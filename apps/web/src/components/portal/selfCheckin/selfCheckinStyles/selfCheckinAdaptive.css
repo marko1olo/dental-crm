@@ -33,7 +33,7 @@
 }
 
 /* Touchscreen and kiosk terminal ergonomics */
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	.selfcheckin-modal-window button,
 	.selfcheckin-modal-window input,
 	.selfcheckin-modal-window .selfcheckin-checkbox-label {

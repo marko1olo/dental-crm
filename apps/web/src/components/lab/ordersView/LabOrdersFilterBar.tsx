@@ -23,7 +23,7 @@ export function LabOrdersFilterBar({
 	onOpenNewOrder,
 }: LabOrdersFilterBarProps): React.JSX.Element {
 	return (
-		<header className="h-9 min-h-[36px] flex items-center justify-between gap-2 px-2.5 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-2xs text-xs w-full max-w-full relative z-20">
+		<header className="min-h-[44px] py-1 flex items-center justify-between gap-2 px-2.5 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-2xs text-xs w-full max-w-full relative z-20">
 			{/* Left: Brand + Inline Counters */}
 			<div className="flex items-center gap-2 shrink-0">
 				<FlaskConical className="w-4 h-4 text-[var(--primary)] shrink-0" />
@@ -44,8 +44,8 @@ export function LabOrdersFilterBar({
 			</div>
 
 			{/* Center: Search & Filter */}
-			<div className="flex items-center gap-1.5 flex-1 min-w-0 max-w-md">
-				<div className="dente-search-wrap relative w-48 sm:w-64 shrink-0">
+			<div className="flex items-center gap-1.5 flex-1 min-w-0">
+				<div className="dente-search-wrap relative flex-1 min-w-[140px] max-w-[260px]">
 					<Search className="dente-search-icon w-3.5 h-3.5 text-[var(--ink-muted)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
 					<input
 						type="text"
@@ -58,7 +58,7 @@ export function LabOrdersFilterBar({
 				<select
 					value={doctorFilter}
 					onChange={(e) => onDoctorFilterChange(e.target.value)}
-					className="hidden lg:block h-9 min-h-[36px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--primary)] focus:outline-none cursor-pointer shrink-0 max-w-[140px]"
+					className="hidden lg:block h-9 min-h-[36px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--primary)] focus:outline-none cursor-pointer min-w-[96px] max-w-[140px] shrink"
 					aria-label="Фильтр по врачу"
 				>
 					<option value="all">Все врачи</option>

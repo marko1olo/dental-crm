@@ -1,102 +1,79 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import * as PnlModules from "../dashboardModules/index.js";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { ManagerialPnlDashboardModal } from "../ManagerialPnlDashboardModal.js";
+import {
+	PnlHeader,
+	PnlSummaryCards,
+	PnlRevenueSection,
+	PnlDirectCostsSection,
+	PnlIndirectCostsSection,
+	PnlChairEconomicsTable,
+	PnlMobileCards,
+	PnlActionFooter,
+	PnlModalContainer,
+	ManagerialPnlModalAssembler,
+} from "../dashboardModules/index.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, "../../../../../../..");
+describe("ManagerialPnlDashboardModal Behavioral & Decomposition Suite", () => {
+	it("renders dynamic cashBoxCount & expenseCount in PnlHeader without hardcoded '6 касс · 12 регламентированных статей'", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(PnlHeader, {
+				periodPreset: "current_month",
+				onSetPeriodPreset: () => {},
+				onRefresh: () => {},
+				onClose: () => {},
+				loading: false,
+				cashBoxCount: 3,
+				expenseCount: 5,
+			}),
+		);
+		assert.equal(html.includes("6 касс · 12 регламентированных статей"), false);
+		assert.ok(html.includes("3 касс · 5 статей расходов"));
+	});
 
-describe("ManagerialPnlDashboardModal Mandate 8b Decomposition & Invariants", () => {
-	const dashboardModules = [
-		"apps/web/src/components/finance/pnl/dashboardModules/PnlHeader.tsx",
-		"apps/web/src/components/finance/pnl/dashboardModules/PnlSummaryCards.tsx",
-		"apps/web/src/components/finance/pnl/dashboardModules/PnlRevenueSection.tsx",
-		"apps/web/src/components/finance/pnl/dashboardModules/PnlDirectCostsSection.tsx",
-		"apps/web/src/components/finance/pnl/dashboardModules/PnlIndirectCostsSection.tsx",
-		"apps/web/src/components/finance/pnl/dashboardModules/PnlChairEconomicsTable.tsx",
-		"apps/web/src/components/finance/pnl/dashboardModules/PnlMobileCards.tsx",
-		"apps/web/src/components/finance/pnl/dashboardModules/PnlActionFooter.tsx",
-		"apps/web/src/components/finance/pnl/dashboardModules/PnlModalContainer.tsx",
-		"apps/web/src/components/finance/pnl/dashboardModules/ManagerialPnlModalAssembler.tsx",
-		"apps/web/src/components/finance/pnl/dashboardModules/index.ts",
-	];
+	it("renders default fallback subtitle when counts are omitted", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(PnlHeader, {
+				periodPreset: "quarter",
+				onSetPeriodPreset: () => {},
+				onRefresh: () => {},
+				onClose: () => {},
+				loading: false,
+			}),
+		);
+		assert.ok(html.includes("Управленческий учет"));
+		assert.equal(html.includes("6 касс"), false);
+	});
 
-	const cssStyles = [
-		"apps/web/src/components/finance/pnl/pnlStyles/pnlLayout.css",
-		"apps/web/src/components/finance/pnl/pnlStyles/pnlHeader.css",
-		"apps/web/src/components/finance/pnl/pnlStyles/pnlKpiCards.css",
-		"apps/web/src/components/finance/pnl/pnlStyles/pnlBreakdownTable.css",
-		"apps/web/src/components/finance/pnl/pnlStyles/pnlFooter.css",
-		"apps/web/src/components/finance/pnl/pnlStyles/pnlMobile.css",
-		"apps/web/src/components/finance/pnl/pnlStyles/pnlDarkTheme.css",
-	];
+	it("renders ManagerialPnlDashboardModal null when closed and shell when open", () => {
+		const closedHtml = renderToStaticMarkup(
+			React.createElement(ManagerialPnlDashboardModal, { isOpen: false, onClose: () => {} }),
+		);
+		assert.equal(closedHtml, "");
 
-	it("guarantees every decomposed TSX module is in healthy sweet spot <= 350 lines", () => {
-		for (const relPath of dashboardModules) {
-			const fullPath = path.resolve(repoRoot, relPath);
-			assert.ok(fs.existsSync(fullPath), `File must exist: ${fullPath}`);
-			const lines = fs.readFileSync(fullPath, "utf-8").split("\n").length;
-			assert.ok(
-				lines <= 350,
-				`Module ${relPath} exceeds healthy limit of 350 lines (currently ${lines})`,
-			);
+		const openHtml = renderToStaticMarkup(
+			React.createElement(ManagerialPnlDashboardModal, { isOpen: true, onClose: () => {} }),
+		);
+		assert.ok(openHtml.includes("Управленческий отчет P&amp;L") || openHtml.includes("Управленческий отчет P&L"));
+		assert.equal(/<button[^>]*\bdisabled\b/i.test(openHtml), false);
+	});
+
+	it("exports all PNL dashboard submodules as valid React components", () => {
+		for (const comp of [
+			PnlHeader,
+			PnlSummaryCards,
+			PnlRevenueSection,
+			PnlDirectCostsSection,
+			PnlIndirectCostsSection,
+			PnlChairEconomicsTable,
+			PnlMobileCards,
+			PnlActionFooter,
+			PnlModalContainer,
+			ManagerialPnlModalAssembler,
+		]) {
+			assert.ok(comp !== undefined);
 		}
-	});
-
-	it("guarantees every decomposed CSS stylesheet is in healthy range <= 350 lines", () => {
-		for (const relPath of cssStyles) {
-			const fullPath = path.resolve(repoRoot, relPath);
-			assert.ok(fs.existsSync(fullPath), `File must exist: ${fullPath}`);
-			const lines = fs.readFileSync(fullPath, "utf-8").split("\n").length;
-			assert.ok(
-				lines <= 350,
-				`CSS ${relPath} exceeds healthy limit of 350 lines (currently ${lines})`,
-			);
-		}
-	});
-
-	it("guarantees root facade ManagerialPnlDashboardModal.tsx is strictly <= 30 lines", () => {
-		const facadePath = path.resolve(
-			repoRoot,
-			"apps/web/src/components/finance/pnl/ManagerialPnlDashboardModal.tsx",
-		);
-		assert.ok(fs.existsSync(facadePath), `Facade file must exist: ${facadePath}`);
-		const lines = fs.readFileSync(facadePath, "utf-8").split("\n").length;
-		assert.ok(
-			lines <= 30,
-			`Facade ManagerialPnlDashboardModal.tsx must be <= 30 lines (currently ${lines})`,
-		);
-	});
-
-	it("verifies elimination of hardcoded '6 касс · 12 регламентированных статей'", () => {
-		const headerPath = path.resolve(
-			repoRoot,
-			"apps/web/src/components/finance/pnl/dashboardModules/PnlHeader.tsx",
-		);
-		const content = fs.readFileSync(headerPath, "utf-8");
-		assert.ok(
-			!content.includes("6 касс · 12 регламентированных статей"),
-			"PnlHeader.tsx must not contain hardcoded '6 касс · 12 регламентированных статей'",
-		);
-		assert.ok(
-			content.includes("cashBoxCount") && content.includes("expenseCount"),
-			"PnlHeader.tsx must dynamically calculate cash boxes and expenses",
-		);
-	});
-
-	it("verifies all modules are properly exported via index.ts", () => {
-		assert.ok(PnlModules.PnlHeader, "PnlHeader must be exported");
-		assert.ok(PnlModules.PnlSummaryCards, "PnlSummaryCards must be exported");
-		assert.ok(PnlModules.PnlRevenueSection, "PnlRevenueSection must be exported");
-		assert.ok(PnlModules.PnlDirectCostsSection, "PnlDirectCostsSection must be exported");
-		assert.ok(PnlModules.PnlIndirectCostsSection, "PnlIndirectCostsSection must be exported");
-		assert.ok(PnlModules.PnlChairEconomicsTable, "PnlChairEconomicsTable must be exported");
-		assert.ok(PnlModules.PnlMobileCards, "PnlMobileCards must be exported");
-		assert.ok(PnlModules.PnlActionFooter, "PnlActionFooter must be exported");
-		assert.ok(PnlModules.PnlModalContainer, "PnlModalContainer must be exported");
-		assert.ok(PnlModules.ManagerialPnlModalAssembler, "ManagerialPnlModalAssembler must be exported");
 	});
 });

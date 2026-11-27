@@ -71,15 +71,14 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 					containerTestId="cash-register-checkout-modal"
 					submitButtonTestId="btn-confirm-checkout-payment"
 					title="Касса · Оплата приёма"
-					totalDueRub={summaryAmount}
-					amountRub={summaryAmount}
+					totalDueKopecks={rublesToKopecks(summaryAmount)}
 					amountKopecks={rublesToKopecks(summaryAmount)}
 					defaultMethod="card"
 					patientId={patient?.id || undefined}
 					patientName={patientName || undefined}
 					patientPhone={patient?.phone || undefined}
-					patientDepositRub={patientDepositRub}
-					patientFamilyBalanceRub={patientFamilyBalanceRub}
+					patientDepositKopecks={rublesToKopecks(patientDepositRub)}
+					patientFamilyBalanceKopecks={rublesToKopecks(patientFamilyBalanceRub)}
 					cashierFullName={s.paymentFiscalCashierName || undefined}
 					clinicLegalName={s.dashboard?.clinicSettings?.profile?.legalName ?? s.dashboard?.clinicSettings?.profile?.clinicName ?? s.dashboard?.clinicName ?? undefined}
 					onClose={() => setIsPaymentModalOpen(false)}

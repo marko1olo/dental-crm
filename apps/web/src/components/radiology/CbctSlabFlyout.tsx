@@ -34,7 +34,7 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 				<button
 					type="button"
 					onClick={onClose}
-					className="w-7 h-7 min-w-[28px] min-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
+					className="w-7 h-7 min-w-[28px] min-h-[28px] max-md:w-11 max-md:h-11 max-md:min-w-[44px] max-md:min-h-[44px] flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
 					aria-label="Закрыть меню"
 				>
 					<X className="w-4 h-4" />
@@ -50,7 +50,7 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectSlabMode("single")}
-						className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
+						className={`px-2 py-1.5 max-md:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 							normalizedSlabMode === "single"
 								? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 font-bold"
 								: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
@@ -62,7 +62,7 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectSlabMode("mip")}
-						className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
+						className={`px-2 py-1.5 max-md:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 							normalizedSlabMode === "mip"
 								? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 font-bold"
 								: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
@@ -74,7 +74,7 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectSlabMode("average")}
-						className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
+						className={`px-2 py-1.5 max-md:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 							normalizedSlabMode === "average"
 								? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 font-bold"
 								: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
@@ -86,7 +86,7 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectSlabMode("minip")}
-						className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
+						className={`px-2 py-1.5 max-md:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 							normalizedSlabMode === "minip"
 								? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 font-bold"
 								: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
@@ -117,7 +117,7 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 							type="button"
 							onClick={() => onChangeSlabThicknessMm?.(t)}
 							data-testid={t === 15 ? "cbct-tool-slab-15mm" : `cbct-slab-thickness-${t}`}
-							className={`px-2 py-0.5 [@media(pointer:coarse)]:py-1 rounded text-[11px] font-mono transition-colors shrink-0 ${
+							className={`px-2 py-0.5 max-md:py-1 rounded text-[11px] font-mono transition-colors shrink-0 ${
 								Math.abs(slabThicknessMm - t) < 0.2
 									? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 font-bold"
 									: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"

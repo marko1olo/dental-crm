@@ -10,6 +10,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { CreditCard, FileText, Plus, ShieldCheck, ArrowLeft, RefreshCw } from "lucide-react";
 import { CashRegisterStudioModal } from "../../../../cashbox/CashRegisterStudioModal";
 import { CashShiftClosingModal } from "../../../../shift/CashShiftClosingModal";
@@ -163,10 +164,10 @@ export const StandaloneCashboxSsotHost: React.FC<StandaloneCashboxSsotHostProps>
 					serviceTitle={effectiveServiceTitle}
 					visitId={visitId}
 					invoiceId={invoiceId}
-					patientDepositRub={effectiveDepositRub}
-					patientFamilyBalanceRub={effectiveFamilyBalanceRub}
-					totalDueRub={effectiveAmountRub}
-					amountRub={effectiveAmountRub}
+					patientDepositKopecks={rublesToKopecks(effectiveDepositRub)}
+					patientFamilyBalanceKopecks={rublesToKopecks(effectiveFamilyBalanceRub)}
+					totalDueKopecks={rublesToKopecks(effectiveAmountRub ?? 0)}
+					amountKopecks={rublesToKopecks(effectiveAmountRub ?? 0)}
 					onSuccess={() => setIsCheckoutOpen(false)}
 				/>
 			)}

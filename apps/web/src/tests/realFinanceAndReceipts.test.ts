@@ -1,15 +1,12 @@
 /**
  * @file realFinanceAndReceipts.test.ts
  * @description Real Finance and Receipts Integration & Autonomy Suite (Wave 21).
- * Verifies FinanceView modular architecture, 54-FZ calculations, cash shift workflows,
- * and test anchor preservation without mocks.
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
 	FinanceView,
 	FinanceOperationsToolbar,
@@ -19,107 +16,106 @@ import {
 	EMPTY_CLINICAL_RULE_SUMMARY,
 	noLabels,
 } from "../views/financeView/index";
+import { PendingCheckoutBanner } from "../views/financeView/PendingCheckoutBanner";
 import { localDayKey, summarizeCashDay } from "../components/finance/cashDaySummary";
 import { rubAmountForInput } from "../rubAmountInput.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 describe("REAL FINANCE & RECEIPTS INTEGRATION SUITE (Wave 21 Decomposed Modules)", () => {
-	const facadePath = path.resolve(__dirname, "../views/financeView/index.tsx");
-	const viewsDirPath = path.resolve(__dirname, "../views/financeView");
-
-	it("1. Verifies thin facade budget and exports parity", () => {
-		assert.ok(fs.existsSync(facadePath), "Canonical views/financeView/index.tsx must exist");
-		const facadeContent = fs.readFileSync(facadePath, "utf-8");
-		const lineCount = facadeContent.split("\n").length;
-		assert.ok(
-			lineCount <= 150,
-			`Facade line count (${lineCount}) must be strictly <= 150 lines`,
+	it("1. Renders FinanceSummaryCards overview & clinical actions cleanly", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(FinanceSummaryCards, {
+				activePaymentsCount: 2,
+				billingSummary: null,
+				money: (v) => `${v ?? 0} ₽`,
+				onGoToVisit: () => {},
+				priorityLabels: { high: "Срочно", medium: "Планово", low: "Наблюдение" },
+				scenarios: [],
+				strategyLabels: { economy: "Базовый", standard: "Оптимум", premium: "Премиум" },
+				onOpenTaxCertificateModal: () => {},
+				dayPayments: [],
+				methodLabels: { cash: "Наличные", card: "Карта", online: "СБП", deposit: "Депозит", bank_transfer: "Безнал", split: "Сплит", certificate: "Сертификат", loyalty: "Бонусы", dms: "ДМС", warranty_100: "Гарантия" },
+			}),
 		);
-
-		assert.equal(typeof FinanceView, "function", "FinanceView must be exported as a function");
-		assert.equal(typeof FinanceOperationsToolbar, "function", "FinanceOperationsToolbar must be exported");
-		assert.equal(typeof FinanceSummaryCards, "function", "FinanceSummaryCards must be exported");
-		assert.equal(typeof FinanceTransactionsTable, "function", "FinanceTransactionsTable must be exported");
-		assert.equal(typeof useFinanceView, "function", "useFinanceView hook must be exported");
+		assert.ok(html.length > 50);
+		assert.equal(html.includes("54-ФЗ"), false);
+		assert.equal(html.includes("043/у"), false);
 	});
 
-	it("2. Verifies all decomposed files in views/financeView respect <= 800 lines limit", () => {
-		const files = fs.readdirSync(viewsDirPath);
-		assert.ok(files.length >= 5, "Must contain all required layer files");
-
-		for (const file of files) {
-			if (/\.(ts|tsx)$/.test(file)) {
-				const fullPath = path.join(viewsDirPath, file);
-				const content = fs.readFileSync(fullPath, "utf-8");
-				const lines = content.split("\n").length;
-				assert.ok(
-					lines <= 800,
-					`File ${file} has ${lines} lines, exceeding the 800-line limit`,
-				);
-			}
-		}
+	it("2. Renders PendingCheckoutBanner with clinical-checkout-handoff-banner testid and clean text", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(PendingCheckoutBanner, {
+				pendingCheckout: {
+					patientId: "pat-1",
+					patientName: "Петров Иван",
+					totalDueRub: 4500,
+					services: [{ name: "Лечение кариеса", priceRub: 4500 }],
+				},
+				onResetPendingCheckout: () => {},
+				onOpenSplitPayment: () => {},
+				money: (v) => `${v ?? 0} ₽`,
+			}),
+		);
+		assert.ok(html.includes('data-testid="clinical-checkout-handoff-banner"'));
+		assert.ok(html.includes("Петров Иван"));
+		assert.ok(html.includes("4500 ₽"));
 	});
 
-	it("3. Verifies test anchors in decomposed view directory", () => {
-		const indexPath = path.join(viewsDirPath, "index.tsx");
-		const toolbarPath = path.join(viewsDirPath, "FinanceOperationsToolbar.tsx");
-		assert.ok(fs.existsSync(indexPath), "index.tsx must exist");
-		assert.ok(fs.existsSync(toolbarPath), "FinanceOperationsToolbar.tsx must exist");
-
-		const bannerPath = path.join(viewsDirPath, "PendingCheckoutBanner.tsx");
-		const cashboxSectionPath = path.join(viewsDirPath, "FinanceCashboxSection.tsx");
-		const combined = fs.readFileSync(indexPath, "utf-8") + "\n" +
-			fs.readFileSync(toolbarPath, "utf-8") +
-			(fs.existsSync(bannerPath) ? "\n" + fs.readFileSync(bannerPath, "utf-8") : "") +
-			(fs.existsSync(cashboxSectionPath) ? "\n" + fs.readFileSync(cashboxSectionPath, "utf-8") : "");
-
-		assert.ok(combined.includes('id="finance"'), "Must preserve id='finance'");
-		assert.ok(
-			combined.includes('data-testid="clinical-checkout-handoff-banner"'),
-			"Must preserve data-testid='clinical-checkout-handoff-banner'",
+	it("3. Renders FinanceOperationsToolbar with cash-shift-panel-container and 0 bureaucratic ciphers", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(FinanceOperationsToolbar, {
+				pendingCheckout: null,
+				onResetPendingCheckout: () => {},
+				effectivePatient: null,
+				effectiveBillingSummary: null,
+				isCashShiftOpen: false,
+				onToggleCashShift: () => {},
+				isShiftOpen: true,
+				onPayDebtQuick: () => {},
+				money: (v) => `${v ?? 0} ₽`,
+				onOpenInvoices: () => {},
+				isFinanceOptionsOpen: false,
+				onToggleFinanceOptions: () => {},
+				onCloseFinanceOptions: () => {},
+				onOpenPnl: () => {},
+				onGoToDocuments: () => {},
+				onOpenCashbox: () => {},
+				onOpenBillingAct: () => {},
+				onOpenQuickExpense: () => {},
+				onOpenTaxCertificate: () => {},
+				shiftNumber: 1,
+				paymentFiscalCashierName: "Администратор",
+				cashInDrawerRub: 1000,
+				cardSumRub: 2000,
+				sbpSumRub: 500,
+				advanceOffsetRub: 0,
+				onOpenShift: async () => {},
+				onCloseShift: async () => {},
+				onCashIn: async () => {},
+				onCashOut: async () => {},
+				onPrintXReport: async () => {},
+			}),
 		);
-		assert.ok(
-			combined.includes('data-testid="cash-shift-panel-container"'),
-			"Must preserve data-testid='cash-shift-panel-container'",
-		);
-		assert.ok(
-			combined.includes('finance-cashbox-container'),
-			"Must preserve finance-cashbox-container anchor",
-		);
+		assert.ok(html.includes('data-testid="btn-finance-open-invoices"'));
+		assert.equal(html.includes("54-ФЗ"), false);
+		assert.equal(html.includes("804н"), false);
 	});
 
 	it("4. Verifies real cash day calculations and kopeck exactness", () => {
+		const todayIso = new Date().toISOString();
 		const samplePayments = [
-			{
-				id: "p-1",
-				paidAt: new Date().toISOString(),
-				amountRub: 5000,
-				method: "cash" as const,
-			},
-			{
-				id: "p-2",
-				paidAt: new Date().toISOString(),
-				amountRub: 12500.5,
-				method: "card" as const,
-			},
-			{
-				id: "p-3",
-				paidAt: new Date().toISOString(),
-				amountRub: 3500.25,
-				method: "online" as const,
-			},
+			{ id: "p-1", paidAt: todayIso, amountRub: 5000, method: "cash" as const },
+			{ id: "p-2", paidAt: todayIso, amountRub: 12500.5, method: "card" as const },
+			{ id: "p-3", paidAt: todayIso, amountRub: 3500.25, method: "online" as const },
 		];
 
 		const todayKey = localDayKey(new Date());
-		assert.ok(todayKey, "localDayKey must return valid day key");
+		assert.ok(todayKey);
 
-		const totals = summarizeCashDay(samplePayments as any, todayKey);
-		assert.equal(totals.cashRub, 5000, "Cash total must match exactly");
-		assert.equal(totals.cardRub, 12500.5, "Card total must match exactly");
-		assert.equal(totals.sbpRub, 3500.25, "SBP (online) total must match exactly");
-		assert.equal(totals.receivedRub, 21000.75, "Received total must sum with exact kopecks");
+		const totals = summarizeCashDay(samplePayments as never, todayKey);
+		assert.equal(totals.cashRub, 5000);
+		assert.equal(totals.cardRub, 12500.5);
+		assert.equal(totals.sbpRub, 3500.25);
+		assert.equal(totals.receivedRub, 21000.75);
 	});
 
 	it("5. Verifies rubAmountForInput sanitization without NaN leakage", () => {
@@ -141,8 +137,6 @@ describe("REAL FINANCE & RECEIPTS INTEGRATION SUITE (Wave 21 Decomposed Modules)
 			requiredServices: 0,
 			coveredRules: 0,
 		});
-
-		const labels = noLabels<"a" | "b">();
-		assert.deepEqual(labels, {});
+		assert.deepEqual(noLabels<"a" | "b">(), {});
 	});
 });

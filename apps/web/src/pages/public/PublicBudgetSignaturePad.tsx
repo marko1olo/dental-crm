@@ -193,7 +193,7 @@ export const PublicBudgetSignaturePad: React.FC<PublicBudgetSignaturePadProps> =
 	const effectiveError = localError || error;
 
 	return (
-		<div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+		<div className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-5 shadow-xl space-y-4">
 			{/* Header bar: Strict legal icon + Ghost Clear Button */}
 			<div className="flex items-center justify-between gap-3">
 				<label className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5 min-w-0">
@@ -264,7 +264,7 @@ export const PublicBudgetSignaturePad: React.FC<PublicBudgetSignaturePadProps> =
 					type="checkbox"
 					checked={agreedToTerms}
 					onChange={(e) => setAgreedToTerms(e.target.checked)}
-					className="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-[var(--primary)] focus:ring-0 bg-white dark:bg-slate-950"
+					className="mt-0.5 rounded border-[var(--line)] text-[var(--primary)] focus:ring-0 bg-[var(--paper)]"
 				/>
 				<span>
 					{agreementText}

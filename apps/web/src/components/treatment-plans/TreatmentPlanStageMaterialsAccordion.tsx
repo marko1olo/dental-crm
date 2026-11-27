@@ -20,7 +20,7 @@ export const TreatmentPlanStageMaterialsAccordion: React.FC<TreatmentPlanStageMa
 			<button
 				type="button"
 				onClick={() => setShowMaterials((prev) => !prev)}
-				className="w-full h-8 min-h-[32px] max-h-[34px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] flex items-center justify-between px-4 py-1.5 text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] transition-colors cursor-pointer"
+				className="w-full h-8 min-h-[32px] max-h-[34px] max-md:h-11 max-md:min-h-[44px] max-md:max-h-[44px] flex items-center justify-between px-4 py-1.5 text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] transition-colors cursor-pointer"
 			>
 				<div className="flex items-center gap-2 min-w-0">
 					<Package size={15} className="text-[var(--teal,var(--brand-primary))] shrink-0" />

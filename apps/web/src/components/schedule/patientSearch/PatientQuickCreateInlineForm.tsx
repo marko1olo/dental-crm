@@ -52,7 +52,7 @@ export const PatientQuickCreateInlineForm: React.FC<Props> = ({
 						value={quickFullName}
 						onChange={(e) => setQuickFullName(e.target.value)}
 						placeholder="Фамилия Имя Отчество"
-						className="w-full h-9 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500"
+						className="w-full h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold outline-none focus:ring-2 focus:ring-[var(--primary)]"
 						autoFocus
 					/>
 				</div>

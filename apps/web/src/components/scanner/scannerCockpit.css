@@ -145,7 +145,7 @@
 	transition: all 0.15s ease;
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.scanner-preset-btn {
 		min-height: 44px;
 		padding: 0 16px;
@@ -287,7 +287,7 @@
 	transition: all 0.12s ease;
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.scanner-filter-btn {
 		min-height: 40px;
 		padding: 0 12px;
@@ -344,7 +344,7 @@
 	text-align: center;
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.scanner-mode-switch-btn {
 		min-height: 44px;
 	}
@@ -385,7 +385,7 @@
 	transition: border-color 0.15s ease;
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.scanner-search-input {
 		min-height: 44px;
 	}
@@ -513,7 +513,7 @@
 	transition: border-color 0.15s ease;
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.scanner-form-input {
 		min-height: 44px;
 	}
@@ -570,7 +570,7 @@
 	transition: all 0.15s ease;
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.scanner-secondary-btn {
 		min-height: 44px;
 		padding: 0 16px;

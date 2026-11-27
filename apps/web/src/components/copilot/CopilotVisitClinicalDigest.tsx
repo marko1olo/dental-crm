@@ -188,12 +188,12 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 		}
 
 		// 3. Отправляем в чат Копайлота структурированный отчет
-		const summaryText = `Сформирован комплексный протокол приёма по ${findings.length} зубам (${findings.map((f) => f.tooth).join(", ")}): дневник SOAP обновлен, услуги внесены в смету визита.`;
+		const summaryText = `Сформирован комплексный протокол приёма по ${findings.length} зубам (${findings.map((f) => f.tooth).join(", ")}): дневник приёма обновлен, услуги внесены в смету визита.`;
 		onSendMessage(summaryText);
-		showToast(`Оформлен приём по ${findings.length} зубам (SOAP + Смета)`, "success");
+		showToast(`Оформлен приём по ${findings.length} зубам (Дневник + Смета)`, "success");
 	};
 
-	// Вставка протокола в дневник SOAP
+	// Вставка протокола в дневник приёма
 	const handleApplySoapOnly = () => {
 		for (const f of findings) {
 			window.dispatchEvent(
@@ -209,7 +209,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 				}),
 			);
 		}
-		showToast(`Дневник приёма SOAP обновлён по ${findings.length} зубам`, "success");
+		showToast(`Дневник приёма обновлён по ${findings.length} зубам`, "success");
 	};
 
 	// Вставка позиций в смету
@@ -290,7 +290,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 						data-testid="copilot-batch-apply-btn"
 					>
 						<Zap size={15} />
-						<span>Оформить приём по всем зубам (SOAP + Смета)</span>
+						<span>Оформить приём по всем зубам (Дневник + Смета)</span>
 					</button>
 
 					<div className="grid grid-cols-2 gap-2">
@@ -300,7 +300,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 							className="h-10 min-h-[40px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
 						>
 							<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-							<span>Только в SOAP</span>
+							<span>Только в дневник</span>
 						</button>
 						<button
 							type="button"
@@ -373,17 +373,17 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 						className="copilot-primary-cta w-full h-11 min-h-[44px] px-4 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-95 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all"
 					>
 						<Zap size={15} />
-						<span>Оформить зуб {f.tooth} (SOAP + Смета)</span>
+						<span>Оформить зуб {f.tooth} (Дневник + Смета)</span>
 					</button>
 
 					<div className="grid grid-cols-2 gap-2">
 						<button
 							type="button"
-							onClick={() => onSendMessage(`Сформируй протокол приёма SOAP для зуба ${f.tooth}: ${f.stateTitle}`)}
+							onClick={() => onSendMessage(`Сформируй протокол приёма для зуба ${f.tooth}: ${f.stateTitle}`)}
 							className="h-10 min-h-[40px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
 						>
 							<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-							<span>Дневник SOAP</span>
+							<span>Дневник приёма</span>
 						</button>
 						<button
 							type="button"

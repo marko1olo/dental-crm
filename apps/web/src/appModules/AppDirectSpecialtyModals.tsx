@@ -104,7 +104,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 			)}
 			{routing.isClinicalTasksOpen && (
 				<Suspense fallback={null}>
-					<div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-md bg-black/60 animate-in fade-in duration-150" role="dialog" aria-modal="true">
+					<div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md bg-black/60 animate-in fade-in duration-150" role="dialog" aria-modal="true">
 						<div className="bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-4xl max-h-[90vh] rounded-2xl p-5 shadow-2xl overflow-y-auto relative">
 							<button type="button" onClick={() => routing.setIsClinicalTasksOpen(false)} className="absolute top-4 right-4 p-2 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer rounded-lg hover:bg-[var(--paper-soft)] font-bold text-sm" aria-label="Закрыть">✕</button>
 							<ClinicalTasksPanel patientId={routing.clinicalTasksPatientId || patient?.id || (typeof window !== "undefined" && window.location.search.includes("demo=1") ? "demo-patient-1" : null)} assignedDoctorId={activeDoctor?.id || staffUser?.id || null} />

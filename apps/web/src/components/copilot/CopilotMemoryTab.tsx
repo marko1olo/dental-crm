@@ -63,7 +63,7 @@ export function CopilotMemoryTab() {
 				<div className="min-w-0 flex-1">
 					<h4 className="font-bold text-[var(--ink)] m-0">Долговременная память ассистента</h4>
 					<p className="text-[11px] text-[var(--muted)] m-0 mt-0.5 leading-relaxed">
-						ИИ учитывает ваши клинические привычки при формировании дневников SOAP, выборе композитов и формулировках диагнозов.
+						ИИ учитывает ваши клинические привычки при формировании дневников приёма, выборе композитов и формулировках диагнозов.
 					</p>
 				</div>
 			</div>

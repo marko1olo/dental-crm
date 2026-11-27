@@ -69,11 +69,11 @@ export const PatientSentimentBadge: React.FC<PatientSentimentBadgeProps> = ({
 
 			{isOpen && typeof document !== "undefined" && createPortal(
 				<>
-					<div className="fixed inset-0 z-[10060] bg-black/20 backdrop-blur-2xs" onClick={() => setIsOpen(false)} aria-hidden="true" />
+					<div className="fixed inset-0 z-[40] bg-black/20 backdrop-blur-2xs" onClick={() => setIsOpen(false)} aria-hidden="true" />
 					<div
 						id={popoverId}
 						role="dialog"
-						className="fixed z-[10061] top-1/3 left-1/2 -translate-x-1/2 w-80 p-4 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xl space-y-3"
+						className="fixed z-[50] top-1/3 left-1/2 -translate-x-1/2 w-80 p-4 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xl space-y-3"
 						onClick={(e) => e.stopPropagation()}
 						data-testid="patient-sentiment-popover"
 					>

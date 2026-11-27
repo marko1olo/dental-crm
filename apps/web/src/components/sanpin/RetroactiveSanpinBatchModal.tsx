@@ -20,7 +20,7 @@ export function RetroactiveSanpinBatchModal({
 
 	return (
 		<div
-			className="sanpin-modal-overlay fixed inset-0 bg-black/65 backdrop-blur-xs flex items-center justify-center z-[1050] p-4"
+			className="sanpin-modal-overlay fixed inset-0 bg-black/65 backdrop-blur-xs flex items-center justify-center z-[100] p-4"
 			onClick={onClose}
 		>
 			<div

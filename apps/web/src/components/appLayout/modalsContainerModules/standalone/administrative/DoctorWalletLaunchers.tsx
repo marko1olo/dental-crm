@@ -124,7 +124,7 @@ export const DoctorWalletStandaloneWorkspace: React.FC<{ readonly onClose?: () =
 		<div
 			id="direct-doctor-wallet-overlay"
 			data-testid="doctor-wallet-standalone-workspace"
-			className="fixed inset-0 z-[9999] bg-[var(--canvas,#ffffff)]/95 backdrop-blur-md overflow-y-auto p-2 sm:p-4 flex flex-col"
+			className="fixed inset-0 z-[100] bg-[var(--canvas,#ffffff)]/95 backdrop-blur-md overflow-y-auto p-2 sm:p-4 flex flex-col"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Мобильный расчётный кошелёк врача"

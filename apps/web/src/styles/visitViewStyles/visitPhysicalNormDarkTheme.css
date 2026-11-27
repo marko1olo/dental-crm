@@ -68,7 +68,7 @@
 }
 
 /* Mobile Apple HIG Touch Target: 44px min-height */
-@media (max-width: 768px), (pointer: coarse) {
+@media (max-width: 768px) {
 	.dente-norm-btn {
 		height: 44px;
 		min-height: 44px;

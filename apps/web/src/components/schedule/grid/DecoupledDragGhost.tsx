@@ -197,7 +197,7 @@ export const DecoupledDragGhost: React.FC = React.memo(
     return (
       <div
         ref={ghostRef}
-        className="schedule-decoupled-drag-ghost fixed top-0 left-0 pointer-events-none z-[99999] rounded-xl border border-[var(--teal)] bg-[var(--paper)] text-[var(--ink)] shadow-[0_16px_36px_-4px_rgba(0,0,0,0.24),0_0_0_1px_var(--teal)] p-2.5 min-w-[210px] max-w-[270px] select-none"
+        className="schedule-decoupled-drag-ghost fixed top-0 left-0 pointer-events-none z-[200] rounded-xl border border-[var(--teal)] bg-[var(--paper)] text-[var(--ink)] shadow-[0_16px_36px_-4px_rgba(0,0,0,0.24),0_0_0_1px_var(--teal)] p-2.5 min-w-[210px] max-w-[270px] select-none"
         style={{
           willChange: "transform",
           contain: "layout style",

@@ -99,7 +99,7 @@
 	border-color: var(--line, #cbd5e1);
 }
 
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	._ccm-close-btn-icon {
 		min-width: 44px;
 		min-height: 44px;

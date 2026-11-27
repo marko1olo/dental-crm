@@ -157,10 +157,10 @@ describe("Red Team UI Mounting & Apple HIG Accessibility", () => {
 				containerTestId="cash-checkout-studio-modal"
 				submitButtonTestId="btn-execute-payment"
 				title="Касса и чеки · Приём оплаты"
-				totalDueRub={7500}
+				totalDueKopecks={750000n}
 				patientName="Иванова Анна Сергеевна"
 				patientPhone="+7 (999) 111-22-33"
-				patientDepositRub={1500}
+				patientDepositKopecks={150000n}
 			/>,
 		);
 

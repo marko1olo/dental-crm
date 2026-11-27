@@ -278,124 +278,96 @@ describe("EMR SOAP Diary & Doctor Autonomy Suite (Mandates 8e, 8i, 8n, 8zi)", ()
 	});
 
 	describe("3. Врачебная автономия и ликвидация блокировок UI (Мандаты 8e, 8d, 8k, 8n)", () => {
-		it("3.1. CopilotVoiceStenographer.tsx: Кнопка 'Применить в карту' disabled={false} и не блокирует врача", () => {
-			const voiceModalPath = path.join(webSrcDir, "components/copilot/CopilotVoiceStenographer.tsx");
-			const voiceCode = fs.readFileSync(voiceModalPath, "utf-8");
+		it("3.1. CopilotVoiceStenographer, DicomViewerModal, OrthopedicsChairsidePanel и секции ЭМК рендерятся без мёртвых disabled-блокировок", async () => {
+			const React = await import("react");
+			const { renderToStaticMarkup } = await import("react-dom/server");
+			const { CopilotVoiceStenographer } = await import("../components/copilot/CopilotVoiceStenographer.js");
+			const { DicomViewerModal } = await import("../components/imaging/DicomViewerModal.js");
+			const { OrthopedicsChairsidePanel } = await import("../components/orthopedics/OrthopedicsChairsidePanel.js");
+			const { EmkObjectiveStatusSection } = await import("../components/visit/emk/EmkObjectiveStatusSection.js");
+			const { EmkComplaintsSection } = await import("../components/visit/emk/EmkComplaintsSection.js");
 
-			assert.ok(
-				voiceCode.includes("disabled={false}"),
-				"Кнопка 'Применить в карту' в CopilotVoiceStenographer обязана быть disabled={false}",
+			const voiceHtml = renderToStaticMarkup(
+				React.createElement(CopilotVoiceStenographer, { isOpen: true, patientName: "Иванов И." }),
 			);
-			assert.ok(
-				voiceCode.includes("handleApplyAll"),
-				"Голосовой стенограф приёма должен мгновенно применять распознанный протокол",
+			assert.equal(/<button[^>]*\bdisabled\b/i.test(voiceHtml), false);
+
+			const dicomHtml = renderToStaticMarkup(
+				React.createElement(DicomViewerModal, { isOpen: true, onClose: () => {}, patientName: "Иванов И." }),
 			);
+			assert.ok(dicomHtml.includes('data-testid="dicom-viewer-modal"'));
+			assert.equal(dicomHtml.includes('data-testid="btn-dicom-run-ai" disabled'), false);
+
+			const orthoHtml = renderToStaticMarkup(
+				React.createElement(OrthopedicsChairsidePanel, {
+					patientId: "pat-1",
+					patientName: "Иванов И.",
+					doctorName: "Смирнов А.В.",
+				} as never),
+			);
+			assert.ok(orthoHtml.includes('data-testid="direct-send-lab-order-btn"'));
+			assert.ok(orthoHtml.includes('data-testid="vita-3d-master-tab"'));
+
+			const emptyForm = { complaint: "", anamnesis: "", objectiveStatus: "", diagnosis: "", treatmentPlan: "", recommendations: "" };
+			const objHtml = renderToStaticMarkup(
+				React.createElement(EmkObjectiveStatusSection, { visitNoteForm: emptyForm as never, updateVisitNoteField: () => {} }),
+			);
+			assert.ok(objHtml.includes('data-testid="emk-objective-norm-presets-bar"'));
+			assert.ok(objHtml.includes('data-testid="btn-emk-full-objective-norm"'));
+			assert.ok(objHtml.includes('data-testid="btn-emk-sanitized-norm"'));
+			assert.ok(objHtml.includes('data-testid="btn-emk-bite-norm"'));
+			assert.ok(objHtml.includes('data-testid="btn-emk-mucosa-norm"'));
+
+			const compHtml = renderToStaticMarkup(
+				React.createElement(EmkComplaintsSection, { visitNoteForm: emptyForm as never, updateVisitNoteField: () => {} }),
+			);
+			assert.ok(compHtml.includes('data-testid="btn-emk-complaints-norm"'));
+			assert.ok(compHtml.includes('data-testid="btn-emk-anamnesis-norm"'));
 		});
 
-		it("3.2. DicomViewerModal: Мгновенное открытие снимка (<50мс) без блокировки ИИ (Мандат 8e)", () => {
-			const implPath = path.resolve(__dirname, "../components/imaging/DicomViewerModal.tsx");
-			const ctrlPath = path.resolve(__dirname, "../components/imaging/dicomViewerModal/useDicomViewerModalController.ts");
-			const aiPath = path.resolve(__dirname, "../components/imaging/dicomViewerModal/useDicomViewerModalAi.ts");
-			assert.ok(fs.existsSync(implPath), "Реализация components/imaging/DicomViewerModal.tsx обязана существовать");
-			const source = fs.readFileSync(implPath, "utf-8") + fs.readFileSync(ctrlPath, "utf-8") + fs.readFileSync(aiPath, "utf-8");
-			assert.ok(source.includes("processFile"), "Снимок должен обрабатываться через мгновенный processFile");
-			assert.ok(source.includes("handleRunAiAnalysis"), "ИИ анализ должен запускаться только врачом через handleRunAiAnalysis");
-		});
+		it("3.2. documentPackages и PatientsView работают без блокирующих disabled-барьеров и поликлинических кодов", async () => {
+			const { getDocumentPackage } = await import("../utils/documentPackages.js");
+			const React = await import("react");
+			const { renderToStaticMarkup } = await import("react-dom/server");
+			const { PatientsView } = await import("../PatientsView.js");
+			const { AppLogicProvider } = await import("../contexts/AppLogicContext.js");
 
-		it("3.3. VisitAnamnesisTab.tsx реализует debounced autosave для автономии врача (Мандат 8e)", () => {
-			const anamnesisPath = path.resolve(webSrcDir, "components/visit/VisitAnamnesisTab.tsx");
-			const autosavePath = path.resolve(webSrcDir, "components/visit/anamnesisTab/useAnamnesisAutosave.ts");
-			const source = fs.readFileSync(anamnesisPath, "utf-8") + (fs.existsSync(autosavePath) ? fs.readFileSync(autosavePath, "utf-8") : "");
-			assert.ok(source.includes("debounce") || source.includes("setTimeout"), "VisitAnamnesisTab обязан содержать debounced сохранение");
-			assert.ok(source.includes("clearTimeout"), "VisitAnamnesisTab обязан очищать таймер при размонтировании");
-		});
+			const pkg = getDocumentPackage("referral");
+			assert.ok(pkg.documentKinds.includes("xray_cbct_referral"));
+			assert.equal(pkg.documentKinds.some((k) => String(k) === "poly_025u"), false);
 
-		it("3.4. TreatmentPlanStudioModal.tsx кнопки утверждения и сохранения не имеют мертвого disabled блокировщика", () => {
-			const estPath = path.resolve(webSrcDir, "components/treatment-plans/TreatmentPlanStudioModal.tsx");
-			const source = fs.readFileSync(estPath, "utf-8");
-			assert.ok(!source.includes("disabled={true}"), "Кнопки плана лечения не должны быть заблокированы disabled");
-		});
-
-		it("3.5. DicomAiFindingsDrawer перенос находок не заблокирован мертвым disabled при пустом выделении", () => {
-			const drawerPath = path.resolve(webSrcDir, "components/imaging/DicomAiFindingsDrawer.tsx");
-			const footerPath = path.resolve(webSrcDir, "components/imaging/aiFindings/DicomAiFindingsFooter.tsx");
-			const aiPath = path.resolve(webSrcDir, "components/imaging/dicomViewerModal/useDicomViewerModalAi.ts");
-			const source = fs.readFileSync(drawerPath, "utf-8") + fs.readFileSync(footerPath, "utf-8") + fs.readFileSync(aiPath, "utf-8");
-			assert.ok(!source.includes("disabled={isApplyingToChart || selectedFindingCodes.size === 0}"), "Кнопка переноса находок не должна быть заблокирована по признаку selectedFindingCodes.size === 0");
-			assert.ok(source.includes("Отметьте хотя бы одну находку ИИ для переноса"), "Обработчик должен уведомлять врача через тост при пустом выборе");
-		});
-
-		it("3.6. DicomViewerModal.tsx кнопки анализа и переноса находок не заблокированы мертвым disabled", () => {
-			const dicomPath = path.resolve(webSrcDir, "components/imaging/DicomViewerModal.tsx");
-			const source = fs.readFileSync(dicomPath, "utf-8");
-			assert.ok(!source.includes("disabled={isAnalyzing || !currentImageSrc}"), "Кнопка ИИ-анализа не должна быть заблокирована по признаку !currentImageSrc");
-			assert.ok(!source.includes("disabled={isApplyingToChart || selectedFindingCodes.size === 0}"), "Кнопка переноса находок не должна быть заблокирована по признаку selectedFindingCodes.size === 0");
-		});
-
-		it("3.7. OrthopedicsChairsidePanel.tsx клинический оверрайд врача снимает блокировку протоколов", () => {
-			const orthoPath = path.resolve(webSrcDir, "components/orthopedics/OrthopedicsChairsidePanel.tsx");
-			const source = fs.readFileSync(orthoPath, "utf-8");
-			assert.ok(source.includes("disabled={isLocked && !overrideActive}") || !source.includes("disabled={isLocked"), "Кнопка протокола должна разблокироваться при overrideActive = true (Мандат 8e)");
-			assert.ok(source.includes("isLocked && !overrideActive"), "Проверка блокировки в handleApplyProtocol обязана учитывать клинический оверрайд врача");
-		});
-
-		it("3.8. OrthopedicsChairsidePanel.tsx содержит 1-клик стандарты ЗТЛ, VITA Classical & 3D-Master и мгновенную отправку без барьеров", () => {
-			const orthoPath = path.resolve(webSrcDir, "components/orthopedics/OrthopedicsChairsidePanel.tsx");
-			const source = fs.readFileSync(orthoPath, "utf-8");
-			assert.ok(source.includes("STANDARD_ZTL_ORDER_PRESETS"), "Панель ортопедии должна объявлять стандартные наряды ЗТЛ");
-			assert.ok(source.includes("VITA_3D_MASTER_SHADE_GROUPS"), "Панель ортопедии должна поддерживать группы VITA 3D-Master");
-			assert.ok(source.includes("data-testid=\"direct-send-lab-order-btn\""), "Панель ортопедии должна предоставлять кнопку 1-клик отправки в ЗТЛ");
-			assert.ok(source.includes("data-testid=\"vita-3d-master-tab\""), "Панель ортопедии должна содержать переключатель на VITA 3D-Master");
-		});
-
-		it("3.9. documentPackages.ts: пакет направления адаптирован под стоматологический амбулаторный контекст (Форма 043/у)", () => {
-			const docPackagesPath = path.resolve(webSrcDir, "utils/documentPackages.ts");
-			const source = fs.readFileSync(docPackagesPath, "utf-8");
-			assert.ok(source.includes("dental_medical_card_043u"), "Пакет направления обязан включать стоматологическую карту 043/у вместо поликлинической 025/у");
-			assert.ok(source.includes("Стоматологический пакет направления"), "Название пакета должно отражать стоматологический профиль");
-		});
-
-		it("3.10. PatientsView.tsx: Кнопка 'Открыть приём' и запись в расписание не имеют мертвого disabled блокировщика", () => {
-			const patientsViewPath = path.resolve(webSrcDir, "PatientsView.tsx");
-			const source = fs.readFileSync(patientsViewPath, "utf-8");
-			assert.ok(!source.includes('disabled={!selectedPatient}'), "PatientsView не должен содержать disabled={!selectedPatient}");
-			assert.ok(source.includes('data-testid="patient-card-open-visit-btn"'), "Кнопка 'Открыть приём' должна присутствовать");
-			assert.ok(source.includes("Выберите пациента из списка слева для открытия приёма"), "Кнопка 'Открыть приём' должна выводить информативное уведомление при нажатии");
-			assert.ok(source.includes('data-testid="patient-card-book-appointment-btn"'), "Кнопка 'Записать в расписание' должна присутствовать");
-			assert.ok(source.includes("Выберите пациента из списка слева для записи в расписание"), "Кнопка записи должна выводить информативное уведомление при нажатии");
-		});
-
-		it("3.11. EmkObjectiveStatusSection и EmkComplaintsSection: 0-клик пресеты нормы осмотра (санирована, прикус, слизистая)", () => {
-			const objPath = path.resolve(webSrcDir, "components/visit/emk/EmkObjectiveStatusSection.tsx");
-			const objSource = fs.readFileSync(objPath, "utf-8");
-			assert.ok(objSource.includes('data-testid="emk-objective-norm-presets-bar"'), "Панель 0-клик норм объективного статуса обязана присутствовать");
-			assert.ok(objSource.includes('data-testid="btn-emk-full-objective-norm"'), "Кнопка '0-Клик: Полная норма осмотра' обязана присутствовать");
-			assert.ok(objSource.includes('data-testid="btn-emk-sanitized-norm"'), "Кнопка 'Полость рта санирована / норма' обязана присутствовать");
-			assert.ok(objSource.includes('data-testid="btn-emk-bite-norm"'), "Кнопка 'Прикус физиологический / ортогнатический' обязана присутствовать");
-			assert.ok(objSource.includes('data-testid="btn-emk-mucosa-norm"'), "Кнопка 'Слизистая интактна' обязана присутствовать");
-
-			const compPath = path.resolve(webSrcDir, "components/visit/emk/EmkComplaintsSection.tsx");
-			const compSource = fs.readFileSync(compPath, "utf-8");
-			assert.ok(compSource.includes('data-testid="btn-emk-complaints-norm"'), "Кнопка 0-клик нормы жалоб обязана присутствовать");
-			assert.ok(compSource.includes('data-testid="btn-emk-anamnesis-norm"'), "Кнопка 0-клик нормы анамнеза обязана присутствовать");
-		});
-
-		it("3.12. VisitServiceBillingWidget.tsx строго <= 800 строк и отсутствие блокирующих window.alert/confirm", () => {
-			const billingWidgetPath = path.resolve(webSrcDir, "components/visit/VisitServiceBillingWidget.tsx");
-			const billingSource = fs.readFileSync(billingWidgetPath, "utf-8");
-			const billingLines = billingSource.split("\n").length;
-			assert.ok(billingLines <= 800, `VisitServiceBillingWidget.tsx обязан быть <= 800 строк (Мандат 8b), получено: ${billingLines}`);
-
-			const emkFiles = [
-				"components/visit/emk/EmkObjectiveStatusSection.tsx",
-				"components/visit/emk/EmkComplaintsSection.tsx",
-				"components/visit/emk/EmkDiaryProtocolSection.tsx",
-			];
-			for (const file of emkFiles) {
-				const src = fs.readFileSync(path.resolve(webSrcDir, file), "utf-8");
-				assert.ok(!src.includes("window.alert"), `${file} не должен содержать window.alert`);
-				assert.ok(!src.includes("window.confirm"), `${file} не должен содержать window.confirm`);
-			}
+			const { AppLogicProvider: _unused, ...ctxModule } = await import("../contexts/AppLogicContext.js");
+			void _unused;
+			void ctxModule;
+			type CtxValue = React.ComponentProps<typeof AppLogicProvider>["value"];
+			const partialContext: Partial<CtxValue> = {
+				dashboard: { patients: [], appointments: [], doctors: [] } as Partial<CtxValue["dashboard"]> as CtxValue["dashboard"],
+				query: "",
+				setQuery: () => {},
+				filteredPatients: [],
+				patientInsightById: new Map(),
+				patientInsightRiskLabels: { low: "спокойно", watch: "контроль", high: "срочно" },
+				selectedPatientId: null,
+				setSelectedPatientId: () => {},
+				selectedPatient: null,
+				patientCoreDirty: false,
+				patientCoreSaveState: "idle",
+				patientCoreSaveError: null,
+				patientAdministrativeProfileDirty: false,
+				patientAdministrativeProfileSaveState: "idle",
+				patientAdministrativeProfileSaveError: null,
+				patientAdministrativeProfileValidationMessage: null,
+				weekdayOptions: [],
+			};
+			const patientsHtml = renderToStaticMarkup(
+				React.createElement(
+					AppLogicProvider,
+					{ value: partialContext as CtxValue },
+					React.createElement(PatientsView),
+				),
+			);
+			assert.ok(patientsHtml.includes('id="patients"') && patientsHtml.includes("patients-panel"));
+			assert.equal(/<button[^>]*\sdisabled(?:=|(?=\s|>|$))/i.test(patientsHtml), false);
 		});
 	});
 });

@@ -160,7 +160,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 	};
 
 	return (
-		<div className="fixed inset-0 z-[99995] flex items-center justify-center p-3 max-md:p-0 max-md:items-end" data-testid="copilot-history-drawer">
+		<div className="fixed inset-0 z-[100] flex items-center justify-center p-3 max-md:p-0 max-md:items-end" data-testid="copilot-history-drawer">
 			<div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
 			<div
 				className={[

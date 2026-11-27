@@ -30,7 +30,7 @@ export const CbctHuFlyout: React.FC<CbctHuFlyoutProps> = ({
 				<button
 					type="button"
 					onClick={onClose}
-					className="w-7 h-7 min-w-[28px] min-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
+					className="w-7 h-7 min-w-[28px] min-h-[28px] max-md:w-11 max-md:h-11 max-md:min-w-[44px] max-md:min-h-[44px] flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
 					aria-label="Закрыть меню"
 				>
 					<X className="w-4 h-4" />
@@ -45,7 +45,7 @@ export const CbctHuFlyout: React.FC<CbctHuFlyoutProps> = ({
 							key={p.id}
 							type="button"
 							onClick={() => onSelectPreset(p.id)}
-							className={`w-full px-2.5 py-1.5 [@media(pointer:coarse)]:py-2 rounded-lg text-left transition-colors flex items-center justify-between gap-2 border ${
+							className={`w-full px-2.5 py-1.5 max-md:py-2 rounded-lg text-left transition-colors flex items-center justify-between gap-2 border ${
 								isActive
 									? "bg-zinc-800 text-cyan-300 border-cyan-500/60 shadow-xs"
 									: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border-zinc-800"

@@ -96,7 +96,7 @@
 }
 
 /* Touchscreen Device Protection */
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	.modal-close-btn,
 	.modal-close,
 	.modal-close-button {

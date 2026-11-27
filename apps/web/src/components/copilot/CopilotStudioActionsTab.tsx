@@ -120,10 +120,10 @@ export const CopilotStudioActionsTab: React.FC<CopilotStudioActionsTabProps> = (
               }),
             },
             {
-              title: "Протокол SOAP в карту",
+              title: "Протокол осмотра в карту",
               badge: "Медкарта",
-              desc: "Синтез дневника по стандарту SOAP с жалобами, осмотром и лечением.",
-              btn: activeTooth ? `Сформировать протокол SOAP (Зуб ${activeTooth})` : "Сформировать протокол SOAP",
+              desc: "Формирование дневника приёма с жалобами, осмотром и лечением.",
+              btn: activeTooth ? `Сформировать дневник приёма (Зуб ${activeTooth})` : "Сформировать дневник приёма",
               icon: <BookOpen size={16} className="text-[var(--teal,#0d9488)]" />,
               fn: () => void executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary, {
                 toothNumber: activeTooth || undefined,

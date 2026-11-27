@@ -4,7 +4,7 @@
  * Мандат 8b: Файл строго <= 120 строк.
  */
 
-@media (pointer: coarse), (max-width: 640px) {
+@media (max-width: 640px) {
 	.online-header-compact {
 		min-height: auto;
 		max-height: none;

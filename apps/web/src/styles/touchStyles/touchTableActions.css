@@ -3,7 +3,7 @@
    Сенсорные зоны строк, иконок действий и моментум-скролл
    ============================================================ */
 
-@media (pointer: coarse), (max-width: 840px) {
+@media (max-width: 768px) {
 	.btn-remove-item,
 	.btn-icon,
 	button[aria-label]:not(.primary-button):not(.secondary-button):not(.nav-item) {

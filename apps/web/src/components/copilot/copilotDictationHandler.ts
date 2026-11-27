@@ -314,10 +314,10 @@ export function handleClinicalSpeechOrText(
 
 	const targetSummaryTeeth = targetNumbers.length > 0 ? targetNumbers.join(", ") : (activeTooth ? String(activeTooth) : "Полость рта");
 	const fallbackText = targetNumbers.length > 0
-		? `Клиническая диктовка принята (${query}). Зафиксированы зубы: ${targetSummaryTeeth}. Сформирован проект дневника приёма SOAP и расчет сметы по протоколам СтАР.`
+		? `Клиническая диктовка принята (${query}). Зафиксированы зубы: ${targetSummaryTeeth}. Сформирован проект дневника приёма и расчёт сметы по протоколам СтАР.`
 		: activeTooth
 			? `Клинический протокол для зуба ${activeTooth}: проведена оценка статуса, сформирован проект протокола приёма и сметы по стандартам СтАР.`
-			: `Клиническая диктовка принята (${query}). Сформирован проект дневника приёма SOAP и расчет сметы по стандартам СтАР.`;
+			: `Клиническая диктовка принята (${query}). Сформирован проект дневника приёма и расчёт сметы по стандартам СтАР.`;
 	const fallbackProposalTooth = targetNumbers[0] || (typeof activeTooth === "number" ? activeTooth : 0);
 
 	return {

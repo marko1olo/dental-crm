@@ -155,7 +155,7 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 			<button
 				type="button"
 				onClick={handleToggleRuler}
-				className={`w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-w-[44px] [@media(pointer:coarse)]:max-h-[44px] rounded-md transition-all cursor-pointer backdrop-blur-sm flex items-center justify-center shadow-xs ${
+				className={`w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] max-md:w-11 max-md:h-11 max-md:min-w-[44px] max-md:min-h-[44px] max-md:max-w-[44px] max-md:max-h-[44px] rounded-md transition-all cursor-pointer backdrop-blur-sm flex items-center justify-center shadow-xs ${
 					isRulerActive
 						? "bg-cyan-500/20 text-cyan-300 border border-cyan-400 ring-1 ring-cyan-400/60 shadow-[0_0_10px_rgba(6,182,212,0.4)]"
 						: "bg-zinc-900/90 text-zinc-400 hover:text-cyan-300 hover:bg-zinc-800 border border-zinc-700/80 hover:border-cyan-500/50"
@@ -171,7 +171,7 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 			<button
 				type="button"
 				onClick={handleToggleAngle}
-				className={`w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-w-[44px] [@media(pointer:coarse)]:max-h-[44px] rounded-md transition-all cursor-pointer backdrop-blur-sm flex items-center justify-center shadow-xs ${
+				className={`w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] max-md:w-11 max-md:h-11 max-md:min-w-[44px] max-md:min-h-[44px] max-md:max-w-[44px] max-md:max-h-[44px] rounded-md transition-all cursor-pointer backdrop-blur-sm flex items-center justify-center shadow-xs ${
 					isAngleActive
 						? "bg-cyan-500/20 text-cyan-300 border border-cyan-400 ring-1 ring-cyan-400/60 shadow-[0_0_10px_rgba(6,182,212,0.4)]"
 						: "bg-zinc-900/90 text-zinc-400 hover:text-cyan-300 hover:bg-zinc-800 border border-zinc-700/80 hover:border-cyan-500/50"
@@ -195,7 +195,7 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 							(onSelectTool as (t: string) => void)(isEndoActive ? "crosshair" : "endo_canal");
 						}
 					}}
-					className={`w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-w-[44px] [@media(pointer:coarse)]:max-h-[44px] rounded-md transition-all cursor-pointer backdrop-blur-sm flex items-center justify-center shadow-xs ${
+					className={`w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] max-md:w-11 max-md:h-11 max-md:min-w-[44px] max-md:min-h-[44px] max-md:max-w-[44px] max-md:max-h-[44px] rounded-md transition-all cursor-pointer backdrop-blur-sm flex items-center justify-center shadow-xs ${
 						isEndoActive
 							? "bg-teal-500/20 text-teal-300 border border-teal-400 ring-1 ring-teal-400/60 shadow-[0_0_10px_rgba(20,184,166,0.4)]"
 							: "bg-zinc-900/90 text-zinc-400 hover:text-teal-300 hover:bg-zinc-800 border border-zinc-700/80 hover:border-teal-400/60"
@@ -242,7 +242,7 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 				<button
 					type="button"
 					onClick={handleToggleSharpen}
-					className={`w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-w-[44px] [@media(pointer:coarse)]:max-h-[44px] rounded-md transition-all cursor-pointer backdrop-blur-sm flex items-center justify-center shadow-xs ${
+					className={`w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] max-md:w-11 max-md:h-11 max-md:min-w-[44px] max-md:min-h-[44px] max-md:max-w-[44px] max-md:max-h-[44px] rounded-md transition-all cursor-pointer backdrop-blur-sm flex items-center justify-center shadow-xs ${
 						activeSharpen > 0
 							? "bg-emerald-500/25 text-emerald-200 border border-emerald-400/80 shadow-[0_0_10px_rgba(16,185,129,0.4)] ring-1 ring-emerald-400/50"
 							: "bg-zinc-900/90 text-zinc-400 hover:text-emerald-300 hover:bg-zinc-800 border border-zinc-700/80 hover:border-emerald-400/60"

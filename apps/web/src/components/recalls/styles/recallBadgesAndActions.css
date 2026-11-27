@@ -63,7 +63,7 @@
 .recall-action-btn--book { color: #ffffff; background: var(--primary); border-color: var(--primary); }
 .recall-action-btn--book:hover { background: var(--primary-hover); }
 
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	.recall-action-btn {
 		min-height: 44px;
 	}

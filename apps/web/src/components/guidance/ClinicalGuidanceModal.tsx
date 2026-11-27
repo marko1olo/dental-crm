@@ -99,7 +99,7 @@ export const ClinicalGuidanceModal: React.FC<ClinicalGuidanceModalProps> = React
 
 	return (
 		<div
-			className="fixed inset-0 z-[1100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+			className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="shortcuts-modal-title"
@@ -109,7 +109,7 @@ export const ClinicalGuidanceModal: React.FC<ClinicalGuidanceModalProps> = React
 				}
 			}}
 		>
-			<div className="relative w-full max-w-2xl bg-[var(--paper)] text-[var(--ink)] rounded-xl border border-[var(--line)] shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[88vh] overflow-hidden z-[1101]">
+			<div className="relative w-full max-w-2xl bg-[var(--paper)] text-[var(--ink)] rounded-xl border border-[var(--line)] shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[88vh] overflow-hidden z-[100]">
 				{/* Modal Header */}
 				<div className="p-4 border-b border-[var(--line)] flex items-center justify-between gap-3 bg-[var(--paper-soft)]">
 					<div className="flex items-center gap-2.5">

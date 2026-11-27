@@ -194,7 +194,7 @@ export function VisitDiaryPhotoThumbnailGrid({
 						role="dialog"
 						aria-modal="true"
 						aria-label={zoomPhoto.name}
-						className="fixed inset-0 z-[10060] flex items-center justify-center bg-black/85 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+						className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-xs p-4 animate-in fade-in duration-150"
 					>
 						<button
 							type="button"

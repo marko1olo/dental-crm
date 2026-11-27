@@ -385,7 +385,7 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 									) : (
 										<>
 											<Sparkles className="w-3.5 h-3.5" />
-											<span>Клинический протокол приёма (SOAP) • 1 142 протокола СтАР</span>
+											<span>Клинический протокол приёма • шаблоны СтАР</span>
 										</>
 									)}
 								</span>

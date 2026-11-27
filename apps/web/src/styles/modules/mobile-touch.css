@@ -87,8 +87,8 @@ summary,
 	}
 }
 
-/* ── 3. Touch Targets (Coarse Pointers / Mobile & Tablet Screens <= 820px) ── */
-@media (pointer: coarse), (max-width: 820px) {
+/* ── 3. Touch Targets (Mobile Screens <= 768px) ── */
+@media (max-width: 768px) {
 	/* Interactive Buttons & Action Bars */
 	button,
 	.primary-button,

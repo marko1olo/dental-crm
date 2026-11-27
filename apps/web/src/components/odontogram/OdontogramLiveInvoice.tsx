@@ -82,7 +82,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 			/>
 			<LiveInvoiceSummaryFooter
 				grossTotalPrice={invoice.grossTotalPrice}
-				totalDiscountRub={invoice.totalDiscountRub}
+				totalDiscountKopecks={rublesToKopecks(invoice.totalDiscountRub)}
 				netTotalPrice={invoice.netTotalPrice}
 				discountPercent={invoice.discountPercent}
 				onCreateInvoice={invoice.handleCreateInvoice}

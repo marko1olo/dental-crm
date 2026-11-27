@@ -102,7 +102,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 			/>
 			{s.isImplantModalOpen && (
 				<div
-					className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs"
+					className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs"
 					data-testid="visit-implant-passport-dialog"
 					role="dialog"
 					aria-modal="true"

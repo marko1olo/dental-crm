@@ -40,7 +40,7 @@ export const CbctTunerPlayground: React.FC<CbctTunerPlaygroundProps> = ({
 			data-cbct-cockpit="true"
 			data-theme="dark"
 			style={{ colorScheme: "dark" }}
-			className="fixed inset-0 z-[999999] flex flex-col bg-black text-zinc-100 select-none overflow-hidden font-sans cbct-dark-cockpit"
+			className="fixed inset-0 z-[100] flex flex-col bg-black text-zinc-100 select-none overflow-hidden font-sans cbct-dark-cockpit"
 		>
 			<CbctTunerHeader
 				selectedPatientId={state.selectedPatientId}

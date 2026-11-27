@@ -10,7 +10,9 @@
 import React, { useCallback, memo } from "react";
 import { Sparkles, ShieldCheck, HeartPulse, Sparkle } from "lucide-react";
 import { normalizeCanonicalSurfaces, type ToothSurfaceKey } from "@dental/shared";
+import { showToast } from "../GlobalToast";
 import {
+	type ToothData,
 	type ToothChartProps,
 	areToothChartPropsEqual,
 } from "./chart/toothChartTypes";
@@ -23,6 +25,80 @@ export * from "./WheelerToothArch";
 
 /** Supported scale invariant for 320px/375px viewports (Mandate 8aw) */
 export const MIN_ARCH_SCALE = 0.35;
+
+export function executeWisdomMissingAction(params: {
+	pediatricMode?: boolean | undefined;
+	mixedDentition?: boolean | undefined;
+	dentitionMode?: ToothChartProps["dentitionMode"] | undefined;
+	teethData: readonly ToothData[];
+	onQuickStateChange?: ToothChartProps["onQuickStateChange"] | undefined;
+	notify?: ((message: string, variant?: "info" | "success" | "warning" | "error") => void) | undefined;
+}): boolean {
+	const notify = params.notify ?? showToast;
+	if (params.pediatricMode || params.dentitionMode === "pediatric") {
+		notify("В молочном прикусе зубы мудрости отсутствуют", "info");
+		return false;
+	}
+	if (params.mixedDentition || params.dentitionMode === "mixed") {
+		const presentWisdom = [18, 28, 38, 48].filter((num) =>
+			params.teethData.some((t) => t.toothNumber === num),
+		);
+		if (presentWisdom.length === 0) {
+			notify("В сменном прикусе зубы мудрости ещё не прорезались", "info");
+			return false;
+		}
+		params.onQuickStateChange?.(presentWisdom, "Missing", []);
+		return true;
+	}
+	params.onQuickStateChange?.([18, 28, 38, 48], "Missing", []);
+	return Boolean(params.onQuickStateChange);
+}
+
+export function executeProHygieneAction(params: {
+	teethData: readonly ToothData[];
+	onMarkProHygieneDone?: (() => void) | undefined;
+	onQuickStateChange?: ToothChartProps["onQuickStateChange"] | undefined;
+	notify?: ((message: string, variant?: "info" | "success" | "warning" | "error") => void) | undefined;
+}): number[] {
+	if (params.onMarkProHygieneDone) {
+		params.onMarkProHygieneDone();
+		return [];
+	}
+	const notify = params.notify ?? showToast;
+	// Не затираем существующие пломбы, кариес, коронки и отсутствующие зубы — обновляем только интактные
+	const intactTeeth = params.teethData
+		.filter((t) => !t.state || t.state === "Healthy")
+		.map((t) => t.toothNumber);
+	if (params.onQuickStateChange) {
+		if (intactTeeth.length > 0) {
+			params.onQuickStateChange(intactTeeth, "Healthy", []);
+		}
+		notify("Профессиональная гигиена отмечена (существующие диагнозы и пломбы сохранены)", "success");
+	}
+	return intactTeeth;
+}
+
+export function executeFastCariesAction(params: {
+	selectedTeeth: readonly number[];
+	activeSurface?: string | undefined;
+	onApplyFastCariesK021?: (() => void) | undefined;
+	onQuickStateChange?: ToothChartProps["onQuickStateChange"] | undefined;
+	notify?: ((message: string, variant?: "info" | "success" | "warning" | "error") => void) | undefined;
+}): boolean {
+	if (params.onApplyFastCariesK021) {
+		params.onApplyFastCariesK021();
+		return true;
+	}
+	if (params.onQuickStateChange && params.selectedTeeth.length > 0) {
+		const targetSurface: ToothSurfaceKey =
+			(params.activeSurface ? (normalizeCanonicalSurfaces(params.activeSurface)[0] as ToothSurfaceKey | undefined) : undefined) ?? "O";
+		params.onQuickStateChange([...params.selectedTeeth], "Caries", [targetSurface]);
+		return true;
+	}
+	const notify = params.notify ?? showToast;
+	notify("Выберите зуб на схеме", "info");
+	return false;
+}
 
 export const ToothChart: React.FC<ToothChartProps> = memo(({
 	teethData = [],
@@ -51,28 +127,15 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 	}, [onMarkIntactDentition, onQuickStateChange, teethData]);
 
 	const handleMarkWisdomMissing = useCallback(() => {
-		if (onQuickStateChange) {
-			onQuickStateChange([18, 28, 38, 48], "Missing", []);
-		}
-	}, [onQuickStateChange]);
+		executeWisdomMissingAction({ pediatricMode, mixedDentition, dentitionMode, teethData, onQuickStateChange });
+	}, [onQuickStateChange, pediatricMode, mixedDentition, dentitionMode, teethData]);
 
 	const handleProHygiene = useCallback(() => {
-		if (onMarkProHygieneDone) {
-			onMarkProHygieneDone();
-		} else if (onQuickStateChange) {
-			const all = teethData.map((t) => t.toothNumber);
-			onQuickStateChange(all, "Healthy", []);
-		}
+		executeProHygieneAction({ teethData, onMarkProHygieneDone, onQuickStateChange });
 	}, [onMarkProHygieneDone, onQuickStateChange, teethData]);
 
 	const handleFastCaries = useCallback(() => {
-		if (onApplyFastCariesK021) {
-			onApplyFastCariesK021();
-		} else if (onQuickStateChange && selectedTeeth.length > 0) {
-			const targetSurface: ToothSurfaceKey =
-				(activeSurface ? (normalizeCanonicalSurfaces(activeSurface)[0] as ToothSurfaceKey | undefined) : undefined) ?? "O";
-			onQuickStateChange(selectedTeeth, "Caries", [targetSurface]);
-		}
+		executeFastCariesAction({ selectedTeeth, activeSurface, onApplyFastCariesK021, onQuickStateChange });
 	}, [onApplyFastCariesK021, onQuickStateChange, selectedTeeth, activeSurface]);
 
 	const handleToothClick = useCallback(

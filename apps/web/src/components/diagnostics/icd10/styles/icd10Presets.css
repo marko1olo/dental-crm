@@ -44,7 +44,7 @@
 		transform var(--transition-fast);
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.icd10-preset-chip {
 		min-height: 44px;
 	}

@@ -29,7 +29,7 @@
 	}
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.pricelist-tab-btn,
 	.pricelist-studio-container .icon-button {
 		min-height: 44px !important;

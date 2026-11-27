@@ -24,7 +24,7 @@ export const ViewportTopRightControls: React.FC<ViewportTopRightControlsProps> =
 				<button
 					type="button"
 					onClick={(e) => { e.stopPropagation(); onToggleMaximize(); }}
-					className="w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-md bg-zinc-900/90 backdrop-blur-sm hover:bg-zinc-800 text-zinc-400 hover:text-cyan-300 hover:border-cyan-500/50 border border-zinc-700/80 shadow-xs transition-all flex items-center justify-center cursor-pointer"
+					className="w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] max-md:w-11 max-md:h-11 max-md:max-w-[44px] max-md:max-h-[44px] rounded-md bg-zinc-900/90 backdrop-blur-sm hover:bg-zinc-800 text-zinc-400 hover:text-cyan-300 hover:border-cyan-500/50 border border-zinc-700/80 shadow-xs transition-all flex items-center justify-center cursor-pointer"
 					title={isMaximized ? "Свернуть квадрант в сетку (двойной клик)" : "Развернуть квадрант на весь экран (двойной клик)"}
 					data-testid={isMaximized ? `btn-viewport-collapse-${viewportType}` : `btn-viewport-expand-${viewportType}`}
 					data-legacy-testid={`cbct-maximize-${viewportType}-btn`}
@@ -33,9 +33,9 @@ export const ViewportTopRightControls: React.FC<ViewportTopRightControlsProps> =
 					aria-label={isMaximized ? "Свернуть окно" : "Развернуть окно"}
 				>
 					{isMaximized ? (
-						<Minimize2 size={13} className="text-zinc-400 hover:text-cyan-300 transition-colors [@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4" />
+						<Minimize2 size={13} className="text-zinc-400 hover:text-cyan-300 transition-colors max-md:w-4 max-md:h-4" />
 					) : (
-						<Maximize2 size={13} className="text-zinc-400 hover:text-cyan-300 transition-colors [@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4" />
+						<Maximize2 size={13} className="text-zinc-400 hover:text-cyan-300 transition-colors max-md:w-4 max-md:h-4" />
 					)}
 				</button>
 			)}
@@ -44,12 +44,12 @@ export const ViewportTopRightControls: React.FC<ViewportTopRightControlsProps> =
 				<button
 					type="button"
 					onClick={(e) => { e.stopPropagation(); onResetView(); }}
-					className="w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-md bg-zinc-900/90 backdrop-blur-sm hover:bg-zinc-800 text-zinc-400 hover:text-cyan-300 hover:border-cyan-500/50 border border-zinc-700/80 shadow-xs transition-all flex items-center justify-center cursor-pointer"
+					className="w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] max-md:w-11 max-md:h-11 max-md:max-w-[44px] max-md:max-h-[44px] rounded-md bg-zinc-900/90 backdrop-blur-sm hover:bg-zinc-800 text-zinc-400 hover:text-cyan-300 hover:border-cyan-500/50 border border-zinc-700/80 shadow-xs transition-all flex items-center justify-center cursor-pointer"
 					title="Сбросить позицию среза: поворот 0.0°, масштаб 1.0x, перекрестие по центру"
 					data-testid={`cbct-reset-view-${viewportType}-btn`}
 					aria-label="Сбросить позицию среза"
 				>
-					<RotateCcw size={13} className="text-zinc-400 hover:text-cyan-300 transition-colors [@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4" />
+					<RotateCcw size={13} className="text-zinc-400 hover:text-cyan-300 transition-colors max-md:w-4 max-md:h-4" />
 				</button>
 			)}
 
@@ -57,7 +57,7 @@ export const ViewportTopRightControls: React.FC<ViewportTopRightControlsProps> =
 				<button
 					type="button"
 					onClick={(e) => { e.stopPropagation(); onResetAngle?.(); }}
-					className={`h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 px-2 py-0.5 rounded-md bg-zinc-900/95 hover:bg-zinc-800 backdrop-blur-sm text-xs font-mono font-bold border ${
+					className={`h-7 min-h-[28px] max-h-[28px] max-md:h-11 max-md:max-h-[44px] px-2 py-0.5 rounded-md bg-zinc-900/95 hover:bg-zinc-800 backdrop-blur-sm text-xs font-mono font-bold border ${
 						isRotating
 							? "border-cyan-400 text-cyan-200 ring-1 ring-cyan-400/50 animate-pulse shadow-[0_0_8px_rgba(6,182,212,0.4)]"
 							: isHandleHovered

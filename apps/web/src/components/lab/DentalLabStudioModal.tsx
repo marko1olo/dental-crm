@@ -654,16 +654,70 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 
 	if (!isOpen || (!hasDentalLab && !isDemoShowcaseMode())) return null;
 
-	const hasSubModalOpen = Boolean(
-		(isReadyInClinicOpen && readyInClinicOrder) || is3DViewerOpen || (isPassportModalOpen && targetOrder),
+	if (isReadyInClinicOpen && readyInClinicOrder) {
+		return <DentalLabReadyInClinicModal isOpen={true} onClose={() => setIsReadyInClinicOpen(false)} order={readyInClinicOrder} />;
+	}
+	if (is3DViewerOpen) {
+		return <IntraoralScan3DViewerModal isOpen={true} onClose={() => setIs3DViewerOpen(false)} modelUrl={scanViewerOrder?.attachedImageUrl || undefined} patientName={scanViewerOrder?.patientName || currentPatientName} toothCode={scanViewerOrder?.teeth?.[0] || selectedTeeth[0]} orderId={scanViewerOrder?.id} scanTitle={scanViewerOrder ? `3D-скан челюсти: ${scanViewerOrder.orderNumber} (${scanViewerOrder.patientName})` : `3D-скан челюсти: ${currentPatientName}`} />;
+	}
+	if (isPassportModalOpen && targetOrder) {
+		return (
+			<OrthopedicPassportA4Modal
+				isOpen={true}
+				onClose={() => { setIsPassportModalOpen(false); setLivePassport(null); }}
+				passport={livePassport || {
+					orderNumber: String(targetOrder.orderNumber || (targetOrder.id ? `ЗТЛ-${targetOrder.id.slice(0, 8).toUpperCase()}` : "Б/Н")),
+					batchCode: `LOT-${new Date().getFullYear()}-${targetOrder.id ? targetOrder.id.slice(0, 6).toUpperCase() : "0001"}`,
+					patientFullName: currentPatientName, clinicName: "Стоматологическая клиника «DENTE»", doctorFullName: effectiveDoctorName, technicianLabName: selectedLab,
+					toothFdi: Array.isArray(selectedTeeth) && selectedTeeth.length > 0 ? selectedTeeth.join(", ") : (currentToothNumber ? String(currentToothNumber) : "—"),
+					restorationType: selectedMaterial.titleRu, frameworkMaterial: selectedMaterial.titleRu, shade: selectedShade, shadeStump: null,
+					cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)", warrantyYears: 2,
+					fixationDate: new Date().toISOString().slice(0, 10), expirationDate: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+					gostStandard: "ГОСТ Р 51087-97 / ГОСТ 31576-2012 / Клинические рекомендации СтАР",
+					sanpinDisinfectionMark: "СанПиН 3.3686-21: Оттиски, прикусные блоки и конструкции дезинфицированы",
+				}}
+			/>
+		);
+	}
+
+	const renderRegistryPanel = (sectionClassName: string, listClassName: string) => (
+		<section className={sectionClassName} data-testid="lab-orders-registry-panel">
+			<div className={`flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2${activeMainTab === "registry" ? " mb-3" : ""}`}>
+				<div className="inline-flex items-center gap-1 p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] overflow-x-auto scrollbar-none">
+					{(["all", "in_work", "in_clinic", "overdue"] as const).map((tab) => {
+						const labels: Record<LabFilterTab, string> = { all: "Все заказы", in_work: "В лаборатории", in_clinic: "Готово в клинике", overdue: "Просроченные" };
+						return (
+							<button key={tab} type="button" data-testid={`filter-tab-${tab}`} onClick={() => setActiveFilter(tab)}
+								className={`h-8 px-3 rounded-lg text-xs whitespace-nowrap shrink-0 transition-all cursor-pointer ${activeFilter === tab ? "bg-[var(--paper)] text-[var(--ink)] font-medium shadow-xs" : "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}>{labels[tab]}</button>
+						);
+					})}
+				</div>
+				<div className="relative w-full sm:w-64 shrink-0">
+					<svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ink-muted)] pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+					</svg>
+					<input type="search" data-testid="lab-orders-search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту, номеру наряда..." className="dental-lab-search-input w-full text-xs py-2 pl-10 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" />
+				</div>
+			</div>
+			<div className={listClassName}>
+				{filteredOrders.length === 0 ? (
+					<div className="text-center py-12 text-[var(--ink-muted)] border border-dashed border-[var(--line)] rounded-2xl">
+						<p className="text-sm font-semibold">Нарядов в выбранной категории не найдено</p>
+						<p className="text-xs pt-1">Оформите новый заказ-наряд у кресла</p>
+					</div>
+				) : (
+					filteredOrders.map((ord) => (
+						<DentalLabRegistryOrderCard key={ord.id} ord={ord} onMarkInClinic={handleMarkInClinic} onCallPatient={handleCallPatient} onPrintOrder={handlePrintOrder} onAdvanceStage={handleAdvanceStage} onView3DScan={handleView3DScan} />
+					))
+				)}
+			</div>
+		</section>
 	);
 
 	return (
-		<>
 		<div
 			data-testid="dental-lab-studio-modal-root"
-			className={hasSubModalOpen ? "hidden" : "dental-lab-modal-backdrop"}
-			aria-hidden={hasSubModalOpen || undefined}
+			className="dental-lab-modal-backdrop"
 			onClick={(e) => { if (e.target === e.currentTarget) handleCloseModal(); }}
 		>
 			<div className="dental-lab-modal-container max-sm:rounded-t-[24px]" data-testid="dental-lab-order-drawer">
@@ -718,37 +772,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 					<DentalLabStudioPrintTab currentPrintOrder={currentPrintOrder} printMaterial={printMaterial} onBackToRegistry={() => setActiveMainTab("registry")} />
 				) : activeMainTab === "registry" ? (
 					<div className="w-full p-4 overflow-y-auto max-h-[78vh]">
-						<section className="dental-lab-right-column w-full border-0 p-0" data-testid="lab-orders-registry-panel">
-							<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 mb-3">
-								<div className="inline-flex items-center gap-1 p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] overflow-x-auto scrollbar-none">
-									{(["all", "in_work", "in_clinic", "overdue"] as const).map((tab) => {
-										const labels: Record<LabFilterTab, string> = { all: "Все заказы", in_work: "В лаборатории", in_clinic: "Готово в клинике", overdue: "Просроченные" };
-										return (
-											<button key={tab} type="button" data-testid={`filter-tab-${tab}`} onClick={() => setActiveFilter(tab)}
-												className={`h-8 px-3 rounded-lg text-xs whitespace-nowrap shrink-0 transition-all cursor-pointer ${activeFilter === tab ? "bg-[var(--paper)] text-[var(--ink)] font-medium shadow-xs" : "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}>{labels[tab]}</button>
-										);
-									})}
-								</div>
-								<div className="relative w-full sm:w-64 shrink-0">
-									<svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ink-muted)] pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-									</svg>
-									<input type="search" data-testid="lab-orders-search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту, номеру наряда..." className="dental-lab-search-input w-full text-xs py-2 pl-10 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" />
-								</div>
-							</div>
-							<div className="space-y-3">
-								{filteredOrders.length === 0 ? (
-									<div className="text-center py-12 text-[var(--ink-muted)] border border-dashed border-[var(--line)] rounded-2xl">
-										<p className="text-sm font-semibold">Нарядов в выбранной категории не найдено</p>
-										<p className="text-xs pt-1">Оформите новый заказ-наряд у кресла</p>
-									</div>
-								) : (
-									filteredOrders.map((ord) => (
-										<DentalLabRegistryOrderCard key={ord.id} ord={ord} onMarkInClinic={handleMarkInClinic} onCallPatient={handleCallPatient} onPrintOrder={handlePrintOrder} onAdvanceStage={handleAdvanceStage} onView3DScan={handleView3DScan} />
-									))
-								)}
-							</div>
-						</section>
+						{renderRegistryPanel("dental-lab-right-column w-full border-0 p-0", "space-y-3")}
 					</div>
 				) : (
 					<div className="dental-lab-body-grid">
@@ -762,65 +786,11 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 							handleCreateOrder={handleCreateOrder} handlePrintA5Blank={handlePrintA5Blank} handleCourierBlank={handleCourierBlank}
 						/>
 						{/* ПРАВАЯ КОЛОНКА: Оперативный реестр последних нарядов */}
-						<section className="dental-lab-right-column mobile-hidden" data-testid="lab-orders-registry-panel">
-							<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
-								<div className="inline-flex items-center gap-1 p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] overflow-x-auto scrollbar-none">
-									{(["all", "in_work", "in_clinic", "overdue"] as const).map((tab) => {
-										const labels: Record<LabFilterTab, string> = { all: "Все заказы", in_work: "В лаборатории", in_clinic: "Готово в клинике", overdue: "Просроченные" };
-										return (
-											<button key={tab} type="button" data-testid={`filter-tab-${tab}`} onClick={() => setActiveFilter(tab)}
-												className={`h-8 px-3 rounded-lg text-xs whitespace-nowrap shrink-0 transition-all cursor-pointer ${activeFilter === tab ? "bg-[var(--paper)] text-[var(--ink)] font-medium shadow-xs" : "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}>{labels[tab]}</button>
-										);
-									})}
-								</div>
-								<div className="relative w-full sm:w-64 shrink-0">
-									<svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ink-muted)] pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-									</svg>
-									<input type="search" data-testid="lab-orders-search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту, номеру наряда..." className="dental-lab-search-input w-full text-xs py-2 pl-10 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" />
-								</div>
-							</div>
-							<div className="space-y-3 overflow-y-auto max-h-[64vh] pr-1">
-								{filteredOrders.length === 0 ? (
-									<div className="text-center py-12 text-[var(--ink-muted)] border border-dashed border-[var(--line)] rounded-2xl">
-										<p className="text-sm font-semibold">Нарядов в выбранной категории не найдено</p>
-										<p className="text-xs pt-1">Оформите новый заказ-наряд у кресла</p>
-									</div>
-								) : (
-									filteredOrders.map((ord) => (
-										<DentalLabRegistryOrderCard key={ord.id} ord={ord} onMarkInClinic={handleMarkInClinic} onCallPatient={handleCallPatient} onPrintOrder={handlePrintOrder} onAdvanceStage={handleAdvanceStage} onView3DScan={handleView3DScan} />
-									))
-								)}
-							</div>
-						</section>
+						{renderRegistryPanel("dental-lab-right-column mobile-hidden", "space-y-3 overflow-y-auto max-h-[64vh] pr-1")}
 					</div>
 				)}
 			</div>
 		</div>
-		{isReadyInClinicOpen && readyInClinicOrder && (
-			<DentalLabReadyInClinicModal isOpen={isReadyInClinicOpen} onClose={() => setIsReadyInClinicOpen(false)} order={readyInClinicOrder} />
-		)}
-		{is3DViewerOpen && (
-			<IntraoralScan3DViewerModal isOpen={is3DViewerOpen} onClose={() => setIs3DViewerOpen(false)} modelUrl={scanViewerOrder?.attachedImageUrl || undefined} patientName={scanViewerOrder?.patientName || currentPatientName} toothCode={scanViewerOrder?.teeth?.[0] || selectedTeeth[0]} orderId={scanViewerOrder?.id} scanTitle={scanViewerOrder ? `3D-скан челюсти: ${scanViewerOrder.orderNumber} (${scanViewerOrder.patientName})` : `3D-скан челюсти: ${currentPatientName}`} />
-		)}
-		{isPassportModalOpen && targetOrder && (
-			<OrthopedicPassportA4Modal
-				isOpen={isPassportModalOpen}
-				onClose={() => { setIsPassportModalOpen(false); setLivePassport(null); }}
-				passport={livePassport || {
-					orderNumber: String(targetOrder.orderNumber || (targetOrder.id ? `ЗТЛ-${targetOrder.id.slice(0, 8).toUpperCase()}` : "Б/Н")),
-					batchCode: `LOT-${new Date().getFullYear()}-${targetOrder.id ? targetOrder.id.slice(0, 6).toUpperCase() : "0001"}`,
-					patientFullName: currentPatientName, clinicName: "Стоматологическая клиника «DENTE»", doctorFullName: effectiveDoctorName, technicianLabName: selectedLab,
-					toothFdi: Array.isArray(selectedTeeth) && selectedTeeth.length > 0 ? selectedTeeth.join(", ") : (currentToothNumber ? String(currentToothNumber) : "—"),
-					restorationType: selectedMaterial.titleRu, frameworkMaterial: selectedMaterial.titleRu, shade: selectedShade, shadeStump: null,
-					cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)", warrantyYears: 2,
-					fixationDate: new Date().toISOString().slice(0, 10), expirationDate: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-					gostStandard: "ГОСТ Р 51087-97 / ГОСТ 31576-2012 / Клинические рекомендации СтАР",
-					sanpinDisinfectionMark: "СанПиН 3.3686-21: Оттиски, прикусные блоки и конструкции дезинфицированы",
-				}}
-			/>
-		)}
-		</>
 	);
 };
 

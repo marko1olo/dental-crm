@@ -117,7 +117,7 @@
 	}
 }
 
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	.sanpin-btn,
 	.sanpin-tab-btn {
 		min-height: 44px;

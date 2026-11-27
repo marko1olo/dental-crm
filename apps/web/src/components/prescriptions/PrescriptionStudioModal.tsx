@@ -206,7 +206,7 @@ export const PrescriptionStudioModal: React.FC<PrescriptionStudioModalProps> = (
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[1000000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/65 backdrop-blur-md rx-studio-overlay overflow-hidden"
+			className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/65 backdrop-blur-md rx-studio-overlay overflow-hidden"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Рецептурный бланк на лекарственные препараты"

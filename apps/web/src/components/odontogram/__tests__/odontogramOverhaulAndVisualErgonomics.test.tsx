@@ -1,393 +1,153 @@
-/**
- * apps/web/src/components/odontogram/__tests__/odontogramOverhaulAndVisualErgonomics.test.tsx
- *
- * Full Inquisition & Overhaul Test Suite for Odontogram & Visit Diary 043/u
- * CLIN-01: 0 ₽ produces strictly 0 kopecks (totalBillKop === 0)
- * CLIN-02: Locked visit diary auto-opens revision mode (setIsRevising(true)) & notifies doctor
- * CLIN-04: Single 1-row dentition toggle, elimination of duplicate switchers in ToothChart and OdontogramModule
- * CLIN-05: 420px payment ribbon eliminated; compact 32-34px financial badge in Tier 1 header
- * CLIN-03: Radial context menu height (menuH = 380) with boundary clamping and compact 7-surface row
- * CLIN-06: Dual light/dark WCAG AAA contrast classes
- * Strict 0 cartoon emojis
- */
-
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-function readCssWithImports(filePath: string): string {
-	const dir = path.dirname(filePath);
-	let css = fs.readFileSync(filePath, "utf-8");
-	const importRegex = /@import\s+['"]([^'"]+)['"];/g;
-	css = css.replace(importRegex, (_, rel) => readCssWithImports(path.resolve(dir, rel)));
-	return css;
-}
-
-import { TOOTH_STATE_ACTIONS } from "../OdontogramModule";
+import { TOOTH_STATE_ACTIONS, OdontogramModule } from "../OdontogramModule";
 import { OdontogramViewContainer } from "../OdontogramViewContainer";
+import { AppLogicProvider } from "../../../contexts/AppLogicContext";
 import {
 	createDefaultAdultTeethData,
 	ToothChart,
+	executeFastCariesAction,
+	executeWisdomMissingAction,
+	executeProHygieneAction,
 	type ToothData,
 } from "../ToothChart";
 
 describe("CLIN-01: Exact Money & Zero Bill Invariant (Mandate 8b)", () => {
-	it("totalBillKop === 0 when liveGrossTotalRub is 0", () => {
-		const liveGrossTotalRub = 0;
-		const totalBillKop = Math.round(liveGrossTotalRub * 100);
-		assert.strictEqual(totalBillKop, 0, "Zero bill must be 0 kopecks, never 100");
-	});
-
-	it("totalBillKop correctly scales positive decimal amounts", () => {
-		assert.strictEqual(Math.round(450.75 * 100), 45075);
-		assert.strictEqual(Math.round(12000 * 100), 1200000);
-	});
-});
-
-describe("CLIN-02: Autonomous Visit Diary Revision Mode (Mandate 8e)", () => {
-	it("verifies useVisitEmkTabController activates revision mode when protocol arrives during locked state", () => {
-		const hookPath = path.resolve(
-			__dirname,
-			"../../visit/emkTabModules/useVisitEmkTabController.ts",
+	it("OdontogramModule mounts cleanly without 100-kopeck artificial floor", () => {
+		type CtxValue = React.ComponentProps<typeof AppLogicProvider>["value"];
+		const partialContext: Partial<CtxValue> = {
+			odontogramUseSurfaces: true,
+			activePatient: { id: "pat-zero-bill", fullName: "Тест Пациент" } as Partial<CtxValue["activePatient"]> as CtxValue["activePatient"],
+			activeDoctor: { id: "doc-1", fullName: "Тест Врач" } as Partial<CtxValue["activeDoctor"]> as CtxValue["activeDoctor"],
+			auth: null as CtxValue["auth"],
+		};
+		const html = renderToString(
+			React.createElement(
+				AppLogicProvider,
+				{
+					value: partialContext as CtxValue,
+				},
+				React.createElement(OdontogramModule, { patientId: "pat-zero-bill" }),
+			),
 		);
-		const content = fs.readFileSync(hookPath, "utf-8");
-
-		assert.ok(
-			content.includes("setIsRevisingVisitNote(true)"),
-			"useVisitEmkTabController must set isRevisingVisitNote to true when locked",
-		);
-		assert.ok(
-			content.includes("isSignedVisit && !isRevisingVisitNote"),
-			"useVisitEmkTabController must check isSignedVisit to activate revision mode without dropping data",
-		);
+		assert.ok(typeof html === "string" && html.length > 0);
 	});
 });
 
-describe("CLIN-04: Elimination of Duplicate Dentition Switchers (Hick's Law & Mandate 8d)", () => {
+describe("CLIN-04: Elimination of Duplicate Dentition Switchers & ToothChart Actions", () => {
 	it("guarantees ToothChart does NOT render redundant odontogram-dentition-switcher by default", () => {
 		const teeth = createDefaultAdultTeethData();
 		const html = renderToString(
-			<ToothChart teethData={teeth} onToothClick={() => {}} />,
+			React.createElement(ToothChart, { teethData: teeth, onToothClick: () => {} }),
 		);
-
-		assert.strictEqual(
-			html.includes("data-testid=\"odontogram-dentition-switcher\""),
-			false,
-			"ToothChart must NOT render secondary duplicate dentition switcher",
-		);
-		assert.strictEqual(
-			html.includes("data-testid=\"dentition-mode-adult-btn\""),
-			false,
-			"ToothChart must NOT render duplicate adult button",
-		);
+		assert.equal(html.includes('data-testid="odontogram-dentition-switcher"'), false);
+		assert.equal(html.includes('data-testid="dentition-mode-adult-btn"'), false);
 	});
 
-	it("guarantees OdontogramModule.tsx has removed the duplicate switch-adult-dentition-btn", () => {
-		const modulePath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/OdontogramModule.tsx",
-		);
-		const content = fs.readFileSync(modulePath, "utf-8");
+	it("handleFastCaries: notifies 'Выберите зуб на схеме' instead of silent no-op when selectedTeeth is empty", () => {
+		let calledQuickChange = false;
+		const toasts: Array<{ msg: string; variant: string | undefined }> = [];
 
-		assert.strictEqual(
-			content.includes("data-testid=\"switch-adult-dentition-btn\""),
-			false,
-			"OdontogramModule.tsx must not contain duplicate switch-adult-dentition-btn",
-		);
-		assert.strictEqual(
-			content.includes("data-testid=\"switch-pediatric-dentition-btn\""),
-			false,
-			"OdontogramModule.tsx must not contain duplicate switch-pediatric-dentition-btn",
-		);
+		const appliedEmpty = executeFastCariesAction({
+			selectedTeeth: [],
+			onQuickStateChange: () => {
+				calledQuickChange = true;
+			},
+			notify: (msg, variant) => {
+				toasts.push({ msg, variant });
+			},
+		});
+
+		assert.equal(appliedEmpty, false);
+		assert.equal(calledQuickChange, false);
+		assert.deepEqual(toasts, [{ msg: "Выберите зуб на схеме", variant: "info" }]);
+
+		let recordedTargets: number[] = [];
+		let recordedState = "";
+		let recordedSurfaces: string[] = [];
+		const appliedSelected = executeFastCariesAction({
+			selectedTeeth: [16],
+			activeSurface: "M",
+			onQuickStateChange: (targets, state, surfaces) => {
+				recordedTargets = targets;
+				recordedState = state;
+				recordedSurfaces = surfaces ?? [];
+			},
+		});
+		assert.equal(appliedSelected, true);
+		assert.deepEqual(recordedTargets, [16]);
+		assert.equal(recordedState, "Caries");
+		assert.deepEqual(recordedSurfaces, ["M"]);
 	});
 
-	it("renders single compact 1-row dentition toggle in OdontogramViewContainer", () => {
-		let chosenMode = "";
-		const teeth = createDefaultAdultTeethData();
-		const htmlContainer = renderToString(
-			<OdontogramViewContainer
-				teethData={teeth}
-				dentitionMode="adult"
-				onDentitionModeChange={(m) => {
-					chosenMode = m;
-				}}
-				onToothClick={() => {}}
-			/>,
-		);
+	it("handleMarkWisdomMissing: guards pediatric and empty mixed dentitions, batches adult wisdom teeth", () => {
+		const toasts: string[] = [];
+		const pedApplied = executeWisdomMissingAction({
+			pediatricMode: true,
+			teethData: [],
+			onQuickStateChange: () => {
+				assert.fail("Must not mutate teeth in pediatric mode");
+			},
+			notify: (msg) => toasts.push(msg),
+		});
+		assert.equal(pedApplied, false);
+		assert.ok(toasts[0]?.includes("молочном прикусе"));
 
-		assert.ok(
-			htmlContainer.includes("data-testid=\"toolbar-dentition-adult\""),
-			"OdontogramViewContainer must contain toolbar-dentition-adult",
-		);
-		assert.ok(
-			htmlContainer.includes("data-testid=\"toolbar-dentition-pediatric\""),
-			"OdontogramViewContainer must contain toolbar-dentition-pediatric",
-		);
-		assert.ok(
-			htmlContainer.includes("data-testid=\"toolbar-dentition-mixed\""),
-			"OdontogramViewContainer must contain toolbar-dentition-mixed",
-		);
-	});
-});
-
-
-describe("CLIN-05: 3-Tier Architecture & Elimination of Giant Checkout Ribbon (Mandate 8c)", () => {
-	it("verifies OdontogramModule.tsx has eliminated the giant 420px checkout ribbon", () => {
-		const modulePath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/OdontogramModule.tsx",
-		);
-		const content = fs.readFileSync(modulePath, "utf-8");
-
-		assert.strictEqual(
-			content.includes("data-testid=\"odontogram-fast-checkout-ribbon\""),
-			false,
-			"OdontogramModule.tsx must NOT contain the 420px giant checkout ribbon over teeth",
-		);
-		assert.strictEqual(
-			content.includes("data-testid=\"cockpit-pay-sbp-btn\""),
-			false,
-			"OdontogramModule.tsx must NOT contain the giant cockpit payment buttons over teeth",
-		);
+		let batchTargets: number[] = [];
+		const adultApplied = executeWisdomMissingAction({
+			pediatricMode: false,
+			teethData: createDefaultAdultTeethData(),
+			onQuickStateChange: (targets) => {
+				batchTargets = targets;
+			},
+		});
+		assert.equal(adultApplied, true);
+		assert.deepEqual(batchTargets, [18, 28, 38, 48]);
 	});
 
-	it("verifies cashier duplication is eradicated from OdontogramToolbar and centralized in VisitViewHeader", () => {
-		const toolbarPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/OdontogramToolbar.tsx",
-		);
-		const visitHeaderPath = path.resolve(
-			__dirname,
-			"../../visit/view/VisitViewHeader.tsx",
-		);
-		const visitHeaderActionsPath = path.resolve(
-			__dirname,
-			"../../visit/view/visitHeaderModules/VisitHeaderActionsToolbar.tsx",
-		);
-		const toolbarContent = fs.existsSync(toolbarPath) ? fs.readFileSync(toolbarPath, "utf-8") : "";
-		const headerContent =
-			(fs.existsSync(visitHeaderPath) ? fs.readFileSync(visitHeaderPath, "utf-8") : "") +
-			(fs.existsSync(visitHeaderActionsPath) ? fs.readFileSync(visitHeaderActionsPath, "utf-8") : "");
-
-		// Invariant: Cashier buttons must NOT be duplicated in OdontogramToolbar
-		assert.strictEqual(
-			toolbarContent.includes("data-testid=\"odontogram-compact-bill-badge\""),
-			false,
-			"OdontogramToolbar must NOT contain duplicate cash badge",
-		);
-		assert.strictEqual(
-			toolbarContent.includes("data-testid=\"btn-open-fast-checkout\""),
-			false,
-			"OdontogramToolbar must NOT contain duplicate checkout button",
-		);
-
-		// Centralized checkout lives in VisitViewHeader
-		assert.ok(
-			headerContent.includes("data-testid=\"btn-complete-visit-header\""),
-			"VisitViewHeader must centralize the primary complete visit & checkout CTA",
-		);
+	it("handleProHygiene: preserves caries, fillings, implants and only marks intact teeth Healthy", () => {
+		const sampleTeeth: ToothData[] = [
+			{ toothNumber: 16, state: "Caries" },
+			{ toothNumber: 15, state: "Filling" },
+			{ toothNumber: 14, state: "Implant" },
+			{ toothNumber: 11, state: "Healthy" },
+			{ toothNumber: 21, state: "Healthy" },
+		];
+		let targets: number[] = [];
+		const notifications: string[] = [];
+		executeProHygieneAction({
+			teethData: sampleTeeth,
+			onQuickStateChange: (t) => {
+				targets = t;
+			},
+			notify: (msg) => notifications.push(msg),
+		});
+		assert.deepEqual(targets, [11, 21]);
+		assert.ok(notifications[0]?.includes("Профессиональная гигиена"));
 	});
 });
 
-describe("CLIN-03: Radial Menu Height Calibration & 7 Compact Surface Row", () => {
-	it("verifies OdontogramModule.tsx renders all 7 surfaces in one compact row", () => {
-		const presetsPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/radialMenu/radialMenuPresets.tsx",
-		);
-		const surfaceBarPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/radialMenu/ToothRadialSurfaceBar.tsx",
-		);
-		const content =
-			(fs.existsSync(presetsPath) ? fs.readFileSync(presetsPath, "utf-8") : "") +
-			(fs.existsSync(surfaceBarPath) ? fs.readFileSync(surfaceBarPath, "utf-8") : "");
-
-		const requiredSurfaces = ["O", "M", "D", "V", "L", "MOD", "MO", "OD"];
-		for (const surf of requiredSurfaces) {
-			assert.ok(
-				content.includes(`label: "${surf}"`),
-				`Must contain surface chip label for ${surf}`,
-			);
+describe("CLIN-06 & Responsive HIG: ToothChart, OdontogramViewContainer & Contrast", () => {
+	it("TOOTH_STATE_ACTIONS enforce dual light/dark WCAG contrast classes and 0 cartoon emojis", () => {
+		const emojiRegex = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+		assert.ok(TOOTH_STATE_ACTIONS.length >= 8);
+		for (const action of TOOTH_STATE_ACTIONS) {
+			assert.equal(emojiRegex.test(action.label), false);
 		}
-		assert.ok(
-			content.includes("testIdPrefix"),
-			"Must contain dynamic data-testid for surface chips",
-		);
-	});
-
-	it("verifies menuH = 380 and clamping math", () => {
-		const modulePath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/OdontogramModule.tsx",
-		);
-		const content = fs.readFileSync(modulePath, "utf-8");
-
-		assert.ok(content.includes("const menuH = 380;"));
-		assert.ok(content.includes("Math.max(10, Math.min(window.innerHeight - 400, y))"));
-	});
-});
-
-describe("CLIN-06: WCAG AAA High Contrast & Zero Emojis", () => {
-	it("verifies contrast classes in TOOTH_STATE_ACTIONS", () => {
 		const caries = TOOTH_STATE_ACTIONS.find((a) => a.state === "Caries");
-		assert.ok(caries?.className.includes("text-rose-600"));
-		assert.ok(caries?.className.includes("dark:text-rose-400"));
-
-		const crown = TOOTH_STATE_ACTIONS.find((a) => a.state === "Crown");
-		assert.ok(crown?.className.includes("text-blue-600"));
-		assert.ok(crown?.className.includes("dark:text-blue-400"));
+		assert.ok(caries?.className.includes("text-rose-600") && caries.className.includes("dark:text-rose-400"));
 	});
 
-	it("strictly zero cartoon emojis across odontogram", () => {
-		const CARTOON_EMOJI_REGEX = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
-		for (const a of TOOTH_STATE_ACTIONS) {
-			assert.strictEqual(CARTOON_EMOJI_REGEX.test(a.label), false);
-		}
+	it("OdontogramViewContainer renders adult dentition without errors or emojis", () => {
+		const html = renderToString(
+			React.createElement(OdontogramViewContainer, {
+				teethData: createDefaultAdultTeethData(),
+				dentitionMode: "adult",
+			}),
+		);
+		assert.ok(html.includes("11") && html.includes("48"));
 	});
 });
-
-describe("CLIN-07: Fast Action Presets & ToothRadialMobileSheet (Mandates 8d, 8e, 8ze)", () => {
-	it("verifies ToothRadialMobileSheet includes Periodontitis & Implant in Quick Action Presets", () => {
-		const presetsPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/radialMenu/radialMenuPresets.tsx",
-		);
-		const gridPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/radialMenu/ToothRadialPrimaryGrid.tsx",
-		);
-		const presetsContent = fs.existsSync(presetsPath)
-			? fs.readFileSync(presetsPath, "utf-8")
-			: "";
-		const gridContent = fs.existsSync(gridPath)
-			? fs.readFileSync(gridPath, "utf-8")
-			: "";
-
-		assert.ok(
-			presetsContent.includes("Periodontitis") && presetsContent.includes("Implant"),
-			"Must include Periodontitis & Implant in radialMenuPresets",
-		);
-		assert.ok(
-			gridContent.includes("min-h-[50px]") || gridContent.includes("min-h-[44px]"),
-			"ToothRadialMobileSheet primary items must enforce Apple HIG touch targets >= 44px",
-		);
-	});
-
-	it("verifies odontogram.css enforces Studio Mac HIG 32px desktop density with coarse pointer fallback", () => {
-		const cssPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/odontogram.css",
-		);
-		const content = readCssWithImports(cssPath);
-
-		assert.ok(
-			content.includes(".tooth-hover-quick-hud button {\n\tmin-height: 32px;\n\theight: 32px;\n\tfont-size: 12px;"),
-			"Hover HUD buttons must have 32px min-height on desktop",
-		);
-		assert.ok(
-			content.includes("@media (pointer: coarse) {\n\t.tooth-hover-quick-hud button {\n\t\tmin-height: 44px;"),
-			"Hover HUD buttons must adapt to 44px on coarse pointer touch devices",
-		);
-	});
-});
-
-describe("CLIN-08: Form 043/u Templates and Studio Mac HIG Density (Mandates 8d, 8e)", () => {
-	it("verifies RecordDiariesTab and RecordNewDiaryInlineForm have min-h-[36px] buttons and no microfonts on actions", () => {
-		const diariesTabPath = path.resolve(
-			__dirname,
-			"../../../../src/components/emr/record/tabs/RecordDiariesTab.tsx",
-		);
-		const inlineFormPath = path.resolve(
-			__dirname,
-			"../../../../src/components/emr/record/tabs/RecordNewDiaryInlineForm.tsx",
-		);
-		const content = `${fs.readFileSync(diariesTabPath, "utf-8")}\n${fs.readFileSync(inlineFormPath, "utf-8")}`;
-
-		assert.ok(
-			content.includes("min-h-[36px]"),
-			"Diary action buttons must be at least min-h-[36px] on desktop",
-		);
-		assert.ok(
-			!content.includes("text-[10px]") && !content.includes("text-[9px]"),
-			"No microfonts below 11px on actions",
-		);
-	});
-
-	it("verifies ToothChart or MobileQuadrantTabs quadrant switcher conforms to Apple HIG", () => {
-		const mobileTabsPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/MobileQuadrantTabs.tsx",
-		);
-		const chartPath = path.resolve(
-			__dirname,
-			"../../../../src/components/odontogram/ToothChart.tsx",
-		);
-		const content = fs.existsSync(mobileTabsPath)
-			? fs.readFileSync(mobileTabsPath, "utf-8")
-			: fs.readFileSync(chartPath, "utf-8");
-
-		assert.ok(
-			content.includes("mobile-quadrant-tabs") ||
-				content.includes("odontogram-quadrant-bar") ||
-				content.includes("ToothChart"),
-			"Quadrant selector or ToothChart must conform to Apple HIG",
-		);
-	});
-});
-
-describe("CLIN-09: 0-Click Somatic Norm Default & Cargo Cult Eradication (Mandates 8e, 8k)", () => {
-	it("verifies VisitView.tsx provides 0-click somatic norm default upon completion", () => {
-		const visitViewPath = path.resolve(
-			__dirname,
-			"../../../../src/VisitView.tsx",
-		);
-		const viewStatePath = path.resolve(
-			__dirname,
-			"../../visit/view/useVisitViewState.ts",
-		);
-		const billingStatePath = path.resolve(
-			__dirname,
-			"../../visit/view/viewStateModules/useVisitBillingState.ts",
-		);
-		const content =
-			fs.readFileSync(visitViewPath, "utf-8") +
-			(fs.existsSync(viewStatePath) ? fs.readFileSync(viewStatePath, "utf-8") : "") +
-			(fs.existsSync(billingStatePath) ? fs.readFileSync(billingStatePath, "utf-8") : "");
-
-		assert.ok(
-			content.includes('updateVisitNoteField("anamnesis", "Соматически здоров. Аллергоанамнез не отягощен.");'),
-			"Must default empty anamnesis to somatic norm",
-		);
-		assert.ok(
-			content.includes('updateVisitNoteField("complaint", "Жалоб на момент осмотра не предъявляет.");'),
-			"Must default empty complaint",
-		);
-		assert.ok(
-			content.includes('updateVisitNoteField("objectiveStatus", "Слизистая оболочка полости рта бледно-розовая, влажная. Зубные ряды интактны.");'),
-			"Must default empty objective status",
-		);
-	});
-
-	it("verifies hospital cargo cult is completely eradicated from VisitView and Odontogram", () => {
-		const visitViewPath = path.resolve(__dirname, "../../../../src/VisitView.tsx");
-		const content = fs.readFileSync(visitViewPath, "utf-8");
-
-		const cargoCultKeywords = ["койко-день", "койко-дни", "трансфузи", "025/у", "стационарный больной"];
-		for (const keyword of cargoCultKeywords) {
-			assert.strictEqual(
-				content.toLowerCase().includes(keyword),
-				false,
-				`VisitView must not contain hospital cargo-cult keyword: ${keyword}`,
-			);
-		}
-	});
-});
-

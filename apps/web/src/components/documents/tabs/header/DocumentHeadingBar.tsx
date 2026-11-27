@@ -21,10 +21,12 @@ export const DocumentHeadingBar: React.FC<DocumentHeadingBarProps> = React.memo(
 				<style>{`
 					.documents-panel .panel-heading button,
 					.documents-panel .document-actions button { min-height: 36px; }
-					@media (pointer: coarse), (max-width: 768px) {
+					@media (max-width: 768px) {
 						.documents-panel .panel-heading button,
 						.documents-panel .document-actions button { min-height: 44px; }
 					}
+					html.mobile-touch-shell .documents-panel .panel-heading button,
+					html.mobile-touch-shell .documents-panel .document-actions button { min-height: 44px; }
 				`}</style>
 				<div className="panel-heading">
 					<h2>Документы и Реестр</h2>

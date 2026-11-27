@@ -48,7 +48,7 @@
 /* ==========================================================================
    Touch Screen / Tablet Ergonomics (Mandate 8c: >= 44px Touch Targets)
    ========================================================================== */
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	.pc-close-btn {
 		min-width: 44px;
 		min-height: 44px;

@@ -87,7 +87,7 @@ export function CopilotSettingsPersonaTab({
 						onChange={(e) => setDiaryTemplate(e.target.value as DiaryTemplate)}
 						className="w-full h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs cursor-pointer focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 					>
-						<option value="soap">SOAP (Субъективно, Объективно, Оценка, План)</option>
+						<option value="soap">Дневник приёма (Жалобы, Осмотр, Диагноз, План)</option>
 						<option value="treatment_diary">Медицинская карта приёма</option>
 						<option value="clinical_protocol">Клинический протокол приёма</option>
 						<option value="express">Краткий экспресс-протокол приёма</option>

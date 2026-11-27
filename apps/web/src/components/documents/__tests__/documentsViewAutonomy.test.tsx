@@ -340,10 +340,11 @@ describe("Documents View Outpatient Archive Autonomy & Non-blocking Selection (M
 			</AppLogicProvider>,
 		);
 
-		// Verify responsive scoped style tag is embedded
+		// Verify responsive scoped style tag is embedded without global (pointer: coarse)
 		expect(html).toContain("min-height: 36px");
 		expect(html).toContain("min-height: 44px");
-		expect(html).toContain("@media (pointer: coarse)");
+		expect(html).toContain("@media (max-width: 768px)");
+		expect(html).not.toContain("@media (pointer: coarse)");
 
 		// Verify toolbar buttons have min-h classes
 		expect(html).toContain("min-h-[44px] sm:min-h-[36px]");

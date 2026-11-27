@@ -23,7 +23,7 @@ export const ChairsidePackageServiceList: React.FC<ChairsidePackageServiceListPr
 	onToggleCode,
 }) => {
 	return (
-		<div className="space-y-1 mb-3 bg-white/90 dark:bg-slate-900/90 rounded-lg p-2 border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800/60">
+		<div className="space-y-1 mb-3 bg-[var(--paper)] rounded-lg p-2 border border-[var(--line)] divide-y divide-[var(--line)]">
 			{items.map((svc) => (
 				<label
 					key={svc.code804n}

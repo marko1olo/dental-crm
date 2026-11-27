@@ -39,7 +39,7 @@
 	transition: all 0.15s ease;
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.dente-quick-tab-btn {
 		min-height: 44px;
 		font-size: 13px;

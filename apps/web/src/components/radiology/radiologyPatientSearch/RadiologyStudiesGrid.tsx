@@ -56,8 +56,8 @@ export const RadiologyStudiesGrid: React.FC<RadiologyStudiesGridProps> = ({
 							onClick={() => onSelectDatePreset(tab.id)}
 							className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-lg transition-all cursor-pointer select-none border text-center ${
 								isSelected
-									? "bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 border-emerald-500/40 shadow-xs font-bold"
-									: "bg-transparent text-slate-700 dark:text-slate-200 border-transparent hover:bg-white/60 dark:hover:bg-slate-700/50 font-semibold"
+									? "bg-[var(--paper)] text-[var(--primary)] border-[var(--primary)]/40 shadow-xs font-semibold"
+									: "bg-transparent text-[var(--ink)] border-transparent hover:bg-[var(--paper)]/60 font-medium"
 							}`}
 							style={{ minHeight: "54px" }}
 							data-testid={`tactile-date-${tab.id}`}
@@ -125,19 +125,19 @@ export const RadiologyStudiesGrid: React.FC<RadiologyStudiesGridProps> = ({
 								type="date"
 								value={customDateFrom}
 								onChange={(e) => onCustomDateFromChange(e.target.value)}
-								className="w-full h-8 px-2.5 rounded-lg bg-white dark:bg-[#162238] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+								className="w-full h-8 px-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] text-xs focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
 								data-testid="input-custom-date-from"
 							/>
 						</div>
 						<div>
-							<label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+							<label className="text-[11px] font-semibold text-[var(--ink-muted)] block mb-1">
 								По дату (конец):
 							</label>
 							<input
 								type="date"
 								value={customDateTo}
 								onChange={(e) => onCustomDateToChange(e.target.value)}
-								className="w-full h-8 px-2.5 rounded-lg bg-white dark:bg-[#162238] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+								className="w-full h-8 px-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] text-xs focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
 								data-testid="input-custom-date-to"
 							/>
 						</div>

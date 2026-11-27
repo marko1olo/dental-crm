@@ -36,7 +36,7 @@ export const StageItemLabOrderButtons: React.FC<StageItemLabOrderButtonsProps> =
 						doctorName: item.assignedDoctorName ?? item.doctorName,
 					});
 				}}
-				className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2.5 py-1 rounded-md text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0 touch-manipulation flex items-center gap-1.5 focus:outline-none"
+				className="h-7 min-h-[28px] max-h-[28px] max-md:h-11 max-md:min-h-[44px] max-md:max-h-[44px] px-2.5 py-1 rounded-md text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0 touch-manipulation flex items-center gap-1.5 focus:outline-none"
 				title={`Оформить наряд-заказ в зуботехническую лабораторию для ${item.name}`}
 				data-testid={`item-lab-order-btn-${item.id}`}
 			>
@@ -47,7 +47,7 @@ export const StageItemLabOrderButtons: React.FC<StageItemLabOrderButtonsProps> =
 				<button
 					type="button"
 					onClick={() => onOneClickLabOrder(itemTeeth)}
-					className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2 py-1 rounded-md text-[11px] font-bold text-[var(--warning,#d97706)] bg-[var(--warning-soft,rgba(217,119,6,0.1))] hover:bg-[var(--warning-soft,rgba(217,119,6,0.2))] border border-[var(--warning,#d97706)]/30 cursor-pointer transition-colors shrink-0 touch-manipulation shadow-2xs flex items-center gap-1 focus:outline-none"
+					className="h-7 min-h-[28px] max-h-[28px] max-md:h-11 max-md:min-h-[44px] max-md:max-h-[44px] px-2 py-1 rounded-md text-[11px] font-bold text-[var(--warning,#d97706)] bg-[var(--warning-soft,rgba(217,119,6,0.1))] hover:bg-[var(--warning-soft,rgba(217,119,6,0.2))] border border-[var(--warning,#d97706)]/30 cursor-pointer transition-colors shrink-0 touch-manipulation shadow-2xs flex items-center gap-1 focus:outline-none"
 					title={`Наряд ЗТЛ: Коронка цирконий VITA A2 (+7 раб. дн.) для ${item.name}`}
 					data-testid={`item-lab-order-one-click-btn-${item.id}`}
 				>

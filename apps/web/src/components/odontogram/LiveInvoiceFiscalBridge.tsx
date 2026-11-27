@@ -39,9 +39,7 @@ export const LiveInvoiceFiscalBridge: React.FC<
 			isOpen={isOpen}
 			mode="checkout"
 			initialTab="checkout"
-			totalDueRub={netTotalPrice}
 			totalDueKopecks={effectiveKopecks}
-			amountRub={netTotalPrice}
 			amountKopecks={effectiveKopecks}
 			patientId={patientId}
 			patientName={patientName || "Пациент"}

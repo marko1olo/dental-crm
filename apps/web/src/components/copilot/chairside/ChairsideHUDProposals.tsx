@@ -162,7 +162,7 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
       {(soapProposal?.diagnosis || soapProposal?.complaint || soapProposal?.treatmentPlan) && (
         <div className="chairside-hud-card chairside-card-soap" data-testid="chairside-card-soap">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1.5">
-            <span className="font-semibold text-xs text-[var(--ink)] shrink-0">Дневник приёма (SOAP)</span>
+            <span className="font-semibold text-xs text-[var(--ink)] shrink-0">Дневник приёма</span>
             <div className="flex items-center justify-between sm:justify-end gap-2 min-w-0">
               <span className="text-xs text-[var(--info,#3b82f6)] font-medium truncate">{soapDiagnosisLabel}</span>
               <button
@@ -176,10 +176,10 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
             </div>
           </div>
           <div className="text-xs text-[var(--muted)] space-y-1 mb-2">
-            {soapProposal.complaint && <p><strong>Жалобы (S):</strong> {soapProposal.complaint}</p>}
-            {soapProposal.objectiveStatus && <p><strong>Объективно (O):</strong> {soapProposal.objectiveStatus}</p>}
-            {soapProposal.diagnosis && <p><strong>Диагноз (A):</strong> {soapProposal.diagnosis}</p>}
-            {soapProposal.treatmentPlan && <p><strong>План лечения (P):</strong> {soapProposal.treatmentPlan}</p>}
+            {soapProposal.complaint && <p><strong>Жалобы:</strong> {soapProposal.complaint}</p>}
+            {soapProposal.objectiveStatus && <p><strong>Объективно:</strong> {soapProposal.objectiveStatus}</p>}
+            {soapProposal.diagnosis && <p><strong>Диагноз:</strong> {soapProposal.diagnosis}</p>}
+            {soapProposal.treatmentPlan && <p><strong>План лечения:</strong> {soapProposal.treatmentPlan}</p>}
           </div>
           <button
             type="button"

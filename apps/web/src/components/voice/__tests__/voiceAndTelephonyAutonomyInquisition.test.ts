@@ -173,10 +173,10 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 				"CSS must enforce min-height: 32px for desktop clinical density",
 			);
 
-			// Adaptive touch target only for coarse pointers
+			// Adaptive touch target only for narrow mobile viewports (<= 768px)
 			assert.ok(
-				css.includes("@media (pointer: coarse)"),
-				"CSS must isolate 44px touch targets under @media (pointer: coarse)",
+				css.includes("@media (max-width: 768px)") && !css.includes("@media (pointer: coarse)"),
+				"CSS must isolate 44px touch targets under @media (max-width: 768px) without global (pointer: coarse)",
 			);
 
 			// No global universal 44px override on desktop

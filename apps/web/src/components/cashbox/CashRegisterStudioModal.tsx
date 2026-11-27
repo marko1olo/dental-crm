@@ -55,26 +55,6 @@ export interface CashRegisterStudioModalProps {
 	readonly amountKopecks?: bigint | number | undefined;
 	readonly patientDepositKopecks?: bigint | number | undefined;
 	readonly patientFamilyBalanceKopecks?: bigint | number | undefined;
-	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
-	readonly initialChangeFundRub?: number | undefined;
-	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
-	readonly netRevenueRub?: number | undefined;
-	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
-	readonly cashInDrawerRub?: number | undefined;
-	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
-	readonly cardSumRub?: number | undefined;
-	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
-	readonly sbpSumRub?: number | undefined;
-	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
-	readonly advanceOffsetRub?: number | undefined;
-	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
-	readonly totalDueRub?: number | undefined;
-	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
-	readonly amountRub?: number | undefined;
-	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
-	readonly patientDepositRub?: number | undefined;
-	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
-	readonly patientFamilyBalanceRub?: number | undefined;
 	readonly onOpenShiftAction?: (() => Promise<void> | void) | undefined;
 	readonly onOpenShift?: (() => Promise<void> | void) | undefined;
 	readonly onCloseShiftAction?: (() => Promise<void> | void) | undefined;
@@ -126,7 +106,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[10050] flex flex-col justify-end md:items-center md:justify-center bg-black/60 backdrop-blur-xs p-0 md:p-4 overflow-x-clip max-w-[100vw] animate-in fade-in duration-150"
+			className="fixed inset-0 z-[100] flex flex-col justify-end md:items-center md:justify-center bg-black/60 backdrop-blur-xs p-0 md:p-4 overflow-x-clip max-w-[100vw] animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby={modalTitleId}

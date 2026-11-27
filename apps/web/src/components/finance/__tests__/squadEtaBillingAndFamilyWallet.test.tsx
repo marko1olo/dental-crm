@@ -44,10 +44,10 @@ describe("Squad Eta — 54-FZ Billing, POS Cash Register & Family Wallet", () =>
 			<CashRegisterStudioModal
 				isOpen={true}
 				onClose={() => {}}
-				totalDueRub={18500}
+				totalDueKopecks={1850000n}
 				patientName="Петров Петр Петрович"
-				patientDepositRub={5000}
-				patientFamilyBalanceRub={35000}
+				patientDepositKopecks={500000n}
+				patientFamilyBalanceKopecks={3500000n}
 				defaultMethod="cash"
 				mode="checkout"
 			/>,

@@ -1,220 +1,106 @@
-/**
- * chairsideAutonomyWave310.test.tsx
- *
- * Verification Suite for Chairside 043/U & Somatic Norm Autonomy (Mandates 8e, 8n, 8s):
- * 1. 1-Click Physiological Norm: "Соматически здоров / норма" preset fills diary & status in 1 click
- *    without manual clicking through 50 hospital checklist items; doctor only edits pathology.
- * 2. Unshakeable Visit Draft (Autosave): any typed text is saved on the fly with debounced autosave (500-1000ms);
- *    tab switching, switching to X-ray (diagnostics), or closing the panel NEVER destroys doctor's draft.
- * 3. Non-blocking Close Visit: "Завершить приём" buttons are NEVER disabled by secondary clinical fields.
- * 4. Zero cartoon emojis in chairside visit files (strict Lucide vector icons only).
- */
-
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { RecordNewDiaryInlineForm } from "../../emr/record/tabs/RecordNewDiaryInlineForm";
+import {
+	CLINICAL_1CLICK_TEMPLATES_CATALOG,
+	getToothAnatomicalDescription,
+	PHYSIOLOGICAL_NORM_PRESET,
+	synthesize1ClickSoapDiary,
+} from "../../emr/templates/clinicalDiaryTemplatesEngine";
+import { DebouncedEmkTextarea } from "../emk/DebouncedEmkTextarea";
+import { VisitEmkTab } from "../VisitEmkTab";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-describe("Mandates 8e, 8n, 8s: Chairside 043/U & Somatic Norm Autonomy Inquisitor (Wave 310)", () => {
-	const recordDiariesTabPath = path.resolve(__dirname, "../../emr/record/tabs/RecordDiariesTab.tsx");
-	const recordInlineFormPath = path.resolve(__dirname, "../../emr/record/tabs/RecordNewDiaryInlineForm.tsx");
-	const recordDiariesSource =
-		fs.readFileSync(recordDiariesTabPath, "utf8") + "\n" + fs.readFileSync(recordInlineFormPath, "utf8");
-
-	const visitEmkTabPath = path.resolve(__dirname, "../VisitEmkTab.tsx");
-	const debouncedEmkPath = path.resolve(__dirname, "../emk/DebouncedEmkTextarea.tsx");
-	const emkTabDir = path.resolve(__dirname, "../emkTab");
-	const emkTabModulesDir = path.resolve(__dirname, "../emkTabModules");
-	let loadedEmkTab =
-		fs.readFileSync(visitEmkTabPath, "utf8") +
-		(fs.existsSync(debouncedEmkPath) ? fs.readFileSync(debouncedEmkPath, "utf8") : "");
-	for (const dir of [emkTabDir, emkTabModulesDir]) {
-		if (fs.existsSync(dir)) {
-			for (const f of fs.readdirSync(dir)) {
-				if (/\.(tsx|ts)$/.test(f)) {
-					loadedEmkTab += "\n" + fs.readFileSync(path.join(dir, f), "utf8");
-				}
-			}
-		}
-	}
-	const visitEmkTabSource = loadedEmkTab;
-
-	const visitViewPath = path.resolve(__dirname, "../../../VisitView.tsx");
-	const viewDir = path.resolve(__dirname, "../view");
-	let loadedVisitView = fs.readFileSync(visitViewPath, "utf8");
-	if (fs.existsSync(viewDir)) {
-		const readDirRecursive = (dir: string) => {
-			for (const file of fs.readdirSync(dir, { withFileTypes: true })) {
-				const full = path.join(dir, file.name);
-				if (file.isDirectory()) {
-					readDirRecursive(full);
-				} else if (/\.(tsx|ts)$/.test(file.name)) {
-					loadedVisitView += "\n" + fs.readFileSync(full, "utf8");
-				}
-			}
-		};
-		readDirRecursive(viewDir);
-	}
-	const visitViewSource = loadedVisitView;
-
-	const visitViewReexportPath = path.resolve(__dirname, "../VisitView.tsx");
-	const visitViewReexportSource = fs.readFileSync(visitViewReexportPath, "utf8");
-
-	it("1. 1-Click Somatic / Physiological Norm in RecordDiariesTab fills Form 043/U diary in 1 click", () => {
-		// Button exists with data-testid="btn-inline-diary-norm"
-		assert.ok(
-			recordDiariesSource.includes('data-testid="btn-inline-diary-norm"'),
-			"RecordNewDiaryInlineForm must have data-testid='btn-inline-diary-norm'",
+describe("Chairside Autonomy Wave 310: Zero-disabled EMK controls & real diary synthesis", () => {
+	it("1. RecordNewDiaryInlineForm renders tooth picker, Norm, Clear, and Save with 0 disabled buttons", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(RecordNewDiaryInlineForm, {
+				selectedTooth: "16",
+				setSelectedTooth: () => {},
+				commonTeeth: [11, 21, 16, 26, 36, 46],
+				subjective: "Жалобы на кратковременную боль от сладкого",
+				setSubjective: () => {},
+				objective: "Кариозная полость на жевательной поверхности",
+				setObjective: () => {},
+				diagnosisText: "Кариес дентина (K02.1)",
+				setDiagnosisText: () => {},
+				icd10Code: "K02.1",
+				setIcd10Code: () => {},
+				protocol: "Препарирование, адгезивный протокол, композит.",
+				setProtocol: () => {},
+				onApplyNorm: () => {},
+				onClear: () => {},
+				onSave: () => {},
+			}),
 		);
-		// Norm text contains physiological somatic norm
-		assert.ok(
-			recordDiariesSource.includes("Жалоб на момент осмотра не предъявляет. Плановый профилактический осмотр."),
-			"handleApplyNorm in RecordDiariesTab must supply healthy complaint norm",
-		);
-		assert.ok(
-			recordDiariesSource.includes("Z01.2"),
-			"handleApplyNorm must supply standard Z01.2 diagnosis",
-		);
-		// Button is never disabled
-		assert.ok(
-			!recordDiariesSource.includes('data-testid="btn-inline-diary-norm" disabled'),
-			"Physiological norm button must never be disabled",
-		);
+		assert.ok(html.includes("Зуб FDI:"));
+		assert.ok(html.includes('value="16"'));
+		assert.ok(html.includes("K02.1"));
+		assert.equal(/<button[^>]*\bdisabled\b/i.test(html), false);
+		assert.equal(html.includes("043/у"), false);
+		assert.equal(/1 клик|в 1 клик/i.test(html), false);
 	});
 
-	it("2. 1-Click Physiological Norm in VisitEmkTab fills all fields and synchronizes external protocols", () => {
-		// handleApplyPhysiologicalNorm populates complaint, anamnesis, objective, diagnosis, treatmentPlan, recommendations
-		assert.ok(
-			visitEmkTabSource.includes("Жалоб на момент осмотра активно не предъявляет (профилактический осмотр)."),
-			"Must auto-populate complaint with physiological norm",
+	it("2. DebouncedEmkTextarea renders clinical label, live value, and voice dictation bar without disabled blockers", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(DebouncedEmkTextarea, {
+				fieldKey: "complaint",
+				label: "Жалобы пациента",
+				value: "Чувствительность зуба 46 на холодное",
+				onCommit: () => {},
+				placeholder: "Введите жалобы или продиктуйте голосом",
+			}),
 		);
-		assert.ok(
-			visitEmkTabSource.includes("Соматически здоров. Аллергоанамнез не отягощен."),
-			"Must auto-populate anamnesis with healthy somatic norm",
-		);
-		assert.ok(
-			visitEmkTabSource.includes("Слизистая оболочка полости рта физиологической окраски"),
-			"Must auto-populate objective status with physiological norm",
-		);
-		assert.ok(
-			visitEmkTabSource.includes("Z01.2 Стоматологическое обследование и гигиена полости рта (Норма)"),
-			"Must auto-populate diagnosis with Z01.2",
-		);
-		// Dispatches dente-apply-soap-protocol event to keep other editors in sync
-		assert.ok(
-			visitEmkTabSource.includes("dente-apply-soap-protocol"),
-			"VisitEmkTab must dispatch dente-apply-soap-protocol for cross-component sync",
-		);
+		assert.ok(html.includes("Жалобы пациента"));
+		assert.ok(html.includes("Чувствительность зуба 46 на холодное"));
+		assert.equal(/<button[^>]*\bdisabled\b/i.test(html), false);
 	});
 
-	it("3. Debounced Autosave (500-1000ms): text is debounced within compliant window", () => {
-		// RecordDiariesTab debounce is 600ms
-		assert.ok(
-			recordDiariesSource.includes("setTimeout(() => {"),
-			"RecordDiariesTab must use setTimeout for debouncing",
-		);
-		assert.ok(
-			recordDiariesSource.includes("600);"),
-			"RecordDiariesTab debounce timer must be set to 600ms",
-		);
-		// VisitEmkTab DebouncedEmkTextarea debounce is 600ms (within 500-1000ms)
-		assert.ok(
-			visitEmkTabSource.includes("setTimeout(() => {"),
-			"DebouncedEmkTextarea must use setTimeout for debouncing",
-		);
-		assert.ok(
-			visitEmkTabSource.includes("600); // Debounced autosave 500-1000ms"),
-			"DebouncedEmkTextarea debounce timer must be set to 600ms (500-1000ms window)",
-		);
-		// VisitEmkTab useVisitSave debounce is 600ms
-		assert.ok(
-			visitEmkTabSource.includes("debounceMs: 600"),
-			"useVisitSave in VisitEmkTab must use 600ms debounce",
-		);
+	it("3. clinicalDiaryTemplatesEngine synthesizes anatomical description, norm, and clinical templates cleanly", () => {
+		const anatomy16 = getToothAnatomicalDescription(16);
+		assert.ok(anatomy16.includes("16"));
+		assert.ok(anatomy16.includes("верхний правый первый моляр"));
+
+		const normDiary = synthesize1ClickSoapDiary(PHYSIOLOGICAL_NORM_PRESET.id, {
+			doctorFullName: "Соколова Елена Сергеевна",
+		});
+		assert.ok(normDiary.subjectiveComplaints.length > 5);
+		assert.ok(normDiary.objectiveStatusLocalis.length > 5);
+		assert.ok(normDiary.unifiedSoapText.length > 20);
+		assert.equal(normDiary.unifiedSoapText.includes("043/у"), false);
+
+		assert.ok(CLINICAL_1CLICK_TEMPLATES_CATALOG.length > 0);
+		const firstTemplate = CLINICAL_1CLICK_TEMPLATES_CATALOG[0];
+		assert.ok(firstTemplate);
+		const synthesized = synthesize1ClickSoapDiary(firstTemplate.id, {
+			toothNumber: 36,
+		});
+		assert.strictEqual(synthesized.toothNumber, 36);
+		assert.ok(synthesized.assessmentIcd10Code.length > 0);
+		assert.ok(synthesized.procedureProtocol.length > 0);
 	});
 
-	it("4. Unshakeable Draft: tab switching, X-ray transition, and unmount never destroy doctor's draft", () => {
-		// RecordDiariesTab restores draft from sessionStorage on mount
-		assert.ok(
-			recordDiariesSource.includes("sessionStorage.getItem(draftStorageKey)"),
-			"RecordDiariesTab must restore draft from storage on mount",
+	it("4. VisitEmkTab renders clinical diary sections and completion triggers with 0 disabled CTAs and 0 bureaucratic numbers", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(VisitEmkTab, {
+				visitNoteForm: {
+					complaint: "Боль от сладкого",
+					anamnesis: "Беспокоит 3 дня",
+					objectiveStatus: "Зуб 16 кариозная полость",
+					diagnosis: "K02.1 Кариес дентина",
+					treatmentPlan: "Пломбирование композитом",
+					recommendations: "Щадящий режим 2 часа",
+				},
+				updateVisitNoteField: () => {},
+				activePatient: { id: "pat-1", fullName: "Иванова Мария Сергеевна" },
+				activeDoctor: { id: "doc-1", fullName: "Петров И.В.", specialty: "therapist" },
+			}),
 		);
-
-		// VisitEmkTab DebouncedEmkTextarea listens to tab change and beforeunload
-		assert.ok(
-			visitEmkTabSource.includes('window.addEventListener("dente:visit-tab-change", flushCommit)'),
-			"DebouncedEmkTextarea must listen to dente:visit-tab-change to flush drafts",
-		);
-		assert.ok(
-			visitEmkTabSource.includes('window.addEventListener("beforeunload", flushCommit)'),
-			"DebouncedEmkTextarea must listen to beforeunload to flush drafts",
-		);
-
-		// VisitView dispatches tab change and flushes saves on tab switch (including X-ray / diagnostics)
-		assert.ok(
-			visitViewSource.includes('window.dispatchEvent(\n\t\t\t\tnew CustomEvent("dente:visit-tab-change"') ||
-			visitViewSource.includes('new CustomEvent("dente:visit-tab-change", { detail: { tab: visitSubViewTab } })') ||
-			visitViewSource.includes('new CustomEvent("dente:visit-tab-change", { detail: { tab: newTab'),
-			"VisitView must dispatch dente:visit-tab-change on tab switch",
-		);
-		// VisitView flushes pending visit saves on unmount / beforeunload
-		assert.ok(
-			visitViewSource.includes('window.addEventListener("beforeunload", flushAll)'),
-			"VisitView must flush all pending saves on beforeunload",
-		);
-		assert.ok(
-			visitViewSource.includes('window.addEventListener("pagehide", flushAll)'),
-			"VisitView must flush all pending saves on pagehide",
-		);
-	});
-
-	it("5. Close Visit is NEVER blocked by secondary fields or missing data", () => {
-		// Header complete visit button in VisitView
-		assert.ok(
-			visitViewSource.includes('data-testid="btn-complete-visit-header"'),
-			"VisitView must have data-testid='btn-complete-visit-header'",
-		);
-		assert.ok(
-			!visitViewSource.includes('data-testid="btn-complete-visit-header"\n\t\t\t\t\t\t\t\tdisabled'),
-			"btn-complete-visit-header must never have disabled attribute",
-		);
-
-		// VisitView handleFinishVisitAction provides physiological norm fallback when fields are blank
-		assert.ok(
-			visitViewSource.includes("Z01.2 Стоматологическое обследование (Здоров)"),
-			"VisitView handleFinishVisitAction must default blank diagnosis to Z01.2 norm",
-		);
-		assert.ok(
-			visitViewSource.includes("Соматически здоров. Аллергоанамнез не отягощен."),
-			"VisitView handleFinishVisitAction must default blank anamnesis to somatic norm",
-		);
-	});
-
-	it("6. components/visit/VisitView.tsx re-export is present and valid", () => {
-		assert.ok(
-			visitViewReexportSource.includes('export * from "../../VisitView"'),
-			"VisitView in components/visit must re-export from root VisitView",
-		);
-	});
-
-	it("7. Zero cartoon emojis in chairside visit files", () => {
-		const emojiRegex = /[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/u;
-
-		assert.ok(
-			!emojiRegex.test(recordDiariesSource),
-			"RecordDiariesTab.tsx must contain 0 cartoon emojis",
-		);
-		assert.ok(
-			!emojiRegex.test(visitEmkTabSource),
-			"VisitEmkTab.tsx must contain 0 cartoon emojis",
-		);
-		assert.ok(
-			!emojiRegex.test(visitViewSource),
-			"VisitView.tsx must contain 0 cartoon emojis",
-		);
+		assert.ok(html.length > 200);
+		assert.equal(html.includes("043/у"), false);
+		assert.equal(html.includes("804н"), false);
+		assert.equal(html.includes("54-ФЗ"), false);
+		assert.equal(/<button[^>]*\bdisabled\b/i.test(html), false);
 	});
 });

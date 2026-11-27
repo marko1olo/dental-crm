@@ -69,7 +69,7 @@ export const TodayQueueBoard: React.FC<TodayQueueBoardProps> = (props) => {
         )}
       </div>
       {showLobbyBillboard && (
-        <div className="fixed inset-0 z-[1200] overflow-hidden bg-[var(--paper)]">
+        <div className="fixed inset-0 z-[100] overflow-hidden bg-[var(--paper)]">
           <WaitingLoungeSignage
             onExit={() => setShowLobbyBillboard(false)}
           />

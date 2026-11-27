@@ -398,7 +398,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
 
   return (
     <div
-      className="copilot-studio-overlay fixed inset-0 z-[99990] flex justify-end max-md:items-end pointer-events-auto"
+      className="copilot-studio-overlay fixed inset-0 z-[100] flex justify-end max-md:items-end pointer-events-auto"
       data-testid="chairside-copilot-studio-root"
     >
       <div

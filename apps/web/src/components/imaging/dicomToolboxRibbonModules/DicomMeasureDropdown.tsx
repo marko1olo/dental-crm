@@ -26,7 +26,7 @@ export const DicomMeasureDropdown: React.FC<DicomMeasureDropdownProps> = ({
 	if (!isOpen) return null;
 
 	return (
-		<div className="absolute left-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-[10001] p-1.5 flex flex-col gap-0.5">
+		<div className="absolute left-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-[40] p-1.5 flex flex-col gap-0.5">
 			<div className="text-xs font-semibold text-slate-400 px-2 py-1 border-b border-slate-800">
 				Измерение
 			</div>

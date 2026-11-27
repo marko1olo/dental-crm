@@ -4,7 +4,7 @@
  * Mandate 8b SSOT <= 120 lines
  */
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.doc-dropdown-item {
 		min-height: 44px;
 	}

@@ -81,7 +81,7 @@
 	flex-shrink: 0;
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.dente-diagnostic-toolbar {
 		min-height: 48px;
 		height: auto;

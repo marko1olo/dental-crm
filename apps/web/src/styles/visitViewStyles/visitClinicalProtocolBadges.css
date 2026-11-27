@@ -67,7 +67,7 @@
 	color: #2dd4bf;
 }
 
-@media (max-width: 768px), (pointer: coarse) {
+@media (max-width: 768px) {
 	.clinical-tooth-btn,
 	button.clinical-tooth-btn {
 		height: 44px !important;

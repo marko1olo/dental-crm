@@ -32,7 +32,7 @@ export const DEFAULT_DENTE_REACT_STEPS: ReactStepItem[] = [
     stepNumber: 4,
     title: "Формирование клинического протокола и сметы...",
     status: "pending",
-    detail: "Расчёт протокола SOAP и позиций прейскуранта",
+    detail: "Формирование дневника приёма и позиций прейскуранта",
     icon: "plan",
   },
 ];

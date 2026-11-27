@@ -73,7 +73,7 @@ export const DiagnosticDrawerImagingTab: React.FC = () => {
 
 			{isViewerOpen && (
 				<div
-					className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm p-4 sm:p-8 flex items-center justify-center animate-in fade-in"
+					className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm p-4 sm:p-8 flex items-center justify-center animate-in fade-in"
 					data-testid="modal-visiograph-study-viewer"
 				>
 					<div className="w-full max-w-4xl h-[620px] max-h-[90vh]">

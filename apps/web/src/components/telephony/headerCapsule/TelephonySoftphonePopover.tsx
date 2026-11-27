@@ -50,7 +50,7 @@ export function TelephonySoftphonePopover({ onClose, isMobile, isStandalone, cla
 	}, [tel.activeCall]);
 
 	const containerClass = isMobile
-		? `fixed inset-x-0 bottom-0 rounded-t-[24px] bg-[var(--paper-strong)] border-t border-[var(--line-strong)] shadow-2xl z-[99990] p-4 flex flex-col gap-3 pb-[calc(env(safe-area-inset-bottom,0px)+16px)] animate-in slide-in-from-bottom duration-200 overflow-x-clip max-w-[100vw] ${className || ""}`
+		? `fixed inset-x-0 bottom-0 rounded-t-[24px] bg-[var(--paper-strong)] border-t border-[var(--line-strong)] shadow-2xl z-[50] p-4 flex flex-col gap-3 pb-[calc(env(safe-area-inset-bottom,0px)+16px)] animate-in slide-in-from-bottom duration-200 overflow-x-clip max-w-[100vw] ${className || ""}`
 		: isStandalone
 		? `relative w-84 sm:w-92 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line-strong)] shadow-2xl backdrop-blur-xl p-3 z-50 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-150 ${className || ""}`
 		: `absolute right-0 top-full mt-2 w-84 sm:w-92 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line-strong)] shadow-2xl backdrop-blur-xl p-3 z-50 flex flex-col gap-2.5 animate-in fade-in slide-in-from-top-1 duration-150 ${className || ""}`;

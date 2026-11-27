@@ -15,9 +15,6 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import {
@@ -25,17 +22,55 @@ import {
 	injectSbpCenterLogo,
 	copySbpUrlToClipboard,
 } from "../sbpQrEngine.js";
+import {
+	isTerminalPaidSbpStatus,
+	resolveSbpManualCheckMessage,
+} from "../sbp/useSbpPolling.js";
 import { SbpDynamicQrCard } from "../SbpDynamicQrCard.js";
 import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
 
-const here = dirname(fileURLToPath(import.meta.url));
-
 describe("Honest SBP QR contour", () => {
-	describe("1. sbpQrEngine — server-only QR source", () => {
-		it("never fabricates an NSPK link on the client", () => {
-			const source = readFileSync(join(here, "../sbpQrEngine.ts"), "utf8");
-			assert.ok(!source.includes("qr.nspk.ru"), "Client module must not contain fabricated NSPK URLs");
-			assert.ok(!source.includes("sbp://pay"), "Client module must not invent sbp:// deep links");
+	describe("1. sbpQrEngine & useSbpPolling — server-only QR & terminal paid statuses", () => {
+		it("refuses to confirm pending/created/waiting/failed/expired SBP statuses and only accepts terminal paid", () => {
+			for (const nonPaid of ["pending", "PENDING", "created", "waiting", "failed", "expired", "refunded", "voided", "", null, undefined]) {
+				assert.equal(isTerminalPaidSbpStatus(nonPaid), false, `Must NOT treat '${String(nonPaid)}' as paid`);
+			}
+			for (const paid of ["PAID", "DEPOSITED", "SETTLED", "CONFIRMED", "paid", "success", "deposited"]) {
+				assert.equal(isTerminalPaidSbpStatus(paid), true, `Must confirm terminal status '${paid}'`);
+			}
+			assert.equal(resolveSbpManualCheckMessage("pending"), "Оплата банком ещё не подтверждена");
+			assert.match(resolveSbpManualCheckMessage("expired"), /отклонён или просрочен/);
+			assert.match(resolveSbpManualCheckMessage("failed"), /отклонён или просрочен/);
+		});
+
+		it("never fabricates QR locally on network error and parses real server QR payload", async () => {
+			const originalFetch = globalThis.fetch;
+			let requestedHeaders: Record<string, string> | undefined;
+			globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+				requestedHeaders = init?.headers as Record<string, string> | undefined;
+				return new Response(
+					JSON.stringify({
+						success: true,
+						operationId: "01900000-0000-7000-8000-000000000002",
+						payloadUrl: "https://qr.nspk.ru/AD1000TESTSERVER",
+						qrSvg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"><rect width="160" height="160"/></svg>',
+						ttlSeconds: 300,
+					}),
+					{ status: 200, headers: { "Content-Type": "application/json" } },
+				);
+			}) as typeof fetch;
+
+			try {
+				const ok = await fetchSbpDynamicQr({
+					sumRub: 4500,
+					operationId: "01900000-0000-7000-8000-000000000002",
+				});
+				assert.ok(ok.qr, "Server QR must be returned when API answers 200");
+				assert.equal(ok.qr?.nspkUrl, "https://qr.nspk.ru/AD1000TESTSERVER");
+				assert.ok(requestedHeaders !== undefined, "Request options must be passed");
+			} finally {
+				globalThis.fetch = originalFetch;
+			}
 		});
 
 		it("refuses to request a QR without an operation id", async () => {
@@ -107,7 +142,7 @@ describe("Honest SBP QR contour", () => {
 					onClose: () => {},
 					defaultMethod: "split",
 					mode: "checkout",
-					totalDueRub: 18000,
+					totalDueKopecks: 1800000n,
 					patientId: "pat-101",
 					patientName: "Козлова Мария",
 				})

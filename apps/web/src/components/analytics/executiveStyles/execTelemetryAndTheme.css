@@ -21,7 +21,7 @@
 	color: var(--ink, #0f172a);
 }
 
-@media (pointer: coarse), (max-width: 640px) {
+@media (max-width: 640px) {
 	.executive-header {
 		min-height: auto;
 		max-height: none;

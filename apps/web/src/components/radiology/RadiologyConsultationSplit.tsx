@@ -130,7 +130,7 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 		if (typeof document === "undefined") return null;
 		return createPortal(
 			<div
-				className="fixed inset-0 z-[99999] flex flex-col p-2 sm:p-4 select-none"
+				className="fixed inset-0 z-[100] flex flex-col p-2 sm:p-4 select-none"
 				style={{
 					backgroundColor: "rgba(15, 23, 42, 0.72)",
 					backdropFilter: "blur(4px)",

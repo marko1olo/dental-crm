@@ -27,7 +27,7 @@ export const CbctDicomFlyout: React.FC<CbctDicomFlyoutProps> = ({
 				<button
 					type="button"
 					onClick={onClose}
-					className="w-7 h-7 min-w-[28px] min-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
+					className="w-7 h-7 min-w-[28px] min-h-[28px] max-md:w-11 max-md:h-11 max-md:min-w-[44px] max-md:min-h-[44px] flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
 					aria-label="Закрыть меню"
 				>
 					<X className="w-4 h-4" />
@@ -38,7 +38,7 @@ export const CbctDicomFlyout: React.FC<CbctDicomFlyoutProps> = ({
 				<button
 					type="button"
 					onClick={onFolderUploadClick}
-					className="w-full px-3 py-2 [@media(pointer:coarse)]:py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-800 text-xs font-semibold flex items-center gap-2.5 transition-colors shadow-xs cursor-pointer"
+					className="w-full px-3 py-2 max-md:py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-800 text-xs font-semibold flex items-center gap-2.5 transition-colors shadow-xs cursor-pointer"
 					data-testid="cbct-dicom-folder-opt"
 				>
 					<FolderOpen className="w-4 h-4 text-cyan-400 shrink-0" />
@@ -53,7 +53,7 @@ export const CbctDicomFlyout: React.FC<CbctDicomFlyoutProps> = ({
 				<button
 					type="button"
 					onClick={onZipUploadClick}
-					className="w-full px-3 py-2 [@media(pointer:coarse)]:py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-800 text-xs font-semibold flex items-center gap-2.5 transition-colors shadow-xs cursor-pointer"
+					className="w-full px-3 py-2 max-md:py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-800 text-xs font-semibold flex items-center gap-2.5 transition-colors shadow-xs cursor-pointer"
 					data-testid="cbct-dicom-zip-opt"
 				>
 					<FileArchive className="w-4 h-4 text-amber-400 shrink-0" />

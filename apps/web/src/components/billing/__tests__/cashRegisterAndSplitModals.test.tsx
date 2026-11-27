@@ -28,11 +28,11 @@ describe("Subagent 4 Inquisitor: CashRegisterStudioModal 54-FZ Operations", () =
 				containerTestId: "cash-register-checkout-modal",
 				submitButtonTestId: "btn-submit-checkout-54fz",
 				title: "Касса · Оплата приёма",
-				totalDueRub: 12500,
+				totalDueKopecks: 1250000n,
 				patientId: "pat-1",
 				patientName: "Ковалёв Роман Станиславович",
 				patientPhone: "+7 (999) 888-77-66",
-				patientDepositRub: 5000,
+				patientDepositKopecks: 500000n,
 			})
 		);
 
@@ -43,7 +43,7 @@ describe("Subagent 4 Inquisitor: CashRegisterStudioModal 54-FZ Operations", () =
 
 		// Large centered total amount due
 		assert.ok(html.includes('data-testid="display-total-amount-due"'));
-		assert.ok(html.includes("12 500 ₽") || html.includes("12 500 ₽") || html.includes("12 500 ₽") || /12[\s\u00A0]?500[\s\u00A0]?₽/.test(html));
+		assert.ok(/12[\s\u00A0]?500(?:[.,]00)?[\s\u00A0]?₽/.test(html));
 
 		// Fast tender tiles
 		assert.ok(html.includes('data-testid="btn-tender-card"'));
@@ -68,7 +68,7 @@ describe("Subagent 4 Inquisitor: CashRegisterStudioModal 54-FZ Operations", () =
 				mode: "checkout",
 				containerTestId: "cash-register-checkout-modal",
 				submitButtonTestId: "btn-submit-checkout-54fz",
-				totalDueRub: 7500,
+				totalDueKopecks: 750000n,
 				patientId: "pat-2",
 				patientName: "Иванова Мария Петровна",
 			})
@@ -89,11 +89,11 @@ describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculati
 				defaultMethod: "split",
 				mode: "checkout",
 				containerTestId: "split-payment-modal",
-				totalDueRub: 20000,
+				totalDueKopecks: 2000000n,
 				patientId: "pat-3",
 				patientName: "Сидоров Иван Васильевич",
-				patientDepositRub: 8000,
-				patientFamilyBalanceRub: 5000,
+				patientDepositKopecks: 800000n,
+				patientFamilyBalanceKopecks: 500000n,
 			})
 		);
 
@@ -144,7 +144,7 @@ describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculati
 				defaultMethod: "split",
 				mode: "checkout",
 				containerTestId: "split-payment-modal",
-				totalDueRub: 15000,
+				totalDueKopecks: 1500000n,
 				patientId: "pat-sbp-split",
 				patientName: "Васильев Игорь Олегович",
 			})
@@ -163,7 +163,7 @@ describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculati
 				mode: "checkout",
 				containerTestId: "cash-register-checkout-modal",
 				submitButtonTestId: "btn-submit-checkout-54fz",
-				totalDueRub: 8500,
+				totalDueKopecks: 850000n,
 				patientId: "pat-sbp-cashier",
 				patientName: "Семенова Ольга Павловна",
 				onOpenSplitPayment: () => {},

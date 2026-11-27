@@ -53,7 +53,7 @@ export const MobilePatientShowcaseOverlay: React.FC<
 			role="dialog"
 			aria-modal="true"
 			aria-label="Демонстрация снимка пациенту"
-			className="fixed inset-0 z-[100060] bg-black/85 backdrop-blur-md flex flex-col justify-between p-4 animate-fade-in"
+			className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex flex-col justify-between p-4 animate-fade-in"
 			data-testid="mobile-patient-showcase-overlay"
 		>
 			<div className="flex items-center justify-between pb-3 border-b border-white/15">

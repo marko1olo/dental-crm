@@ -177,7 +177,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 
 	return (
 		<div
-			className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4 overflow-x-clip"
+			className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4 overflow-x-clip"
 			data-testid="anesthesia-studio-modal-backdrop"
 			onClick={onClose}
 		>

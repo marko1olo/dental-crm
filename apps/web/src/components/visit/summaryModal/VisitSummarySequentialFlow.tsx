@@ -1,4 +1,5 @@
 import React from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { QuickBookingDrawer } from "../../schedule/QuickBookingDrawer";
 import type { VisitDiaryEntry043 } from "../../emr";
 import { ClinicalProtocolsCatalogModal } from "../clinicalCatalog/ClinicalProtocolsCatalogModal";
@@ -117,10 +118,11 @@ export function VisitSummarySequentialFlow({
 				patientName={state.patientName !== "—" ? state.patientName : "Пациент"}
 				patientPhone={props.patient?.phone || ""}
 				visitId={(appLogic?.activeVisitId as string | undefined) ?? undefined}
-				amountRub={state.effectiveTotalDueRub}
+				totalDueKopecks={rublesToKopecks(state.effectiveTotalDueRub)}
+				amountKopecks={rublesToKopecks(state.effectiveTotalDueRub)}
 				defaultMethod={defaultMethod}
-				patientDepositRub={state.effectiveDepositRub}
-				patientFamilyBalanceRub={state.effectiveFamilyBalanceRub}
+				patientDepositKopecks={rublesToKopecks(state.effectiveDepositRub)}
+				patientFamilyBalanceKopecks={rublesToKopecks(state.effectiveFamilyBalanceRub)}
 				cashierFullName={props.doctorName || "Врач-стоматолог"}
 				doctorFullName={props.doctorName || appLogic?.activeDoctor?.fullName || "Врач-стоматолог"}
 				clinicLegalName={appLogic?.dashboard?.clinicSettings?.profile?.legalName || "ООО «ДЕНТЕ»"}

@@ -117,7 +117,7 @@
 	.recall-tab-btn { min-height: 44px; flex: 1; justify-content: center; font-size: 0.8125rem; padding: 6px 4px; }
 }
 
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	.recall-tab-btn,
 	.recall-close-btn { min-height: 44px; }
 }

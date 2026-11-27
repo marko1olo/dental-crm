@@ -29,7 +29,7 @@ export function renderOmnichannelAndTelephonyLauncher(): React.ReactElement | nu
 	if (!isOmnichannelHub && !isOmnichannel) return null;
 
 	return (
-		<div className="fixed inset-0 z-[99999] w-full h-screen min-h-screen p-2 sm:p-4 bg-[var(--paper)] text-[var(--ink)] box-border flex flex-col overflow-hidden">
+		<div className="fixed inset-0 z-[100] w-full h-screen min-h-screen p-2 sm:p-4 bg-[var(--paper)] text-[var(--ink)] box-border flex flex-col overflow-hidden">
 			<OmnichannelOperatorDesk className="flex-1 w-full h-full" />
 		</div>
 	);

@@ -111,8 +111,7 @@
 	background: var(--paper-soft);
 }
 
-.sterile-glove-active .surgery-btn,
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	.surgery-btn {
 		min-height: 48px;
 		height: auto;

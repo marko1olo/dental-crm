@@ -36,14 +36,14 @@ export const InviteStaffCard: React.FC = () => {
 					placeholder="email@example.com"
 					value={inviteEmail}
 					onChange={(e) => setInviteEmail(e.target.value)}
-					className="w-full px-3.5 py-2 min-h-[44px] rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+					className="w-full px-3.5 py-2 min-h-[44px] sm:min-h-[36px] rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
 				/>
 				<select
 					id="invite-role"
 					aria-label="Роль нового сотрудника"
 					value={inviteRole}
 					onChange={(e) => setInviteRole(e.target.value as StaffRole)}
-					className="w-full sm:w-auto px-3.5 py-2 min-h-[44px] rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 min-w-[160px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+					className="w-full sm:w-auto px-3.5 py-2 min-h-[44px] sm:min-h-[36px] rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] min-w-[160px] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
 				>
 					{INVITABLE_STAFF_ROLES.map((role) => (
 						<option key={role} value={role}>{inviteRoleTitle(role)}</option>

@@ -3,7 +3,7 @@
    Эргономика плотных наборов фильтров и навигационных табов
    ============================================================ */
 
-@media (pointer: coarse), (max-width: 840px) {
+@media (max-width: 768px) {
 	.dente-segmented-item,
 	.dente-filter-chip {
 		min-height: 44px !important;

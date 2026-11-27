@@ -52,8 +52,8 @@ export function IncomingCallPopup(props?: IncomingCallPopupProps): React.JSX.Ele
 
 	return createPortal(
 		<div
-			className={`dnt-incoming-call-badge-container z-[99990] flex flex-col pointer-events-none ${!shouldShowCapsule ? "is-expanded" : ""}`}
-			style={{ zIndex: 99990 }}
+			className={`dnt-incoming-call-badge-container z-[200] flex flex-col pointer-events-none ${!shouldShowCapsule ? "is-expanded" : ""}`}
+			style={{ zIndex: 200 }}
 			data-testid="incoming-call-badge-container"
 		>
 			{shouldShowCapsule ? (

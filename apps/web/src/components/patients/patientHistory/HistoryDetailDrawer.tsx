@@ -44,7 +44,7 @@ export const HistoryDetailDrawer: React.FC<HistoryDetailDrawerProps> = React.mem
 
 		return (
 			<div
-				className="fixed inset-0 z-[10060] flex justify-end bg-black/50 backdrop-blur-xs transition-opacity duration-200"
+				className="fixed inset-0 z-[50] flex justify-end bg-black/50 backdrop-blur-xs transition-opacity duration-200"
 				data-testid="history-detail-drawer-backdrop" onClick={onClose}
 				role="dialog" aria-modal="true" aria-labelledby="history-detail-drawer-title"
 			>

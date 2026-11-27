@@ -99,22 +99,22 @@ export const ClinicalAllPresetsGrid: React.FC<ClinicalAllPresetsGridProps> = ({
 						>
 							<div className="flex items-center gap-1.5 min-w-0 truncate">
 								{preset.category === "pediatric" && (
-									<Baby size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />
+									<Baby size={14} className="shrink-0 text-[var(--ink-muted)]" />
 								)}
 								{preset.category === "therapy" && (
-									<Stethoscope size={14} className="shrink-0 text-blue-600 dark:text-blue-400" />
+									<Stethoscope size={14} className="shrink-0 text-[var(--ink-muted)]" />
 								)}
 								{preset.category === "surgery" && (
-									<Bone size={14} className="shrink-0 text-rose-600 dark:text-rose-400" />
+									<Bone size={14} className="shrink-0 text-[var(--ink-muted)]" />
 								)}
 								{preset.category === "orthopedics" && (
-									<Crown size={14} className="shrink-0 text-purple-600 dark:text-purple-400" />
+									<Crown size={14} className="shrink-0 text-[var(--ink-muted)]" />
 								)}
 								{preset.category === "periodontology" && (
-									<HeartPulse size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
+									<HeartPulse size={14} className="shrink-0 text-[var(--ink-muted)]" />
 								)}
 								{preset.category === "hygiene" && (
-									<Sparkles size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />
+									<Sparkles size={14} className="shrink-0 text-[var(--ink-muted)]" />
 								)}
 								<span className="font-extrabold truncate text-[var(--ink)]">{badgeTitle}</span>
 							</div>

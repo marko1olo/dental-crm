@@ -49,7 +49,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 
 	const content = (
 		<div
-			className={`radial-tooth-menu-overlay fixed inset-0 z-[9999] pointer-events-auto animate-fadeIn ${isTouchOrMobile ? "flex flex-col justify-end p-0 sm:p-4" : ""}`}
+			className={`radial-tooth-menu-overlay fixed inset-0 z-[40] pointer-events-auto animate-fadeIn ${isTouchOrMobile ? "flex flex-col justify-end p-0 sm:p-4" : ""}`}
 			style={{ backgroundColor: "rgba(15, 23, 42, 0.45)", backdropFilter: "blur(3px)" }}
 			data-testid="tooth-radial-menu-overlay"
 			onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}

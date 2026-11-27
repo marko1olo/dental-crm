@@ -369,15 +369,15 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 	// Error state
 	if (loadError || !budget) {
 		return (
-			<div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex items-center justify-center p-4">
-				<div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center space-y-4 shadow-xl">
+			<div className="min-h-screen bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center p-4">
+				<div className="max-w-md w-full bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-6 text-center space-y-4 shadow-xl">
 					<div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 dark:text-rose-400 flex items-center justify-center mx-auto">
 						<AlertCircle className="w-6 h-6" />
 					</div>
-					<h1 className="text-lg font-semibold text-slate-900 dark:text-white">Не удалось открыть смету</h1>
-					<p className="text-sm text-slate-500 dark:text-slate-400">{loadError || "Ссылка недействительна или устарела."}</p>
+					<h1 className="text-lg font-semibold text-[var(--ink)]">Не удалось открыть смету</h1>
+					<p className="text-sm text-[var(--ink-muted)]">{loadError || "Ссылка недействительна или устарела."}</p>
 					<div className="pt-2">
-						<p className="text-xs text-slate-400 dark:text-slate-500">
+						<p className="text-xs text-[var(--ink-muted)]">
 							Пожалуйста, свяжитесь с клиникой для получения актуальной ссылки.
 						</p>
 					</div>
@@ -424,7 +424,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 			`}</style>
 			<div className="max-w-lg w-full mx-auto space-y-6">
 				{/* Top Clinic Header */}
-				<header className="public-budget-print-card bg-white/90 dark:bg-slate-900/80 backdrop-blur border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-lg flex items-center justify-between">
+				<header className="public-budget-print-card bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-4 shadow-lg flex items-center justify-between">
 					<div>
 						<div className="flex items-center gap-2">
 							<span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)] shadow-[0_0_8px_rgba(13,148,136,0.5)]" />
@@ -449,7 +449,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 
 				{/* STAGE 1: Phone Verification Required (ZERO DATA LEAKS) */}
 				{!budget.isVerified && !isAccepted && (
-					<div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+					<div className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-6 shadow-xl space-y-5">
 						{/* Apple HIG Tactile Drag Handle */}
 						<div className="drag-handle w-9 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto -mt-2 mb-2" data-testid="sheet-drag-handle" aria-hidden="true" />
 
@@ -528,7 +528,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 						{/* Apple HIG Tactile Drag Handle */}
 						<div className="drag-handle w-9 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto -mb-2" data-testid="sheet-drag-handle" aria-hidden="true" />
 						{/* Doctor & Patient Info */}
-						<div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-lg flex items-center justify-between text-xs">
+						<div className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-4 shadow-lg flex items-center justify-between text-xs">
 							<div>
 								<span className="text-slate-500 dark:text-slate-400 block">Пациент:</span>
 								<span className="font-semibold text-slate-900 dark:text-slate-200 text-sm">
@@ -624,7 +624,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 						})()}
 
 						{/* Items list */}
-						<div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+						<div className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-5 shadow-xl space-y-4">
 							<div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
 								<h2 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
 									<FileCheck className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
@@ -707,7 +707,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 						/>
 
 						{/* 1-Click PEP Confirmation & Paper Print Fallback (Zero Dead-Ends, Mandates 8e, 8n) */}
-						<div className="no-print bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+						<div className="no-print bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
 							<button
 								type="button"
 								data-testid="public-budget-quick-pep-btn"
@@ -739,7 +739,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 
 				{/* STAGE 3: Success Confirmation (Accepted) */}
 				{isAccepted && (
-					<div className="public-budget-print-card bg-white dark:bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 shadow-2xl text-center space-y-5">
+					<div className="public-budget-print-card bg-[var(--paper)] border border-[var(--primary)]/30 rounded-2xl p-6 shadow-2xl text-center space-y-5">
 						<div className="w-16 h-16 rounded-3xl bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
 							<CheckCircle2 className="w-8 h-8" />
 						</div>

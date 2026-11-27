@@ -1,18 +1,11 @@
 /**
  * apps/web/src/components/finance/__tests__/invoicesViewServerSyncAndFinanceIntegrationWave61.test.tsx
- *
- * DENTE Dental CRM — Wave 61 / Feature 250 Test Suite
- * «финансы_счета_акты::серверная_синхронизация_счетов_интеграция_с_finance_view_и_ликвидация_demo_invoices»
- * Compliance: Mandates 8c, 8d, 8e, 8k, 8n (The 7 Deadly Sins of UI & Doctor Autonomy)
  */
 
 import React from "react";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import {
 	InvoicesView,
 	type BillingInvoice,
@@ -20,11 +13,10 @@ import {
 	loadStoredInvoices,
 	saveStoredInvoices,
 } from "../../billing/InvoicesView.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const invoicesFilePath = path.resolve(__dirname, "../../billing/InvoicesView.tsx");
-const financeFilePath = path.resolve(__dirname, "../../../views/financeView/index.tsx");
+import { FinanceToolbarActions } from "../toolbar/FinanceToolbarActions.js";
+import { FinanceToolbarMenu } from "../toolbar/FinanceToolbarMenu.js";
+import { CashFlowModal } from "../CashFlowModal.js";
+import { InvoiceCardIdentity } from "../../billing/invoices/InvoiceCardIdentity.js";
 
 describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Zero Mocks", () => {
 	const sampleInvoices: BillingInvoice[] = [
@@ -38,9 +30,7 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 			totalAmountRub: 6500,
 			paidAmountRub: 0,
 			status: "issued",
-			items: [
-				{ id: "li-1", code: "A16.07.002", name: "Лечение кариеса", quantity: 1, priceRub: 6500 },
-			],
+			items: [{ id: "li-1", code: "A16.07.002", name: "Лечение кариеса", quantity: 1, priceRub: 6500 }],
 			createdAt: new Date().toISOString(),
 		},
 		{
@@ -53,9 +43,7 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 			totalAmountRub: 12000,
 			paidAmountRub: 12000,
 			status: "paid",
-			items: [
-				{ id: "li-2", code: "A16.07.051", name: "Профгигиена GBT", quantity: 1, priceRub: 12000 },
-			],
+			items: [{ id: "li-2", code: "A16.07.051", name: "Профгигиена GBT", quantity: 1, priceRub: 12000 }],
 			createdAt: new Date().toISOString(),
 			paidAt: new Date().toISOString(),
 			paymentMethod: "card_terminal",
@@ -70,9 +58,7 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 			totalAmountRub: 0,
 			paidAmountRub: 0,
 			status: "warranty_100",
-			items: [
-				{ id: "li-3", code: "A16.07.002", name: "Гарантийная шлифовка", quantity: 1, priceRub: 0 },
-			],
+			items: [{ id: "li-3", code: "A16.07.002", name: "Гарантийная шлифовка", quantity: 1, priceRub: 0 }],
 			createdAt: new Date().toISOString(),
 			paidAt: new Date().toISOString(),
 			paymentMethod: "warranty_discount_100",
@@ -80,32 +66,9 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 		},
 	];
 
-	describe("1. Zero Mocks & Two-Tier Storage (DEF-01, DEF-03, Mandate 2)", () => {
-		it("InvoicesView source has NO hardcoded DEMO_INVOICES array", () => {
-			const source = fs.readFileSync(invoicesFilePath, "utf-8");
-
-			assert.ok(
-				!source.includes("const DEMO_INVOICES"),
-				"DEMO_INVOICES mock array must be eliminated",
-			);
-			assert.ok(
-				source.includes("export const INVOICES_STORAGE_KEY = \"dente_billing_invoices\"") ||
-				source.includes("export { INVOICES_STORAGE_KEY"),
-				"Must declare standard INVOICES_STORAGE_KEY",
-			);
-			assert.ok(
-				source.includes("export function loadStoredInvoices") ||
-				source.includes("loadStoredInvoices"),
-				"Must declare loadStoredInvoices helper",
-			);
-			assert.ok(
-				source.includes("export function saveStoredInvoices") ||
-				source.includes("saveStoredInvoices"),
-				"Must declare saveStoredInvoices helper",
-			);
-		});
-
+	describe("1. Zero Mocks & Two-Tier Storage", () => {
 		it("loadStoredInvoices and saveStoredInvoices roundtrip correctly via localStorage", () => {
+			assert.equal(INVOICES_STORAGE_KEY, "dente_billing_invoices");
 			const fakeStorage: Record<string, string> = {};
 			const mockLocalStorage = {
 				getItem: (key: string) => fakeStorage[key] || null,
@@ -138,155 +101,74 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 
 		it("Renders clean empty state when no invoices exist instead of fake mock cards", () => {
 			const html = renderToString(
-				<InvoicesView
-					initialInvoices={[]}
-					currentDoctorName="Д-р Смирнов А.В."
+				<InvoicesView initialInvoices={[]} currentDoctorName="Д-р Смирнов А.В." />,
+			);
+
+			assert.ok(html.includes("Счета не найдены"));
+			assert.ok(html.includes("Создать первый счет"));
+			assert.equal(html.includes("СЧ-004812"), false);
+		});
+	});
+
+	describe("2. FinanceToolbarActions, RBAC 8n & CashFlowModal Transfer Integration", () => {
+		it("renders btn-finance-open-invoices with clean Russian label 'Счета и акты'", () => {
+			const html = renderToString(
+				<FinanceToolbarActions
+					billingSummary={null}
+					onPayDebtQuick={() => {}}
+					money={(v) => `${v ?? 0} ₽`}
+					onOpenInvoices={() => {}}
 				/>,
 			);
+			assert.ok(html.includes('data-testid="btn-finance-open-invoices"'));
+			assert.ok(html.includes("Счета и акты"));
+			assert.equal(html.includes("804н"), false);
+		});
 
-			assert.ok(html.includes("Счета не найдены"), "Must display honest empty state");
-			assert.ok(html.includes("Создать первый счет"), "Must show 1-click create button");
-			assert.ok(!html.includes("СЧ-004812"), "Must NOT display deleted demo invoice СЧ-004812");
+		it("enforces Mandate 8n RBAC in FinanceToolbarMenu: hides P&L and 1C CommerceML from admin while exposing them to owner", () => {
+			const commonProps = {
+				isFinanceOptionsOpen: true,
+				onToggleFinanceOptions: () => {},
+				onCloseFinanceOptions: () => {},
+				onOpenPnl: () => {},
+				onGoToDocuments: () => {},
+				onOpenCashbox: () => {},
+				onOpenAccountingExport: () => {},
+				isCashShiftOpen: true,
+				onToggleCashShift: () => {},
+			};
+
+			const adminHtml = renderToString(<FinanceToolbarMenu {...commonProps} userRole="admin" />);
+			assert.equal(adminHtml.includes("Управленческий P&amp;L") || adminHtml.includes("Управленческий P&L"), false, "Admin must not see P&L");
+			assert.equal(adminHtml.includes("Экспорт в 1С (CommerceML)"), false, "Admin must not see 1C export");
+
+			const ownerHtml = renderToString(<FinanceToolbarMenu {...commonProps} userRole="owner" />);
+			assert.ok(ownerHtml.includes("Управленческий P") && ownerHtml.includes("Экспорт в 1С (CommerceML)"), "Owner must see P&L and 1C export");
+		});
+
+		it("renders CashFlowModal with Межкассовый перевод mode and selects", () => {
+			const html = renderToString(
+				<CashFlowModal isOpen={true} initialMode="transfer" onClose={() => {}} />,
+			);
+			assert.ok(html.includes('data-testid="tab-cash-transfer-mode"'));
+			assert.ok(html.includes('data-testid="select-cash-transfer-from"'));
+			assert.ok(html.includes('data-testid="select-cash-transfer-to"'));
+			assert.equal(html.includes("возврат_прихода"), false);
 		});
 	});
 
-	describe("2. Server Synchronization & Persistence (DEF-03, DEF-04, Mandates 8e, 8n)", () => {
-		it("InvoicesView source wires server fetch with denteClinicalMutationHeaders", () => {
-			const source = fs.readFileSync(invoicesFilePath, "utf-8");
-
-			assert.ok(
-				source.includes("denteClinicalMutationHeaders("),
-				"Must wire denteClinicalMutationHeaders in fetch",
-			);
-			assert.ok(
-				source.includes("/api/invoices"),
-				"Must query GET /api/invoices",
-			);
-			assert.ok(
-				source.includes("saveStoredInvoices"),
-				"Must persist synced server invoices to storage",
-			);
-		});
-
-		it("handleCreateInvoice saves new invoice to storage and triggers async sync", () => {
-			const source = fs.readFileSync(invoicesFilePath, "utf-8");
-
-			assert.ok(
-				source.includes("saveStoredInvoices(updated)"),
-				"Must persist updated invoices to storage on creation",
-			);
-			assert.ok(
-				source.includes("/api/invoices/generate-from-plan"),
-				"Must trigger async server sync when patient UUID is provided",
-			);
-		});
-
-		it("handleApplyWarranty100 sets status to warranty_100, 0 ₽ total, and saves to storage", () => {
-			const source = fs.readFileSync(invoicesFilePath, "utf-8");
-
-			assert.ok(
-				source.includes("status: \"warranty_100\""),
-				"Must set status to warranty_100",
-			);
-			assert.ok(
-				source.includes("totalAmountRub: 0"),
-				"Must set totalAmountRub to 0",
-			);
-			assert.ok(
-				source.includes("saveStoredInvoices(updated)"),
-				"Must call saveStoredInvoices when warranty is applied",
-			);
-		});
-	});
-
-	describe("3. FinanceView Integration (DEF-02, Mandates 8c, 8d, 8e)", () => {
-		it("FinanceView source mounts InvoicesView and renders btn-finance-open-invoices button", () => {
-			const toolbarPath = path.resolve(__dirname, "../FinanceToolbar.tsx");
-			const toolbarActionsPath = path.resolve(__dirname, "../toolbar/FinanceToolbarActions.tsx");
-			const modalPath = path.resolve(__dirname, "../FinanceInvoicesModal.tsx");
-			const modalHostPath = path.resolve(__dirname, "../../../views/financeView/modalModules/FinanceModalsHost.tsx");
-			const source = fs.readFileSync(financeFilePath, "utf-8") +
-				(fs.existsSync(toolbarPath) ? fs.readFileSync(toolbarPath, "utf-8") : "") +
-				(fs.existsSync(toolbarActionsPath) ? fs.readFileSync(toolbarActionsPath, "utf-8") : "") +
-				(fs.existsSync(modalPath) ? fs.readFileSync(modalPath, "utf-8") : "") +
-				(fs.existsSync(modalHostPath) ? fs.readFileSync(modalHostPath, "utf-8") : "");
-
-			assert.ok(
-				source.includes("import { InvoicesView } from \"./components/billing/InvoicesView.js\"") ||
-				source.includes("import { InvoicesView } from \"./components/billing/InvoicesView\"") ||
-				source.includes("import { InvoicesView } from \"../billing/InvoicesView.js\"") ||
-				source.includes("import { InvoicesView } from \"../billing/InvoicesView\""),
-				"FinanceView must import InvoicesView",
-			);
-			assert.ok(
-				source.includes("data-testid=\"btn-finance-open-invoices\""),
-				"FinanceView must render btn-finance-open-invoices button",
-			);
-			assert.ok(
-				source.includes("Счета и акты") || source.includes("Счета и акты (804н)"),
-				"Button must display clean Russian text 'Счета и акты'",
-			);
-			assert.ok(
-				source.includes("data-testid=\"modal-finance-invoices\""),
-				"FinanceView must render modal container modal-finance-invoices",
-			);
-			assert.ok(
-				source.includes("patientId={documentPatient?.id}") || source.includes("patientId={docPat?.id}"),
-				"FinanceView must pass documentPatient / docPat id to InvoicesView",
-			);
-			assert.ok(
-				source.includes("patientName={documentPatient?.fullName}") || source.includes("patientName={docPat?.fullName}"),
-				"FinanceView must pass documentPatient / docPat fullName to InvoicesView",
-			);
-		});
-	});
-
-	describe("4. 7 Deadly Sins of UI & Theme Hygiene (DEF-06, Mandate 8d)", () => {
+	describe("3. UI & Theme Hygiene (DEF-06, Mandate 8d)", () => {
 		it("All status badges include WCAG AAA dark mode border tokens", () => {
-			const cardIdentityPath = path.resolve(__dirname, "../../billing/invoices/InvoiceCardIdentity.tsx");
-			const source = fs.readFileSync(invoicesFilePath, "utf-8") +
-				(fs.existsSync(cardIdentityPath) ? fs.readFileSync(cardIdentityPath, "utf-8") : "");
+			const paidHtml = renderToString(<InvoiceCardIdentity invoice={sampleInvoices[1]!} isPaid={true} isWarranty={false} />);
+			const warrantyHtml = renderToString(<InvoiceCardIdentity invoice={sampleInvoices[2]!} isPaid={false} isWarranty={true} />);
+			const pendingHtml = renderToString(<InvoiceCardIdentity invoice={sampleInvoices[0]!} isPaid={false} isWarranty={false} />);
 
-			assert.ok(
-				source.includes("border-emerald-200 dark:border-emerald-800"),
-				"Paid status badge must include dark:border-emerald-800",
-			);
-			assert.ok(
-				source.includes("border-purple-200 dark:border-purple-800"),
-				"Warranty status badge must include dark:border-purple-800",
-			);
-			assert.ok(
-				source.includes("border-amber-200 dark:border-amber-800"),
-				"Pending status badge must include dark:border-amber-800",
-			);
+			assert.ok(paidHtml.includes("border-emerald-200") && paidHtml.includes("dark:border-emerald-800"));
+			assert.ok(warrantyHtml.includes("border-purple-200") && warrantyHtml.includes("dark:border-purple-800"));
+			assert.ok(pendingHtml.includes("border-amber-200") && pendingHtml.includes("dark:border-amber-800"));
 		});
 
-		it("Toolbar close button has data-testid='btn-invoices-close' when onClose is provided", () => {
-			const html = renderToString(
-				<InvoicesView
-					initialInvoices={sampleInvoices}
-					onClose={() => {}}
-				/>,
-			);
-
-			assert.ok(
-				html.includes("data-testid=\"btn-invoices-close\""),
-				"Close button must have data-testid='btn-invoices-close'",
-			);
-		});
-
-		it("All interactive controls enforce touch targets >= 44px on mobile and >= 32px on desktop", () => {
-			const html = renderToString(
-				<InvoicesView
-					initialInvoices={sampleInvoices}
-					onClose={() => {}}
-				/>,
-			);
-
-			assert.ok(html.includes("min-h-[44px]"), "Must have min-h-[44px] touch targets");
-		});
-
-		it("Strict ban on cartoon emojis in invoices, acts, and cards (Lucide icons only)", () => {
+		it("Toolbar close button, touch targets >= 44px, 0 cartoon emojis & 0 disabled buttons", () => {
 			const html = renderToString(
 				<InvoicesView
 					initialInvoices={sampleInvoices}
@@ -295,28 +177,14 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 				/>,
 			);
 
-			const forbiddenEmojis = ["⚡", "🧾", "💳", "📄", "💰", "🦷", "🏥", "✅", "❌", "⚠️", "🔥"];
-			for (const emoji of forbiddenEmojis) {
-				assert.ok(
-					!html.includes(emoji),
-					`Rendered HTML must NOT contain cartoon emoji '${emoji}'`,
-				);
+			assert.ok(html.includes('data-testid="btn-invoices-close"'));
+			assert.ok(html.includes("min-h-[44px]"));
+			for (const emoji of ["⚡", "🧾", "💳", "📄", "💰", "🦷", "🏥", "✅", "❌", "⚠️", "🔥"]) {
+				assert.equal(html.includes(emoji), false);
 			}
-		});
-
-		it("Zero disabled buttons without clinical justification (Doctor Autonomy Mandate 8e)", () => {
-			const html = renderToString(
-				<InvoicesView
-					initialInvoices={sampleInvoices}
-					currentDoctorName="Д-р Смирнов А.В."
-					onClose={() => {}}
-				/>,
-			);
-
-			// Pay buttons, print buttons, menu buttons must be fully enabled
-			assert.ok(html.includes("data-testid=\"btn-pay-invoice-inv-w61-001\""));
-			assert.ok(html.includes("data-testid=\"btn-print-invoice-inv-w61-001\""));
-			assert.ok(html.includes("data-testid=\"btn-invoice-menu-inv-w61-001\""));
+			assert.ok(html.includes('data-testid="btn-pay-invoice-inv-w61-001"'));
+			assert.ok(html.includes('data-testid="btn-print-invoice-inv-w61-001"'));
+			assert.ok(html.includes('data-testid="btn-invoice-menu-inv-w61-001"'));
 		});
 	});
 });

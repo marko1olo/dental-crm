@@ -90,7 +90,7 @@
 	justify-content: center;
 	transition: opacity var(--transition-fast, 0.15s ease), background-color var(--transition-fast, 0.15s ease);
 }
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	.roster-cell-add-btn {
 		opacity: 1;
 	}

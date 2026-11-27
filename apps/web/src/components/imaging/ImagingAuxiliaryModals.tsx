@@ -52,7 +52,7 @@ export function ImagingAuxiliaryModals({
 			{isPanoramicWindowOpen && (
 				<Suspense
 					fallback={
-						<div className="panoramic-recon-window-modal fixed inset-0 z-[100060] flex items-center justify-center bg-black/80">
+						<div className="panoramic-recon-window-modal fixed inset-0 z-[100] flex items-center justify-center bg-black/80">
 							<div className="w-8 h-8 border-4 border-[var(--teal)] border-t-transparent rounded-full animate-spin" />
 						</div>
 					}

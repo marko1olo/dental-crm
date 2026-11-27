@@ -175,8 +175,9 @@ test("Patient Personal Cabinet & 375px Mobile Ergonomics Suite", async (t) => {
 		assert.ok(css.includes(".pc-status-hero-card"));
 		assert.ok(css.includes("display: none !important"));
 
-		// Touch Screen / Tablet Ergonomics (pointer: coarse)
-		assert.ok(css.includes("@media (pointer: coarse)"));
+		// Mobile Touch Screen Ergonomics (<= 768px, no global pointer: coarse)
+		assert.ok(css.includes("@media (max-width: 768px)"));
+		assert.ok(!css.includes("@media (pointer: coarse)"));
 	});
 
 	await t.test("8. TreatmentPlanTab & Scans Trigger: Renders Clinical Scans Button", async () => {

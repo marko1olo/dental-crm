@@ -138,8 +138,8 @@ body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-dra
 	min-height: 32px;
 }
 
-/* Adaptive Touch Targets for Coarse Pointers (Apple HIG >= 44x44px) */
-@media (pointer: coarse) {
+/* Adaptive Touch Targets on Mobile <= 768px (Apple HIG >= 44x44px) */
+@media (max-width: 768px) {
 	.dnt-telephony-card button,
 	.dnt-telephony-patient-drawer button {
 		min-height: 44px;

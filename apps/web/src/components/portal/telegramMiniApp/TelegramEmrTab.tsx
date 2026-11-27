@@ -26,7 +26,7 @@ export const TelegramEmrTab: React.FC<TelegramEmrTabProps> = ({
 				<span className="text-xs font-bold text-teal-400">75% выполнено</span>
 			</div>
 			<div className="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden mb-3">
-				<div className="bg-gradient-to-r from-teal-500 to-emerald-400 h-full rounded-full w-3/4 transition-all duration-500" />
+				<div className="bg-[var(--primary)] h-full rounded-full w-3/4 transition-all duration-500" />
 			</div>
 			<div className="text-xs text-slate-300 space-y-1">
 				<div className="flex items-center gap-1.5 text-emerald-400">
@@ -44,7 +44,7 @@ export const TelegramEmrTab: React.FC<TelegramEmrTabProps> = ({
 			</div>
 		</div>
 
-		<div className="bg-gradient-to-br from-teal-950/60 to-slate-900 border border-teal-500/40 rounded-2xl p-4 shadow-md">
+		<div className="bg-slate-800/80 border border-teal-500/40 rounded-2xl p-4 shadow-md">
 			<div className="flex items-center justify-between mb-2">
 				<span className="text-xs font-medium text-teal-400">Ближайший визит</span>
 				<span className="text-xs font-bold px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30">
@@ -55,7 +55,7 @@ export const TelegramEmrTab: React.FC<TelegramEmrTabProps> = ({
 			<div className="text-xs text-slate-300 mt-1">Доктор: Смирнов А.В. • Кабинет 3 (Терапия)</div>
 		</div>
 
-		<div className="bg-gradient-to-r from-amber-950/40 to-slate-900 border border-amber-500/30 rounded-2xl p-4 shadow-md">
+		<div className="bg-slate-800/80 border border-amber-500/30 rounded-2xl p-4 shadow-md">
 			<div className="flex items-center gap-2 mb-2">
 				<div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">🎁</div>
 				<div>

@@ -39,7 +39,7 @@ export function ImagingExportModal(props: ImagingExportModalProps) {
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 select-none"
+			className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 select-none"
 			style={{ backgroundColor: "rgba(15, 23, 42, 0.65)", backdropFilter: "blur(4px)" }}
 			onClick={(e) => {
 				if (e.target === e.currentTarget) onClose();

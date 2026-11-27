@@ -48,10 +48,10 @@ export const CompletedServicesChecklist: React.FC<
 	return (
 		<div
 			data-testid="completed-services-checklist"
-			className="completed-services-checklist bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-3"
+			className="completed-services-checklist bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-3"
 		>
 			<div className="flex items-center justify-between gap-2 mb-1">
-				<h4 className="m-0 text-sm font-semibold text-slate-900 dark:text-white">
+				<h4 className="m-0 text-sm font-semibold text-[var(--ink)]">
 					Отметка выполненного у кресла
 				</h4>
 				<button

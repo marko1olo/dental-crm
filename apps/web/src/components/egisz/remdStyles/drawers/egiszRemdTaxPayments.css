@@ -63,7 +63,7 @@
 	min-height: 36px;
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.egisz-tax-footer-cta button {
 		height: 44px;
 		min-height: 44px;

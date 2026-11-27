@@ -260,12 +260,20 @@ describe("CBCT Clinical UI/UX Ergonomics & Measurement HUD Suite", () => {
 			assert.ok(!compactClassSample.includes("w-11 h-11"));
 		});
 
-		it("verifies dual-mode touch targets for tablet / coarse pointers without bloating desktop", () => {
-			// On desktop (fine mouse pointer): strictly 28px
-			// On coarse pointer (tablet touch): expands to 44px tap target via @media(pointer:coarse)
-			const responsivePattern = "[@media(pointer:coarse)]:h-11";
-			const sampleToolbarClass = "h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11";
-			assert.ok(sampleToolbarClass.includes(responsivePattern));
+		it("verifies dual-mode touch targets for narrow mobile viewports without bloating desktop", async () => {
+			// On desktop: compact 28px; on mobile (<768px): expands to 44px tap target via max-md:h-11
+			const { ViewportTopRightControls } = await import("../hud/ViewportTopRightControls.js");
+			const React = await import("react");
+			const { renderToStaticMarkup } = await import("react-dom/server");
+			const html = renderToStaticMarkup(
+				React.createElement(ViewportTopRightControls, {
+					viewportType: "axial",
+					onToggleMaximize: () => {},
+				}),
+			);
+			assert.ok(html.includes("min-h-[28px]"), "Desktop button keeps 28px compact density");
+			assert.ok(html.includes("max-md:h-11"), "Mobile viewport expands target to 44px");
+			assert.ok(!html.includes("pointer:coarse"), "Must not use global (pointer: coarse)");
 		});
 	});
 

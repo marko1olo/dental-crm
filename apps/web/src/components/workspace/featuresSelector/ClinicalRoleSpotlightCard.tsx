@@ -22,7 +22,7 @@ export function ClinicalRoleSpotlightCard({
 }: ClinicalRoleSpotlightCardProps) {
 	return (
 		<div
-			className="p-4 rounded-xl border transition-all bg-gradient-to-br from-white to-slate-50/80 dark:from-slate-900 dark:to-slate-950/80 shadow-xs"
+			className="p-4 rounded-xl border transition-all bg-[var(--paper)] shadow-xs"
 			style={{ borderColor: `${activePreset.color}66` }}
 			data-testid="clinical-role-spotlight-card"
 		>

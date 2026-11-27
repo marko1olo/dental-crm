@@ -69,7 +69,7 @@ export const DicomViewerModalHeader: React.FC<DicomViewerModalHeaderProps> = ({
 						<FileText size={13} className="text-[var(--teal)]" /> <span>Протоколы</span> <ChevronDown size={11} />
 					</button>
 					{isProtocolsDropdownOpen && (
-						<div className="absolute top-full right-0 mt-1 min-w-[240px] bg-slate-900 border border-slate-700 rounded-lg shadow-2xl z-[10002] p-1 flex flex-col gap-0.5">
+						<div className="absolute top-full right-0 mt-1 min-w-[240px] bg-slate-900 border border-slate-700 rounded-lg shadow-2xl z-[40] p-1 flex flex-col gap-0.5">
 							{RADIOLOGY_STANDARD_PROTOCOLS.map((preset) => (
 								<button key={preset.id} type="button" onClick={() => onApplyProtocol(preset)} data-testid={`btn-dicom-protocol-${preset.id}`} className={`w-full text-left px-2 py-1.5 rounded text-xs flex items-center gap-2 cursor-pointer ${appliedProtocolId === preset.id ? "bg-teal-900 text-teal-200" : "text-slate-200 hover:bg-slate-800"}`}>
 									<Check size={12} className={appliedProtocolId === preset.id ? "opacity-100" : "opacity-0"} />

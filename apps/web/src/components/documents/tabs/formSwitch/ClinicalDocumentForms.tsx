@@ -24,7 +24,7 @@ export const ClinicalDocumentForms: React.FC<DocumentFormSwitchProps> = React.me
 					<article className="document-payload-card" data-testid="dental-medical-card-document-card">
 						<div>
 							<h3 className="text-base font-bold text-[var(--ink)]">Амбулаторная медицинская карта (ЭМК)</h3>
-							<p className="text-xs text-[var(--ink-muted)] mt-1">Официальная электронная медицинская карта пациента с дневниками приёма по стандарту SOAP, зубной формулой и анамнезом.</p>
+							<p className="text-xs text-[var(--ink-muted)] mt-1">Официальная электронная медицинская карта пациента с дневниками приёма, зубной формулой и анамнезом.</p>
 						</div>
 						<div className="mt-4 p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col sm:flex-row items-center justify-between gap-3">
 							<div className="text-xs text-[var(--ink-muted)]">

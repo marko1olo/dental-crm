@@ -152,7 +152,7 @@ export function PatientMemoPrintModal({
 
 	return (
 		<div
-			className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150"
+			className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="patient-memo-modal-title"

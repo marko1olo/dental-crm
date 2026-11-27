@@ -3,7 +3,7 @@
    Apple iOS HIG & Medical Glove Touch Standard (>= 44x44px)
    ============================================================ */
 
-@media (pointer: coarse), (max-width: 840px) {
+@media (max-width: 768px) {
 	.primary-button,
 	.secondary-button,
 	.text-button,

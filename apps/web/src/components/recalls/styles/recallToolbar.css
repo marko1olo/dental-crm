@@ -109,7 +109,7 @@
 	.recall-toolbar-top { gap: 6px; }
 	.recall-search-input-wrap { min-width: 100%; }
 }
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	.recall-chip,
 	.recall-cycle-chip { min-height: 44px; }
 }

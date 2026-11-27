@@ -1,94 +1,46 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
+import { documentFormInitialValues } from "../store/documentStore.js";
+import { initialAppState } from "../store/appStoreModules/initialAppState.js";
 
 /**
  * Денежные и импортные поля обязаны начинаться пустыми.
- *
- * В начальном состоянии хранилищ лежали демонстрационные данные, и они
- * подставлялись пользователю как уже введённые:
- *  - сумма оплаты «3800» — касса открывалась с готовой суммой при нулевом
- *    остатке по пациенту;
- *  - сумма возврата «3800» — форма возврата с готовым возвратом;
- *  - выгрузка пациентов и прайс из десяти позиций с ценами до 160 000 ₽ — в
- *    полях импорта, откуда одно нажатие заносит их в базу настоящей клиники.
- *
- * Отличить подставленное от своего невозможно: поле выглядит заполненным
- * человеком. Пример должен быть подсказкой в пустом поле, а не текстом.
- *
- * Проверка читает исходники хранилищ: значение по умолчанию задаётся там, и
- * поймать его надёжнее статически, чем поднимая браузер.
+ * Проверяем реальные инициализаторы сторов (без fs.readFileSync/regex).
  */
-const here = dirname(fileURLToPath(import.meta.url));
-const webSrc = join(here, "..");
-
-const read = (relativePath: string) =>
-	readFileSync(join(webSrc, relativePath), "utf8");
-
-const readDirRecursive = (dirPath: string): string => {
-	const chunks: string[] = [];
-	for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
-		const fullPath = join(dirPath, entry.name);
-		if (entry.isDirectory()) {
-			chunks.push(readDirRecursive(fullPath));
-		} else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) {
-			chunks.push(readFileSync(fullPath, "utf8"));
-		}
-	}
-	return chunks.join("\n");
-};
-
-/** Начальное значение поля в объекте хранилища. */
-function initialValueOf(source: string, field: string): string | null {
-	const match = new RegExp(
-		`^\\s+${field}\\s*:\\s*(".*?"|'.*?'|[^,\\n]+),`,
-		"m",
-	).exec(source);
-	if (!match) return null;
-	const val = match[1];
-	return val ? val.trim() : null;
-}
-
 describe("денежные и импортные поля начинаются пустыми", () => {
-	const documentStore = read("store/documentStore.ts") + "\n" + readDirRecursive(join(webSrc, "store/documentStore"));
-	const appStore = read("store/appStore.ts") + "\n" + readDirRecursive(join(webSrc, "store/appStoreModules"));
-	const appStoreInitial = read("store/appStoreModules/initialAppState.ts");
+	const docsInitial = documentFormInitialValues();
 
 	it("сумма оплаты не подставлена", () => {
-		assert.equal(initialValueOf(documentStore, "paymentAmount"), '""');
+		assert.equal(docsInitial.paymentAmount, "");
 	});
 
 	it("сумма возврата не подставлена", () => {
-		assert.equal(initialValueOf(documentStore, "refundAmountRub"), '""');
+		assert.equal(docsInitial.refundAmountRub, "");
 	});
 
 	it("выгрузка пациентов для импорта не подставлена", () => {
-		assert.equal(initialValueOf(appStoreInitial, "importText"), '""');
+		assert.equal(initialAppState.importText, "");
 	});
 
 	it("смешанная выгрузка для умного разбора не подставлена", () => {
-		assert.equal(initialValueOf(appStoreInitial, "smartImportText"), '""');
+		assert.equal(initialAppState.smartImportText, "");
 	});
 
 	it("прайс для импорта не подставлен", () => {
-		assert.equal(initialValueOf(appStoreInitial, "pricelistText"), '""');
+		assert.equal(initialAppState.pricelistText, "");
 	});
 
-	it("в хранилищах не осталось выдуманных цен и телефонов", () => {
-		for (const [name, source] of [
-			["documentStore", documentStore],
-			["appStore", appStore],
-		] as const) {
-			assert.ok(
-				!/\+7 9\d\d \d\d\d-\d\d-\d\d/.test(source),
-				`${name}: остался выдуманный телефон`,
-			);
-			assert.ok(
-				!/\d{2} \d{3} руб/.test(source),
-				`${name}: осталась выдуманная цена`,
-			);
-		}
+	it("в начальных состояниях сторов нет выдуманных телефонов и цен", () => {
+		const serialized = JSON.stringify({
+			docsInitial,
+			importText: initialAppState.importText,
+			smartImportText: initialAppState.smartImportText,
+			pricelistText: initialAppState.pricelistText,
+			recognitionText: initialAppState.recognitionText,
+			releaseProtectionNote: initialAppState.releaseProtectionNote,
+			communicationNote: initialAppState.communicationNote,
+		});
+		assert.equal(/\+7 9\d\d \d\d\d-\d\d-\d\d/.test(serialized), false);
+		assert.equal(/\d{2} \d{3} руб/.test(serialized), false);
 	});
 });

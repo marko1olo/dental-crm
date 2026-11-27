@@ -46,7 +46,7 @@
 	outline: 2px solid var(--teal);
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.icd10-rubric-tab {
 		min-height: 44px;
 	}

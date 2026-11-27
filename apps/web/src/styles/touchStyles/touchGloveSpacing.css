@@ -12,7 +12,7 @@
 	gap: 8px !important;
 }
 
-@media (pointer: coarse), (max-width: 840px) {
+@media (max-width: 768px) {
 	.quick-chips-row,
 	.dictation-quick-row,
 	.clinical-action-row,

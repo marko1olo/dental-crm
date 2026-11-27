@@ -41,7 +41,7 @@ export const DOCTOR_TABS: readonly DoctorTabDefinition[] = [
 	{
 		id: "protocols",
 		label: "Протоколы",
-		description: "Шаблоны лечения, SOAP-дневники, автозаполнение",
+		description: "Шаблоны лечения, дневники приёма, автозаполнение",
 		icon: FileText,
 	},
 	{

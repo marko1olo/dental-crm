@@ -61,7 +61,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 
 	return (
 		<div
-			className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+			className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
 			data-testid="ukep-signing-modal-root"
 		>
 			<div

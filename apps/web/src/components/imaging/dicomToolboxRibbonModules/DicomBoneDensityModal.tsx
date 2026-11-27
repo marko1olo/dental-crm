@@ -16,7 +16,7 @@ export const DicomBoneDensityModal: React.FC<DicomBoneDensityModalProps> = ({
 	const modalContent = (
 		<div
 			data-testid="dicom-hu-density-modal"
-			className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[10003]"
+			className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[120]"
 			onClick={onClose}
 		>
 			<div

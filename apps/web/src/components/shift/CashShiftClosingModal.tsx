@@ -339,7 +339,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 
 	const modalNode = (
 		<div
-			className="fixed inset-0 z-[10050] flex flex-col justify-end md:items-center md:justify-center bg-black/60 backdrop-blur-xs p-0 md:p-4 animate-in fade-in duration-150"
+			className="fixed inset-0 z-[100] flex flex-col justify-end md:items-center md:justify-center bg-black/60 backdrop-blur-xs p-0 md:p-4 animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby={titleId}

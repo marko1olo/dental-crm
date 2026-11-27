@@ -3,8 +3,8 @@
    Эргономика верхних панелей управления и модальных окон
    ============================================================ */
 
-@media (pointer: coarse), (max-width: 840px) {
-	/* 2-строчный компактный хедер приёма 043/у (Мандаты 8c, 8e) */
+@media (max-width: 768px) {
+	/* 2-строчный компактный хедер приёма (Мандаты 8c, 8e) */
 	.visit-monolithic-header .primary-button,
 	.visit-monolithic-header .secondary-button {
 		min-height: 28px !important;

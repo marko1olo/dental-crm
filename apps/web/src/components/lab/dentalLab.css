@@ -69,7 +69,7 @@
 }
 
 /* 5. Интерактивные сенсорные области для мобильных устройств (Apple HIG >= 44x44px) */
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	[data-testid^="tooth-chip-"],
 	[data-testid^="shade-chip-"],
 	[data-testid^="filter-tab-"] {

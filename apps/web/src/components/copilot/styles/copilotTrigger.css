@@ -40,7 +40,7 @@
   box-shadow: 0 2px 8px rgba(15, 118, 110, 0.3);
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
   .copilot-trigger-btn {
     bottom: calc(148px + env(safe-area-inset-bottom, 0px));
     right: 16px;

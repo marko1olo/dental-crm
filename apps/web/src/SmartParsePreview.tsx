@@ -138,7 +138,7 @@ export function SmartParsePreview({
 	const renderComplexNotice = () => (
 		<div className="space-y-2 text-sm">
 			<div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 mb-2">
-				<span className="bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-200 p-2 rounded-lg text-xs font-semibold uppercase mb-2 border border-teal-200 dark:border-teal-800 flex items-center gap-1.5">
+				<span className="bg-[var(--paper-soft)] text-[var(--primary)] p-2 rounded-lg text-xs font-semibold mb-2 border border-[var(--line)] flex items-center gap-1.5">
 					<Zap className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
 					Требуется клинический разбор
 				</span>
@@ -425,7 +425,7 @@ export function SmartParsePreview({
 					initial={{ opacity: 0, y: -10 }}
 					animate={{ opacity: 1, y: 0 }}
 					exit={{ opacity: 0, y: -10 }}
-					className="absolute left-0 top-full mt-2 w-[400px] bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50"
+					className="absolute left-0 top-full mt-2 w-[400px] bg-[var(--paper)] text-[var(--ink)] rounded-xl shadow-xl border border-[var(--line)] overflow-hidden z-50"
 				>
 					<div className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700/60 p-3 flex justify-between items-center">
 						<h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
@@ -451,14 +451,14 @@ export function SmartParsePreview({
 						{renderContent()}
 					</div>
 
-					<div className="bg-slate-50 dark:bg-slate-800/80 p-3 border-t border-slate-100 dark:border-slate-700/60 flex gap-2">
+					<div className="bg-[var(--paper-soft)] p-3 border-t border-[var(--line)] flex gap-2">
 						<button
 							type="button"
 							onClick={() =>
 								internalData && onApply(internalData as SmartParsedPayload)
 							}
 							disabled={isAiLoading || !internalData}
-							className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1.5 shadow-sm"
+							className="flex-1 bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1.5 shadow-sm"
 						>
 							<Check className="w-4 h-4" />
 							Применить
@@ -468,7 +468,7 @@ export function SmartParsePreview({
 								type="button"
 								onClick={handleAiParse}
 								disabled={isAiLoading}
-								className="flex-1 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/60 dark:text-teal-300 text-teal-700 font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1.5 border border-teal-200 dark:border-teal-800"
+								className="flex-1 bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1.5 border border-[var(--line)]"
 							>
 								<Zap className="w-4 h-4" />
 								ИИ-Анализ
@@ -478,7 +478,7 @@ export function SmartParsePreview({
 							type="button"
 							onClick={onManual}
 							disabled={isAiLoading}
-							className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-700 dark:text-slate-200 font-medium text-sm py-2 px-3 rounded-lg transition-colors"
+							className="flex-1 bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] disabled:opacity-40 text-[var(--ink)] font-medium text-sm py-2 px-3 rounded-lg transition-colors"
 						>
 							Вручную
 						</button>

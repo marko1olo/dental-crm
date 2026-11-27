@@ -21,8 +21,8 @@ export const VisitSummaryDiarySections: React.FC<VisitSummaryDiarySectionsProps>
 		<div className="space-y-4">
 			{/* I - Жалобы и анамнез */}
 			<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
-				<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-					<span className="font-mono font-black">I</span> — Жалобы и анамнез
+				<div className="flex items-center gap-2 text-xs font-semibold text-[var(--ink)]">
+					<span className="font-mono font-semibold text-[var(--primary)]">I</span> — Жалобы и анамнез
 				</div>
 				<p className="text-sm text-[var(--ink)] whitespace-pre-wrap leading-relaxed">
 					{synthesizedDiaryPreview?.subjectiveComplaints || diary.anamnesis || "—"}
@@ -31,8 +31,8 @@ export const VisitSummaryDiarySections: React.FC<VisitSummaryDiarySectionsProps>
 
 			{/* II - Объективно */}
 			<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
-				<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-					<span className="font-mono font-black">II</span> — Осмотр и зубная формула
+				<div className="flex items-center gap-2 text-xs font-semibold text-[var(--ink)]">
+					<span className="font-mono font-semibold text-[var(--primary)]">II</span> — Осмотр и зубная формула
 				</div>
 				<p className="text-sm text-[var(--ink)] whitespace-pre-wrap leading-relaxed">
 					{synthesizedDiaryPreview?.objectiveStatusLocalis || diary.statusLocalis || "—"}
@@ -41,8 +41,8 @@ export const VisitSummaryDiarySections: React.FC<VisitSummaryDiarySectionsProps>
 
 			{/* III - Диагноз */}
 			<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2">
-				<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-					<span className="font-mono font-black">III</span> — Диагноз
+				<div className="flex items-center gap-2 text-xs font-semibold text-[var(--ink)]">
+					<span className="font-mono font-semibold text-[var(--primary)]">III</span> — Диагноз
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
 					{synthesizedDiaryPreview?.assessmentIcd10Code || diary.diagnosisIcd10 ? (
@@ -71,8 +71,8 @@ export const VisitSummaryDiarySections: React.FC<VisitSummaryDiarySectionsProps>
 
 			{/* IV - Дневник лечения и рекомендации */}
 			<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
-				<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--teal)]">
-					<span className="font-mono font-black">IV</span> — Лечение и рекомендации
+				<div className="flex items-center gap-2 text-xs font-semibold text-[var(--ink)]">
+					<span className="font-mono font-semibold text-[var(--primary)]">IV</span> — Лечение и рекомендации
 				</div>
 				<p className="text-sm text-[var(--ink)] whitespace-pre-wrap leading-relaxed">
 					{synthesizedDiaryPreview?.procedureProtocol || diary.treatmentDescription || "—"}

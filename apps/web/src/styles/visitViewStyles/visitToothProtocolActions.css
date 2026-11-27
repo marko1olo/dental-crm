@@ -33,7 +33,7 @@
 	font-weight: 500;
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	._ccm-protocol-add-btn {
 		min-height: 44px;
 		height: 44px;

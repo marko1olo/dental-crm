@@ -2,7 +2,7 @@
  * DENTE CRM — DIRECT RVG WORKSTATION APPLE HIG MOBILE TOUCH ERGONOMICS
  * Touch Target >= 44x44px, Natural Thumb Zone, Safe Area, 0px Drift. Mandate 8b (<=120 lines).
  */
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	.rvg-close-btn { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
 	.rvg-trigger-btn { min-height: 44px; height: 44px; padding: 0.5rem 1rem; border-radius: 0.5rem; }
 	.rvg-tool-btn { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }

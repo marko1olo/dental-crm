@@ -2,7 +2,7 @@
  * toothDrawerResponsiveTouch.css — Mobile & Touch Ergonomics Invariants (Apple HIG >= 44x44px)
  */
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.dente-quick-tab-btn,
 	.dente-accordion-trigger,
 	.dente-touch-chip,

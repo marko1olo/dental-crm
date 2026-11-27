@@ -103,7 +103,7 @@
 	border-color: var(--tp-primary, var(--teal));
 	transform: translateY(-1px);
 }
-@media (max-width: 768px), (pointer: coarse) {
+@media (max-width: 768px) {
 	.btn-treatment-action,
 	.btn-patient-choice,
 	.btn-treatment-print,

@@ -93,7 +93,7 @@ export const CbctColormapFlyout: React.FC<CbctColormapFlyoutProps> = ({
 				<button
 					type="button"
 					onClick={onClose}
-					className="w-7 h-7 min-w-[28px] min-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
+					className="w-7 h-7 min-w-[28px] min-h-[28px] max-md:w-11 max-md:h-11 max-md:min-w-[44px] max-md:min-h-[44px] flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
 					aria-label="Закрыть меню"
 				>
 					<X className="w-4 h-4" />
@@ -108,7 +108,7 @@ export const CbctColormapFlyout: React.FC<CbctColormapFlyoutProps> = ({
 							key={p.id}
 							type="button"
 							onClick={() => onSelectColorMap(p.id)}
-							className={`w-full px-2.5 py-1.5 [@media(pointer:coarse)]:py-2 rounded-lg text-left transition-colors flex items-center justify-between gap-2 border ${
+							className={`w-full px-2.5 py-1.5 max-md:py-2 rounded-lg text-left transition-colors flex items-center justify-between gap-2 border ${
 								isActive
 									? "bg-zinc-800 text-purple-300 border-purple-500/60 shadow-xs"
 									: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border-zinc-800"
@@ -276,7 +276,7 @@ export const getToolBtnClass = (
 	isActive: boolean,
 	activeStyle = "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40",
 ) =>
-	`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
+	`w-8 h-8 min-w-[32px] min-h-[32px] max-md:w-11 max-md:h-11 max-md:min-w-[44px] max-md:min-h-[44px] rounded-md max-md:rounded-lg flex items-center justify-center transition-all duration-150 ${
 		isActive
 			? activeStyle
 			: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"

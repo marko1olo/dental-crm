@@ -131,14 +131,14 @@ export function CtPlanningTaskBoardPanel({
 
 				<div className="flex items-center gap-2 shrink-0">
 					{/* Status Filters */}
-					<div className="inline-flex rounded-md p-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+					<div className="inline-flex rounded-md p-0.5 bg-[var(--paper-soft)] border border-[var(--line)]">
 						<button
 							type="button"
 							onClick={() => setFilterStatus("all")}
 							className={`h-6 px-2 text-[11px] font-medium rounded transition-colors ${
 								filterStatus === "all"
-									? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold"
-									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs font-semibold"
+									: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 							}`}
 							data-testid="ct-planning-filter-all"
 						>
@@ -149,8 +149,8 @@ export function CtPlanningTaskBoardPanel({
 							onClick={() => setFilterStatus("active")}
 							className={`h-6 px-2 text-[11px] font-medium rounded transition-colors ${
 								filterStatus === "active"
-									? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold"
-									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs font-semibold"
+									: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 							}`}
 							data-testid="ct-planning-filter-active"
 						>
@@ -161,8 +161,8 @@ export function CtPlanningTaskBoardPanel({
 							onClick={() => setFilterStatus("completed")}
 							className={`h-6 px-2 text-[11px] font-medium rounded transition-colors ${
 								filterStatus === "completed"
-									? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold"
-									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs font-semibold"
+									: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 							}`}
 							data-testid="ct-planning-filter-completed"
 						>

@@ -39,8 +39,8 @@
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-/* Touch targets >= 44x44px for mobile and tablets (Mandate 8c, 8d) */
-@media (pointer: coarse) {
+/* Touch targets >= 44x44px for narrow mobile viewports (<= 768px, Mandate 8c, 8d) */
+@media (max-width: 768px) {
 	.schedule-reassign-pill,
 	.chair-schedule-toolbar button,
 	.chair-schedule-toolbar select {

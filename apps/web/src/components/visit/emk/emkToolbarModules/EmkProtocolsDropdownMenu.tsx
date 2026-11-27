@@ -63,7 +63,7 @@ export function EmkProtocolsDropdownMenu({
 	return createPortal(
 		<div
 			ref={menuRef}
-			className="fixed z-[9999] flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper))] border border-[var(--line)] rounded-xl shadow-2xl min-w-[268px] max-w-[calc(100vw-24px)] text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100 backdrop-blur-md"
+			className="fixed z-[40] flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper))] border border-[var(--line)] rounded-xl shadow-2xl min-w-[268px] max-w-[calc(100vw-24px)] text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100 backdrop-blur-md"
 			style={{ top: `${dropdownPos.top}px`, left: `${dropdownPos.left}px` }}
 			role="menu"
 			aria-hidden={!isOpen}

@@ -64,7 +64,7 @@ export const StandaloneRvgHost: React.FC<{ onClose: () => void }> = ({ onClose }
 
 	return (
 		<div
-			className="fixed inset-0 z-[9999] bg-[var(--paper)] p-2 sm:p-6 flex flex-col justify-center items-center"
+			className="fixed inset-0 z-[100] bg-[var(--paper)] p-2 sm:p-6 flex flex-col justify-center items-center"
 			data-testid="standalone-radiology-host"
 		>
 			<div className="w-full max-w-5xl h-full max-h-[850px] shadow-2xl rounded-2xl overflow-hidden">

@@ -177,7 +177,7 @@ export const KnowledgeBaseHubModal: React.FC<KnowledgeBaseHubModalProps> = React
 
 	return (
 		<div
-			className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/65 backdrop-blur-xs p-2 sm:p-4 md:p-6 animate-in fade-in duration-200"
+			className="fixed inset-0 z-[100] flex items-center justify-center bg-black/65 backdrop-blur-xs p-2 sm:p-4 md:p-6 animate-in fade-in duration-200"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="knowledge-hub-title"

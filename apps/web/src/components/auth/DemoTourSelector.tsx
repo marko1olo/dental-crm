@@ -167,7 +167,7 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 	{
 		id: "accountant",
 		title: "Бухгалтер",
-		subtitle: "Касса 54-ФЗ, выгрузка в 1С и расчёт ЗП",
+		subtitle: "Касса и чеки, выгрузка в 1С и расчёт ЗП",
 		badge: "Бухгалтерия и отчётность",
 		doctorName: "Волкова Н. И.",
 		role: "accountant",

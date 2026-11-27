@@ -1,4 +1,5 @@
 import type React from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { CashRegisterStudioModal } from "../../../components/cashbox/CashRegisterStudioModal";
 import { TaxDeductionCertificateModal } from "../../../components/documents/DocumentsStudioModal";
 import { DoctorPayrollStudioModal } from "../../../components/payroll/DoctorPayrollStudioModal";
@@ -87,8 +88,8 @@ export const FinancePatientModalsSubhost: React.FC<
 					patientId={docPat?.id}
 					patientName={docPat?.fullName}
 					patientPhone={docPat?.phone ?? undefined}
-					patientDepositRub={resolvePatientDeposit(docPat)}
-					patientFamilyBalanceRub={resolvePatientFamilyBalance(docPat)}
+					patientDepositKopecks={rublesToKopecks(resolvePatientDeposit(docPat))}
+					patientFamilyBalanceKopecks={rublesToKopecks(resolvePatientFamilyBalance(docPat))}
 					clinicName={clinicName}
 					clinicLegalName={clinicLegalName}
 				/>
@@ -135,7 +136,7 @@ export const FinancePatientModalsSubhost: React.FC<
 					patientId={docPat?.id}
 					patientName={docPat?.fullName}
 					patientPhone={docPat?.phone ?? undefined}
-					patientFamilyBalanceRub={resolvePatientFamilyBalance(docPat)}
+					patientFamilyBalanceKopecks={rublesToKopecks(resolvePatientFamilyBalance(docPat))}
 					clinicName={clinicName}
 					clinicLegalName={clinicLegalName}
 					onPaymentComplete={() => {

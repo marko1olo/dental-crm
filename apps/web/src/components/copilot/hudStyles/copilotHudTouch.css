@@ -2,7 +2,7 @@
    TOUCH ERGONOMICS (Mandates 8d, 8e, 8p):
    Preserve 32-36px desktop density, expand to 44-48px touch targets on tablet/touch.
    ============================================================================ */
-@media (pointer: coarse) {
+@media (max-width: 768px) {
   .chairside-hud-btn-icon,
   .chairside-hud-btn-mic,
   .chairside-hud-btn-mic-capsule,

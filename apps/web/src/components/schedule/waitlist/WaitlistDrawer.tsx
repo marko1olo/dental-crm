@@ -123,7 +123,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
       aria-modal="true"
       aria-labelledby={titleId}
       data-testid="waitlist-drawer"
-      className="fixed inset-0 z-[1200] flex items-end justify-center sm:items-stretch sm:justify-end bg-black/40 backdrop-blur-sm transition-opacity"
+      className="fixed inset-0 z-[50] flex items-end justify-center sm:items-stretch sm:justify-end bg-black/40 backdrop-blur-sm transition-opacity"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

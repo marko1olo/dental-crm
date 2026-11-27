@@ -27,7 +27,7 @@ export const InvoiceCardContextMenu: React.FC<InvoiceCardContextMenuProps> = (pr
 		invoice: inv, isPending, isPaid, onPrintAct, onPrintReceipt,
 		onSplitPay, onBankInstallment, onApplyWarranty, onRefund, onPrepareFnsTaxDeduction,
 	} = props;
-	const itemBtnCls = "w-full min-h-[32px] [@media(pointer:coarse)]:min-h-[44px] px-3 py-1.5 text-left flex items-center gap-2 cursor-pointer transition-colors";
+	const itemBtnCls = "w-full min-h-[32px] max-md:min-h-[44px] px-3 py-1.5 text-left flex items-center gap-2 cursor-pointer transition-colors";
 
 	return (
 		<div

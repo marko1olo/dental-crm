@@ -91,7 +91,7 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[100000] flex items-end sm:items-center justify-center p-0 sm:p-4 select-none overflow-x-clip"
+			className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 select-none overflow-x-clip"
 			style={{ backgroundColor: "rgba(10, 15, 26, 0.85)", backdropFilter: "blur(8px)", height: "100dvh", maxHeight: "100dvh", maxWidth: "100vw" }}
 			onClick={(e) => {
 				if (e.target === e.currentTarget) onClose();

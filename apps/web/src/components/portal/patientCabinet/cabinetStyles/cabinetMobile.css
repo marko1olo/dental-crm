@@ -196,7 +196,7 @@
 	}
 }
 
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	.pc-close-btn,
 	.pc-quick-action-btn,
 	.pc-cal-btn,

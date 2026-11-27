@@ -33,7 +33,7 @@ export const ChairsideDiagnosisPackageCard: React.FC<ChairsideDiagnosisPackageCa
 	return (
 		<div
 			data-testid="chairside-diagnosis-package-card"
-			className="mb-3 p-3 rounded-xl bg-gradient-to-r from-teal-50/70 via-indigo-50/50 to-slate-50/60 dark:from-teal-950/20 dark:via-indigo-950/20 dark:to-slate-900/40 border border-teal-200/80 dark:border-teal-800/60 shadow-xs"
+			className="mb-3 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] shadow-xs"
 		>
 			<ChairsidePackageHeader
 				activeBundle={p.activeBundle}
@@ -68,10 +68,10 @@ export const ChairsideDiagnosisPackageCard: React.FC<ChairsideDiagnosisPackageCa
 						type="button"
 						onClick={p.handleApplyToPlan}
 						data-testid="apply-diagnosis-bundle-btn"
-						className="flex-1 sm:flex-initial min-h-[44px] px-3.5 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors shrink-0"
+						className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-sm transition-colors shrink-0"
 						title="Дописать выбранный пакет в карту приёма и передать в счёт"
 					>
-						<Check className="w-4 h-4" />
+						<Check className="w-4 h-4 shrink-0" />
 						Внести в карту и счёт ({money(p.customized.totalRub)})
 					</button>
 
@@ -79,10 +79,10 @@ export const ChairsideDiagnosisPackageCard: React.FC<ChairsideDiagnosisPackageCa
 						type="button"
 						onClick={p.handleExportToCashier}
 						data-testid="export-diagnosis-bundle-cashier-btn"
-						className="secondary-button flex-1 sm:flex-initial min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-colors shrink-0"
+						className="secondary-button flex-1 sm:flex-initial min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-colors shrink-0"
 						title="Передать пакет услуг в кассу с точным расчётом в копейках"
 					>
-						<Receipt className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+						<Receipt className="w-4 h-4 shrink-0 text-[var(--ink-muted)]" />
 						В кассу
 					</button>
 				</div>

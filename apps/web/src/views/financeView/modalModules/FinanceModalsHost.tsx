@@ -101,14 +101,13 @@ export function FinanceModalsHost({
 				clinicLegalName={clinicLegalName}
 				cashierInn={profile?.inn ?? undefined}
 				onCloseShiftAction={s.handleCloseShift}
-				totalDueRub={totalBill}
-				amountRub={totalBill}
+				totalDueKopecks={rublesToKopecks(totalBill)}
 				amountKopecks={rublesToKopecks(totalBill)}
 				patientId={docPat?.id}
 				patientName={docPat?.fullName}
 				patientPhone={docPat?.phone ?? undefined}
-				patientDepositRub={depositRub}
-				patientFamilyBalanceRub={resolvePatientFamilyBalanceRub(docPat)}
+				patientDepositKopecks={rublesToKopecks(depositRub)}
+				patientFamilyBalanceKopecks={rublesToKopecks(resolvePatientFamilyBalanceRub(docPat))}
 				onPaymentComplete={() => {
 					void s.loadDashboard?.();
 					s.setIsCashboxOpen(false);
@@ -133,14 +132,13 @@ export function FinanceModalsHost({
 					mode="checkout"
 					initialTab="checkout"
 					defaultMethod="split"
-					totalDueRub={totalBill}
-					amountRub={totalBill}
+					totalDueKopecks={rublesToKopecks(totalBill)}
 					amountKopecks={rublesToKopecks(totalBill)}
 					patientId={effPat?.id}
 					patientName={effPat?.fullName}
 					patientPhone={effPat?.phone ?? undefined}
-					patientDepositRub={effDepositRub}
-					patientFamilyBalanceRub={resolvePatientFamilyBalanceRub(effPat)}
+					patientDepositKopecks={rublesToKopecks(effDepositRub)}
+					patientFamilyBalanceKopecks={rublesToKopecks(resolvePatientFamilyBalanceRub(effPat))}
 					cashierFullName={s.paymentFiscalCashierName || undefined}
 					onSuccess={() => {
 						void s.loadDashboard?.();

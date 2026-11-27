@@ -151,7 +151,7 @@ export function CopilotSettingsVoicePrivacyTab({
 			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
 				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] font-semibold text-[var(--ink)]">
 					<input type="checkbox" checked={autoSaveDrafts} onChange={(e) => setAutoSaveDrafts(e.target.checked)} className="rounded text-[var(--primary)]" />
-					<span>Автосохранение черновиков дневников SOAP</span>
+					<span>Автосохранение черновиков дневников приёма</span>
 				</label>
 				<p className="text-[10px] text-[var(--muted)] pl-5 m-0">Сохраняет набранный врачом текст при переключении вкладок с дебаунсом 500мс.</p>
 			</section>

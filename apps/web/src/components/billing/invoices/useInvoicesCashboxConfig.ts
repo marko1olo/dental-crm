@@ -58,8 +58,7 @@ export function useInvoicesCashboxConfig(
 				onClose: () => setActivePaymentInvoice(null),
 				mode: "checkout",
 				initialTab: "checkout",
-				totalDueRub: activePaymentInvoice.totalAmountRub,
-				amountRub: activePaymentInvoice.totalAmountRub,
+				totalDueKopecks: rublesToKopecks(activePaymentInvoice.totalAmountRub),
 				amountKopecks: rublesToKopecks(activePaymentInvoice.totalAmountRub),
 				patientId: activePaymentInvoice.patientId,
 				patientName: activePaymentInvoice.patientName,
@@ -73,30 +72,29 @@ export function useInvoicesCashboxConfig(
 					const isOffline = isObject && "offlineBuffered" in payload ? Boolean(payload.offlineBuffered) : false;
 					const method = isObject && "method" in payload && typeof payload.method === "string" ? payload.method : undefined;
 					const paidRub = isObject && "totalRub" in payload && typeof payload.totalRub === "number" ? payload.totalRub : activePaymentInvoice.totalAmountRub;
-					const invoiceStatus: BillingInvoice["status"] = method === "warranty_100" || paidRub === 0 ? "warranty_100" : "paid";
+					const isDeferredInstallment = method === "installment" && paidRub === 0;
+					const invoiceStatus: BillingInvoice["status"] = isDeferredInstallment
+						? "partially_paid"
+						: method === "warranty_100" || paidRub === 0
+							? "warranty_100"
+							: "paid";
 
 					onUpdateInvoice?.({
 						...activePaymentInvoice,
 						status: invoiceStatus,
-						paidAmountRub: paidRub,
-						paidAt: new Date().toISOString(),
+						paidAmountRub: isDeferredInstallment ? 0 : paidRub,
+						...(isDeferredInstallment ? {} : { paidAt: new Date().toISOString() }),
 						paymentMethod: method,
 						fiscalStatus: isOffline ? "pending_fiscal_sync" : "fiscalized",
 						isOfflineQueued: isOffline,
 					});
 					setActivePaymentInvoice(null);
-					showToast(`Счет ${activePaymentInvoice.number} успешно закрыт`, "success");
-				},
-				onPaymentComplete: () => {
-					onUpdateInvoice?.({
-						...activePaymentInvoice,
-						status: "paid",
-						paidAmountRub: activePaymentInvoice.totalAmountRub,
-						paidAt: new Date().toISOString(),
-						fiscalStatus: "fiscalized",
-					});
-					setActivePaymentInvoice(null);
-					showToast(`Счет ${activePaymentInvoice.number} успешно закрыт`, "success");
+					showToast(
+						isDeferredInstallment
+							? `По счёту ${activePaymentInvoice.number} оформлена рассрочка`
+							: `Счет ${activePaymentInvoice.number} успешно закрыт`,
+						"success",
+					);
 				},
 			};
 		}
@@ -108,8 +106,7 @@ export function useInvoicesCashboxConfig(
 				mode: "checkout",
 				initialTab: "checkout",
 				defaultMethod: "split",
-				totalDueRub: activeSplitInvoice.totalAmountRub,
-				amountRub: activeSplitInvoice.totalAmountRub,
+				totalDueKopecks: rublesToKopecks(activeSplitInvoice.totalAmountRub),
 				amountKopecks: rublesToKopecks(activeSplitInvoice.totalAmountRub),
 				patientId: activeSplitInvoice.patientId,
 				patientName: activeSplitInvoice.patientName,
@@ -134,23 +131,10 @@ export function useInvoicesCashboxConfig(
 					setActiveSplitInvoice(null);
 					showToast(`Сплит-оплата по счету ${activeSplitInvoice.number} успешно проведена`, "success");
 				},
-				onPaymentComplete: () => {
-					onUpdateInvoice?.({
-						...activeSplitInvoice,
-						status: "paid",
-						paidAmountRub: activeSplitInvoice.totalAmountRub,
-						paidAt: new Date().toISOString(),
-						paymentMethod: "split",
-						fiscalStatus: "fiscalized",
-					});
-					setActiveSplitInvoice(null);
-					showToast(`Сплит-оплата по счету ${activeSplitInvoice.number} успешно проведена`, "success");
-				},
 			};
 		}
 
 		if (isRegisterDrawerOpen) {
-			const selectedInvoice = activePaymentInvoice ?? invoices[0] ?? null;
 			return {
 				isOpen: true,
 				onClose: () => setIsRegisterDrawerOpen(false),
@@ -158,23 +142,12 @@ export function useInvoicesCashboxConfig(
 				initialTab: "checkout",
 				cashierFullName: currentDoctorName,
 				clinicLegalName,
-				patientName: selectedInvoice?.patientName || patientName || undefined,
-				patientId: selectedInvoice?.patientId || patientId || undefined,
-				totalDueRub: selectedInvoice?.totalAmountRub ?? 0,
-				amountRub: selectedInvoice?.totalAmountRub ?? 0,
-				amountKopecks: selectedInvoice ? rublesToKopecks(selectedInvoice.totalAmountRub) : 0,
-				invoiceId: selectedInvoice?.id || undefined,
+				patientName: patientName || undefined,
+				patientId: patientId || undefined,
+				totalDueKopecks: 0,
+				amountKopecks: 0,
 				onSuccess: () => {
-					if (selectedInvoice && onUpdateInvoice) {
-						onUpdateInvoice({
-							...selectedInvoice,
-							status: "paid",
-							paidAmountRub: selectedInvoice.totalAmountRub,
-							paidAt: new Date().toISOString(),
-						});
-					}
-					const invNumText = selectedInvoice?.number ? ` ${selectedInvoice.number}` : "";
-					showToast(`Оплата по счёту${invNumText} успешно зафиксирована в кассе`, "success");
+					showToast("Оплата успешно зафиксирована в кассе", "success");
 				},
 			};
 		}

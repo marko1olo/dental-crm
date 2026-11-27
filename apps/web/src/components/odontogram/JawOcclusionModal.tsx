@@ -28,7 +28,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 
 	const content = (
 		<div
-			className="fixed inset-0 z-[10000] bg-black/65 backdrop-blur-[4px] flex items-center justify-center p-3 sm:p-4 select-none animate-fadeIn"
+			className="fixed inset-0 z-[100] bg-black/65 backdrop-blur-[4px] flex items-center justify-center p-3 sm:p-4 select-none animate-fadeIn"
 			role="dialog"
 			aria-modal="true"
 			aria-label={`Диагностика: ${logic.targetLabelRu}`}

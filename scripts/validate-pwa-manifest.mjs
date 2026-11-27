@@ -36,7 +36,7 @@ if (!Array.isArray(manifest.icons) || manifest.icons.length === 0) {
 }
 
 if (!Array.isArray(manifest.shortcuts) || manifest.shortcuts.length < 3) {
-	throw new Error("PWA manifest must provide clinical shortcuts (Form 043/u, Schedule, Finance)");
+	throw new Error("PWA manifest must provide clinical shortcuts (Medical Record, Schedule, Finance)");
 }
 
 // 2. Check icon file

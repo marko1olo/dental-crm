@@ -45,7 +45,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto overscroll-contain"
+			className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto overscroll-contain"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="pediatric-modal-title"

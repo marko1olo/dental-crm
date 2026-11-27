@@ -580,8 +580,7 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 						onClose={() => setIsFastCheckoutOpen(false)}
 						mode="checkout"
 						initialTab="checkout"
-						totalDueRub={liveGrossTotalRub}
-						amountRub={liveGrossTotalRub}
+						totalDueKopecks={rublesToKopecks(liveGrossTotalRub)}
 						amountKopecks={rublesToKopecks(liveGrossTotalRub)}
 						defaultMethod={toCashboxTenderType(fastCheckoutMethod)}
 						patientId={patientId}

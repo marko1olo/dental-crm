@@ -62,11 +62,11 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = (props) => {
 					<button
 						type="button"
 						onClick={onPay}
-						className="h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3.5 py-1.5 [@media(pointer:coarse)]:py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
+						className="h-8 min-h-[32px] max-md:h-11 max-md:min-h-[44px] px-3.5 py-1.5 max-md:py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-medium flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
 						data-testid={`btn-pay-invoice-${inv.id}`}
 						title="Принять оплату (касса / карта / сплит)"
 					>
-						<CreditCard size={14} />
+						<CreditCard className="w-4 h-4 shrink-0" />
 						<span>Оплатить</span>
 					</button>
 				)}
@@ -74,11 +74,11 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = (props) => {
 				<button
 					type="button"
 					onClick={onPrintInvoice}
-					className="h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 py-1.5 [@media(pointer:coarse)]:py-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0"
+					className="h-8 min-h-[32px] max-md:h-11 max-md:min-h-[44px] px-3 py-1.5 max-md:py-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink)] flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0"
 					data-testid={`btn-print-invoice-${inv.id}`}
 					title="Печать счета на оплату"
 				>
-					<Printer size={14} className="text-slate-500 shrink-0" />
+					<Printer className="w-4 h-4 text-[var(--ink-muted)] shrink-0" />
 					<span className="hidden md:inline whitespace-nowrap shrink-0">Счет</span>
 				</button>
 
@@ -87,11 +87,11 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = (props) => {
 					<button
 						type="button"
 						onClick={onToggleMenu}
-						className="w-8 h-8 min-h-[32px] min-w-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:min-w-[44px] rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+						className="w-8 h-8 min-h-[32px] min-w-[32px] max-md:w-11 max-md:h-11 max-md:min-h-[44px] max-md:min-w-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center justify-center text-[var(--ink-muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
 						aria-label="Дополнительные действия"
 						data-testid={`btn-invoice-menu-${inv.id}`}
 					>
-						<MoreVertical size={16} />
+						<MoreVertical className="w-4 h-4" />
 					</button>
 
 					{isMenuOpen && (

@@ -20,7 +20,7 @@ export interface EnvironmentCapability {
 }
 
 export const ENVIRONMENT_CAPABILITIES_MATRIX: EnvironmentCapability[] = [
-  { id: "emr_diary", name: "Ведение дневников SOAP и медкарт", description: "Заполнение протоколов приёма по стандартам СтАР", web: "available", desktop: "available", mobile: "available" },
+  { id: "emr_diary", name: "Ведение дневников приёма и медкарт", description: "Заполнение протоколов приёма по стандартам СтАР", web: "available", desktop: "available", mobile: "available" },
   { id: "voice_web_speech", name: "Голосовая диктовка (Web Speech)", description: "Стенографирование жалоб и объективного статуса", web: "available", desktop: "available", mobile: "available" },
   { id: "phi_masking", name: "Защита персональных данных", description: "Маскирование ФИО и телефонов перед отправкой в LLM", web: "available", desktop: "available", mobile: "available" },
   { id: "dicom_import", name: "Импорт DICOM и снимков КЛКТ", description: "Загрузка исследований с диска, дисковода или папки экспорта", web: "available", desktop: "available", mobile: "available" },
@@ -115,7 +115,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
     items: [
       {
         id: "chairside-diary", label: "Заполнить дневник приёма",
-        prompt: "Заполни медицинскую карту приёма по текущему пациенту по стандарту SOAP",
+        prompt: "Заполни медицинскую карту приёма по текущему пациенту",
         description: "Формирование протокола осмотра, жалоб и плана лечения в карту приёма",
         category: "Клинический приём у кресла", icon: "FileText", mode: "both",
         requiresConfirmation: true, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary,

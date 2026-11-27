@@ -63,7 +63,7 @@ export const StageFooterMenu: React.FC<StageFooterMenuProps> = ({
 			<button
 				type="button"
 				onClick={() => setIsOpen((prev) => !prev)}
-				className="h-9 w-9 min-h-[36px] min-w-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:min-w-[44px] rounded-lg border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer flex items-center justify-center shrink-0 shadow-2xs transition-colors touch-manipulation"
+				className="h-9 w-9 min-h-[36px] min-w-[36px] max-md:h-11 max-md:w-11 max-md:min-h-[44px] max-md:min-w-[44px] rounded-lg border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer flex items-center justify-center shrink-0 shadow-2xs transition-colors touch-manipulation"
 				title="Дополнительные действия этапа"
 				aria-label="Дополнительные действия этапа"
 				aria-expanded={isOpen}

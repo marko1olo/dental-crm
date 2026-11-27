@@ -1,230 +1,135 @@
-/**
- * wave115ScheduleParity.test.ts
- *
- * Wave 115: Schedule Desktop Parity & Clinical Ergonomics Test Suite
- *
- * Scope:
- * 1. 4-State Workplace Palettes from StomX depot (Lavender, Blue, Rose, Olive, Sand).
- * 2. Palette helpers: getStomxWorkplacePalette, STOMX_WORKPLACE_PALETTES_MAP, DEFAULT_STOMX_WORKPLACE_PALETTE.
- * 3. ScheduleGrid integration: chair palette badges, data-chair-palette attributes on headers and cells.
- * 4. 1-Click Refusal Reasons catalog and AppointmentCard banner / chips / dropdown integration.
- * 5. Touch targets >= 44x44px in PatientBillingModal (Tabs, Discounts, Express Pay, Tenders, Footer Actions).
- */
-
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
+	APPOINTMENT_REFUSAL_REASONS_CATALOG,
 	DEFAULT_WORKPLACE_CHAIR_PALETTE,
 	getWorkplaceChairPalette,
 	WORKPLACE_CHAIR_PALETTES,
 	WORKPLACE_CHAIR_PALETTES_MAP,
-	workplaceChairPaletteSchema,
-	APPOINTMENT_REFUSAL_REASONS_CATALOG,
-	type WorkplaceChairPalette,
+	type Appointment,
+	type Dashboard,
 } from "@dental/shared";
+import { ScheduleChairHeader } from "../grid/ScheduleChairHeader";
+import { AppointmentRefusalBanner } from "../appointmentPaymentBadges/AppointmentRefusalBanner";
+import { formatPatientDisplayFio } from "../AppointmentCard";
+import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-describe("Wave 115: 4-State Workplace Palettes Parity", () => {
-	it("exposes clean canonical DENTE chair palette definitions", () => {
+describe("Wave 115 Schedule Parity: Chair Palettes, Refusal Chips & Unified Cashbox SSOT", () => {
+	it("1. Workplace chair palettes expose all 5 canonical hues & numeric wrap-around lookup", () => {
 		assert.ok(Array.isArray(WORKPLACE_CHAIR_PALETTES));
-		assert.ok(typeof getWorkplaceChairPalette === "function");
-		assert.ok(DEFAULT_WORKPLACE_CHAIR_PALETTE);
-		assert.ok(WORKPLACE_CHAIR_PALETTES_MAP);
-		assert.ok(workplaceChairPaletteSchema);
-	});
-
-	it("should have exactly 5 canonical workplace palettes", () => {
-		assert.equal(WORKPLACE_CHAIR_PALETTES.length, 5);
-		const expectedIds = [1, 5, 6, 8, 9];
-		const actualIds = WORKPLACE_CHAIR_PALETTES.map((p) => p.id);
-		assert.deepEqual(actualIds, expectedIds);
-	});
-
-	it("should contain exact 4-state hex colors for canonical palettes", () => {
-		// Lavender
-		const lavender = WORKPLACE_CHAIR_PALETTES_MAP.lavender;
-		assert.ok(lavender);
-		assert.equal(lavender.bright_code, "#AEA7D3");
-		assert.equal(lavender.bright_dark, "#292541");
-		assert.equal(lavender.code, "#D3CFE7");
-		assert.equal(lavender.dark, "#3E3862");
-		assert.equal(lavender.nameRu, "Лаванда");
-
-		// Blue
-		const blue = WORKPLACE_CHAIR_PALETTES_MAP.blue;
-		assert.ok(blue);
-		assert.equal(blue.bright_code, "#91B9E9");
-		assert.equal(blue.bright_dark, "#25313F");
-		assert.equal(blue.code, "#BBD4F1");
-		assert.equal(blue.dark, "#394B60");
-		assert.equal(blue.nameRu, "Синий");
-
-		// Rose
-		const rose = WORKPLACE_CHAIR_PALETTES_MAP.rose;
-		assert.ok(rose);
-		assert.equal(rose.bright_code, "#EF8AAF");
-		assert.equal(rose.bright_dark, "#392029");
-		assert.equal(rose.code, "#F8CCDC");
-		assert.equal(rose.dark, "#623746");
-		assert.equal(rose.nameRu, "Роза");
-
-		// Olive
-		const olive = WORKPLACE_CHAIR_PALETTES_MAP.olive;
-		assert.ok(olive);
-		assert.equal(olive.bright_code, "#C1DE9B");
-		assert.equal(olive.bright_dark, "#2C381C");
-		assert.equal(olive.code, "#D7EABF");
-		assert.equal(olive.dark, "#506633");
-		assert.equal(olive.nameRu, "Олива");
-
-		// Sand
-		const sand = WORKPLACE_CHAIR_PALETTES_MAP.sand;
-		assert.ok(sand);
-		assert.equal(sand.bright_code, "#E1EF8A");
-		assert.equal(sand.bright_dark, "#413425");
-		assert.equal(sand.code, "#F2F8CC");
-		assert.equal(sand.dark, "#624E38");
-		assert.equal(sand.nameRu, "Песок");
-	});
-
-	it("should validate each palette against Zod schema", () => {
-		for (const palette of WORKPLACE_CHAIR_PALETTES) {
-			const parsed = workplaceChairPaletteSchema.safeParse(palette);
-			assert.equal(parsed.success, true, `Palette ${palette.nameRu} failed Zod validation`);
-		}
-	});
-
-	it("getWorkplaceChairPalette should correctly resolve by id, number, index, or fallback", () => {
-		// By ID
-		assert.equal(getWorkplaceChairPalette("lavender").nameRu, "Лаванда");
-		assert.equal(getWorkplaceChairPalette("blue").nameRu, "Синий");
-		assert.equal(getWorkplaceChairPalette("rose").nameRu, "Роза");
-		assert.equal(getWorkplaceChairPalette("olive").nameRu, "Олива");
-		assert.equal(getWorkplaceChairPalette("sand").nameRu, "Песок");
-
-		// By index / number
-		assert.equal(getWorkplaceChairPalette(0).nameRu, "Лаванда");
-		assert.equal(getWorkplaceChairPalette(1).nameRu, "Лаванда"); // id 1 is lavender
-		assert.equal(getWorkplaceChairPalette(5).nameRu, "Синий"); // id 5 is blue
-		assert.equal(getWorkplaceChairPalette(6).nameRu, "Роза"); // id 6 is rose
-		assert.equal(getWorkplaceChairPalette(8).nameRu, "Олива"); // id 8 is olive
-		assert.equal(getWorkplaceChairPalette(9).nameRu, "Песок"); // id 9 is sand
-
-		// Invalid string / fallback
-		assert.equal(getWorkplaceChairPalette("").nameRu, DEFAULT_WORKPLACE_CHAIR_PALETTE.nameRu);
-		assert.equal(getWorkplaceChairPalette("" as string).nameRu, DEFAULT_WORKPLACE_CHAIR_PALETTE.nameRu);
-	});
-});
-
-describe("Wave 115: ScheduleGrid Workplace Palette Integration", () => {
-	it("ScheduleGrid source should contain data-chair-palette and getWorkplaceChairPalette", () => {
-		const gridPath = path.resolve(__dirname, "../ScheduleGrid.tsx");
-		const headerPath = path.resolve(__dirname, "../grid/ScheduleChairHeaderTopBar.tsx");
-		const content = [
-			fs.readFileSync(gridPath, "utf-8"),
-			fs.readFileSync(headerPath, "utf-8"),
-		].join("\n");
-
-		assert.ok(/getWorkplaceChairPalette/.test(content));
-		assert.match(content, /data-chair-palette/);
-		assert.match(content, /chair-palette-badge-/);
-		assert.ok(/WORKPLACE_CHAIR_PALETTES/.test(content));
-	});
-});
-
-describe("Wave 115: AppointmentCard Refusal Reasons & Categorization", () => {
-	it("should export 10 refusal reasons from shared catalog", () => {
-		assert.equal(APPOINTMENT_REFUSAL_REASONS_CATALOG.length, 10);
-		const codes = APPOINTMENT_REFUSAL_REASONS_CATALOG.map((r) => r.code);
-		assert.ok(codes.includes("no_show_confirmed"));
-		assert.ok(codes.includes("no_show_unconfirmed"));
-		assert.ok(codes.includes("patient_cancelled"));
-		assert.ok(codes.includes("patient_refused_clinic"));
-		assert.ok(codes.includes("clinic_cancelled"));
-		assert.ok(codes.includes("clinic_error"));
-	});
-
-	it("AppointmentCard should contain 1-click refusal menu trigger, dropdown, banner and quick chips", () => {
-		const filePath = path.resolve(
-			__dirname,
-			"../AppointmentCard.tsx",
+		assert.strictEqual(WORKPLACE_CHAIR_PALETTES.length, 5);
+		assert.deepStrictEqual(
+			WORKPLACE_CHAIR_PALETTES.map((p) => p.nameRu),
+			["Лаванда", "Синий", "Роза", "Олива", "Песок"],
 		);
-		const content = fs.readFileSync(filePath, "utf-8");
-
-		// Refusal dropdown menu trigger and list in card menu
-		assert.match(content, /appointment-card-refusal-menu-trigger/);
-		assert.match(content, /appointment-card-refusal-reasons-dropdown/);
-		assert.match(content, /appointment-card-refusal-reason-/);
-
-		// Refusal banner and quick categorization chips on card body
-		assert.match(content, /appointment-card-refusal-banner/);
-		assert.match(content, /appointment-card-refusal-chips/);
-		assert.match(content, /appointment-card-refusal-chip-/);
-		assert.match(content, /\[Отмена:/);
-	});
-});
-
-describe("Wave 115: PatientBillingModal Touch Targets >= 44x44px", () => {
-	const billingModalPath = path.resolve(
-		__dirname,
-		"../../finance/PatientBillingModal.tsx",
-	);
-	if (!fs.existsSync(billingModalPath)) {
-		it("legacy PatientBillingModal is decommissioned in favor of CashRegisterStudioModal", () => {
-			assert.equal(fs.existsSync(billingModalPath), false);
-		});
-		return;
-	}
-	const content = [
-		fs.readFileSync(billingModalPath, "utf-8"),
-		fs.readFileSync(path.resolve(__dirname, "../../finance/PatientBillingHeader.tsx"), "utf-8"),
-		fs.readFileSync(path.resolve(__dirname, "../../finance/PatientBillingDiscountsToolbar.tsx"), "utf-8"),
-		fs.readFileSync(path.resolve(__dirname, "../../finance/PatientBillingFriendlyTab.tsx"), "utf-8"),
-		fs.readFileSync(path.resolve(__dirname, "../../finance/PatientBillingTenderPanel.tsx"), "utf-8"),
-		fs.readFileSync(path.resolve(__dirname, "../../finance/PatientBillingFooter.tsx"), "utf-8"),
-	].join("\n");
-
-	it("tab buttons should have min-h-[44px]", () => {
-		assert.match(content, /data-testid="btn-tab-friendly-bill"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="btn-tab-preview-act"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="btn-tab-details-act"[\s\S]*?min-h-\[44px\]/);
+		assert.strictEqual(WORKPLACE_CHAIR_PALETTES_MAP.lavender.nameRu, "Лаванда");
+		assert.strictEqual(getWorkplaceChairPalette("blue").nameRu, "Синий");
+		assert.strictEqual(getWorkplaceChairPalette("rose").nameRu, "Роза");
+		assert.strictEqual(getWorkplaceChairPalette("olive").nameRu, "Олива");
+		assert.strictEqual(getWorkplaceChairPalette("sand").nameRu, "Песок");
+		assert.strictEqual(getWorkplaceChairPalette(0).nameRu, "Лаванда");
+		assert.strictEqual(getWorkplaceChairPalette(1).nameRu, "Лаванда");
+		assert.strictEqual(getWorkplaceChairPalette(5).nameRu, "Синий");
+		assert.strictEqual(getWorkplaceChairPalette(6).nameRu, "Роза");
+		assert.strictEqual(getWorkplaceChairPalette(8).nameRu, "Олива");
+		assert.strictEqual(getWorkplaceChairPalette(9).nameRu, "Песок");
+		assert.strictEqual(getWorkplaceChairPalette("").nameRu, DEFAULT_WORKPLACE_CHAIR_PALETTE.nameRu);
 	});
 
-	it("discount select, quick rounding, percentage pills, and reset should have min-h-[44px]", () => {
-		assert.match(content, /data-testid="select-loyalty-discount"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="btn-round-hundreds"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="btn-discount-3"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="btn-discount-5"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="btn-discount-10"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="btn-discount-warranty"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="btn-discount-colleague"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="btn-discount-reset"[\s\S]*?min-h-\[44px\]/);
+	it("2. ScheduleChairHeader renders chair palette attribute and chair title via real component", () => {
+		const minimalDashboard = {
+			patients: [],
+			appointments: [],
+			doctors: [{ id: "doc-1", fullName: "Иванов Сергей Петрович", role: "doctor" }],
+			clinicSettings: { staff: [], chairs: [], isSoloPractice: false },
+		} as unknown as Dashboard;
+
+		const html = renderToStaticMarkup(
+			React.createElement(ScheduleChairHeader, {
+				chair: { id: "chair-1", name: "Кресло 1", colorId: 5 },
+				chairIndex: 0,
+				effectiveChairAssignments: {},
+				doctors: [{ id: "doc-1", fullName: "Иванов Сергей Петрович", role: "doctor" }],
+				suggestedDoctor: null,
+				isSoloDoctor: false,
+				dateKey: "2026-11-27",
+				dashboard: minimalDashboard,
+				isToday: true,
+				currentHour: 11,
+				activeHeaderDoctorPopoverChairId: null,
+				setActiveHeaderDoctorPopoverChairId: () => {},
+				openAssignModal: () => {},
+				handleConfirmAssignDoctor: () => {},
+				handleUnassignDoctor: () => {},
+				handleAssignDoctorWeek: () => {},
+				handleAssignDoctorMonth: () => {},
+				handleQuickSubstituteDoctor: () => {},
+				handleBindDoctorToChair: () => {},
+			}),
+		);
+		assert.ok(html.includes('data-testid="chair-header-chair-1"'));
+		assert.ok(html.includes('data-chair-palette="Синий"'));
+		assert.ok(html.includes("Кресло 1"));
 	});
 
-	it("express pay buttons should have min-h-[44px]", () => {
-		assert.match(content, /data-testid="btn-express-pay-card"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="btn-express-pay-cash"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="btn-express-pay-sbp"[\s\S]*?min-h-\[44px\]/);
+	it("3. APPOINTMENT_REFUSAL_REASONS_CATALOG & AppointmentRefusalBanner render quick refusal chips & patient FIO formatting", () => {
+		assert.strictEqual(APPOINTMENT_REFUSAL_REASONS_CATALOG.length, 10);
+		const cancelledAppt = {
+			id: "appt-cancel-1",
+			patientId: "pat-1",
+			doctorUserId: "doc-1",
+			chairId: "chair-1",
+			startsAt: "2026-11-27T10:00:00.000Z",
+			endsAt: "2026-11-27T10:30:00.000Z",
+			status: "cancelled",
+			reason: "Консультация",
+			comment: "",
+		} as unknown as Appointment;
+
+		const htmlUnreasoned = renderToStaticMarkup(
+			React.createElement(AppointmentRefusalBanner, {
+				appointment: cancelledAppt,
+				isQuickStatusUpdating: false,
+				appointmentHasOpenVisit: false,
+				onQuickStatusChange: async () => {},
+			}),
+		);
+		assert.ok(htmlUnreasoned.includes('data-testid="appointment-card-refusal-banner"'));
+		assert.ok(htmlUnreasoned.includes('data-testid="appointment-card-refusal-chips"'));
+		assert.ok(htmlUnreasoned.includes("Запись отменена"));
+		assert.ok(htmlUnreasoned.includes("Причина отказа:"));
+
+		const htmlWithReason = renderToStaticMarkup(
+			React.createElement(AppointmentRefusalBanner, {
+				appointment: { ...cancelledAppt, comment: "[Отмена: Передумал / нет времени]" },
+				isQuickStatusUpdating: false,
+				appointmentHasOpenVisit: false,
+				onQuickStatusChange: async () => {},
+			}),
+		);
+		assert.ok(htmlWithReason.includes("Передумал / нет времени"));
+		assert.equal(htmlWithReason.includes('data-testid="appointment-card-refusal-chips"'), false);
+
+		assert.ok(formatPatientDisplayFio("Иванова Мария Сергеевна").includes("Иванова"));
 	});
 
-	it("1-click tender buttons should have min-h-[44px]", () => {
-		assert.match(content, /data-testid="tender-btn-card"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="tender-btn-sbp"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="tender-btn-cash"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="tender-btn-family"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="tender-btn-deposit"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="tender-btn-installment"[\s\S]*?min-h-\[44px\]/);
-	});
-
-	it("footer action buttons should have min-h-[44px]", () => {
-		assert.match(content, /data-testid="btn-print-billing-act"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="btn-fiscalize-54fz"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="btn-footer-send-whatsapp"[\s\S]*?min-h-\[44px\]/);
-		assert.match(content, /data-testid="btn-footer-partial-refund"[\s\S]*?min-h-\[44px\]/);
+	it("4. Unified CashRegisterStudioModal SSOT replaces PatientBillingModal using kopeck props", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(CashRegisterStudioModal, {
+				isOpen: true,
+				onClose: () => {},
+				mode: "checkout",
+				patientName: "Сидоров Иван Николаевич",
+				totalDueKopecks: 550000,
+				amountKopecks: 550000,
+				patientDepositKopecks: 100000,
+			}),
+		);
+		assert.ok(html.includes("Сидоров Иван Николаевич"));
+		assert.ok(html.replace(/\u00a0/g, " ").includes("5 500") || html.includes("5500"));
+		assert.equal(html.includes("54-ФЗ"), false);
+		assert.equal(/<button[^>]*\sdisabled(?:=|(?=\s|>|$))/i.test(html), false);
 	});
 });

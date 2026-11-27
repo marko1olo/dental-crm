@@ -148,7 +148,7 @@ describe("Dual-Mode Zero-Mock Batch 4: Finance, Fast Checkout & Refunds", () => 
 					onClose: () => {},
 					patientId: "pat-100",
 					patientName: "Иванов И.И.",
-					totalDueRub: 4500,
+					totalDueKopecks: 450000n,
 				}),
 			);
 

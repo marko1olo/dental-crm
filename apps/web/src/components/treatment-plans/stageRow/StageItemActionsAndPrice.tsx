@@ -106,7 +106,7 @@ export const StageItemActionsAndPrice: React.FC<StageItemActionsAndPriceProps> =
 				<button
 					type="button"
 					onClick={() => onRemoveItem(item.id)}
-					className="h-7 w-7 min-h-[28px] min-w-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 flex items-center justify-center p-1 rounded-md text-[var(--muted,#64748b)] hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
+					className="h-7 w-7 min-h-[28px] min-w-[28px] max-md:h-11 max-md:w-11 flex items-center justify-center p-1 rounded-md text-[var(--muted,#64748b)] hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
 					title={`Удалить процедуру «${item.name}» из этапа`}
 					data-testid={`remove-item-${item.id}`}
 				>

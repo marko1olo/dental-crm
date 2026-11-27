@@ -129,7 +129,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 	if (!isOpen) return null;
 
 	return (
-		<div className="fixed inset-0 z-[10060] bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 overflow-y-auto print:p-0 print:static print:bg-white print:inset-auto print:overflow-visible print:block print-layer" role="dialog" aria-modal="true" aria-label="Печатная форма Договора и сметы" data-testid="treatment-plan-contract-print-modal">
+		<div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 overflow-y-auto print:p-0 print:static print:bg-white print:inset-auto print:overflow-visible print:block print-layer" role="dialog" aria-modal="true" aria-label="Печатная форма Договора и сметы" data-testid="treatment-plan-contract-print-modal">
 			<div className="bg-[var(--paper)] w-full max-w-4xl rounded-2xl shadow-2xl border border-[var(--line)] flex flex-col max-h-[92vh] overflow-hidden my-auto print:max-h-none print:shadow-none print:border-none print:rounded-none print:w-full print:max-w-none print:bg-white print:text-black print:overflow-visible print:block">
 				<TreatmentPlanContractPrintHeader viewMode={viewMode} setViewMode={setViewMode} isCopiedMessenger={isCopiedMessenger} onCopyForMessenger={handleCopyForMessenger} onClose={onClose} />
 				<div className="relative p-6 sm:p-10 overflow-y-auto print:p-0 print:overflow-visible print:text-black print:bg-white bg-[var(--paper)] text-[var(--ink)] text-xs leading-relaxed space-y-6 premium-doc-sheet print-paper-sheet" data-paper-sheet>

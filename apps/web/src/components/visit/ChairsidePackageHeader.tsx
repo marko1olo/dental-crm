@@ -33,12 +33,12 @@ export const ChairsidePackageHeader: React.FC<ChairsidePackageHeaderProps> = ({
 							{activeBundle.diagnosisIcd10}
 						</span>
 						{selectedTooth && (
-							<span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700">
+							<span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)]">
 								Зуб {selectedTooth}
 							</span>
 						)}
 					</div>
-					<div className="text-[11px] text-slate-500 dark:text-slate-400">
+					<div className="text-[11px] text-[var(--ink-muted)]">
 						{activeBundle.diagnosisTitle} у кресла без ручного поиска по позициям
 					</div>
 				</div>
@@ -54,8 +54,8 @@ export const ChairsidePackageHeader: React.FC<ChairsidePackageHeaderProps> = ({
 							onClick={() => onSelectBundle(b)}
 							className={`px-2 py-1 rounded-md text-[11px] font-medium transition-all shrink-0 min-h-[32px] sm:min-h-[28px] ${
 								isSelected
-									? "bg-teal-600 text-white font-bold shadow-2xs"
-									: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-teal-300"
+									? "bg-[var(--primary)] text-white font-semibold shadow-2xs"
+									: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 							}`}
 						>
 							{b.diagnosisTitle.split(" ")[0]} ({b.diagnosisIcd10})

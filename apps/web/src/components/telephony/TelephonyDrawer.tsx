@@ -35,8 +35,8 @@ export function TelephonyDrawer(props: TelephonyDrawerProps = {}): React.JSX.Ele
 
 	const content = (
 		<section
-			className="dnt-telephony-patient-drawer fixed right-0 top-0 bottom-0 w-full sm:w-[480px] max-w-full z-[9995] bg-[var(--paper-strong)] text-[var(--ink)] border-l border-[var(--line)] shadow-2xl flex flex-col pointer-events-auto animate-slide-in-right overflow-hidden"
-			style={{ zIndex: 9995 }}
+			className="dnt-telephony-patient-drawer fixed right-0 top-0 bottom-0 w-full sm:w-[480px] max-w-full z-[50] bg-[var(--paper-strong)] text-[var(--ink)] border-l border-[var(--line)] shadow-2xl flex flex-col pointer-events-auto animate-slide-in-right overflow-hidden"
+			style={{ zIndex: 50 }}
 			aria-label="Боковая шторка телефонии"
 			data-testid="telephony-patient-side-drawer"
 		>

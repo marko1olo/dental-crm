@@ -45,7 +45,7 @@
 	font-weight: 700;
 }
 
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	._ccm-tab-btn {
 		min-height: 40px;
 	}

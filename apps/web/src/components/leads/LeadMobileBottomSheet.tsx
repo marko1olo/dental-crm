@@ -62,7 +62,7 @@ export const LeadMobileBottomSheet = ({
 
 	const sheet = (
 		<div
-			className="fixed inset-0 z-[10050] flex flex-col justify-end"
+			className="fixed inset-0 z-[50] flex flex-col justify-end"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="lead-bottom-sheet-title"

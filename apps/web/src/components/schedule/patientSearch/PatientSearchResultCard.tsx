@@ -89,7 +89,7 @@ export const PatientSearchResultCard: React.FC<Props> = ({
 					type="button"
 					data-testid={`quick-open-card-${patient.id}`}
 					onClick={() => onOpenCard?.(patient.id)}
-					className="h-9 min-h-[36px] min-w-[44px] px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs shrink-0"
+					className="h-9 min-h-[36px] min-w-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs shrink-0"
 					title="Открыть карту"
 					aria-label="Открыть карту"
 				>

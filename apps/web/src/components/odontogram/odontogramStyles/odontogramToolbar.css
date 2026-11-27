@@ -126,7 +126,7 @@
 		padding: 0 10px;
 	}
 }
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	.tooth-hover-quick-hud button {
 		min-height: 44px;
 		min-width: 44px;

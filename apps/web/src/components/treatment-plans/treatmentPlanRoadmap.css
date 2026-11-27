@@ -63,7 +63,7 @@
 	}
 }
 
-@media (pointer: coarse), (max-width: 640px) {
+@media (max-width: 640px) {
 	.roadmap-book-stage-btn {
 		min-height: 44px;
 		height: auto;

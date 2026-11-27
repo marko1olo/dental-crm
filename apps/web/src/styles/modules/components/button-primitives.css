@@ -653,7 +653,7 @@ a.button-lg {
    9. TOUCH ERGONOMICS & MOBILE HIG (>= 44x44px for Coarse Pointer / Viewport <= 768px)
    ========================================================================== */
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.primary-button,
 	.secondary-button,
 	.ghost-button,

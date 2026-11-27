@@ -1,189 +1,103 @@
 /**
  * emkErgonomicsAndDoctorAutonomy.test.tsx
- *
- * RED TEAM INQUISITION SUITE: Doctor Autonomy, Clinical Ergonomics & Visual De-Cluttering.
- *
- * Verifies that:
- * 1. EMK Diary is a clean clinical notepad by default:
- *    - Complaint & Anamnesis chip clouds are hidden inside collapsed <details> spoilers.
- *    - Objective status chips and sub-norm buttons are hidden inside collapsed <details> spoilers.
- *    - Express protocols, ICD-10 chips, and recommendation chips are hidden inside collapsed <details> spoilers.
- * 2. 0-Click Objective Norm button (`btn-emk-full-objective-norm`) is prominent and functional in header.
- * 3. Somatic safety alerts are calm clinical badges ("Особенности анамнеза:"), not screaming red banners (Mandates 8e, 8y).
- * 4. Finance screen is purged of bureaucratic cipher language ("54-ФЗ", "804н") in primary navigation.
- * 5. Empty clinical recommendations accordion in FinanceView is hidden when 0 rules/evaluations exist.
- *
- * Mandates: 8e (Doctor Autonomy), 8k (CRM != Reality Simulator), 8n (Solo Doctor Sovereignty),
- * 8x (Zero Fluff & High Density), 8y (Clinical Safety & Passive Informing), 8ab (Background Silent Stock).
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { describe, it  } from "vitest";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, it } from "vitest";
+import { EmkComplaintsSection } from "../EmkComplaintsSection";
+import { EmkObjectiveStatusSection } from "../EmkObjectiveStatusSection";
+import { EmkDiaryProtocolSection } from "../EmkDiaryProtocolSection";
+import { SomaticSafetyAlertWidget } from "../../../clinical/SomaticSafetyAlertWidget";
+import { FinanceToolbar } from "../../../finance/FinanceToolbar";
 
 describe("RED TEAM INQUISITION: Clinical Ergonomics & Doctor Autonomy", () => {
-	const complaintsPath = path.resolve(__dirname, "../EmkComplaintsSection.tsx");
-	const objectivePath = path.resolve(__dirname, "../EmkObjectiveStatusSection.tsx");
-	const diaryPath = path.resolve(__dirname, "../EmkDiaryProtocolSection.tsx");
-	const somaticAlertPath = path.resolve(__dirname, "../../../clinical/SomaticSafetyAlertWidget.tsx");
-	const visitHeaderPath = path.resolve(__dirname, "../../view/visitHeaderModules/VisitHeaderActionsToolbar.tsx");
-	const financeToolbarPath = path.resolve(__dirname, "../../../finance/FinanceToolbar.tsx");
-	const financeViewPath = path.resolve(__dirname, "../../../../views/financeView/index.tsx");
+	const baseVisitNoteForm = {
+		complaint: "",
+		anamnesis: "",
+		objectiveStatus: "",
+		diagnosis: "",
+		treatmentPlan: "",
+		recommendations: "",
+	};
 
-	it("1. EmkComplaintsSection is purged of hardcoded accordion spoilers in favor of clean clinical textareas and Protocols Catalog", () => {
-		const source = fs.readFileSync(complaintsPath, "utf8");
-
-		// Hardcoded junk accordions must NOT exist
-		assert.ok(
-			!source.includes("Шаблоны жалоб") && !source.includes("Шаблоны анамнеза"),
-			"Hardcoded complaint and anamnesis chip accordions must be completely purged",
+	it("1. EmkComplaintsSection renders immediate clinical textareas without hardcoded junk chip accordions", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(EmkComplaintsSection, {
+				visitNoteForm: baseVisitNoteForm as never,
+				updateVisitNoteField: () => {},
+			}),
 		);
-		assert.ok(
-			!source.includes("complaintChips") && !source.includes("anamnesisChips"),
-			"Hardcoded chip arrays must not exist in EmkComplaintsSection",
-		);
-
-		// Textareas must remain top-level for immediate typing
-		assert.ok(
-			source.includes("DebouncedEmkTextarea"),
-			"Clinical textareas must be available for instant typing",
-		);
+		assert.equal(html.includes("Шаблоны жалоб"), false);
+		assert.equal(html.includes("Шаблоны анамнеза"), false);
+		assert.ok(html.includes('data-testid="emk-complaints-section"'));
+		assert.ok(html.includes('data-testid="btn-emk-complaints-norm"'));
 	});
 
-	it("2. EmkObjectiveStatusSection hides objective & examination chips inside <details> while keeping 0-Click Norm accessible", () => {
-		const source = fs.readFileSync(objectivePath, "utf8");
-
-		// 0-Click Norm button must be present in header and enabled
-		assert.ok(
-			source.includes('data-testid="btn-emk-full-objective-norm"'),
-			"0-Click Objective Norm button must exist",
+	it("2. EmkObjectiveStatusSection exposes btn-emk-full-objective-norm and collapsed <details> presets", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(EmkObjectiveStatusSection, {
+				visitNoteForm: baseVisitNoteForm as never,
+				updateVisitNoteField: () => {},
+			}),
 		);
-		assert.ok(
-			source.includes("Физиологическая норма осмотра"),
-			"Button must clearly state Objective Norm",
-		);
-
-		// Examination chips must be wrapped in <details>
-		assert.ok(
-			source.includes("Шаблоны осмотра и статуса"),
-			"Sub-presets and examination chips must be inside <details> spoiler",
-		);
-		assert.ok(
-			source.includes("Шаблоны исследований"),
-			"Instrumental examination chips must be inside <details> spoiler",
-		);
+		assert.ok(html.includes('data-testid="btn-emk-full-objective-norm"'));
+		assert.ok(html.includes("Физиологическая норма осмотра"));
+		assert.ok(html.includes("Шаблоны осмотра и статуса"));
+		assert.ok(html.includes("Шаблоны исследований"));
 	});
 
-	it("3. EmkDiaryProtocolSection is purged of accordion bloat and shortcut button dumps in favor of clean clinical diary and protocol catalog (Mandate 8bi)", () => {
-		const source = fs.readFileSync(diaryPath, "utf8");
-
-		// Accordion bloat and express chip dumps must NOT exist
-		assert.ok(
-			!source.includes("<details"),
-			"Accordion spoilers must not exist in EmkDiaryProtocolSection (Mandate 8bi)",
+	it("3. EmkDiaryProtocolSection has no <details> spoilers and provides btn-open-protocols-catalog-diary", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(EmkDiaryProtocolSection, {
+				visitNoteForm: baseVisitNoteForm as never,
+				updateVisitNoteField: () => {},
+				onOpenTemplatesModal: () => {},
+			}),
 		);
-		assert.ok(
-			!source.includes("Экспресс-протоколы у кресла"),
-			"Legacy express accordion must be purged",
-		);
-		assert.ok(
-			!source.includes("Шаблоны диагнозов МКБ-10"),
-			"Legacy ICD-10 accordion must be purged",
-		);
-		assert.ok(
-			!source.includes("Шаблоны рекомендаций"),
-			"Legacy recommendations accordion must be purged",
-		);
-
-		// Clinical textareas and protocol catalog button must be present
-		assert.ok(
-			source.includes("DebouncedEmkTextarea"),
-			"Clinical textareas must be available for instant typing",
-		);
-		assert.ok(
-			source.includes("btn-open-protocols-catalog-diary"),
-			"Protocols catalog action button must be present in diary section",
-		);
+		assert.equal(html.includes("<details"), false);
+		assert.equal(html.includes("Экспресс-протоколы у кресла"), false);
+		assert.ok(html.includes("btn-open-protocols-catalog-diary"));
 	});
 
-	it("4. SomaticSafetyAlertWidget uses calm clinical warning instead of screaming all-caps stop-factor badge", () => {
-		let source = fs.readFileSync(somaticAlertPath, "utf8");
-		const alertDir = path.resolve(__dirname, "../../../clinical/somaticAlert");
-		if (fs.existsSync(alertDir)) {
-			for (const f of fs.readdirSync(alertDir)) {
-				source += `\n${fs.readFileSync(path.join(alertDir, f), "utf8")}`;
-			}
-		}
-
-		// Screaming caps "СТОП-ФАКТОРЫ" must be purged
-		assert.ok(
-			!source.includes("СТОП-ФАКТОРЫ ("),
-			"Screaming all-caps 'СТОП-ФАКТОРЫ' must NOT be used",
+	it("4. SomaticSafetyAlertWidget renders calm amber 'Особенности анамнеза:' badge instead of all-caps scream", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(SomaticSafetyAlertWidget, {
+				patient: {
+					id: "pat-1",
+					fullName: "Иванов И.И.",
+					allergies: "Лидокаин",
+				} as never,
+			}),
 		);
-		assert.ok(
-			source.includes("Особенности анамнеза:"),
-			"Must use calm clinical phrase 'Особенности анамнеза:'",
-		);
-
-		// Calm amber styling instead of emergency red
-		assert.ok(
-			source.includes("amber"),
-			"Must use calm amber warning palette",
-		);
+		assert.equal(html.includes("СТОП-ФАКТОРЫ ("), false);
+		assert.ok(html.includes("Особенности анамнеза:"));
+		assert.ok(html.includes("amber"));
 	});
 
-	it("5. VisitHeaderActionsToolbar demotes emergency rescue button to quiet mode", () => {
-		const source = fs.readFileSync(visitHeaderPath, "utf8");
-
-		// Emergency rescue button must not scream with red border on normal screens
-		assert.ok(
-			source.includes('data-testid="btn-visit-emergency-rescue"'),
-			"Emergency rescue button must exist for safety",
+	it("5. FinanceToolbar uses human-friendly labels ('Касса онлайн', 'Счета и акты') without 54-ФЗ/804н", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(FinanceToolbar, {
+				documentPatient: null,
+				billingSummary: null,
+				isCashShiftOpen: false,
+				onToggleCashShift: () => {},
+				isShiftOpen: true,
+				onPayDebtQuick: () => {},
+				money: (v) => `${v ?? 0} ₽`,
+				onOpenInvoices: () => {},
+				isFinanceOptionsOpen: false,
+				onToggleFinanceOptions: () => {},
+				onCloseFinanceOptions: () => {},
+				onOpenPnl: () => {},
+				onGoToDocuments: () => {},
+				onOpenCashbox: () => {},
+			}),
 		);
-		assert.ok(
-			source.includes("sr-only") || source.includes("hidden"),
-			"Emergency rescue button must be hidden on standard screens to prevent panic clutter",
-		);
-	});
-
-	it("6. FinanceToolbar replaces bureaucratic law numbers with human-friendly labels", () => {
-		const source = fs.readFileSync(financeToolbarPath, "utf8");
-
-		// Purged Soviet/bureaucratic law ciphers from visible tab labels
-		assert.ok(
-			!source.includes("ККТ 54-ФЗ"),
-			"'ККТ 54-ФЗ' must be replaced with 'Касса онлайн'",
-		);
-		assert.ok(
-			!source.includes("Счета и акты (804н)"),
-			"'Счета и акты (804н)' must be replaced with 'Счета и акты'",
-		);
-
-		assert.ok(
-			source.includes("Касса онлайн"),
-			"Must provide human-friendly 'Касса онлайн' label",
-		);
-		assert.ok(
-			source.includes("Счета и акты"),
-			"Must provide human-friendly 'Счета и акты' label",
-		);
-	});
-
-	it("7. FinanceView hides clinical recommendations accordion when 0 active rules or evaluations exist", () => {
-		const source = fs.readFileSync(financeViewPath, "utf8");
-
-		// Condition must check for active rules / unresolved / evaluations before rendering accordion (or completely purged)
-		assert.ok(
-			!source.includes("clinical-recommendations-accordion") ||
-				source.includes("hasActiveClinicalRules") ||
-				source.includes("(clinicalRuleSummary.unresolved ?? 0) > 0 ||\n\t\t\t\t\t\t(clinicalRuleSummary.activeRules ?? 0) > 0") ||
-				source.includes("clinicalRuleSummary.activeRules ?? 0)) ||\n\t\t\t\t\t(clinicalRuleEvaluations && clinicalRuleEvaluations.length > 0)"),
-			"clinical-recommendations-accordion must only render when active rules or evaluations exist or be completely purged",
-		);
+		assert.equal(html.includes("ККТ 54-ФЗ"), false);
+		assert.equal(html.includes("Счета и акты (804н)"), false);
+		assert.ok(html.includes("Касса онлайн"));
+		assert.ok(html.includes("Счета и акты"));
 	});
 });

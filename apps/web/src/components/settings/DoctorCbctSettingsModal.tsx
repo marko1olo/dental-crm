@@ -29,7 +29,7 @@ export function DoctorCbctSettingsModal({ isOpen, onClose, onSaved }: DoctorCbct
 	if (!isOpen || typeof document === "undefined") return null;
 
 	return createPortal(
-		<div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150 cbct-dark-cockpit" data-cbct-cockpit="true" data-theme="dark" style={{ colorScheme: "dark" }} role="dialog" aria-modal="true" aria-labelledby={titleId} ref={modalRef}>
+		<div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150 cbct-dark-cockpit" data-cbct-cockpit="true" data-theme="dark" style={{ colorScheme: "dark" }} role="dialog" aria-modal="true" aria-labelledby={titleId} ref={modalRef}>
 			<div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-[#090d16] text-slate-100 border border-slate-700/80 shadow-2xl overflow-hidden cbct-dark-cockpit" data-cbct-cockpit="true">
 				<DoctorCbctModalHeader titleId={titleId} isCanonical={s.isCanonical} onClose={onClose} />
 				<div className="flex-1 overflow-y-auto p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">

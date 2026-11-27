@@ -193,7 +193,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo((pro
 	if (isModal) {
 		return (
 			<div
-				className="fixed inset-0 z-[10060] pointer-events-auto flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto perio-modal-overlay bg-slate-950/65 backdrop-blur-xs"
+				className="fixed inset-0 z-[100] pointer-events-auto flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto perio-modal-overlay bg-slate-950/65 backdrop-blur-xs"
 				data-testid="perio-chart-modal"
 				role="dialog"
 				aria-modal="true"

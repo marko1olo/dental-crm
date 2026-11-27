@@ -47,7 +47,7 @@ export function VisitEmkModals({
 			{/* Окно оплаты по СБП QR (Мандаты 8d, 8e) */}
 			{isSbpQrModalOpen && completionResult && (
 				<div
-					className="fixed inset-0 z-[99999] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-150"
+					className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-150"
 					style={{ backgroundColor: "rgba(15, 23, 42, 0.65)" }}
 					role="dialog"
 					aria-modal="true"

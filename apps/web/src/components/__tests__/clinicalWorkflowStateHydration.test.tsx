@@ -195,11 +195,11 @@ describe("Clinical Workflow — Stage 5: Cash Register Checkout & Solo Sovereign
 				containerTestId="cash-register-checkout-modal"
 				submitButtonTestId="btn-confirm-checkout-payment"
 				title="Касса · Оплата приёма"
-				totalDueRub={12500}
+				totalDueKopecks={1250000n}
 				patientId="pat-petrov"
 				patientName="Петров Василий Николаевич"
 				patientPhone="+7 (912) 345-67-89"
-				patientDepositRub={5000}
+				patientDepositKopecks={500000n}
 				cashierFullName="Администратор Кассы"
 			/>,
 		);

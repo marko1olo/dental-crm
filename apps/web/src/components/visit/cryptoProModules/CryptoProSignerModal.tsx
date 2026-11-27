@@ -17,7 +17,7 @@ export function CryptoProSignerModal({ state, onPrintDraft }: CryptoProSignerMod
 
 	return createPortal(
 		<div
-			className="crypto-signer-modal-overlay fixed inset-0 z-[10005] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm transition-opacity"
+			className="crypto-signer-modal-overlay fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm transition-opacity"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="crypto-signer-modal-title"

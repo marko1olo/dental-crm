@@ -171,7 +171,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 	if (!isOpen) return null;
 
 	const content = (
-		<div className="fixed inset-0 z-[10060] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+		<div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
 			<div className="relative w-full max-w-2xl rounded-3xl border border-[var(--line)] bg-[var(--paper)] p-5 sm:p-6 shadow-2xl flex flex-col max-h-[92dvh] overflow-y-auto">
 				<div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line)]">
 					<h3 className="text-base sm:text-lg font-semibold text-[var(--ink)]">Памятка родителям после приёма</h3>

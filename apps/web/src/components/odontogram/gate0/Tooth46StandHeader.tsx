@@ -85,8 +85,8 @@ export const Tooth46StandHeader: React.FC<Tooth46StandHeaderProps> = ({
 								onClick={() => onZoomChange(z)}
 								className={`h-11 sm:h-8 px-3.5 sm:px-2.5 min-w-[44px] sm:min-w-[32px] rounded transition-colors flex items-center justify-center ${
 									zoom === z
-										? "bg-teal-500 text-white font-medium shadow-sm"
-										: "dark:bg-slate-800/80 dark:text-slate-300 bg-white text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+										? "bg-[var(--primary)] text-white font-medium shadow-sm"
+										: "bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
 								{z}x
@@ -98,7 +98,7 @@ export const Tooth46StandHeader: React.FC<Tooth46StandHeaderProps> = ({
 					type="button"
 					onClick={onToggleTheme}
 					aria-label="Переключить тему оформления"
-					className="h-11 sm:h-8 px-4 sm:px-3 min-w-[44px] text-xs font-medium rounded-lg border dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700 bg-white text-slate-700 border-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center justify-center"
+					className="h-11 sm:h-8 px-4 sm:px-3 min-w-[44px] text-xs font-medium rounded-lg border bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)] transition-colors flex items-center justify-center"
 				>
 					{isDark ? "Тёмная" : "Светлая"}
 				</button>

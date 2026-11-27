@@ -38,7 +38,7 @@ export const Tooth46ProstheticBar: React.FC<Tooth46ProstheticBarProps> = ({
 							className={`px-3 py-1.5 min-h-[44px] sm:min-h-[28px] rounded border transition-all flex items-center justify-center shrink-0 ${
 								layers.crownMaterial === mat
 									? "bg-amber-600 text-white border-amber-500 font-semibold"
-									: "dark:bg-slate-800 dark:border-slate-700 bg-white text-slate-700 hover:bg-slate-100"
+									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
 							{name}

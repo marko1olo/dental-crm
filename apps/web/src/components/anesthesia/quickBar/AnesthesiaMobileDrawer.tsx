@@ -46,7 +46,7 @@ export function AnesthesiaMobileDrawer({
 
 	return (
 		<div
-			className="fixed inset-0 z-[10050] flex items-end justify-center bg-black/60 backdrop-blur-xs transition-opacity lg:hidden anesthesia-mobile-sheet"
+			className="fixed inset-0 z-[50] flex items-end justify-center bg-black/60 backdrop-blur-xs transition-opacity lg:hidden anesthesia-mobile-sheet"
 			data-testid="anesthesia-mobile-sheet"
 			onClick={onClose}
 		>

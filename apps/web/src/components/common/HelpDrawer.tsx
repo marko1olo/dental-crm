@@ -190,7 +190,7 @@ export const HelpDrawer: React.FC<HelpDrawerProps> = React.memo(({
 
 	return (
 		<div
-			className="fixed inset-0 z-[1000] flex justify-end bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
+			className="fixed inset-0 z-[50] flex justify-end bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="help-drawer-title"
@@ -201,7 +201,7 @@ export const HelpDrawer: React.FC<HelpDrawerProps> = React.memo(({
 			}}
 		>
 			<div
-				className="w-full max-w-2xl bg-[var(--paper)] text-[var(--ink)] border-l border-[var(--line)] shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-200 z-[1001] overflow-hidden"
+				className="w-full max-w-2xl bg-[var(--paper)] text-[var(--ink)] border-l border-[var(--line)] shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-200 z-[50] overflow-hidden"
 				onClick={(e) => e.stopPropagation()}
 			>
 				{/* Drawer Header */}

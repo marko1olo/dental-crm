@@ -74,7 +74,7 @@ export const VisiographHotFolderToast: React.FC<VisiographHotFolderToastProps> =
 			role="alert"
 			aria-live="polite"
 			data-testid="visiograph-incoming-toast"
-			className={`fixed top-4 right-4 left-4 sm:left-auto sm:top-auto sm:bottom-6 sm:right-6 z-[9999] flex flex-col gap-2.5 sm:gap-3 rounded-2xl p-3 sm:p-3.5 shadow-2xl backdrop-blur-md transition-all duration-200 animate-in fade-in slide-in-from-top-3 sm:slide-in-from-bottom-3 ${className}`}
+			className={`fixed top-4 right-4 left-4 sm:left-auto sm:top-auto sm:bottom-6 sm:right-6 z-[200] flex flex-col gap-2.5 sm:gap-3 rounded-2xl p-3 sm:p-3.5 shadow-2xl backdrop-blur-md transition-all duration-200 animate-in fade-in slide-in-from-top-3 sm:slide-in-from-bottom-3 ${className}`}
 			style={{
 				background: "var(--paper-strong)",
 				border: "1px solid var(--line)",

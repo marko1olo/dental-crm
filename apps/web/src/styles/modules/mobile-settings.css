@@ -21,7 +21,7 @@
 }
 
 /* Touch Target Minimum Invariant (44x44px) */
-@media (max-width: 768px), (pointer: coarse) {
+@media (max-width: 768px) {
 	.mobile-touch-target {
 		min-width: 44px;
 		min-height: 44px;

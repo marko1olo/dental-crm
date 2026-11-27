@@ -16,7 +16,6 @@
 
 import { describe, it, before } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { registerHooks } from "node:module";
@@ -88,13 +87,14 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 		assert.equal(kopecksToRub(sumSplitKop), totalDueRub, "Converted sum must equal original total in rubles");
 	});
 
-	// ТЕСТ 2: DirectCashboxLauncher.tsx снесён, канонический фасад cashbox/index.ts ведёт на CashRegisterStudioModal SSOT
-	it("2. legacy DirectCashboxLauncher is decommissioned and cashbox facade exports CashRegisterStudioModal", () => {
-		const legacyPath = path.resolve(financeDir, "../cashbox/DirectCashboxLauncher.tsx");
-		const facadePath = path.resolve(financeDir, "../cashbox/index.ts");
-		assert.equal(fs.existsSync(legacyPath), false, "Legacy DirectCashboxLauncher.tsx must stay decommissioned");
-		const content = fs.readFileSync(facadePath, "utf-8");
-		assert.equal(content.includes("CashRegisterStudioModal"), true, "Facade must export canonical CashRegisterStudioModal SSOT");
+	// ТЕСТ 2: Канонический фасад cashbox/index.ts экспортирует CashRegisterStudioModal SSOT
+	it("2. cashbox facade exports canonical CashRegisterStudioModal SSOT", async () => {
+		const cashboxFacade = await import("../../cashbox/index.js");
+		assert.equal(
+			cashboxFacade.CashRegisterStudioModal,
+			CashierStudioModal,
+			"Facade must export canonical CashRegisterStudioModal SSOT",
+		);
 	});
 
 	// ТЕСТ 3: CashRegisterStudioModal экспорт и SSR-рендер
@@ -104,7 +104,7 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 				isOpen={true}
 				onClose={() => {}}
 				initialTab="checkout"
-				totalDueRub={1500}
+				totalDueKopecks={150000n}
 				patientName="Тестов Пациент"
 			/>,
 		);
@@ -289,7 +289,7 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 				isOpen={true}
 				onClose={() => {}}
 				initialTab="checkout"
-				totalDueRub={6500}
+				totalDueKopecks={650000n}
 				patientName="Иванов Иван"
 			/>,
 		);
@@ -307,7 +307,7 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 				isOpen={true}
 				onClose={() => {}}
 				initialTab="checkout"
-				totalDueRub={6500}
+				totalDueKopecks={650000n}
 				patientName="Иванов Иван"
 			/>,
 		);
@@ -322,7 +322,7 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 				isOpen={true}
 				onClose={() => {}}
 				initialTab="checkout"
-				totalDueRub={6500}
+				totalDueKopecks={650000n}
 				patientName="Иванов Иван"
 			/>,
 		);
@@ -346,7 +346,7 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 				isOpen={false}
 				onClose={() => {}}
 				initialTab="checkout"
-				totalDueRub={0}
+				totalDueKopecks={0n}
 				patientName=""
 			/>,
 		);

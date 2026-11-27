@@ -55,7 +55,7 @@ export function OrthopedicPassportA4Modal({ isOpen, onClose, passport }: Orthope
 	};
 
 	const modalContent = (
-		<div className="fixed inset-0 z-[99999] flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto max-sm:items-end" role="dialog" aria-modal="true" data-testid="orthopedic-passport-modal">
+		<div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto max-sm:items-end" role="dialog" aria-modal="true" data-testid="orthopedic-passport-modal">
 			<style>{`@media print { .no-print { display: none !important; } #orthopedic-passport-print-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 12mm 15mm !important; background: #fff !important; color: #0f172a !important; box-shadow: none !important; border: none !important; } }`}</style>
 			<div className="relative w-full max-w-4xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh] sm:max-h-[92vh]">
 				<div className="sm:hidden w-9 h-1.5 bg-[var(--line)] rounded-full mx-auto mt-2.5 mb-1 shrink-0 no-print" aria-hidden="true" />

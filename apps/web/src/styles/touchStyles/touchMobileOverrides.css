@@ -61,7 +61,7 @@
 	}
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	html,
 	body {
 		overscroll-behavior-y: none;

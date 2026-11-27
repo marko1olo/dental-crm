@@ -30,6 +30,7 @@ import {
 	submitInstallmentContractApi,
 	submitCashboxPaymentApi,
 	toggleCashboxShiftApi,
+	printFiscalXReportApi,
 	buildPaymentPayload,
 } from "./cashRegisterApi.js";
 
@@ -47,15 +48,14 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		isOpen, initialTab = "checkout", mode = "studio", shiftNumber = 1,
 		cashierFullName = "Кассир", clinicLegalName, kktRegNumber: propKktRegNumber,
 		ofdName: propOfdName, isShiftOpen: initialShiftOpen = true,
-		netRevenueKopecks: propNetRevenueKopecks, netRevenueRub: propNetRevenueRub,
-		cashInDrawerKopecks: propCashDrawerKopecks, cashInDrawerRub: propCashDrawerRub,
-		cardSumKopecks: propCardSumKopecks, cardSumRub: propCardSumRub,
-		sbpSumKopecks: propSbpSumKopecks, sbpSumRub: propSbpSumRub,
-		advanceOffsetKopecks: propAdvanceSumKopecks, advanceOffsetRub: propAdvanceSumRub,
-		patientDepositKopecks: propPatientDepositKopecks, patientDepositRub: propPatientDepositRub,
-		patientFamilyBalanceKopecks: propPatientFamilyBalanceKopecks, patientFamilyBalanceRub: propPatientFamilyBalanceRub,
+		netRevenueKopecks: propNetRevenueKopecks,
+		cashInDrawerKopecks: propCashDrawerKopecks,
+		cardSumKopecks: propCardSumKopecks,
+		sbpSumKopecks: propSbpSumKopecks,
+		advanceOffsetKopecks: propAdvanceSumKopecks,
+		patientDepositKopecks: propPatientDepositKopecks,
+		patientFamilyBalanceKopecks: propPatientFamilyBalanceKopecks,
 		totalDueKopecks: propTotalDueKopecks, amountKopecks: propAmountKopecks,
-		totalDueRub: propTotalDueRub, amountRub: propAmountRub,
 		initialWarranty100 = false, visitId: propVisitId, patientId: propPatientId,
 		invoiceId: propInvoiceId, defaultMethod = "card", initialPaymentMethod,
 		printFormat: initialPrintFormat = "tape_80mm", onClose,
@@ -64,17 +64,15 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 	const rawBaseDueKopecks = useMemo(() => {
 		if (propTotalDueKopecks !== undefined) return toKopecksBigInt(propTotalDueKopecks);
 		if (propAmountKopecks !== undefined) return toKopecksBigInt(propAmountKopecks);
-		if (propTotalDueRub !== undefined) return toKopecksBigInt(null, propTotalDueRub);
-		if (propAmountRub !== undefined) return toKopecksBigInt(null, propAmountRub);
 		return 0n;
-	}, [propTotalDueKopecks, propAmountKopecks, propTotalDueRub, propAmountRub]);
+	}, [propTotalDueKopecks, propAmountKopecks]);
 
-	const initialCashDrawerKopecks = useMemo(() => toKopecksBigInt(propCashDrawerKopecks, propCashDrawerRub), [propCashDrawerKopecks, propCashDrawerRub]);
-	const initialCardSumKopecks = useMemo(() => toKopecksBigInt(propCardSumKopecks, propCardSumRub), [propCardSumKopecks, propCardSumRub]);
-	const initialSbpSumKopecks = useMemo(() => toKopecksBigInt(propSbpSumKopecks, propSbpSumRub), [propSbpSumKopecks, propSbpSumRub]);
-	const initialAdvanceSumKopecks = useMemo(() => toKopecksBigInt(propAdvanceSumKopecks, propAdvanceSumRub), [propAdvanceSumKopecks, propAdvanceSumRub]);
-	const patientDepositKopecks = useMemo(() => toKopecksBigInt(propPatientDepositKopecks, propPatientDepositRub), [propPatientDepositKopecks, propPatientDepositRub]);
-	const patientFamilyBalanceKopecks = useMemo(() => toKopecksBigInt(propPatientFamilyBalanceKopecks, propPatientFamilyBalanceRub), [propPatientFamilyBalanceKopecks, propPatientFamilyBalanceRub]);
+	const initialCashDrawerKopecks = useMemo(() => toKopecksBigInt(propCashDrawerKopecks), [propCashDrawerKopecks]);
+	const initialCardSumKopecks = useMemo(() => toKopecksBigInt(propCardSumKopecks), [propCardSumKopecks]);
+	const initialSbpSumKopecks = useMemo(() => toKopecksBigInt(propSbpSumKopecks), [propSbpSumKopecks]);
+	const initialAdvanceSumKopecks = useMemo(() => toKopecksBigInt(propAdvanceSumKopecks), [propAdvanceSumKopecks]);
+	const patientDepositKopecks = useMemo(() => toKopecksBigInt(propPatientDepositKopecks), [propPatientDepositKopecks]);
+	const patientFamilyBalanceKopecks = useMemo(() => toKopecksBigInt(propPatientFamilyBalanceKopecks), [propPatientFamilyBalanceKopecks]);
 
 	const [clinicFiscalMeta, setClinicFiscalMeta] = useState<{ kktRegNumber: string; ofdName: string } | null>(null);
 	useEffect(() => {
@@ -289,10 +287,10 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 
 	const totalShiftKopecks = initialCashDrawerKopecks + initialCardSumKopecks + initialSbpSumKopecks + initialAdvanceSumKopecks;
 	const calculatedNetRevenueKopecks = useMemo(
-		() => (propNetRevenueKopecks !== undefined || propNetRevenueRub !== undefined)
-			? toKopecksBigInt(propNetRevenueKopecks, propNetRevenueRub)
+		() => propNetRevenueKopecks !== undefined
+			? toKopecksBigInt(propNetRevenueKopecks)
 			: totalShiftKopecks,
-		[propNetRevenueKopecks, propNetRevenueRub, totalShiftKopecks],
+		[propNetRevenueKopecks, totalShiftKopecks],
 	);
 
 	const tapeText = useMemo(() => generateFiscalTapeText({
@@ -304,8 +302,11 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 	}), [shiftNumber, cashierFullName, clinicLegalName, effectiveKktRegNumber, effectiveOfdName, calculatedNetRevenueKopecks, initialCashDrawerKopecks, initialCardSumKopecks, initialSbpSumKopecks, initialAdvanceSumKopecks, recentOperations, printFormat]);
 
 	const notifyPaymentSuccess = useCallback((result: Record<string, unknown>) => {
-		props.onSuccess?.(result);
-		props.onPaymentComplete?.();
+		if (props.onSuccess) {
+			props.onSuccess(result);
+		} else {
+			props.onPaymentComplete?.();
+		}
 		props.onConfirmPayment?.(result);
 		handleClose();
 	}, [props, handleClose]);
@@ -435,12 +436,16 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 	const handlePrintXReport = useCallback(async () => {
 		try {
 			const fn = props.onPrintXReportAction || props.onPrintXReport;
-			if (fn) await fn();
-			showToast(`X-отчёт смены №${shiftNumber} отправлен на печать`, "info");
+			if (fn) {
+				await fn();
+			} else {
+				await printFiscalXReportApi(cashierFullName);
+			}
+			showToast(`X-отчёт смены №${shiftNumber} сформирован`, "info");
 		} catch (err: unknown) {
-			showToast(err instanceof Error ? err.message : "Не удалось напечатать X-отчёт", "error");
+			showToast(err instanceof Error ? err.message : "Не удалось сформировать X-отчёт", "error");
 		}
-	}, [props, shiftNumber]);
+	}, [props, cashierFullName, shiftNumber]);
 
 	const handleCopyTape = useCallback(() => {
 		if (typeof navigator !== "undefined" && navigator.clipboard) {

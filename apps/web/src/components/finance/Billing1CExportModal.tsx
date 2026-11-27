@@ -44,7 +44,7 @@ export function Billing1CExportModal(props: Billing1CExportModalProps): React.Re
 
 	return (
 		<div
-			className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in"
+			className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in"
 			onClick={props.onClose}
 			role="dialog"
 			aria-modal="true"

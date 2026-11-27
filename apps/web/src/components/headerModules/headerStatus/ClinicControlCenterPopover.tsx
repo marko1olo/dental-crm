@@ -36,13 +36,13 @@ export function ClinicControlCenterPopover({
 	if (!isOpen) return null;
 
 	const desktopPositionClass = isSidebar
-		? "fixed bottom-16 left-4 z-[9999] w-[360px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-96px)] overflow-y-auto rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink)] border border-[var(--line-strong,var(--line))] p-4 shadow-2xl overflow-x-clip"
-		: "fixed top-14 right-4 z-[9999] w-[372px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-80px)] overflow-y-auto rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink)] border border-[var(--line-strong,var(--line))] p-4 shadow-2xl overflow-x-clip";
+		? "fixed bottom-16 left-4 z-[40] w-[360px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-96px)] overflow-y-auto rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink)] border border-[var(--line-strong,var(--line))] p-4 shadow-2xl overflow-x-clip"
+		: "fixed top-14 right-4 z-[40] w-[372px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-80px)] overflow-y-auto rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink)] border border-[var(--line-strong,var(--line))] p-4 shadow-2xl overflow-x-clip";
 
 	const content = (
 		<section
 			ref={popoverRef}
-			className={isMobile ? "dnt-cc-mobile-sheet fixed bottom-0 left-0 right-0 z-[9999] rounded-t-[24px] bg-[var(--paper-strong,var(--paper,#ffffff))] max-h-[85vh] overflow-y-auto p-4 border-t border-[var(--line)] shadow-2xl overflow-x-clip" : desktopPositionClass}
+			className={isMobile ? "dnt-cc-mobile-sheet fixed bottom-0 left-0 right-0 z-[50] rounded-t-[24px] bg-[var(--paper-strong,var(--paper,#ffffff))] max-h-[85vh] overflow-y-auto p-4 border-t border-[var(--line)] shadow-2xl overflow-x-clip" : desktopPositionClass}
 			aria-label="Центр управления клиникой"
 		>
 			{isMobile && (
@@ -88,7 +88,7 @@ export function ClinicControlCenterPopover({
 			<>
 				{isMobile && (
 					<div
-						className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[9998] transition-opacity"
+						className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[40] transition-opacity"
 						onClick={onClose}
 						aria-hidden="true"
 					/>

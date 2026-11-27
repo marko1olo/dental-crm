@@ -9,6 +9,7 @@
 
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { AppLoadingState } from "../../../../../AppBootState";
 import { lazyWithRetry } from "../../../../../lib/lazyWithRetry";
 import { useAppStore } from "../../../../../store/appStore";
@@ -75,7 +76,7 @@ export const StandaloneFamilyBillingLauncherHost: React.FC<{ onClose: () => void
 			mode="checkout"
 			patientId={patientId}
 			patientName={payerName || family.headPatientName || "Ответственный плательщик"}
-			patientFamilyBalanceRub={family.balanceRub}
+			patientFamilyBalanceKopecks={rublesToKopecks(family.balanceRub)}
 			clinicName={profile?.legalName || profile?.clinicName || ""}
 			clinicLegalName={profile?.legalName}
 			onClose={onClose}

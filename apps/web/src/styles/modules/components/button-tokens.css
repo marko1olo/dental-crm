@@ -344,7 +344,7 @@ button.icon-only-btn {
 	color: var(--teal, #2dd4bf);
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.btn-primary,
 	.btn-primary-cta,
 	.btn-secondary,

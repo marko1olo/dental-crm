@@ -164,7 +164,7 @@ describe("Solo Doctor & Friction Killer Autonomy Suite (Wave 40 / Mandates 8e, 8
 					isOpen={true}
 					onClose={() => {}}
 					amountKopecks={650000}
-					totalDueRub={6500}
+					totalDueKopecks={650000n}
 					patientId="pat-test-1"
 					patientName="Иванов И.И."
 					mode="checkout"

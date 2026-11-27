@@ -137,14 +137,13 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 						onClose={() => routing.setIsFastCheckoutDirectOpen(false)}
 						mode="checkout"
 						initialTab="checkout"
-						totalDueRub={appLogic?.effectiveBillingSummary?.totalDueRub ?? routing.fastCheckoutInitialAmountRub ?? 0}
-						amountRub={appLogic?.effectiveBillingSummary?.totalDueRub ?? routing.fastCheckoutInitialAmountRub ?? 0}
+						totalDueKopecks={routing.fastCheckoutInitialAmountKopecks ?? rublesToKopecks(appLogic?.effectiveBillingSummary?.totalDueRub ?? routing.fastCheckoutInitialAmountRub ?? 0)}
 						amountKopecks={routing.fastCheckoutInitialAmountKopecks ?? rublesToKopecks(appLogic?.effectiveBillingSummary?.totalDueRub ?? routing.fastCheckoutInitialAmountRub ?? 0)}
 						patientId={patient?.id || undefined}
 						patientName={patient?.fullName || undefined}
 						patientPhone={patient?.phone || undefined}
-						patientDepositRub={patient?.depositRub ?? 0}
-						patientFamilyBalanceRub={patient?.familyBalanceRub ?? 0}
+						patientDepositKopecks={rublesToKopecks(patient?.depositRub ?? 0)}
+						patientFamilyBalanceKopecks={rublesToKopecks(patient?.familyBalanceRub ?? 0)}
 						cashierFullName={staffUser?.fullName || doctorName}
 						clinicLegalName={activeWorkspaceProfile?.title || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
 						onSuccess={() => routing.setIsFastCheckoutDirectOpen(false)}

@@ -60,12 +60,12 @@ export const StandaloneFastCheckoutHost: React.FC<{ onClose: () => void }> = ({ 
 			containerTestId="cash-register-checkout-modal"
 			submitButtonTestId="btn-confirm-checkout-payment"
 			title="Касса · Оплата приёма"
-			totalDueRub={debtRub}
-			amountRub={debtRub}
+			totalDueKopecks={rublesToKopecks(debtRub)}
+			amountKopecks={rublesToKopecks(debtRub)}
 			patientId={patient.id}
 			patientName={patient.fullName}
 			patientPhone={patient.phone}
-			patientDepositRub={family?.balanceRub ?? 0}
+			patientDepositKopecks={rublesToKopecks(family?.balanceRub ?? 0)}
 			onClose={onClose}
 		/>
 	);
@@ -98,16 +98,15 @@ export const StandaloneSbpPaymentHost: React.FC<{ onClose: () => void }> = ({ on
 			title="Касса · Оплата СБП"
 			containerTestId="standalone-sbp-modal"
 			submitButtonTestId="btn-confirm-checkout-payment"
-			totalDueRub={debtRub}
-			amountRub={debtRub}
+			totalDueKopecks={rublesToKopecks(debtRub)}
 			amountKopecks={rublesToKopecks(debtRub)}
 			defaultMethod={isSplit ? "split" : "sbp"}
 			initialPaymentMethod={isSplit ? "split" : "sbp"}
 			patientId={patient.id}
 			patientName={patient.fullName}
 			patientPhone={patient.phone}
-			patientDepositRub={family?.balanceRub ?? 0}
-			patientFamilyBalanceRub={family?.balanceRub ?? 0}
+			patientDepositKopecks={rublesToKopecks(family?.balanceRub ?? 0)}
+			patientFamilyBalanceKopecks={rublesToKopecks(family?.balanceRub ?? 0)}
 			onClose={onClose}
 		/>
 	);

@@ -3,8 +3,8 @@
    Touch ergonomics >= 44x44px, 0px horizontal drift, safe area insets.
    ========================================================================== */
 
-/* Coarse pointer & Mobile Touch Targets (>= 44x44px per Apple HIG) */
-@media (pointer: coarse), (max-width: 840px) {
+/* Mobile Touch Targets (>= 44x44px per Apple HIG, <= 768px) */
+@media (max-width: 768px) {
 	.patients-search-clear-btn {
 		min-width: 44px;
 		min-height: 44px;
@@ -12,7 +12,7 @@
 	}
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
 	.patients-new-patient-btn,
 	.patients-header-actions .secondary-button,
 	.patient-row-action-btn,

@@ -96,7 +96,7 @@ export const RadiologyPatientSearchModal: React.FC<RadiologyPatientSearchModalPr
 			onClick={(e) => e.target === e.currentTarget && onClose()}
 		>
 			<div
-				className="relative flex flex-col w-full max-w-3xl max-h-[90vh] bg-white dark:bg-[#0c1424] text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+				className="relative flex flex-col w-full max-w-3xl max-h-[90vh] bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
 				data-testid="tactile-search-modal-dialog"
 				onClick={(e) => e.stopPropagation()}
 			>

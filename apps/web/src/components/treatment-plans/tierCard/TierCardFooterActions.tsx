@@ -35,7 +35,7 @@ export const TierCardFooterActions: React.FC<TierCardFooterActionsProps> = ({
 				<button
 					type="button"
 					onClick={(e) => onSignClick(e, tier)}
-					className={`w-full h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center gap-1.5 px-3 rounded-xl text-[13px] font-semibold cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[var(--teal)] active:scale-[0.99] secondary-button dente-btn dente-btn-secondary border ${
+					className={`w-full h-9 min-h-[36px] max-md:h-11 max-md:min-h-[44px] flex items-center justify-center gap-1.5 px-3 rounded-xl text-[13px] font-semibold cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[var(--teal)] active:scale-[0.99] secondary-button dente-btn dente-btn-secondary border ${
 						isSelected
 							? "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] font-bold shadow-2xs"
 							: "bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border-[var(--line,var(--border,#cbd5e1))]"
@@ -51,7 +51,7 @@ export const TierCardFooterActions: React.FC<TierCardFooterActionsProps> = ({
 				<button
 					type="button"
 					onClick={(e) => onInstallmentClick(e, tier)}
-					className="secondary-button dente-btn dente-btn-secondary flex-1 h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center gap-1.5 px-3 rounded-xl text-[13px] font-medium bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap min-w-0"
+					className="secondary-button dente-btn dente-btn-secondary flex-1 h-9 min-h-[36px] max-md:h-11 max-md:min-h-[44px] flex items-center justify-center gap-1.5 px-3 rounded-xl text-[13px] font-medium bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap min-w-0"
 					title="Оформить рассрочку 0% по данному варианту"
 				>
 					<CreditCard size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
@@ -61,7 +61,7 @@ export const TierCardFooterActions: React.FC<TierCardFooterActionsProps> = ({
 				<button
 					type="button"
 					onClick={(e) => onCopyMessengerClick(e, tier)}
-					className="secondary-button dente-btn dente-btn-secondary h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-2.5 rounded-xl text-[13px] font-medium bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap"
+					className="secondary-button dente-btn dente-btn-secondary h-9 min-h-[36px] max-md:h-11 max-md:min-h-[44px] px-2.5 rounded-xl text-[13px] font-medium bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap"
 					title="Скопировать смету для WhatsApp / Telegram (понятный пациенту формат)"
 					aria-label="Скопировать смету"
 					data-testid={`copy-estimate-messenger-btn-${tier.tierId}`}
@@ -83,7 +83,7 @@ export const TierCardFooterActions: React.FC<TierCardFooterActionsProps> = ({
 					<button
 						type="button"
 						onClick={(e) => onPrintClick(e, tier)}
-						className="secondary-button dente-btn dente-btn-secondary h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-xl text-[13px] font-medium bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap"
+						className="secondary-button dente-btn dente-btn-secondary h-9 min-h-[36px] max-md:h-11 max-md:min-h-[44px] px-3 rounded-xl text-[13px] font-medium bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap"
 						title="Распечатать договор и смету"
 						aria-label="Договор и смета (QR)"
 					>

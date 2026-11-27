@@ -562,7 +562,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 	if (!props.isOpen) return null;
 
 	const modalContent = (
-		<div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[var(--backdrop,rgba(15,23,42,0.8))] backdrop-blur-sm overflow-x-clip" role="dialog" aria-modal="true" aria-label={`Эндодонтическая студия зуба ${activeTooth}`} data-testid="endodontic-studio-modal">
+		<div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[var(--backdrop,rgba(15,23,42,0.8))] backdrop-blur-sm overflow-x-clip" role="dialog" aria-modal="true" aria-label={`Эндодонтическая студия зуба ${activeTooth}`} data-testid="endodontic-studio-modal">
 			<div className="relative w-full max-w-5xl bg-[var(--paper)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-w-full" data-testid="endo-canal-log-modal">
 				<div className="w-9 h-1.5 rounded-full bg-[var(--line)] mx-auto my-2.5 sm:hidden shrink-0 pointer-events-none" />
 				<header className="flex items-center justify-between p-3.5 sm:p-4 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">

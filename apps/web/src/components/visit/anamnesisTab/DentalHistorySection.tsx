@@ -19,8 +19,8 @@ export const DentalHistorySection: React.FC<DentalHistorySectionProps> = ({
 }) => {
 	return (
 		<div className="space-y-2.5">
-			<label className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-200 flex items-center gap-2 uppercase tracking-wider">
-				<Activity className="w-4 h-4 text-purple-500" />
+			<label className="text-xs font-semibold text-[var(--ink)] flex items-center gap-2">
+				<Activity className="w-4 h-4 text-[var(--ink-muted)]" />
 				<span>3. Стоматологический анамнез (Опыт анестезии, дентофобия, кровоточивость)</span>
 			</label>
 			<div className="flex flex-wrap gap-2">
@@ -38,9 +38,9 @@ export const DentalHistorySection: React.FC<DentalHistorySectionProps> = ({
 							className={`anamnesis-chip ${isSelected ? activeClass : ""}`}
 						>
 							{isSelected ? (
-								<Check className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+								<Check className="w-3.5 h-3.5 text-[var(--primary)]" />
 							) : (
-								<Plus className="w-3.5 h-3.5 text-[var(--muted,#64748b)]" />
+								<Plus className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
 							)}
 							<span>{item.label}</span>
 						</button>

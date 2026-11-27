@@ -97,37 +97,37 @@ export const ClinicalTopScenariosSubbar: React.FC<
 										{isNorm && (
 											<ShieldCheck
 												size={15}
-												className="text-emerald-600 dark:text-emerald-400 shrink-0"
+												className="text-[var(--primary)] shrink-0"
 											/>
 										)}
 										{isHygiene && (
 											<Sparkles
 												size={15}
-												className="text-teal-600 dark:text-teal-400 shrink-0"
+												className="text-[var(--ink-muted)] shrink-0"
 											/>
 										)}
 										{isCaries && (
 											<Stethoscope
 												size={15}
-												className="text-blue-600 dark:text-blue-400 shrink-0"
+												className="text-[var(--ink-muted)] shrink-0"
 											/>
 										)}
 										{isPulpitis && (
 											<Flame
 												size={15}
-												className="text-rose-600 dark:text-rose-400 shrink-0"
+												className="text-[var(--danger)] shrink-0"
 											/>
 										)}
 										{isPerio && (
 											<HeartPulse
 												size={15}
-												className="text-amber-600 dark:text-amber-400 shrink-0"
+												className="text-[var(--ink-muted)] shrink-0"
 											/>
 										)}
 										{isSurgery && (
 											<Scissors
 												size={15}
-												className="text-purple-600 dark:text-purple-400 shrink-0"
+												className="text-[var(--ink-muted)] shrink-0"
 											/>
 										)}
 										<span className="whitespace-nowrap shrink-0 font-extrabold text-[var(--ink)]">
@@ -191,7 +191,7 @@ export const ClinicalTopScenariosSubbar: React.FC<
 									<div className="flex items-center gap-1.5 min-w-0">
 										<Stethoscope
 											size={15}
-											className="text-blue-600 dark:text-blue-400 shrink-0"
+											className="text-[var(--ink-muted)] shrink-0"
 										/>
 										<span className="whitespace-nowrap shrink-0 font-extrabold text-[var(--ink)]">
 											{dynamicBadge}
