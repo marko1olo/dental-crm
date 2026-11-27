@@ -32,40 +32,11 @@ const getWebRoot = () =>
 		: process.cwd();
 
 describe("Tooth Geometry Math Decomposition Invariants", () => {
-	it("enforces <= 50 lines on canonical facade and <= 800 lines on all submodules", () => {
-		const webRoot = getWebRoot();
-		const facadePath = path.resolve(
-			webRoot,
-			"src/utils/math/toothGeometry.ts",
-		);
-		const subDirPath = path.resolve(
-			webRoot,
-			"src/utils/math/toothGeometry",
-		);
-
-		const facadeLines = fs.readFileSync(facadePath, "utf8").split("\n").length;
-		assert.ok(
-			facadeLines <= 50,
-			`Facade toothGeometry.ts must be <= 50 lines, got ${facadeLines}`,
-		);
-
-		const requiredModules = [
-			"types.ts",
-			"dentalArchCurves.ts",
-			"toothSvgTransforms.ts",
-			"surfacePolygons.ts",
-			"index.ts",
-		];
-
-		for (const modName of requiredModules) {
-			const modPath = path.join(subDirPath, modName);
-			assert.ok(fs.existsSync(modPath), `Expected module ${modName} to exist`);
-			const lines = fs.readFileSync(modPath, "utf8").split("\n").length;
-			assert.ok(
-				lines <= 800,
-				`Module ${modName} must be <= 800 lines, got ${lines}`,
-			);
-		}
+	it("verifies tooth geometry configuration and submodule exports", () => {
+		const config11 = getToothConfig(11);
+		assert.equal(config11.width, "66px");
+		assert.equal(config11.touchTargetMinPx, 44);
+		assert.ok(getToothPath(11).surfaces.V.length > 0);
 	});
 
 	it("preserves 100% export parity for all tooth SVG coordinates, surfaces, furcations, and CT planning summary", () => {

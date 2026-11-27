@@ -28,7 +28,7 @@ import {
 
 export function isRecordKey<T extends string>(
 	value: unknown,
-	record: Record<T, unknown>,
+	record: Readonly<Partial<Record<T, unknown>>>,
 ): value is T {
 	return typeof value === "string" && Object.hasOwn(record, value);
 }
@@ -66,13 +66,13 @@ export function isNullableString(value: unknown): value is string | null {
 }
 
 export function isPaymentMethod(value: unknown): value is PaymentMethod {
-	return isRecordKey(value, paymentMethodLabels as Record<PaymentMethod, unknown>);
+	return isRecordKey<PaymentMethod>(value, paymentMethodLabels);
 }
 
 export function isPricelistSourceKind(
 	value: unknown,
 ): value is PricelistSourceKind {
-	return isRecordKey(value, pricelistSourceKindLabels as Record<PricelistSourceKind, unknown>);
+	return isRecordKey<PricelistSourceKind>(value, pricelistSourceKindLabels);
 }
 
 export function isAiJobKind(value: unknown): value is AiJobKind {
@@ -85,25 +85,25 @@ export function isAiJobKind(value: unknown): value is AiJobKind {
 export function isAiRecognitionTarget(
 	value: unknown,
 ): value is AiRecognitionTarget {
-	return isRecordKey(value, recognitionTargetLabels as Record<AiRecognitionTarget, unknown>);
+	return isRecordKey<AiRecognitionTarget>(value, recognitionTargetLabels);
 }
 
 export function isImportSourceKind(value: unknown): value is ImportSourceKind {
-	return isRecordKey(value, importSourceLabels as Record<ImportSourceKind, unknown>);
+	return isRecordKey<ImportSourceKind>(value, importSourceLabels);
 }
 
 export function isDocumentIngestionTarget(
 	value: unknown,
 ): value is DocumentIngestionTarget {
-	return isRecordKey(value, ingestionTargetLabels as Record<DocumentIngestionTarget, unknown>);
+	return isRecordKey<DocumentIngestionTarget>(value, ingestionTargetLabels);
 }
 
 export function isImagingSourceKind(value: unknown): value is ImagingSourceKind {
-	return isRecordKey(value, imagingSourceLabels as Record<ImagingSourceKind, unknown>);
+	return isRecordKey<ImagingSourceKind>(value, imagingSourceLabels);
 }
 
 export function isSmartImportMode(value: unknown): value is SmartImportMode {
-	return isRecordKey(value, smartImportModeLabels as Record<SmartImportMode, unknown>);
+	return isRecordKey<SmartImportMode>(value, smartImportModeLabels);
 }
 
 export function isImagingKindFilter(
@@ -111,7 +111,7 @@ export function isImagingKindFilter(
 ): value is ImagingStudyKind | "all" {
 	return (
 		value === "all" ||
-		isRecordKey(value, imagingKindLabels as Record<ImagingStudyKind, unknown>)
+		isRecordKey<ImagingStudyKind>(value, imagingKindLabels)
 	);
 }
 

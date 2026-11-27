@@ -1,90 +1,124 @@
-/**
- * marketingRecallsAndAppleHig.test.ts
- * Red Team Inquisitorial tests for Patient Recalls Hub, WhatsApp/SMS/Telegram status persistence,
- * single Primary CTA, and Apple HIG mobile ergonomics (Mandates 8e, 8am, 8ze).
- */
-
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import test from "node:test";
-import { fileURLToPath } from "node:url";
+import { describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { sendRecallCandidateStatusUpdate } from "../../recalls/recallStatusUpdateApi";
+import { sendRecallCandidateInvite, validateRecallInviteSafety } from "../../recalls/recallMessagingApi";
+import { PatientRecallsHubModal } from "../../recalls/PatientRecallsHubModal";
+import { MarketingRomiTableHeader } from "../MarketingRomiTableHeader";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const marketingDir = path.resolve(__dirname, "..");
-const stylesDir = path.resolve(marketingDir, "../../styles/marketingStyles");
-const recallsDir = path.resolve(marketingDir, "../recalls");
+describe("Marketing, Recalls API & Apple HIG Render Verification", () => {
+	it("1. sendRecallCandidateStatusUpdate dispatches PATCH /api/recalls/:patientId/status with Idempotency-Key and throws on HTTP error", async () => {
+		const originalFetch = globalThis.fetch;
+		const calls: Array<{ url: string; method?: string | undefined; body?: string | undefined; headers?: Record<string, string> | undefined }> = [];
+		globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+			calls.push({
+				url: String(input),
+				method: init?.method,
+				body: init?.body ? String(init.body) : undefined,
+				headers: (init?.headers as Record<string, string>) ?? undefined,
+			});
+			if (String(input).includes("fail-patient")) {
+				return new Response(JSON.stringify({ message: "Ошибка обновления" }), { status: 400 });
+			}
+			return new Response(
+				JSON.stringify({ data: { ok: true, patientId: "pat-1", status: "scheduled", updatedAt: "2026-06-01T10:00:00Z" } }),
+				{ status: 200, headers: { "content-type": "application/json" } },
+			);
+		}) as typeof fetch;
 
-test("1. PatientRecallsHub canonical SSOT persists status to PostgreSQL /api/recalls", () => {
-	const actionsPath = path.join(recallsDir, "recallStatusUpdateApi.ts");
-	const actionsContent = fs.readFileSync(actionsPath, "utf8");
+		try {
+			const res = await sendRecallCandidateStatusUpdate({
+				patientId: "pat-1",
+				status: "scheduled",
+				channel: "whatsapp",
+				note: "Записан на гигиену",
+			});
+			assert.equal(res.ok, true);
+			assert.equal(res.status, "scheduled");
+			assert.equal(calls[0]?.url, "/api/recalls/pat-1/status");
+			assert.equal(calls[0]?.method, "PATCH");
+			assert.ok(calls[0]?.headers?.["Idempotency-Key"], "Must send Idempotency-Key header");
 
-	assert.ok(
-		actionsContent.includes("/api/recalls/") || actionsContent.includes("/api/patients/recall-candidates/"),
-		"Must invoke /api/recalls/ to persist recall status in PostgreSQL",
-	);
+			await assert.rejects(
+				() => sendRecallCandidateStatusUpdate({ patientId: "fail-patient", status: "scheduled" }),
+				/Ошибка обновления/,
+			);
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
+	});
 
-	const invitePath = path.join(recallsDir, "recallMessagingApi.ts");
-	const inviteContent = fs.readFileSync(invitePath, "utf8");
-	assert.ok(
-		inviteContent.includes("/api/recalls/invite"),
-		"Must invoke /api/recalls/invite for messaging invitations",
-	);
+	it("2. sendRecallCandidateInvite blocks non-consented marketing invites locally before fetch and posts /api/recalls/invite when allowed", async () => {
+		const originalFetch = globalThis.fetch;
+		let fetchCount = 0;
+		let lastUrl = "";
+		globalThis.fetch = (async (input: RequestInfo | URL) => {
+			fetchCount += 1;
+			lastUrl = String(input);
+			return new Response(JSON.stringify({ ok: true, outboxId: "out-1" }), { status: 200 });
+		}) as typeof fetch;
 
-	const hubActionsPath = path.join(recallsDir, "useRecallHubActions.ts");
-	const hubActionsContent = fs.readFileSync(hubActionsPath, "utf8");
-	assert.ok(
-		hubActionsContent.includes("buildWhatsAppUrl"),
-		"Must provide WhatsApp messaging integration",
-	);
-	assert.ok(
-		hubActionsContent.includes("buildTelegramUrl"),
-		"Must provide Telegram messaging integration",
-	);
+		try {
+			const blocked = await sendRecallCandidateInvite(
+				{ patientId: "pat-no-consent", channel: "sms", body: "Приглашаем" },
+				undefined,
+				{ consentMarketing: false },
+			);
+			assert.equal(blocked.ok, false);
+			assert.equal(fetchCount, 0, "Must suppress network request when marketing consent is false");
+
+			const okRes = await sendRecallCandidateInvite(
+				{ patientId: "pat-ok", channel: "whatsapp", body: "Ждём на профосмотр" },
+				undefined,
+				{ consentMarketing: true, messagesSentTodayCount: 0 },
+			);
+			assert.equal(okRes.ok, true);
+			assert.equal(fetchCount, 1);
+			assert.equal(lastUrl, "/api/recalls/invite");
+
+			const safetyCheck = validateRecallInviteSafety(
+				{
+					id: "rec-1",
+					patientId: "pat-1",
+					patientName: "Тест",
+					phone: "+79001112233",
+					consentMarketing: false,
+				} as Parameters<typeof validateRecallInviteSafety>[0],
+			);
+			assert.equal(safetyCheck.allowed, false);
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
+	});
+
+	it("3. PatientRecallsHubModal renders Apple HIG drag handle & unlocked buttons without raw emojis", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(PatientRecallsHubModal, {
+				isOpen: true,
+				embedded: true,
+				clinicName: "Денте Плюс",
+				initialCandidates: [],
+			}),
+		);
+		assert.ok(html.includes('data-testid="patient-recalls-hub-modal"'));
+		assert.ok(html.includes("recall-drag-handle"));
+		assert.equal(/<button[^>]*disabled/i.test(html), false, "No disabled buttons allowed");
+	});
+
+	it("4. MarketingRomiTableHeader renders single primary CTA and secondary sync/audit buttons", () => {
+		const noop = () => {};
+		const html = renderToStaticMarkup(
+			React.createElement(MarketingRomiTableHeader, {
+				onSyncWithCrm: noop,
+				onOpenRoiModal: noop,
+				onResetDefaults: noop,
+				isAddingChannel: false,
+				onToggleAddChannel: noop,
+			}),
+		);
+		assert.equal((html.match(/romi-action-btn primary/g) || []).length, 1);
+		assert.ok(html.includes('data-testid="romi-sync-crm-btn"'));
+		assert.ok(html.includes("Добавить канал"));
+	});
 });
-
-test("2. PatientRecallsHubModal contains canonical modal structure and Apple HIG drag handle", () => {
-	const hubPath = path.join(recallsDir, "PatientRecallsHubModal.tsx");
-	const content = fs.readFileSync(hubPath, "utf8");
-
-	assert.ok(
-		content.includes("data-testid=\"patient-recalls-hub-modal\""),
-		"Must have data-testid patient-recalls-hub-modal",
-	);
-	assert.ok(
-		content.includes("recall-drag-handle"),
-		"Modal must contain Apple HIG mobile bottom sheet drag handle",
-	);
-});
-
-test("3. MarketingRomiTableHeader has exactly ONE Primary CTA in Teal", () => {
-	const headerPath = path.join(marketingDir, "MarketingRomiTableHeader.tsx");
-	const content = fs.readFileSync(headerPath, "utf8");
-
-	const primaryMatches = content.match(/romi-action-btn primary/g) || [];
-	assert.equal(
-		primaryMatches.length,
-		1,
-		"There must be exactly ONE Primary CTA in MarketingRomiTableHeader",
-	);
-	assert.ok(
-		content.includes("Добавить канал"),
-		"Primary CTA must be channel addition",
-	);
-});
-
-test("4. Marketing mobile styles enforce Apple HIG >= 44px touch targets and 0px horizontal drift", () => {
-	const mobileCssPath = path.join(stylesDir, "marketingMobile.css");
-	const content = fs.readFileSync(mobileCssPath, "utf8");
-
-	assert.ok(
-		content.includes("min-height: 44px") || content.includes("min-height:44px"),
-		"Touch targets must enforce >= 44px minimum height",
-	);
-	assert.ok(
-		content.includes("overflow-x: clip") || content.includes("overflow-x: hidden"),
-		"Must prevent horizontal drift with overflow-x: clip",
-	);
-});
-

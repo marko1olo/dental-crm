@@ -10,20 +10,6 @@ import {
 } from "./preloadGraphPlan";
 import { logger } from "../utils/logger";
 
-type IdleDeadline = {
-	didTimeout: boolean;
-	timeRemaining: () => number;
-};
-
-type IdlePreloadWindow = Window &
-	typeof globalThis & {
-		requestIdleCallback?: (
-			callback: (deadline: IdleDeadline) => void,
-			options?: { timeout: number },
-		) => number;
-		cancelIdleCallback?: (handle: number) => void;
-	};
-
 /** Кэш успешно запрошенных или находящихся в процессе загрузки разделов */
 const preloadedViewCache = new Set<AppView>();
 
@@ -96,7 +82,6 @@ export function preloadWorkspaceView(
 			if (preloadedViewCache.has(view)) return;
 			preloadedViewCache.add(view);
 
-			const idleWindow = window as IdlePreloadWindow;
 			const executeLoad = () => {
 				void retryDynamicImport(preloader, {
 					maxRetries: 2,
@@ -111,8 +96,8 @@ export function preloadWorkspaceView(
 				});
 			};
 
-			if (idleWindow.requestIdleCallback) {
-				idleWindow.requestIdleCallback(executeLoad, {
+			if (window.requestIdleCallback) {
+				window.requestIdleCallback(executeLoad, {
 					timeout: isLowSpecDevice() ? 6000 : 3000,
 				});
 			} else {
@@ -138,7 +123,6 @@ export function preloadWorkspaceView(
 			if (preloadedViewCache.has(view)) return;
 			preloadedViewCache.add(view);
 
-			const idleWindow = window as IdlePreloadWindow;
 			const executeLoad = () => {
 				void retryDynamicImport(preloader, {
 					maxRetries: 2,
@@ -153,8 +137,8 @@ export function preloadWorkspaceView(
 				});
 			};
 
-			if (idleWindow.requestIdleCallback) {
-				idleWindow.requestIdleCallback(executeLoad, {
+			if (window.requestIdleCallback) {
+				window.requestIdleCallback(executeLoad, {
 					timeout: isLowSpecDevice() ? 5000 : 2500,
 				});
 			} else {
@@ -209,14 +193,13 @@ export function scheduleIdleWorkspacePreload(
 		preloadViews = preloadViews.slice(0, 1);
 	}
 
-	const idleWindow = window as IdlePreloadWindow;
 	let cancelled = false;
 	let currentIdleHandle: number | null = null;
 	let currentTimerHandle: number | null = null;
 
 	const clearScheduled = () => {
-		if (currentIdleHandle !== null && idleWindow.cancelIdleCallback) {
-			idleWindow.cancelIdleCallback(currentIdleHandle);
+		if (currentIdleHandle !== null && window.cancelIdleCallback) {
+			window.cancelIdleCallback(currentIdleHandle);
 			currentIdleHandle = null;
 		}
 		if (currentTimerHandle !== null) {
@@ -255,8 +238,8 @@ export function scheduleIdleWorkspacePreload(
 			currentTimerHandle = null;
 			if (cancelled) return;
 
-			if (idleWindow.requestIdleCallback) {
-				currentIdleHandle = idleWindow.requestIdleCallback(
+			if (window.requestIdleCallback) {
+				currentIdleHandle = window.requestIdleCallback(
 					(deadline) => {
 						currentIdleHandle = null;
 						if (cancelled) return;

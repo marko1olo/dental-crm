@@ -44,12 +44,11 @@ export function useFilteredSettingsTabs(
 	rawSettingsTabs: SettingsTabItem[] | null | undefined,
 	flags: SettingsViewFeatureFlags,
 	activeStaffUser?: SettingsStaffUser | null,
-): Array<{ id: SettingsTabId; title: string; group: SettingsTabGroup }> {
-	let typed = (
+): SettingsTabItem[] {
+	let typed: SettingsTabItem[] =
 		Array.isArray(rawSettingsTabs) && rawSettingsTabs.length > 0
 			? rawSettingsTabs
-			: settingsTabs
-	) as Array<{ id: SettingsTabId; title: string; group: SettingsTabGroup }>;
+			: settingsTabs.map((t) => ({ id: t.id, title: t.title, group: t.group }));
 
 	if (!flags.hasMarketingModule) typed = typed.filter((t) => t.id !== "marketing");
 	if (!flags.hasAnalyticsModule) typed = typed.filter((t) => t.id !== "reporting");
@@ -101,17 +100,20 @@ export function buildSettingsViewLogicBag(appLogic: Record<string, unknown> | nu
 		pricelistWarningsText: (w: unknown[]) => {
 			const fn = appLogic?.pricelistWarningsText;
 			if (typeof fn !== "function") return "";
-			return fn(w.filter((x): x is string => typeof x === "string")) as string;
+			const res = fn(w.filter((x): x is string => typeof x === "string"));
+			return typeof res === "string" ? res : "";
 		},
 		pricelistItemMaterialText: (it: unknown) => {
 			const fn = appLogic?.pricelistItemMaterialText;
 			if (!it || typeof it !== "object" || typeof fn !== "function") return "";
-			return fn(it) as string;
+			const res = fn(it);
+			return typeof res === "string" ? res : "";
 		},
 		pricelistMaterialSummaryText: (s: unknown) => {
 			const fn = appLogic?.pricelistMaterialSummaryText;
 			if (!s || typeof s !== "object" || typeof fn !== "function") return "";
-			return fn(s) as string;
+			const res = fn(s);
+			return typeof res === "string" ? res : "";
 		},
 	};
 }

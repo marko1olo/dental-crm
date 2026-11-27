@@ -8,8 +8,7 @@ import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { communicationEvents } from "../../db/schema.js";
 import {
 	UUID_REGEX,
@@ -64,8 +63,8 @@ export async function handleStreamRecording(
 		return reply.status(400).send({ error: "InvalidEventId", message: "Invalid event ID format" });
 	}
 
-	const eventRow = await withTenantCtx(orgId, async () => {
-		const rows = await db
+	const eventRow = await withTenantReadCtx(orgId, async (tx) => {
+		const rows = await tx
 			.select({ id: communicationEvents.id, recordingUrl: communicationEvents.recordingUrl, audioFormat: communicationEvents.audioFormat })
 			.from(communicationEvents)
 			.where(and(eq(communicationEvents.id, eventId), eq(communicationEvents.organizationId, orgId)))

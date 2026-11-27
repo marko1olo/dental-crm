@@ -1,4 +1,8 @@
 import React, { useEffect, useState, useMemo } from "react";
+import {
+  extractWallTimePartsInTimeZone,
+  resolveValidIanaTimeZone,
+} from "@dental/shared";
 
 export interface ScheduleCurrentTimeIndicatorProps {
   timeSlots: string[];
@@ -7,6 +11,7 @@ export interface ScheduleCurrentTimeIndicatorProps {
   timezone?: string;
   baseSlotHeightPx?: number;
   leftOffset?: string;
+  now?: Date | undefined;
 }
 
 function parseSlotMinutes(slot: string): number {
@@ -16,39 +21,17 @@ function parseSlotMinutes(slot: string): number {
   return h * 60 + m;
 }
 
-function getCurrentTimeInfo(dateKey: string, timezone?: string) {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  let todayStr = `${y}-${m}-${d}`;
-  let nowHours = now.getHours();
-  let nowMinutes = now.getMinutes();
-
-  if (timezone) {
-    try {
-      const formatter = new Intl.DateTimeFormat("en-CA", {
-        timeZone: timezone,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-      const parts = formatter.formatToParts(now);
-      const py = parts.find((p) => p.type === "year")?.value;
-      const pm = parts.find((p) => p.type === "month")?.value;
-      const pd = parts.find((p) => p.type === "day")?.value;
-      const phr = parts.find((p) => p.type === "hour")?.value;
-      const pmin = parts.find((p) => p.type === "minute")?.value;
-      if (py && pm && pd) todayStr = `${py}-${pm}-${pd}`;
-      if (phr !== undefined) nowHours = Number.parseInt(phr, 10);
-      if (pmin !== undefined) nowMinutes = Number.parseInt(pmin, 10);
-    } catch {
-      // fallback to local time
-    }
-  }
+export function getCurrentTimeInfo(
+  dateKey: string,
+  timezone?: string,
+  nowInput?: Date,
+) {
+  const now = nowInput ?? new Date();
+  const tz = resolveValidIanaTimeZone(timezone);
+  const wall = extractWallTimePartsInTimeZone(now, tz);
+  const todayStr = wall?.dateKey ?? now.toISOString().slice(0, 10);
+  const nowHours = wall?.hours ?? now.getUTCHours();
+  const nowMinutes = wall?.minutes ?? now.getUTCMinutes();
 
   const isToday = !dateKey || dateKey === "today" || dateKey === todayStr;
   const currentTotalMinutes = nowHours * 60 + nowMinutes;
@@ -69,12 +52,16 @@ export const ScheduleCurrentTimeIndicator: React.FC<ScheduleCurrentTimeIndicator
   timezone,
   baseSlotHeightPx = 52,
   leftOffset = "clamp(88px, 6.5vw, 96px)",
+  now,
 }) => {
-  const [timeInfo, setTimeInfo] = useState(() => getCurrentTimeInfo(dateKey, timezone));
+  const [timeInfo, setTimeInfo] = useState(() =>
+    getCurrentTimeInfo(dateKey, timezone, now),
+  );
 
   // Ticking update every 30 seconds
   useEffect(() => {
-    setTimeInfo(getCurrentTimeInfo(dateKey, timezone));
+    setTimeInfo(getCurrentTimeInfo(dateKey, timezone, now));
+    if (now) return undefined;
     const interval = setInterval(() => {
       setTimeInfo(getCurrentTimeInfo(dateKey, timezone));
     }, 30_000);
@@ -87,7 +74,7 @@ export const ScheduleCurrentTimeIndicator: React.FC<ScheduleCurrentTimeIndicator
       (interval as { unref: () => void }).unref();
     }
     return () => clearInterval(interval);
-  }, [dateKey, timezone]);
+  }, [dateKey, timezone, now]);
 
   const indicatorLayout = useMemo(() => {
     if (!timeInfo.isToday || timeSlots.length === 0) return null;

@@ -108,7 +108,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 					: secretHeader;
 
 				if (botId?.trim() && providedSecret?.trim()) {
-					const [orgConfig] = await withSuperuserBypass(async (tx) =>
+					const matchedConfigs = await withSuperuserBypass(async (tx) =>
 						tx
 							.select({
 								organizationId: denteMaxBotConfigs.organizationId,
@@ -117,8 +117,19 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 							})
 							.from(denteMaxBotConfigs)
 							.where(eq(denteMaxBotConfigs.botId, botId.trim()))
-							.limit(1),
+							.limit(2),
 					);
+					if (matchedConfigs.length > 1) {
+						request.log.error(
+							{ botId: botId.trim() },
+							"MAX webhook rejected: ambiguous botId shared across multiple organizations",
+						);
+						return reply.code(409).send({
+							error: "AmbiguousBotId",
+							message: "Идентификатор бота MAX привязан более чем к одной организации.",
+						});
+					}
+					const orgConfig = matchedConfigs[0];
 					const storedSecret = OmnichannelTokenVault.resolveOperationalToken(
 						orgConfig?.tokenSecretRef ?? orgConfig?.maxBotToken,
 						orgConfig?.organizationId ?? "default",
@@ -371,13 +382,21 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 				? String(msgIdRaw).trim()
 				: null;
 
-		const [orgConfig] = await withSuperuserBypass(async (tx) =>
+		const matchedConfigs = await withSuperuserBypass(async (tx) =>
 			tx
 				.select({ organizationId: denteMaxBotConfigs.organizationId })
 				.from(denteMaxBotConfigs)
 				.where(eq(denteMaxBotConfigs.botId, botIdHeader))
-				.limit(1),
+				.limit(2),
 		);
+		if (matchedConfigs.length > 1) {
+			request.log.error(
+				{ botId: botIdHeader },
+				"MAX webhook skipped: ambiguous botId configured across multiple organizations",
+			);
+			return false;
+		}
+		const orgConfig = matchedConfigs[0];
 
 		if (!orgConfig) return false;
 

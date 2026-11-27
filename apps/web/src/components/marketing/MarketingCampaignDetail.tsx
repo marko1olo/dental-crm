@@ -57,8 +57,18 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 
 	const estimatedCostRub = (activeSegment.count * DEFAULT_CHANNEL_RATES[channel].rateRub).toFixed(2);
 	const clinicSettingsTyped = appLogic?.dashboard?.clinicSettings as
-		| { name?: string | null; website?: string | null; profile?: { legalName?: string | null } }
+		| {
+				name?: string | null;
+				phone?: string | null;
+				website?: string | null;
+				profile?: { legalName?: string | null; phone?: string | null };
+		  }
 		| undefined;
+	const defaultTestRecipient =
+		clinicSettingsTyped?.phone?.trim() ||
+		clinicSettingsTyped?.profile?.phone?.trim() ||
+		"";
+	const [testRecipient, setTestRecipient] = useState<string>(defaultTestRecipient);
 	const resolvedClinicName =
 		clinicName.trim() ||
 		clinicSettingsTyped?.name?.trim() ||
@@ -79,7 +89,12 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 		.replace(/\{Ссылка\}/g, clinicBookingUrl);
 
 	const handleTestSend = async () => {
-		setTestSent(true);
+		const targetRecipient = (testRecipient || defaultTestRecipient).trim();
+		if (!targetRecipient) {
+			setTestSent(false);
+			showToast("Укажите номер телефона или ID чата для тестовой отправки", "warning");
+			return;
+		}
 		try {
 			if (!testSendKeyRef.current) {
 				testSendKeyRef.current = generateUuidV7();
@@ -91,21 +106,27 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 			const res = await fetch("/api/communications/outbox", {
 				method: "POST",
 				headers,
-				body: JSON.stringify({ channel, intent: "general", scope: "marketing", body: `[ТЕСТ] ${compiledPreview}`, dedupeKey: `test_${promo.id}_${testSendKeyRef.current}` }),
+				body: JSON.stringify({
+					channel,
+					intent: "general",
+					scope: "marketing",
+					recipientAddress: targetRecipient,
+					body: `[ТЕСТ] ${compiledPreview}`,
+					dedupeKey: `test_${promo.id}_${testSendKeyRef.current}`,
+				}),
 			});
 			if (!res.ok) {
 				throw new Error(`HTTP ${res.status}`);
 			}
 			testSendKeyRef.current = null;
-			showToast(`Тестовое сообщение (${channel.toUpperCase()}) отправлено`, "info");
+			setTestSent(true);
+			showToast(`Тестовое сообщение (${channel.toUpperCase()}) отправлено на ${targetRecipient}`, "info");
 		} catch (err) {
 			setTestSent(false);
 			showToast(
 				err instanceof Error ? `Не удалось отправить тестовое сообщение: ${err.message}` : "Ошибка тестовой отправки",
 				"error",
 			);
-		} finally {
-			setTimeout(() => setTestSent(false), 3000);
 		}
 	};
 
@@ -149,7 +170,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 			<MarketingCampaignConditions conditions={promo.conditions} />
 			<MarketingCampaignAnalytics stats={promo.stats} />
 			<MarketingCampaignMessageCard selectedChannel={channel} onSelectChannel={setChannel} compiledText={compiledPreview} channelRateLabel={DEFAULT_CHANNEL_RATES[channel].label} />
-			<MarketingCampaignLaunchSection segments={segments} selectedSegmentId={segmentId} onSelectSegment={setSegmentId} consentOnly={consentOnly} onChangeConsentOnly={setConsentOnly} estimatedCostRub={estimatedCostRub} activeSegment={activeSegment} channelRateRub={DEFAULT_CHANNEL_RATES[channel].rateRub} isSending={isSending} testSent={testSent} onLaunch={handleLaunchCampaign} onTestSend={handleTestSend} />
+			<MarketingCampaignLaunchSection segments={segments} selectedSegmentId={segmentId} onSelectSegment={setSegmentId} consentOnly={consentOnly} onChangeConsentOnly={setConsentOnly} estimatedCostRub={estimatedCostRub} activeSegment={activeSegment} channelRateRub={DEFAULT_CHANNEL_RATES[channel].rateRub} isSending={isSending} testSent={testSent} testRecipient={testRecipient} onChangeTestRecipient={setTestRecipient} onLaunch={handleLaunchCampaign} onTestSend={handleTestSend} />
 		</div>
 	);
 };

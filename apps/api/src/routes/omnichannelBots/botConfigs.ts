@@ -4,8 +4,7 @@ import {
 	requireNonDoctorAccess,
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantCtx, withTenantReadCtx } from "../../db/rls.js";
 import {
 	denteMaxBotConfigs,
 	denteTelegramBotConfigs,
@@ -27,24 +26,28 @@ export async function getBotConfigsHandler(request: FastifyRequest, reply: Fasti
 	const orgId = await requireResolvedOrganizationId(request, reply, "bots configs read");
 	if (!orgId) return;
 
-	const [tgConfigs, vkConfigs, waConfigs, maxConfigs] = await Promise.all([
-		db
-			.select()
-			.from(denteTelegramBotConfigs)
-			.where(eq(denteTelegramBotConfigs.organizationId, orgId)),
-		db
-			.select()
-			.from(denteVkBotConfigs)
-			.where(eq(denteVkBotConfigs.organizationId, orgId)),
-		db
-			.select()
-			.from(denteWhatsappBotConfigs)
-			.where(eq(denteWhatsappBotConfigs.organizationId, orgId)),
-		db
-			.select()
-			.from(denteMaxBotConfigs)
-			.where(eq(denteMaxBotConfigs.organizationId, orgId)),
-	]);
+	const [tgConfigs, vkConfigs, waConfigs, maxConfigs] = await withTenantReadCtx(
+		orgId,
+		async (tx) =>
+			Promise.all([
+				tx
+					.select()
+					.from(denteTelegramBotConfigs)
+					.where(eq(denteTelegramBotConfigs.organizationId, orgId)),
+				tx
+					.select()
+					.from(denteVkBotConfigs)
+					.where(eq(denteVkBotConfigs.organizationId, orgId)),
+				tx
+					.select()
+					.from(denteWhatsappBotConfigs)
+					.where(eq(denteWhatsappBotConfigs.organizationId, orgId)),
+				tx
+					.select()
+					.from(denteMaxBotConfigs)
+					.where(eq(denteMaxBotConfigs.organizationId, orgId)),
+			]),
+	);
 
 	const tg = tgConfigs[0];
 	const vk = vkConfigs[0];
@@ -308,14 +311,21 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 		}
 	});
 
-	// Обновляем рантайм в памяти движка
+	const runtimeToken =
+		body.token?.trim() ||
+		(encryptedToken ? OmnichannelTokenVault.resolveToken(encryptedToken, orgId) ?? "" : "");
+	const runtimeSecretToken =
+		body.secretKey?.trim() ||
+		(encryptedSecretKey ? OmnichannelTokenVault.resolveToken(encryptedSecretKey, orgId) ?? null : null);
+
+	// Обновляем рантайм в памяти движка расшифрованным токеном
 	const runtime = omnichannelBotEngine.registerBot({
 		channel: body.channel,
 		organizationId: orgId,
 		clinicId: body.clinicId ?? null,
 		botConfigId: body.botConfigId,
-		token: encryptedToken ?? "",
-		secretToken: encryptedSecretKey ?? null,
+		token: runtimeToken,
+		secretToken: runtimeSecretToken,
 		isActive: body.isActive,
 		enabledPlugins: body.enabledPlugins,
 	});

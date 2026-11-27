@@ -152,8 +152,17 @@ export function extractErrorMessage(
 		if (readable) return readable;
 	}
 
-	if (typeof error === "object") {
-		const obj = error as Record<string, unknown>;
+	interface ApiErrorObject {
+		issues?: unknown;
+		message?: unknown;
+		error?: unknown;
+		code?: unknown;
+		status?: unknown;
+		statusCode?: unknown;
+	}
+
+	if (error && typeof error === "object") {
+		const obj = error as ApiErrorObject;
 
 		// Обработка Zod issues / Fastify валидации
 		if (Array.isArray(obj.issues) && obj.issues.length > 0) {

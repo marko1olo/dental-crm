@@ -52,6 +52,7 @@ export function ScheduleViewToolbar(props: ScheduleViewToolbarProps) {
         onClose={() => setIsTimeReservationOpen(false)}
         defaultDateKey={props.scheduleDateFilter}
         chairs={props.dashboard?.clinicSettings?.chairs}
+        timezone={props.dashboard?.clinicSettings?.profile?.timezone}
       />
     </>
   );

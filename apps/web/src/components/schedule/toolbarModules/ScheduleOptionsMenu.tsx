@@ -1,4 +1,5 @@
 import React from "react";
+import { tomorrowDateKeyInTimeZone } from "@dental/shared";
 import {
 	MoreVertical,
 	Plus,
@@ -19,6 +20,7 @@ export interface ScheduleOptionsMenuProps {
 	onQuickBooking?: (() => void) | undefined;
 	onSetDate: (date: string) => void;
 	localNow: Date;
+	timezone?: string | undefined;
 	onSelectWholeWeek?: (() => void) | undefined;
 	statusFilter?: string | null | undefined;
 	onSetStatusFilter: (status: string) => void;
@@ -55,6 +57,7 @@ export function ScheduleOptionsMenu({
 	onQuickBooking,
 	onSetDate,
 	localNow,
+	timezone,
 	onSelectWholeWeek,
 	statusFilter,
 	onSetStatusFilter,
@@ -124,8 +127,7 @@ export function ScheduleOptionsMenu({
 						type="button"
 						onClick={() => {
 							onClose();
-							const tom = new Date(localNow.getTime() + 86400000).toISOString().slice(0, 10);
-							onSetDate(tom);
+							onSetDate(tomorrowDateKeyInTimeZone(timezone, localNow));
 						}}
 						className="w-full py-1.5 px-2.5 rounded-md hover:bg-[var(--paper-soft)] text-left flex items-center justify-between text-[var(--ink)] cursor-pointer"
 					>

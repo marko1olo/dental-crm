@@ -21,6 +21,10 @@ import {
 	lockAppointmentResources,
 	type DbClientOrTransaction,
 } from "./appointmentValidationHelpers.js";
+import {
+	acquireCanonicalScheduleAdvisoryLocks,
+	assertNoTimeReservationOverlap,
+} from "./scheduleReservationLockHelpers.js";
 
 export async function updateAppointmentInDb(
 	organizationId: string,
@@ -126,6 +130,11 @@ export async function updateAppointmentInDb(
 		const isEmergencyOverrideOverall = isEmergencyBookingOverride(input);
 
 		if (newStatus !== "cancelled" && newStatus !== "no_show") {
+			await acquireCanonicalScheduleAdvisoryLocks(tx, organizationId, {
+				chairIds: [existing.chairId, newChairId],
+				doctorIds: [existing.doctorUserId, newDoctorUserId],
+			});
+
 			// Шаг 2: Блокировка всех затрагиваемых ресурсов (старых И новых) в каноническом порядке
 			await lockAppointmentResources(tx, organizationId, {
 				chairIds: [existing.chairId, newChairId],
@@ -165,6 +174,11 @@ export async function updateAppointmentInDb(
 
 			// Шаг 4: Проверка отсутствия пересечений (пропускается при овербукинге или острой боли)
 			if (!input.allowOverbooking && !isEmergencyOverrideOverall) {
+				await assertNoTimeReservationOverlap(tx, organizationId, {
+					startsAt: candidateStarts,
+					endsAt: candidateEnds,
+					chairId: newChairId,
+				});
 				await assertNoResourceOverlap(tx, organizationId, {
 					startsAt: candidateStarts,
 					endsAt: candidateEnds,

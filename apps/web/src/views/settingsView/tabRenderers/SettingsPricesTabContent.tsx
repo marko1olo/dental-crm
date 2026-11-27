@@ -23,15 +23,12 @@ export const SettingsPricesTabContent: React.FC<SettingsPricesTabContentProps> =
 	pricelistItemMaterialText = () => "",
 	pricelistMaterialSummaryText = () => "",
 }) => {
-	const typedPricelistItems = (pricelistAnalysis?.items ??
-		[]) as DentalPricelistAnalysisResponse["items"];
-	const pricelistWarningRows = (typedPricelistItems ?? []).filter(
+	const typedPricelistItems = pricelistAnalysis?.items ?? [];
+	const pricelistWarningRows = typedPricelistItems.filter(
 		(item) => (item?.warnings ?? []).length > 0,
 	);
-	const typedPricelistResponseWarnings = (pricelistAnalysis?.warnings ??
-		[]) as DentalPricelistAnalysisResponse["warnings"];
-	const typedPricelistSummary = (pricelistAnalysis?.summary ??
-		[]) as DentalPricelistAnalysisResponse["summary"];
+	const typedPricelistResponseWarnings = pricelistAnalysis?.warnings ?? [];
+	const typedPricelistSummary = pricelistAnalysis?.summary ?? [];
 
 	const pricelistSummaryPriceRangeText = (summary: DentalPricelistAnalysisResponse["summary"][number]): string => {
 		if (summary.minPriceRub === null || summary.maxPriceRub === null) return "не определяются — ни одна строка категории не отдала цену";

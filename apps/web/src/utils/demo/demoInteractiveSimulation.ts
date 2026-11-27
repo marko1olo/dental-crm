@@ -24,6 +24,7 @@ import {
 	isDemoPatientId,
 	isDemoTenant,
 } from "../demoModeEngine.js";
+import { logger } from "../logger.js";
 import {
 	DEMO_THERAPIST_ODONTOGRAM,
 	DEMO_THERAPIST_SOAP_DIARY,
@@ -191,7 +192,8 @@ export class DemoInteractiveState {
 		if (this.appointments.length === 0 && typeof getDemoShowcaseAppointments === "function") {
 			try {
 				this.appointments = getDemoShowcaseAppointments();
-			} catch {
+			} catch (err) {
+				logger.debug("[demoInteractiveSimulation] Failed to load showcase appointments", err);
 				this.appointments = [];
 			}
 		}
@@ -206,7 +208,8 @@ export class DemoInteractiveState {
 		if (this.appointments.length === 0 && typeof getDemoShowcaseAppointments === "function") {
 			try {
 				this.appointments = getDemoShowcaseAppointments();
-			} catch {
+			} catch (err) {
+				logger.debug("[demoInteractiveSimulation] Failed to load showcase appointments", err);
 				this.appointments = [];
 			}
 		}
@@ -319,7 +322,9 @@ export function simulateDemoAppointmentStatusChange(
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ status: newStatus }),
 				})
-				.catch(() => {});
+				.catch((err) => {
+					logger.debug("[Demo] appointment status sync skipped", err);
+				});
 		} catch {
 			// non-blocking
 		}
@@ -367,7 +372,9 @@ export function simulateDemoToothClick(
 						}),
 					},
 				)
-				.catch(() => {});
+				.catch((err) => {
+					logger.debug("[Demo] appointment status sync skipped", err);
+				});
 		} catch {
 			// non-blocking
 		}
@@ -458,7 +465,8 @@ export function restoreLiveStaffSessionAfterDemo(): boolean {
 			}
 		}
 		return true;
-	} catch {
+	} catch (err) {
+		logger.debug("[demoInteractiveSimulation] Failed to clear demo staff session", err);
 		return false;
 	}
 }
@@ -559,7 +567,9 @@ export function switchDemoRole(
 							},
 							body: JSON.stringify({ role: roleKey }),
 						})
-						.catch(() => {});
+						.catch((err) => {
+					logger.debug("[Demo] appointment status sync skipped", err);
+				});
 				} catch {
 					// non-blocking
 				}

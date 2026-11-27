@@ -36,6 +36,7 @@ export interface ShiftQueueCounts {
 
 export interface ScheduleFilterStripProps {
 	todayIso?: string | undefined;
+	clinicTimezone?: string | undefined;
 	scheduleDateFilter: string;
 	setScheduleDateFilter: (date: string) => void;
 	stepScheduleDay: (delta: number) => void;

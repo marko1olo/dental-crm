@@ -210,10 +210,7 @@ export function normalizedClinicalRuleAction(
 ): Dashboard["clinicalRules"][number]["action"] {
 	return isRecordKey<Dashboard["clinicalRules"][number]["action"]>(
 		value,
-		clinicalRuleActionLabels as Record<
-			Dashboard["clinicalRules"][number]["action"],
-			unknown
-		>,
+		clinicalRuleActionLabels,
 	)
 		? value
 		: "add_required_service";
@@ -224,10 +221,7 @@ export function normalizedClinicalRuleSeverity(
 ): Dashboard["clinicalRules"][number]["severity"] {
 	return isRecordKey<Dashboard["clinicalRules"][number]["severity"]>(
 		value,
-		clinicalRuleSeverityLabels as Record<
-			Dashboard["clinicalRules"][number]["severity"],
-			unknown
-		>,
+		clinicalRuleSeverityLabels,
 	)
 		? value
 		: "warning";
@@ -238,10 +232,7 @@ export function normalizedServiceCategory(
 ): Dashboard["serviceCatalog"][number]["category"] {
 	return isRecordKey<Dashboard["serviceCatalog"][number]["category"]>(
 		value,
-		serviceCategoryLabels as Record<
-			Dashboard["serviceCatalog"][number]["category"],
-			unknown
-		>,
+		serviceCategoryLabels,
 	)
 		? value
 		: "therapy";

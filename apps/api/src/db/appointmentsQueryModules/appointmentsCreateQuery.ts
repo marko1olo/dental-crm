@@ -21,6 +21,10 @@ import {
 	lockAppointmentResources,
 	type DbClientOrTransaction,
 } from "./appointmentValidationHelpers.js";
+import {
+	acquireCanonicalScheduleAdvisoryLocks,
+	assertNoTimeReservationOverlap,
+} from "./scheduleReservationLockHelpers.js";
 
 export type CreateAppointmentDbInput = CreateAppointmentInput & {
 	allowEmergencyOverride?: boolean | undefined;
@@ -179,6 +183,10 @@ export async function createAppointmentInDb(
 			input,
 		);
 		if (input.status !== "cancelled" && input.status !== "no_show") {
+			await acquireCanonicalScheduleAdvisoryLocks(executor, organizationId, {
+				chairId: input.chairId,
+				doctorUserId: input.doctorUserId,
+			});
 			await lockAppointmentResources(executor, organizationId, {
 				chairId: input.chairId,
 				doctorUserId: input.doctorUserId,
@@ -186,6 +194,11 @@ export async function createAppointmentInDb(
 				patientId: input.patientId,
 			});
 			if (!input.allowOverbooking && !isEmergencyOverrideOverall) {
+				await assertNoTimeReservationOverlap(executor, organizationId, {
+					startsAt: candidateStarts,
+					endsAt: candidateEnds,
+					chairId: input.chairId,
+				});
 				await assertNoResourceOverlap(executor, organizationId, {
 					startsAt: candidateStarts,
 					endsAt: candidateEnds,

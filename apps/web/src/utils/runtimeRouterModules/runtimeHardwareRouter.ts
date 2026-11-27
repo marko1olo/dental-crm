@@ -21,6 +21,22 @@ import { isLowSpecDevice } from "../lowSpecHddOptimizer.js";
 import { logger } from "../logger.js";
 import type { AppRuntimeKind, RuntimeRoutingConfig } from "./runtimeRouterTypes.js";
 
+declare global {
+	interface Window {
+		__DENTE_PWA__?: boolean;
+		electron?: unknown;
+		process?: { type?: string; versions?: { electron?: string } };
+		chrome?: { webview?: unknown };
+		__DENTE_DESKTOP__?: boolean;
+		__WEBVIEW2__?: boolean;
+		__TAURI__?: unknown;
+		__TAURI_INTERNALS__?: unknown;
+	}
+	interface Navigator {
+		standalone?: boolean;
+	}
+}
+
 let mockRuntimeOverride: AppRuntimeKind | null = null;
 
 /**
@@ -43,23 +59,14 @@ export function detectAppRuntimeKind(): AppRuntimeKind {
 		return "desktop_exe";
 	}
 	if (typeof window !== "undefined") {
-		const win = window as unknown as {
-			electron?: unknown;
-			process?: { type?: string; versions?: { electron?: string } };
-			chrome?: { webview?: unknown };
-			__DENTE_DESKTOP__?: boolean;
-			__WEBVIEW2__?: boolean;
-			__TAURI__?: unknown;
-			__TAURI_INTERNALS__?: unknown;
-		};
 		if (
-			win.electron !== undefined ||
-			win.process?.versions?.electron !== undefined ||
-			win.chrome?.webview !== undefined ||
-			win.__DENTE_DESKTOP__ === true ||
-			win.__WEBVIEW2__ === true ||
-			win.__TAURI__ !== undefined ||
-			win.__TAURI_INTERNALS__ !== undefined
+			window.electron !== undefined ||
+			window.process?.versions?.electron !== undefined ||
+			window.chrome?.webview !== undefined ||
+			window.__DENTE_DESKTOP__ === true ||
+			window.__WEBVIEW2__ === true ||
+			window.__TAURI__ !== undefined ||
+			window.__TAURI_INTERNALS__ !== undefined
 		) {
 			return "desktop_exe";
 		}
@@ -74,11 +81,8 @@ export function detectAppRuntimeKind(): AppRuntimeKind {
 	if (isMobileApp()) {
 		return "android_apk";
 	}
-	if (typeof window !== "undefined") {
-		const win = window as unknown as { Capacitor?: unknown };
-		if (win.Capacitor !== undefined) {
-			return "android_apk";
-		}
+	if (typeof window !== "undefined" && window.Capacitor !== undefined) {
+		return "android_apk";
 	}
 	if (typeof navigator !== "undefined" && navigator.userAgent) {
 		const ua = navigator.userAgent;
@@ -89,25 +93,18 @@ export function detectAppRuntimeKind(): AppRuntimeKind {
 
 	// 3. PWA Standalone window
 	if (typeof window !== "undefined") {
-		const win = window as unknown as {
-			__DENTE_PWA__?: boolean;
-			matchMedia?: (q: string) => { matches: boolean };
-		};
-		if (win.__DENTE_PWA__ === true) {
+		if (window.__DENTE_PWA__ === true) {
 			return "pwa_standalone";
 		}
 		if (
-			win.matchMedia?.("(display-mode: standalone)").matches ||
-			win.matchMedia?.("(display-mode: minimal-ui)").matches
+			window.matchMedia?.("(display-mode: standalone)").matches ||
+			window.matchMedia?.("(display-mode: minimal-ui)").matches
 		) {
 			return "pwa_standalone";
 		}
 	}
-	if (typeof navigator !== "undefined") {
-		const nav = navigator as unknown as { standalone?: boolean };
-		if (nav.standalone === true) {
-			return "pwa_standalone";
-		}
+	if (typeof navigator !== "undefined" && navigator.standalone === true) {
+		return "pwa_standalone";
 	}
 	if (
 		typeof document !== "undefined" &&

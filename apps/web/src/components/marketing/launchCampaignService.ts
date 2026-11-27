@@ -94,8 +94,11 @@ export async function launchMarketingCampaign(params: {
 		body: JSON.stringify({
 			title: `${promo.title} · ${channel.toUpperCase()}`,
 			templateId,
-			scope: consentOnly ? "marketing" : "service",
-			criteria,
+			scope: "marketing",
+			criteria: {
+				...criteria,
+				consentOnly,
+			},
 		}),
 	});
 

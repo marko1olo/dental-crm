@@ -195,8 +195,8 @@ export async function signDataWithRutoken(
 		logger.error("Rutoken signing error:", error);
 		try {
 			await plugin?.logout(deviceId);
-		} catch {
-			// ignore logout errors on failure
+		} catch (logoutError) {
+			logger.warn("Rutoken post-error logout failed:", logoutError);
 		}
 
 		const message = error instanceof Error ? error.message : String(error);

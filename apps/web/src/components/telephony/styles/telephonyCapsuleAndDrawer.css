@@ -4,7 +4,7 @@
 	top: 12px;
 	left: 50%;
 	transform: translateX(-50%);
-	z-index: 99990;
+	z-index: 200;
 	pointer-events: none;
 	width: auto;
 	max-width: calc(100vw - 32px);
@@ -83,7 +83,7 @@
 	bottom: 0;
 	width: 420px;
 	max-width: 100%;
-	z-index: 9995;
+	z-index: 50;
 	background: var(--paper-strong, var(--paper, #ffffff));
 	color: var(--ink, #0f172a);
 	border-left: 1px solid var(--line-strong, var(--line, #e2e8f0));

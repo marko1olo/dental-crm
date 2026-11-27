@@ -1,4 +1,5 @@
 import { BotPatientStateStorage } from "./botPatientStateStorage.js";
+import { sendBotReplyToChannel } from "./botReplySender.js";
 import type { BotSessionRouter } from "./botSessionRouter.js";
 import type {
 	BotInboundMessage,
@@ -125,8 +126,26 @@ export class BotWebhookDispatcher {
 				handledPluginName = "default_responder";
 			}
 
-			// Фиксируем автоответ бота в communicationEvents
-			if (savedPatientId && executedReply) {
+			// Доставляем ответ пользователю в VK / MAX до фиксации статуса в communicationEvents
+			let outboundOk = true;
+			if (
+				executedReply &&
+				(msg.channel === "vk" || msg.channel === "max") &&
+				!msg.rawEvent?.__skipExternalReplySend
+			) {
+				const sendOutcome = await sendBotReplyToChannel({
+					channel: msg.channel,
+					organizationId: msg.organizationId,
+					recipientId: msg.senderId,
+					reply: executedReply,
+				});
+				if (sendOutcome.attempted && !sendOutcome.ok) {
+					outboundOk = false;
+				}
+			}
+
+			// Фиксируем автоответ бота в communicationEvents с честным статусом доставки
+			if (savedPatientId && executedReply && outboundOk) {
 				await BotPatientStateStorage.persistBotReply({
 					organizationId: msg.organizationId,
 					patientId: savedPatientId,

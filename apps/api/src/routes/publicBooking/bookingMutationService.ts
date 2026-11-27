@@ -1,4 +1,4 @@
-import { and, eq, gt, ilike, lt, notInArray, or } from "drizzle-orm";
+import { and, eq, gt, ilike, inArray, lt, notInArray, or } from "drizzle-orm";
 import { withSavepoint } from "../../db/rls.js";
 import {
 	appointments,
@@ -9,6 +9,10 @@ import {
 	users,
 } from "../../db/schema.js";
 import { isPatientBookingBlocked } from "../../db/patientArchiveReasonsAndBlacklistsQuery.js";
+import {
+	acquireCanonicalScheduleAdvisoryLocks,
+	findConflictingTimeReservation,
+} from "../../db/appointmentsQueryModules/scheduleReservationLockHelpers.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import {
 	nameFuzzySimilarity,
@@ -77,10 +81,10 @@ export async function executeBookingTransaction(
 		comment,
 	} = params;
 
-	// 1. Canonical Resource Lock Hierarchy: Chair -> Doctor -> Patient
-	// Discover and lock available chair first to prevent 40P01 deadlocks with CRM
+	// 1. Canonical Resource Lock Hierarchy: Advisory -> Chairs (all active, sorted) -> Doctor -> Patient
+	// Lock all active chairs before Doctor/Patient so alternate-chair fallback never inverts lock order (40P01).
 	const activeChairs = await tx
-		.select({ id: chairs.id })
+		.select({ id: chairs.id, name: chairs.name })
 		.from(chairs)
 		.where(
 			and(
@@ -89,12 +93,39 @@ export async function executeBookingTransaction(
 			),
 		);
 
+	const sortedChairs = [...activeChairs].sort((a, b) =>
+		a.id.localeCompare(b.id),
+	);
+	await acquireCanonicalScheduleAdvisoryLocks(tx, organizationId, {
+		chairIds: sortedChairs.map((c) => c.id),
+		doctorUserId: doctorId,
+	});
+
+	if (sortedChairs.length > 0) {
+		await tx
+			.select({ id: chairs.id })
+			.from(chairs)
+			.where(
+				and(
+					eq(chairs.organizationId, organizationId),
+					inArray(chairs.id, sortedChairs.map((c) => c.id)),
+				),
+			)
+			.orderBy(chairs.id)
+			.for("update");
+	}
+
 	let selectedChairId: string | null = null;
-	if (activeChairs.length > 0) {
-		const sortedChairs = [...activeChairs].sort((a, b) =>
-			a.id.localeCompare(b.id),
-		);
+	if (sortedChairs.length > 0) {
 		for (const chair of sortedChairs) {
+			const reserved = await findConflictingTimeReservation(tx, organizationId, {
+				startsAt: startDate,
+				endsAt: endDate,
+				chairId: chair.id,
+				chairName: chair.name,
+			});
+			if (reserved) continue;
+
 			const [occupied] = await tx
 				.select({ id: appointments.id })
 				.from(appointments)
@@ -118,6 +149,14 @@ export async function executeBookingTransaction(
 		}
 
 		if (!selectedChairId) {
+			return { conflict: true as const };
+		}
+	} else {
+		const reserved = await findConflictingTimeReservation(tx, organizationId, {
+			startsAt: startDate,
+			endsAt: endDate,
+		});
+		if (reserved) {
 			return { conflict: true as const };
 		}
 	}
@@ -150,7 +189,7 @@ export async function executeBookingTransaction(
 		}
 	}
 
-	if (!patientId) {
+	if (!patientId && patientPhone.trim().length >= 5) {
 		const [existingByPhone] = await tx
 			.select({ id: patients.id, status: patients.status })
 			.from(patients)
@@ -159,7 +198,7 @@ export async function executeBookingTransaction(
 					eq(patients.organizationId, organizationId),
 					or(
 						eq(patients.phone, patientPhone),
-						eq(patients.phone, phoneDigits),
+						...(phoneDigits.length >= 5 ? [eq(patients.phone, phoneDigits)] : []),
 					),
 				),
 			)
@@ -280,22 +319,7 @@ export async function executeBookingTransaction(
 		};
 	}
 
-	// 3. Acquire locks in STRICT CANONICAL ORDER: Chair (Level 1) -> Doctor (Level 2) -> Patient (Level 3)
-	// (Mandates 8d, 8e: Prevents PostgreSQL 40P01 deadlocks with clinic CRM appointments)
-	if (selectedChairId) {
-		await tx
-			.select({ id: chairs.id })
-			.from(chairs)
-			.where(
-				and(
-					eq(chairs.organizationId, organizationId),
-					eq(chairs.id, selectedChairId),
-				),
-			)
-			.limit(1)
-			.for("update");
-	}
-
+	// 3. Acquire Doctor (Level 2) -> Patient (Level 3) locks (all active chairs already locked at Level 1)
 	await tx
 		.select({ id: users.id })
 		.from(users)
@@ -330,7 +354,7 @@ export async function executeBookingTransaction(
 			.values({
 				organizationId,
 				fullName: patientName,
-				phone: normalizePhone(patientPhone) ?? patientPhone,
+				phone: phoneDigits.length >= 5 ? (normalizePhone(patientPhone) ?? patientPhone) : null,
 				status: "active",
 				administrativeProfile: {
 					leadSource: effectiveSource,
@@ -441,20 +465,18 @@ export async function executeBookingTransaction(
 		const isDoctorConflict = existing?.doctorUserId === doctorId;
 		const isPatientConflict = Boolean(patientId && existing?.patientId === patientId);
 
-		if (!isDoctorConflict && !isPatientConflict && activeChairs.length > 1) {
-			const otherChairs = [...activeChairs]
-				.filter((c) => c.id !== selectedChairId)
-				.sort((a, b) => a.id.localeCompare(b.id));
+		if (!isDoctorConflict && !isPatientConflict && sortedChairs.length > 1) {
+			const otherChairs = sortedChairs.filter((c) => c.id !== selectedChairId);
 
 			let alternateChairFound = false;
 			for (const altChair of otherChairs) {
-				// Блокируем альтернативное кресло в каноническом порядке
-				await tx
-					.select({ id: chairs.id })
-					.from(chairs)
-					.where(and(eq(chairs.organizationId, organizationId), eq(chairs.id, altChair.id)))
-					.limit(1)
-					.for("update");
+				const altReserved = await findConflictingTimeReservation(tx, organizationId, {
+					startsAt: startDate,
+					endsAt: endDate,
+					chairId: altChair.id,
+					chairName: altChair.name,
+				});
+				if (altReserved) continue;
 
 				const [altOccupied] = await tx
 					.select({ id: appointments.id })

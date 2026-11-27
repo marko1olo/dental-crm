@@ -96,7 +96,7 @@ export async function handleTestIncomingMessage(
 		text: data.text,
 		payload: data.payload || null,
 		timestamp: Date.now(),
-		rawEvent: { simulated: true, ...data },
+		rawEvent: { simulated: true, __skipExternalReplySend: true, ...data },
 	};
 
 	const result = await omnichannelBotEngine.dispatchInboundMessage(inbound);

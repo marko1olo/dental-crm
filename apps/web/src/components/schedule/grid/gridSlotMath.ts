@@ -1,4 +1,4 @@
-import type { Appointment } from "@dental/shared";
+import { todayDateKeyInTimeZone, type Appointment } from "@dental/shared";
 import { fromDateTimeLocalValue } from "../../../utils/dateTimeUtils";
 
 export function extractTeethList(appointment: Appointment): string[] {
@@ -57,7 +57,7 @@ export function safeBuildSlotIso(
 ): { startIso: string; endIso: string } {
   const cleanDate = dateKey
     ? dateKey.slice(0, 10)
-    : new Date().toISOString().slice(0, 10);
+    : todayDateKeyInTimeZone(timezone);
   const dur =
     Number.isFinite(durationMinutes) && durationMinutes > 0
       ? durationMinutes

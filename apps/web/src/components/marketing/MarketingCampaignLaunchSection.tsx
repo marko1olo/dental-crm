@@ -19,6 +19,8 @@ export interface MarketingCampaignLaunchSectionProps {
 	readonly channelRateRub: number;
 	readonly isSending: boolean;
 	readonly testSent: boolean;
+	readonly testRecipient?: string | undefined;
+	readonly onChangeTestRecipient?: ((value: string) => void) | undefined;
 	readonly onLaunch: () => void;
 	readonly onTestSend: () => void;
 }
@@ -34,6 +36,8 @@ export const MarketingCampaignLaunchSection: React.FC<MarketingCampaignLaunchSec
 	channelRateRub,
 	isSending,
 	testSent,
+	testRecipient,
+	onChangeTestRecipient,
 	onLaunch,
 	onTestSend,
 }) => {
@@ -75,6 +79,26 @@ export const MarketingCampaignLaunchSection: React.FC<MarketingCampaignLaunchSec
 				activeSegmentCount={activeSegment.count}
 				channelRateRub={channelRateRub}
 			/>
+
+			{onChangeTestRecipient && (
+				<div className="mb-3 flex flex-col sm:flex-row sm:items-center gap-2">
+					<label
+						htmlFor="marketing-test-recipient"
+						className="text-xs text-[var(--ink-muted)] shrink-0"
+					>
+						Получатель теста:
+					</label>
+					<input
+						id="marketing-test-recipient"
+						type="text"
+						value={testRecipient ?? ""}
+						onChange={(e) => onChangeTestRecipient(e.target.value)}
+						placeholder="+79991234567 или ID чата"
+						className="h-9 min-h-[44px] sm:min-h-0 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm w-full sm:max-w-[260px]"
+						data-testid="input-test-recipient"
+					/>
+				</div>
+			)}
 
 			<div className="marketing-launch-actions">
 				<button

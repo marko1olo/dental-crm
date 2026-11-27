@@ -7,7 +7,11 @@
  * - Mandate 8d: Apple HIG & Medical Density (touch targets >= 44x44px, 0 emojis)
  */
 
-import { generateUuidV7 } from "@dental/shared";
+import {
+	generateUuidV7,
+	shiftCalendarDay,
+	todayDateKeyInTimeZone,
+} from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import { safeLocalStorageGetJson } from "../../../lib/safeLocalStorage";
@@ -24,11 +28,17 @@ import type {
  * Returns ISO date (YYYY-MM-DD) for Monday of the given date's week.
  */
 export function getMondayOfWeekIso(dateIso?: string): string {
-	const base = dateIso ? new Date(dateIso) : new Date();
-	const day = base.getDay(); // 0 is Sun
-	const diff = base.getDate() - day + (day === 0 ? -6 : 1);
-	const monday = new Date(base.setDate(diff));
-	return monday.toISOString().slice(0, 10);
+	const key =
+		dateIso && /^\d{4}-\d{2}-\d{2}/.test(dateIso)
+			? dateIso.slice(0, 10)
+			: dateIso
+				? todayDateKeyInTimeZone()
+				: todayDateKeyInTimeZone();
+	const parsed = Date.parse(`${key}T12:00:00.000Z`);
+	const safeKey = Number.isNaN(parsed) ? todayDateKeyInTimeZone() : key;
+	const day = new Date(`${safeKey}T12:00:00.000Z`).getUTCDay(); // 0 is Sun
+	const delta = day === 0 ? -6 : 1 - day;
+	return shiftCalendarDay(safeKey, delta);
 }
 
 export { addDaysToDateIso, getWeekDaysIso };

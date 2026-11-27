@@ -10,13 +10,16 @@ import {
 	type DenteTelegramChatLink,
 	type StaffRole,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
+import { and, asc, eq, gte, notInArray } from "drizzle-orm";
+import { withTenantCtx, withTenantReadCtx } from "../../../db/rls.js";
 import {
+	appointments as appointmentsTable,
+	clinics as clinicsTable,
 	communicationEvents as communicationEventsTable,
 	communicationTasks as communicationTasksTable,
 	denteTelegramChatLinks as denteTelegramChatLinksTable,
 } from "../../../db/schema.js";
+import { DEFAULT_CLINIC_TIME_ZONE } from "../../../services/reports/managerReports/timezone.js";
 import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import {
 	denteTelegramBotSettings,
@@ -361,9 +364,9 @@ export async function createDenteTelegramCareRequest(
 	};
 }
 
-export function buildDenteTelegramLinkedScheduleReply(
+export async function buildDenteTelegramLinkedScheduleReply(
 	chatFingerprintValue: string | null,
-	_scope: {
+	scope: {
 		organizationId?: string | null;
 		clinicId?: string | null;
 		botConfigId?: string | null;
@@ -371,18 +374,15 @@ export function buildDenteTelegramLinkedScheduleReply(
 		appointments?: readonly Appointment[] | null;
 	} = {},
 	_settings: DenteTelegramBotSettings = denteTelegramBotSettings,
-): {
+): Promise<{
 	text: string;
 	linked: boolean;
 	subjectType: "patient" | "staff" | null;
 	appointmentCount: number;
 	blockedReason: string | null;
 	replyMarkup: Record<string, unknown> | null;
-} {
-	const chatLink = denteTelegramChatLinks.find(
-		(link) =>
-			link.chatFingerprint === chatFingerprintValue && link.status === "active",
-	);
+}> {
+	const chatLink = await findActiveChatLink(chatFingerprintValue, scope);
 
 	if (!chatLink) {
 		return {
@@ -395,11 +395,101 @@ export function buildDenteTelegramLinkedScheduleReply(
 		};
 	}
 
+	const targetOrgId = toValidUuid(scope.organizationId ?? chatLink.organizationId);
+	const now = new Date();
+	let activeAppointments: Array<{
+		id: string;
+		startsAt: Date;
+		status: string;
+	}> = [];
+	let timeZone = DEFAULT_CLINIC_TIME_ZONE;
+
+	if (targetOrgId && process.env.DENTAL_STATE_PERSISTENCE !== "off") {
+		const loaded = await withTenantReadCtx(targetOrgId, async (tx) => {
+			const [clinicRow] = await tx
+				.select({ timezone: clinicsTable.timezone })
+				.from(clinicsTable)
+				.where(eq(clinicsTable.organizationId, targetOrgId))
+				.limit(1);
+			const subjectFilter =
+				chatLink.subjectType === "staff"
+					? eq(appointmentsTable.doctorUserId, chatLink.subjectId)
+					: eq(appointmentsTable.patientId, chatLink.subjectId);
+			const rows = await tx
+				.select({
+					id: appointmentsTable.id,
+					startsAt: appointmentsTable.startsAt,
+					status: appointmentsTable.status,
+				})
+				.from(appointmentsTable)
+				.where(
+					and(
+						eq(appointmentsTable.organizationId, targetOrgId),
+						subjectFilter,
+						gte(appointmentsTable.startsAt, now),
+						notInArray(appointmentsTable.status, ["cancelled", "no_show", "completed"]),
+					),
+				)
+				.orderBy(asc(appointmentsTable.startsAt))
+				.limit(5);
+			return { timezone: clinicRow?.timezone || DEFAULT_CLINIC_TIME_ZONE, rows };
+		});
+		timeZone = loaded.timezone;
+		activeAppointments = loaded.rows;
+	} else if (Array.isArray(scope.appointments)) {
+		activeAppointments = scope.appointments
+			.filter((a) => {
+				if (a.status === "cancelled" || a.status === "no_show" || a.status === "completed") {
+					return false;
+				}
+				const subjectMatches =
+					chatLink.subjectType === "staff"
+						? a.doctorUserId === chatLink.subjectId
+						: a.patientId === chatLink.subjectId;
+				return subjectMatches && new Date(a.startsAt).getTime() >= now.getTime();
+			})
+			.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+			.slice(0, 5)
+			.map((a) => ({
+				id: a.id,
+				startsAt: new Date(a.startsAt),
+				status: a.status,
+			}));
+	}
+
+	if (activeAppointments.length === 0) {
+		return {
+			text: "DENTE: активных записей сейчас нет. Для деталей откройте защищенный портал или свяжитесь с клиникой.",
+			linked: true,
+			subjectType: chatLink.subjectType,
+			appointmentCount: 0,
+			blockedReason: null,
+			replyMarkup: null,
+		};
+	}
+
+	const lines = activeAppointments.map((appt, idx) => {
+		const when = appt.startsAt.toLocaleString("ru-RU", {
+			day: "2-digit",
+			month: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			timeZone,
+		});
+		const label = appointmentStatusLabelForTelegram(appt.status as AppointmentStatus);
+		return `${idx + 1}. ${when} — ${label}`;
+	});
+
+	const header =
+		chatLink.subjectType === "staff"
+			? `DENTE: ближайшие приёмы в вашем расписании (${activeAppointments.length}):`
+			: `DENTE: ваши ближайшие записи (${activeAppointments.length}):`;
+
 	return {
-		text: "DENTE: активных записей сейчас нет. Для деталей откройте защищенный портал или свяжитесь с клиникой.",
+		text: [header, ...lines].join("\n"),
 		linked: true,
 		subjectType: chatLink.subjectType,
-		appointmentCount: 0,
+		appointmentCount: activeAppointments.length,
 		blockedReason: null,
 		replyMarkup: null,
 	};

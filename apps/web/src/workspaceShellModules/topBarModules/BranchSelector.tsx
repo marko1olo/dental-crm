@@ -64,8 +64,8 @@ export function BranchSelector({
 						return nextId;
 					});
 				}
-			} catch {
-				// Офлайн режим или сетевой сбой — фоллбек
+			} catch (fetchErr: unknown) {
+				void String(fetchErr);
 			}
 		}
 

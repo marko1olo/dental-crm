@@ -26,7 +26,7 @@ import { useScheduleStore } from "../../store/scheduleStore";
 import { useTelephonyStore } from "../../store/telephonyStore";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
-import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 if (typeof document !== "undefined") {
 	import("./styles/telephonyStudio.css");
 }
@@ -439,30 +439,41 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 		}
 
 		const noteToSave = callNote.trim() || "Заметка звонка зафиксирована без комментариев";
-		setIsNoteSaved(true);
 
-		if (selectedCall?.id) {
-			const staffToken = readDenteStaffToken();
-			const clinicToken = readDenteClinicToken();
-			useTelephonyStore.getState().updateCallNote(selectedCall.id, noteToSave);
-			fetch(`/api/telephony/calls/${encodeURIComponent(selectedCall.id)}`, {
-				method: "PATCH",
-				headers: {
-					"Content-Type": "application/json",
-					"Idempotency-Key": crypto.randomUUID(),
-					...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
-					...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-				},
-				body: JSON.stringify({ note: noteToSave, clinicalNote: noteToSave, patientId: selectedCall.patientId }),
+		if (!selectedCall?.id) {
+			showToast("Выберите звонок из списка для сохранения заметки", "warning");
+			return;
+		}
+
+		const targetCallId = selectedCall.id;
+		const targetPatientId = selectedCall.patientId;
+		setIsNoteSaved(false);
+		fetch(`/api/telephony/calls/${encodeURIComponent(targetCallId)}`, {
+			method: "PATCH",
+			headers: denteClinicalMutationHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": crypto.randomUUID(),
+			}),
+			body: JSON.stringify({ note: noteToSave, clinicalNote: noteToSave, patientId: targetPatientId }),
+		})
+			.then((res) => {
+				if (!res.ok) {
+					setIsNoteSaved(false);
+					showToast("Не удалось сохранить заметку к звонку", "error");
+					return;
+				}
+				useTelephonyStore.getState().updateCallNote(targetCallId, noteToSave);
+				setIsNoteSaved(true);
+				showToast("Заметка к звонку сохранена", "info");
+				if (noteTimerRef.current) {
+					clearTimeout(noteTimerRef.current);
+				}
+				noteTimerRef.current = setTimeout(() => setIsNoteSaved(false), 2500);
 			})
-				.then((res) => showToast(res.ok ? "Заметка к звонку сохранена" : "Не удалось сохранить заметку к звонку", res.ok ? "info" : "error"))
-				.catch(() => showToast("Ошибка сети при сохранении заметки", "error"));
-		}
-
-		if (noteTimerRef.current) {
-			clearTimeout(noteTimerRef.current);
-		}
-		noteTimerRef.current = setTimeout(() => setIsNoteSaved(false), 2500);
+			.catch(() => {
+				setIsNoteSaved(false);
+				showToast("Ошибка сети при сохранении заметки", "error");
+			});
 	}, [dialedNumber, selectedCall, callNote, onClose]);
 
 	if (!isOpen) return null;

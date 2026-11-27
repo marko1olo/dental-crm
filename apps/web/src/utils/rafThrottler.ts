@@ -19,6 +19,13 @@
  */
 
 import { useEffect, useRef } from "react";
+import { clientLogger } from "./logger.js";
+
+declare global {
+	interface Navigator {
+		deviceMemory?: number;
+	}
+}
 
 export type GpuPerformanceTier = "low" | "medium" | "high";
 
@@ -38,7 +45,7 @@ export function detectGpuPerformanceTier(): GpuPerformanceTier {
 	}
 
 	// 2. Device memory check (Chrome/Edge API): <= 4GB RAM
-	const deviceMemory = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+	const deviceMemory = navigator.deviceMemory;
 	if (typeof deviceMemory === "number" && deviceMemory <= 4) {
 		return "low";
 	}
@@ -89,8 +96,8 @@ export function detectGpuPerformanceTier(): GpuPerformanceTier {
 				}
 			}
 		}
-	} catch {
-		// WebGL inspection non-fatal fallback
+	} catch (e) {
+		clientLogger.debug("[rafThrottler] WebGL inspection fallback to core heuristics", e);
 	}
 
 	return cores <= 4 ? "low" : "medium";
@@ -276,7 +283,7 @@ export function createRafThrottler<T = void>(
 				rafId = requestAnimationFrame(tick);
 			} else {
 				// Fallback for non-browser/test environments
-				rafId = setTimeout(() => tick(Date.now()), minIntervalMs) as unknown as number;
+				rafId = Number(setTimeout(() => tick(Date.now()), minIntervalMs));
 			}
 		}
 	} as ThrottledRafFunction<T>;

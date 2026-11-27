@@ -72,25 +72,57 @@ export async function registerDiagnocatIntegrationRoutes(app: FastifyInstance) {
 				? headerOrg.trim()
 				: null);
 
-		let organizationId =
+		const resolvedCandidateOrgId =
 			candidateOrgId && UUID_REGEX.test(candidateOrgId) ? candidateOrgId : null;
 
-		if (!organizationId) {
-			organizationId = await withSuperuserBypass(async (tx) => {
-				const [patient] = await tx
-					.select({ organizationId: patients.organizationId })
-					.from(patients)
-					.where(eq(patients.id, body.patientId))
-					.limit(1);
-				return patient?.organizationId ?? null;
+		const boundEnvOrgId = process.env.DIAGNOCAT_WEBHOOK_ORGANIZATION_ID?.trim() || null;
+		if (boundEnvOrgId && resolvedCandidateOrgId && resolvedCandidateOrgId !== boundEnvOrgId) {
+			return reply.status(403).send({
+				error: "CrossTenantRejected",
+				message: "Переданный organizationId не соответствует привязке вебхука Diagnocat",
 			});
 		}
 
+		// Всегда проверяем принадлежность пациента реальной организации в БД
+		const patientOrgId = await withSuperuserBypass(async (tx) => {
+			const [patient] = await tx
+				.select({ organizationId: patients.organizationId })
+				.from(patients)
+				.where(eq(patients.id, body.patientId))
+				.limit(1);
+			return patient?.organizationId ?? null;
+		});
+
+		if (resolvedCandidateOrgId && patientOrgId && resolvedCandidateOrgId !== patientOrgId) {
+			return reply.status(403).send({
+				error: "CrossTenantRejected",
+				message: "Идентификатор организации не совпадает с владельцем карты пациента",
+			});
+		}
+
+		const organizationId = patientOrgId ?? resolvedCandidateOrgId;
 		if (!organizationId) {
 			return reply.status(400).send({
 				error: "MissingOrganizationContext",
 				message: "Не удалось определить организацию для входящего отчета Diagnocat",
 			});
+		}
+
+		// Если для конкретной организации задан персональный секрет в окружении, требуем именно его
+		const orgEnvKey = `DIAGNOCAT_WEBHOOK_SECRET_${organizationId.replace(/-/g, "_").toUpperCase()}`;
+		const orgSpecificSecret = process.env[orgEnvKey]?.trim();
+		if (orgSpecificSecret) {
+			const orgVerified = verifyWebhookSecret(request, reply, {
+				channel: "diagnocat",
+				secretEnvNames: [orgEnvKey],
+				extraHeaderNames: [
+					"x-diagnocat-api-key",
+					"x-diagnocat-secret",
+					"x-clinical-ai-api-key",
+					"x-api-key",
+				],
+			});
+			if (!orgVerified) return;
 		}
 
 		const inserted = await withTenantWriteCtx(organizationId, async (tx) => {

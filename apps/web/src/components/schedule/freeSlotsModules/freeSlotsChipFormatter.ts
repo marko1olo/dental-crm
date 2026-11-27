@@ -9,23 +9,21 @@ import type {
 	FindNextDoctorFreeSlotParams,
 	QuickRepeatSlotsResult,
 } from "./freeSlotsTypes";
-import { findDoctorFreeSlots } from "@dental/shared";
+import {
+	findDoctorFreeSlots,
+	shiftCalendarDay,
+	todayDateKeyInTimeZone,
+} from "@dental/shared";
 
 /**
- * 1-Click Fast Re-booking algorithm:
+ * Fast Re-booking algorithm:
  * Instantly finds the nearest free slot at the doctor starting from referenceDate + daysOffset.
  */
 export function findNextDoctorFreeSlotAfterDays(
 	params: FindNextDoctorFreeSlotParams,
 ): DoctorFreeSlot | null {
-	const refDateStr = params.referenceDate || new Date().toISOString().slice(0, 10);
-	const refDate = new Date(`${refDateStr}T00:00:00`);
-	refDate.setDate(refDate.getDate() + params.daysOffset);
-
-	const yyyy = refDate.getFullYear();
-	const mm = String(refDate.getMonth() + 1).padStart(2, "0");
-	const dd = String(refDate.getDate()).padStart(2, "0");
-	const startDateStr = `${yyyy}-${mm}-${dd}`;
+	const refDateStr = params.referenceDate || todayDateKeyInTimeZone();
+	const startDateStr = shiftCalendarDay(refDateStr, params.daysOffset);
 
 	const days = findDoctorFreeSlots({
 		doctorId: params.doctorId,

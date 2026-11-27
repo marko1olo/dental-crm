@@ -25,12 +25,12 @@ export function featureDisabledReplyFor(
 	};
 }
 
-export function scheduleReplyFor(
+export async function scheduleReplyFor(
 	settings: DenteTelegramBotSettings,
 	chatFingerprintValue: string | null,
 	scope: TelegramRequestScope = {},
-): TelegramWebhookReplyPackage {
-	const scheduleReply = buildDenteTelegramLinkedScheduleReply(
+): Promise<TelegramWebhookReplyPackage> {
+	const scheduleReply = await buildDenteTelegramLinkedScheduleReply(
 		chatFingerprintValue,
 		scope,
 		settings,
@@ -47,12 +47,12 @@ export function scheduleReplyFor(
 	};
 }
 
-export function startCommandReplyFor(
+export async function startCommandReplyFor(
 	settings: DenteTelegramBotSettings,
 	chatFingerprintValue: string | null,
 	scope: TelegramRequestScope = {},
-): TelegramWebhookReplyPackage {
-	const linkedStartReply = buildDenteTelegramLinkedScheduleReply(
+): Promise<TelegramWebhookReplyPackage> {
+	const linkedStartReply = await buildDenteTelegramLinkedScheduleReply(
 		chatFingerprintValue,
 		scope,
 		settings,

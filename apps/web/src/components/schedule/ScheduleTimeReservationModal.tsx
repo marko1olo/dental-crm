@@ -1,8 +1,13 @@
 import React, { useCallback, useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { Lock, Trash2, X, Clock } from "lucide-react";
-import { generateUuidV7 } from "@dental/shared";
+import {
+	extractWallTimePartsInTimeZone,
+	generateUuidV7,
+	todayDateKeyInTimeZone,
+} from "@dental/shared";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import { fromDateTimeLocalValue } from "../../utils/dateTimeUtils";
 import { showToast } from "../GlobalToast";
 
 export type ScheduleTimeReservationItem = {
@@ -24,6 +29,7 @@ export interface ScheduleTimeReservationModalProps {
 	defaultDateKey?: string | undefined;
 	chairs?: readonly { id: string; name: string }[] | undefined;
 	defaultChairName?: string | undefined;
+	timezone?: string | undefined;
 }
 
 type ReservationPreset = {
@@ -60,32 +66,29 @@ const RESERVATION_PRESETS: readonly ReservationPreset[] = [
 	},
 ];
 
-function getTodayIsoDate(): string {
-	const now = new Date();
-	const y = now.getFullYear();
-	const m = String(now.getMonth() + 1).padStart(2, "0");
-	const d = String(now.getDate()).padStart(2, "0");
-	return `${y}-${m}-${d}`;
+function addMinutesToTimeStr(hm: string, deltaMinutes: number): string {
+	const [hStr, mStr] = hm.split(":");
+	const h = Number.parseInt(hStr ?? "9", 10);
+	const m = Number.parseInt(mStr ?? "0", 10);
+	const total = Math.max(0, Math.min(23 * 60 + 59, (Number.isFinite(h) ? h : 9) * 60 + (Number.isFinite(m) ? m : 0) + deltaMinutes));
+	return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
-function addMinutesToTimeStr(timeStr: string, deltaMinutes: number): string {
-	const [rawH, rawM] = timeStr.split(":");
-	const h = Number(rawH);
-	const m = Number(rawM);
-	if (!Number.isFinite(h) || !Number.isFinite(m)) return "14:00";
-	const total = Math.max(0, Math.min(23 * 60 + 55, h * 60 + m + deltaMinutes));
-	const nextH = String(Math.floor(total / 60)).padStart(2, "0");
-	const nextM = String(total % 60).padStart(2, "0");
-	return `${nextH}:${nextM}`;
-}
-
-function formatReservationTimeRange(startTime: string, endTime: string): string {
+function formatReservationTimeRange(
+	startTime: string,
+	endTime: string,
+	timezone?: string,
+): string {
 	const extractHm = (iso: string) => {
+		const hasOffset = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(iso.trim());
+		if (hasOffset) {
+			const parts = extractWallTimePartsInTimeZone(iso, timezone);
+			if (parts) return parts.hm;
+		}
 		const match = iso.match(/T(\d{2}:\d{2})/);
 		if (match?.[1]) return match[1];
-		const parsed = new Date(iso);
-		if (Number.isNaN(parsed.getTime())) return iso.slice(0, 5);
-		return `${String(parsed.getHours()).padStart(2, "0")}:${String(parsed.getMinutes()).padStart(2, "0")}`;
+		const parts = extractWallTimePartsInTimeZone(iso, timezone);
+		return parts ? parts.hm : iso.slice(0, 5);
 	};
 	return `${extractHm(startTime)} – ${extractHm(endTime)}`;
 }
@@ -96,11 +99,12 @@ export function ScheduleTimeReservationModal({
 	defaultDateKey,
 	chairs = [],
 	defaultChairName,
+	timezone,
 }: ScheduleTimeReservationModalProps) {
 	const titleId = useId();
 	const initialDate = defaultDateKey && /^\d{4}-\d{2}-\d{2}$/.test(defaultDateKey)
 		? defaultDateKey
-		: getTodayIsoDate();
+		: todayDateKeyInTimeZone(timezone);
 
 	const [reservationType, setReservationType] = useState<ReservationPreset["id"]>("lunch");
 	const [hatchingStyle, setHatchingStyle] = useState<ReservationPreset["hatchingStyle"]>("diagonal_amber");
@@ -122,13 +126,13 @@ export function ScheduleTimeReservationModal({
 		setDateKey(
 			defaultDateKey && /^\d{4}-\d{2}-\d{2}$/.test(defaultDateKey)
 				? defaultDateKey
-				: getTodayIsoDate(),
+				: todayDateKeyInTimeZone(timezone),
 		);
 		setStartTime("13:00");
 		setEndTime("14:00");
 		setChairName(defaultChairName || "Все кресла");
 		setErrorText(null);
-	}, [defaultChairName, defaultDateKey]);
+	}, [defaultChairName, defaultDateKey, timezone]);
 
 	const handleClose = useCallback(() => {
 		resetDraft();
@@ -212,8 +216,12 @@ export function ScheduleTimeReservationModal({
 				body: JSON.stringify({
 					chairName: chairName.trim() || "Все кресла",
 					reservationType,
-					startTime: `${dateKey}T${startTime}:00`,
-					endTime: `${dateKey}T${endTime}:00`,
+					startTime: timezone
+						? fromDateTimeLocalValue(`${dateKey}T${startTime}`, timezone)
+						: `${dateKey}T${startTime}:00`,
+					endTime: timezone
+						? fromDateTimeLocalValue(`${dateKey}T${endTime}`, timezone)
+						: `${dateKey}T${endTime}:00`,
 					bookingLocked: true,
 					hatchingStyle,
 					note: normalizedNote,
@@ -459,7 +467,7 @@ export function ScheduleTimeReservationModal({
 										<div className="min-w-0 flex-1">
 											<div className="font-medium text-[var(--ink)] truncate">{item.note}</div>
 											<div className="text-[var(--ink-muted)] tabular-nums">
-												{formatReservationTimeRange(item.startTime, item.endTime)} · {item.chairName}
+												{formatReservationTimeRange(item.startTime, item.endTime, timezone)} · {item.chairName}
 											</div>
 										</div>
 										<button

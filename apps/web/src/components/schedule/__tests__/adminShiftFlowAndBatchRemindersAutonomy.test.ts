@@ -250,10 +250,10 @@ describe("Red Team: Admin Shift Flow & Batch Reminders Autonomy Suite", () => {
 					isShiftOpen: true,
 					shiftNumber: 14,
 					cashierFullName: "Администратор Смирнова",
-					cashInDrawerRub: cashRub,
-					cardSumRub: cardRub,
-					sbpSumRub: sbpRub,
-					advanceOffsetRub: advanceRub,
+					cashInDrawerKopecks: Math.round(cashRub * 100),
+					cardSumKopecks: Math.round(cardRub * 100),
+					sbpSumKopecks: Math.round(sbpRub * 100),
+					advanceOffsetKopecks: Math.round(advanceRub * 100),
 					initialTab: "reconciliation",
 				}),
 			);
@@ -290,7 +290,7 @@ describe("Red Team: Admin Shift Flow & Batch Reminders Autonomy Suite", () => {
 					containerTestId: "cash-register-modal",
 					isShiftOpen: true,
 					shiftNumber: 15,
-					cashInDrawerRub: cashRub,
+					cashInDrawerKopecks: Math.round(cashRub * 100),
 					initialTab: "drawer",
 				}),
 			);

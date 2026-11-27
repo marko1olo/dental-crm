@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { defineStreamRoute } from "../../../core/routeFactories.js";
@@ -78,7 +78,7 @@ export function registerInboxThreadHandlers(app: FastifyInstance): void {
 					}
 				}
 
-				const events = await tx
+				const eventsDesc = await tx
 					.select({
 						id: communicationEvents.id,
 						patientId: communicationEvents.patientId,
@@ -98,9 +98,10 @@ export function registerInboxThreadHandlers(app: FastifyInstance): void {
 							eq(communicationEvents.patientId, patientId),
 						),
 					)
-					.orderBy(asc(communicationEvents.createdAt));
+					.orderBy(desc(communicationEvents.createdAt))
+					.limit(200);
 
-				return { ok: true as const, events };
+				return { ok: true as const, events: eventsDesc.reverse() };
 			});
 
 			if (!outcome.ok) {

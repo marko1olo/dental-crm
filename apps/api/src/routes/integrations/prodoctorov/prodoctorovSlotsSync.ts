@@ -6,6 +6,7 @@
 import { and, eq, lt, ne, sql } from "drizzle-orm";
 import { formatKopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { type TenantDb } from "../../../db/client.js";
+import { isReservationMatchingChair } from "../../../db/appointmentsQueryModules/scheduleReservationLockHelpers.js";
 import { withSavepoint } from "../../../db/rls.js";
 import {
 	appointments,
@@ -581,10 +582,7 @@ export async function calculateAvailableSlots(
 
 							const chairReserved = reservations.some((r) => {
 								const matchesChair =
-									!r.chairName ||
-									r.chairName === "*" ||
-									r.chairName.toUpperCase() === "ALL" ||
-									r.chairName.trim().toLowerCase() === ch.name.trim().toLowerCase() ||
+									isReservationMatchingChair(r.chairName, ch.name) ||
 									(r as { chairId?: string }).chairId === ch.id;
 
 								if (!matchesChair) return false;
@@ -607,6 +605,7 @@ export async function calculateAvailableSlots(
 						availableChairName = foundChair.name;
 					} else {
 						const generalResBusy = reservations.some((r) => {
+							if (!isReservationMatchingChair(r.chairName, null)) return false;
 							const rStart = Date.parse(r.startTime);
 							const rEnd = Date.parse(r.endTime);
 							if (Number.isFinite(rStart) && Number.isFinite(rEnd)) {

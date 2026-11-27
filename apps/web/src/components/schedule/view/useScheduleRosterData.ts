@@ -6,6 +6,7 @@ import {
   safeLocalStorageRemoveItem,
 } from "../../../lib/safeLocalStorage";
 import { logger } from "../../../utils/logger";
+import { showToast } from "../../GlobalToast";
 import type {
   DoctorShift,
   StaffMember as RosterStaffMember,
@@ -147,14 +148,19 @@ export function useScheduleRosterData({
             ? auth.denteClinicalMutationHeaders()
             : {}),
         };
-        await fetch("/api/schedule/shifts", {
+        const res = await fetch("/api/schedule/shifts", {
           method: "POST",
           headers,
           body: JSON.stringify({ shifts }),
         });
+        if (!res.ok) {
+          logger.warn("[ScheduleView] Roster shift save failed with HTTP", res.status);
+          showToast("Не удалось сохранить график смен врачей", "error");
+        }
       }
     } catch (apiErr: unknown) {
       logger.warn("[ScheduleView] Error saving shifts to API:", apiErr);
+      showToast("Ошибка сети при сохранении графика смен", "error");
     }
   }, [auth]);
 

@@ -1,5 +1,6 @@
 import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { shiftCalendarDay, todayDateKeyInTimeZone } from "@dental/shared";
 import { z } from "zod";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
 import { definePublicRoute } from "../../core/routeFactories.js";
@@ -13,6 +14,10 @@ import {
 	users,
 	visits,
 } from "../../db/schema.js";
+import {
+	clinicTimeZone,
+	DEFAULT_CLINIC_TIME_ZONE,
+} from "../../services/reports/managerReports/timezone.js";
 import {
 	isDbConnectionError,
 	TelegramReferralLoyaltyService,
@@ -604,8 +609,18 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 						fullName: users.fullName,
 					})
 					.from(users)
-					.where(and(eq(users.organizationId, organizationId), eq(users.isActive, true)))
+					.where(
+						and(
+							eq(users.organizationId, organizationId),
+							eq(users.role, "doctor"),
+							eq(users.isActive, true),
+						),
+					)
 					.limit(10);
+
+				const zone = (await clinicTimeZone(organizationId, tx)) || DEFAULT_CLINIC_TIME_ZONE;
+				const todayKey = todayDateKeyInTimeZone(zone);
+				const daysRu = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
 
 				const weekSlots: Array<{
 					date: string;
@@ -618,49 +633,37 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 					}>;
 				}> = [];
 
-				const daysRu = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-
 				for (let i = 0; i < 7; i++) {
-					const d = new Date();
-					d.setDate(d.getDate() + i);
-					const dateStr = d.toISOString().split("T")[0] || "";
-					const dayOfWeek = daysRu[d.getDay()] || "";
+					const dateStr = shiftCalendarDay(todayKey, i);
+					const weekdayIndex = new Date(`${dateStr}T12:00:00.000Z`).getUTCDay();
+					const dayOfWeek = daysRu[weekdayIndex] || "";
 
-					const doctorsWithSlots: Array<{
-						doctorId: string;
-						doctorName: string;
-						specialty: string | null;
-						slots: string[];
-					}> = [];
-					for (const doc of doctors) {
+					let daySlots: Array<{ time: string; availableDoctorIds: string[] }> = [];
+					if (doctors.length > 0) {
 						try {
-							const calcResult = await withSavepoint(tx, async (spTx) =>
-								calculateAvailableSlots(spTx, {
-									organizationId,
-									date: dateStr,
-									requestedDoctorId: doc.id,
-								}),
-							);
-							const slots = calcResult.success ? calcResult.slots.map((s) => s.time) : [];
-							doctorsWithSlots.push({
-								doctorId: doc.id,
-								doctorName: doc.fullName,
-								specialty: "Врач-стоматолог",
-								slots,
+							const calcResult = await calculateAvailableSlots(tx, {
+								organizationId,
+								date: dateStr,
 							});
+							if (calcResult.success) {
+								daySlots = calcResult.slots;
+							}
 						} catch (slotErr) {
 							request.log.warn(
-								{ err: slotErr, doctorId: doc.id },
-								"[telegramWebAppSession] Failed to calculate slots for doctor inside savepoint",
+								{ err: slotErr, dateStr },
+								"[telegramWebAppSession] Failed to calculate slots for day",
 							);
-							doctorsWithSlots.push({
-								doctorId: doc.id,
-								doctorName: doc.fullName,
-								specialty: "Врач-стоматолог",
-								slots: [],
-							});
 						}
 					}
+
+					const doctorsWithSlots = doctors.map((doc) => ({
+						doctorId: doc.id,
+						doctorName: doc.fullName,
+						specialty: "Врач-стоматолог",
+						slots: daySlots
+							.filter((slot) => slot.availableDoctorIds.includes(doc.id))
+							.map((slot) => slot.time),
+					}));
 
 					weekSlots.push({
 						date: dateStr,

@@ -19,7 +19,7 @@
  */
 
 import React, { useRef, useState, useEffect, useMemo, type ReactElement } from "react";
-import type { Appointment } from "@dental/shared";
+import { shiftCalendarDay, todayDateKeyInTimeZone, type Appointment } from "@dental/shared";
 import { Plus, Lock } from "lucide-react";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { QuickAddChairModal } from "./QuickAddChairModal";
@@ -56,7 +56,7 @@ export function ScheduleUnifiedToolbar(props: ScheduleUnifiedToolbarProps): Reac
 
 	// Dates & Timestamps
 	const localNow = useMemo(() => new Date(), []);
-	const localTodayIso = `${localNow.getFullYear()}-${String(localNow.getMonth() + 1).padStart(2, "0")}-${String(localNow.getDate()).padStart(2, "0")}`;
+	const localTodayIso = todayDateKeyInTimeZone(props.clinicTimezone);
 	const todayIso = props.todayIso || localTodayIso;
 	const currentDateIso = dateFilter || todayIso;
 	const isToday = currentDateIso === todayIso;
@@ -75,10 +75,7 @@ export function ScheduleUnifiedToolbar(props: ScheduleUnifiedToolbarProps): Reac
 			props.stepScheduleDay(delta);
 			return;
 		}
-		const cur = new Date(currentDateIso);
-		cur.setDate(cur.getDate() + delta);
-		const nextIso = cur.toISOString().slice(0, 10);
-		setDateFilter(nextIso);
+		setDateFilter(shiftCalendarDay(currentDateIso, delta));
 	};
 
 	// 2. Data items: Chairs & Doctors
@@ -267,6 +264,7 @@ export function ScheduleUnifiedToolbar(props: ScheduleUnifiedToolbarProps): Reac
 						onQuickBooking={props.onQuickBooking}
 						onSetDate={setDateFilter}
 						localNow={localNow}
+						timezone={props.clinicTimezone}
 						onSelectWholeWeek={props.onSelectWholeWeek}
 						statusFilter={statusFilter}
 						onSetStatusFilter={(st: string) => setStatusFilter(st as Appointment["status"] | "all")}

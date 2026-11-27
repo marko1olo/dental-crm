@@ -15,6 +15,11 @@ import { randomUUID } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, gt, lt, lte, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
+import {
+	acquireCanonicalScheduleAdvisoryLocks,
+	findConflictingTimeReservation,
+} from "../../db/appointmentsQueryModules/scheduleReservationLockHelpers.js";
+import { lockAppointmentResources } from "../../db/appointmentsQueryModules/appointmentValidationHelpers.js";
 import { withTenantWriteCtx } from "../../db/rls.js";
 import { appointments, scheduleSlotLeases } from "../../db/schema.js";
 import { ADMIN_ROLES, getRequestIdentity } from "../../security/identity.js";
@@ -123,12 +128,29 @@ export async function handleAcquireSlotLease(
 				),
 			);
 
-		// 2. Advisory-lock по ресурсу (кресло, врач или общий слот)
-		const lockKey = chairId ?? doctorUserId ?? "slot-lease";
-		if (process.env.DENTAL_STATE_PERSISTENCE !== "off") {
-			await tx.execute(
-				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId}), hashtext(${lockKey}))`,
-			);
+		// 2. Каноническая блокировка ресурсов (Chair -> Doctor), синхронная с create/update приёмов
+		await acquireCanonicalScheduleAdvisoryLocks(tx, orgId, {
+			chairId,
+			doctorUserId,
+		});
+		await lockAppointmentResources(tx, orgId, {
+			chairId,
+			doctorUserId,
+		});
+
+		const reservationConflict = await findConflictingTimeReservation(tx, orgId, {
+			startsAt: startsAtDate,
+			endsAt: endsAtDate,
+			chairId,
+		});
+		if (reservationConflict) {
+			return {
+				status: 409 as const,
+				body: {
+					error: "SLOT_RESERVED",
+					message: `Время заблокировано технологическим резервом (${reservationConflict.note || reservationConflict.chairName})`,
+				},
+			};
 		}
 
 		// 3. Проверка существующих подтвержденных приемов

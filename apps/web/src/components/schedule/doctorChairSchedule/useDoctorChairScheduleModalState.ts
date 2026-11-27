@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import type { DentalSpecialty } from "@dental/shared";
+import { shiftCalendarDay, type DentalSpecialty } from "@dental/shared";
 import {
 	CHAIR_SHIFT_PRESETS,
 	type ChairDoctorShiftAssignment,
@@ -70,11 +70,7 @@ export function useDoctorChairScheduleModalState(
 	const [rangeStartDate, setRangeStartDate] = useState<string>(dateKey);
 	const [rangeEndDate, setRangeEndDate] = useState<string>(() => {
 		if (!dateKey) return "";
-		const [year, month, day] = dateKey.split("-").map(Number);
-		if (year === undefined || month === undefined || day === undefined || Number.isNaN(year)) return "";
-		const d = new Date(Date.UTC(year, month - 1, day));
-		d.setUTCDate(d.getUTCDate() + 6);
-		return d.toISOString().slice(0, 10);
+		return shiftCalendarDay(dateKey, 6);
 	});
 	const [rangeRotationPreset, setRangeRotationPreset] =
 		useState<RangeRotationPreset>("full");
@@ -108,12 +104,7 @@ export function useDoctorChairScheduleModalState(
 	useEffect(() => {
 		if (dateKey) {
 			setRangeStartDate(dateKey);
-			const [year, month, day] = dateKey.split("-").map(Number);
-			if (year !== undefined && month !== undefined && day !== undefined && !Number.isNaN(year)) {
-				const d = new Date(Date.UTC(year, month - 1, day));
-				d.setUTCDate(d.getUTCDate() + 6);
-				setRangeEndDate(d.toISOString().slice(0, 10));
-			}
+			setRangeEndDate(shiftCalendarDay(dateKey, 6));
 		}
 	}, [dateKey]);
 

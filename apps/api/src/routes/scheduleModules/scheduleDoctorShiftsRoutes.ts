@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -62,12 +62,23 @@ const scheduleShiftsSchema = z
 					branchId: z.string().nullable().optional(),
 					doctorId: z.string(),
 					doctorName: z.string(),
+					assistantId: z.string().nullable().optional(),
+					assistantName: z.string().nullable().optional(),
 					cabinetId: z.string().nullable().optional(),
 					chairId: z.string().nullable().optional(),
 					dateIso: z.string().optional(),
 					shiftDateIso: z.string().optional(),
 					startTime: z.string().optional(),
 					endTime: z.string().optional(),
+					archetypeId: z.string().nullable().optional(),
+					durationHours: z.number().optional(),
+					breakMinutes: z.number().optional(),
+					isNight: z.boolean().optional(),
+					nightHours: z.number().optional(),
+					status: z.string().optional(),
+					customNotes: z.string().nullable().optional(),
+					shiftPreset: z.string().nullable().optional(),
+					doctorSpecialty: z.string().nullable().optional(),
 					role: z.string().nullable().optional(),
 					doctorRole: z.string().nullable().optional(),
 					specialty: z.string().nullable().optional(),
@@ -79,6 +90,8 @@ const scheduleShiftsSchema = z
 				.strict(),
 		),
 		dateIso: z.string().optional(),
+		chairId: z.string().nullable().optional(),
+		doctorId: z.string().nullable().optional(),
 		replaceAll: z.boolean().optional(),
 	})
 	.strict();
@@ -240,7 +253,7 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 				message: "Некорректная структура смен врачей (поле shifts обязательно).",
 			});
 		}
-		const { shifts, dateIso, replaceAll } = parsed.data;
+		const { shifts, dateIso, chairId: scopeChairId, doctorId: scopeDoctorId, replaceAll } = parsed.data;
 		const explicitDate = typeof dateIso === "string" ? dateIso.trim() : "";
 		const targetDates = Array.from(
 			new Set([...shifts.map((s) => s.dateIso || s.shiftDateIso || ""), explicitDate].filter((d): d is string => Boolean(d))),
@@ -319,13 +332,50 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 				// Явный флаг глобальной перезаписи смен клиники
 				await tx.delete(doctorShiftRosters).where(eq(doctorShiftRosters.organizationId, orgId));
 			} else if (targetDates.length > 0) {
-				// Точечное удаление смен строго за указанные даты
-				await tx.delete(doctorShiftRosters).where(
-					and(
-						eq(doctorShiftRosters.organizationId, orgId),
-						inArray(doctorShiftRosters.dateIso, targetDates),
-					),
+				const scopedChairIds = Array.from(
+					new Set([
+						...shifts.map((s) => s.chairId).filter((id): id is string => Boolean(id)),
+						...(scopeChairId ? [scopeChairId] : []),
+					]),
 				);
+				const scopedDoctorIds = Array.from(
+					new Set([
+						...shifts.map((s) => s.doctorId).filter(Boolean),
+						...(scopeDoctorId ? [scopeDoctorId] : []),
+					]),
+				);
+
+				if (scopedChairIds.length > 0 && scopedDoctorIds.length > 0) {
+					await tx.delete(doctorShiftRosters).where(
+						and(
+							eq(doctorShiftRosters.organizationId, orgId),
+							inArray(doctorShiftRosters.dateIso, targetDates),
+							or(
+								inArray(doctorShiftRosters.chairId, scopedChairIds),
+								inArray(doctorShiftRosters.doctorId, scopedDoctorIds),
+							),
+						),
+					);
+				} else if (scopedChairIds.length > 0) {
+					await tx.delete(doctorShiftRosters).where(
+						and(
+							eq(doctorShiftRosters.organizationId, orgId),
+							inArray(doctorShiftRosters.dateIso, targetDates),
+							inArray(doctorShiftRosters.chairId, scopedChairIds),
+						),
+					);
+				} else if (scopedDoctorIds.length > 0) {
+					await tx.delete(doctorShiftRosters).where(
+						and(
+							eq(doctorShiftRosters.organizationId, orgId),
+							inArray(doctorShiftRosters.dateIso, targetDates),
+							inArray(doctorShiftRosters.doctorId, scopedDoctorIds),
+						),
+					);
+				} else {
+					// Защита от случайного сноса всей клиники при пустом payload без scope (chairId/doctorId)
+					return { kind: "ok" as const };
+				}
 			} else {
 				// Защита от потери данных: без replaceAll и без дат ничего глобально не удаляем
 				return { kind: "ok" as const };

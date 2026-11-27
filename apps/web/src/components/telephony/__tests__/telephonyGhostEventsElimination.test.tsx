@@ -6,14 +6,12 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { describe, it } from "node:test";
 import { TelephonyStudioModal } from "../TelephonyStudioModal";
 import { initiateOutboundCall } from "../initiateOutboundCall";
+import { useCallDurationTimer } from "../incomingCallDataModules/useCallDurationTimer";
 import { useTelephonyStore } from "../../../store/telephonyStore";
 import { enableDemoShowcaseMode, disableDemoShowcaseMode } from "../../../lib/demoMode";
 
@@ -97,27 +95,43 @@ describe("Telephony Ghost Events Elimination (Red Team Inquisition)", () => {
 		}
 	});
 
-	it("5. useCallDurationTimer confirms complete removal of 45-second auto-drop timeout", () => {
-		const __dirname = path.dirname(fileURLToPath(import.meta.url));
-		const filePath = path.resolve(__dirname, "../incomingCallDataModules/useCallDurationTimer.ts");
-		const content = fs.readFileSync(filePath, "utf-8");
-		assert.ok(
-			!content.includes("45000"),
-			"useCallDurationTimer must NOT contain 45-second auto-dismiss timeout",
-		);
-		assert.ok(
-			!content.includes("setTimeout"),
-			"useCallDurationTimer must NOT contain client-side dismiss setTimeout",
-		);
+	it("5. useCallDurationTimer tracks active call duration and never schedules an auto-dismiss timeout", () => {
+		let dismissCalls = 0;
+		const originalSetTimeout = globalThis.setTimeout;
+		let timeoutCount = 0;
+		globalThis.setTimeout = ((fn: TimerHandler, ms?: number, ...args: unknown[]) => {
+			if (typeof ms === "number" && ms >= 40_000) timeoutCount += 1;
+			return originalSetTimeout(fn, ms, ...args);
+		}) as typeof setTimeout;
+
+		try {
+			function TimerProbe() {
+				const seconds = useCallDurationTimer(
+					{
+						callId: "probe-1",
+						direction: "inbound",
+						phone: "+79001112233",
+						status: "answered",
+						callStartedAt: Date.now() - 10_000,
+					},
+					() => {
+						dismissCalls += 1;
+					},
+				);
+				return <span data-testid="probe-sec">{seconds}</span>;
+			}
+			const html = renderToString(<TimerProbe />);
+			assert.ok(html.includes('data-testid="probe-sec"'));
+			assert.equal(dismissCalls, 0);
+			assert.equal(timeoutCount, 0);
+		} finally {
+			globalThis.setTimeout = originalSetTimeout;
+		}
 	});
 
-	it("6. TelephonyStudioModal eliminates typeof window === 'undefined' demo data leak risk", () => {
-		const __dirname = path.dirname(fileURLToPath(import.meta.url));
-		const filePath = path.resolve(__dirname, "../TelephonyStudioModal.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
-		assert.ok(
-			!content.includes('isDemoShowcaseMode() || typeof window === "undefined"'),
-			"TelephonyStudioModal must strictly use isDemoShowcaseMode()",
-		);
+	it("6. TelephonyStudioModal hides synthetic demo calls when demo mode is disabled", () => {
+		disableDemoShowcaseMode();
+		const html = renderToString(<TelephonyStudioModal isOpen={true} onClose={() => {}} />);
+		assert.equal(html.includes("DEMO"), false, "Production mode must not render demo showcase records");
 	});
 });

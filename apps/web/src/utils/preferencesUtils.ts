@@ -29,6 +29,7 @@ import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
 } from "../lib/safeLocalStorage";
+import { clientLogger } from "./logger";
 
 export type TelegramLinkSubjectType = DenteTelegramSubjectType;
 
@@ -172,7 +173,8 @@ export function loadUiPreferences(): UiPreferences {
 			}
 		}
 		return prefs;
-	} catch {
+	} catch (err: unknown) {
+		clientLogger.debug("[preferencesUtils] Failed to loadUiPreferences, using default:", err);
 		return defaultUiPreferences;
 	}
 }
@@ -189,7 +191,8 @@ export function saveUiPreferences(
 		};
 		safeLocalStorageSetItem(uiPreferencesStorageKey, JSON.stringify(full));
 		return full;
-	} catch {
+	} catch (err: unknown) {
+		clientLogger.debug("[preferencesUtils] Failed to saveUiPreferences:", err);
 		return null;
 	}
 }

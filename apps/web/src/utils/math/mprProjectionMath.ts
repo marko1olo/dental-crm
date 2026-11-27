@@ -61,9 +61,14 @@ export type CrossSectionWorkerResponse =
 
 export type MprWorkerRequest =
 	| (PanoramicWorkerRequest & { type?: "panoramic" })
-	| CrossSectionWorkerRequest;
+	| CrossSectionWorkerRequest
+	| { type: "ping" };
 
-export type MprWorkerResponse = PanoramicWorkerResponse | CrossSectionWorkerResponse;
+export type MprWorkerResponse =
+	| PanoramicWorkerResponse
+	| CrossSectionWorkerResponse
+	| { success: true; type: "pong"; timestamp: number }
+	| { success: false; error: string };
 
 /**
  * Expand a cornerstone 3x3 column/row-major `Mat3` (9 elements) into the

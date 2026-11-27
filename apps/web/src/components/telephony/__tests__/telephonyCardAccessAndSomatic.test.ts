@@ -1,40 +1,32 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { resolvePatientSomaticAlerts } from "../../../store/telephonyClinical";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import type { Patient, PatientInsight } from "@dental/shared";
+import { resolvePatientSomaticAlerts } from "../../../store/telephonyClinical";
+import { useAppStore } from "../../../store/appStore";
+import { useTelephonyStore } from "../../../store/telephonyStore";
+import { IncomingCallerCard } from "../IncomingCallerCard";
+import { TelephonyDrawerSomaticAlerts } from "../drawerModules/activeCallPanel/TelephonyDrawerSomaticAlerts";
 
 describe("Telephony Patient Card Access & Somatic Alerts (Mandates 8b, 8d, 8e)", () => {
-	const srcDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
-		? path.resolve(process.cwd(), "apps/web/src")
-		: path.resolve(process.cwd(), "src");
+	it("1. Toggling call drawer preserves currentView='visit' so active Form 043/u visit never resets", () => {
+		const prevView = useAppStore.getState().currentView;
+		const prevDrawer = useTelephonyStore.getState().isCallDrawerOpen;
+		try {
+			useAppStore.setState({ currentView: "visit" });
+			useTelephonyStore.setState({ isCallDrawerOpen: false });
+			useTelephonyStore.getState().toggleCallDrawer();
 
-	const drawerPanelPath = path.resolve(srcDir, "components/telephony/drawerModules/TelephonyActiveCallPanel.tsx");
-	const callerCardPath = path.resolve(srcDir, "components/telephony/IncomingCallerCard.tsx");
-	const controllerPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/useIncomingCallPopupController.ts");
-
-	it("1. Existing Patient: 1-Click Card Access Without Resetting Active Form 043/u Visit", () => {
-		const controllerSource = fs.readFileSync(controllerPath, "utf-8");
-		assert.ok(
-			controllerSource.includes("const handleToggleCardDrawer = () => {"),
-			"IncomingCallPopup controller must provide handleToggleCardDrawer",
-		);
-		assert.ok(
-			controllerSource.includes("toggleCallDrawer();"),
-			"IncomingCallPopup controller must toggle drawer state without calling setCurrentView('patients')",
-		);
-		assert.ok(
-			controllerSource.includes('if (currentView === "visit") {'),
-			"Must check if currentView === 'visit' before full page navigation",
-		);
-		assert.ok(
-			controllerSource.includes("Приём пациента активен. Карта доступна в текущей шторке без сброса визита."),
-			"Must warn doctor that active visit is preserved and card is accessible in current drawer",
-		);
+			assert.equal(useTelephonyStore.getState().isCallDrawerOpen, true, "Drawer must open via toggleCallDrawer()");
+			assert.equal(useAppStore.getState().currentView, "visit", "Active visit route must never be reset");
+		} finally {
+			useAppStore.setState({ currentView: prevView });
+			useTelephonyStore.setState({ isCallDrawerOpen: prevDrawer });
+		}
 	});
 
-	it("2. Existing Patient: Instant Somatic Status (Allergies & Contraindications)", () => {
+	it("2. Existing Patient: Instant Somatic Status renders allergy & acute pain alerts in both IncomingCallerCard and Drawer", () => {
 		const samplePatient: Partial<Patient> = {
 			id: "pat-101",
 			fullName: "Иванов Иван Иванович",
@@ -55,18 +47,39 @@ describe("Telephony Patient Card Access & Somatic Alerts (Mandates 8b, 8d, 8e)",
 		);
 
 		assert.ok(alerts.length >= 2, "Must resolve multiple somatic alerts");
-		const hasAllergy = alerts.some((a) => a.category === "allergy");
-		const hasPain = alerts.some((a) => a.category === "pain");
-		const hasPacemaker = alerts.some((a) => a.label.includes("Кардиостимулятор"));
+		assert.ok(alerts.some((a) => a.category === "allergy"), "Must identify anesthesia allergy");
+		assert.ok(alerts.some((a) => a.category === "pain"), "Must identify acute pain flag");
+		assert.ok(alerts.some((a) => a.label.includes("Кардиостимулятор")), "Must identify pacemaker contraindication");
 
-		assert.ok(hasAllergy, "Must identify anesthesia allergy");
-		assert.ok(hasPain, "Must identify acute pain flag");
-		assert.ok(hasPacemaker, "Must identify pacemaker contraindication for ultrasonic scalers");
+		const drawerHtml = renderToStaticMarkup(
+			React.createElement(TelephonyDrawerSomaticAlerts, {
+				somaticAlerts: alerts,
+				onQuickBookUrgent: () => {},
+			}),
+		);
+		assert.ok(drawerHtml.includes("Кардиостимулятор"));
+		assert.ok(drawerHtml.includes('data-testid="drawer-action-cito"'));
 
-		const drawerPanelSource = fs.readFileSync(drawerPanelPath, "utf-8");
-		const callerCardSource = fs.readFileSync(callerCardPath, "utf-8");
-
-		assert.ok(drawerPanelSource.includes("somaticAlerts.map"), "TelephonyDrawer panel must render somatic alerts list");
-		assert.ok(callerCardSource.includes("allergyAlerts.length > 0"), "IncomingCallerCard must render dedicated allergy pill");
+		const cardHtml = renderToStaticMarkup(
+			React.createElement(IncomingCallerCard, {
+				callerName: "Иванов Иван Иванович",
+				formattedPhone: "+7 999 111-22-33",
+				rawPhone: "+79991112233",
+				initials: "ИИ",
+				avatarColors: { bg: "", text: "" },
+				isKnownPatient: true,
+				financialSummary: {
+					hasDebt: false,
+					debtAmountRub: 0,
+					depositBalanceRub: 0,
+					hasInsurance: false,
+					formattedDebt: "0 ₽",
+					formattedDeposit: "0 ₽",
+				},
+				somaticAlerts: alerts,
+				upcomingAppointment: null,
+			}),
+		);
+		assert.ok(cardHtml.includes("Аллергия") || cardHtml.includes("лидокаин"));
 	});
 });

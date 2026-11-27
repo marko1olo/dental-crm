@@ -12,16 +12,17 @@ import {
 
 describe("anesthesiaCalculatorEngine — Core Engine Verification", () => {
 	it("exposes primary drugs with correct concentrations and defaults", () => {
-		assert.ok(ANESTHESIA_DRUGS.ultracain_ds_forte);
-		assert.ok(ANESTHESIA_DRUGS.ultracain_ds);
-		assert.ok(ANESTHESIA_DRUGS.scandonest_3);
+		assert.equal(ANESTHESIA_DRUGS.ultracain_ds_forte.commercialName, "Ультракаин Д-С форте");
+		assert.equal(ANESTHESIA_DRUGS.ultracain_ds.commercialName, "Ультракаин Д-С");
 		assert.equal(ANESTHESIA_DRUGS.scandonest_3.isAdrenalineFree, true);
 	});
 
 	it("exposes core administration methods", () => {
-		assert.ok(ANESTHESIA_METHODS.infiltration);
-		assert.ok(ANESTHESIA_METHODS.mandibular);
-		assert.ok(ANESTHESIA_METHODS.torusal);
+		assert.equal(ANESTHESIA_METHODS.infiltration.nameRu, "Инфильтрационная");
+		assert.equal(ANESTHESIA_METHODS.infiltration.typicalOnsetMinutes, 2);
+		assert.equal(ANESTHESIA_METHODS.mandibular.nameRu, "Проводниковая мандибулярная");
+		assert.equal(ANESTHESIA_METHODS.mandibular.typicalOnsetMinutes, 5);
+		assert.equal(ANESTHESIA_METHODS.torusal.nameRu, "Проводниковая торусальная (по Вейсбрему)");
 	});
 
 	it("executes safe default calculation for healthy adult", () => {

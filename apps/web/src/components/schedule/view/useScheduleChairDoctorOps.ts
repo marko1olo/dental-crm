@@ -158,7 +158,7 @@ export function useScheduleChairDoctorOps({
 
   const handleAssignChairDoctor = useCallback(
     (chairId: string, assignment: ChairDoctorShiftAssignment | null) => {
-      const persistAndSyncShifts = (nextShifts: DoctorShift[]) => {
+      const persistAndSyncShifts = (nextShifts: DoctorShift[], scopedChairId: string) => {
         try {
           safeLocalStorageSetItem(
             "dente_doctor_shifts",
@@ -185,7 +185,7 @@ export function useScheduleChairDoctorOps({
               "Idempotency-Key": generateUuidV7(),
               ...(auth?.denteClinicalMutationHeaders
                 ? auth.denteClinicalMutationHeaders()
-                : {}),
+                : denteClinicalMutationHeaders()),
             };
             fetch("/api/schedule/shifts", {
               method: "POST",
@@ -193,16 +193,35 @@ export function useScheduleChairDoctorOps({
               body: JSON.stringify({
                 shifts: nextShifts,
                 dateIso: currentDateKey,
+                chairId: scopedChairId,
               }),
-            }).catch((syncErr: unknown) => {
-              logger.warn("[ScheduleView] Async shift sync failed:", syncErr);
-            });
+            })
+              .then((res) => {
+                if (!res.ok) {
+                  logger.warn(
+                    "[ScheduleView] Async shift sync failed with HTTP",
+                    res.status,
+                  );
+                  showToast(
+                    "Не удалось сохранить смену врача на сервере",
+                    "error",
+                  );
+                }
+              })
+              .catch((syncErr: unknown) => {
+                logger.warn("[ScheduleView] Async shift sync failed:", syncErr);
+                showToast(
+                  "Ошибка сети при сохранении смены врача",
+                  "error",
+                );
+              });
           }
         } catch (networkErr: unknown) {
           logger.warn(
             "[ScheduleView] Error initiating shift sync fetch:",
             networkErr,
           );
+          showToast("Не удалось инициировать сохранение смены врача", "error");
         }
       };
 
@@ -211,7 +230,7 @@ export function useScheduleChairDoctorOps({
           const next = prev.filter(
             (s) => !(s.dateIso === currentDateKey && s.chairId === chairId),
           );
-          persistAndSyncShifts(next);
+          persistAndSyncShifts(next, chairId);
           return next;
         });
       } else if (
@@ -279,7 +298,7 @@ export function useScheduleChairDoctorOps({
             (s) => !(s.dateIso === currentDateKey && s.chairId === chairId),
           );
           const next = [...filtered, ...multiShifts];
-          persistAndSyncShifts(next);
+          persistAndSyncShifts(next, chairId);
           return next;
         });
       } else {
@@ -341,12 +360,12 @@ export function useScheduleChairDoctorOps({
             return true;
           });
           const next = [...filtered, newShift];
-          persistAndSyncShifts(next);
+          persistAndSyncShifts(next, chairId);
           return next;
         });
       }
     },
-    [currentDateKey, auth, setSavedDoctorShifts],
+    [currentDateKey, auth, setSavedDoctorShifts, showToast],
   );
 
   return {

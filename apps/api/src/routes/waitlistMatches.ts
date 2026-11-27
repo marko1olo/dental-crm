@@ -21,6 +21,8 @@ import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import { replyBadRequest } from "./routeErrors.js";
 import {
 	findWaitlistMatches,
+	loadActiveWaitlistRows,
+	matchWaitlistRowsToSlot,
 	type WaitlistMatch,
 } from "../services/schedule/waitlistMatching.js";
 
@@ -70,7 +72,7 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 					now.getTime() + horizonDays * 24 * 60 * 60 * 1000,
 				);
 
-				const { timeZone, rows } = await withTenantReadCtx(
+				const { timeZone, rows, waitlistRows } = await withTenantReadCtx(
 					context.organizationId,
 					async (tx) => {
 						const [clinic] = await tx
@@ -100,18 +102,21 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 									lte(appointments.startsAt, horizon),
 								),
 							)
-							.orderBy(appointments.startsAt);
+							.orderBy(appointments.startsAt)
+							.limit(200);
 
-						return { timeZone: resolvedTimeZone, rows: matchedRows };
+						const activeWaitlist =
+							matchedRows.length > 0
+								? await loadActiveWaitlistRows(tx, context.organizationId)
+								: [];
+
+						return { timeZone: resolvedTimeZone, rows: matchedRows, waitlistRows: activeWaitlist };
 					},
 				);
 
 				/*
-				 * Кандидаты считаются сразу для каждого окна. Иначе экран показывал бы
-				 * «есть 6 свободных окон» и заставлял открывать каждое, чтобы выяснить,
-				 * что предлагать их некому.
+				 * Кандидаты считаются сразу для каждого окна на одном наборе записей листа ожидания.
 				 */
-				/** Тип объявлен явно: пустой массив без него выводится как never[]. */
 				const slots: {
 					appointmentId: string;
 					startsAt: Date;
@@ -123,7 +128,8 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 					candidatesTotal: number;
 				}[] = [];
 				for (const row of rows) {
-					const report = await findWaitlistMatches(
+					const report = matchWaitlistRowsToSlot(
+						waitlistRows,
 						{
 							organizationId: context.organizationId,
 							startsAt: row.startsAt,

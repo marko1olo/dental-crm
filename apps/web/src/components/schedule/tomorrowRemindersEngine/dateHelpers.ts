@@ -1,24 +1,11 @@
+import { tomorrowDateKeyInTimeZone } from "@dental/shared";
 import type { ReminderChannel } from "./types";
 
 /**
  * Returns tomorrow's date formatted as YYYY-MM-DD in clinic timezone.
  */
 export function getTomorrowDateIso(baseDate: Date = new Date(), timezone?: string): string {
-	const tomorrow = new Date(baseDate.getTime() + 24 * 60 * 60 * 1000);
-	if (timezone) {
-		try {
-			const formatter = new Intl.DateTimeFormat("en-CA", {
-				timeZone: timezone,
-				year: "numeric",
-				month: "2-digit",
-				day: "2-digit",
-			});
-			return formatter.format(tomorrow);
-		} catch {
-			// ignore and fallback
-		}
-	}
-	return tomorrow.toISOString().slice(0, 10);
+	return tomorrowDateKeyInTimeZone(timezone, baseDate);
 }
 
 /**

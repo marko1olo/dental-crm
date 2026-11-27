@@ -393,7 +393,12 @@ describe("SoundFeedbackService: Web Audio DSP Synthesis & Oscillators", () => {
 		for (const type of types) {
 			mockCtx.oscillators = [];
 			await service.playSound(type);
-			assert.ok(mockCtx.oscillators.length > 0, `Type ${type} must trigger oscillator synthesis`);
+			assert.strictEqual(
+				mockCtx.oscillators.length >= 1,
+				true,
+				`Type ${type} must trigger oscillator synthesis`,
+			);
+			assert.strictEqual(typeof mockCtx.oscillators[0]?.frequency.setValueAtTime, "function");
 		}
 	});
 

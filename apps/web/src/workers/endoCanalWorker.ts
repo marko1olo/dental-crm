@@ -87,8 +87,10 @@ export type EndoCanalWorkerOutboundMessage =
 	| EndoCanalWorkerErrorResponse
 	| EndoCanalWorkerPongResponse;
 
+declare const self: DedicatedWorkerGlobalScope;
+
 // Dedicated Worker global scope
-const ctx = (typeof self !== "undefined" ? self : {}) as DedicatedWorkerGlobalScope;
+const ctx: DedicatedWorkerGlobalScope = self;
 
 if (typeof ctx.addEventListener === "function") {
 	ctx.addEventListener("message", (event: MessageEvent<EndoCanalWorkerInboundMessage>) => {

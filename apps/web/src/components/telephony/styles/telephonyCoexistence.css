@@ -9,7 +9,7 @@ body:has([aria-modal="true"]) .dnt-telephony-island-container {
 	left: 50%;
 	right: auto;
 	transform: translateX(-50%);
-	z-index: 9995;
+	z-index: 200;
 	align-items: center;
 }
 
@@ -23,7 +23,7 @@ body:has(.visit-bottom-bar) .dnt-incoming-call-badge-container {
 	left: 50%;
 	right: auto;
 	transform: translateX(-50%);
-	z-index: 9995;
+	z-index: 200;
 }
 
 

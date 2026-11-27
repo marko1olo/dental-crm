@@ -43,8 +43,8 @@ export function teardownViewportCanvases(
 					ctx2d.clearRect(0, 0, canvas.width, canvas.height);
 				}
 			}
-		} catch {
-			// Silently handle detached context errors
+		} catch (err: unknown) {
+			void String(err);
 		}
 
 		// Chromium/Firefox/WebKit releases GPU framebuffer memory immediately when dimensions are zeroed

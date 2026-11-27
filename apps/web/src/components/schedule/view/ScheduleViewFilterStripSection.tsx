@@ -58,6 +58,7 @@ export function ScheduleViewFilterStripSection({ props }: { props: ScheduleViewT
   return (
     <ScheduleUnifiedToolbar
       todayIso={clinicToday}
+      clinicTimezone={dashboard?.clinicSettings?.profile?.timezone}
       scheduleDateFilter={scheduleDateFilter}
       setScheduleDateFilter={setScheduleDateFilter}
       stepScheduleDay={stepScheduleDay}

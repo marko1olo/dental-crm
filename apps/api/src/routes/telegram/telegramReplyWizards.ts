@@ -98,7 +98,7 @@ export async function suggestedReplyFor(
 	}
 
 	if (normalizedCommand === "/start" || callbackAction === "dente:start") {
-		return startCommandReplyFor(settings, chatFingerprintValue, scope);
+		return await startCommandReplyFor(settings, chatFingerprintValue, scope);
 	}
 
 	if (normalizedCommand === "/help" || callbackAction === "dente:help") {
@@ -118,7 +118,7 @@ export async function suggestedReplyFor(
 		normalizedCommand === "/appointments" ||
 		callbackAction === "dente:schedule"
 	) {
-		return scheduleReplyFor(settings, chatFingerprintValue, scope);
+		return await scheduleReplyFor(settings, chatFingerprintValue, scope);
 	}
 
 	if (

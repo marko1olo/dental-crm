@@ -13,6 +13,7 @@ export type DocumentRenderContext = {
 	serviceCatalog?: ServiceCatalogItem[];
 	treatmentPlanItems?: TreatmentPlanItem[];
 	isDraft?: boolean;
+	origin?: string | undefined;
 };
 
 export * from "./renderUtilsModules/renderTypographyAndCss.js";

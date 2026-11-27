@@ -150,11 +150,21 @@ export async function authenticatePbxWebhook(
 	}
 
 	const orgSecrets = await resolveOrgTelephonySecrets(organizationId);
+	const hasAnyOrgSecret = Boolean(
+		orgSecrets.webhookSecret?.trim() ||
+			orgSecrets.sipuniSecret?.trim() ||
+			orgSecrets.uisSecret?.trim() ||
+			orgSecrets.gravitelSecret?.trim() ||
+			orgSecrets.mtsExolveSecret?.trim(),
+	);
 
+	// Когда у клиники настроен свой секрет в БД, глобальный env-секрет НЕ должен открывать инъекцию в её тенант.
 	const primarySecret =
 		orgSecrets.webhookSecret?.trim() ||
-		process.env.TELEPHONY_WEBHOOK_SECRET?.trim() ||
-		process.env.DENTE_WEBHOOK_SECRET?.trim();
+		(hasAnyOrgSecret
+			? undefined
+			: process.env.TELEPHONY_WEBHOOK_SECRET?.trim() ||
+				process.env.DENTE_WEBHOOK_SECRET?.trim());
 
 	const candidateTokens: string[] = [];
 
@@ -357,9 +367,11 @@ export async function authenticatePbxWebhook(
 		extractHeader(request, "x-exolve-signature");
 	const mtsSecret =
 		orgSecrets.mtsExolveSecret?.trim() ||
-		process.env.MTS_EXOLVE_WEBHOOK_SECRET?.trim() ||
-		process.env.EXOLVE_API_SECRET?.trim() ||
-		primarySecret;
+		(hasAnyOrgSecret
+			? primarySecret
+			: process.env.MTS_EXOLVE_WEBHOOK_SECRET?.trim() ||
+				process.env.EXOLVE_API_SECRET?.trim() ||
+				primarySecret);
 	if (mtsSign && mtsSecret && request.body) {
 		let cleanMtsSign = mtsSign.trim();
 		if (cleanMtsSign.toLowerCase().startsWith("sha256=")) {

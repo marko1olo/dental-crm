@@ -88,22 +88,45 @@ export function registerInboxOverviewHandlers(app: FastifyInstance): void {
 
 			const latestEvents = await withTenantReadCtx(orgId, (tx) =>
 				tx.execute<RawInboxEventRow>(sql`
-				SELECT DISTINCT ON (COALESCE(e.patient_id::text, e.caller_phone, e.id::text))
-					e.id,
-					e.patient_id AS "patientId",
-					e.caller_phone AS "callerPhone",
-					e.message,
-					e.channel,
-					e.direction,
-					e.status,
-					e.created_at AS "createdAt",
-					COALESCE(p.full_name, l.patient_name, l.name, e.caller_phone, 'Новый контакт') AS "patientName",
-					COALESCE(p.phone, l.phone, e.caller_phone) AS "patientPhone"
-				FROM communication_events e
-				LEFT JOIN patients p ON e.patient_id = p.id AND p.organization_id = ${orgId}
-				LEFT JOIN crm_leads l ON (e.caller_phone = l.phone OR (e.caller_phone IS NOT NULL AND l.phone IS NOT NULL AND RIGHT(regexp_replace(l.phone, '[^0-9]', '', 'g'), 10) = RIGHT(regexp_replace(e.caller_phone, '[^0-9]', '', 'g'), 10))) AND l.organization_id = ${orgId}
-				WHERE e.organization_id = ${orgId}
-				ORDER BY COALESCE(e.patient_id::text, e.caller_phone, e.id::text), e.created_at DESC
+				WITH recent_threads AS (
+					SELECT DISTINCT ON (COALESCE(e.patient_id::text, e.caller_phone, e.id::text))
+						e.id,
+						e.patient_id,
+						e.caller_phone,
+						e.message,
+						e.channel,
+						e.direction,
+						e.status,
+						e.created_at
+					FROM communication_events e
+					WHERE e.organization_id = ${orgId}
+					ORDER BY COALESCE(e.patient_id::text, e.caller_phone, e.id::text), e.created_at DESC
+					LIMIT 250
+				)
+				SELECT
+					rt.id,
+					rt.patient_id AS "patientId",
+					rt.caller_phone AS "callerPhone",
+					rt.message,
+					rt.channel,
+					rt.direction,
+					rt.status,
+					rt.created_at AS "createdAt",
+					COALESCE(p.full_name, l.patient_name, l.name, rt.caller_phone, 'Новый контакт') AS "patientName",
+					COALESCE(p.phone, l.phone, rt.caller_phone) AS "patientPhone"
+				FROM recent_threads rt
+				LEFT JOIN patients p ON rt.patient_id = p.id AND p.organization_id = ${orgId}
+				LEFT JOIN LATERAL (
+					SELECT l_inner.patient_name, l_inner.name, l_inner.phone
+					FROM crm_leads l_inner
+					WHERE l_inner.organization_id = ${orgId}
+					  AND rt.caller_phone IS NOT NULL
+					  AND l_inner.phone = rt.caller_phone
+					ORDER BY l_inner.created_at DESC
+					LIMIT 1
+				) l ON TRUE
+				ORDER BY rt.created_at DESC
+				LIMIT 250
 			`),
 			);
 

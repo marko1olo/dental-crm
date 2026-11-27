@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { Appointment } from "@dental/shared";
+import { todayDateKeyInTimeZone, type Appointment } from "@dental/shared";
 
 export interface ScheduleMiniMonthCalendarProps {
   selectedDate: string; // YYYY-MM-DD
@@ -106,7 +106,7 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
       return "high";
     };
 
-    const todayIso = new Date().toISOString().slice(0, 10);
+    const todayIso = todayDateKeyInTimeZone(timezone);
 
     // 1. Previous month trailing days
     for (let i = startDayOfWeek - 1; i >= 0; i--) {
@@ -194,10 +194,13 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
           <button
             type="button"
             onClick={() => {
-              const now = new Date();
-              setViewYear(now.getFullYear());
-              setViewMonth(now.getMonth());
-              onSelectDate(now.toISOString().slice(0, 10));
+              const todayKey = todayDateKeyInTimeZone(timezone);
+              const [yPart, mPart] = todayKey.split("-").map(Number);
+              if (yPart && mPart) {
+                setViewYear(yPart);
+                setViewMonth(mPart - 1);
+              }
+              onSelectDate(todayKey);
             }}
             className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors cursor-pointer"
             title="Текущий месяц"

@@ -11,6 +11,7 @@ import {
 import { sensitiveLocalDraftRetentionMs } from "../documentDraftHelpers";
 import { isVisitNoteForm } from "./typeGuards";
 import type { VisitLocalDraft } from "./types";
+import { logger } from "../../logger";
 
 export function browserGeneratedId(prefix: string): string {
 	return `${prefix}-${crypto.randomUUID()}`;
@@ -81,7 +82,9 @@ export function saveVisitLocalDraft(
 				draft,
 				organizationId || undefined,
 			);
-		}).catch(() => {});
+		}).catch((err: unknown) => {
+			logger.warn("[VisitDraft] offline save failed", err);
+		});
 	} catch {
 		// Ignore dynamic import failure in non-browser environments
 	}

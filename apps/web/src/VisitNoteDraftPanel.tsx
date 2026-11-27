@@ -56,6 +56,10 @@ const SPECIALTIES = [
 
 type Specialty = (typeof SPECIALTIES)[number]["value"];
 
+function isSpecialty(v: string): v is Specialty {
+	return SPECIALTIES.some((s) => s.value === v);
+}
+
 export type VisitNoteDraftResult = {
 	complaint: string | null;
 	anamnesis: string | null;
@@ -83,14 +87,43 @@ export type VisitNoteDraftPanelProps = {
 	onApply?: (draft: VisitNoteDraftResult) => void;
 };
 
-function jsonObjectOrNull(raw: string): Record<string, unknown> | null {
+export type JsonObject = { [key: string]: unknown };
+
+function isJsonObject(value: unknown): value is JsonObject {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseQuality(q: unknown): VisitNoteDraftResult["quality"] {
+	if (!isJsonObject(q)) return undefined;
+	const level = typeof q.level === "string" ? q.level : undefined;
+	const confidence = typeof q.confidence === "number" ? q.confidence : undefined;
+	const specialty = typeof q.specialty === "string" ? q.specialty : undefined;
+	const detectedToothCodes = Array.isArray(q.detectedToothCodes)
+		? q.detectedToothCodes.filter((c): c is string => typeof c === "string")
+		: undefined;
+	const signals = Array.isArray(q.signals)
+		? q.signals.filter((s): s is string => typeof s === "string")
+		: undefined;
+	const missing = Array.isArray(q.missing)
+		? q.missing.filter((m): m is string => typeof m === "string")
+		: undefined;
+
+	return {
+		...(level !== undefined ? { level } : {}),
+		...(confidence !== undefined ? { confidence } : {}),
+		...(specialty !== undefined ? { specialty } : {}),
+		...(detectedToothCodes !== undefined ? { detectedToothCodes } : {}),
+		...(signals !== undefined ? { signals } : {}),
+		...(missing !== undefined ? { missing } : {}),
+	};
+}
+
+function jsonObjectOrNull(raw: string): JsonObject | null {
 	const t = raw.trim();
 	if (!t) return null;
 	try {
 		const p: unknown = JSON.parse(t);
-		return typeof p === "object" && p !== null && !Array.isArray(p)
-			? (p as Record<string, unknown>)
-			: null;
+		return isJsonObject(p) ? p : null;
 	} catch (jsonErr: unknown) {
 		clientLogger.debug("[VisitNoteDraftPanel] Invalid JSON object candidate", jsonErr);
 		return null;
@@ -185,13 +218,13 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 				diagnosis: fieldText(json?.diagnosis) || null,
 				treatmentPlan: fieldText(json?.treatmentPlan) || null,
 			};
-			if (json?.quality && typeof json.quality === "object") {
-				next.quality = json.quality as NonNullable<
-					VisitNoteDraftResult["quality"]
-				>;
+			const quality = parseQuality(json?.quality);
+			if (quality) {
+				next.quality = quality;
 			}
 			if (Array.isArray(json?.warnings)) {
-				next.warnings = ((json?.warnings ?? []) as unknown[]).filter(
+				const rawWarnings: unknown[] = json.warnings;
+				next.warnings = rawWarnings.filter(
 					(w): w is string => typeof w === "string",
 				);
 			}
@@ -328,7 +361,10 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 							<select
 								data-testid="visit-note-draft-specialty"
 								value={specialty}
-								onChange={(e) => setSpecialty(e.target.value as Specialty)}
+								onChange={(e) => {
+									const val = e.target.value;
+									if (isSpecialty(val)) setSpecialty(val);
+								}}
 								className="mt-1 w-full bg-paper border border-line rounded-xl px-3 py-2 text-sm text-ink outline-none focus:ring-1 focus:ring-teal-500/50 min-h-[44px]"
 							>
 								{SPECIALTIES.map((s) => (

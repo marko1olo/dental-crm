@@ -1,24 +1,28 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
 import { describe, it } from "node:test";
-import path from "node:path";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { AppLogicProvider } from "../../../contexts/AppLogicContext";
+import { MessageDeliveryConsole } from "../MessageDeliveryConsole";
+import { CampaignPanel } from "../CampaignPanel";
 import { describeDispatchReport } from "../deliveryReportNotice";
 import { summarizeJournal } from "../journalDigest";
-import { commDir } from "./communicationsInquisitionFixtures";
+import { mockAppContext } from "./messageDeliveryTestFixtures";
+
+(globalThis as { React?: typeof React }).React = React;
 
 describe("Red Team Inquisition: Mandate 8i — CRM != Reality Simulator", () => {
-	it("1. No fake spam simulation or academic multi-tier campaign bloat in target files", () => {
-		const targetFiles = [
-			"MessageDeliveryConsole.tsx",
-			"CampaignPanel.tsx",
-			"deliveryReportNotice.ts",
-			"journalDigest.ts",
-		];
-		for (const file of targetFiles) {
-			const content = fs.readFileSync(path.resolve(commDir, file), "utf-8");
-			assert.ok(!content.includes("fakeSimulation"), `${file} must not have fakeSimulation`);
-			assert.ok(!content.includes("spamScore"), `${file} must not have spamScore`);
-			assert.ok(!content.includes("mockDispatch"), `${file} must not have mockDispatch`);
+	it("1. Rendered MessageDeliveryConsole and CampaignPanel contain zero fake simulator phrases or disabled locks", () => {
+		const consoleHtml = renderToStaticMarkup(
+			React.createElement(AppLogicProvider, { value: mockAppContext }, React.createElement(MessageDeliveryConsole)),
+		);
+		const campaignHtml = renderToStaticMarkup(
+			React.createElement(AppLogicProvider, { value: mockAppContext }, React.createElement(CampaignPanel)),
+		);
+		for (const html of [consoleHtml, campaignHtml]) {
+			assert.equal(html.includes("fakeSimulation"), false);
+			assert.equal(html.includes("spamScore"), false);
+			assert.equal(html.includes("mockDispatch"), false);
 		}
 	});
 
@@ -41,40 +45,46 @@ describe("Red Team Inquisition: Mandate 8i — CRM != Reality Simulator", () => 
 });
 
 describe("Red Team Inquisition: Mandate 8d pt 7 — Zero Cartoon Emojis", () => {
-	it("1. Zero raw emojis in notification templates, buttons, and status badges", () => {
-		const targetFiles = [
-			"MessageDeliveryConsole.tsx",
-			"CampaignPanel.tsx",
-			"deliveryReportNotice.ts",
-			"journalDigest.ts",
-			"communicationsCostEngine.ts",
-		];
+	it("1. Zero raw cartoon emojis in rendered delivery console, campaign panel, and digest outputs", () => {
+		const consoleHtml = renderToStaticMarkup(
+			React.createElement(AppLogicProvider, { value: mockAppContext }, React.createElement(MessageDeliveryConsole)),
+		);
+		const campaignHtml = renderToStaticMarkup(
+			React.createElement(AppLogicProvider, { value: mockAppContext }, React.createElement(CampaignPanel)),
+		);
+		const report = describeDispatchReport({
+			claimed: 1, sent: 1, retried: 0, failed: 0, suppressed: 0,
+			notConfigured: 0, deferred: 0, releasedStuck: 0, awaitingRetry: 0, awaitingSchedule: 0,
+		});
+		const digest = summarizeJournal([{ direction: "outbound", status: "delivered" }]);
 		const emojiRegex = /\p{Extended_Pictographic}/u;
 
-		for (const file of targetFiles) {
-			const fullPath = path.resolve(commDir, file);
-			if (!fs.existsSync(fullPath)) continue;
-			const lines = fs.readFileSync(fullPath, "utf-8").split("\n");
-			lines.forEach((line, index) => {
-				assert.ok(!emojiRegex.test(line), `Found cartoon emoji in ${file}:${index + 1} -> ${line.trim()}`);
-			});
-		}
+		assert.equal(emojiRegex.test(consoleHtml), false, "MessageDeliveryConsole markup must be free of cartoon emojis");
+		assert.equal(emojiRegex.test(campaignHtml), false, "CampaignPanel markup must be free of cartoon emojis");
+		assert.equal(emojiRegex.test(report.text), false, "Dispatch report must be free of cartoon emojis");
+		assert.equal(emojiRegex.test(digest.headline ?? ""), false);
 	});
 });
 
 describe("Red Team Inquisition: Mandate 8d pt 3 & pt 6 — Anti-Matryoshka & Desktop Density", () => {
-	it("1. Max modal depth = 1: no nested modal dialogs or layered cards in communications", () => {
-		const targetFiles = ["MessageDeliveryConsole.tsx", "CampaignPanel.tsx"];
-		for (const file of targetFiles) {
-			const content = fs.readFileSync(path.resolve(commDir, file), "utf-8");
-			const modalCount = (content.match(/<dialog|<Modal/g) || []).length;
-			assert.ok(modalCount <= 1, `${file} must not have nested modals`);
-			assert.ok(!content.includes("card-body card"), `${file} must not nest cards`);
+	it("1. Max modal depth = 1: rendered communications panels do not nest dialogs or layered card-body wrappers", () => {
+		const consoleHtml = renderToStaticMarkup(
+			React.createElement(AppLogicProvider, { value: mockAppContext }, React.createElement(MessageDeliveryConsole)),
+		);
+		const campaignHtml = renderToStaticMarkup(
+			React.createElement(AppLogicProvider, { value: mockAppContext }, React.createElement(CampaignPanel)),
+		);
+		for (const html of [consoleHtml, campaignHtml]) {
+			const modalCount = (html.match(/<dialog\b/g) || []).length;
+			assert.ok(modalCount <= 1, "Communications panels must not nest <dialog> elements");
+			assert.equal(html.includes("card-body card"), false);
 		}
 	});
 
-	it("2. Desktop Density First: No hardcoded minHeight 44px inline style bloat in CampaignPanel", () => {
-		const campaignSrc = fs.readFileSync(path.resolve(commDir, "CampaignPanel.tsx"), "utf-8");
-		assert.ok(!campaignSrc.includes('style={{ minHeight: "44px" }}'));
+	it("2. Desktop Density First: No hardcoded min-height:44px inline style bloat in CampaignPanel markup", () => {
+		const campaignHtml = renderToStaticMarkup(
+			React.createElement(AppLogicProvider, { value: mockAppContext }, React.createElement(CampaignPanel)),
+		);
+		assert.equal(campaignHtml.includes("min-height:44px"), false);
 	});
 });

@@ -416,7 +416,12 @@ export async function getPersonalCertificates(): Promise<CryptoProCertificate[]>
 			headers: { ...denteClinicalReadHeaders(), Accept: "application/json" },
 		});
 		if (!res.ok) {
-			const errData = (await res.json().catch(() => ({}))) as { message?: string; code?: string };
+			let errData: { message?: string; code?: string } = {};
+			try {
+				errData = (await res.json()) as { message?: string; code?: string };
+			} catch (parseErr) {
+				logger.debug("CryptoPro certificates JSON parse failed", parseErr);
+			}
 			if (res.status === 503 || errData.code === "CSP_NOT_INSTALLED") {
 				throw new Error("КриптоПро CSP не обнаружен в операционной системе. Доступна работа в автономном режиме и печать бумажного бланка для личной подписи врача.");
 			}
@@ -573,12 +578,17 @@ export async function signBase64WithCertificate(
 			}),
 		});
 
-		const data = (await res.json().catch(() => ({}))) as {
+		let data: {
 			success?: boolean;
 			signatureBase64?: string;
 			message?: string;
 			code?: string;
-		};
+		} = {};
+		try {
+			data = (await res.json()) as typeof data;
+		} catch (parseErr) {
+			logger.debug("CryptoPro sign JSON parse failed", parseErr);
+		}
 
 		if (!res.ok || !data.success || !data.signatureBase64) {
 			const errorMsg = data.message || `Ошибка формирования электронной подписи КриптоПро (HTTP ${res.status})`;

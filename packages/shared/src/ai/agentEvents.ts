@@ -187,7 +187,8 @@ export function parseAgentSseEvent(chunk: string): AgentHarnessEvent | null {
 			const parsed = JSON.parse(trimmed);
 			const validation = agentHarnessEventSchema.safeParse(parsed);
 			return validation.success ? validation.data : null;
-		} catch {
+		} catch (e) {
+			void String(e);
 			return null;
 		}
 	}
@@ -204,7 +205,8 @@ export function parseAgentSseEvent(chunk: string): AgentHarnessEvent | null {
 		}
 		const validation = agentHarnessEventSchema.safeParse(record);
 		return validation.success ? validation.data : null;
-	} catch {
+	} catch (e) {
+		void String(e);
 		return null;
 	}
 }

@@ -1,12 +1,17 @@
-import { and, eq } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
+import { and, desc, eq, isNotNull, notInArray, or, sql } from "drizzle-orm";
+import { onTenantTxCommit, withTenantCtx } from "../../../db/rls.js";
 import {
 	appointments,
+	clinics,
 	communicationEvents,
 	communicationTasks,
+	denteTelegramChatLinks,
+	messengerInboundEvents,
 	patients,
 	users,
 } from "../../../db/schema.js";
+import { DEFAULT_CLINIC_TIME_ZONE } from "../../reports/managerReports/timezone.js";
+import { hashTelegramChatFingerprint } from "../../../utils/telegramChatHash.js";
 import { wsBroker } from "../../websocketBroker.js";
 import type {
 	BotInboundMessage,
@@ -17,14 +22,14 @@ import type {
 
 /**
  * Плагин сервисных напоминаний и подтверждения визитов (Service Reminder Plugin).
- * 1. Обрабатывает подтверждение («✓ Подтверждаю») и перенос («🔄 Перенести приём») в 1 клик.
- * 2. Мгновенно переводит статус в БД `appointments.status = 'confirmed'` / `reschedule_requested`.
- * 3. Рассылает оповещения в веб-интерфейс регистратуры через WebSocket.
+ * 1. Обрабатывает подтверждение («✓ Подтверждаю») и перенос («🔄 Перенести приём»).
+ * 2. Мгновенно переводит статус в БД `appointments.status = 'confirmed'` / `cancelled`.
+ * 3. Рассылает оповещения в веб-интерфейс регистратуры через WebSocket (после COMMIT).
  * 4. Обеспечивает генерацию шаблонов напоминаний за 24 часа и за 2 часа до приёма.
  */
 export class ServiceReminderPlugin implements BotPlugin {
 	readonly name = "service_reminders";
-	readonly description = "Сервисные напоминания за 24ч и за 2ч с подтверждением и переносом в 1 клик";
+	readonly description = "Сервисные напоминания за 24ч и за 2ч с быстрым подтверждением и переносом";
 
 	canHandle(msg: BotInboundMessage): boolean {
 		const payload = msg.payload?.toLowerCase().trim() || "";
@@ -90,11 +95,73 @@ export class ServiceReminderPlugin implements BotPlugin {
 				isReschedule = true;
 			}
 
-			// Если конкретный ID не передан в payload, ищем ближайшую запись пациента
-			if (!appointmentId) {
-				const phoneDigits = msg.senderId.replace(/\D/g, "");
-				const phoneSearch = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : "";
+			const UUID_RE =
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+			if (appointmentId && !UUID_RE.test(appointmentId)) {
+				appointmentId = null;
+			}
 
+			// Fail-closed определение пациента по верифицированной связке канала или однозначному телефону (>= 10 цифр).
+			let verifiedPatientId: string | null = null;
+			const rawSender = msg.senderId.trim();
+			const phoneDigits = rawSender.replace(/\D/g, "");
+			const phoneSuffix = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : "";
+
+			if (msg.channel === "telegram" && rawSender) {
+				const fp = hashTelegramChatFingerprint(rawSender);
+				const [tgLink] = await tx
+					.select({ subjectId: denteTelegramChatLinks.subjectId })
+					.from(denteTelegramChatLinks)
+					.where(
+						and(
+							eq(denteTelegramChatLinks.organizationId, orgId),
+							eq(denteTelegramChatLinks.subjectType, "patient"),
+							eq(denteTelegramChatLinks.status, "active"),
+							or(
+								eq(denteTelegramChatLinks.chatTransportRef, rawSender),
+								eq(denteTelegramChatLinks.chatFingerprint, fp),
+							),
+						),
+					)
+					.limit(1);
+				verifiedPatientId = tgLink?.subjectId ?? null;
+			}
+
+			if (!verifiedPatientId && rawSender) {
+				const [inboundLink] = await tx
+					.select({ patientId: messengerInboundEvents.patientId })
+					.from(messengerInboundEvents)
+					.where(
+						and(
+							eq(messengerInboundEvents.organizationId, orgId),
+							eq(messengerInboundEvents.channel, msg.channel),
+							eq(messengerInboundEvents.externalChatId, rawSender),
+							isNotNull(messengerInboundEvents.patientId),
+						),
+					)
+					.orderBy(desc(messengerInboundEvents.createdAt))
+					.limit(1);
+				verifiedPatientId = inboundLink?.patientId ?? null;
+			}
+
+			if (!verifiedPatientId && phoneSuffix.length === 10) {
+				const phoneMatches = await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.organizationId, orgId),
+							sql`right(regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g'), 10) = ${phoneSuffix}`,
+						),
+					)
+					.limit(2);
+				if (phoneMatches.length === 1 && phoneMatches[0]) {
+					verifiedPatientId = phoneMatches[0].id;
+				}
+			}
+
+			// Если конкретный ID не передан в payload, ищем ближайшую активную запись ТОЛЬКО подтверждённого пациента.
+			if (!appointmentId && verifiedPatientId) {
 				const recentApps = await tx
 					.select({
 						id: appointments.id,
@@ -102,11 +169,11 @@ export class ServiceReminderPlugin implements BotPlugin {
 						startsAt: appointments.startsAt,
 					})
 					.from(appointments)
-					.innerJoin(patients, eq(appointments.patientId, patients.id))
 					.where(
 						and(
 							eq(appointments.organizationId, orgId),
-							phoneSearch ? eq(patients.phone, `+${phoneDigits}`) : undefined,
+							eq(appointments.patientId, verifiedPatientId),
+							notInArray(appointments.status, ["cancelled", "no_show", "completed"]),
 						),
 					)
 					.orderBy(appointments.startsAt)
@@ -120,7 +187,7 @@ export class ServiceReminderPlugin implements BotPlugin {
 
 			if (!appointmentId) {
 				return {
-					text: "ℹ️ Не найдено активных записей на приём для вашего номера телефона. Если вы хотите записаться к врачу, нажмите кнопку ниже:",
+					text: "ℹ️ Не найдено активных записей на приём для вашего профиля. Если вы хотите записаться к врачу, нажмите кнопку ниже:",
 					keyboard: {
 						inline: true,
 						buttons: [
@@ -132,7 +199,7 @@ export class ServiceReminderPlugin implements BotPlugin {
 				};
 			}
 
-			// Получаем детали записи
+			// Получаем детали записи (с проверкой владения при наличии verifiedPatientId)
 			const [existingApp] = await tx
 				.select({
 					id: appointments.id,
@@ -148,22 +215,38 @@ export class ServiceReminderPlugin implements BotPlugin {
 					and(
 						eq(appointments.id, appointmentId),
 						eq(appointments.organizationId, orgId),
+						...(verifiedPatientId ? [eq(appointments.patientId, verifiedPatientId)] : []),
 					),
 				)
 				.limit(1);
 
 			if (!existingApp) {
 				return {
-					text: "⚠️ Запись на приём не найдена или уже была отменена.",
+					text: "⚠️ Запись на приём не найдена или недоступна.",
 					actionExecuted: "appointment_not_found",
 				};
 			}
 
+			const [clinicRow] = await tx
+				.select({ timezone: clinics.timezone })
+				.from(clinics)
+				.where(eq(clinics.organizationId, orgId))
+				.limit(1);
+			const clinicTz = clinicRow?.timezone || DEFAULT_CLINIC_TIME_ZONE;
+
 			const formattedTime = existingApp.startsAt
-				? new Date(existingApp.startsAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+				? new Date(existingApp.startsAt).toLocaleTimeString("ru-RU", {
+						hour: "2-digit",
+						minute: "2-digit",
+						timeZone: clinicTz,
+					})
 				: "назначенное время";
 			const formattedDate = existingApp.startsAt
-				? new Date(existingApp.startsAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })
+				? new Date(existingApp.startsAt).toLocaleDateString("ru-RU", {
+						day: "numeric",
+						month: "long",
+						timeZone: clinicTz,
+					})
 				: "сегодня";
 
 			if (isConfirm) {
@@ -192,15 +275,19 @@ export class ServiceReminderPlugin implements BotPlugin {
 					});
 				}
 
-				// 3. Рассылаем WebSocket событие для UI регистратуры
-				wsBroker.broadcastToOrganization(orgId, {
-					type: "APPOINTMENT_CONFIRMED",
-					payload: {
-						appointmentId,
-						patientName: existingApp.patientName,
-						confirmedAt: new Date().toISOString(),
-						channel: msg.channel,
-					},
+				// 3. Рассылаем WebSocket событие строго после COMMIT транзакции
+				const confirmedApptId = appointmentId;
+				const confirmedPatientName = existingApp.patientName;
+				onTenantTxCommit(() => {
+					wsBroker.broadcastToOrganization(orgId, {
+						type: "APPOINTMENT_CONFIRMED",
+						payload: {
+							appointmentId: confirmedApptId,
+							patientName: confirmedPatientName,
+							confirmedAt: new Date().toISOString(),
+							channel: msg.channel,
+						},
+					});
 				});
 
 				return {
@@ -257,15 +344,19 @@ export class ServiceReminderPlugin implements BotPlugin {
 					});
 				}
 
-				// 3. WebSocket оповещение
-				wsBroker.broadcastToOrganization(orgId, {
-					type: "APPOINTMENT_RESCHEDULE_REQUESTED",
-					payload: {
-						appointmentId,
-						patientName: existingApp.patientName,
-						requestedAt: new Date().toISOString(),
-						channel: msg.channel,
-					},
+				// 3. WebSocket оповещение строго после COMMIT
+				const reschedApptId = appointmentId;
+				const reschedPatientName = existingApp.patientName;
+				onTenantTxCommit(() => {
+					wsBroker.broadcastToOrganization(orgId, {
+						type: "APPOINTMENT_RESCHEDULE_REQUESTED",
+						payload: {
+							appointmentId: reschedApptId,
+							patientName: reschedPatientName,
+							requestedAt: new Date().toISOString(),
+							channel: msg.channel,
+						},
+					});
 				});
 
 				return {

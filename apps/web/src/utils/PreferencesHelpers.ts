@@ -1,4 +1,5 @@
 import type { UiLanguage } from "@dental/shared";
+import { clientLogger } from "./logger";
 import { safeLocalStorageSetItem } from "../lib/safeLocalStorage";
 import {
 	type UiPreferences,
@@ -39,12 +40,12 @@ export function normalizeUiLanguageInput(value: unknown): UiLanguage {
 }
 
 export function pickUiPreference<T>(
-	source: Record<string, unknown>,
+	source: Partial<UiPreferencesInput> | Record<string, unknown>,
 	key: keyof UiPreferencesInput,
 	fallback: T,
 	isValid: (value: unknown) => value is T,
 ): T {
-	const value = source[key];
+	const value = Reflect.get(source, key);
 	return isValid(value) ? value : fallback;
 }
 
@@ -58,7 +59,8 @@ export function persistUiPreferences(
 			JSON.stringify(preferences),
 		);
 		return preferences;
-	} catch {
+	} catch (err: unknown) {
+		clientLogger.debug("[PreferencesHelpers] Failed to persistUiPreferences:", err);
 		// Preferences are convenience only. Clinical drafts use separate guarded storage.
 		return null;
 	}

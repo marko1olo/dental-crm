@@ -4,6 +4,7 @@
  * Strictly <= 120 lines per Mandate 8b.
  */
 
+import { todayDateKeyInTimeZone } from "@dental/shared";
 import { useAppStore } from "../../store/appStore";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
@@ -20,6 +21,7 @@ export interface ChatPatientBookingInfo {
 export interface ChatBookingDashboardContext {
 	todayIso?: string;
 	clinicSettings?: {
+		profile?: { timezone?: string };
 		staff?: Array<{ id: string; role?: string; fullName?: string }>;
 		chairs?: Array<{ id: string; name?: string }>;
 	};
@@ -35,7 +37,8 @@ export function executeBookAppointmentFromChat(
 	}
 
 	const todayIso =
-		dashboard?.todayIso ?? new Date().toISOString().slice(0, 10);
+		dashboard?.todayIso ??
+		todayDateKeyInTimeZone(dashboard?.clinicSettings?.profile?.timezone);
 	const defaultDoctorId =
 		dashboard?.clinicSettings?.staff?.find((s) => s.role === "doctor")?.id ??
 		"";

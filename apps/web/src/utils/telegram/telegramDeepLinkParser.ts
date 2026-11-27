@@ -2,6 +2,7 @@ import type {
 	DenteTelegramFeature,
 	GeneratedDocument,
 } from "@dental/shared";
+import { clientLogger } from "../logger.js";
 import type { AppView } from "../routeUtils.js";
 
 export const telegramPublicUrlSensitiveQueryKeys = new Set([
@@ -163,7 +164,8 @@ export function readDenteTelegramHandoffTarget(): DenteTelegramHandoffTarget | n
 		return isDenteTelegramPortalSection(section)
 			? denteTelegramHandoffTargets[section]
 			: null;
-	} catch {
+	} catch (err: unknown) {
+		clientLogger.debug("[telegramDeepLinkParser] Invalid window.location URL:", err);
 		return null;
 	}
 }

@@ -27,9 +27,8 @@ export function useImagingDicomweb({
 		setDicomwebLoadProgress("Подключение к DICOMweb WADO-RS...");
 		try {
 			const apiBase = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
-			const studyAny = selectedImagingStudy as Record<string, unknown>;
-			let studyUid = (studyAny.dicomStudyUid ?? studyAny.studyInstanceUid ?? studyAny.studyUid) as string | undefined;
-			let seriesUid = (studyAny.dicomSeriesUid ?? studyAny.seriesInstanceUid ?? studyAny.seriesUid) as string | undefined;
+			let studyUid = (selectedImagingStudy.dicomStudyUid ?? selectedImagingStudy.studyInstanceUid ?? selectedImagingStudy.studyUid) ?? undefined;
+			let seriesUid = (selectedImagingStudy.dicomSeriesUid ?? selectedImagingStudy.seriesInstanceUid ?? selectedImagingStudy.seriesUid) ?? undefined;
 
 			if (!studyUid) {
 				const qidoUrl = `${apiBase}/api/dicomweb/studies${activePatientId ? `?PatientID=${encodeURIComponent(activePatientId)}` : ""}`;
@@ -98,8 +97,7 @@ export function useImagingDicomweb({
 		if (!selectedImagingStudy || selectedImagingStudy.kind !== "cbct") return;
 		if (localImageIds && localImageIds.length > 0) return;
 		if (isDicomwebLoading) return;
-		const studyAny = selectedImagingStudy as Record<string, unknown>;
-		if (studyAny.dicomStudyUid ?? studyAny.studyInstanceUid ?? studyAny.studyUid ?? studyAny.hasDicomweb) {
+		if (selectedImagingStudy.dicomStudyUid ?? selectedImagingStudy.studyInstanceUid ?? selectedImagingStudy.studyUid ?? selectedImagingStudy.hasDicomweb) {
 			handleLoadFromDicomweb({ silentOnError: true });
 		}
 	}, [selectedImagingStudy, localImageIds, isDicomwebLoading, handleLoadFromDicomweb]);

@@ -18,8 +18,10 @@ import {
 	denteMaxBotConfigs,
 	denteTelegramBotConfigs,
 	denteTelegramChatLinks,
+	denteVkBotConfigs,
 	denteWhatsappBotConfigs,
 } from "../../db/schema.js";
+import { VkApiClient } from "../bots/VkApiClient.js";
 import {
 	readSmtpCredentialsFromEnv,
 	type SmtpCredentials,
@@ -49,7 +51,7 @@ export type { CommunicationChannelCode, CommunicationConsentScope };
 
 /** Каналы, по которым сообщение действительно уходит машиной. */
 export const MACHINE_DELIVERABLE_CHANNELS: readonly CommunicationChannelCode[] =
-	["sms", "email", "whatsapp", "telegram", "max"];
+	["sms", "email", "whatsapp", "telegram", "max", "vk"];
 
 export function isMachineDeliverableChannel(
 	channel: string,
@@ -80,6 +82,7 @@ export type ChannelCredentialSet = {
 	 * интеграции кладут маскированное значение.
 	 */
 	readonly maxBotToken: string | null;
+	readonly vkGroupToken: string | null;
 };
 
 /**
@@ -114,7 +117,7 @@ export async function resolveChannelCredentials(
 	organizationId: string,
 	env: NodeJS.ProcessEnv = process.env,
 ): Promise<ChannelCredentialSet> {
-	const { whatsappConfig, telegramConfig, maxConfig } = await withTenantCtx(
+	const { whatsappConfig, telegramConfig, maxConfig, vkConfig } = await withTenantCtx(
 		organizationId,
 		async (tx) => {
 			const [wa] = await tx
@@ -139,7 +142,18 @@ export async function resolveChannelCredentials(
 				.where(eq(denteMaxBotConfigs.organizationId, organizationId))
 				.limit(1);
 
-			return { whatsappConfig: wa, telegramConfig: tg, maxConfig: max };
+			const [vk] = await tx
+				.select({
+					groupToken: denteVkBotConfigs.groupToken,
+					tokenSecretRef: denteVkBotConfigs.tokenSecretRef,
+					isActive: denteVkBotConfigs.isActive,
+					isEnabled: denteVkBotConfigs.isEnabled,
+				})
+				.from(denteVkBotConfigs)
+				.where(eq(denteVkBotConfigs.organizationId, organizationId))
+				.limit(1);
+
+			return { whatsappConfig: wa, telegramConfig: tg, maxConfig: max, vkConfig: vk };
 		},
 	);
 
@@ -156,6 +170,15 @@ export async function resolveChannelCredentials(
 			maxConfig?.isActive && (maxConfig.token || maxConfig.tokenSecretRef)
 				? OmnichannelTokenVault.resolveToken(
 						maxConfig.token || maxConfig.tokenSecretRef,
+						organizationId,
+					)
+				: null,
+		vkGroupToken:
+			vkConfig?.isActive &&
+			vkConfig.isEnabled !== false &&
+			(vkConfig.groupToken || vkConfig.tokenSecretRef)
+				? OmnichannelTokenVault.resolveToken(
+						vkConfig.groupToken || vkConfig.tokenSecretRef,
 						organizationId,
 					)
 				: null,
@@ -377,14 +400,42 @@ export async function sendThroughChannel(
 					};
 		}
 
-		case "vk":
-			/*
-			 * ВКонтакте (VK Bot / Сообщество): таблицы конфигурации denteVkBotConfigs созданы в БД.
-			 * Прямая исходящая отправка по API сообществ VK требует настройки токена сообщества в панели клиники.
-			 */
-			return notConfigured(
-				"Отправка во ВКонтакте не настроена: укажите токен доступа сообщества в настройках интеграции ВКонтакте.",
-			);
+		case "vk": {
+			if (!credentials.vkGroupToken) {
+				return notConfigured(
+					"Отправка во ВКонтакте не настроена: укажите токен доступа сообщества в настройках интеграции ВКонтакте.",
+				);
+			}
+			const cleanVkId = request.recipientAddress
+				.trim()
+				.replace(/^vk:/i, "")
+				.replace(/^id/i, "")
+				.trim();
+			if (!/^\d{1,19}$/.test(cleanVkId)) {
+				return notConfigured(
+					"У пациента не указан числовой идентификатор диалога ВКонтакте.",
+				);
+			}
+			try {
+				const vkRes = await VkApiClient.sendMessage(
+					credentials.vkGroupToken,
+					cleanVkId,
+					request.body,
+				);
+				return {
+					ok: true,
+					providerMessageId: String(vkRes.messageId),
+					segments: null,
+				};
+			} catch (vkErr) {
+				const errMsg = vkErr instanceof Error ? vkErr.message : String(vkErr);
+				return {
+					ok: false,
+					errorClass: "network",
+					errorMessage: errMsg,
+				};
+			}
+		}
 
 		case "phone":
 		case "in_person":

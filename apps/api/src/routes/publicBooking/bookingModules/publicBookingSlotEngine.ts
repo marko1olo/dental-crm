@@ -1,11 +1,16 @@
 import { and, eq, gt, inArray, isNotNull, lt, notInArray } from "drizzle-orm";
 import type { FastifyReply } from "fastify";
+import {
+	isReservationMatchingChair,
+	parseReservationInstant,
+} from "../../../db/appointmentsQueryModules/scheduleReservationLockHelpers.js";
 import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	appointments,
 	chairs,
 	clinics,
 	organizations,
+	scheduleTimeReservations,
 	users,
 } from "../../../db/schema.js";
 import { FREED_APPOINTMENT_STATUSES } from "../../appointmentErrors.js";
@@ -143,7 +148,7 @@ export async function calculateAvailableSlots(
 
 	// Load active physical clinic chairs to prevent chair double-booking 409 collisions
 	const activeChairs = await tx
-		.select({ id: chairs.id })
+		.select({ id: chairs.id, name: chairs.name })
 		.from(chairs)
 		.where(
 			and(
@@ -152,6 +157,20 @@ export async function calculateAvailableSlots(
 			),
 		);
 	const activeChairIds = activeChairs.map((c) => c.id);
+
+	const lockedReservations = await tx
+		.select({
+			chairName: scheduleTimeReservations.chairName,
+			startTime: scheduleTimeReservations.startTime,
+			endTime: scheduleTimeReservations.endTime,
+		})
+		.from(scheduleTimeReservations)
+		.where(
+			and(
+				eq(scheduleTimeReservations.organizationId, organizationId),
+				eq(scheduleTimeReservations.bookingLocked, true),
+			),
+		);
 
 	// Load appointments on this date
 	const dayStartUtc = localWallTimeToUtc(date, 0, timeZone);
@@ -205,6 +224,29 @@ export async function calculateAvailableSlots(
 			endMs: new Date(a.endsAt).getTime(),
 		}));
 
+	const globalReservedIntervals: Array<{ startMs: number; endMs: number }> = [];
+	for (const res of lockedReservations) {
+		const rStartMs = parseReservationInstant(res.startTime, timeZone);
+		const rEndMs = parseReservationInstant(res.endTime, timeZone);
+		if (rStartMs === null || rEndMs === null || rEndMs <= rStartMs) continue;
+		if (rStartMs >= dayEndUtc.getTime() || rEndMs <= dayStartUtc.getTime()) continue;
+		if (activeChairs.length === 0) {
+			if (isReservationMatchingChair(res.chairName, null)) {
+				globalReservedIntervals.push({ startMs: rStartMs, endMs: rEndMs });
+			}
+		} else {
+			for (const ch of activeChairs) {
+				if (isReservationMatchingChair(res.chairName, ch.name)) {
+					occupiedChairIntervals.push({
+						chairId: ch.id,
+						startMs: rStartMs,
+						endMs: rEndMs,
+					});
+				}
+			}
+		}
+	}
+
 	const nowMs = Date.now();
 	const slotUnionMap = new Map<
 		string,
@@ -246,7 +288,12 @@ export async function calculateAvailableSlots(
 
 			if (slotStartMs <= nowMs) continue;
 
-			// Chair availability pre-check: ensure at least one physical chair is unblocked during this slot
+			// Chair & reservation availability pre-check: ensure at least one physical chair is unblocked
+			const globalBlocked = globalReservedIntervals.some(
+				(iv) => slotStartMs < iv.endMs && slotEndMs > iv.startMs,
+			);
+			if (globalBlocked) continue;
+
 			const chairAvailable = isAnyChairAvailable(
 				activeChairIds,
 				occupiedChairIntervals,

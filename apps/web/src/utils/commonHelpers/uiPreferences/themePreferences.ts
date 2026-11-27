@@ -314,7 +314,7 @@ export function normalizeUiPreferencesPayload(
 	) {
 		return null;
 	}
-	const source = parsed as Record<string, unknown>;
+	const source = parsed as Partial<UiPreferencesInput & { savedAt?: unknown }>;
 	const legacyIssueSignatureDraft = loadDocumentIssueSignatureDraft();
 	return {
 		version: 1,

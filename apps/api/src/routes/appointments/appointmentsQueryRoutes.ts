@@ -1,5 +1,6 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { getPeriodStartInTimeZone } from "@dental/shared";
 import { getAppointmentByIdInDb } from "../../db/appointmentsQuery.js";
 import { withTenantReadCtx } from "../../db/rls.js";
 import { appointments, chairs, patients, users } from "../../db/schema.js";
@@ -118,24 +119,6 @@ export async function handleGetAppointments(
 			});
 		}
 		cleanDateToResolve = date.trim();
-	} else if (period) {
-		const now = new Date();
-		let dateThreshold: Date | undefined;
-		if (period === "day") {
-			dateThreshold = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-		} else if (period === "week") {
-			dateThreshold = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-		} else if (period === "month") {
-			dateThreshold = new Date(now.getFullYear(), now.getMonth(), 1);
-		} else if (period === "quarter") {
-			const currentQuarterMonth = Math.floor(now.getMonth() / 3) * 3;
-			dateThreshold = new Date(now.getFullYear(), currentQuarterMonth, 1);
-		} else if (period === "year") {
-			dateThreshold = new Date(now.getFullYear(), 0, 1);
-		}
-		if (dateThreshold) {
-			conditions.push(sql`${appointments.startsAt} >= ${dateThreshold}`);
-		}
 	}
 
 	const cardNumSql = sql<string>`coalesce(
@@ -146,12 +129,21 @@ export async function handleGetAppointments(
 	)`;
 
 	const rows = await withTenantReadCtx(orgId, async (tx) => {
+		const clinicZone = (await clinicTimeZone(orgId, tx)) ?? DEFAULT_CLINIC_TIME_ZONE;
 		if (cleanDateToResolve) {
-			const clinicZone = (await clinicTimeZone(orgId, tx)) ?? DEFAULT_CLINIC_TIME_ZONE;
 			const { dayStart, dayEnd } = resolveScheduleDateBounds(cleanDateToResolve, clinicZone);
 			conditions.push(
 				sql`${appointments.startsAt} >= ${dayStart} AND ${appointments.startsAt} <= ${dayEnd}`,
 			);
+		} else if (
+			period === "day" ||
+			period === "week" ||
+			period === "month" ||
+			period === "quarter" ||
+			period === "year"
+		) {
+			const dateThreshold = getPeriodStartInTimeZone(period, clinicZone, new Date());
+			conditions.push(sql`${appointments.startsAt} >= ${dateThreshold}`);
 		}
 
 		return tx

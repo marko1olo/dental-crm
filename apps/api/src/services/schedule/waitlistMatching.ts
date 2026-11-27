@@ -22,7 +22,7 @@
  */
 
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../../db/rls.js";
 import {
 	appointments,
 	appointmentWaitlists,
@@ -229,51 +229,69 @@ const PRIORITY_ORDER: Readonly<Record<string, number>> = {
 	low: 2,
 };
 
-export async function findWaitlistMatches(
-	slot: FreedSlot,
-	limit = 20,
-): Promise<WaitlistMatchReport> {
-	const rows = await withTenantCtx(slot.organizationId, async (tx) =>
-		tx
-			.select({
-				entryId: appointmentWaitlists.id,
-				patientId: appointmentWaitlists.patientId,
-				storedName: appointmentWaitlists.patientName,
-				storedPhone: appointmentWaitlists.patientPhone,
-				preferredDoctorId: appointmentWaitlists.preferredDoctorId,
-				priorityLevel: appointmentWaitlists.priorityLevel,
-				preferredTimeRanges: appointmentWaitlists.preferredTimeRanges,
-				createdAt: appointmentWaitlists.createdAt,
-				// Имя и телефон берутся из карточки: в записи листа ожидания они
-				// скопированы на момент создания и успевают устареть.
-				patientName: patients.fullName,
-				patientPhone: patients.phone,
-				/*
-				 * Есть ли у пациента другая запись на будущее. Предлагать окно тому,
-				 * кто уже записан, обычно не нужно — но скрывать его нельзя: человек
-				 * мог просить более раннее время, и это как раз оно.
-				 * Ссылка на внешнюю таблицу пишется как ${appointmentWaitlists}."patient_id":
-				 * без имени таблицы drizzle подставит голое «patient_id», и внутри
-				 * подзапроса оно свяжется с колонкой appointments — условие станет
-				 * всегда ложным без всякой ошибки.
-				 */
-				futureAppointments: sql<number>`(
+export type ActiveWaitlistRow = {
+	readonly entryId: string;
+	readonly patientId: string;
+	readonly storedName: string | null;
+	readonly storedPhone: string | null;
+	readonly preferredDoctorId: string | null;
+	readonly priorityLevel: string;
+	readonly preferredTimeRanges: unknown;
+	readonly createdAt: Date;
+	readonly patientName: string | null;
+	readonly patientPhone: string | null;
+	readonly futureAppointments: number;
+};
+
+export async function loadActiveWaitlistRows(
+	tx: TenantDb,
+	organizationId: string,
+): Promise<ActiveWaitlistRow[]> {
+	return tx
+		.select({
+			entryId: appointmentWaitlists.id,
+			patientId: appointmentWaitlists.patientId,
+			storedName: appointmentWaitlists.patientName,
+			storedPhone: appointmentWaitlists.patientPhone,
+			preferredDoctorId: appointmentWaitlists.preferredDoctorId,
+			priorityLevel: appointmentWaitlists.priorityLevel,
+			preferredTimeRanges: appointmentWaitlists.preferredTimeRanges,
+			createdAt: appointmentWaitlists.createdAt,
+			patientName: patients.fullName,
+			patientPhone: patients.phone,
+			futureAppointments: sql<number>`(
 				SELECT count(*) FROM ${appointments} a
 				WHERE a.patient_id = ${appointmentWaitlists}."patient_id"
 				  AND a.starts_at > now()
 				  AND a.status IN ('planned', 'confirmed')
 			)`.as("future_appointments"),
-			})
-			.from(appointmentWaitlists)
-			.leftJoin(patients, eq(patients.id, appointmentWaitlists.patientId))
-			.where(
-				and(
-					eq(appointmentWaitlists.organizationId, slot.organizationId),
-					// Только те, кто ещё ждёт: отработанные записи предлагать нельзя.
-					inArray(appointmentWaitlists.status, ["waiting", "active"]),
-				),
+		})
+		.from(appointmentWaitlists)
+		.leftJoin(patients, eq(patients.id, appointmentWaitlists.patientId))
+		.where(
+			and(
+				eq(appointmentWaitlists.organizationId, organizationId),
+				inArray(appointmentWaitlists.status, ["waiting", "active"]),
 			),
+		)
+		.limit(500);
+}
+
+export async function findWaitlistMatches(
+	slot: FreedSlot,
+	limit = 20,
+): Promise<WaitlistMatchReport> {
+	const rows = await withTenantReadCtx(slot.organizationId, (tx) =>
+		loadActiveWaitlistRows(tx, slot.organizationId),
 	);
+	return matchWaitlistRowsToSlot(rows, slot, limit);
+}
+
+export function matchWaitlistRowsToSlot(
+	rows: readonly ActiveWaitlistRow[],
+	slot: FreedSlot,
+	limit = 20,
+): WaitlistMatchReport {
 
 	const now = new Date();
 	const effectiveTimeZone = slot.timezone || "Europe/Samara";

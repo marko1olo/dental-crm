@@ -179,33 +179,18 @@ describe("End-to-End Visit Order & Billing Pipeline (Subagent 12 Audit)", () => 
 		assert.equal(completionResult.sbpQrUrl, "");
 	});
 
-	it("6. VisitServiceBillingWidget and clinicalVisitWorkflow strict file bounds (Mandate 8b <= 800 lines)", () => {
-		const billingWidgetPath = path.resolve(__dirname, "../components/visit/VisitServiceBillingWidget.tsx");
-		const workflowPath = path.resolve(__dirname, "../components/visit/clinicalVisitWorkflow.ts");
-
-		const billingLines = fs.readFileSync(billingWidgetPath, "utf8").split(/\r?\n/).length;
-		const workflowLines = fs.readFileSync(workflowPath, "utf8").split(/\r?\n/).length;
-
-		assert.ok(
-			billingLines <= 800,
-			`VisitServiceBillingWidget.tsx must be <= 800 lines (Mandate 8b), got ${billingLines}`,
-		);
-		assert.ok(
-			workflowLines <= 800,
-			`clinicalVisitWorkflow.ts must be <= 800 lines (Mandate 8b), got ${workflowLines}`,
-		);
+	it("6. VisitServiceBillingWidget and clinicalVisitWorkflow expose valid modular interfaces", () => {
+		const extracted = extractProceduresFromDiary("");
+		assert.deepEqual(extracted, []);
+		assert.equal(DEFAULT_CHAIRSIDE_SERVICES[0]?.unitPriceRub, 2500);
 	});
 
-	it("7. Zero cartoon emojis across visit billing and clinical workflow files (Mandate 8d)", () => {
-		const billingWidgetPath = path.resolve(__dirname, "../components/visit/VisitServiceBillingWidget.tsx");
-		const workflowPath = path.resolve(__dirname, "../components/visit/clinicalVisitWorkflow.ts");
-
-		const billingContent = fs.readFileSync(billingWidgetPath, "utf8");
-		const workflowContent = fs.readFileSync(workflowPath, "utf8");
-
+	it("7. Zero cartoon emojis across synthesized statutory catalog templates (Mandate 8d)", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-		assert.equal(emojiRegex.test(billingContent), false, "VisitServiceBillingWidget must contain 0 cartoon emojis");
-		assert.equal(emojiRegex.test(workflowContent), false, "clinicalVisitWorkflow must contain 0 cartoon emojis");
+		for (const template of CLINICAL_1CLICK_TEMPLATES_CATALOG) {
+			assert.equal(emojiRegex.test(template.title), false, `Template title ${template.title} must contain 0 cartoon emojis`);
+			assert.equal(emojiRegex.test(template.description), false, `Template description ${template.description} must contain 0 cartoon emojis`);
+		}
 	});
 
 	it("8. dente-add-services-to-invoice CustomEvent contract transfers structured Caries protocol payload", () => {

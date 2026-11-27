@@ -36,14 +36,14 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	 * GET /api/bots/configs
 	 * Получение настроек всех ботов клиники (токены отдаются в замаскированном виде).
 	 */
-	app.get("/api/bots/configs", getBotConfigsHandler);
+	app.get("/api/bots/configs", { config: { tenantTxSelfManaged: true } }, getBotConfigsHandler);
 
 	/**
 	 * GET /api/messengers/overview & GET /api/bots/overview
 	 * Обзорный статус всех каналов мессенджеров клиники.
 	 */
-	app.get("/api/messengers/overview", getMessengersOverviewHandler);
-	app.get("/api/bots/overview", getMessengersOverviewHandler);
+	app.get("/api/messengers/overview", { config: { tenantTxSelfManaged: true } }, getMessengersOverviewHandler);
+	app.get("/api/bots/overview", { config: { tenantTxSelfManaged: true } }, getMessengersOverviewHandler);
 
 	/**
 	 * POST /api/messengers/test-connection
@@ -57,21 +57,21 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 
 	/**
 	 * POST /api/bots/configs
-	 * Сохранение / обновление конфигурации бота любого канала в 2 клика с шифрованием AES-256-GCM.
+	 * Сохранение / обновление конфигурации бота любого канала с шифрованием AES-256-GCM.
 	 */
-	app.post("/api/bots/configs", saveBotConfigHandler);
+	app.post("/api/bots/configs", { config: { tenantTxSelfManaged: true } }, saveBotConfigHandler);
 
 	/**
 	 * GET /api/bots/:botId/status
 	 * Телеметрия, состояние задержек и счетчики сообщений рантайма бота.
 	 */
-	app.get("/api/bots/:botId/status", getBotStatusHandler);
+	app.get("/api/bots/:botId/status", { config: { tenantTxSelfManaged: true } }, getBotStatusHandler);
 
 	/**
 	 * GET /api/bots/metrics
 	 * Общие метрики движка ботов по всей системе.
 	 */
-	app.get("/api/bots/metrics", getEngineMetricsHandler);
+	app.get("/api/bots/metrics", { config: { tenantTxSelfManaged: true } }, getEngineMetricsHandler);
 
 	/**
 	 * GET /api/bots/:botId/export-source & GET /api/bots/:botId/export-zip
@@ -96,13 +96,17 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	app.get<{
 		Params: { channel: string; organizationId: string };
 		Querystring: Record<string, string>;
-	}>("/api/bots/webhook/:channel/:organizationId", async (request, reply) => {
-		const { channel, organizationId } = request.params;
-		const query = request.query || {};
+	}>(
+		"/api/bots/webhook/:channel/:organizationId",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			const { channel, organizationId } = request.params;
+			const query = request.query || {};
 
-		const result = await handleWebhookGetHandshake(channel, organizationId, query);
-		return reply.code(result.statusCode).send(result.payload);
-	});
+			const result = await handleWebhookGetHandshake(channel, organizationId, query);
+			return reply.code(result.statusCode).send(result.payload);
+		},
+	);
 
 	/**
 	 * УНИФИЦИРОВАННЫЙ ВЕБХУК:
@@ -111,7 +115,10 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	app.post<{
 		Params: { channel: string; organizationId: string };
 		Body: Record<string, unknown>;
-	}>("/api/bots/webhook/:channel/:organizationId", async (request, reply) => {
+	}>(
+		"/api/bots/webhook/:channel/:organizationId",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
 		const { channel, organizationId } = request.params;
 		const body = request.body || {};
 
@@ -167,13 +174,17 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	 * GET /api/bots/inbox
 	 * Список активных диалогов во всех мессенджерах (Telegram, VK, WhatsApp, MAX).
 	 */
-	app.get("/api/bots/inbox", async (request, reply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply, "bots inbox read");
-		if (!orgId) return;
+	app.get(
+		"/api/bots/inbox",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			const orgId = await requireResolvedOrganizationId(request, reply, "bots inbox read");
+			if (!orgId) return;
 
-		const result = await fetchInboxConversations(orgId);
-		return reply.send(result);
-	});
+			const result = await fetchInboxConversations(orgId);
+			return reply.send(result);
+		},
+	);
 
 	/**
 	 * GET /api/bots/inbox/:senderId/messages
@@ -182,7 +193,10 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	app.get<{
 		Params: { senderId: string };
 		Querystring: { channel?: string };
-	}>("/api/bots/inbox/:senderId/messages", async (request, reply) => {
+	}>(
+		"/api/bots/inbox/:senderId/messages",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "bots inbox messages read");
 		if (!orgId) return;
 
@@ -211,7 +225,10 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	app.post<{
 		Params: { senderId: string };
 		Body: unknown;
-	}>("/api/bots/chats/:senderId/takeover", async (request, reply) => {
+	}>(
+		"/api/bots/chats/:senderId/takeover",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "bots takeover");
 		if (!orgId) return;
 
@@ -238,7 +255,10 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	app.post<{
 		Params: { senderId: string };
 		Body: unknown;
-	}>("/api/bots/chats/:senderId/release", async (request, reply) => {
+	}>(
+		"/api/bots/chats/:senderId/release",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "bots release");
 		if (!orgId) return;
 
@@ -260,7 +280,10 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	 * Симуляция входящего сообщения (для тестов, отладки и телефона-симулятора).
 	 * DEF-TEL-06: Защита боевого режима от несанкционированной симуляции входящих сообщений.
 	 */
-	app.post("/api/bots/test-incoming", async (request, reply) => {
+	app.post(
+		"/api/bots/test-incoming",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
 		const isDemoMode =
 			request.headers["x-demo-mode"] === "true" ||
 			process.env.DENTE_DEMO_MODE === "true";
@@ -284,7 +307,10 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	app.post<{
 		Params: { senderId: string };
 		Body: unknown;
-	}>("/api/bots/chats/:senderId/link-patient", async (request, reply) => {
+	}>(
+		"/api/bots/chats/:senderId/link-patient",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "bots link patient");
 		if (!orgId) return;
 
@@ -312,7 +338,10 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	 */
 	app.post<{
 		Params: { senderId: string };
-	}>("/api/bots/chats/:senderId/book-appointment", async (request, reply) => {
+	}>(
+		"/api/bots/chats/:senderId/book-appointment",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "bots book appointment");
 		if (!orgId) return;
 

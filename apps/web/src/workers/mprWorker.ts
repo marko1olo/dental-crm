@@ -14,9 +14,29 @@ import {
 	type PanoramicWorkerResponse,
 } from "../utils/math/mprMath";
 
+declare const self: DedicatedWorkerGlobalScope;
+
 // Scope the worker global explicitly. DedicatedWorkerGlobalScope carries the
 // (message, transfer[]) overload needed for zero-copy Transferable Objects transfer.
-const ctx = self as DedicatedWorkerGlobalScope;
+const ctx: DedicatedWorkerGlobalScope = self;
+
+function isCrossSectionRequest(req: unknown): req is CrossSectionWorkerRequest {
+	return (
+		typeof req === "object" &&
+		req !== null &&
+		"type" in req &&
+		(req.type === "crossSection" || req.type === "cross_section")
+	);
+}
+
+function isPanoramicRequest(req: unknown): req is PanoramicWorkerRequest & { type?: string } {
+	return (
+		typeof req === "object" &&
+		req !== null &&
+		("splinePoints" in req ||
+			("type" in req && (req.type === "panoramic" || req.type === "panoramic_opg")))
+	);
+}
 
 ctx.onmessage = (e: MessageEvent<MprWorkerRequest>) => {
 	const req = e.data;
@@ -26,7 +46,7 @@ ctx.onmessage = (e: MessageEvent<MprWorkerRequest>) => {
 		return;
 	}
 
-	const reqType = (req as { type?: string }).type;
+	const reqType = "type" in req && typeof req.type === "string" ? req.type : undefined;
 
 	// Branch 0: Liveness & Health Check
 	if (reqType === "ping") {
@@ -35,30 +55,29 @@ ctx.onmessage = (e: MessageEvent<MprWorkerRequest>) => {
 	}
 
 	// Branch 1: Orthogonal Cross-Section Reconstruction
-	if (reqType === "crossSection" || reqType === "cross_section") {
-		const csReq = req as CrossSectionWorkerRequest;
+	if (isCrossSectionRequest(req)) {
 		try {
-			if (!csReq.dimensions || !csReq.spacing || !csReq.scalarData || !csReq.controlPoints) {
+			if (!req.dimensions || !req.spacing || !req.scalarData || !req.controlPoints) {
 				throw new Error("Неполные данные объема для расчета ортогонального среза");
 			}
 
-			const [nx, ny, nz] = csReq.dimensions;
+			const [nx, ny, nz] = req.dimensions;
 			const sliceStride = nx * ny;
-			const scalar = csReq.scalarData;
+			const scalar = req.scalarData;
 
-			const invSx = 1 / csReq.spacing[0];
-			const invSy = 1 / csReq.spacing[1];
-			const invSz = 1 / csReq.spacing[2];
+			const invSx = 1 / req.spacing[0];
+			const invSy = 1 / req.spacing[1];
+			const invSz = 1 / req.spacing[2];
 
-			const z0 = csReq.origin[2];
-			const z1 = csReq.origin[2] + (nz - 1) * csReq.spacing[2];
+			const z0 = req.origin[2];
+			const z1 = req.origin[2] + (nz - 1) * req.spacing[2];
 			const zMin = Math.min(z0, z1);
 			const zMax = Math.max(z0, z1);
-			const vSpacing = Math.abs(csReq.spacing[2]);
+			const vSpacing = Math.abs(req.spacing[2]);
 
 			const vol: VolumeSamplingData = {
-				dims: csReq.dimensions,
-				origin: csReq.origin,
+				dims: req.dimensions,
+				origin: req.origin,
 				invSx,
 				invSy,
 				invSz,
@@ -74,11 +93,11 @@ ctx.onmessage = (e: MessageEvent<MprWorkerRequest>) => {
 			};
 
 			const result = computeCrossSection(vol, {
-				controlPoints: csReq.controlPoints as Point2[],
-				position: csReq.position,
-				tiltDeg: csReq.tiltDeg,
-				widthMm: csReq.widthMm,
-				resolution: csReq.resolution,
+				controlPoints: req.controlPoints,
+				position: req.position,
+				tiltDeg: req.tiltDeg,
+				widthMm: req.widthMm,
+				resolution: req.resolution,
 			});
 
 			if (!result) {
@@ -109,29 +128,24 @@ ctx.onmessage = (e: MessageEvent<MprWorkerRequest>) => {
 	}
 
 	// Branch 2: Panoramic Curved Planar Reformation (OPG unwrap)
-	if (
-		reqType === "panoramic" ||
-		reqType === "panoramic_opg" ||
-		"splinePoints" in req
-	) {
-		const panReq = req as PanoramicWorkerRequest;
+	if (isPanoramicRequest(req)) {
 		try {
-			if (!panReq.scalarData || !panReq.dimensions || !panReq.spacing || !panReq.splinePoints) {
+			if (!req.scalarData || !req.dimensions || !req.spacing || !req.splinePoints) {
 				throw new Error("Неполные данные объема для построения панорамной реконструкции ОПТГ");
 			}
 
 			const result = generatePanoramicImage(
-				panReq.scalarData,
-				panReq.dimensions,
-				panReq.origin,
-				panReq.direction,
-				panReq.spacing,
-				panReq.splinePoints,
-				panReq.zStartWorld,
-				panReq.zEndWorld,
-				panReq.zStepWorld,
-				panReq.thickness,
-				panReq.blendMode,
+				req.scalarData,
+				req.dimensions,
+				req.origin,
+				req.direction,
+				req.spacing,
+				req.splinePoints,
+				req.zStartWorld,
+				req.zEndWorld,
+				req.zStepWorld,
+				req.thickness,
+				req.blendMode,
 			);
 
 			// Zero-copy: transfer the pixel buffer ownership to the main UI thread
@@ -158,6 +172,6 @@ ctx.onmessage = (e: MessageEvent<MprWorkerRequest>) => {
 	// Unknown message type fallback
 	ctx.postMessage({
 		success: false,
-		error: `Неизвестный тип запроса Web Worker: ${(req as { type?: string }).type ?? "не указан"}`,
+		error: `Неизвестный тип запроса Web Worker: ${reqType ?? "не указан"}`,
 	});
 };

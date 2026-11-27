@@ -244,6 +244,8 @@ export async function saveRemoteMemoryFacts(memoryFacts: AiMemoryFact[]): Promis
 	}
 }
 
+type CopilotSessionSettingsMap = { [key: string]: unknown };
+
 export async function fetchRemoteSettings(): Promise<Record<string, unknown> | null> {
 	try {
 		const res = await fetch("/api/agent/settings", {
@@ -259,8 +261,8 @@ export async function fetchRemoteSettings(): Promise<Record<string, unknown> | n
 			? unwrapped.settings
 			: (rootObj?.settings && typeof rootObj.settings === "object")
 				? rootObj.settings
-				: (unwrapped && typeof unwrapped === "object" && !("ok" in unwrapped) && !("settings" in unwrapped) ? unwrapped as Record<string, unknown> : null);
-		return candidate;
+				: (unwrapped && typeof unwrapped === "object" && !("ok" in unwrapped) && !("settings" in unwrapped) ? (unwrapped as CopilotSessionSettingsMap) : null);
+		return candidate as Record<string, unknown> | null;
 	} catch (err) {
 		logger.error("[copilotSessionApi] fetchRemoteSettings failed:", err);
 		return null;

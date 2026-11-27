@@ -17,8 +17,10 @@ export function EditorStaffChairSection({
 	| "activeChairs"
 	| "updateAppointmentScheduleDraft"
 >) {
+	const clinicMode = dashboard?.clinicSettings?.profile?.mode;
 	const showAssistant =
-		dashboard?.clinicSettings?.profile?.mode !== "one_chair" &&
+		clinicMode !== "one_chair" &&
+		clinicMode !== "solo_doctor" &&
 		activeAssistants.length > 0;
 
 	return (

@@ -107,9 +107,11 @@ export async function removeLocalDicomWorkbenchDraft(
 	organizationId: string | null | undefined = null,
 ): Promise<void> {
 	if (speechChunkIndexedDbAvailable()) {
-		await deleteLocalDicomWorkbenchDraftFromIndexedDb(organizationId).catch(
-			() => undefined,
-		);
+		try {
+			await deleteLocalDicomWorkbenchDraftFromIndexedDb(organizationId);
+		} catch (dbErr) {
+			logger.warn("[DicomDraft] failed to delete from IDB", dbErr);
+		}
 	}
 	removeLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
 }

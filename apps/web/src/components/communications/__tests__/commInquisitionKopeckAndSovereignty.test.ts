@@ -1,7 +1,5 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
 import { describe, it } from "node:test";
-import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AppLogicProvider } from "../../../contexts/AppLogicContext";
@@ -9,8 +7,12 @@ import {
 	calculateMessagingCostKopecks, calculateSmsCostKopecks,
 	DEFAULT_SMS_SEGMENT_COST_KOPECKS, formatSmsBalance, formatSmsCostRu,
 } from "../communicationsCostEngine";
+import { CampaignPanel, useCampaignPanel } from "../CampaignPanel";
+import { CampaignAudienceFilter, CampaignQuickPresets } from "../campaignPanel/CampaignAudienceFilter";
 import { MessageDeliveryConsole } from "../MessageDeliveryConsole";
-import { commDir, mockAppContext } from "./communicationsInquisitionFixtures";
+import { mockAppContext } from "./communicationsInquisitionFixtures";
+
+(globalThis as { React?: typeof React }).React = React;
 
 describe("Red Team Inquisition: Mandate 8b — Kopeck-Exact Arithmetic & SMS Segment Costing", () => {
 	it("1. calculateSmsCostKopecks computes exact integer kopecks without float drift", () => {
@@ -66,13 +68,12 @@ describe("Red Team Inquisition: Mandate 8b — Kopeck-Exact Arithmetic & SMS Seg
 });
 
 describe("Red Team Inquisition: Mandate 8s — Solo Doctor & Small Clinic Sovereignty", () => {
-	it("1. Single-click reminder: enqueueMessage does not require double-click when body is empty", () => {
-		const hookPath = fs.existsSync(path.resolve(commDir, "deliveryConsole/useMessageDeliveryConsole.ts"))
-			? path.resolve(commDir, "deliveryConsole/useMessageDeliveryConsole.ts")
-			: path.resolve(commDir, "MessageDeliveryConsole.tsx");
-		const consoleSrc = fs.readFileSync(hookPath, "utf-8");
-		assert.ok(!consoleSrc.includes("showToast(\"Заполнен текст напоминания по умолчанию. Нажмите кнопку ещё раз для отправки\""));
-		assert.ok(consoleSrc.includes("Здравствуйте! Напоминаем о вашей записи на приём в клинику ДЕНТЕ. Ждём вас!"));
+	it("1. Single-click reminder: MessageDeliveryConsole renders unlocked enqueue CTA ready for empty-body default send", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(AppLogicProvider, { value: mockAppContext }, React.createElement(MessageDeliveryConsole)),
+		);
+		assert.match(html, /data-testid="outbox-enqueue-submit"/);
+		assert.equal(/<button[^>]*data-testid="outbox-enqueue-submit"[^>]*disabled/i.test(html), false);
 	});
 
 	it("2. Solo doctor sovereignty: empty templates view provides 1-click button to fill default reminder", () => {
@@ -83,21 +84,39 @@ describe("Red Team Inquisition: Mandate 8s — Solo Doctor & Small Clinic Sovere
 		assert.match(html, /Заполнить шаблон подтверждения по умолчанию/);
 	});
 
-	it("3. CampaignPanel defaults to service scope for clinical recall without marketing barriers", () => {
-		const hookPath = fs.existsSync(path.resolve(commDir, "campaignPanel/useCampaignPanel.ts"))
-			? path.resolve(commDir, "campaignPanel/useCampaignPanel.ts")
-			: path.resolve(commDir, "CampaignPanel.tsx");
-		const campaignSrc = fs.readFileSync(hookPath, "utf-8");
-		assert.ok(campaignSrc.includes('useState<"service" | "marketing">("service")'));
+	it("3. useCampaignPanel defaults to service scope for clinical recall without marketing barriers", () => {
+		let capturedScope = "";
+		function CampaignScopeProbe() {
+			const panel = useCampaignPanel();
+			capturedScope = panel.scope;
+			return React.createElement(CampaignAudienceFilter, {
+				scope: panel.scope,
+				setScope: panel.setScope,
+				monthsSinceVisit: panel.monthsSinceVisit,
+				setMonthsSinceVisit: panel.setMonthsSinceVisit,
+				excludeBooked: panel.excludeBooked,
+				setExcludeBooked: panel.setExcludeBooked,
+			});
+		}
+		const html = renderToStaticMarkup(
+			React.createElement(AppLogicProvider, { value: mockAppContext }, React.createElement(CampaignScopeProbe)),
+		);
+		assert.equal(capturedScope, "service");
+		assert.match(html, /<option value="service" selected=""/i);
 	});
 
-	it("4. CampaignPanel includes 1-click quick recall presets for solo doctor", () => {
-		const presetsPath = fs.existsSync(path.resolve(commDir, "campaignPanel/CampaignAudienceFilter.tsx"))
-			? path.resolve(commDir, "campaignPanel/CampaignAudienceFilter.tsx")
-			: path.resolve(commDir, "CampaignPanel.tsx");
-		const campaignSrc = fs.readFileSync(presetsPath, "utf-8");
-		assert.ok(campaignSrc.includes('data-testid="preset-recall-6m"'));
-		assert.ok(campaignSrc.includes('data-testid="preset-recall-12m"'));
-		assert.ok(campaignSrc.includes('data-testid="preset-hygiene-3m"'));
+	it("4. CampaignQuickPresets renders quick recall presets and applies service scope on click", () => {
+		let applied: { title: string; scope: "service" | "marketing"; months: string; excludeBooked: boolean } | null = null;
+		const html = renderToStaticMarkup(
+			React.createElement(CampaignQuickPresets, {
+				onApplyPreset: (preset) => {
+					applied = preset;
+				},
+			}),
+		);
+		assert.ok(html.includes('data-testid="preset-recall-6m"'));
+		assert.ok(html.includes('data-testid="preset-recall-12m"'));
+		assert.ok(html.includes('data-testid="preset-hygiene-3m"'));
+		assert.equal(applied, null);
 	});
 });

@@ -160,7 +160,7 @@ export async function freeTextReplyFor(
 	}
 
 	if (freeTextIncludes(text, ["распис", "запис", "прием", "визит", "время"])) {
-		return scheduleReplyFor(settings, chatFingerprintValue, scope);
+		return await scheduleReplyFor(settings, chatFingerprintValue, scope);
 	}
 
 	if (

@@ -1,6 +1,14 @@
-import { and, eq } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
-import { clinics, users } from "../../../db/schema.js";
+import { and, desc, eq, isNotNull, or } from "drizzle-orm";
+import { tomorrowDateKeyInTimeZone } from "@dental/shared";
+import { onTenantTxCommit, withTenantCtx } from "../../../db/rls.js";
+import {
+	clinics,
+	denteTelegramChatLinks,
+	messengerInboundEvents,
+	patients,
+	users,
+} from "../../../db/schema.js";
+import { hashTelegramChatFingerprint } from "../../../utils/telegramChatHash.js";
 import { wsBroker } from "../../websocketBroker.js";
 import { calculateAvailableSlots } from "../../../routes/publicBooking/bookingModules/publicBookingSlotEngine.js";
 import { DEFAULT_TIMEZONE } from "../../../routes/publicBooking/bookingModules/publicBookingSchemas.js";
@@ -91,8 +99,65 @@ export class OnlineBookingPlugin implements BotPlugin {
 					const endDateTime = localWallTimeToUtc(dateStr, minuteOfDay + 60, clinicTimeZone);
 
 					const senderLabel = msg.senderName || `Пациент ${msg.channel.toUpperCase()}`;
-					const rawPhone = msg.senderId.replace(/\D/g, "");
-					const senderPhone = rawPhone.length >= 10 ? `+${rawPhone}` : "+79990000000";
+					const rawSender = msg.senderId.trim();
+					const rawPhone = rawSender.replace(/\D/g, "");
+					const senderPhone = rawPhone.length >= 10 ? `+${rawPhone}` : "";
+
+					// Ищем уже привязанную карту пациента по каналу (не склеиваем разных людей на синтетический телефон!)
+					let linkedPatientId: string | undefined;
+					let linkedPatientPhone = senderPhone;
+					if (!senderPhone && rawSender) {
+						if (msg.channel === "telegram") {
+							const fp = hashTelegramChatFingerprint(rawSender);
+							const [tgLink] = await tx
+								.select({ subjectId: denteTelegramChatLinks.subjectId })
+								.from(denteTelegramChatLinks)
+								.where(
+									and(
+										eq(denteTelegramChatLinks.organizationId, orgId),
+										eq(denteTelegramChatLinks.subjectType, "patient"),
+										eq(denteTelegramChatLinks.status, "active"),
+										or(
+											eq(denteTelegramChatLinks.chatTransportRef, rawSender),
+											eq(denteTelegramChatLinks.chatFingerprint, fp),
+										),
+									),
+								)
+								.limit(1);
+							linkedPatientId = tgLink?.subjectId;
+						}
+						if (!linkedPatientId) {
+							const [inboundLink] = await tx
+								.select({ patientId: messengerInboundEvents.patientId })
+								.from(messengerInboundEvents)
+								.where(
+									and(
+										eq(messengerInboundEvents.organizationId, orgId),
+										eq(messengerInboundEvents.channel, msg.channel),
+										eq(messengerInboundEvents.externalChatId, rawSender),
+										isNotNull(messengerInboundEvents.patientId),
+									),
+								)
+								.orderBy(desc(messengerInboundEvents.createdAt))
+								.limit(1);
+							linkedPatientId = inboundLink?.patientId ?? undefined;
+						}
+						if (linkedPatientId) {
+							const [pRow] = await tx
+								.select({ phone: patients.phone })
+								.from(patients)
+								.where(
+									and(
+										eq(patients.id, linkedPatientId),
+										eq(patients.organizationId, orgId),
+									),
+								)
+								.limit(1);
+							if (pRow?.phone) {
+								linkedPatientPhone = pRow.phone;
+							}
+						}
+					}
 
 					// If doctorId is not provided, pick first active doctor
 					let targetDoctorId = doctorId;
@@ -125,7 +190,8 @@ export class OnlineBookingPlugin implements BotPlugin {
 						startDate: startDateTime,
 						endDate: endDateTime,
 						patientName: senderLabel,
-						patientPhone: senderPhone,
+						patientPhone: linkedPatientPhone,
+						...(linkedPatientId ? { patientId: linkedPatientId } : {}),
 						comment: `Онлайн-запись через ${msg.channel.toUpperCase()} бот. Контакт: ${msg.senderId}`,
 						source: `bot_${msg.channel}`,
 					});
@@ -158,21 +224,24 @@ export class OnlineBookingPlugin implements BotPlugin {
 
 					const appointment = bookingResult.appointment;
 
-					// Оповещаем ресепшен через WebSocket
-					wsBroker.broadcastToOrganization(orgId, {
-						type: "APPOINTMENT_CREATED",
-						payload: {
-							appointmentId: appointment.id,
-							patientId: appointment.patientId,
-							startTime: startDateTime.toISOString(),
-							source: `bot_${msg.channel}`,
-						},
+					// Оповещаем ресепшен через WebSocket строго после COMMIT транзакции
+					onTenantTxCommit(() => {
+						wsBroker.broadcastToOrganization(orgId, {
+							type: "APPOINTMENT_CREATED",
+							payload: {
+								appointmentId: appointment.id,
+								patientId: appointment.patientId,
+								startTime: startDateTime.toISOString(),
+								source: `bot_${msg.channel}`,
+							},
+						});
 					});
 
 					const formattedDate = startDateTime.toLocaleDateString("ru-RU", {
 						day: "numeric",
 						month: "long",
 						year: "numeric",
+						timeZone: clinicTimeZone,
 					});
 
 					return {
@@ -183,7 +252,7 @@ export class OnlineBookingPlugin implements BotPlugin {
 							`⏰ <b>Время:</b> ${timeStr}`,
 							"🏥 <b>Статус:</b> Подтверждено в расписании клиники",
 							"",
-							"За 24 часа и за 2 часа до визита мы пришлём вам напоминание с возможностью подтверждения в 1 клик.",
+							"За 24 часа и за 2 часа до визита мы пришлём вам напоминание с быстрым подтверждением.",
 							"Если у вас изменятся планы, вы сможете легко перенести визит через этот чат.",
 						].join("\n"),
 						keyboard: {
@@ -207,10 +276,9 @@ export class OnlineBookingPlugin implements BotPlugin {
 				}
 			}
 
-			// 2. Шаг: выбор даты и свободных слотов
-			const targetDate = new Date();
-			targetDate.setDate(targetDate.getDate() + 1); // Предлагаем завтрашний день по умолчанию
-			const dateIso = targetDate.toISOString().slice(0, 10);
+			// 2. Шаг: выбор даты и свободных слотов строго в часовом поясе клиники
+			const dateIso = tomorrowDateKeyInTimeZone(clinicTimeZone);
+			const targetDate = localWallTimeToUtc(dateIso, 12 * 60, clinicTimeZone);
 
 			// Читаем врачей клиники
 			const activeDoctors = await tx
@@ -242,7 +310,7 @@ export class OnlineBookingPlugin implements BotPlugin {
 					text: [
 						"📅 <b>Онлайн-запись на приём к врачу</b>",
 						"",
-						`На завтра (${targetDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}) свободных окон у врача <b>${doctorName}</b> не осталось.`,
+						`На завтра (${targetDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long", timeZone: clinicTimeZone })}) свободных окон у врача <b>${doctorName}</b> не осталось.`,
 						"",
 						"Вы можете выбрать другую дату или обратиться к администратору:",
 					].join("\n"),

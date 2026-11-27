@@ -6,6 +6,7 @@
  */
 
 import type { StaffRole } from "@dental/shared";
+import { clientLogger } from "../logger.js";
 import { type AppView, appViews, getFilteredAppViews, getFallbackAppView } from "../routeUtils.js";
 import type {
 	CbctStudioRouteParams,
@@ -99,7 +100,8 @@ export function parseCbctStudioRoute(
 			pathname = parsed.pathname;
 			search = parsed.search;
 			hash = parsed.hash;
-		} catch {
+		} catch (err: unknown) {
+			clientLogger.debug("[runtimeRouteMatcher] Fallback to raw targetUrl:", err);
 			pathname = targetUrl;
 		}
 	} else if (targetUrl) {
@@ -195,7 +197,8 @@ export function parseCephStudioRoute(targetUrl?: string | Location): CephStudioR
 			pathname = parsed.pathname;
 			search = parsed.search;
 			hash = parsed.hash;
-		} catch {
+		} catch (err: unknown) {
+			clientLogger.debug("[runtimeRouteMatcher] Fallback to raw targetUrl:", err);
 			pathname = targetUrl;
 		}
 	} else if (targetUrl) {

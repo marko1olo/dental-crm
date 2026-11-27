@@ -96,6 +96,10 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 					selectedChairId={selectedChairId}
 					doctors={doctors}
 					chairs={chairs}
+					isSoloDoctor={
+						props.dashboard?.clinicSettings?.profile?.mode === "solo_doctor" ||
+						props.dashboard?.clinicSettings?.profile?.mode === "one_chair"
+					}
 					onSelectDoctor={onSelectDoctor}
 					onSelectChair={onSelectChair}
 				/>

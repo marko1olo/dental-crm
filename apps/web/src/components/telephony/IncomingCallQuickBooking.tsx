@@ -1,6 +1,12 @@
 import { Calendar, Clock, X, Zap } from "lucide-react";
 import React from "react";
-import type { Appointment } from "@dental/shared";
+import {
+	extractWallTimePartsInTimeZone,
+	shiftCalendarDay,
+	todayDateKeyInTimeZone,
+	wallClockToUtcInTimeZone,
+	type Appointment,
+} from "@dental/shared";
 import { findNearestAvailableSlot, type ResourceCollisionOptions } from "../../utils/scheduleCollisionUtils";
 
 export type QuickSlotType = "today_urgent" | "today_standard" | "tomorrow" | "today_cito";
@@ -9,6 +15,7 @@ export interface QuickBookingDashboardLike {
 	todayIso?: string | undefined;
 	appointments?: readonly Appointment[] | Appointment[] | undefined;
 	clinicSettings?: {
+		profile?: { timezone?: string | undefined } | undefined;
 		staff?: ResourceCollisionOptions["staff"] | undefined;
 		chairs?: ResourceCollisionOptions["chairs"] | undefined;
 	} | undefined;
@@ -60,7 +67,8 @@ export function computeQuickBookingSlots(
 	slots: QuickSlotOption[];
 	getSlotInterval: (slotType: QuickSlotType) => { startsAt: string; endsAt: string };
 } {
-	const todayIso = dashboard?.todayIso || new Date().toISOString().slice(0, 10);
+	const clinicTz = dashboard?.clinicSettings?.profile?.timezone || "Europe/Samara";
+	const todayIso = dashboard?.todayIso || todayDateKeyInTimeZone(clinicTz);
 	const appointments = dashboard?.appointments || [];
 	const activeStaff = dashboard?.clinicSettings?.staff?.filter((s) => s.active && (s.role === "doctor" || s.role === "owner")) || [];
 	const defaultDoctorId = activeStaff[0]?.id || dashboard?.clinicSettings?.staff?.[0]?.id || null;
@@ -70,11 +78,14 @@ export function computeQuickBookingSlots(
 
 	const now = new Date();
 	const roundedNow = new Date(Math.ceil(now.getTime() / (15 * 60 * 1000)) * (15 * 60 * 1000));
+	const roundedNowWall = extractWallTimePartsInTimeZone(roundedNow, clinicTz);
 
 	// 1. Urgent slot today
-	const today9am = new Date(todayIso);
-	today9am.setHours(9, 0, 0, 0);
-	const earliestUrgent = roundedNow.getTime() > today9am.getTime() && roundedNow.toISOString().slice(0, 10) === todayIso ? roundedNow : today9am;
+	const today9am = wallClockToUtcInTimeZone(todayIso, 9, 0, clinicTz) ?? new Date(`${todayIso}T09:00:00`);
+	const earliestUrgent =
+		roundedNow.getTime() > today9am.getTime() && roundedNowWall?.dateKey === todayIso
+			? roundedNow
+			: today9am;
 	const urgentStartIso = earliestUrgent.toISOString();
 	const urgentEndIso = new Date(earliestUrgent.getTime() + 30 * 60 * 1000).toISOString();
 	const urgentNearest = findNearestAvailableSlot(
@@ -82,13 +93,15 @@ export function computeQuickBookingSlots(
 		appointments, ctx,
 	);
 	const urgentInterval = { startsAt: urgentNearest ? urgentNearest.startsAt : urgentStartIso, endsAt: urgentNearest ? urgentNearest.endsAt : urgentEndIso };
-	const urgentTimeDisplay = urgentNearest ? urgentNearest.timeDisplay : urgentStartIso.slice(11, 16);
+	const urgentTimeDisplay = urgentNearest ? urgentNearest.timeDisplay : (extractWallTimePartsInTimeZone(earliestUrgent, clinicTz)?.hm ?? "09:00");
 
 	// 2. Standard slot today
 	const candidateStandard = new Date(roundedNow.getTime() + 60 * 60 * 1000);
+	const candidateWall = extractWallTimePartsInTimeZone(candidateStandard, clinicTz);
 	let standardStartIso: string;
-	if (candidateStandard.toISOString().slice(0, 10) !== todayIso || candidateStandard.getHours() >= 20) {
-		const fallback = new Date(todayIso); fallback.setHours(14, 0, 0, 0); standardStartIso = fallback.toISOString();
+	if (!candidateWall || candidateWall.dateKey !== todayIso || candidateWall.hours >= 20) {
+		const fallback = wallClockToUtcInTimeZone(todayIso, 14, 0, clinicTz) ?? new Date(`${todayIso}T14:00:00`);
+		standardStartIso = fallback.toISOString();
 	} else {
 		standardStartIso = candidateStandard.toISOString();
 	}
@@ -98,10 +111,11 @@ export function computeQuickBookingSlots(
 		appointments, ctx,
 	);
 	const standardInterval = { startsAt: standardNearest ? standardNearest.startsAt : standardStartIso, endsAt: standardNearest ? standardNearest.endsAt : standardEndIso };
-	const standardTimeDisplay = standardNearest ? standardNearest.timeDisplay : standardStartIso.slice(11, 16);
+	const standardTimeDisplay = standardNearest ? standardNearest.timeDisplay : (extractWallTimePartsInTimeZone(standardStartIso, clinicTz)?.hm ?? "14:00");
 
 	// 3. Tomorrow slot
-	const dTomorrow = new Date(todayIso); dTomorrow.setDate(dTomorrow.getDate() + 1); dTomorrow.setHours(10, 0, 0, 0);
+	const tomorrowIso = shiftCalendarDay(todayIso, 1);
+	const dTomorrow = wallClockToUtcInTimeZone(tomorrowIso, 10, 0, clinicTz) ?? new Date(`${tomorrowIso}T10:00:00`);
 	const tomorrowStartIso = dTomorrow.toISOString();
 	const tomorrowEndIso = new Date(dTomorrow.getTime() + 30 * 60 * 1000).toISOString();
 	const tomorrowNearest = findNearestAvailableSlot(
@@ -109,7 +123,7 @@ export function computeQuickBookingSlots(
 		appointments, ctx,
 	);
 	const tomorrowInterval = { startsAt: tomorrowNearest ? tomorrowNearest.startsAt : tomorrowStartIso, endsAt: tomorrowNearest ? tomorrowNearest.endsAt : tomorrowEndIso };
-	const tomorrowTimeDisplay = tomorrowNearest ? tomorrowNearest.timeDisplay : tomorrowStartIso.slice(11, 16);
+	const tomorrowTimeDisplay = tomorrowNearest ? tomorrowNearest.timeDisplay : (extractWallTimePartsInTimeZone(tomorrowStartIso, clinicTz)?.hm ?? "10:00");
 
 	const slots: QuickSlotOption[] = [
 		{

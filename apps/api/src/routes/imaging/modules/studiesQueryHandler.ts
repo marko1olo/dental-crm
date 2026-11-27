@@ -25,7 +25,7 @@ const querySchema = z
 	})
 	.strict();
 
-export async function getStudiesHandler(request: FastifyRequest<{ Params: { patientId?: string } }>, reply: FastifyReply) {
+export async function getStudiesHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalReadAccess(request, reply, "imaging studies"))) return;
 
 	const identity = getRequestIdentity(request);
@@ -38,7 +38,13 @@ export async function getStudiesHandler(request: FastifyRequest<{ Params: { pati
 		});
 	}
 
-	if (request.params.patientId && !isValidUuid(request.params.patientId)) {
+	const rawParams = request.params;
+	const routePatientId =
+		typeof rawParams === "object" && rawParams !== null && "patientId" in rawParams && typeof rawParams.patientId === "string"
+			? rawParams.patientId
+			: undefined;
+
+	if (routePatientId && !isValidUuid(routePatientId)) {
 		return reply.code(400).send({
 			error: "ValidationError",
 			message: "Некорректный идентификатор пациента (ожидается UUID).",
@@ -52,7 +58,7 @@ export async function getStudiesHandler(request: FastifyRequest<{ Params: { pati
 		});
 	}
 
-	const effectivePatientId = request.params.patientId ?? parsedQuery.data.patientId ?? parsedQuery.data.patient_id;
+	const effectivePatientId = routePatientId ?? parsedQuery.data.patientId ?? parsedQuery.data.patient_id;
 	const effectiveBindingStatus = parsedQuery.data.bindingStatus ?? parsedQuery.data.binding_status;
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
@@ -68,7 +74,7 @@ export async function getStudiesHandler(request: FastifyRequest<{ Params: { pati
 	return studies.map((study) => imagingStudySchema.parse(study));
 }
 
-export async function getStudyByIdHandler(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+export async function getStudyByIdHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalReadAccess(request, reply, "get imaging study"))) return;
 
 	const identity = getRequestIdentity(request);
@@ -86,7 +92,11 @@ export async function getStudyByIdHandler(request: FastifyRequest<{ Params: { id
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 
-	const { id } = request.params;
+	const rawParams = request.params;
+	const id =
+		typeof rawParams === "object" && rawParams !== null && "id" in rawParams && typeof rawParams.id === "string"
+			? rawParams.id
+			: "";
 	if (!isValidUuid(id)) {
 		return reply.code(400).send({
 			error: "ValidationError",

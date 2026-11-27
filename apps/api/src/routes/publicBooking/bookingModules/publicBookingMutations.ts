@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { formatDateKeyInTimeZone } from "@dental/shared";
 import { onTenantTxCommit, withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	clinics,
@@ -318,7 +319,16 @@ export async function handleBookAppointment(
 
 		const localEnd = utcToLocalWallTime(endDate, bookingTimeZone);
 		const startMinute = localDate.hours * 60 + localDate.minutes;
-		const endMinute = localEnd.hours * 60 + localEnd.minutes;
+		const isNextDayMidnight =
+			localEnd.hours === 0 &&
+			localEnd.minutes === 0 &&
+			endDate.getTime() > startDate.getTime() &&
+			formatDateKeyInTimeZone(endDate, bookingTimeZone) !==
+				formatDateKeyInTimeZone(startDate, bookingTimeZone) &&
+			endDate.getTime() - startDate.getTime() <= 24 * 60 * 60_000;
+		const endMinute = isNextDayMidnight
+			? 1440
+			: localEnd.hours * 60 + localEnd.minutes;
 
 		if (
 			startMinute < effectiveWindow.startMinute ||

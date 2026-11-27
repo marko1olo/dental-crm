@@ -147,9 +147,10 @@ export function useMarketingRomiChannels() {
 	}, [persistChannels, loadRomiFromServer]);
 
 	useEffect(() => {
-		if ((appLogic?.dashboard?.patients?.length ?? 0) > 0) handleSyncWithCrm();
-		else loadRomiFromServer();
-	}, []);
+		if (!isDemoShowcaseMode()) {
+			loadRomiFromServer();
+		}
+	}, [loadRomiFromServer]);
 
 	return { channels, summary, calculatedMetrics, syncMessage, getInputValue, handleInputChange, handleInputBlur, handleSyncWithCrm, handleSaveNewChannel, handleRemoveChannel, handleResetDefaults };
 }

@@ -1,4 +1,4 @@
-import type { Dashboard } from "@dental/shared";
+import { todayDateKeyInTimeZone, type Dashboard } from "@dental/shared";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { useScheduleStore } from "../../../store/scheduleStore";
@@ -26,7 +26,8 @@ export function useDrawerLogActions(params: { dashboard: Dashboard | null | unde
 		if (matched) setSelectedPatientId(matched.id);
 		else setNewPatientPhone(item.phone);
 
-		const todayIso = dashboard?.todayIso || (new Date().toISOString().split("T")[0] ?? "");
+		const clinicTz = dashboard?.clinicSettings?.profile?.timezone;
+		const todayIso = dashboard?.todayIso || todayDateKeyInTimeZone(clinicTz);
 		const defaultDoctorId = dashboard?.clinicSettings?.staff?.find((s) => s.role === "doctor")?.id || "";
 		const defaultChairId = dashboard?.clinicSettings?.chairs?.[0]?.id || "";
 

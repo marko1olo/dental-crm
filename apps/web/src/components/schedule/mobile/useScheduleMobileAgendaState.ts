@@ -1,5 +1,10 @@
 import { useMemo, useState, useCallback } from "react";
-import type { Appointment } from "@dental/shared";
+import {
+  type Appointment,
+  shiftCalendarDay,
+  todayDateKeyInTimeZone,
+  tomorrowDateKeyInTimeZone,
+} from "@dental/shared";
 import type { ScheduleMobileAgendaViewProps } from "./scheduleMobileAgendaTypes";
 import { RUSSIAN_MONTHS } from "./scheduleMobileAgendaTypes";
 import { useMobileWeekDays } from "./useMobileWeekDays";
@@ -21,24 +26,14 @@ export function useScheduleMobileAgendaState(props: ScheduleMobileAgendaViewProp
 
   const [selectedMobileAppt, setSelectedMobileAppt] = useState<Appointment | null>(null);
 
-  const todayKey = useMemo(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  }, []);
+  const todayKey = useMemo(() => todayDateKeyInTimeZone(timezone), [timezone]);
 
-  const tomorrowKey = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  }, []);
+  const tomorrowKey = useMemo(() => tomorrowDateKeyInTimeZone(timezone), [timezone]);
 
   const effectiveDateKey = dateKey || todayKey;
 
   const handleShiftDay = useCallback((deltaDays: number) => {
-    const parts = effectiveDateKey.split("-").map(Number);
-    const d = new Date(parts[0] ?? 2026, (parts[1] ?? 1) - 1, (parts[2] ?? 1) + deltaDays);
-    const nextKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    onDateChange(nextKey);
+    onDateChange(shiftCalendarDay(effectiveDateKey, deltaDays));
   }, [effectiveDateKey, onDateChange]);
 
   const weekDays = useMobileWeekDays({
@@ -55,9 +50,7 @@ export function useScheduleMobileAgendaState(props: ScheduleMobileAgendaViewProp
   }, [effectiveDateKey]);
 
   const handleShiftWeek = useCallback((deltaDays: number) => {
-    const parts = effectiveDateKey.split("-").map(Number);
-    const d = new Date(parts[0] ?? 2026, (parts[1] ?? 1) - 1, (parts[2] ?? 1) + deltaDays);
-    onDateChange(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+    onDateChange(shiftCalendarDay(effectiveDateKey, deltaDays));
   }, [effectiveDateKey, onDateChange]);
 
   const doctors = useMemo(() => {

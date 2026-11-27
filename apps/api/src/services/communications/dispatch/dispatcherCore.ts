@@ -452,8 +452,9 @@ export async function listOutboxOrganizations(
 }
 
 /**
- * Проход по очереди ОДНОЙ клиники. Вызывается уже внутри `withTenantCtx`, то
- * есть все запросы ниже идут под её арендатором.
+ * Проход по очереди ОДНОЙ клиники. Каждая БД-операция (захват, чтение настроек/согласий,
+ * сохранение итога) открывает собственную короткую транзакцию, оставляя внешний сетевой
+ * вызов `sendThroughChannel` строго ВНЕ открытой транзакции PG18 (TX-split).
  */
 export async function dispatchForOrganization(input: {
 	readonly organizationId: string;
@@ -624,15 +625,13 @@ export async function dispatchDueMessages(
 
 	let budget = batchSize;
 	for (const organizationId of targets) {
-		const orgReport = await withTenantCtx(organizationId, () =>
-			dispatchForOrganization({
-				organizationId,
-				now,
-				batchSize: Math.max(0, budget),
-				workerId,
-				stuckLockMinutes,
-			}),
-		);
+		const orgReport = await dispatchForOrganization({
+			organizationId,
+			now,
+			batchSize: Math.max(0, budget),
+			workerId,
+			stuckLockMinutes,
+		});
 		report.claimed += orgReport.claimed;
 		report.sent += orgReport.sent;
 		report.retried += orgReport.retried;

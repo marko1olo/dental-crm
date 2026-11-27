@@ -1,4 +1,5 @@
 import type { StaffRole } from "@dental/shared";
+import { clientLogger } from "./logger.js";
 import { usePerspectiveStore } from "../store/perspectiveStore";
 
 export const appViews = [
@@ -214,7 +215,9 @@ export function viewFromHash(customHash?: string): AppView {
 		if (typeof window !== "undefined") {
 			try {
 				usePerspectiveStore.getState().setPerspective("orthodontic");
-			} catch {}
+			} catch (err) {
+				clientLogger.debug("[routeUtils] Failed to set orthodontic perspective", err);
+			}
 		}
 		return "visit";
 	}

@@ -2,8 +2,8 @@ import { and, eq, gt, ilike } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { defineWebhookRoute } from "../../core/routeFactories.js";
-import { withTenantWriteCtx } from "../../db/rls.js";
-import { communicationTasks, patients } from "../../db/schema.js";
+import { withSuperuserBypass, withTenantWriteCtx } from "../../db/rls.js";
+import { communicationTasks, organizations, patients } from "../../db/schema.js";
 import { verifyWebhookSecret } from "../../security/webhookAuth.js";
 
 const flexbeLeadDataSchema = z
@@ -46,14 +46,6 @@ export async function registerFlexbeRoutes(app: FastifyInstance) {
 		method: "POST",
 		path: "/api/integrations/flexbe/webhook",
 		handler: async ({ request: req, reply }) => {
-			if (
-				!verifyWebhookSecret(req, reply, {
-					channel: "flexbe",
-					secretEnvNames: ["FLEXBE_WEBHOOK_SECRET", "DENTE_WEBHOOK_SECRET"],
-				})
-			) {
-				return reply;
-			}
 			const querySchema = z
 				.object({
 					organizationId: z.string().uuid(),
@@ -68,6 +60,42 @@ export async function registerFlexbeRoutes(app: FastifyInstance) {
 				});
 			}
 			const organizationId = queryResult.data.organizationId;
+
+			const boundFlexbeOrgId = process.env.FLEXBE_WEBHOOK_ORGANIZATION_ID?.trim();
+			if (boundFlexbeOrgId && boundFlexbeOrgId !== organizationId) {
+				return reply.status(403).send({
+					error: "CrossTenantRejected",
+					message: "Вебхук Flexbe привязан к другой организации.",
+				});
+			}
+
+			const orgSecretKey = `FLEXBE_WEBHOOK_SECRET_${organizationId.replace(/-/g, "_").toUpperCase()}`;
+			const hasPerOrgSecret = Boolean(process.env[orgSecretKey]?.trim());
+			if (
+				!verifyWebhookSecret(req, reply, {
+					channel: "flexbe",
+					secretEnvNames: hasPerOrgSecret
+						? [orgSecretKey]
+						: ["FLEXBE_WEBHOOK_SECRET", "DENTE_WEBHOOK_SECRET"],
+				})
+			) {
+				return reply;
+			}
+
+			const orgExists = await withSuperuserBypass(async (tx) => {
+				const [row] = await tx
+					.select({ id: organizations.id })
+					.from(organizations)
+					.where(eq(organizations.id, organizationId))
+					.limit(1);
+				return Boolean(row);
+			});
+			if (!orgExists) {
+				return reply.status(404).send({
+					error: "OrganizationNotFound",
+					message: "Организация с указанным organizationId не найдена.",
+				});
+			}
 
 			const payload = flexbePayloadSchema.safeParse(req.body);
 			if (!payload.success) {

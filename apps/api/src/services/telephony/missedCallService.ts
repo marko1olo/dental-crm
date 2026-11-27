@@ -18,6 +18,10 @@ import {
 } from "../../db/schema.js";
 import { maskPhoneDisplay } from "@dental/shared";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
+import {
+	clinicTimeZone,
+	DEFAULT_CLINIC_TIME_ZONE,
+} from "../reports/managerReports/timezone.js";
 import { normalizePhoneNumber } from "./telephonySecurity.js";
 import { wsBroker } from "../websocketBroker.js";
 
@@ -198,11 +202,13 @@ export class MissedCallService {
 
 						if (existingLeads.length > 0 && existingLeads[0]) {
 							const existingLead = existingLeads[0];
+							const resolvedTz = (await clinicTimeZone(organizationId, leadTx)) || DEFAULT_CLINIC_TIME_ZONE;
+							const callStamp = new Date().toLocaleString("ru-RU", { timeZone: resolvedTz });
 							const [updatedLead] = await leadTx
 								.update(crmLeads)
 								.set({
 									lastContactedAt: new Date(),
-									notes: sql`coalesce(${crmLeads.notes}, '') || E'\n' || ${`Пропущенный звонок от пациента ${patientDisplayName}: ${new Date().toLocaleString("ru-RU")}`}`,
+									notes: sql`coalesce(${crmLeads.notes}, '') || E'\n' || ${`Пропущенный звонок от пациента ${patientDisplayName}: ${callStamp}`}`,
 								})
 								.where(
 									and(
@@ -303,6 +309,8 @@ export class MissedCallService {
 							const wasRecent =
 								existingLead.lastContactedAt &&
 								new Date(existingLead.lastContactedAt) > sixtySecondsAgo;
+							const resolvedTz = (await clinicTimeZone(organizationId, leadTx)) || DEFAULT_CLINIC_TIME_ZONE;
+							const callStamp = new Date().toLocaleString("ru-RU", { timeZone: resolvedTz });
 
 							const [updatedLead] = await leadTx
 								.update(crmLeads)
@@ -312,7 +320,7 @@ export class MissedCallService {
 										existingLead.status === "won" || existingLead.status === "archived"
 											? "new"
 											: existingLead.status,
-									notes: sql`coalesce(${crmLeads.notes}, '') || E'\n' || ${`Повторный пропущенный звонок от ${callerPhoneE164} (${new Date().toLocaleString("ru-RU")})`}`,
+									notes: sql`coalesce(${crmLeads.notes}, '') || E'\n' || ${`Повторный пропущенный звонок от ${callerPhoneE164} (${callStamp})`}`,
 								})
 								.where(
 									and(

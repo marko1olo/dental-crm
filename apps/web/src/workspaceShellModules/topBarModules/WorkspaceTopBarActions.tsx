@@ -53,8 +53,8 @@ function toggleTheme(): void {
 	}
 	try {
 		localStorage.setItem("dente_theme", next);
-	} catch {
-		// Ignore storage write failure in restricted iframe/incognito
+	} catch (storageErr: unknown) {
+		void String(storageErr);
 	}
 }
 

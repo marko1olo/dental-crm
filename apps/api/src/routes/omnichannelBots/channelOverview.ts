@@ -471,7 +471,7 @@ export async function getMessengersOverviewHandler(request: FastifyRequest, repl
 				: (vkGroup?.groupId ? ("yellow" as const) : ("gray" as const)),
 			details: vkGroup?.groupId ? `ID группы: ${vkGroup.groupId}` : "Ожидает токен группы",
 			tokenMasked: OmnichannelTokenVault.maskToken(vkGroup?.groupToken || vkGroup?.tokenSecretRef),
-			configTab: "telegram",
+			configTab: "vk",
 			updatedAt: vkGroup?.updatedAt?.toISOString() || null,
 		},
 		// 4. VK Личный Аккаунт
@@ -492,7 +492,7 @@ export async function getMessengersOverviewHandler(request: FastifyRequest, repl
 				: ("gray" as const),
 			details: vkAccount?.groupId ? `VK ID: ${vkAccount.groupId}` : "Личный диалог врача/администратора",
 			tokenMasked: OmnichannelTokenVault.maskToken(vkAccount?.groupToken || vkAccount?.tokenSecretRef),
-			configTab: "telegram",
+			configTab: "vk",
 			updatedAt: vkAccount?.updatedAt?.toISOString() || null,
 		},
 		// 5. WhatsApp Телефон (Green-API / QR)

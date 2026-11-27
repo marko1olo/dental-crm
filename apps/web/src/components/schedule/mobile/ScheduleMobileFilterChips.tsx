@@ -8,6 +8,7 @@ export interface ScheduleMobileFilterChipsProps {
   selectedChairId: string | null;
   doctors: Array<{ id: string; fullName: string }>;
   chairs: Array<{ id: string; name: string }>;
+  isSoloDoctor?: boolean | undefined;
   onSelectDoctor?: ((id: string | null) => void) | undefined;
   onSelectChair?: ((id: string | null) => void) | undefined;
 }
@@ -17,10 +18,11 @@ export const ScheduleMobileFilterChips: React.FC<ScheduleMobileFilterChipsProps>
   selectedChairId,
   doctors,
   chairs,
+  isSoloDoctor = false,
   onSelectDoctor,
   onSelectChair,
 }) => {
-  if (doctors.length <= 1 && chairs.length <= 1) {
+  if (isSoloDoctor || (doctors.length <= 1 && chairs.length <= 1)) {
     return null;
   }
 

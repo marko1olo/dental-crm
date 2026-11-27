@@ -14,20 +14,6 @@ import { logger } from "../utils/logger";
 
 export { hydrateCatalogsFromPersistentStorage, warmupStatutoryCatalogs };
 
-type IdleDeadline = {
-	didTimeout: boolean;
-	timeRemaining: () => number;
-};
-
-type IdlePreloadWindow = Window &
-	typeof globalThis & {
-		requestIdleCallback?: (
-			callback: (deadline: IdleDeadline) => void,
-			options?: { timeout: number },
-		) => number;
-		cancelIdleCallback?: (handle: number) => void;
-	};
-
 const preloadedClinicalHotModules = new Set<ClinicalHotModule>();
 
 /**
@@ -46,9 +32,8 @@ export function scheduleClinicalHotModulesWarmup(): (() => void) | undefined {
 	}
 
 	// Запускаем фоновый прогрев и гидратацию кэша справочников (804н, МКБ-10, шаблоны 043/у) и офлайн-кэшей из IndexedDB в RAM во время idle (0 мс доступ)
-	const idleWindow = window as IdlePreloadWindow;
-	if (idleWindow.requestIdleCallback) {
-		idleWindow.requestIdleCallback(
+	if (window.requestIdleCallback) {
+		window.requestIdleCallback(
 			() => {
 				void warmupStatutoryCatalogs().catch((err: unknown) => {
 					logger.debug("[preload:warmup] warmupStatutoryCatalogs failed:", err);
@@ -87,8 +72,8 @@ export function scheduleClinicalHotModulesWarmup(): (() => void) | undefined {
 			window.clearTimeout(timerId);
 			timerId = null;
 		}
-		if (idleId !== null && idleWindow.cancelIdleCallback) {
-			idleWindow.cancelIdleCallback(idleId);
+		if (idleId !== null && window.cancelIdleCallback) {
+			window.cancelIdleCallback(idleId);
 			idleId = null;
 		}
 	};
@@ -131,8 +116,8 @@ export function scheduleClinicalHotModulesWarmup(): (() => void) | undefined {
 			timerId = null;
 			if (cancelled) return;
 
-			if (idleWindow.requestIdleCallback) {
-				idleId = idleWindow.requestIdleCallback(
+			if (window.requestIdleCallback) {
+				idleId = window.requestIdleCallback(
 					(deadline) => {
 						idleId = null;
 						if (cancelled) return;
