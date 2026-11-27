@@ -15,6 +15,43 @@ import type {
 	SplitBrainReconciliationResult,
 } from "./types.js";
 
+function isUnknownRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function toSurfaceInput(value: unknown): OdontogramToothCrdtState["surfaces"] {
+	if (Array.isArray(value)) {
+		return value.filter((item): item is string => typeof item === "string");
+	}
+	if (isUnknownRecord(value)) {
+		const record: Record<string, import("./types.js").PerSurfaceState> = {};
+		for (const [key, entry] of Object.entries(value)) {
+			if (isUnknownRecord(entry)) {
+				record[key] = {
+					surface: typeof entry.surface === "string" ? entry.surface : key,
+					status: typeof entry.status === "string" ? entry.status : "treated",
+					updatedAtMs: typeof entry.updatedAtMs === "number" ? entry.updatedAtMs : 0,
+					...entry,
+				};
+			}
+		}
+		return record;
+	}
+	return undefined;
+}
+
+function toToothCrdtState(value: unknown): OdontogramToothCrdtState {
+	if (!isUnknownRecord(value)) {
+		return { toothNumber: 0, statusCode: "treated" };
+	}
+	return {
+		...value,
+		toothNumber: typeof value.toothNumber === "number" ? value.toothNumber : 0,
+		statusCode: typeof value.statusCode === "string" ? value.statusCode : "treated",
+		surfaces: toSurfaceInput(value.surfaces),
+	};
+}
+
 export function reconcileSplitBrainEntity<T extends Record<string, unknown> = Record<string, unknown>>(
 	input: SplitBrainReconciliationInput,
 ): SplitBrainReconciliationResult<T> {
@@ -92,8 +129,24 @@ export function reconcileSplitBrainEntity<T extends Record<string, unknown> = Re
 		reconcilingNodeId,
 	);
 
-	const safeLocal = localState as Record<string, unknown>;
-	const safeRemote = remoteState as Record<string, unknown>;
+	if (!localState || !remoteState) {
+		return {
+			entityKind,
+			entityId,
+			mergedState: {} as T,
+			mergedVectorClock: mergedClock,
+			changedFields: [],
+			conflictDetails: [],
+			hasDivergence: false,
+			resolutionStrategy: "identical_noop",
+			somaticAlertsPreserved: true,
+			surfacesMergedCount: 0,
+			diaryNotesAppendedCount: 0,
+		};
+	}
+
+	const safeLocal: Record<string, unknown> = localState;
+	const safeRemote: Record<string, unknown> = remoteState;
 
 	if (JSON.stringify(safeLocal) === JSON.stringify(safeRemote)) {
 		return {
@@ -190,14 +243,14 @@ export function reconcileSplitBrainEntity<T extends Record<string, unknown> = Re
 		) {
 			if (field === "surfaces" || field === "surfaceStates") {
 				const localToothState: OdontogramToothCrdtState = {
-					surfaces: localVal as string[] | Record<string, import("./types.js").PerSurfaceState> | undefined,
-					toothNumber: (safeLocal.toothNumber as number) ?? 0,
-					statusCode: (safeLocal.condition as string) ?? "treated",
+					surfaces: toSurfaceInput(localVal),
+					toothNumber: typeof safeLocal.toothNumber === "number" ? safeLocal.toothNumber : 0,
+					statusCode: typeof safeLocal.condition === "string" ? safeLocal.condition : "treated",
 				};
 				const remoteToothState: OdontogramToothCrdtState = {
-					surfaces: remoteVal as string[] | Record<string, import("./types.js").PerSurfaceState> | undefined,
-					toothNumber: (safeRemote.toothNumber as number) ?? 0,
-					statusCode: (safeRemote.condition as string) ?? "treated",
+					surfaces: toSurfaceInput(remoteVal),
+					toothNumber: typeof safeRemote.toothNumber === "number" ? safeRemote.toothNumber : 0,
+					statusCode: typeof safeRemote.condition === "string" ? safeRemote.condition : "treated",
 				};
 				const toothMerged = mergeOdontogramToothPerSurface(
 					localToothState,
@@ -221,8 +274,8 @@ export function reconcileSplitBrainEntity<T extends Record<string, unknown> = Re
 			}
 
 			if (Array.isArray(localVal) || Array.isArray(remoteVal)) {
-				const localTeeth = (Array.isArray(localVal) ? localVal : []) as OdontogramToothCrdtState[];
-				const remoteTeeth = (Array.isArray(remoteVal) ? remoteVal : []) as OdontogramToothCrdtState[];
+				const localTeeth = Array.isArray(localVal) ? localVal.map(toToothCrdtState) : [];
+				const remoteTeeth = Array.isArray(remoteVal) ? remoteVal.map(toToothCrdtState) : [];
 
 				const { mergedTeeth, totalSurfacesMerged } = mergeOdontogramListPerSurface(
 					localTeeth,
@@ -248,8 +301,8 @@ export function reconcileSplitBrainEntity<T extends Record<string, unknown> = Re
 			}
 
 			const toothMerged = mergeOdontogramToothPerSurface(
-				(localVal || {}) as OdontogramToothCrdtState,
-				(remoteVal || {}) as OdontogramToothCrdtState,
+				toToothCrdtState(localVal),
+				toToothCrdtState(remoteVal),
 				localUpdatedAtMs,
 				remoteUpdatedAtMs,
 			);

@@ -22,7 +22,7 @@ import {
 	rollbackRun,
 	runMigration,
 } from "../migration/engine.js";
-import { buildDbfFile, encodeSingleByte } from "../migration/tests/fixtures.js";
+import { buildDbfFile, encodeSingleByte } from "../migration/lib/binaryFixtures.js";
 
 function cliOut(...args: unknown[]): void {
 	process.stdout.write(`${format(...args)}\n`);

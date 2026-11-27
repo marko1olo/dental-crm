@@ -56,6 +56,22 @@ interface BarcodeDetectorLike {
 	detect(image: ImageBitmapSource): Promise<DetectedBarcodeLike[]>;
 }
 
+interface ExtendedMediaTrackConstraintSet extends MediaTrackConstraintSet {
+	focusMode?: string;
+	torch?: boolean;
+}
+
+interface ExtendedMediaTrackConstraints extends MediaTrackConstraints {
+	advanced?: ExtendedMediaTrackConstraintSet[];
+}
+
+function getErrorName(err: unknown): string {
+	if (err && typeof err === "object" && "name" in err && typeof err.name === "string") {
+		return err.name;
+	}
+	return "";
+}
+
 export class HardwareScanner {
 	private state: HardwareScannerState = "idle";
 	private activeMediaStream: MediaStream | null = null;
@@ -67,7 +83,7 @@ export class HardwareScanner {
 	private lastScanTimestamp = 0;
 	private debounceMs = 400;
 	private torchEnabled = false;
-	private barcodeDetectorInstance: unknown = null;
+	private barcodeDetectorInstance: BarcodeDetectorLike | null = null;
 
 	// Peripherals registry & cleanup handles
 	private discoveredDevices: HardwareDevice[] = [];
@@ -202,7 +218,8 @@ export class HardwareScanner {
 		try {
 			const devices = await navigator.mediaDevices.enumerateDevices();
 			return devices.some((d) => d.kind === "videoinput");
-		} catch {
+		} catch (err) {
+			logger.warn("[HardwareScanner] isCameraAvailable enumerateDevices error:", err);
 			return false;
 		}
 	}
@@ -217,7 +234,8 @@ export class HardwareScanner {
 		try {
 			const devices = await navigator.mediaDevices.enumerateDevices();
 			return devices.filter((d) => d.kind === "videoinput");
-		} catch {
+		} catch (err) {
+			logger.warn("[HardwareScanner] getCameraDevices enumerateDevices error:", err);
 			return [];
 		}
 	}
@@ -271,19 +289,20 @@ export class HardwareScanner {
 			throw new Error(errText);
 		}
 
+		const tier1Video: ExtendedMediaTrackConstraints = {
+			facingMode: { ideal: facingMode },
+			width: { ideal: 1920, min: 640 },
+			height: { ideal: 1080, min: 480 },
+			frameRate: { ideal: idealFps, min: 24 },
+			advanced: [{ focusMode: "continuous" }],
+		};
+
 		// Progressive constraint ladder to prevent OverconstrainedError on low-end cameras
 		const constraintLadder: MediaStreamConstraints[] = [
 			// Tier 1: Continuous autofocus + High-res 1080p @ 60 FPS (Clinical Ideal)
 			{
 				audio: false,
-				video: {
-					facingMode: { ideal: facingMode },
-					width: { ideal: 1920, min: 640 },
-					height: { ideal: 1080, min: 480 },
-					frameRate: { ideal: idealFps, min: 24 },
-					// @ts-expect-error advanced continuous focus constraint on mobile Chrome
-					advanced: [{ focusMode: "continuous" }],
-				},
+				video: tier1Video,
 			},
 			// Tier 2: 720p @ 30 FPS
 			{
@@ -319,7 +338,7 @@ export class HardwareScanner {
 			} catch (err: unknown) {
 				lastError = err;
 				// If user explicitly denied permission or security blocked, do not retry ladder
-				const errName = (err as { name?: string })?.name || "";
+				const errName = getErrorName(err);
 				if (errName === "NotAllowedError" || errName === "PermissionDeniedError" || errName === "SecurityError") {
 					break;
 				}
@@ -434,7 +453,7 @@ export class HardwareScanner {
 					let detectedFormat: BarcodeFormat = "unknown";
 
 					// 1. Native High-Speed BarcodeDetector API (Chrome / Edge / Android 60 FPS)
-					const detector = this.barcodeDetectorInstance as BarcodeDetectorLike | null;
+					const detector = this.barcodeDetectorInstance;
 					if (detector && typeof detector.detect === "function") {
 						const barcodes = await detector.detect(video);
 						if (barcodes && barcodes.length > 0) {
@@ -586,12 +605,14 @@ export class HardwareScanner {
 		if (!videoTrack) return false;
 
 		try {
-			await videoTrack.applyConstraints({
-				advanced: [{ torch: enabled } as MediaTrackConstraintSet & { torch?: boolean }],
-			});
+			const torchConstraints: ExtendedMediaTrackConstraints = {
+				advanced: [{ torch: enabled }],
+			};
+			await videoTrack.applyConstraints(torchConstraints);
 			this.torchEnabled = enabled;
 			return true;
-		} catch {
+		} catch (err) {
+			logger.warn("[HardwareScanner] setTorch constraint unsupported:", err);
 			this.torchEnabled = false;
 			return false;
 		}
@@ -614,12 +635,13 @@ export class HardwareScanner {
 		const videoTrack = this.activeMediaStream.getVideoTracks()[0];
 		if (!videoTrack) return false;
 		try {
-			const capabilities =
+			const capabilities: MediaTrackCapabilities & { torch?: boolean } | null =
 				typeof videoTrack.getCapabilities === "function"
-					? (videoTrack.getCapabilities() as Record<string, unknown>)
+					? videoTrack.getCapabilities()
 					: null;
 			return Boolean(capabilities?.torch);
-		} catch {
+		} catch (err) {
+			logger.warn("[HardwareScanner] isTorchSupported check failed:", err);
 			return false;
 		}
 	}

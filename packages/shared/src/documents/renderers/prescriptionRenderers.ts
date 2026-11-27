@@ -31,26 +31,110 @@ export interface PrescriptionItemPrintLike {
 	readonly [key: string]: unknown;
 }
 
+type PrintPayloadInput = Form107_1uPayload | Form148_1u88Payload | Form148_1u04lPayload | Record<string, unknown>;
+
+function readProp(obj: unknown, key: string): unknown {
+	if (typeof obj === "object" && obj !== null && key in obj) {
+		return Object.getOwnPropertyDescriptor(obj, key)?.value;
+	}
+	return undefined;
+}
+
+function readStr(obj: unknown, key: string, fallback = ""): string {
+	const v = readProp(obj, key);
+	if (typeof v === "string" && v.length > 0) return v;
+	if (typeof v === "number" || typeof v === "boolean") return String(v);
+	return fallback;
+}
+
+function readNestedStr(obj: unknown, nestedKey: string, fieldKey: string, fallback = "—"): string {
+	const direct = readStr(obj, fieldKey === "fullName" ? (nestedKey === "organization" ? "clinicLegalName" : "patientFullName") : fieldKey, "");
+	if (direct) return direct;
+	const nested = readProp(obj, nestedKey);
+	return readStr(nested, fieldKey, fallback);
+}
+
+function readOrgField(obj: unknown, directKey: string, orgKey: string, fallback = "—"): string {
+	const direct = readStr(obj, directKey, "");
+	if (direct) return direct;
+	return readStr(readProp(obj, "organization"), orgKey, fallback);
+}
+
+function readPatientField(obj: unknown, directKey: string, patientKey: string, fallback = "—"): string {
+	const direct = readStr(obj, directKey, "");
+	if (direct) return direct;
+	return readStr(readProp(obj, "patient"), patientKey, fallback);
+}
+
+function readPrescriptionItems(obj: unknown): readonly PrescriptionItemPrintLike[] {
+	const raw = readProp(obj, "items");
+	if (!Array.isArray(raw)) return [];
+	const items: PrescriptionItemPrintLike[] = [];
+	for (const entry of raw) {
+		if (typeof entry === "object" && entry !== null) {
+			items.push(entry);
+		}
+	}
+	return items;
+}
+
+function readUkepSignature(obj: unknown): UkepDigitalSignaturePayload | undefined {
+	const raw = readProp(obj, "ukepSignature");
+	if (typeof raw !== "object" || raw === null) return undefined;
+	const res: UkepDigitalSignaturePayload = {};
+	const doctorFullName = readStr(raw, "doctorFullName");
+	if (doctorFullName) res.doctorFullName = doctorFullName;
+	const doctorSnils = readStr(raw, "doctorSnils");
+	if (doctorSnils) res.doctorSnils = doctorSnils;
+	const certificateSerialNumber = readStr(raw, "certificateSerialNumber");
+	if (certificateSerialNumber) res.certificateSerialNumber = certificateSerialNumber;
+	const certificateThumbprint = readStr(raw, "certificateThumbprint");
+	if (certificateThumbprint) res.certificateThumbprint = certificateThumbprint;
+	const certificateIssuer = readStr(raw, "certificateIssuer");
+	if (certificateIssuer) res.certificateIssuer = certificateIssuer;
+	const certificateValidFrom = readStr(raw, "certificateValidFrom");
+	if (certificateValidFrom) res.certificateValidFrom = certificateValidFrom;
+	const certificateValidTo = readStr(raw, "certificateValidTo");
+	if (certificateValidTo) res.certificateValidTo = certificateValidTo;
+	const signedAt = readStr(raw, "signedAt");
+	if (signedAt) res.signedAt = signedAt;
+	const signatureAlgorithm = readStr(raw, "signatureAlgorithm");
+	if (signatureAlgorithm) res.signatureAlgorithm = signatureAlgorithm;
+	const egiszDocumentId = readStr(raw, "egiszDocumentId");
+	if (egiszDocumentId) res.egiszDocumentId = egiszDocumentId;
+	const cryptoSignaturePkcs7 = readStr(raw, "cryptoSignaturePkcs7");
+	if (cryptoSignaturePkcs7) res.cryptoSignaturePkcs7 = cryptoSignaturePkcs7;
+	const qrVerificationUrl = readStr(raw, "qrVerificationUrl");
+	if (qrVerificationUrl) res.qrVerificationUrl = qrVerificationUrl;
+	return res;
+}
+
 /** 7. Рендерер Рецептурного бланка № 107-1/у (Приказ Минздрава России от 24.11.2021 N 1094н) */
 export function renderForm107_1uHtml(payload: Form107_1uPayload | Record<string, unknown>): string {
-	const p = payload as Record<string, unknown>;
-	const clinicName = (p.clinicLegalName || (p.organization as { fullName?: string })?.fullName || "Стоматологическая клиника") as string;
-	const clinicAddress = (p.clinicAddress || (p.organization as { address?: string })?.address || "—") as string;
-	const clinicPhone = (p.clinicPhone || (p.organization as { phone?: string })?.phone || "—") as string;
-	const clinicOgrn = (p.clinicOgrn || (p.organization as { ogrn?: string })?.ogrn || "—") as string;
-	const clinicInn = (p.clinicInn || (p.organization as { inn?: string })?.inn || "—") as string;
-	const medLic = p.medicalLicenseNumber ? `Лицензия: № ${escapeHtml(String(p.medicalLicenseNumber))}` : "";
-	const recNum = String(p.prescriptionSeriesNumber || "—");
-	const recDate = String(p.prescriptionDate || new Date().toISOString().slice(0, 10));
-	const patientName = String(p.patientFullName || (p.patient as { fullName?: string })?.fullName || "—");
-	const patientBirth = String(p.patientBirthDate || (p.patient as { birthDate?: string })?.birthDate || "—");
-	const patientAge = p.patientAgeYears != null ? `${p.patientAgeYears} лет` : "";
-	const cardNum = String(p.medicalCardNumber || (p.patient as { medicalCardNumber?: string })?.medicalCardNumber || "—");
-	const doctorName = String(p.doctorFullName || "Врач-стоматолог");
-	const doctorSpecialty = String(p.doctorSpecialty || "Врач-стоматолог");
-	const validity = String(p.validityDays || "60");
-	const items: readonly PrescriptionItemPrintLike[] = (p.items || []) as readonly PrescriptionItemPrintLike[];
-	const withStamp = p.withStampAndSignature !== false;
+	const clinicName = readOrgField(payload, "clinicLegalName", "fullName", "Стоматологическая клиника");
+	const clinicAddress = readOrgField(payload, "clinicAddress", "address", "—");
+	const clinicPhone = readOrgField(payload, "clinicPhone", "phone", "—");
+	const clinicOgrn = readOrgField(payload, "clinicOgrn", "ogrn", "—");
+	const clinicInn = readOrgField(payload, "clinicInn", "inn", "—");
+	const rawMedLic = readStr(payload, "medicalLicenseNumber");
+	const medLic = rawMedLic ? `Лицензия: № ${escapeHtml(rawMedLic)}` : "";
+	const recNum = readStr(payload, "prescriptionSeriesNumber", "—");
+	const recDate = readStr(payload, "prescriptionDate", new Date().toISOString().slice(0, 10));
+	const patientName = readPatientField(payload, "patientFullName", "fullName", "—");
+	const patientBirth = readPatientField(payload, "patientBirthDate", "birthDate", "—");
+	const rawAge = readProp(payload, "patientAgeYears");
+	const patientAge = rawAge != null ? `${String(rawAge)} лет` : "";
+	const cardNum = readPatientField(payload, "medicalCardNumber", "medicalCardNumber", "—");
+	const doctorName = readStr(payload, "doctorFullName", "Врач-стоматолог");
+	const doctorSpecialty = readStr(payload, "doctorSpecialty", "Врач-стоматолог");
+	const validity = readStr(payload, "validityDays", "60");
+	const items = readPrescriptionItems(payload);
+	const withStamp = readProp(payload, "withStampAndSignature") !== false;
+	const diagnosisIcd10Code = readStr(payload, "diagnosisIcd10Code");
+	const isChronicSpecialCare = Boolean(readProp(payload, "isChronicSpecialCare"));
+	const chronicPeriodicity = readStr(payload, "chronicPeriodicity", "ежемесячно");
+	const qrVerificationUrl = readStr(payload, "qrVerificationUrl");
+	const ukepSignature = readUkepSignature(payload);
 
 	const itemsHtml = items.map((item: PrescriptionItemPrintLike, idx: number) => `
     <div style="margin-bottom:10px; font-family:'Times New Roman', serif; font-size:10pt; line-height:1.35;">
@@ -132,7 +216,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       <span>№ медкарты: <strong>${escapeHtml(cardNum)}</strong></span>
     </div>
     <div>Ф.И.О. лечащего врача: <strong>${escapeHtml(doctorName)}</strong> (${escapeHtml(doctorSpecialty)})</div>
-    ${p.diagnosisIcd10Code ? `<div style="font-size:7.5pt; color:#64748b;">Диагноз (МКБ-10): <strong>${escapeHtml(String(p.diagnosisIcd10Code))}</strong></div>` : ""}
+    ${diagnosisIcd10Code ? `<div style="font-size:7.5pt; color:#64748b;">Диагноз (МКБ-10): <strong>${escapeHtml(diagnosisIcd10Code)}</strong></div>` : ""}
   </div>
 
   <div style="min-height:50mm; padding:3px 0;">
@@ -150,9 +234,9 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       <div style="font-size:6.5pt; color:#64748b;">(нужное подчеркнуть)</div>
     </div>
 
-    ${p.isChronicSpecialCare ? `
+    ${isChronicSpecialCare ? `
       <div style="border:1px solid #cbd5e1; background:#f8fafc; padding:3px 5px; margin-bottom:4px; font-size:7pt;">
-        [X] <strong>По специальному назначению</strong> (периодичность отпуска: ${escapeHtml(String(p.chronicPeriodicity || "ежемесячно"))})
+        [X] <strong>По специальному назначению</strong> (периодичность отпуска: ${escapeHtml(chronicPeriodicity)})
       </div>
     ` : ""}
 
@@ -167,7 +251,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       </div>
       <div style="width:28%; display:flex; flex-direction:column; align-items:center;">
         <div style="width:64px; height:64px; border:1px solid #cbd5e1; padding:2px; background:#fff;">
-          ${generateQrCodeSvg(String(p.qrVerificationUrl || `https://egisz.rosminzdrav.ru/rx/verify?id=${encodeURIComponent(recNum)}&org=${encodeURIComponent(clinicOgrn)}&date=${encodeURIComponent(recDate)}`), { size: 60, margin: 1, title: `QR-код рецепта № ${recNum}` })}
+          ${generateQrCodeSvg(qrVerificationUrl || `https://egisz.rosminzdrav.ru/rx/verify?id=${encodeURIComponent(recNum)}&org=${encodeURIComponent(clinicOgrn)}&date=${encodeURIComponent(recDate)}`, { size: 60, margin: 1, title: `QR-код рецепта № ${recNum}` })}
         </div>
         <div style="font-size:5.5pt; color:#64748b; margin-top:2px; text-align:center;">QR для аптеки / ЕГИСЗ</div>
       </div>
@@ -186,7 +270,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       </div>
     </div>
 
-    ${renderUkepDigitalSignatureBlock(p.ukepSignature as UkepDigitalSignaturePayload | undefined)}
+    ${renderUkepDigitalSignatureBlock(ukepSignature)}
   </div>
 </div>
 </body>
@@ -195,23 +279,26 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
 
 /** 8. Рендерер Рецептурного бланка строгой отчетности № 148-1/у-88 (ПКУ) */
 export function renderForm148_1u88Html(payload: Form148_1u88Payload | Record<string, unknown>): string {
-	const p = payload as Record<string, unknown>;
-	const clinicName = (p.clinicLegalName || (p.organization as { fullName?: string })?.fullName || "Стоматологическая клиника") as string;
-	const clinicAddress = (p.clinicAddress || (p.organization as { address?: string })?.address || "—") as string;
-	const clinicPhone = (p.clinicPhone || (p.organization as { phone?: string })?.phone || "—") as string;
-	const clinicOgrn = (p.clinicOgrn || (p.organization as { ogrn?: string })?.ogrn || "—") as string;
-	const clinicInn = (p.clinicInn || (p.organization as { inn?: string })?.inn || "—") as string;
-	const medLic = p.medicalLicenseNumber ? `Лицензия: № ${escapeHtml(String(p.medicalLicenseNumber))}` : "";
-	const recNum = String(p.prescriptionSeriesNumber || "—");
-	const recDate = String(p.prescriptionDate || new Date().toISOString().slice(0, 10));
-	const patientName = String(p.patientFullName || (p.patient as { fullName?: string })?.fullName || "—");
-	const patientBirth = String(p.patientBirthDate || (p.patient as { birthDate?: string })?.birthDate || "—");
-	const patientAddress = String(p.patientAddress || (p.patient as { address?: string })?.address || "—");
-	const cardNum = String(p.medicalCardNumber || (p.patient as { medicalCardNumber?: string })?.medicalCardNumber || "—");
-	const doctorName = String(p.doctorFullName || "Врач-стоматолог");
-	const doctorSpecialty = String(p.doctorSpecialty || "Врач-стоматолог");
-	const headOfDept = String(p.headOfDepartmentFullName || "—");
-	const rawItems = (p.items || []) as readonly PrescriptionItemPrintLike[];
+	const clinicName = readOrgField(payload, "clinicLegalName", "fullName", "Стоматологическая клиника");
+	const clinicAddress = readOrgField(payload, "clinicAddress", "address", "—");
+	const clinicPhone = readOrgField(payload, "clinicPhone", "phone", "—");
+	const clinicOgrn = readOrgField(payload, "clinicOgrn", "ogrn", "—");
+	const clinicInn = readOrgField(payload, "clinicInn", "inn", "—");
+	const rawMedLic = readStr(payload, "medicalLicenseNumber");
+	const medLic = rawMedLic ? `Лицензия: № ${escapeHtml(rawMedLic)}` : "";
+	const recNum = readStr(payload, "prescriptionSeriesNumber", "—");
+	const recDate = readStr(payload, "prescriptionDate", new Date().toISOString().slice(0, 10));
+	const patientName = readPatientField(payload, "patientFullName", "fullName", "—");
+	const patientBirth = readPatientField(payload, "patientBirthDate", "birthDate", "—");
+	const patientAddress = readPatientField(payload, "patientAddress", "address", "—");
+	const cardNum = readPatientField(payload, "medicalCardNumber", "medicalCardNumber", "—");
+	const doctorName = readStr(payload, "doctorFullName", "Врач-стоматолог");
+	const doctorSpecialty = readStr(payload, "doctorSpecialty", "Врач-стоматолог");
+	const headOfDept = readStr(payload, "headOfDepartmentFullName", "—");
+	const rawItems = readPrescriptionItems(payload);
+	const diagnosisIcd10Code = readStr(payload, "diagnosisIcd10Code");
+	const qrVerificationUrl = readStr(payload, "qrVerificationUrl");
+	const ukepSignature = readUkepSignature(payload);
 	const item: PrescriptionItemPrintLike = rawItems[0] || {
 		latinName: "Rp.: Tramadoli 50 mg",
 		tradeName: "Трамадол",
@@ -289,7 +376,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
     <div>Адрес проживания: <strong>${escapeHtml(patientAddress)}</strong></div>
     <div style="display:flex; justify-content:space-between;">
       <span>№ медкарты: <strong>${escapeHtml(cardNum)}</strong></span>
-      ${p.diagnosisIcd10Code ? `<span>Диагноз (МКБ-10): <strong>${escapeHtml(String(p.diagnosisIcd10Code))}</strong></span>` : ""}
+      ${diagnosisIcd10Code ? `<span>Диагноз (МКБ-10): <strong>${escapeHtml(diagnosisIcd10Code)}</strong></span>` : ""}
     </div>
     <div>Ф.И.О. лечащего врача: <strong>${escapeHtml(doctorName)}</strong> (${escapeHtml(doctorSpecialty)})</div>
   </div>
@@ -317,7 +404,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       </div>
       <div style="width:20%; display:flex; flex-direction:column; align-items:center;">
         <div style="width:58px; height:58px; border:1px solid #cbd5e1; padding:2px; background:#fff;">
-          ${generateQrCodeSvg(String(p.qrVerificationUrl || `https://egisz.rosminzdrav.ru/rx/verify?id=${encodeURIComponent(recNum)}&pku=1&org=${encodeURIComponent(clinicOgrn)}&date=${encodeURIComponent(recDate)}`), { size: 54, margin: 1, title: `QR-код ПКУ № ${recNum}` })}
+          ${generateQrCodeSvg(qrVerificationUrl || `https://egisz.rosminzdrav.ru/rx/verify?id=${encodeURIComponent(recNum)}&pku=1&org=${encodeURIComponent(clinicOgrn)}&date=${encodeURIComponent(recDate)}`, { size: 54, margin: 1, title: `QR-код ПКУ № ${recNum}` })}
         </div>
         <div style="font-size:5pt; color:#64748b; margin-top:1px; text-align:center;">QR ЕГИСЗ / ПКУ</div>
       </div>
@@ -334,7 +421,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       </div>
     </div>
 
-    ${renderUkepDigitalSignatureBlock(p.ukepSignature as UkepDigitalSignaturePayload | undefined)}
+    ${renderUkepDigitalSignatureBlock(ukepSignature)}
   </div>
 </div>
 </body>
@@ -343,27 +430,31 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
 
 /** 9. Рендерер Льготного рецептурного бланка № 148-1/у-04(л) */
 export function renderForm148_1u04lHtml(payload: Form148_1u04lPayload | Record<string, unknown>): string {
-	const p = payload as Record<string, unknown>;
-	const clinicName = (p.clinicLegalName || (p.organization as { fullName?: string })?.fullName || "Стоматологическая клиника") as string;
-	const clinicAddress = (p.clinicAddress || (p.organization as { address?: string })?.address || "—") as string;
-	const clinicPhone = (p.clinicPhone || (p.organization as { phone?: string })?.phone || "—") as string;
-	const clinicOgrn = (p.clinicOgrn || (p.organization as { ogrn?: string })?.ogrn || "—") as string;
-	const clinicInn = (p.clinicInn || (p.organization as { inn?: string })?.inn || "—") as string;
-	const recNum = String(p.prescriptionSeriesNumber || "—");
-	const recDate = String(p.prescriptionDate || new Date().toISOString().slice(0, 10));
-	const patientName = String(p.patientFullName || (p.patient as { fullName?: string })?.fullName || "—");
-	const patientBirth = String(p.patientBirthDate || (p.patient as { birthDate?: string })?.birthDate || "—");
-	const cardNum = String(p.medicalCardNumber || (p.patient as { medicalCardNumber?: string })?.medicalCardNumber || "—");
-	const pref = (p.preferentialDetails || {}) as Record<string, unknown>;
-	const snils = String(pref.patientSnils || "—");
-	const oms = String(pref.patientOmsPolicy || "—");
-	const benefitCode = String(pref.preferentialBenefitCode || "081");
-	const benefitName = String(pref.preferentialBenefitNameRu || "Инвалиды I группы");
-	const discount = typeof pref.preferentialDiscountPercent === "number" ? pref.preferentialDiscountPercent : 100;
-	const funding = pref.fundingSource === "regional" ? "Бюджет субъекта РФ" : "Федеральный бюджет";
-	const doctorName = String(p.doctorFullName || "Врач-стоматолог");
-	const validity = String(p.validityDays || "30");
-	const items: readonly PrescriptionItemPrintLike[] = (p.items || []) as readonly PrescriptionItemPrintLike[];
+	const clinicName = readOrgField(payload, "clinicLegalName", "fullName", "Стоматологическая клиника");
+	const clinicAddress = readOrgField(payload, "clinicAddress", "address", "—");
+	const clinicPhone = readOrgField(payload, "clinicPhone", "phone", "—");
+	const clinicOgrn = readOrgField(payload, "clinicOgrn", "ogrn", "—");
+	const clinicInn = readOrgField(payload, "clinicInn", "inn", "—");
+	const recNum = readStr(payload, "prescriptionSeriesNumber", "—");
+	const recDate = readStr(payload, "prescriptionDate", new Date().toISOString().slice(0, 10));
+	const patientName = readPatientField(payload, "patientFullName", "fullName", "—");
+	const patientBirth = readPatientField(payload, "patientBirthDate", "birthDate", "—");
+	const cardNum = readPatientField(payload, "medicalCardNumber", "medicalCardNumber", "—");
+	const pref = readProp(payload, "preferentialDetails");
+	const snils = readStr(pref, "patientSnils", "—");
+	const oms = readStr(pref, "patientOmsPolicy", "—");
+	const benefitCode = readStr(pref, "preferentialBenefitCode", "081");
+	const benefitName = readStr(pref, "preferentialBenefitNameRu", "Инвалиды I группы");
+	const rawDiscount = readProp(pref, "preferentialDiscountPercent");
+	const discount = typeof rawDiscount === "number" ? rawDiscount : 100;
+	const funding = readProp(pref, "fundingSource") === "regional" ? "Бюджет субъекта РФ" : "Федеральный бюджет";
+	const doctorName = readStr(payload, "doctorFullName", "Врач-стоматолог");
+	const validity = readStr(payload, "validityDays", "30");
+	const items = readPrescriptionItems(payload);
+	const diagnosisIcd10Code = readStr(payload, "diagnosisIcd10Code");
+	const isChronicSpecialCare = Boolean(readProp(payload, "isChronicSpecialCare"));
+	const chronicPeriodicity = readStr(payload, "chronicPeriodicity", "ежемесячно");
+	const ukepSignature = readUkepSignature(payload);
 
 	const itemsHtml = items.map((item: PrescriptionItemPrintLike, idx: number) => `
     <div style="margin-bottom:8px; font-family:'Times New Roman', serif; font-size:9.5pt; line-height:1.3;">
@@ -442,7 +533,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
     <div>Ф.И.О. пациента: <strong>${escapeHtml(patientName)}</strong> (д.р. ${escapeHtml(patientBirth)})</div>
     <div style="display:flex; justify-content:space-between;">
       <span>№ медкарты: <strong>${escapeHtml(cardNum)}</strong></span>
-      ${p.diagnosisIcd10Code ? `<span>Диагноз (МКБ-10): <strong>${escapeHtml(String(p.diagnosisIcd10Code))}</strong></span>` : ""}
+      ${diagnosisIcd10Code ? `<span>Диагноз (МКБ-10): <strong>${escapeHtml(diagnosisIcd10Code)}</strong></span>` : ""}
     </div>
     <div>Лечащий врач: <strong>${escapeHtml(doctorName)}</strong></div>
   </div>
@@ -459,7 +550,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
         <span style="${validity === "30" ? "text-decoration:underline; font-weight:bold; color:#047857;" : "font-weight:bold;"}">30 дней</span> /
         <span style="${validity === "365" ? "text-decoration:underline; font-weight:bold;" : ""}">1 год</span>
       </div>
-      <div>${p.isChronicSpecialCare ? `[X] По спец. назначению (${escapeHtml(String(p.chronicPeriodicity || "ежемесячно"))})` : ""}</div>
+      <div>${isChronicSpecialCare ? `[X] По спец. назначению (${escapeHtml(chronicPeriodicity)})` : ""}</div>
     </div>
 
     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:6px;">
@@ -477,7 +568,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       </div>
     </div>
 
-    ${renderUkepDigitalSignatureBlock(p.ukepSignature as UkepDigitalSignaturePayload | undefined)}
+    ${renderUkepDigitalSignatureBlock(ukepSignature)}
   </div>
 </div>
 </body>
@@ -485,14 +576,13 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
 }
 
 /** Универсальный маршрутизатор рендера рецепта */
-export function renderPrescriptionUniversalHtml(payload: Form107_1uPayload | Form148_1u88Payload | Form148_1u04lPayload | Record<string, unknown>): string {
-	const p = payload as Record<string, unknown>;
-	const form = p.formNumber || p.formType;
+export function renderPrescriptionUniversalHtml(payload: PrintPayloadInput): string {
+	const form = readProp(payload, "formNumber") ?? readProp(payload, "formType");
 	if (form === "148-1/у-88" || form === "148-1u-88" || form === "148-1u") {
-		return renderForm148_1u88Html(p);
+		return renderForm148_1u88Html(payload);
 	}
 	if (form === "148-1/у-04(л)" || form === "148-1u-04l" || form === "148-1u-preferential") {
-		return renderForm148_1u04lHtml(p);
+		return renderForm148_1u04lHtml(payload);
 	}
-	return renderForm107_1uHtml(p);
+	return renderForm107_1uHtml(payload);
 }

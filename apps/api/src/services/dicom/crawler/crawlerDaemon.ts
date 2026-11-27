@@ -110,8 +110,10 @@ export class DicomCrawlerDaemon extends EventEmitter {
 			if (!existsSync(this.config.cacheDir)) {
 				void mkdir(this.config.cacheDir, { recursive: true });
 			}
-		} catch {
-			// игнорируем ошибку первичного создания
+		} catch (err) {
+			dicomIngestLogger.warn("Не удалось проверить/создать cacheDir при запуске демона", err, {
+				cacheDir: this.config.cacheDir,
+			});
 		}
 
 		void this.scanNow();
@@ -134,8 +136,8 @@ export class DicomCrawlerDaemon extends EventEmitter {
 		for (const watcher of this.fileWatchers) {
 			try {
 				watcher.close();
-			} catch {
-				// игнорируем ошибки закрытия
+			} catch (err) {
+				dicomIngestLogger.warn("Ошибка закрытия fileWatcher при остановке демона", err);
 			}
 		}
 		this.fileWatchers = [];
@@ -200,8 +202,8 @@ export class DicomCrawlerDaemon extends EventEmitter {
 		for (const w of this.fileWatchers) {
 			try {
 				w.close();
-			} catch {
-				// игнорируем
+			} catch (err) {
+				dicomIngestLogger.warn("Ошибка закрытия fileWatcher при переинициализации", err);
 			}
 		}
 		this.fileWatchers = [];

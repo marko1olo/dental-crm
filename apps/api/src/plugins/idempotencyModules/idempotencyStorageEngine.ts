@@ -5,8 +5,11 @@
 import { and, eq, lt } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import { idempotencyKeys, syncIdempotencyRecords } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { extractPgErrorCode } from "./idempotencyHeaderParser.js";
 import type { IdempotencyContext, InMemoryRecord } from "./idempotencyTypes.js";
+
+const logger = createApiLogger("idempotencyStorageEngine");
 
 /** 60-second threshold for zombie in-flight locks (Crash Recovery) */
 export const STALE_LOCK_THRESHOLD_MS = 60_000;
@@ -187,8 +190,11 @@ export async function reclaimStaleLock(
 						),
 					);
 			});
-		} catch {
-			// Ignored for sync compatibility table
+		} catch (syncErr) {
+			logger.debug(
+				{ err: safeLogError(syncErr), tenantId, idempotencyKey },
+				"Sync compatibility table stale-lock reclaim skipped",
+			);
 		}
 	}
 
@@ -231,8 +237,11 @@ export async function recordInFlightToDatabase(
 					responseJson: null,
 				});
 			});
-		} catch {
-			// Ignored if sync table fails or duplicates
+		} catch (syncInsertErr) {
+			logger.debug(
+				{ err: safeLogError(syncInsertErr), tenantId, idempotencyKey },
+				"Sync compatibility table in-flight insert skipped",
+			);
 		}
 
 		return { success: true };
@@ -251,8 +260,11 @@ export async function recordInFlightToDatabase(
 				if (reclaimed) {
 					return { success: true };
 				}
-			} catch {
-				// Fall back to conflict
+			} catch (reclaimErr) {
+				logger.warn(
+					{ err: safeLogError(reclaimErr), tenantId, idempotencyKey },
+					"Failed to reclaim stale idempotency lock; returning conflict",
+				);
 			}
 			return { success: false, isConflict: true };
 		}
@@ -303,8 +315,11 @@ export async function recordCompletedToDatabase(
 					),
 				);
 		});
-	} catch {
-		// Ignored
+	} catch (syncCompleteErr) {
+		logger.debug(
+			{ err: safeLogError(syncCompleteErr), organizationId, idempotencyKey },
+			"Sync compatibility table completion update skipped",
+		);
 	}
 }
 
@@ -337,8 +352,11 @@ export async function evictDatabaseIdempotencyRecord(
 					),
 				);
 		});
-	} catch {
-		// Ignored
+	} catch (syncEvictErr) {
+		logger.debug(
+			{ err: safeLogError(syncEvictErr), organizationId, idempotencyKey },
+			"Sync compatibility table eviction skipped",
+		);
 	}
 }
 
@@ -404,8 +422,11 @@ export async function cleanupOnUncaughtError(
 	if (useDatabase && organizationId) {
 		try {
 			await evictDatabaseIdempotencyRecord(organizationId, idempotencyKey);
-		} catch {
-			// Ignore cleanup errors on error path
+		} catch (cleanupErr) {
+			logger.warn(
+				{ err: safeLogError(cleanupErr), organizationId, idempotencyKey },
+				"Failed to evict idempotency DB record during uncaught error cleanup",
+			);
 		}
 	}
 }

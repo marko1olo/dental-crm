@@ -178,12 +178,41 @@ export function generateInformedConsent1051nHtml(
 }
 
 /**
+ * Расширенный вход для рендера ИДС (совместим с Payload, Options и легаси-объектами карточки).
+ */
+export type InformedConsent1051nLegacyPrintInput = Omit<
+	Partial<InformedConsent1051nPayload>,
+	"clinicAddress" | "consentType"
+> &
+	Omit<Partial<InformedConsent1051nOptions>, "clinicAddress"> & {
+		readonly consentType?: string | undefined;
+		readonly clinicAddress?: string | null | undefined;
+		readonly organization?: {
+			readonly fullName?: string | null | undefined;
+			readonly address?: string | null | undefined;
+			readonly ogrn?: string | null | undefined;
+			readonly inn?: string | null | undefined;
+		} | null | undefined;
+		readonly patient?: {
+			readonly fullName?: string | null | undefined;
+			readonly birthDate?: string | null | undefined;
+			readonly passport?: string | null | undefined;
+			readonly address?: string | null | undefined;
+			readonly phone?: string | null | undefined;
+			readonly snils?: string | null | undefined;
+		} | null | undefined;
+	};
+
+/**
  * Рендерер Информированного добровольного согласия (ИДС) по Приказу Минздрава № 1051н
  */
-export function renderInformedConsent1051nHtml(payload: InformedConsent1051nPayload | InformedConsent1051nOptions | any): string {
+export function renderInformedConsent1051nHtml(
+	rawPayload: InformedConsent1051nLegacyPrintInput,
+): string {
+	const payload: InformedConsent1051nLegacyPrintInput = rawPayload;
 	// Если переданы компактные опции визита (без детального реестра рисков) — рендерим А4-бланк
 	if (!payload.explainedRisks && (payload.toothNumbers !== undefined || payload.isClosed !== undefined || payload.watermarkText !== undefined || payload.diagnosisIcd !== undefined)) {
-		return generateInformedConsent1051nHtml(payload as InformedConsent1051nOptions);
+		return generateInformedConsent1051nHtml(payload);
 	}
 
 	const clinicName = payload.clinicLegalName || payload.clinicName || payload.organization?.fullName || 'ООО "Денте Клиник"';

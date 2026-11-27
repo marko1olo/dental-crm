@@ -126,7 +126,8 @@ export function parseBidiServerMessage(
 		}
 
 		return null;
-	} catch {
+	} catch (err) {
+		logger.debug({ err: safeLogError(err) }, "Failed to parse Gemini Bidi server message");
 		return null;
 	}
 }
@@ -502,8 +503,8 @@ export class GeminiBidiBridge extends EventEmitter {
 			try {
 				this.ws.removeAllListeners();
 				this.ws.close(1000, "Key Rotation");
-			} catch {
-				// cleanup
+			} catch (err) {
+				logger.debug({ err: safeLogError(err) }, "Failed to close previous Bidi WebSocket during key rotation");
 			}
 			this.ws = null;
 		}
@@ -617,8 +618,8 @@ export class GeminiBidiBridge extends EventEmitter {
 						},
 					}),
 				);
-			} catch {
-				// ignore
+			} catch (err) {
+				logger.debug({ err: safeLogError(err) }, "Failed to send Bidi turnComplete frame");
 			}
 		}
 	}
@@ -633,8 +634,8 @@ export class GeminiBidiBridge extends EventEmitter {
 		if (this.ws) {
 			try {
 				this.ws.close(code, reason);
-			} catch {
-				// ignore
+			} catch (err) {
+				logger.debug({ err: safeLogError(err) }, "Failed to close Gemini Bidi WebSocket");
 			}
 			this.ws = null;
 		}

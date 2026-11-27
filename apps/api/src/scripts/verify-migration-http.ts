@@ -24,7 +24,7 @@ import {
 	organizations,
 	patients,
 } from "../db/schema.js";
-import { buildDbfFile } from "../migration/tests/fixtures.js";
+import { buildDbfFile } from "../migration/lib/binaryFixtures.js";
 import { drainMigrationQueue } from "../migration/worker.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import {

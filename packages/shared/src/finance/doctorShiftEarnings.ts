@@ -25,6 +25,7 @@ import {
 	parseKopecks,
 	rublesToKopecks,
 	sumKopecks,
+	toExactKopecks,
 } from "../money.js";
 import {
 	DEFAULT_CATEGORY_COMMISSION_PERCENT,
@@ -101,9 +102,10 @@ export interface CalculateChairsideShiftEarningsInput {
 export function calculateChairsideShiftEarnings(
 	input: CalculateChairsideShiftEarningsInput,
 ): ChairsideShiftEarningsSummary {
+	const zeroKop = toExactKopecks(0);
 	const shiftDate = input.shiftDateIso
-		? input.shiftDateIso.split("T")[0]!
-		: new Date().toISOString().split("T")[0]!;
+		? (input.shiftDateIso.split("T")[0] ?? input.shiftDateIso.slice(0, 10))
+		: new Date().toISOString().slice(0, 10);
 	const defaultCommission = input.defaultCommissionPercent ?? 25;
 
 	const targetDocId = input.doctorId?.trim();
@@ -122,10 +124,10 @@ export function calculateChairsideShiftEarnings(
 
 	let patientsCompletedCount = 0;
 	let patientsInChairCount = 0;
-	let grossRevenueKop = 0 as Kopecks;
-	let labCostKop = 0 as Kopecks;
-	let materialsCostKop = 0 as Kopecks;
-	let totalEarnedPayoutKop = 0 as Kopecks;
+	let grossRevenueKop = zeroKop;
+	let labCostKop = zeroKop;
+	let materialsCostKop = zeroKop;
+	let totalEarnedPayoutKop = zeroKop;
 
 	const patientItems: ChairsidePatientEarningsItem[] = [];
 
@@ -138,42 +140,46 @@ export function calculateChairsideShiftEarnings(
 
 		// Учитываем выполненные процедуры завершенных визитов или текущих в кресле
 		if (isCompleted || isInChair) {
-			let aptGrossKop = 0 as Kopecks;
-			let aptLabKop = 0 as Kopecks;
-			let aptMatKop = 0 as Kopecks;
-			let aptEarnedKop = 0 as Kopecks;
+			let aptGrossKop = zeroKop;
+			let aptLabKop = zeroKop;
+			let aptMatKop = zeroKop;
+			let aptEarnedKop = zeroKop;
 			const serviceTitles: string[] = [];
 
 			for (const srv of apt.services || []) {
-				const srvRev = (srv.finalRevenueKop || srv.totalCostKop || 0) as Kopecks;
-				const srvLab = (srv.directLabZtlCostKop || 0) as Kopecks;
-				const srvMat = (srv.directMaterialCostKop || 0) as Kopecks;
+				const srvRev = toExactKopecks(srv.finalRevenueKop || srv.totalCostKop || 0);
+				const srvLab = toExactKopecks(srv.directLabZtlCostKop || 0);
+				const srvMat = toExactKopecks(srv.directMaterialCostKop || 0);
+				const categoryRate = srv.category ? input.categoryRates?.[srv.category] : undefined;
+				const defaultCategoryRate = srv.category
+					? DEFAULT_CATEGORY_COMMISSION_PERCENT[srv.category]
+					: undefined;
 				const commission =
 					srv.commissionPercent !== undefined
 						? srv.commissionPercent
-						: input.categoryRates?.[srv.category] !== undefined
-							? input.categoryRates[srv.category]!
-							: srv.category && DEFAULT_CATEGORY_COMMISSION_PERCENT[srv.category] !== undefined
-								? DEFAULT_CATEGORY_COMMISSION_PERCENT[srv.category]!
+						: categoryRate !== undefined
+							? categoryRate
+							: defaultCategoryRate !== undefined
+								? defaultCategoryRate
 								: defaultCommission;
 
-				const srvDealBase = Math.max(0, srvRev - srvLab - srvMat) as Kopecks;
-				const srvEarned = calculatePercentDiscountKopecks(srvDealBase, commission) as Kopecks;
+				const srvDealBase = toExactKopecks(Math.max(0, srvRev - srvLab - srvMat));
+				const srvEarned = toExactKopecks(calculatePercentDiscountKopecks(srvDealBase, commission));
 
-				aptGrossKop = (aptGrossKop + srvRev) as Kopecks;
-				aptLabKop = (aptLabKop + srvLab) as Kopecks;
-				aptMatKop = (aptMatKop + srvMat) as Kopecks;
-				aptEarnedKop = (aptEarnedKop + srvEarned) as Kopecks;
+				aptGrossKop = toExactKopecks(aptGrossKop + srvRev);
+				aptLabKop = toExactKopecks(aptLabKop + srvLab);
+				aptMatKop = toExactKopecks(aptMatKop + srvMat);
+				aptEarnedKop = toExactKopecks(aptEarnedKop + srvEarned);
 
 				serviceTitles.push(srv.nameRu);
 			}
 
-			const aptNetBase = Math.max(0, aptGrossKop - aptLabKop - aptMatKop) as Kopecks;
+			const aptNetBase = toExactKopecks(Math.max(0, aptGrossKop - aptLabKop - aptMatKop));
 
-			grossRevenueKop = (grossRevenueKop + aptGrossKop) as Kopecks;
-			labCostKop = (labCostKop + aptLabKop) as Kopecks;
-			materialsCostKop = (materialsCostKop + aptMatKop) as Kopecks;
-			totalEarnedPayoutKop = (totalEarnedPayoutKop + aptEarnedKop) as Kopecks;
+			grossRevenueKop = toExactKopecks(grossRevenueKop + aptGrossKop);
+			labCostKop = toExactKopecks(labCostKop + aptLabKop);
+			materialsCostKop = toExactKopecks(materialsCostKop + aptMatKop);
+			totalEarnedPayoutKop = toExactKopecks(totalEarnedPayoutKop + aptEarnedKop);
 
 			patientItems.push({
 				appointmentId: apt.id,
@@ -193,7 +199,7 @@ export function calculateChairsideShiftEarnings(
 		}
 	}
 
-	const netBaseRevenueKop = Math.max(0, grossRevenueKop - labCostKop - materialsCostKop) as Kopecks;
+	const netBaseRevenueKop = toExactKopecks(Math.max(0, grossRevenueKop - labCostKop - materialsCostKop));
 
 	const d = new Date(shiftDate + "T00:00:00");
 	const shiftDateRu = !Number.isNaN(d.getTime())
@@ -243,7 +249,7 @@ export function calculateChairsideShiftEarnings(
 export function createSampleChairsideShiftAppointments(
 	doctorId = "doc-1",
 	doctorFullName = "Д-р Смирнов Алексей Петрович",
-	shiftDateIso = new Date().toISOString().split("T")[0]!,
+	shiftDateIso = new Date().toISOString().slice(0, 10),
 ): DoctorShiftAppointment[] {
 	return [
 		{

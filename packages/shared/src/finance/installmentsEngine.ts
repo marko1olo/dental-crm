@@ -31,6 +31,7 @@ import {
 	parseKopecks,
 	rublesToKopecks,
 	sumKopecks,
+	toExactKopecks,
 } from "../money.js";
 
 export type InstallmentPlanStatus = "on_schedule" | "due" | "overdue" | "completed";
@@ -92,8 +93,9 @@ export interface GenerateInstallmentScheduleInput {
 export function generateInstallmentSchedule(
 	input: GenerateInstallmentScheduleInput,
 ): InternalInstallmentScheduleItem[] {
-	const totalKop = Math.max(0, Math.round(input.totalAmountKopecks)) as Kopecks;
-	const downPaymentKop = Math.max(0, Math.min(totalKop, Math.round(input.downPaymentKopecks))) as Kopecks;
+	const zeroKop = toExactKopecks(0);
+	const totalKop = toExactKopecks(Math.max(0, Math.round(input.totalAmountKopecks)));
+	const downPaymentKop = toExactKopecks(Math.max(0, Math.min(totalKop, Math.round(input.downPaymentKopecks))));
 	const months = Math.max(1, Math.round(input.monthsCount));
 	const startDate = input.startDateIso ? new Date(input.startDateIso) : new Date();
 
@@ -107,16 +109,16 @@ export function generateInstallmentSchedule(
 			title: `Первоначальный взнос (${Math.round((downPaymentKop / totalKop) * 100)}%)`,
 			dueDateIso: startDate.toISOString(),
 			amountKopecks: downPaymentKop,
-			paidKopecks: 0 as Kopecks,
+			paidKopecks: zeroKop,
 			status: "due",
 		});
 	}
 
 	// 2. Ежемесячные платежи на остаток суммы
-	const remainingDebtKop = (totalKop - downPaymentKop) as Kopecks;
+	const remainingDebtKop = toExactKopecks(totalKop - downPaymentKop);
 	if (remainingDebtKop > 0) {
-		const baseMonthlyKop = Math.floor(remainingDebtKop / months) as Kopecks;
-		const remainderKop = (remainingDebtKop - baseMonthlyKop * months) as Kopecks;
+		const baseMonthlyKop = toExactKopecks(Math.floor(remainingDebtKop / months));
+		const remainderKop = toExactKopecks(remainingDebtKop - baseMonthlyKop * months);
 
 		for (let i = 1; i <= months; i++) {
 			const payDate = new Date(startDate);
@@ -127,7 +129,7 @@ export function generateInstallmentSchedule(
 			}
 
 			// Неделимый остаток копеек прибавляется к первому ежемесячному платежу
-			const amountKopecks = (i === 1 ? baseMonthlyKop + remainderKop : baseMonthlyKop) as Kopecks;
+			const amountKopecks = toExactKopecks(i === 1 ? baseMonthlyKop + remainderKop : baseMonthlyKop);
 
 			schedule.push({
 				id: `inst-pay-${i}`,
@@ -135,7 +137,7 @@ export function generateInstallmentSchedule(
 				title: `Ежемесячный платеж №${i} из ${months}`,
 				dueDateIso: payDate.toISOString(),
 				amountKopecks,
-				paidKopecks: 0 as Kopecks,
+				paidKopecks: zeroKop,
 				status: "on_schedule",
 			});
 		}
@@ -166,19 +168,19 @@ export function evaluateInstallmentStatus(
 	const currentMs = new Date(currentDateIso).getTime();
 	const todayDateStr = currentDateIso.split("T")[0] ?? currentDateIso.slice(0, 10);
 
-	let paidAmountKopecks = 0 as Kopecks;
-	let totalAmountKopecks = 0 as Kopecks;
-	let overdueDebtKopecks = 0 as Kopecks;
+	let paidAmountKopecks = toExactKopecks(0);
+	let totalAmountKopecks = toExactKopecks(0);
+	let overdueDebtKopecks = toExactKopecks(0);
 	let nextPaymentDueItem: InternalInstallmentScheduleItem | null = null;
 	let daysUntilNextPayment: number | null = null;
 
 	const updatedSchedule: InternalInstallmentScheduleItem[] = [];
 
 	for (const item of schedule) {
-		totalAmountKopecks = (totalAmountKopecks + item.amountKopecks) as Kopecks;
-		paidAmountKopecks = (paidAmountKopecks + item.paidKopecks) as Kopecks;
+		totalAmountKopecks = toExactKopecks(totalAmountKopecks + item.amountKopecks);
+		paidAmountKopecks = toExactKopecks(paidAmountKopecks + item.paidKopecks);
 
-		const remainingItemKop = Math.max(0, item.amountKopecks - item.paidKopecks) as Kopecks;
+		const remainingItemKop = toExactKopecks(Math.max(0, item.amountKopecks - item.paidKopecks));
 		const dueMs = new Date(item.dueDateIso).getTime();
 		const dueDateStr = item.dueDateIso.split("T")[0] ?? item.dueDateIso.slice(0, 10);
 
@@ -192,7 +194,7 @@ export function evaluateInstallmentStatus(
 
 			if (dueDateStr < todayDateStr) {
 				itemStatus = "overdue";
-				overdueDebtKopecks = (overdueDebtKopecks + remainingItemKop) as Kopecks;
+				overdueDebtKopecks = toExactKopecks(overdueDebtKopecks + remainingItemKop);
 			} else if (diffDays <= 5) {
 				itemStatus = "due";
 			} else {
@@ -212,7 +214,7 @@ export function evaluateInstallmentStatus(
 		});
 	}
 
-	const remainingDebtKopecks = Math.max(0, totalAmountKopecks - paidAmountKopecks) as Kopecks;
+	const remainingDebtKopecks = toExactKopecks(Math.max(0, totalAmountKopecks - paidAmountKopecks));
 
 	let planStatus: InstallmentPlanStatus = "on_schedule";
 	if (remainingDebtKopecks <= 0) {
@@ -293,9 +295,9 @@ export function recordInstallmentPayment(
 	}
 	const payAmountKop = (input.paidAmountKopecks !== undefined && input.paidAmountKopecks > 0)
 		? input.paidAmountKopecks
-		: (targetItem.amountKopecks - targetItem.paidKopecks) as Kopecks;
+		: toExactKopecks(targetItem.amountKopecks - targetItem.paidKopecks);
 
-	const newPaidKop = Math.min(targetItem.amountKopecks, targetItem.paidKopecks + payAmountKop) as Kopecks;
+	const newPaidKop = toExactKopecks(Math.min(targetItem.amountKopecks, targetItem.paidKopecks + payAmountKop));
 	const isFullyPaid = newPaidKop >= targetItem.amountKopecks;
 
 	// Генерация фискального чека 54-ФЗ (ФФД 1.2, тег 1214) — детерминированный фискальный признак (FNV-хэш)
@@ -318,10 +320,11 @@ export function recordInstallmentPayment(
 
 	const updatedSchedule = input.plan.schedule.map((item, idx) => {
 		if (idx === targetItemIndex) {
+			const nextStatus: InstallmentItemStatus = isFullyPaid ? "paid" : item.status;
 			return {
 				...item,
 				paidKopecks: newPaidKop,
-				status: isFullyPaid ? ("paid" as InstallmentItemStatus) : item.status,
+				status: nextStatus,
 				paidAtIso: currentIso,
 				paymentMethod,
 				fiscalReceiptNumber: receiptNumber,
@@ -385,7 +388,7 @@ export function generateInstallmentReminder(params: {
 	sbpQrUrl?: string | undefined;
 }): InstallmentReminderOutput {
 	const item = params.targetItem || params.plan.nextPaymentDueItem || params.plan.schedule.find((s) => s.paidKopecks < s.amountKopecks);
-	const targetAmountKop = item ? (item.amountKopecks - item.paidKopecks) as Kopecks : params.plan.remainingDebtKopecks;
+	const targetAmountKop = item ? toExactKopecks(item.amountKopecks - item.paidKopecks) : params.plan.remainingDebtKopecks;
 	const amountFormatted = formatKopecksRu(targetAmountKop);
 	const remainingDebtFormatted = formatKopecksRu(params.plan.remainingDebtKopecks);
 
@@ -501,7 +504,7 @@ export function createDefaultInternalInstallmentsPreset(
 ): InstallmentPlan {
 	const cfg = TREATMENT_INSTALLMENT_PRESETS[presetType];
 	const totalKop = rublesToKopecks(cfg.totalRubles);
-	const downPaymentKop = calculatePercentDiscountKopecks(totalKop, cfg.downPaymentPercent) as Kopecks;
+	const downPaymentKop = toExactKopecks(calculatePercentDiscountKopecks(totalKop, cfg.downPaymentPercent));
 
 	const schedule = generateInstallmentSchedule({
 		totalAmountKopecks: totalKop,
@@ -514,7 +517,7 @@ export function createDefaultInternalInstallmentsPreset(
 	const evalResult = evaluateInstallmentStatus(schedule, startDateIso);
 
 	const secondInstallment = schedule[1];
-	const monthlyPaymentKop = secondInstallment ? secondInstallment.amountKopecks : (0 as Kopecks);
+	const monthlyPaymentKop = secondInstallment ? secondInstallment.amountKopecks : toExactKopecks(0);
 	const contractNumber = generateInstallmentContractNumber(patientId, startDateIso, 1);
 
 	return {

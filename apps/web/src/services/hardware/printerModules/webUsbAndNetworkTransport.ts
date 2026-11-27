@@ -31,6 +31,43 @@ interface MobileNativeThermalApi {
 	printThermalBinary?(bytes: number[]): Promise<{ success?: boolean } | null | undefined>;
 }
 
+interface WebBluetoothCharacteristic {
+	writeValue(value: BufferSource): Promise<void>;
+}
+
+interface WebBluetoothService {
+	getCharacteristic(uuid: string): Promise<WebBluetoothCharacteristic>;
+}
+
+interface WebBluetoothRemoteGatt {
+	connect(): Promise<{ getPrimaryService(uuid: string): Promise<WebBluetoothService> }>;
+}
+
+interface WebBluetoothDevice {
+	gatt?: WebBluetoothRemoteGatt | undefined;
+}
+
+interface WebBluetoothApi {
+	requestDevice(options: {
+		filters: Array<{ services: string[] }>;
+		optionalServices?: string[];
+	}): Promise<WebBluetoothDevice>;
+}
+
+function getWebBluetoothApi(): WebBluetoothApi | null {
+	if (typeof navigator === "undefined" || !("bluetooth" in navigator)) return null;
+	const candidate = navigator.bluetooth;
+	if (
+		candidate &&
+		typeof candidate === "object" &&
+		"requestDevice" in candidate &&
+		typeof candidate.requestDevice === "function"
+	) {
+		return candidate as WebBluetoothApi;
+	}
+	return null;
+}
+
 export async function dispatchBluetoothPrintBuffer(
 	buffer: Uint8Array,
 ): Promise<BluetoothDispatchResult> {
@@ -46,10 +83,10 @@ export async function dispatchBluetoothPrintBuffer(
 	}
 
 	// 2. Web Bluetooth API fallback in modern Chromium
-	if (typeof navigator !== "undefined" && "bluetooth" in navigator) {
+	const bluetooth = getWebBluetoothApi();
+	if (bluetooth) {
 		try {
-			// @ts-expect-error Web Bluetooth API standard interface
-			const device = await navigator.bluetooth.requestDevice({
+			const device = await bluetooth.requestDevice({
 				filters: [{ services: ["000018f0-0000-1000-8000-00805f9b34fb"] }], // Standard POS service
 				optionalServices: ["0000ff00-0000-1000-8000-00805f9b34fb"],
 			});

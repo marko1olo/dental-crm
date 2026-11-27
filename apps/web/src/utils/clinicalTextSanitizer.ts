@@ -233,8 +233,10 @@ export function mergeMultiToothDiagnoses(
 	// Сортируем зубы по номеру FDI для идеального клинического порядка
 	const sortedTeeth = Array.from(toothEntries.keys()).sort((a, b) => a - b);
 	for (const tooth of sortedTeeth) {
-		const diag = toothEntries.get(tooth)!;
-		formattedList.push(`[Зуб ${tooth}: ${diag}]`);
+		const diag = toothEntries.get(tooth);
+		if (diag !== undefined) {
+			formattedList.push(`[Зуб ${tooth}: ${diag}]`);
+		}
 	}
 
 	// Добавляем общие диагнозы (без Z01.2, так как есть патология)
@@ -366,7 +368,13 @@ export function mergeMultiToothTreatmentPlan(
  * Санитизирует всю форму визита VisitNoteForm:
  * устраняет противоречия между нормой и патологиями по всем зубам.
  */
-export function sanitizeVisitNoteFormFields<T extends Record<string, any>>(form: T): T {
+export function sanitizeVisitNoteFormFields<
+	T extends {
+		complaint?: string | undefined;
+		objectiveStatus?: string | undefined;
+		diagnosis?: string | undefined;
+	},
+>(form: T): T {
 	if (!form) return form;
 
 	const hasSpecificTeeth =

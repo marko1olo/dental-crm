@@ -5,6 +5,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { safeLocalStorageSetItem } from "../lib/safeLocalStorage";
+import { logger } from "../utils/logger";
 
 interface BeforeInstallPromptEvent extends Event {
 	readonly platforms: string[];
@@ -13,6 +14,18 @@ interface BeforeInstallPromptEvent extends Event {
 		platform: string;
 	}>;
 	prompt(): Promise<void>;
+}
+
+function isBeforeInstallPromptEvent(event: Event): event is BeforeInstallPromptEvent {
+	return "prompt" in event && typeof event.prompt === "function" && "userChoice" in event;
+}
+
+function hasIosStandaloneFlag(nav: Navigator): boolean {
+	return "standalone" in nav && nav.standalone === true;
+}
+
+function hasIeMsStreamFlag(win: Window): boolean {
+	return "MSStream" in win && Boolean(win.MSStream);
 }
 
 export const A2HS_DISMISSED_STORAGE_KEY = "dente_a2hs_dismissed_at_ms";
@@ -41,21 +54,21 @@ export function useA2hsPrompt(): UseA2hsPromptResult {
 
 		const isStandaloneMode =
 			window.matchMedia("(display-mode: standalone)").matches ||
-			// @ts-expect-error - iOS Safari standalone property
-			Boolean(navigator.standalone);
+			hasIosStandaloneFlag(navigator);
 
 		setIsInstalled(isStandaloneMode);
 
 		const isAppleIos =
 			/iPad|iPhone|iPod/.test(navigator.userAgent) &&
-			// @ts-expect-error - MSStream check for IE
-			!window.MSStream;
+			!hasIeMsStreamFlag(window);
 
 		setIsIos(isAppleIos);
 
 		const handleBeforeInstallPrompt = (e: Event) => {
 			e.preventDefault();
-			setDeferredPrompt(e as BeforeInstallPromptEvent);
+			if (isBeforeInstallPromptEvent(e)) {
+				setDeferredPrompt(e);
+			}
 		};
 
 		const handleAppInstalled = () => {
@@ -86,8 +99,8 @@ export function useA2hsPrompt(): UseA2hsPromptResult {
 		try {
 			const expiryMs = Date.now() + days * 24 * 60 * 60 * 1000;
 			safeLocalStorageSetItem(A2HS_DISMISSED_STORAGE_KEY, String(expiryMs));
-		} catch {
-			// ignore
+		} catch (err) {
+			logger.warn("Failed to persist A2HS dismissal cooldown", err);
 		}
 	}, []);
 
@@ -106,7 +119,8 @@ export function useA2hsPrompt(): UseA2hsPromptResult {
 				return true;
 			}
 			return false;
-		} catch {
+		} catch (err) {
+			logger.warn("PWA A2HS install prompt failed", err);
 			return false;
 		}
 	}, [deferredPrompt]);

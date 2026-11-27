@@ -449,6 +449,10 @@ export const CLINICAL_DOCUMENT_PRINT_STYLES = `
 </style>
 `;
 
+function isUnknownRecord(val: unknown): val is Record<string, unknown> {
+	return typeof val === "object" && val !== null;
+}
+
 /** Вспомогательный рендерер зубной формулы FDI (18-28 и 48-38) */
 export function renderFdiToothFormulaTable(dentalFormula?: Record<string, unknown> | null): string {
 	const adultUpperRight = [18, 17, 16, 15, 14, 13, 12, 11];
@@ -460,25 +464,23 @@ export function renderFdiToothFormulaTable(dentalFormula?: Record<string, unknow
 	if (dentalFormula) {
 		if (Array.isArray(dentalFormula.teeth)) {
 			for (const rawT of dentalFormula.teeth) {
-				if (rawT && typeof rawT === "object") {
-					const t = rawT as Record<string, unknown>;
-					const num = Number(t.toothNumber);
+				if (isUnknownRecord(rawT)) {
+					const num = Number(rawT.toothNumber);
 					if (num) {
 						teethMap.set(num, {
-							status: String(t.statusCode || t.condition || "H"),
-							mobility: String(t.mobilityGrade || "—"),
+							status: String(rawT.statusCode || rawT.condition || "H"),
+							mobility: String(rawT.mobilityGrade || "—"),
 						});
 					}
 				}
 			}
-		} else if (typeof dentalFormula === "object" && dentalFormula !== null) {
+		} else if (isUnknownRecord(dentalFormula)) {
 			for (const [key, val] of Object.entries(dentalFormula)) {
 				const num = Number(key);
-				if (num && typeof val === "object" && val !== null) {
-					const tVal = val as Record<string, unknown>;
+				if (num && isUnknownRecord(val)) {
 					teethMap.set(num, {
-						status: String(tVal.condition || tVal.statusCode || "H"),
-						mobility: String(tVal.mobility || tVal.mobilityGrade || "—"),
+						status: String(val.condition || val.statusCode || "H"),
+						mobility: String(val.mobility || val.mobilityGrade || "—"),
 					});
 				}
 			}
@@ -524,7 +526,7 @@ export function renderFdiToothFormulaTable(dentalFormula?: Record<string, unknow
 }
 
 /** Вспомогательный блок электронной цифровой подписи врача (УКЭП) */
-export function renderUkepDigitalSignatureBlock(ukep: UkepDigitalSignaturePayload | any): string {
+export function renderUkepDigitalSignatureBlock(ukep: UkepDigitalSignaturePayload | null | undefined): string {
 	if (!ukep || (!ukep.cryptoSignaturePkcs7 && !ukep.certificateSerialNumber && !ukep.certificateThumbprint)) {
 		return "";
 	}

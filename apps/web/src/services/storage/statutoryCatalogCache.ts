@@ -17,6 +17,7 @@ import {
 	getCachedApiResponse,
 	readCatalogFromPersistentStorage,
 } from "../../lib/apiCacheEngine";
+import { logger } from "../../utils/logger";
 
 // In-memory RAM L1 cache for sub-millisecond synchronous returns
 let ram804nCache: unknown[] | null = null;
@@ -56,8 +57,8 @@ export async function getOrLoadNomenclature804n<T = unknown>(): Promise<T[]> {
 			setCachedApiResponse("/api/clinical/804n", idbCached, { ttlMs: 24 * 60 * 60 * 1000 });
 			return idbCached;
 		}
-	} catch {
-		// Fallback to next storage layer
+	} catch (err) {
+		logger.warn("IndexedDB catalog_804n read fallback failed", err);
 	}
 
 	// Try persistent storage (apiCacheEngine)
@@ -68,11 +69,13 @@ export async function getOrLoadNomenclature804n<T = unknown>(): Promise<T[]> {
 		if (persistentApi?.data && Array.isArray(persistentApi.data) && persistentApi.data.length > 0) {
 			ram804nCache = persistentApi.data;
 			setCachedApiResponse("/api/clinical/804n", persistentApi.data, { ttlMs: 24 * 60 * 60 * 1000 });
-			void cacheStatutoryCatalog("catalog_804n", persistentApi.data).catch(() => {});
+			void cacheStatutoryCatalog("catalog_804n", persistentApi.data).catch((err: unknown) => {
+				logger.warn("cacheStatutoryCatalog catalog_804n background write failed", err);
+			});
 			return persistentApi.data;
 		}
-	} catch {
-		// Fallback to static presets on storage failure
+	} catch (err) {
+		logger.warn("Persistent storage catalog_804n read fallback failed", err);
 	}
 
 	// Fallback to statutory presets
@@ -82,7 +85,9 @@ export async function getOrLoadNomenclature804n<T = unknown>(): Promise<T[]> {
 	const data = (STATUTORY_804N_NOMENCLATURE ?? []) as T[];
 	ram804nCache = data;
 	setCachedApiResponse("/api/clinical/804n", data, { ttlMs: 24 * 60 * 60 * 1000 });
-	void cacheStatutoryCatalog("catalog_804n", data).catch(() => {});
+	void cacheStatutoryCatalog("catalog_804n", data).catch((err: unknown) => {
+		logger.warn("cacheStatutoryCatalog catalog_804n preset seed failed", err);
+	});
 	return data;
 }
 
@@ -110,8 +115,8 @@ export async function getOrLoadIcd10Dictionary<T = unknown>(): Promise<T[]> {
 			setCachedApiResponse("/api/clinical/icd10", idbCached, { ttlMs: 24 * 60 * 60 * 1000 });
 			return idbCached;
 		}
-	} catch {
-		// Fallback to next storage layer
+	} catch (err) {
+		logger.warn("IndexedDB catalog_icd10 read fallback failed", err);
 	}
 
 	try {
@@ -121,18 +126,22 @@ export async function getOrLoadIcd10Dictionary<T = unknown>(): Promise<T[]> {
 		if (persistentApi?.data && Array.isArray(persistentApi.data) && persistentApi.data.length > 0) {
 			ramIcd10Cache = persistentApi.data;
 			setCachedApiResponse("/api/clinical/icd10", persistentApi.data, { ttlMs: 24 * 60 * 60 * 1000 });
-			void cacheStatutoryCatalog("catalog_icd10", persistentApi.data).catch(() => {});
+			void cacheStatutoryCatalog("catalog_icd10", persistentApi.data).catch((err: unknown) => {
+				logger.warn("cacheStatutoryCatalog catalog_icd10 background write failed", err);
+			});
 			return persistentApi.data;
 		}
-	} catch {
-		// Fallback to static presets on storage failure
+	} catch (err) {
+		logger.warn("Persistent storage catalog_icd10 read fallback failed", err);
 	}
 
 	const { ICD10_DICTIONARY } = await import("../../lib/icd10");
 	const data = (ICD10_DICTIONARY ?? []) as T[];
 	ramIcd10Cache = data;
 	setCachedApiResponse("/api/clinical/icd10", data, { ttlMs: 24 * 60 * 60 * 1000 });
-	void cacheStatutoryCatalog("catalog_icd10", data).catch(() => {});
+	void cacheStatutoryCatalog("catalog_icd10", data).catch((err: unknown) => {
+		logger.warn("cacheStatutoryCatalog catalog_icd10 preset seed failed", err);
+	});
 	return data;
 }
 
@@ -163,8 +172,8 @@ export async function getOrLoadClinical043Templates<T = unknown>(): Promise<T[]>
 			setCachedApiResponse("/api/emr/templates", idbCached, { ttlMs: 24 * 60 * 60 * 1000 });
 			return idbCached;
 		}
-	} catch {
-		// Fallback to next storage layer
+	} catch (err) {
+		logger.warn("IndexedDB catalog_templates read fallback failed", err);
 	}
 
 	try {
@@ -177,11 +186,13 @@ export async function getOrLoadClinical043Templates<T = unknown>(): Promise<T[]>
 			ramTemplatesCache = persistentApi.data;
 			setCachedApiResponse("/api/clinical/outpatient-templates", persistentApi.data, { ttlMs: 24 * 60 * 60 * 1000 });
 			setCachedApiResponse("/api/emr/templates", persistentApi.data, { ttlMs: 24 * 60 * 60 * 1000 });
-			void cacheStatutoryCatalog("catalog_templates", persistentApi.data).catch(() => {});
+			void cacheStatutoryCatalog("catalog_templates", persistentApi.data).catch((err: unknown) => {
+				logger.warn("cacheStatutoryCatalog catalog_templates background write failed", err);
+			});
 			return persistentApi.data;
 		}
-	} catch {
-		// Fallback to static presets on storage failure
+	} catch (err) {
+		logger.warn("Persistent storage catalog_templates read fallback failed", err);
 	}
 
 	const { CLINICAL_1CLICK_TEMPLATES_CATALOG } = await import(
@@ -190,7 +201,9 @@ export async function getOrLoadClinical043Templates<T = unknown>(): Promise<T[]>
 	const data = (CLINICAL_1CLICK_TEMPLATES_CATALOG ?? []) as T[];
 	ramTemplatesCache = data;
 	setCachedApiResponse("/api/emr/templates", data, { ttlMs: 24 * 60 * 60 * 1000 });
-	void cacheStatutoryCatalog("catalog_templates", data).catch(() => {});
+	void cacheStatutoryCatalog("catalog_templates", data).catch((err: unknown) => {
+		logger.warn("cacheStatutoryCatalog catalog_templates preset seed failed", err);
+	});
 	return data;
 }
 
@@ -225,9 +238,15 @@ export async function clearStatutoryCatalogsCache(): Promise<void> {
 	ramTemplatesCache = null;
 
 	await Promise.all([
-		deleteCachedClinicalRecord("catalog_804n", "canonical").catch(() => {}),
-		deleteCachedClinicalRecord("catalog_icd10", "canonical").catch(() => {}),
-		deleteCachedClinicalRecord("catalog_templates", "canonical").catch(() => {}),
+		deleteCachedClinicalRecord("catalog_804n", "canonical").catch((err: unknown) => {
+			logger.warn("Failed to clear catalog_804n cache", err);
+		}),
+		deleteCachedClinicalRecord("catalog_icd10", "canonical").catch((err: unknown) => {
+			logger.warn("Failed to clear catalog_icd10 cache", err);
+		}),
+		deleteCachedClinicalRecord("catalog_templates", "canonical").catch((err: unknown) => {
+			logger.warn("Failed to clear catalog_templates cache", err);
+		}),
 	]);
 }
 
@@ -325,7 +344,9 @@ export function getCachedTemplatesSync<T = unknown>(): T[] | null {
 /**
  * Instant 0 ms synchronous search across in-memory 804n nomenclature.
  */
-export function searchCached804nSync<T extends { code?: string; name?: string; serviceName?: string } = any>(
+export function searchCached804nSync<
+	T extends { code?: string; name?: string; serviceName?: string } = { code?: string; name?: string; serviceName?: string },
+>(
 	query: string,
 	limit = 50,
 ): T[] {
@@ -349,7 +370,9 @@ export function searchCached804nSync<T extends { code?: string; name?: string; s
 /**
  * Instant 0 ms synchronous search across in-memory ICD-10 catalog.
  */
-export function searchCachedIcd10Sync<T extends { code?: string; name?: string; description?: string } = any>(
+export function searchCachedIcd10Sync<
+	T extends { code?: string; name?: string; description?: string } = { code?: string; name?: string; description?: string },
+>(
 	query: string,
 	limit = 50,
 ): T[] {

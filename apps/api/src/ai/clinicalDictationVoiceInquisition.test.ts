@@ -435,9 +435,33 @@ describe("Red Team Inquisition: Dental Clinical Voice Dictation Parser (Mandate 
 			});
 		}
 
-		it("asserts overall clinical recognition accuracy >= 95%", () => {
-			const accuracy = (passedChecks / totalChecks) * 100;
-			console.log(`[Clinical Dictation Benchmark] Accuracy: ${accuracy.toFixed(1)}% (${passedChecks}/${totalChecks} checks passed)`);
+		it("asserts overall clinical recognition accuracy >= 95% across all scenarios", () => {
+			let localTotal = 0;
+			let localPassed = 0;
+			for (const sc of scenarios) {
+				const result = parseDictationLocally(sc.phrase, "visit");
+				localTotal++;
+				if (!result || result.action !== "update_tooth") continue;
+				const toothUpdates =
+					result.toothUpdates ??
+					(isUpdateToothPayload(result.payload) ? result.payload.toothUpdates : undefined);
+				if (toothUpdates?.[0]?.code === sc.expectedTooth) {
+					localPassed++;
+				}
+				if (sc.expectedDiagCode) {
+					localTotal++;
+					const diagCode = toothUpdates?.[0]?.diagnosisCode || result.emkUpdates?.diagnosisIcd10;
+					if (diagCode === sc.expectedDiagCode) localPassed++;
+				}
+				if (sc.expectedAnesthesia) {
+					localTotal++;
+					const anDrug =
+						result.anesthesia?.drugKey ??
+						(isUpdateToothPayload(result.payload) ? result.payload.anesthesia?.drugKey : undefined);
+					if (anDrug === sc.expectedAnesthesia) localPassed++;
+				}
+			}
+			const accuracy = (localPassed / localTotal) * 100;
 			assert.ok(accuracy >= 95.0, `Accuracy must be >= 95%, got ${accuracy.toFixed(1)}%`);
 		});
 	});

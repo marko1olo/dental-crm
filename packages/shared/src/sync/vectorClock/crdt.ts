@@ -5,6 +5,20 @@ import type {
 	PerSurfaceState,
 } from "./types.js";
 
+function isUnknownRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readOptionalString(rec: Record<string, unknown>, key: string): string | undefined {
+	const value = rec[key];
+	return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function readOptionalNumber(rec: Record<string, unknown>, key: string): number | undefined {
+	const value = rec[key];
+	return typeof value === "number" ? value : undefined;
+}
+
 export function unionMergeSomaticAllergies(
 	localAllergies: unknown,
 	remoteAllergies: unknown,
@@ -59,31 +73,32 @@ function normalizeToothSurfaces(
 		for (const [surf, state] of Object.entries(tooth.surfaceStates)) {
 			if (!surf || !state) continue;
 			const safeSurf = surf.toUpperCase().trim();
-			const rec = state as Record<string, unknown>;
 			map.set(safeSurf, {
-				...rec,
+				...state,
 				surface: safeSurf,
-				status: (rec.status as string) || tooth.statusCode || "treated",
-				updatedAtMs: (rec.updatedAtMs as number) ?? tooth.updatedAtMs ?? fallbackMs,
-				doctorId: (rec.doctorId as string) ?? defaultDoctorId,
-				doctorName: rec.doctorName as string | undefined,
+				status: state.status || tooth.statusCode || "treated",
+				updatedAtMs: state.updatedAtMs ?? tooth.updatedAtMs ?? fallbackMs,
+				doctorId: state.doctorId ?? defaultDoctorId,
+				doctorName: state.doctorName,
 			});
 		}
 		return map;
 	}
 
 	if (tooth.surfaces && typeof tooth.surfaces === "object" && !Array.isArray(tooth.surfaces)) {
-		for (const [surf, state] of Object.entries(tooth.surfaces as Record<string, unknown>)) {
-			if (!surf || !state) continue;
+		for (const [surf, rawState] of Object.entries(tooth.surfaces)) {
+			if (!surf || !rawState) continue;
 			const safeSurf = surf.toUpperCase().trim();
-			const rec = (typeof state === "object" && state !== null ? state : { status: String(state) }) as Record<string, unknown>;
+			const rec: Record<string, unknown> = isUnknownRecord(rawState)
+				? rawState
+				: { status: String(rawState) };
 			map.set(safeSurf, {
 				...rec,
 				surface: safeSurf,
-				status: (rec.status as string) || tooth.statusCode || "treated",
-				updatedAtMs: (rec.updatedAtMs as number) ?? tooth.updatedAtMs ?? fallbackMs,
-				doctorId: (rec.doctorId as string) ?? defaultDoctorId,
-				doctorName: rec.doctorName as string | undefined,
+				status: readOptionalString(rec, "status") || tooth.statusCode || "treated",
+				updatedAtMs: readOptionalNumber(rec, "updatedAtMs") ?? tooth.updatedAtMs ?? fallbackMs,
+				doctorId: readOptionalString(rec, "doctorId") ?? defaultDoctorId,
+				doctorName: readOptionalString(rec, "doctorName"),
 			});
 		}
 		return map;
@@ -238,39 +253,43 @@ function extractDiaryEntries(
 
 	if (Array.isArray(diaryVal)) {
 		for (const item of diaryVal) {
-			if (typeof item === "object" && item !== null) {
-				const rec = item as Record<string, unknown>;
+			if (isUnknownRecord(item)) {
+				const rawTs = readOptionalNumber(item, "timestampMs") ?? readOptionalNumber(item, "timestamp");
+				const rawTsIso = readOptionalString(item, "timestampIso");
 				const tsMs =
-					typeof rec.timestampMs === "number"
-						? rec.timestampMs
-						: typeof rec.timestamp === "number"
-							? rec.timestamp
-							: typeof rec.timestampIso === "string"
-								? new Date(rec.timestampIso).getTime() || defaultTimestampMs
-								: defaultTimestampMs;
+					rawTs !== undefined
+						? rawTs
+						: rawTsIso !== undefined
+							? new Date(rawTsIso).getTime() || defaultTimestampMs
+							: defaultTimestampMs;
 				const note =
-					(rec.note as string) ||
-					(rec.text as string) ||
-					(rec.content as string) ||
+					readOptionalString(item, "note") ??
+					readOptionalString(item, "text") ??
+					readOptionalString(item, "content") ??
 					"";
 				if (note.trim()) {
-					const entryId = (rec.id as string) || (rec.entryId as string) || undefined;
-					const docName = (rec.doctorName as string) || (rec.authorName as string) || defaultDoctorName;
-					const sig = (rec.doctorSignature as string) || (rec.signature as string) || defaultSignature;
+					const entryId = readOptionalString(item, "id") ?? readOptionalString(item, "entryId");
+					const docName =
+						readOptionalString(item, "doctorName") ??
+						readOptionalString(item, "authorName") ??
+						defaultDoctorName;
+					const sig =
+						readOptionalString(item, "doctorSignature") ??
+						readOptionalString(item, "signature") ??
+						defaultSignature;
 					const entry: ClinicalDiaryEntry = {
 						id: entryId,
 						entryId,
 						timestampMs: tsMs,
-						timestampIso:
-							(rec.timestampIso as string) || new Date(tsMs).toISOString(),
+						timestampIso: rawTsIso ?? new Date(tsMs).toISOString(),
 						doctorName: docName,
 						authorName: docName,
-						doctorId: (rec.doctorId as string) || defaultDoctorId,
+						doctorId: readOptionalString(item, "doctorId") ?? defaultDoctorId,
 						note: note.trim(),
 						text: note.trim(),
 						signature: sig,
 						doctorSignature: sig,
-						category: (rec.category as string) || undefined,
+						category: readOptionalString(item, "category"),
 					};
 					results.push(entry);
 				}
@@ -401,8 +420,9 @@ export const EXTENDED_ANESTHESIA_RISK_RANK: Record<string, number> = {
 export function getAnesthesiaRiskRank(val: unknown): number {
 	if (typeof val !== "string") return 0;
 	const normalized = val.toLowerCase().trim();
-	if (normalized in EXTENDED_ANESTHESIA_RISK_RANK) {
-		return EXTENDED_ANESTHESIA_RISK_RANK[normalized]!;
+	const extendedRank = EXTENDED_ANESTHESIA_RISK_RANK[normalized];
+	if (extendedRank !== undefined) {
+		return extendedRank;
 	}
 	const match = normalized.match(/asa\s*([0-9ivx]+)/i);
 	if (match && match[1]) {

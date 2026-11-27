@@ -7,7 +7,10 @@ import { existsSync, statSync, readdirSync, watch, type FSWatcher } from "node:f
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import { DEBOUNCE_FILE_STABILIZE_MS, JUNK_VIEWER_PATH_REGEX } from "./types.js";
+
+const logger = createApiLogger("dicomDirectoryWatcher");
 
 /**
  * Получение путей сканирования на macOS (системные папки, OsiriX, Horos, внешние тома /Volumes)
@@ -38,8 +41,8 @@ export function getMacWatchPaths(homedir?: string): string[] {
 				}
 			}
 		}
-	} catch {
-		// игнорируем ошибку обхода /Volumes
+	} catch (err: unknown) {
+		logger.debug({ err: safeLogError(err), volumesRoot }, "macOS /Volumes scan skipped");
 	}
 
 	return paths;
@@ -99,7 +102,8 @@ export function getDefaultWatchPaths(platformOverride?: string, homedirOverride?
 	const existing = candidates.filter((p) => {
 		try {
 			return existsSync(p) && statSync(p).isDirectory();
-		} catch {
+		} catch (err: unknown) {
+			logger.debug({ err: safeLogError(err), path: p }, "Watch path stat skipped");
 			return false;
 		}
 	});
@@ -132,8 +136,8 @@ export function getDefaultHotFolders(platformOverride?: string, homedirOverride?
 					}
 				}
 			}
-		} catch {
-			// игнорируем
+		} catch (err: unknown) {
+			logger.debug({ err: safeLogError(err), volumesRoot }, "macOS /Volumes hot-folder scan skipped");
 		}
 	} else if (currentPlatform === "win32") {
 		candidates = [
@@ -153,7 +157,8 @@ export function getDefaultHotFolders(platformOverride?: string, homedirOverride?
 	return candidates.filter((p) => {
 		try {
 			return existsSync(p) && statSync(p).isDirectory();
-		} catch {
+		} catch (err: unknown) {
+			logger.debug({ err: safeLogError(err), path: p }, "Hot-folder path stat skipped");
 			return false;
 		}
 	});
@@ -175,7 +180,8 @@ export async function findArchivesAndFolders(
 	let entries;
 	try {
 		entries = await readdir(currentPath, { withFileTypes: true });
-	} catch {
+	} catch (err: unknown) {
+		logger.debug({ err: safeLogError(err), currentPath }, "DICOM directory readdir skipped");
 		return { archives, folders };
 	}
 
@@ -266,8 +272,8 @@ export class HotFolderWatchController {
 		for (const w of this.watchers) {
 			try {
 				w.close();
-			} catch {
-				// игнорируем
+			} catch (err: unknown) {
+				logger.debug({ err: safeLogError(err) }, "fs.watch handle close cleanup error");
 			}
 		}
 		this.watchers = [];
@@ -319,8 +325,8 @@ export class HotFolderWatchController {
 
 			// Размер стабилен! Вызываем обработчик
 			await handler(targetPath);
-		} catch {
-			// игнорируем временные сбои доступа
+		} catch (err: unknown) {
+			logger.debug({ err: safeLogError(err), targetPath }, "Transient hot-file stability probe error");
 		}
 	}
 }

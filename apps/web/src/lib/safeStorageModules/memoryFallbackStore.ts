@@ -70,8 +70,9 @@ export function isIdbStorageFallbackAvailable(): boolean {
 		}
 		if (
 			typeof globalThis !== "undefined" &&
-			(globalThis as unknown as { indexedDB?: IDBFactory }).indexedDB &&
-			typeof (globalThis as unknown as { indexedDB?: IDBFactory }).indexedDB?.open === "function"
+			"indexedDB" in globalThis &&
+			globalThis.indexedDB &&
+			typeof globalThis.indexedDB.open === "function"
 		) {
 			return true;
 		}
@@ -90,8 +91,8 @@ function getIdbFactory(): IDBFactory | null {
 		// ignore
 	}
 	try {
-		if (typeof globalThis !== "undefined" && (globalThis as unknown as { indexedDB?: IDBFactory }).indexedDB) {
-			return (globalThis as unknown as { indexedDB?: IDBFactory }).indexedDB ?? null;
+		if (typeof globalThis !== "undefined" && "indexedDB" in globalThis && globalThis.indexedDB) {
+			return globalThis.indexedDB ?? null;
 		}
 	} catch {
 		// ignore
@@ -247,8 +248,8 @@ export function getUnderlyingLocalStorage(): Storage | null {
 		// ignore
 	}
 	try {
-		if (typeof globalThis !== "undefined" && (globalThis as unknown as { localStorage?: Storage }).localStorage) {
-			return (globalThis as unknown as { localStorage?: Storage }).localStorage ?? null;
+		if (typeof globalThis !== "undefined" && "localStorage" in globalThis && globalThis.localStorage) {
+			return globalThis.localStorage ?? null;
 		}
 	} catch {
 		// ignore
@@ -265,8 +266,8 @@ export function getUnderlyingSessionStorage(): Storage | null {
 		// ignore
 	}
 	try {
-		if (typeof globalThis !== "undefined" && (globalThis as unknown as { sessionStorage?: Storage }).sessionStorage) {
-			return (globalThis as unknown as { sessionStorage?: Storage }).sessionStorage ?? null;
+		if (typeof globalThis !== "undefined" && "sessionStorage" in globalThis && globalThis.sessionStorage) {
+			return globalThis.sessionStorage ?? null;
 		}
 	} catch {
 		// ignore

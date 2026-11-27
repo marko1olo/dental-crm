@@ -67,13 +67,15 @@ export interface CropBox {
   max: [number, number, number];
 }
 
+
+function freezeCropPreset(min: Vec3, max: Vec3): Readonly<CropBox> {
+  return Object.freeze({ min, max });
+}
+
 /**
  * Full uncropped volume box sentinel.
  */
-export const NO_CROP: Readonly<CropBox> = Object.freeze({
-  min: [0, 0, 0] as [number, number, number],
-  max: [1, 1, 1] as [number, number, number],
-});
+export const NO_CROP: Readonly<CropBox> = freezeCropPreset([0, 0, 0], [1, 1, 1]);
 
 /**
  * World-space plane definition for volumetric mappers and raymarchers.
@@ -85,11 +87,14 @@ export interface ClipPlaneParam {
 }
 
 /** Standard Cartesian axes in 3D: +X, +Y, +Z */
-export const AXES_3D: readonly Vec3[] = [
+export const AXES_3D: readonly [Vec3, Vec3, Vec3] = [
   [1, 0, 0],
   [0, 1, 0],
   [0, 0, 1],
 ];
+
+const AXIS_INDICES: readonly [0, 1, 2] = [0, 1, 2];
+
 
 /**
  * Discrete voxel index range for a cropped sub-volume.
@@ -133,40 +138,19 @@ export interface SubVolumeMemoryEstimate {
 export const DENTAL_CROP_PRESETS = {
   FULL: NO_CROP,
   /** Upper jaw (Maxilla + maxillary sinus floor) */
-  MAXILLA: Object.freeze({
-    min: [0.0, 0.0, 0.45] as [number, number, number],
-    max: [1.0, 0.85, 1.0] as [number, number, number],
-  } as CropBox),
+  MAXILLA: freezeCropPreset([0.0, 0.0, 0.45], [1.0, 0.85, 1.0]),
   /** Lower jaw (Mandible + mandibular canal + chin) */
-  MANDIBLE: Object.freeze({
-    min: [0.0, 0.0, 0.0] as [number, number, number],
-    max: [1.0, 0.85, 0.55] as [number, number, number],
-  } as CropBox),
+  MANDIBLE: freezeCropPreset([0.0, 0.0, 0.0], [1.0, 0.85, 0.55]),
   /** Upper Right Quadrant 1 (teeth 18..11) */
-  QUADRANT_1: Object.freeze({
-    min: [0.5, 0.0, 0.45] as [number, number, number],
-    max: [1.0, 0.85, 1.0] as [number, number, number],
-  } as CropBox),
+  QUADRANT_1: freezeCropPreset([0.5, 0.0, 0.45], [1.0, 0.85, 1.0]),
   /** Upper Left Quadrant 2 (teeth 21..28) */
-  QUADRANT_2: Object.freeze({
-    min: [0.0, 0.0, 0.45] as [number, number, number],
-    max: [0.5, 0.85, 1.0] as [number, number, number],
-  } as CropBox),
+  QUADRANT_2: freezeCropPreset([0.0, 0.0, 0.45], [0.5, 0.85, 1.0]),
   /** Lower Left Quadrant 3 (teeth 31..38) */
-  QUADRANT_3: Object.freeze({
-    min: [0.0, 0.0, 0.0] as [number, number, number],
-    max: [0.5, 0.85, 0.55] as [number, number, number],
-  } as CropBox),
+  QUADRANT_3: freezeCropPreset([0.0, 0.0, 0.0], [0.5, 0.85, 0.55]),
   /** Lower Right Quadrant 4 (teeth 48..41) */
-  QUADRANT_4: Object.freeze({
-    min: [0.5, 0.0, 0.0] as [number, number, number],
-    max: [1.0, 0.85, 0.55] as [number, number, number],
-  } as CropBox),
+  QUADRANT_4: freezeCropPreset([0.5, 0.0, 0.0], [1.0, 0.85, 0.55]),
   /** Anterior aesthetic zone (teeth 13..23 / 33..43) */
-  ANTERIOR_ZONE: Object.freeze({
-    min: [0.25, 0.0, 0.1] as [number, number, number],
-    max: [0.75, 0.45, 0.9] as [number, number, number],
-  } as CropBox),
+  ANTERIOR_ZONE: freezeCropPreset([0.25, 0.0, 0.1], [0.75, 0.45, 0.9]),
 } as const;
 
 // ── Normalization & Validation ─────────────────────────────────
@@ -193,9 +177,9 @@ export function normalizeCropBox(crop: CropBox): CropBox {
  */
 export function isCropActive(crop: CropBox, tolerance = 0.001): boolean {
   const norm = normalizeCropBox(crop);
-  for (let a = 0; a < 3; a++) {
-    const minVal = norm.min[a as 0 | 1 | 2]!;
-    const maxVal = norm.max[a as 0 | 1 | 2]!;
+  for (const a of AXIS_INDICES) {
+    const minVal = norm.min[a];
+    const maxVal = norm.max[a];
     if (minVal > tolerance || maxVal < 1.0 - tolerance) {
       return true;
     }
@@ -223,24 +207,24 @@ export function clipPlanes(
   const norm = normalizeCropBox(crop);
   const planes: ClipPlaneParam[] = [];
 
-  for (let a = 0; a < 3; a++) {
-    const bminA = bmin[a as 0 | 1 | 2]!;
-    const bmaxA = bmax[a as 0 | 1 | 2]!;
+  for (const a of AXIS_INDICES) {
+    const bminA = bmin[a];
+    const bmaxA = bmax[a];
     const span = bmaxA - bminA;
-    const pos = AXES_3D[a]!;
+    const pos = AXES_3D[a];
     const neg: Vec3 = [-pos[0], -pos[1], -pos[2]];
 
-    const normMin = norm.min[a as 0 | 1 | 2]!;
-    const normMax = norm.max[a as 0 | 1 | 2]!;
+    const normMin = norm.min[a];
+    const normMax = norm.max[a];
 
     if (normMin > tolerance) {
-      const o: Vec3 = [bmin[0]!, bmin[1]!, bmin[2]!];
+      const o: Vec3 = [bmin[0], bmin[1], bmin[2]];
       o[a] = bminA + normMin * span;
       planes.push({ origin: o, normal: pos }); // keep coord >= lo
     }
 
     if (normMax < 1.0 - tolerance) {
-      const o: Vec3 = [bmin[0]!, bmin[1]!, bmin[2]!];
+      const o: Vec3 = [bmin[0], bmin[1], bmin[2]];
       o[a] = bminA + normMax * span;
       planes.push({ origin: o, normal: neg }); // keep coord <= hi
     }
@@ -279,18 +263,18 @@ export function isPointInsideCropBox(
   tolerance = 1e-5,
 ): boolean {
   const norm = normalizeCropBox(crop);
-  const px = Array.isArray(p) ? p[0]! : p.x;
-  const py = Array.isArray(p) ? p[1]! : p.y;
-  const pz = Array.isArray(p) ? p[2]! : p.z;
+  const px = Array.isArray(p) ? p[0] : p.x;
+  const py = Array.isArray(p) ? p[1] : p.y;
+  const pz = Array.isArray(p) ? p[2] : p.z;
   const pt: [number, number, number] = [px, py, pz];
 
-  for (let a = 0; a < 3; a++) {
-    const bminA = bmin[a as 0 | 1 | 2]!;
-    const bmaxA = bmax[a as 0 | 1 | 2]!;
+  for (const a of AXIS_INDICES) {
+    const bminA = bmin[a];
+    const bmaxA = bmax[a];
     const span = bmaxA - bminA;
-    const lo = bminA + norm.min[a as 0 | 1 | 2]! * span;
-    const hi = bminA + norm.max[a as 0 | 1 | 2]! * span;
-    const ptA = pt[a as 0 | 1 | 2]!;
+    const lo = bminA + norm.min[a] * span;
+    const hi = bminA + norm.max[a] * span;
+    const ptA = pt[a];
     if (ptA < lo - tolerance || ptA > hi + tolerance) {
       return false;
     }
@@ -308,15 +292,15 @@ export function isNormalizedPointInsideCropBox(
   tolerance = 1e-5,
 ): boolean {
   const norm = normalizeCropBox(crop);
-  const px = Array.isArray(normP) ? normP[0]! : normP.x;
-  const py = Array.isArray(normP) ? normP[1]! : normP.y;
-  const pz = Array.isArray(normP) ? normP[2]! : normP.z;
+  const px = Array.isArray(normP) ? normP[0] : normP.x;
+  const py = Array.isArray(normP) ? normP[1] : normP.y;
+  const pz = Array.isArray(normP) ? normP[2] : normP.z;
   const pt: [number, number, number] = [px, py, pz];
 
-  for (let a = 0; a < 3; a++) {
-    const ptA = pt[a as 0 | 1 | 2]!;
-    const minA = norm.min[a as 0 | 1 | 2]!;
-    const maxA = norm.max[a as 0 | 1 | 2]!;
+  for (const a of AXIS_INDICES) {
+    const ptA = pt[a];
+    const minA = norm.min[a];
+    const maxA = norm.max[a];
     if (ptA < minA - tolerance || ptA > maxA + tolerance) {
       return false;
     }
@@ -333,15 +317,15 @@ export function doesPointSatisfyClipPlanes(
   planes: readonly ClipPlaneParam[],
   tolerance = 1e-5,
 ): boolean {
-  const px = Array.isArray(p) ? p[0]! : p.x;
-  const py = Array.isArray(p) ? p[1]! : p.y;
-  const pz = Array.isArray(p) ? p[2]! : p.z;
+  const px = Array.isArray(p) ? p[0] : p.x;
+  const py = Array.isArray(p) ? p[1] : p.y;
+  const pz = Array.isArray(p) ? p[2] : p.z;
 
   for (const plane of planes) {
-    const dx = px - plane.origin[0]!;
-    const dy = py - plane.origin[1]!;
-    const dz = pz - plane.origin[2]!;
-    const dot = dx * plane.normal[0]! + dy * plane.normal[1]! + dz * plane.normal[2]!;
+    const dx = px - plane.origin[0];
+    const dy = py - plane.origin[1];
+    const dz = pz - plane.origin[2];
+    const dot = dx * plane.normal[0] + dy * plane.normal[1] + dz * plane.normal[2];
     if (dot < -tolerance) {
       return false;
     }
@@ -427,14 +411,14 @@ export function worldBoundsFromCropBox(
 ): { min: Vec3; max: Vec3 } {
   const norm = normalizeCropBox(crop);
   const min: Vec3 = [
-    bmin[0]! + norm.min[0] * (bmax[0]! - bmin[0]!),
-    bmin[1]! + norm.min[1] * (bmax[1]! - bmin[1]!),
-    bmin[2]! + norm.min[2] * (bmax[2]! - bmin[2]!),
+    bmin[0] + norm.min[0] * (bmax[0] - bmin[0]),
+    bmin[1] + norm.min[1] * (bmax[1] - bmin[1]),
+    bmin[2] + norm.min[2] * (bmax[2] - bmin[2]),
   ];
   const max: Vec3 = [
-    bmin[0]! + norm.max[0] * (bmax[0]! - bmin[0]!),
-    bmin[1]! + norm.max[1] * (bmax[1]! - bmin[1]!),
-    bmin[2]! + norm.max[2] * (bmax[2]! - bmin[2]!),
+    bmin[0] + norm.max[0] * (bmax[0] - bmin[0]),
+    bmin[1] + norm.max[1] * (bmax[1] - bmin[1]),
+    bmin[2] + norm.max[2] * (bmax[2] - bmin[2]),
   ];
   return { min, max };
 }
@@ -492,7 +476,8 @@ export function extractSubVolume(
 
       if (trackHU) {
         for (let i = 0; i < subW; i++) {
-          const val = rowSlice[i]!;
+          const val = rowSlice[i];
+          if (val === undefined) continue;
           if (val < minVoxelHU) minVoxelHU = val;
           if (val > maxVoxelHU) maxVoxelHU = val;
         }
@@ -612,9 +597,9 @@ export function expandCropBoxWithMargin(
   margin: number | [number, number, number],
 ): CropBox {
   const norm = normalizeCropBox(crop);
-  const mx = Array.isArray(margin) ? margin[0]! : margin;
-  const my = Array.isArray(margin) ? margin[1]! : margin;
-  const mz = Array.isArray(margin) ? margin[2]! : margin;
+  const mx = Array.isArray(margin) ? margin[0] : margin;
+  const my = Array.isArray(margin) ? margin[1] : margin;
+  const mz = Array.isArray(margin) ? margin[2] : margin;
 
   return {
     min: [

@@ -18,10 +18,13 @@ import {
 	generateMacCommandShortcut,
 	type DicomArchiveInspectionResult,
 } from "@dental/shared";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import {
 	parseDicomIngestBuffer,
 	type DicomIngestMetadata,
 } from "../dicomIngestMetadataParser.js";
+
+const logger = createApiLogger("dicomArchiveInspector");
 import {
 	ZIP_EOCD_SEARCH_WINDOW,
 	ZIP_MAX_HEADER_PREFIX,
@@ -99,7 +102,10 @@ export async function readZipEntryPrefix(
 					await once(inflater, "drain");
 				}
 				inflater.end();
-			})().catch(() => finish(null));
+			})().catch((err: unknown) => {
+				logger.debug({ err: safeLogError(err), entryName: entry.name }, "ZIP prefix decompression failed");
+				finish(null);
+			});
 		});
 	}
 
@@ -118,7 +124,8 @@ export async function inspectZipForDicom(
 	let stats;
 	try {
 		stats = await stat(filePath);
-	} catch {
+	} catch (err: unknown) {
+		logger.debug({ err: safeLogError(err), filePath }, "ZIP archive stat failed");
 		return { isDicomArchive: false, sliceCount: 0, totalArchiveBytes: 0, dicomFileNames: [], confidence: 0 };
 	}
 
@@ -247,8 +254,8 @@ export async function inspectZipForDicom(
 		let metadata: DicomIngestMetadata | null = null;
 		try {
 			metadata = parseDicomIngestBuffer(prefixBuffer);
-		} catch {
-			// если буфер обрезан, используем базовые данные
+		} catch (err: unknown) {
+			logger.debug({ err: safeLogError(err), filePath }, "DICOM ingest metadata parse failed for truncated ZIP prefix");
 		}
 
 		const sliceCount = finalCandidates.length;
@@ -483,8 +490,8 @@ export async function unpackZipArchive(
 				if (path.basename(firstSlice).toLowerCase() !== "volume_multiframe.dcm") {
 					try {
 						await copyFile(firstSlice, targetVolumePath);
-					} catch {
-						// fallback
+					} catch (err: unknown) {
+						logger.warn({ err: safeLogError(err), firstSlice, targetVolumePath }, "Failed to copy multiframe DICOM slice");
 					}
 				}
 			}
@@ -500,8 +507,8 @@ export async function unpackZipArchive(
 					const targetSlicePath = path.join(slicesDir, `slice_${pad}.dcm`);
 					try {
 						await copyFile(srcSlice, targetSlicePath);
-					} catch {
-						// fallback
+					} catch (err: unknown) {
+						logger.warn({ err: safeLogError(err), srcSlice, targetSlicePath }, "Failed to copy DICOM series slice");
 					}
 				}
 			}
@@ -522,8 +529,8 @@ export async function unpackZipArchive(
 			if (os.platform() !== "win32") {
 				try {
 					await chmod(macCommandPath, 0o755);
-				} catch {
-					// ignore chmod error
+				} catch (err: unknown) {
+					logger.debug({ err: safeLogError(err), macCommandPath }, "chmod 0755 skipped for macOS command shortcut");
 				}
 			}
 

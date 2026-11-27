@@ -155,8 +155,8 @@ export async function cacheUpcomingVisit(visit: UpcomingVisit): Promise<void> {
 	// Always update localStorage as immediate synchronous fallback
 	try {
 		safeLocalStorageSetItem(LOCAL_STORAGE_UPCOMING_VISIT_KEY, JSON.stringify(enrichedVisit));
-	} catch {
-		// quota exceeded or private mode ignore
+	} catch (err) {
+		logger.warn("localStorage cacheUpcomingVisit fallback error", err);
 	}
 }
 
@@ -193,8 +193,8 @@ export async function getCachedUpcomingVisit(): Promise<UpcomingVisit | null> {
 		if (raw) {
 			return JSON.parse(raw) as UpcomingVisit;
 		}
-	} catch {
-		// parse error
+	} catch (err) {
+		logger.warn("localStorage getCachedUpcomingVisit parse error", err);
 	}
 
 	return null;
@@ -218,8 +218,8 @@ export async function clearCachedUpcomingVisit(): Promise<void> {
 
 	try {
 		safeLocalStorageRemoveItem(LOCAL_STORAGE_UPCOMING_VISIT_KEY);
-	} catch {
-		// ignore
+	} catch (err) {
+		logger.warn("localStorage clearCachedUpcomingVisit error", err);
 	}
 }
 
@@ -261,8 +261,8 @@ export async function enqueueOfflinePatientBooking(
 		const queue: OfflinePatientBookingRequest[] = raw ? JSON.parse(raw) : [];
 		queue.push(booking);
 		safeLocalStorageSetItem(LOCAL_STORAGE_BOOKING_QUEUE_KEY, JSON.stringify(queue));
-	} catch {
-		// ignore
+	} catch (err) {
+		logger.warn("localStorage enqueueOfflinePatientBooking error", err);
 	}
 
 	// Request Background Sync if Service Worker SyncManager is available
@@ -295,8 +295,8 @@ export async function getQueuedOfflinePatientBookings(): Promise<OfflinePatientB
 		if (raw) {
 			return JSON.parse(raw) as OfflinePatientBookingRequest[];
 		}
-	} catch {
-		// ignore
+	} catch (err) {
+		logger.warn("localStorage getQueuedOfflinePatientBookings parse error", err);
 	}
 
 	return [];
@@ -325,8 +325,8 @@ export async function removeQueuedOfflinePatientBooking(id: string): Promise<voi
 			const filtered = queue.filter((item) => item.id !== id);
 			safeLocalStorageSetItem(LOCAL_STORAGE_BOOKING_QUEUE_KEY, JSON.stringify(filtered));
 		}
-	} catch {
-		// ignore
+	} catch (err) {
+		logger.warn("localStorage removeQueuedOfflinePatientBooking error", err);
 	}
 }
 
@@ -411,6 +411,19 @@ export async function flushOfflinePatientBookings(
 
 export const syncOfflineBookingsWithServer = flushOfflinePatientBookings;
 
+interface SyncManagerLike {
+	register(tag: string): Promise<void>;
+}
+
+function getRegistrationSyncManager(reg: ServiceWorkerRegistration): SyncManagerLike | null {
+	if (!("sync" in reg)) return null;
+	const candidate = reg.sync;
+	if (candidate && typeof candidate === "object" && "register" in candidate && typeof candidate.register === "function") {
+		return candidate as SyncManagerLike;
+	}
+	return null;
+}
+
 function requestServiceWorkerBackgroundSync(): void {
 	if (
 		typeof window !== "undefined" &&
@@ -418,12 +431,9 @@ function requestServiceWorkerBackgroundSync(): void {
 		"SyncManager" in window
 	) {
 		navigator.serviceWorker.ready
-			.then((reg) => {
-				// @ts-expect-error - SyncManager types extension
-				return reg.sync?.register?.("dente-offline-sync");
-			})
-			.catch(() => {
-				// Background sync registration not supported or denied
+			.then((reg) => getRegistrationSyncManager(reg)?.register("dente-offline-sync"))
+			.catch((err: unknown) => {
+				logger.warn("Background sync registration unsupported or denied", err);
 			});
 	}
 }
@@ -458,7 +468,8 @@ export function useOfflinePatientSync(
 		try {
 			const queue = await getQueuedOfflinePatientBookings();
 			setQueuedCount(queue.length);
-		} catch {
+		} catch (err) {
+			logger.warn("refreshQueueCount failed", err);
 			setQueuedCount(0);
 		}
 	}, []);

@@ -11,6 +11,7 @@ import * as tls from "node:tls";
 import { URL } from "node:url";
 import { type SocksClientOptions, SocksClient } from "socks";
 import type { Dispatcher } from "undici";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import {
 	DEFAULT_FALLBACK_SOCKS5_PROXY,
 	createProxiedDispatcher,
@@ -20,6 +21,18 @@ import {
 	type ProxyDispatcherOptions,
 	type ProxyProtocol,
 } from "./proxyDispatcher.js";
+
+const logger = createApiLogger("networkShield");
+
+function resolveTlsServername(connOpts: http.ClientRequestArgs, targetHost: string): string {
+	const candidateServername =
+		"servername" in connOpts && typeof connOpts.servername === "string"
+			? connOpts.servername
+			: undefined;
+	const candidateHost =
+		typeof connOpts.host === "string" ? connOpts.host : undefined;
+	return candidateServername || candidateHost || targetHost;
+}
 
 export { DEFAULT_FALLBACK_SOCKS5_PROXY };
 
@@ -209,17 +222,7 @@ class NetworkShieldSocksAgent extends https.Agent {
 					return;
 				}
 
-				const connOptsRecord = connOpts as Record<string, unknown>;
-				const candidateServername =
-					typeof connOptsRecord["servername"] === "string"
-						? connOptsRecord["servername"]
-						: undefined;
-				const candidateHost =
-					typeof connOptsRecord["host"] === "string"
-						? connOptsRecord["host"]
-						: undefined;
-				const servername =
-					candidateServername || candidateHost || targetHost;
+				const servername = resolveTlsServername(connOpts, targetHost);
 
 				const tlsSocket = tls.connect({
 					socket,
@@ -238,8 +241,8 @@ class NetworkShieldSocksAgent extends https.Agent {
 					tlsSocket.removeListener("secureConnect", onSecureConnect);
 					try {
 						socket.destroy();
-					} catch {
-						// cleanup
+					} catch (destroyErr) {
+						logger.debug({ err: safeLogError(destroyErr) }, "SOCKS TLS error socket cleanup failed");
 					}
 					emitErr(err);
 				};
@@ -312,17 +315,7 @@ class NetworkShieldHttpConnectAgent extends https.Agent {
 				return;
 			}
 
-			const connOptsRecord = connOpts as Record<string, unknown>;
-			const candidateServername =
-				typeof connOptsRecord["servername"] === "string"
-					? connOptsRecord["servername"]
-					: undefined;
-			const candidateHost =
-				typeof connOptsRecord["host"] === "string"
-					? connOptsRecord["host"]
-					: undefined;
-			const servername =
-				candidateServername || candidateHost || targetHost;
+			const servername = resolveTlsServername(connOpts, targetHost);
 
 			const tlsSocket = tls.connect({
 				socket,
@@ -341,8 +334,8 @@ class NetworkShieldHttpConnectAgent extends https.Agent {
 				tlsSocket.removeListener("secureConnect", onSecureConnect);
 				try {
 					socket.destroy();
-				} catch {
-					// cleanup
+				} catch (destroyErr) {
+					logger.debug({ err: safeLogError(destroyErr) }, "HTTP CONNECT TLS error socket cleanup failed");
 				}
 				emitErr(err);
 			};
@@ -488,8 +481,8 @@ export async function probeProxyConnectivity(
 					const latencyMs = Date.now() - startTime;
 					try {
 						info.socket.destroy();
-					} catch {
-						// ignore
+					} catch (destroyErr) {
+						logger.debug({ err: safeLogError(destroyErr) }, "SOCKS probe socket cleanup failed");
 					}
 					resolve({ success: true, latencyMs });
 				})
@@ -525,8 +518,8 @@ export async function probeProxyConnectivity(
 			const latencyMs = Date.now() - startTime;
 			try {
 				socket.destroy();
-			} catch {
-				// ignore
+			} catch (destroyErr) {
+				logger.debug({ err: safeLogError(destroyErr) }, "HTTP CONNECT probe socket cleanup failed");
 			}
 			if (res.statusCode === 200) {
 				resolve({ success: true, latencyMs });

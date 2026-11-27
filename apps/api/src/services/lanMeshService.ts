@@ -49,8 +49,11 @@ import {
 	parseMeshLeaseHeartbeatPacket,
 	verifyMeshSchemaCompatibility,
 } from "@dental/shared";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
+
+const meshLogger = createApiLogger("lanMeshService");
 import {
 	browseMdnsDenteServers,
 	getLanDiscoveryUdpSocket,
@@ -389,15 +392,15 @@ export class LanMeshService {
 		// 1. Multicast group
 		try {
 			this.udpSocket.send(packetBuffer, 0, packetBuffer.length, this.udpPort, "239.255.255.250");
-		} catch {
-			// Best-effort
+		} catch (err) {
+			meshLogger.debug({ err: safeLogError(err) }, "LAN mesh multicast lease heartbeat skipped");
 		}
 
 		// 2. Local subnet broadcast
 		try {
 			this.udpSocket.send(packetBuffer, 0, packetBuffer.length, this.udpPort, "255.255.255.255");
-		} catch {
-			// Best-effort
+		} catch (err) {
+			meshLogger.debug({ err: safeLogError(err) }, "LAN mesh broadcast lease heartbeat skipped");
 		}
 	}
 
@@ -478,15 +481,15 @@ export class LanMeshService {
 		// 1. Multicast group
 		try {
 			this.udpSocket.send(beaconBuffer, 0, beaconBuffer.length, this.udpPort, "239.255.255.250");
-		} catch {
-			// Best-effort
+		} catch (err) {
+			meshLogger.debug({ err: safeLogError(err) }, "LAN mesh multicast discovery beacon skipped");
 		}
 
 		// 2. Local subnet broadcast
 		try {
 			this.udpSocket.send(beaconBuffer, 0, beaconBuffer.length, this.udpPort, "255.255.255.255");
-		} catch {
-			// Best-effort
+		} catch (err) {
+			meshLogger.debug({ err: safeLogError(err) }, "LAN mesh broadcast discovery beacon skipped");
 		}
 	}
 
@@ -554,8 +557,8 @@ export class LanMeshService {
 					targets.push({ ip: svc.address, port: svc.apiPort });
 				}
 			}
-		} catch {
-			// Best-effort mDNS enrichment before HTTP probe
+		} catch (err) {
+			meshLogger.debug({ err: safeLogError(err) }, "Best-effort mDNS enrichment skipped before HTTP probe");
 		}
 
 		for (const ip of candidates) {
@@ -652,8 +655,8 @@ export class LanMeshService {
 								resolve(true);
 								return;
 							}
-						} catch {
-							// Ignore parse failure
+						} catch (err) {
+							meshLogger.debug({ err: safeLogError(err), peerIp, peerPort }, "Peer handshake JSON parse failed");
 						}
 						resolve(false);
 					});

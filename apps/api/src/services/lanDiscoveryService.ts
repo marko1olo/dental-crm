@@ -112,8 +112,8 @@ export function sendLanDiscoveryUdpPacket(
 		if (useBroadcast) {
 			try {
 				sock.setBroadcast(true);
-			} catch {
-				// Ignore broadcast toggle errors on restricted adapters
+			} catch (err: unknown) {
+				logger.debug({ err: safeLogError(err), address, port }, "Broadcast toggle skipped on restricted adapter");
 			}
 		}
 		const buf = typeof payload === "string" ? Buffer.from(payload, "utf8") : payload;
@@ -161,8 +161,8 @@ export function getMacOsHardwarePorts(forceRefresh = false): Map<string, "ethern
 					}
 				}
 			}
-		} catch {
-			// Ignore if networksetup is unavailable, restricted, or timed out
+		} catch (err: unknown) {
+			logger.debug({ err: safeLogError(err) }, "macOS networksetup probe skipped");
 		}
 	}
 
@@ -651,13 +651,13 @@ export async function browseMdnsDenteServers(timeoutMs = 1500): Promise<MdnsDisc
 			settled = true;
 			try {
 				browser?.stop();
-			} catch {
-				// Ignore cleanup errors
+			} catch (err: unknown) {
+				logger.debug({ err: safeLogError(err) }, "mDNS browser stop cleanup error");
 			}
 			try {
 				mdns?.destroy();
-			} catch {
-				// Ignore cleanup errors
+			} catch (err: unknown) {
+				logger.debug({ err: safeLogError(err) }, "mDNS instance destroy cleanup error");
 			}
 			resolve(Array.from(found.values()));
 		};
@@ -770,8 +770,8 @@ export function startLanDiscoveryService(options: {
 			for (const listener of udpMessageListeners) {
 				try {
 					listener(msg, rinfo);
-				} catch {
-					// Keep discovery socket isolated from mesh listener errors
+				} catch (err: unknown) {
+					logger.debug({ err: safeLogError(err), remoteIp: rinfo.address }, "LAN discovery UDP listener error isolated");
 				}
 			}
 
@@ -839,13 +839,13 @@ export function startLanDiscoveryService(options: {
 			stop: () => {
 				try {
 					mdnsService?.stop?.();
-				} catch {
-					// Ignore mDNS stop errors
+				} catch (err: unknown) {
+					logger.debug({ err: safeLogError(err) }, "mDNS advertisement stop cleanup error");
 				}
 				try {
 					mdnsInstance?.destroy?.();
-				} catch {
-					// Ignore mDNS destroy errors
+				} catch (err: unknown) {
+					logger.debug({ err: safeLogError(err) }, "mDNS instance destroy cleanup error");
 				}
 				if (activeMdnsService === mdnsService) activeMdnsService = null;
 				if (activeBonjour === mdnsInstance) activeBonjour = null;
@@ -868,8 +868,8 @@ export function startLanDiscoveryService(options: {
 				try {
 					mdnsService?.stop?.();
 					mdnsInstance?.destroy?.();
-				} catch {
-					// Ignore cleanup errors
+				} catch (cleanupErr: unknown) {
+					logger.debug({ err: safeLogError(cleanupErr) }, "Fallback mDNS cleanup error");
 				}
 				if (activeMdnsService === mdnsService) activeMdnsService = null;
 				if (activeBonjour === mdnsInstance) activeBonjour = null;
@@ -885,16 +885,16 @@ export function stopLanDiscoveryService(): void {
 	if (activeMdnsService) {
 		try {
 			activeMdnsService.stop?.();
-		} catch {
-			// Ignore cleanup errors
+		} catch (err: unknown) {
+			logger.debug({ err: safeLogError(err) }, "Active mDNS stop cleanup error");
 		}
 		activeMdnsService = null;
 	}
 	if (activeBonjour) {
 		try {
 			activeBonjour.destroy?.();
-		} catch {
-			// Ignore cleanup errors
+		} catch (err: unknown) {
+			logger.debug({ err: safeLogError(err) }, "Active Bonjour destroy cleanup error");
 		}
 		activeBonjour = null;
 	}

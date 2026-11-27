@@ -52,7 +52,7 @@ import {
 	buildDbfFile,
 	type DbfFixtureField,
 	encodeSingleByte,
-} from "../migration/tests/fixtures.js";
+} from "../migration/lib/binaryFixtures.js";
 
 function cliOut(...args: unknown[]): void {
 	process.stdout.write(`${format(...args)}\n`);

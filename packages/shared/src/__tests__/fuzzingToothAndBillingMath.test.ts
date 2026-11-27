@@ -477,17 +477,21 @@ describe("Autonomous Red Team Fuzzing & Clinical Math Suite (@dental/shared)", (
 			assert.ok(compactW <= 320, "Compact frontal width must be <= 320px");
 		});
 
-		it("verifies canonical Wheeler 2.5D alignment constants", () => {
-			// Center X = 50.0, Center Y = 176.0, ViewBox = "0 0 100 218", badgeRadius <= 14px
-			const CX = 50.0;
-			const CY = 176.0;
-			const VIEWBOX_WIDTH = 100;
-			const VIEWBOX_HEIGHT = 218;
-			const MAX_BADGE_RADIUS = 14;
+		it("verifies canonical Wheeler 2.5D widths and deciduous frontal arch constraints via SUT", () => {
+			assert.ok(WHEELER_CELL_WIDTHS_PX.incisor.standard < WHEELER_CELL_WIDTHS_PX.canine.standard);
+			assert.ok(WHEELER_CELL_WIDTHS_PX.canine.standard < WHEELER_CELL_WIDTHS_PX.premolar.standard);
+			assert.ok(WHEELER_CELL_WIDTHS_PX.premolar.standard < WHEELER_CELL_WIDTHS_PX.molar.standard);
 
-			assert.equal(CX, VIEWBOX_WIDTH / 2);
-			assert.ok(CY < VIEWBOX_HEIGHT);
-			assert.ok(MAX_BADGE_RADIUS <= 14);
+			for (const tooth of ALL_FDI_TEETH) {
+				const compact = getWheelerCellWidthPx(tooth, "compact");
+				const standard = getWheelerCellWidthPx(tooth, "standard");
+				assert.equal(standard - compact, 4);
+			}
+
+			const pediatricFrontalWidth = calculateFrontalGroupWidthPx([83, 82, 81, 71, 72, 73], "standard");
+			assert.equal(pediatricFrontalWidth, 300);
+			assert.ok(pediatricFrontalWidth <= 320);
+			assert.throws(() => assertValidFdiToothNumber(99));
 		});
 	});
 });

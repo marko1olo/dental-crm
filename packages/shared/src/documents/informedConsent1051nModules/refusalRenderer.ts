@@ -301,6 +301,6 @@ export function generateMedicalInterventionRefusal1051nHtml(
 /**
  * Рендерер Отказа от медицинского вмешательства по Приказу Минздрава № 1051н (Приложение № 2)
  */
-export function renderMedicalInterventionRefusal1051nHtml(payload: MedicalInterventionRefusal1051nOptions | any): string {
+export function renderMedicalInterventionRefusal1051nHtml(payload: MedicalInterventionRefusal1051nOptions): string {
 	return generateMedicalInterventionRefusal1051nHtml(payload);
 }
