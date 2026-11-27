@@ -1,7 +1,6 @@
 import { kopecksToNumericString, kopecksToRubles } from "@dental/shared";
 import { and, eq, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { namedDevelopmentModeActive } from "../../accessGuard.js";
 import { defineWebhookRoute } from "../../core/routeFactories.js";
 import { withSuperuserBypass, withTenantWriteCtx } from "../../db/rls.js";
 import {
@@ -16,11 +15,13 @@ import { FiscalReceiptFactory } from "../../services/kkt/FiscalReceiptFactory.js
 import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { applyAcquiringCashboxLedgerInTx } from "../cashbox/cashlessAcquiringLedger.js";
 import { reconcileInvoiceBalanceInDb } from "../billingRoutes/invoiceBalanceReconciler.js";
-import { verifySberbankChecksum } from "./sberbankSecurityHelpers.js";
+import { verifyAndResolveAcquiringWebhook } from "./acquiringWebhookSecurity.js";
 import {
+	acquireSberTxAdvisoryLock,
 	findUniqueSberbankTxInTenant,
 	isSberSettledOrPaid,
 	isSberTerminalRefundedOrReversed,
+	reconcileAcquiringRefundInDb,
 } from "./sberbankUtils.js";
 
 /**
@@ -33,73 +34,13 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 		method: "POST",
 		path: "/api/sberbank/webhook",
 		handler: async ({ request, reply }) => {
-		const secret =
-			process.env.SBERBANK_WEBHOOK_SECRET ||
-			process.env.DENTE_WEBHOOK_SECRET ||
-			process.env.SBERBANK_SECRET_KEY;
-
-		if (!secret) {
-			if (!namedDevelopmentModeActive()) {
-				return reply.status(503).send({
-					error: "WebhookSecretNotConfigured",
-					message:
-						"Приём уведомлений от банка временно недоступен: клиника не подключила защищённую интеграцию. Обратитесь к администратору клиники.",
-				});
-			}
-		}
-
-		const body = (request.body as Record<string, unknown>) || {};
-		const query = (request.query as Record<string, unknown>) || {};
-		const payload = { ...query, ...body };
-
-		const incomingChecksum =
-			(payload.checksum as string) ||
-			(payload.sign as string) ||
-			(payload.signature as string) ||
-			(request.headers["x-dente-webhook-secret"] as string) ||
-			(request.headers["x-sberbank-signature"] as string);
-
-		if (!incomingChecksum) {
-			return reply.status(400).send({
-				error: "MissingChecksum",
-				message: "Параметр подписи/контрольной суммы (checksum) отсутствует.",
-			});
-		}
-
-		const effectiveSecret =
-			secret || (namedDevelopmentModeActive() ? "dev-sberbank-secret" : "");
-		if (!effectiveSecret) {
-			return reply.status(503).send({
-				error: "WebhookSecretNotConfigured",
-				message:
-					"Приём уведомлений от банка временно недоступен: клиника не подключила защищённую интеграцию. Обратитесь к администратору клиники.",
-			});
-		}
-		const isValidSignature = verifySberbankChecksum(
-			payload,
-			effectiveSecret,
-			incomingChecksum,
+		const verified = await verifyAndResolveAcquiringWebhook(
+			request,
+			reply,
+			"sberbank",
 		);
-
-		if (!isValidSignature) {
-			return reply.status(401).send({
-				error: "InvalidChecksum",
-				message: "Неверная подпись/контрольная сумма вебхука.",
-			});
-		}
-
-		// Signature guard passed with ZERO DB calls so far.
-		const orderId =
-			(payload.orderId as string) ||
-			(payload.mdOrder as string) ||
-			(payload.orderNumber as string);
-
-		if (!orderId) {
-			return reply.status(400).send({
-				error: "MissingOrderId",
-				message: "Параметр orderId отсутствует в запросе.",
-			});
-		}
+		if (!verified.ok) return;
+		const { orderId, payload } = verified;
 
 		const lookupRows = await withSuperuserBypass(async (tx) => {
 			return await tx
@@ -125,6 +66,7 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 		}
 
 		return await withTenantWriteCtx(targetTx.organizationId, async (tx) => {
+			await acquireSberTxAdvisoryLock(tx, targetTx.organizationId, String(orderId));
 			const lockedLookup = await findUniqueSberbankTxInTenant(
 				tx,
 				targetTx.organizationId,
@@ -198,6 +140,20 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 				operation === "reversed" ||
 				rawStatus === "reversed"
 			) {
+				if (
+					(isSberTerminalRefundedOrReversed(lockedTx.status) ||
+						lockedPayment?.status === "refunded") &&
+					lockedPayment?.status !== "paid"
+				) {
+					const lockedStatusLower = lockedTx.status.toLowerCase();
+					return reply.status(200).send({
+						success: true,
+						processed: false,
+						reason: "already_refunded",
+						status: lockedStatusLower === "reversed" ? "reversed" : "refunded",
+					});
+				}
+
 				const terminalStatus =
 					operation === "refunded" || rawStatus === "refunded"
 						? ("refunded" as const)
@@ -294,13 +250,10 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 					}
 				}
 
-				if (lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)) {
-					await reconcileInvoiceBalanceInDb(
-						tx,
-						lockedTx.organizationId,
-						lockedTx.invoiceId,
-					);
-				}
+				await reconcileAcquiringRefundInDb(tx, lockedTx.organizationId, {
+					invoiceId: lockedTx.invoiceId,
+					visitId: lockedTx.visitId,
+				});
 
 				return reply.status(200).send({
 					success: true,

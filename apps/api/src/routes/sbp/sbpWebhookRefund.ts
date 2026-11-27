@@ -1,10 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import type { TenantDb } from "../../db/rls.js";
 import { fiscalReceiptQueue, patients, payments, sberbankTransactions } from "../../db/schema.js";
-import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { FiscalReceiptFactory } from "../../services/kkt/FiscalReceiptFactory.js";
 import { applyAcquiringCashboxLedgerInTx } from "../cashbox/cashlessAcquiringLedger.js";
-import { reconcileInvoiceBalanceInDb } from "../payments/sberWebhook/paymentStateTransition.js";
+import {
+	isSberTerminalRefundedOrReversed,
+	reconcileAcquiringRefundInDb,
+} from "../sberbankRoutes/sberbankUtils.js";
 import type { SbpWebhookResult } from "./types.js";
 
 /** Handles refund operation in SBP webhook */
@@ -15,6 +17,23 @@ export async function handleSbpWebhookRefund(params: {
 	lockedPayment?: typeof payments.$inferSelect | undefined;
 }): Promise<{ statusCode: 200; body: SbpWebhookResult }> {
 	const { tx, orgId, lockedSberTx, lockedPayment } = params;
+
+	if (
+		((lockedSberTx && isSberTerminalRefundedOrReversed(lockedSberTx.status)) ||
+			lockedPayment?.status === "refunded") &&
+		lockedPayment?.status !== "paid"
+	) {
+		return {
+			statusCode: 200,
+			body: {
+				success: true,
+				processed: false,
+				reason: "already_refunded",
+				status: "REFUNDED",
+				paymentId: lockedPayment?.id ?? undefined,
+			},
+		};
+	}
 
 	if (lockedSberTx) {
 		await tx
@@ -112,10 +131,12 @@ export async function handleSbpWebhookRefund(params: {
 		}
 	}
 
-	const invoiceIdToReconcile = lockedSberTx?.invoiceId || lockedPayment?.documentId;
-	if (invoiceIdToReconcile && isValidUuid(invoiceIdToReconcile)) {
-		await reconcileInvoiceBalanceInDb(tx, orgId, invoiceIdToReconcile);
-	}
+	const invoiceIdToReconcile = lockedSberTx?.invoiceId || lockedPayment?.documentId || null;
+	const visitIdToReconcile = lockedPayment?.visitId ?? lockedSberTx?.visitId ?? null;
+	await reconcileAcquiringRefundInDb(tx, orgId, {
+		invoiceId: invoiceIdToReconcile,
+		visitId: visitIdToReconcile,
+	});
 
 	return {
 		statusCode: 200,

@@ -1,6 +1,7 @@
 import { and, eq, or } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import { payments, sberbankTransactions } from "../../db/schema.js";
+import { acquireSberTxAdvisoryLock } from "../sberbankRoutes/sberbankUtils.js";
 import { handleSbpWebhookRefund } from "./sbpWebhookRefund.js";
 import { handleSbpWebhookSuccess } from "./sbpWebhookSuccess.js";
 import type { ProcessSbpWebhookResult } from "./sbpWebhookTypes.js";
@@ -18,6 +19,7 @@ export async function processSbpWebhookTransaction(params: {
 	const mutationId = `sbp:${operationId}`;
 
 	return await withTenantCtx(orgId, async (tx) => {
+		await acquireSberTxAdvisoryLock(tx, orgId, String(operationId));
 		let lockedSberTx: typeof sberbankTransactions.$inferSelect | undefined;
 		if (targetContext.source === "sberbankTransactions") {
 			const [locked] = await tx

@@ -15,10 +15,12 @@ import { SberbankClient } from "../../services/sberbankClient.js";
 import { applyAcquiringCashboxLedgerInTx } from "../cashbox/cashlessAcquiringLedger.js";
 import { reconcileInvoiceBalanceInDb } from "../billingRoutes/invoiceBalanceReconciler.js";
 import {
+	acquireSberTxAdvisoryLock,
 	enqueueSberbankFiscalReceiptInTx,
 	findUniqueSberbankTxInTenant,
 	isSberSettledOrPaid,
 	isSberTerminalRefundedOrReversed,
+	reconcileAcquiringRefundInDb,
 } from "./sberbankUtils.js";
 import {
 	sberbankCancelReconcileBodySchema,
@@ -99,6 +101,7 @@ export async function registerSberbankCancelReconcileRoute(app: FastifyInstance)
 				}
 
 				return await withTenantWriteCtx(orgId, async (tx) => {
+					await acquireSberTxAdvisoryLock(tx, orgId, orderId);
 					const lockedLookup = await findUniqueSberbankTxInTenant(tx, orgId, orderId, true);
 					if (lockedLookup.kind === "ambiguous") {
 						return reply.status(409).send({
@@ -314,9 +317,10 @@ export async function registerSberbankCancelReconcileRoute(app: FastifyInstance)
 							}
 						}
 
-						if (lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)) {
-							await reconcileInvoiceBalanceInDb(tx, orgId, lockedTx.invoiceId);
-						}
+						await reconcileAcquiringRefundInDb(tx, orgId, {
+							invoiceId: lockedTx.invoiceId,
+							visitId: lockedTx.visitId,
+						});
 
 						return {
 							success: true,

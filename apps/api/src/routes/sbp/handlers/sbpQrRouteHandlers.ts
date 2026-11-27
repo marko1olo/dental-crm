@@ -5,6 +5,7 @@ import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { withTenantWriteCtx } from "../../../db/rls.js";
 import { patientInvoices, sberbankTransactions } from "../../../db/schema.js";
 import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
+import { acquireSberTxAdvisoryLock } from "../../sberbankRoutes/sberbankUtils.js";
 import {
 	generateSbpDynamicQrService,
 	verifySbpPayloadService,
@@ -97,6 +98,7 @@ export async function handleGenerateQr(
 		const result = generateSbpDynamicQrService(parsed.data);
 
 		if (resolvedPatientId) {
+			await acquireSberTxAdvisoryLock(tx, orgId, result.operationId);
 			await tx
 				.insert(sberbankTransactions)
 				.values({
@@ -109,7 +111,12 @@ export async function handleGenerateQr(
 					amountKopecks: BigInt(parsed.data.amountKopecks),
 					status: "pending",
 				})
-				.onConflictDoNothing();
+				.onConflictDoNothing({
+					target: [
+						sberbankTransactions.organizationId,
+						sberbankTransactions.orderId,
+					],
+				});
 		}
 
 		return { status: "ok" as const, result };

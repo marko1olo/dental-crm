@@ -9,86 +9,30 @@ import {
 	sberbankTransactions,
 	visits,
 } from "../../../db/schema.js";
-import { namedDevelopmentModeActive } from "../../../accessGuard.js";
 import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
 import { applyAcquiringCashboxLedgerInTx } from "../../cashbox/cashlessAcquiringLedger.js";
 import { reconcileInvoiceBalanceInDb } from "../../billingRoutes/invoiceBalanceReconciler.js";
+import { verifyAndResolveAcquiringWebhook } from "../../sberbankRoutes/acquiringWebhookSecurity.js";
 import {
+	acquireSberTxAdvisoryLock,
 	findUniqueSberbankTxInTenant,
 	isSberSettledOrPaid,
 	isSberTerminalRefundedOrReversed,
+	reconcileAcquiringRefundInDb,
 } from "../../sberbankRoutes/sberbankUtils.js";
-import { verifySberPosWebhookChecksum } from "./signatureVerifier.js";
 import type { SberPosTransactionStatus } from "./types.js";
 
 export { reconcileInvoiceBalanceInDb };
 
 export const webhookHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-	const secret =
-		process.env.SBERBANK_POS_WEBHOOK_SECRET ||
-		process.env.SBERBANK_WEBHOOK_SECRET ||
-		process.env.DENTE_WEBHOOK_SECRET ||
-		process.env.SBERBANK_SECRET_KEY;
-
-	if (!secret && !namedDevelopmentModeActive()) {
-		return reply.status(503).send({
-			error: "WebhookSecretNotConfigured",
-			message:
-				"Приём уведомлений от POS-терминалов Сбербанка временно недоступен: защищенный ключ не настроен.",
-		});
-	}
-
-	const body = (request.body as Record<string, unknown> | null) ?? {};
-	const query = (request.query as Record<string, unknown> | null) ?? {};
-	const payload: Record<string, unknown> = { ...query, ...body };
-
-	const incomingChecksum =
-		(typeof payload.checksum === "string" ? payload.checksum : undefined) ||
-		(typeof payload.sign === "string" ? payload.sign : undefined) ||
-		(typeof payload.signature === "string" ? payload.signature : undefined) ||
-		(typeof request.headers["x-sberbank-signature"] === "string"
-			? request.headers["x-sberbank-signature"]
-			: undefined) ||
-		(typeof request.headers["x-dente-webhook-secret"] === "string"
-			? request.headers["x-dente-webhook-secret"]
-			: undefined);
-
-	if (!incomingChecksum) {
-		return reply.status(400).send({
-			error: "MissingChecksum",
-			message: "Параметр подписи/контрольной суммы (checksum) отсутствует в теле вебхука.",
-		});
-	}
-
-	const effectiveSecret =
-		secret || (namedDevelopmentModeActive() ? "dev-sberbank-pos-secret" : "");
-
-	const isValidSignature = verifySberPosWebhookChecksum(
-		payload,
-		effectiveSecret,
-		incomingChecksum,
+	const verified = await verifyAndResolveAcquiringWebhook(
+		request,
+		reply,
+		"sber_pos",
 	);
-
-	if (!isValidSignature) {
-		return reply.status(401).send({
-			error: "InvalidChecksum",
-			message: "Неверная криптографическая подпись вебхука Сбербанк POS.",
-		});
-	}
-
-	const orderId =
-		(typeof payload.orderId === "string" ? payload.orderId : undefined) ||
-		(typeof payload.mdOrder === "string" ? payload.mdOrder : undefined) ||
-		(typeof payload.orderNumber === "string" ? payload.orderNumber : undefined) ||
-		(typeof payload.terminalTxId === "string" ? payload.terminalTxId : undefined);
-
-	if (!orderId) {
-		return reply.status(400).send({
-			error: "MissingOrderId",
-			message: "Параметр orderId отсутствует в запросе.",
-		});
-	}
+	if (!verified.ok) return;
+	const { orderId, payload } = verified;
 
 	// Find transaction in superuser bypass first to discover tenant context
 	const lookupRows = await withSuperuserBypass(async (tx) => {
@@ -115,6 +59,7 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 	}
 
 	const result = await withTenantCtx(targetTx.organizationId, async (tx) => {
+		await acquireSberTxAdvisoryLock(tx, targetTx.organizationId, String(orderId));
 		const lockedLookup = await findUniqueSberbankTxInTenant(
 			tx,
 			targetTx.organizationId,
@@ -196,6 +141,23 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 			rawStatus === "4" ||
 			rawStatus === "UNHOLD"
 		) {
+			if (
+				(isSberTerminalRefundedOrReversed(lockedTx.status) ||
+					lockedPayment?.status === "refunded") &&
+				lockedPayment?.status !== "paid"
+			) {
+				return {
+					statusCode: 200,
+					body: {
+						success: true,
+						processed: false,
+						reason: "already_refunded",
+						status: lockedTx.status,
+						orderId: lockedTx.orderId,
+					},
+				};
+			}
+
 			const nextStatus: SberPosTransactionStatus =
 				rawStatus === "REFUNDED" ? "REFUNDED" : "REVERSED";
 
@@ -237,9 +199,10 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 						),
 					);
 
-				if (lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)) {
-					await reconcileInvoiceBalanceInDb(tx, lockedTx.organizationId, lockedTx.invoiceId);
-				}
+				await reconcileAcquiringRefundInDb(tx, lockedTx.organizationId, {
+					invoiceId: lockedTx.invoiceId,
+					visitId: lockedTx.visitId,
+				});
 
 				if (refundTargetPayment && refundTargetPayment.status === "paid") {
 					const refundKopecks =

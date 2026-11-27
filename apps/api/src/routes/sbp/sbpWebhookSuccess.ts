@@ -86,7 +86,22 @@ export async function handleSbpWebhookSuccess(params: {
 		};
 	}
 
-	const targetInvoiceId = targetContext.invoiceId || lockedSberTx?.invoiceId || null;
+	let targetInvoiceId = targetContext.invoiceId || lockedSberTx?.invoiceId || null;
+	if (!targetInvoiceId && lockedPayment?.documentId && isValidUuid(lockedPayment.documentId)) {
+		const [docAsInvoice] = await tx
+			.select({ id: patientInvoices.id })
+			.from(patientInvoices)
+			.where(
+				and(
+					eq(patientInvoices.id, lockedPayment.documentId),
+					eq(patientInvoices.organizationId, orgId),
+				),
+			)
+			.limit(1);
+		if (docAsInvoice) {
+			targetInvoiceId = docAsInvoice.id;
+		}
+	}
 	if (targetInvoiceId && isValidUuid(targetInvoiceId)) {
 		const [invRow] = await tx
 			.select({ id: patientInvoices.id, patientId: patientInvoices.patientId })
@@ -137,23 +152,45 @@ export async function handleSbpWebhookSuccess(params: {
 		targetContext.documentId ||
 		lockedSberTx?.documentId ||
 		null;
-	const [insertedPayment] = await tx
-		.insert(payments)
-		.values({
-			organizationId: orgId,
-			patientId: effectivePatientId,
-			visitId: targetContext.visitId || lockedSberTx?.visitId || null,
-			documentId: resolvedDocumentId,
-			method: "online",
-			status: "paid",
-			amountRub,
-			amountKopecks: BigInt(targetAmountKopecks),
-			paidAt: new Date(),
-			clientMutationId: mutationId,
-			note: `Оплата через СБП QR (операция ${operationId})`,
-		})
-		.onConflictDoNothing({ target: [payments.organizationId, payments.clientMutationId] })
-		.returning();
+	let settledPayment: typeof payments.$inferSelect | undefined;
+	if (lockedPayment) {
+		const [updatedPayment] = await tx
+			.update(payments)
+			.set({
+				status: "paid",
+				paidAt: new Date(),
+				amountRub,
+				amountKopecks: BigInt(targetAmountKopecks),
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(payments.id, lockedPayment.id),
+					eq(payments.organizationId, orgId),
+				),
+			)
+			.returning();
+		settledPayment = updatedPayment;
+	} else {
+		const [insertedPayment] = await tx
+			.insert(payments)
+			.values({
+				organizationId: orgId,
+				patientId: effectivePatientId,
+				visitId: targetContext.visitId || lockedSberTx?.visitId || null,
+				documentId: resolvedDocumentId,
+				method: "online",
+				status: "paid",
+				amountRub,
+				amountKopecks: BigInt(targetAmountKopecks),
+				paidAt: new Date(),
+				clientMutationId: mutationId,
+				note: `Оплата через СБП QR (операция ${operationId})`,
+			})
+			.onConflictDoNothing({ target: [payments.organizationId, payments.clientMutationId] })
+			.returning();
+		settledPayment = insertedPayment;
+	}
 
 	const targetDocId = targetContext.documentId || lockedSberTx?.documentId;
 	if (targetDocId) {
@@ -172,16 +209,16 @@ export async function handleSbpWebhookSuccess(params: {
 		await reconcileInvoiceBalanceInDb(tx, orgId, targetInvoiceId);
 	}
 
-	// Only enqueue 54-FZ receipt & update cashless shift ledger if payment row was genuinely inserted
-	const resolvedPaymentId = insertedPayment?.id || lockedPayment?.id || null;
-	if (insertedPayment) {
+	// Only enqueue 54-FZ receipt & update cashless shift ledger if payment row was genuinely settled
+	const resolvedPaymentId = settledPayment?.id || lockedPayment?.id || null;
+	if (settledPayment) {
 		await applyAcquiringCashboxLedgerInTx(tx, {
 			organizationId: orgId,
 			direction: "income",
 			amountKopecks: targetAmountKopecks,
 			paymentMethod: "online",
 			patientId: effectivePatientId,
-			paymentId: insertedPayment.id,
+			paymentId: settledPayment.id,
 			invoiceId: targetInvoiceId,
 			reasonText: `Оплата через СБП QR (операция ${operationId})`,
 			sourceTag: mutationId,
@@ -213,7 +250,7 @@ export async function handleSbpWebhookSuccess(params: {
 
 		await tx.insert(fiscalReceiptQueue).values({
 			organizationId: orgId,
-			paymentId: insertedPayment.id,
+			paymentId: settledPayment.id,
 			visitId: targetVisitId ?? undefined,
 			receiptType: "income",
 			status: "pending_print",
@@ -221,7 +258,7 @@ export async function handleSbpWebhookSuccess(params: {
 				...ffdPayload,
 				clientMutationId: mutationId,
 				invoiceId: targetInvoiceId || null,
-				paymentId: insertedPayment.id,
+				paymentId: settledPayment.id,
 				operationId,
 				amountRub,
 				amountKopecks: targetAmountKopecks,

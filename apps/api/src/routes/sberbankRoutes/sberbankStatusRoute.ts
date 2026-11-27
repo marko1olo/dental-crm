@@ -1,5 +1,5 @@
 import { kopecksToRubles } from "@dental/shared";
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
 import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
@@ -15,12 +15,14 @@ import { SberbankClient } from "../../services/sberbankClient.js";
 import { applyAcquiringCashboxLedgerInTx } from "../cashbox/cashlessAcquiringLedger.js";
 import { reconcileInvoiceBalanceInDb } from "../billingRoutes/invoiceBalanceReconciler.js";
 import {
+	acquireSberTxAdvisoryLock,
 	enqueueSberbankFiscalReceiptInTx,
 	findUniqueSberbankTxInTenant,
 	isSberPendingOrHeld,
 	isSberSettledOrPaid,
 	isSberTerminalRefundedOrReversed,
 	mapSberbankOrderStatus,
+	reconcileAcquiringRefundInDb,
 } from "./sberbankUtils.js";
 import { sberbankStatusFastifySchema, sberbankStatusParamsSchema } from "./types.js";
 
@@ -130,9 +132,7 @@ export async function registerSberbankStatusRoutes(app: FastifyInstance): Promis
 				const mappedStatus = mapSberbankOrderStatus(sberStatus.orderStatus);
 
 				return await withTenantWriteCtx(orgId, async (tx) => {
-					await tx.execute(
-						sql`SELECT pg_advisory_xact_lock(hashtext(${orgId}), hashtext('sberbank_status:' || ${orderId}))`,
-					);
+					await acquireSberTxAdvisoryLock(tx, orgId, orderId);
 
 					const lookup = await findUniqueSberbankTxInTenant(tx, orgId, orderId, true);
 					if (lookup.kind === "ambiguous") {
@@ -194,6 +194,20 @@ export async function registerSberbankStatusRoutes(app: FastifyInstance): Promis
 					}
 
 					if (mappedStatus === "refunded") {
+						if (
+							(isSberTerminalRefundedOrReversed(lockedTx.status) ||
+								lockedPayment?.status === "refunded") &&
+							lockedPayment?.status !== "paid"
+						) {
+							return {
+								success: true,
+								processed: false,
+								reason: "already_refunded",
+								status: lockedTx.status,
+								amount: Number(lockedTx.amountKopecks),
+							};
+						}
+
 						await tx
 							.update(sberbankTransactions)
 							.set({ status: "refunded", updatedAt: new Date() })
@@ -245,9 +259,10 @@ export async function registerSberbankStatusRoutes(app: FastifyInstance): Promis
 							});
 						}
 
-						if (lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)) {
-							await reconcileInvoiceBalanceInDb(tx, orgId, lockedTx.invoiceId);
-						}
+						await reconcileAcquiringRefundInDb(tx, orgId, {
+							invoiceId: lockedTx.invoiceId,
+							visitId: lockedTx.visitId,
+						});
 
 						return {
 							success: true,

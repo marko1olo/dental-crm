@@ -1,6 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import { registerSberbankCancelReconcileRoute } from "./sberbankCancelReconcileRoute.js";
-import { registerSberbankPayRoute } from "./sberbankPayRoute.js";
+import {
+	registerSberbankPayRoute,
+	type RegisterSberbankPayRouteOptions,
+} from "./sberbankPayRoute.js";
 import { registerSberbankStatusRoutes } from "./sberbankStatusRoute.js";
 
 /**
@@ -10,8 +13,11 @@ import { registerSberbankStatusRoutes } from "./sberbankStatusRoute.js";
  * - POST /api/sberbank/status/:orderId
  * - POST /api/sberbank/cancel-or-reconcile
  */
-export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promise<void> {
-	await registerSberbankPayRoute(app);
+export async function registerSberbankPaymentRoutes(
+	app: FastifyInstance,
+	options?: RegisterSberbankPayRouteOptions,
+): Promise<void> {
+	await registerSberbankPayRoute(app, options);
 	await registerSberbankStatusRoutes(app);
 	await registerSberbankCancelReconcileRoute(app);
 }

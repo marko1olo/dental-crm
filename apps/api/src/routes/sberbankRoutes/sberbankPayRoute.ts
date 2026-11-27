@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
@@ -13,10 +12,32 @@ import {
 import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { requirePermission } from "../../security/permissions.js";
 import { SberbankClient } from "../../services/sberbankClient.js";
-import { resolveSberReturnUrl } from "./sberbankUtils.js";
+import {
+	acquireSberTxAdvisoryLock,
+	resolveSberReturnUrl,
+} from "./sberbankUtils.js";
 import { sberbankPayBodySchema, sberbankPayFastifySchema } from "./types.js";
 
-export async function registerSberbankPayRoute(app: FastifyInstance): Promise<void> {
+export interface SberbankPayGatewayClient {
+	registerOrder(
+		orderNumber: string,
+		amountKopecks: number,
+		returnUrl: string,
+	): Promise<{
+		orderId?: string | undefined;
+		formUrl?: string | undefined;
+		errorMessage?: string | undefined;
+	}>;
+}
+
+export interface RegisterSberbankPayRouteOptions {
+	createClient?: (() => SberbankPayGatewayClient) | undefined;
+}
+
+export async function registerSberbankPayRoute(
+	app: FastifyInstance,
+	options?: RegisterSberbankPayRouteOptions,
+): Promise<void> {
 	app.post(
 		"/api/sberbank/pay",
 		{
@@ -48,16 +69,15 @@ export async function registerSberbankPayRoute(app: FastifyInstance): Promise<vo
 					: undefined);
 			const idempotencyKey = rawIdempotencyKey?.trim();
 
-			if (idempotencyKey) {
-				if (!isValidUuid(idempotencyKey)) {
-					return reply.status(400).send({
-						error: "IdempotencyKeyRequired",
-						message: "Заголовок Idempotency-Key должен быть корректным UUID.",
-					});
-				}
-				reply.header("Idempotency-Key", idempotencyKey);
-				reply.header("X-Idempotency-Key", idempotencyKey);
+			if (!idempotencyKey || !isValidUuid(idempotencyKey)) {
+				return reply.status(400).send({
+					error: "IdempotencyKeyRequired",
+					message:
+						"Заголовок Idempotency-Key (корректный UUID) обязателен для инициализации оплаты.",
+				});
 			}
+			reply.header("Idempotency-Key", idempotencyKey);
+			reply.header("X-Idempotency-Key", idempotencyKey);
 
 			const { patientId, amountKopecks, visitId, documentId, invoiceId } = parsed.data;
 
@@ -167,9 +187,11 @@ export async function registerSberbankPayRoute(app: FastifyInstance): Promise<vo
 				});
 			}
 
-			let client: SberbankClient;
+			let client: SberbankPayGatewayClient;
 			try {
-				client = new SberbankClient();
+				client = options?.createClient
+					? options.createClient()
+					: new SberbankClient();
 			} catch {
 				return reply.status(501).send({
 					error: "PaymentGatewayNotConfigured",
@@ -178,7 +200,7 @@ export async function registerSberbankPayRoute(app: FastifyInstance): Promise<vo
 				});
 			}
 
-			const orderNumber = idempotencyKey || crypto.randomUUID();
+			const orderNumber = idempotencyKey;
 
 			try {
 				const res = await client.registerOrder(orderNumber, amountKopecks, returnUrl);
@@ -192,16 +214,25 @@ export async function registerSberbankPayRoute(app: FastifyInstance): Promise<vo
 
 				const sberbankOrderId = res.orderId;
 				await withTenantWriteCtx(organizationId, async (tx) => {
-					await tx.insert(sberbankTransactions).values({
-						organizationId,
-						patientId,
-						visitId: visitId || null,
-						documentId: documentId || null,
-						invoiceId: invoiceId || null,
-						orderId: sberbankOrderId,
-						amountKopecks: BigInt(amountKopecks),
-						status: "pending",
-					});
+					await acquireSberTxAdvisoryLock(tx, organizationId, sberbankOrderId);
+					await tx
+						.insert(sberbankTransactions)
+						.values({
+							organizationId,
+							patientId,
+							visitId: visitId || null,
+							documentId: documentId || null,
+							invoiceId: invoiceId || null,
+							orderId: sberbankOrderId,
+							amountKopecks: BigInt(amountKopecks),
+							status: "pending",
+						})
+						.onConflictDoNothing({
+							target: [
+								sberbankTransactions.organizationId,
+								sberbankTransactions.orderId,
+							],
+						});
 				});
 
 				return { success: true, orderId: res.orderId, formUrl: res.formUrl };

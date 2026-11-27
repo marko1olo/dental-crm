@@ -62,6 +62,9 @@ export const organizations = pgTable("organizations", {
 	 * Пустое значение означает «клиника ещё не настраивалась».
 	 */
 	workspaceFeatureFlags: jsonb("workspace_feature_flags"),
+	sberbankWebhookSecret: text("sberbank_webhook_secret"),
+	sbpWebhookSecret: text("sbp_webhook_secret"),
+	sberPosWebhookSecret: text("sber_pos_webhook_secret"),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),

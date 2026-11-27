@@ -45,13 +45,27 @@ export async function locateSbpWebhookContext(
 			.limit(1);
 
 		if (existingPayment) {
+			let resolvedInvoiceId: string | null = null;
+			if (existingPayment.documentId && isValidUuid(existingPayment.documentId)) {
+				const [invRow] = await tx
+					.select({ id: patientInvoices.id })
+					.from(patientInvoices)
+					.where(
+						and(
+							eq(patientInvoices.id, existingPayment.documentId),
+							eq(patientInvoices.organizationId, existingPayment.organizationId),
+						),
+					)
+					.limit(1);
+				resolvedInvoiceId = invRow?.id ?? null;
+			}
 			return {
 				source: "payments" as const,
 				organizationId: existingPayment.organizationId,
 				patientId: existingPayment.patientId,
 				visitId: existingPayment.visitId,
 				documentId: existingPayment.documentId,
-				invoiceId: null,
+				invoiceId: resolvedInvoiceId,
 				amountKopecks:
 					existingPayment.amountKopecks !== null && existingPayment.amountKopecks !== undefined
 						? Number(existingPayment.amountKopecks)

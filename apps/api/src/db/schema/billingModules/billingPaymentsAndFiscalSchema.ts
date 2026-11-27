@@ -11,6 +11,7 @@ import {
 	text,
 	timestamp,
 	unique,
+	uniqueIndex,
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
@@ -235,6 +236,10 @@ export const sberbankTransactions = pgTable(
 		orgCreatedIdx: index("sberbank_transactions_org_created_idx").on(
 			t.organizationId,
 			t.createdAt,
+		),
+		orgOrderUniqueIdx: uniqueIndex("sberbank_transactions_org_order_id_uidx").on(
+			t.organizationId,
+			t.orderId,
 		),
 	}),
 );
