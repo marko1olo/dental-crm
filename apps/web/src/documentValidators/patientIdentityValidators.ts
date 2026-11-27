@@ -1,9 +1,11 @@
+import { resolveDocumentState } from "../documentLogic/documentStateHydrator";
 import { requiredDocumentField as defaultRequiredDocumentField } from "./regexRules";
 import type { DocumentState, ValidationResult } from "./types";
 
 export function validatePatientIntakeQuestionnaire(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const allowBlankForPrint = Boolean(state.allowBlankForPrint);
 	if (allowBlankForPrint) {
 		return null;
@@ -64,8 +66,9 @@ export function validatePatientIntakeQuestionnaire(
 }
 
 export function validateMinorLegalRepresentativeConsent(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		documentTextLines,
 		minorRepresentativeFullNameValue,
@@ -148,8 +151,9 @@ export function validateMinorLegalRepresentativeConsent(
 }
 
 export function validatePersonalDataProcessingConsent(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		documentTextLines,
 		clinicProfileDraft,
@@ -207,8 +211,9 @@ export function validatePersonalDataProcessingConsent(
 }
 
 export function validateMedicalRecordCopyRequest(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		documentTextLines,
 		documentPatient,
@@ -256,8 +261,9 @@ export function validateMedicalRecordCopyRequest(
 }
 
 export function validateMedicalDocumentReleaseReceipt(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		documentTextLines,
 		selectedReleaseSourceRequestDocumentId,

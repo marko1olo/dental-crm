@@ -92,13 +92,18 @@ export function calculateUnsharpMaskWeights(modeId: string): {
 	threshold: number;
 	laplacianWeight: number;
 } {
-	const preset = VATECH_EZDENT_IP_MODES.find((p) => p.id === modeId) || VATECH_EZDENT_IP_MODES[0]!;
-	const normalizedAmount = Math.max(0, Math.min(300, preset.usmAmount)) / 100.0;
+	const defaultPreset = VATECH_EZDENT_IP_MODES[0];
+	const preset = VATECH_EZDENT_IP_MODES.find((p) => p.id === modeId) ?? defaultPreset;
+	if (!preset) {
+		return { amount: 0, radius: 0, threshold: 0, laplacianWeight: 0 };
+	}
+	const usmGain = Math.max(0, Math.min(300, preset.usmAmount));
+	const normalizedGain = usmGain * 0.01;
 	return {
 		amount: preset.usmAmount,
 		radius: preset.usmRadius,
 		threshold: preset.histEquThreshold,
-		laplacianWeight: Number((normalizedAmount * 0.8).toFixed(3)),
+		laplacianWeight: Number((normalizedGain * 0.8).toFixed(3)),
 	};
 }
 

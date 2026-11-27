@@ -198,6 +198,28 @@ export function parseKopecks(
 	return toExactKopecks(result);
 }
 
+/**
+ * Безопасный парсинг копеек без исключений (возвращает null при некорректной строке).
+ */
+export function safeParseKopecks(
+	value: string | number | null | undefined,
+): Kopecks | null {
+	if (value === null || value === undefined || value === "") return toExactKopecks(0);
+	if (typeof value === "number") {
+		if (!Number.isFinite(value) || Number.isNaN(value)) return null;
+		if (Number.isInteger(value)) return toExactKopecks(value * KOPECKS_IN_RUBLE);
+		return safeParseKopecks(value.toFixed(2));
+	}
+	const text = value.trim();
+	const match = /^(-)?(\d+)(?:\.(\d{1,2}))?$/.exec(text);
+	if (!match) return null;
+	const [, sign, whole, fraction = ""] = match;
+	const kopecks =
+		Number(whole) * KOPECKS_IN_RUBLE + Number(fraction.padEnd(2, "0"));
+	const result = sign ? -kopecks : kopecks;
+	return toExactKopecks(result);
+}
+
 /** Рубли → копейки с защитой от нецелых чисел и плавающей точки (округление до копейки). */
 export function rublesToKopecks(rubles: number): Kopecks {
 	if (typeof rubles !== "number" || !Number.isFinite(rubles) || Number.isNaN(rubles)) {

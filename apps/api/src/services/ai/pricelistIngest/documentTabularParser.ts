@@ -6,6 +6,10 @@
 import { formatKopecksToRubles, parseKopecks, rublesToKopecks } from "@dental/shared";
 import type { PriceListIngestSourceType, ExtractedPriceInfo } from "./types.js";
 
+const MIN_VALID_PRICE_KOPECKS = rublesToKopecks(50);
+const MAX_VALID_PRICE_KOPECKS = rublesToKopecks(10_000_000);
+const DECIMAL_PRICE_CANDIDATE_RE = /^\d+(?:\.\d{1,2})?$/;
+
 // =============================================================================
 // MULTI-FORMAT LINE & TOKEN EXTRACTOR
 // =============================================================================
@@ -103,16 +107,14 @@ export function extractPriceAndTitleFromLine(rawLine: string): ExtractedPriceInf
 	const rawMatch1 = match1?.[1];
 	if (match1 && rawMatch1) {
 		const rawDigits = rawMatch1.replace(/\s+/g, "").replace("-00", ".00").replace(",", ".");
-		try {
+		if (DECIMAL_PRICE_CANDIDATE_RE.test(rawDigits)) {
 			const kopecks = parseKopecks(rawDigits);
-			if (kopecks > 0 && kopecks <= 10_000_000 * 100) {
+			if (kopecks > 0 && kopecks <= MAX_VALID_PRICE_KOPECKS) {
 				priceKopecks = kopecks;
 				priceRub = Number(formatKopecksToRubles(kopecks));
 				rawPriceString = (match1[0] ?? "").trim();
 				cleanTitle = match1.index !== undefined ? line.slice(0, match1.index).trim() : cleanTitle;
 			}
-		} catch {
-			// ignore parse failure, proceed to fallback regexes
 		}
 	}
 
@@ -138,16 +140,14 @@ export function extractPriceAndTitleFromLine(rawLine: string): ExtractedPriceInf
 		const rawMatch3 = match3?.[1];
 		if (match3 && rawMatch3) {
 			const rawDigits = rawMatch3.replace(/\s+/g, "").replace(",", ".");
-			try {
+			if (DECIMAL_PRICE_CANDIDATE_RE.test(rawDigits)) {
 				const kopecks = parseKopecks(rawDigits);
-				if (kopecks >= 50 * 100 && kopecks <= 10_000_000 * 100) {
+				if (kopecks >= MIN_VALID_PRICE_KOPECKS && kopecks <= MAX_VALID_PRICE_KOPECKS) {
 					priceKopecks = kopecks;
 					priceRub = Number(formatKopecksToRubles(kopecks));
 					rawPriceString = rawMatch3.trim();
 					cleanTitle = match3.index !== undefined ? line.slice(0, match3.index).trim() : cleanTitle;
 				}
-			} catch {
-				// ignore parse failure
 			}
 		}
 	}

@@ -12,6 +12,32 @@ import {
 
 export { setForcedLowSpecMode };
 
+function getNavigatorProperty(key: string): unknown {
+	if (typeof navigator === "undefined") {
+		return undefined;
+	}
+	return Reflect.get(navigator, key);
+}
+
+interface NetworkInformationSnapshot {
+	saveData: boolean;
+	effectiveType: string | null;
+}
+
+function getNetworkInformationSnapshot(): NetworkInformationSnapshot | null {
+	const rawConnection = getNavigatorProperty("connection");
+	if (typeof rawConnection !== "object" || rawConnection === null) {
+		return null;
+	}
+	const saveData = Reflect.get(rawConnection, "saveData") === true;
+	const rawEffectiveType = Reflect.get(rawConnection, "effectiveType");
+	const effectiveType =
+		typeof rawEffectiveType === "string" && rawEffectiveType.length > 0
+			? rawEffectiveType
+			: null;
+	return { saveData, effectiveType };
+}
+
 /**
  * Определяет, относится ли текущее устройство к категории слабых (Low-Spec / Slow HDD).
  */
@@ -58,19 +84,17 @@ export function isLowSpecDevice(): boolean {
 	}
 
 	// 2. Проверка объема RAM (Device Memory API, если доступно в Chromium)
-	const navWithMemory = navigator as unknown as { deviceMemory?: number };
-	if (typeof navWithMemory.deviceMemory === "number" && navWithMemory.deviceMemory <= 4) {
+	const deviceMemory = getNavigatorProperty("deviceMemory");
+	if (typeof deviceMemory === "number" && deviceMemory <= 4) {
 		return true;
 	}
 
 	// 3. Проверка режима экономии трафика (часто включен на слабых каналах)
-	const navWithConn = navigator as unknown as {
-		connection?: { saveData?: boolean; effectiveType?: string };
-	};
-	if (navWithConn.connection?.saveData === true) {
+	const connection = getNetworkInformationSnapshot();
+	if (connection?.saveData === true) {
 		return true;
 	}
-	const effType = navWithConn.connection?.effectiveType;
+	const effType = connection?.effectiveType;
 	if (effType === "slow-2g" || effType === "2g" || effType === "3g") {
 		return true;
 	}
@@ -94,17 +118,15 @@ export function getDeviceCapabilities(): DeviceCapabilities {
 			cores = navigator.hardwareConcurrency;
 		}
 
-		const navWithMemory = navigator as unknown as { deviceMemory?: number };
-		if (typeof navWithMemory.deviceMemory === "number") {
-			memoryGb = navWithMemory.deviceMemory;
+		const deviceMemory = getNavigatorProperty("deviceMemory");
+		if (typeof deviceMemory === "number") {
+			memoryGb = deviceMemory;
 		}
 
-		const navWithConn = navigator as unknown as {
-			connection?: { saveData?: boolean; effectiveType?: string };
-		};
-		if (navWithConn.connection) {
-			saveData = Boolean(navWithConn.connection.saveData);
-			effectiveType = navWithConn.connection.effectiveType || null;
+		const connection = getNetworkInformationSnapshot();
+		if (connection) {
+			saveData = connection.saveData;
+			effectiveType = connection.effectiveType;
 		}
 	}
 

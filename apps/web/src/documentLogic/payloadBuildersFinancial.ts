@@ -1,12 +1,14 @@
 import type { DocumentPayload, GeneratedDocument } from "@dental/shared";
 import { fromDateTimeLocalValue } from "../AppHelpers";
 import { normalizeRubAmountInput } from "../rubAmountInput";
+import { resolveDocumentState } from "./documentStateHydrator";
 import type { DocumentState } from "./types";
 
 export function buildFinancialPayload(
 	kind: GeneratedDocument["kind"],
-	state: DocumentState,
+	incomingState: DocumentState,
 ): DocumentPayload | null {
+	const state = resolveDocumentState(incomingState);
 	if (kind === "paid_medical_services_contract") {
 		const {
 			paidContractNumber,

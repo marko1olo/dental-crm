@@ -14,15 +14,16 @@ export function mapServicesToRefundableItems(
 ): RefundableInvoiceItem[] {
 	return rawServices.map((s) => {
 		const rawUnitPriceKop =
-			typeof (s as unknown as { priceKop?: number }).priceKop === "number"
-				? (s as unknown as { priceKop: number }).priceKop
+			"priceKop" in s && typeof s.priceKop === "number"
+				? s.priceKop
 				: rublesToKopecks(Number.isFinite(s.priceRub) ? s.priceRub : 0);
 		const unitPriceKop = Number.isFinite(rawUnitPriceKop) ? Math.max(0, Math.round(rawUnitPriceKop)) : 0;
 		const quantity = Number.isFinite(s.quantity) && s.quantity > 0 ? s.quantity : 1;
 		const totalAmountKop = Math.round(unitPriceKop * quantity);
+		const fallbackName = "nameRu" in s && typeof s.nameRu === "string" ? s.nameRu : "";
 		return {
 			id: s.id,
-			name: s.name || (s as unknown as { nameRu?: string }).nameRu || "Медицинская услуга",
+			name: s.name || fallbackName || "Медицинская услуга",
 			code804n: s.code804n || "A16.07.002",
 			toothNumber: s.toothNumber,
 			unitPriceKop,
@@ -31,7 +32,11 @@ export function mapServicesToRefundableItems(
 			netAmountKop: totalAmountKop,
 			doctorName: s.doctorName || doctorName,
 			commissionPct: s.commissionPct ?? doctorCommissionPct,
-			materialCostKop: rublesToKopecks(Number.isFinite(s.materialCostRub) ? s.materialCostRub! : 0),
+			materialCostKop: rublesToKopecks(
+				typeof s.materialCostRub === "number" && Number.isFinite(s.materialCostRub)
+					? s.materialCostRub
+					: 0,
+			),
 		};
 	});
 }

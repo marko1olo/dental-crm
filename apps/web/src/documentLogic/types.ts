@@ -1,4 +1,234 @@
-export type DocumentState = Record<string, any>;
+import type { DocumentPayload } from "@dental/shared";
+import type { DocumentState as StoreDocumentState } from "../store/documentStore/types";
+
+type StoreDataFields = {
+	[K in keyof StoreDocumentState as StoreDocumentState[K] extends (
+		...args: never[]
+	) => unknown
+		? never
+		: K]: StoreDocumentState[K];
+};
+
+export type DocumentTextLinesInput = string | readonly string[];
+
+export interface DocumentProfileClinicDraft {
+	clinicName?: string | null | undefined;
+	legalName?: string | null | undefined;
+	inn?: string | null | undefined;
+	address?: string | null | undefined;
+}
+
+export interface DocumentProfilePatient {
+	id?: string | null | undefined;
+	fullName?: string | null | undefined;
+	medicalCardNumber?: string | null | undefined;
+	cardNumber?: string | null | undefined;
+}
+
+export interface DocumentProfileDoctor {
+	fullName?: string | null | undefined;
+}
+
+export interface DocumentDashboardContext {
+	activeVisit?: {
+		id?: string | null | undefined;
+		complaint?: string | null | undefined;
+		diagnosis?: string | null | undefined;
+		doctorSummary?: string | null | undefined;
+		treatmentPlan?: string | null | undefined;
+	} | null | undefined;
+}
+
+export type DentalMedicalCard043uPayloadShape = NonNullable<
+	DocumentPayload["dentalMedicalCard043u"]
+>;
+
+export type ClinicalToothRowList = NonNullable<
+	DocumentPayload["treatmentPlan"]
+>["clinicalToothRows"];
+
+export type TreatmentPlanStageRowList = NonNullable<
+	DocumentPayload["treatmentPlan"]
+>["plannedStages"];
+
+export type TreatmentAcceptanceStageRowList = NonNullable<
+	DocumentPayload["treatmentPlanAcceptance"]
+>["acceptedStages"];
+
+export type InstallmentScheduleRowList = NonNullable<
+	DocumentPayload["installmentPaymentSchedule"]
+>["installments"];
+
+export type FinancialPayloadServiceLineList = NonNullable<
+	DocumentPayload["treatmentCostEstimate"]
+>["serviceLines"];
+
+export interface ResolvedDocumentState
+	extends Omit<
+		StoreDataFields,
+		| "treatmentEstimateExcludedItems"
+		| "warrantyPatientObligations"
+		| "warrantyExcludedRiskFactors"
+		| "warrantyUrgentContactReasons"
+		| "informedConsentRisks"
+		| "informedConsentAlternatives"
+		| "informedConsentAftercare"
+		| "procedureConsentPatientRiskFactors"
+		| "procedureConsentSpecificRisks"
+		| "procedureConsentAlternatives"
+		| "procedureConsentAftercare"
+		| "personalDataPurposes"
+		| "personalDataCategories"
+		| "personalDataActions"
+		| "refusalExplainedRisks"
+		| "refusalAlternatives"
+		| "refusalUrgentWarningSigns"
+		| "minorConsentRisks"
+		| "minorConsentAlternatives"
+		| "treatmentPlanGoals"
+		| "treatmentPlanAlternatives"
+		| "treatmentPlanRisks"
+		| "treatmentAcceptanceRejectedAlternatives"
+		| "treatmentAcceptanceRisks"
+		| "postVisitAllowedAfter"
+		| "postVisitRestrictions"
+		| "postVisitMedicationAndRinsePlan"
+		| "postVisitHygieneInstructions"
+		| "postVisitNutritionInstructions"
+		| "postVisitUrgentWarningSigns"
+		| "prescriptionSafetyNotes"
+		| "recordExtractSourceVisitIds"
+		| "copyRequestDocumentTypes"
+		| "releaseDocumentTypes"
+	> {
+	treatmentEstimateExcludedItems: DocumentTextLinesInput;
+	warrantyPatientObligations: DocumentTextLinesInput;
+	warrantyExcludedRiskFactors: DocumentTextLinesInput;
+	warrantyUrgentContactReasons: DocumentTextLinesInput;
+	informedConsentRisks: DocumentTextLinesInput;
+	informedConsentAlternatives: DocumentTextLinesInput;
+	informedConsentAftercare: DocumentTextLinesInput;
+	procedureConsentPatientRiskFactors: DocumentTextLinesInput;
+	procedureConsentSpecificRisks: DocumentTextLinesInput;
+	procedureConsentAlternatives: DocumentTextLinesInput;
+	procedureConsentAftercare: DocumentTextLinesInput;
+	personalDataPurposes: DocumentTextLinesInput;
+	personalDataCategories: DocumentTextLinesInput;
+	personalDataActions: DocumentTextLinesInput;
+	refusalExplainedRisks: DocumentTextLinesInput;
+	refusalAlternatives: DocumentTextLinesInput;
+	refusalUrgentWarningSigns: DocumentTextLinesInput;
+	minorConsentRisks: DocumentTextLinesInput;
+	minorConsentAlternatives: DocumentTextLinesInput;
+	treatmentPlanGoals: DocumentTextLinesInput;
+	treatmentPlanAlternatives: DocumentTextLinesInput;
+	treatmentPlanRisks: DocumentTextLinesInput;
+	treatmentAcceptanceRejectedAlternatives: DocumentTextLinesInput;
+	treatmentAcceptanceRisks: DocumentTextLinesInput;
+	postVisitAllowedAfter: DocumentTextLinesInput;
+	postVisitRestrictions: DocumentTextLinesInput;
+	postVisitMedicationAndRinsePlan: DocumentTextLinesInput;
+	postVisitHygieneInstructions: DocumentTextLinesInput;
+	postVisitNutritionInstructions: DocumentTextLinesInput;
+	postVisitUrgentWarningSigns: DocumentTextLinesInput;
+	prescriptionSafetyNotes: DocumentTextLinesInput;
+	recordExtractSourceVisitIds: DocumentTextLinesInput;
+	copyRequestDocumentTypes: DocumentTextLinesInput;
+	releaseDocumentTypes: DocumentTextLinesInput;
+
+	activeDoctor: DocumentProfileDoctor | null;
+	allowBlankForPrint: boolean;
+	clinicProfileDraft: DocumentProfileClinicDraft | null;
+	dashboard: DocumentDashboardContext | null;
+	documentPatient: DocumentProfilePatient | null;
+	inferredTreatmentArea: string | null;
+	selectedCompletedActContractDocumentId: string;
+	selectedReleaseSourceRequestDocumentId: string;
+	releaseProtectionNote: string;
+	selectedPaymentReceiptPayments: Array<{
+		id: string;
+		fiscalReceiptIssuedAt?: string | null | undefined;
+	}>;
+	selectedPaymentReceiptTotalRub: number;
+
+	documentTextLines: (value: DocumentTextLinesInput | null | undefined) => string[];
+	requiredDocumentField: (
+		value: string | null | undefined,
+		label: string,
+	) => string | null;
+	confirmedDocumentLiteral: (value: boolean, label: string) => true;
+
+	clinicalToothRowsValue: () => ClinicalToothRowList;
+	treatmentPlanStageRows: () => TreatmentPlanStageRowList;
+	treatmentAcceptanceStageRows: () => TreatmentAcceptanceStageRowList;
+	installmentScheduleInstallmentRows: () => InstallmentScheduleRowList;
+	plannedServiceLinesForFinancialPayload: () => FinancialPayloadServiceLineList;
+	dentalMedicalCard043uPayloadValue: () => DentalMedicalCard043uPayloadShape;
+	completedActFiscalReceiptLines: () => string[];
+	paymentReceiptFiscalReceiptLines: () => string[];
+	selectedTaxPaymentIdsForCurrentDocument: () => string[];
+
+	attendanceEndedAtValue: () => string;
+	attendanceSignedByValue: () => string;
+	attendanceStartedAtValue: () => string;
+	completedActDoctorFullNameValue: () => string;
+	completedActServicesSummaryValue: () => string;
+	installmentScheduleBaseDocumentTitleValue: () => string;
+	installmentSchedulePayerFullNameValue: () => string;
+	installmentScheduleResponsibleFullNameValue: () => string;
+	minorConsentDiagnosisOrIndicationValue: () => string;
+	minorConsentDoctorFullNameValue: () => string;
+	minorConsentInterventionScopeValue: () => string;
+	minorConsentPatientBirthDateValue: () => string;
+	minorConsentPatientFullNameValue: () => string;
+	minorRepresentativeFullNameValue: () => string;
+	minorRepresentativeIdentityDocumentValue: () => string;
+	minorRepresentativePhoneValue: () => string;
+	minorRepresentativeRelationshipValue: () => string;
+	paidContractCareReasonValue: () => string;
+	paidContractCustomerFullNameValue: () => string;
+	paidContractDoctorFullNameValue: () => string;
+	paidContractServiceScopeValue: () => string;
+	paymentInvoiceBankDetailsValue: () => string;
+	paymentInvoicePayerFullNameValue: () => string;
+	paymentReceiptIssuedByValue: () => string;
+	paymentReceiptPayerBirthDateValue: () => string;
+	paymentReceiptPayerFullNameValue: () => string;
+	paymentReceiptPayerIdentityDocumentValue: () => string;
+	paymentReceiptPayerInnValue: () => string;
+	paymentReceiptPayerRelationshipValue: () => string;
+	postVisitDoctorFullNameValue: () => string;
+	postVisitProcedureNameValue: () => string;
+	postVisitToothOrAreaValue: () => string;
+	recordExtractComplaintAndAnamnesisValue: () => string;
+	recordExtractDiagnosisValue: () => string;
+	recordExtractObjectiveStatusValue: () => string;
+	recordExtractTreatmentProvidedValue: () => string;
+	treatmentEstimateDoctorFullNameValue: () => string;
+	treatmentEstimatePatientOrPayerFullNameValue: () => string;
+	treatmentEstimateTreatmentBasisValue: () => string;
+	treatmentPlanClinicalReasonValue: () => string;
+	treatmentPlanDiagnosisSummaryValue: () => string;
+	treatmentPlanDoctorFullNameValue: () => string;
+	treatmentPlanTeethOrAreaValue: () => string;
+	warrantyDoctorFullNameValue: () => string;
+	warrantyLinkedActOrContractValue: () => string;
+	warrantyServiceOrWorkNameValue: () => string;
+	warrantyTeethOrAreaValue: () => string;
+
+	completedActPaidRubValue: () => number;
+	completedActTotalRubValue: () => number;
+	installmentSchedulePrepaidRubValue: () => number;
+	installmentScheduleRemainingRubValue: () => number;
+	installmentScheduleTotalRubValue: () => number;
+	paidContractTotalRubValue: () => number;
+	paymentInvoiceTotalRubValue: () => number;
+	treatmentAcceptanceTotalRubValue: () => number;
+	treatmentEstimateTotalRubValue: () => number;
+	treatmentPlanTotalRubValue: () => number;
+}
+
+export type DocumentState = Partial<ResolvedDocumentState>;
 
 export type TimestampShape = "dateTime" | "date" | "isoDate" | "dateTimeLocal";
 

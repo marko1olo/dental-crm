@@ -23,6 +23,17 @@ export interface UseModalA11yOptions {
 	enableFocusTrap?: boolean | undefined;
 }
 
+function hasCheckVisibility(
+	el: HTMLElement,
+): el is HTMLElement & {
+	checkVisibility: (opts?: {
+		checkOpacity?: boolean;
+		checkVisibilityCSS?: boolean;
+	}) => boolean;
+} {
+	return typeof Reflect.get(el, "checkVisibility") === "function";
+}
+
 /**
  * Чистая функция Focus Trap для циклического удержания фокуса в контейнере (подходит для прямого тестирования).
  */
@@ -37,8 +48,8 @@ export function trapTabKey(
 		container.querySelectorAll<HTMLElement>(FOCUSABLE_ELEMENTS_SELECTOR),
 	).filter((el) => {
 		// Исключаем невидимые элементы без Layout Thrashing (без чтения el.offsetWidth в цикле)
-		if (typeof (el as unknown as { checkVisibility?: (opts?: { checkOpacity?: boolean; checkVisibilityCSS?: boolean }) => boolean }).checkVisibility === "function") {
-			return (el as unknown as { checkVisibility: (opts?: { checkOpacity?: boolean; checkVisibilityCSS?: boolean }) => boolean }).checkVisibility({ checkOpacity: false, checkVisibilityCSS: true });
+		if (hasCheckVisibility(el)) {
+			return el.checkVisibility({ checkOpacity: false, checkVisibilityCSS: true });
 		}
 		if (typeof el.offsetParent !== "undefined" && el.offsetParent === null && el.style.position !== "fixed") {
 			return false;

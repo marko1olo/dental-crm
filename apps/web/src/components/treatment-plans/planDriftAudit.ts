@@ -64,7 +64,14 @@ export function detectPriceDrift(
 	};
 }
 
-export function resolveArchivedPlanItem<T extends Record<string, any>>(
+export interface ArchivablePlanItem {
+	priceRub?: number | null | undefined;
+	unitPriceRub?: number | null | undefined;
+	priceId?: string | null | undefined;
+	name?: string | undefined;
+}
+
+export function resolveArchivedPlanItem<T extends ArchivablePlanItem>(
 	item: T,
 	resolution: "keep_agreed_price" | "replace_from_catalog",
 	replacementCatalogItem?: PlanPriceCatalogItem,
@@ -75,8 +82,8 @@ export function resolveArchivedPlanItem<T extends Record<string, any>>(
 	priceRub: number;
 	unitPriceRub: number;
 	requiresManualPricing: boolean;
-	priceId?: string;
-	name?: string;
+	priceId?: string | undefined;
+	name?: string | undefined;
 } {
 	if (resolution === "keep_agreed_price") {
 		return {
@@ -87,13 +94,14 @@ export function resolveArchivedPlanItem<T extends Record<string, any>>(
 			priceRub: Number(item.priceRub ?? item.unitPriceRub ?? 0),
 			unitPriceRub: Number(item.unitPriceRub ?? item.priceRub ?? 0),
 			requiresManualPricing: false,
+			priceId: item.priceId ?? undefined,
 		};
 	}
 
 	const newPrice = replacementCatalogItem?.basePriceRub ?? Number(item.priceRub ?? 0);
 	return {
 		...item,
-		priceId: replacementCatalogItem?.id ?? item.priceId,
+		priceId: replacementCatalogItem?.id ?? item.priceId ?? undefined,
 		name: replacementCatalogItem?.title ?? item.name,
 		priceRub: newPrice,
 		unitPriceRub: newPrice,

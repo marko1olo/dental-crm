@@ -1,9 +1,11 @@
+import { resolveDocumentState } from "../documentLogic/documentStateHydrator";
 import { requiredDocumentField as defaultRequiredDocumentField } from "./regexRules";
 import type { DocumentState, ValidationResult } from "./types";
 
 export function validateTreatmentPlan(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		documentTextLines,
 		clinicalToothRowsValue,
@@ -78,8 +80,9 @@ export function validateTreatmentPlan(
 }
 
 export function validateTreatmentPlanAcceptance(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		documentTextLines,
 		inferredTreatmentArea,
@@ -171,8 +174,9 @@ export function validateTreatmentPlanAcceptance(
 }
 
 export function validatePostVisitRecommendations(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		documentTextLines,
 		postVisitProcedureNameValue,
@@ -248,8 +252,9 @@ export function validatePostVisitRecommendations(
 }
 
 export function validatePrescriptionMedicationOrder(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		documentTextLines,
 		clinicalToothRowsValue,
@@ -283,8 +288,9 @@ export function validatePrescriptionMedicationOrder(
 }
 
 export function validateLabWorkOrder(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		clinicalToothRowsValue,
 		labWorkType,
@@ -309,8 +315,9 @@ export function validateLabWorkOrder(
 }
 
 export function validateXrayCbctReferral(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		activeDoctor,
 		clinicalToothRowsValue,
@@ -337,8 +344,9 @@ export function validateXrayCbctReferral(
 }
 
 export function validateDentalMedicalCard043U(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const allowBlankForPrint = Boolean(state.allowBlankForPrint);
 	if (allowBlankForPrint) {
 		return null;
@@ -355,24 +363,7 @@ export function validateDentalMedicalCard043U(
 		clinicProfileDraft,
 		requiredDocumentField = defaultRequiredDocumentField,
 		dentalMedicalCard043uPayloadValue,
-	} = state as DocumentState & {
-		dentalMedicalCard043uPayloadValue?: () => {
-			visitDate?: string | null;
-			organization?: { fullName?: string | null; shortName?: string | null };
-			patient?: {
-				fullName?: string | null;
-				medicalCardNumber?: string | null;
-			};
-			complaint?: string | null;
-			anamnesis?: string | null;
-			objectiveStatus?: string | null;
-			diagnosisText?: string | null;
-			treatmentDescription?: string | null;
-			treatmentPlan?: string | null;
-			doctor?: { fullName?: string | null };
-			clinicalToothRows?: unknown[];
-		};
-	};
+	} = state;
 
 	const payload = dentalMedicalCard043uPayloadValue?.();
 	const orgName =
@@ -431,8 +422,9 @@ export function validateDentalMedicalCard043U(
 }
 
 export function validateMedicalRecordExtract(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		documentTextLines,
 		dashboard,
@@ -505,8 +497,9 @@ export function validateMedicalRecordExtract(
 }
 
 export function validateVisitAttendanceCertificate(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		attendanceStartedAtValue,
 		attendanceEndedAtValue,
@@ -553,8 +546,9 @@ export function validateVisitAttendanceCertificate(
 }
 
 export function validateOrthodonticMedicalCard043_1U(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		documentPatient,
 		clinicProfileDraft,
@@ -573,8 +567,9 @@ export function validateOrthodonticMedicalCard043_1U(
 }
 
 export function validateDailyDentistDiary037U(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		clinicProfileDraft,
 		requiredDocumentField = defaultRequiredDocumentField,
@@ -586,8 +581,9 @@ export function validateDailyDentistDiary037U(
 }
 
 export function validateSummaryDentistStatement039U(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		clinicProfileDraft,
 		requiredDocumentField = defaultRequiredDocumentField,
@@ -599,8 +595,9 @@ export function validateSummaryDentistStatement039U(
 }
 
 export function validateRadiationDoseSheet(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		documentPatient,
 		clinicProfileDraft,

@@ -37,7 +37,7 @@ export interface MigrationKickstartPanelProps {
 		matchedFiles: number;
 		lastFolder: string;
 	} | null | undefined;
-	browserMigrationInputRef: RefObject<HTMLInputElement>;
+	browserMigrationInputRef: RefObject<HTMLInputElement | null>;
 	isMigrationSourceDiscovering: boolean;
 	isMigrationAutopilotLoading: boolean;
 	isBrowserMigrationScanning: boolean;

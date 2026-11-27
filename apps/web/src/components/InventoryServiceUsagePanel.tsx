@@ -14,7 +14,7 @@ const MaterialBomsSettingsPanel = lazy(() =>
 export interface InventoryServiceUsagePanelProps {
 	readonly organizationId: string;
 	readonly inventoryItems?: readonly InventoryItem[];
-	readonly rulesList?: readonly any[];
+	readonly rulesList?: readonly unknown[];
 	readonly onRulesUpdated?: () => void;
 	readonly getHeaders?: (headers?: Record<string, string>) => Record<string, string>;
 }

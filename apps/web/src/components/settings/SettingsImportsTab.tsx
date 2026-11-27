@@ -1,4 +1,10 @@
 import React from "react";
+import type {
+	DicomSeriesPreviewResponse,
+	DocumentIngestionTarget,
+	ImagingSourceKind,
+	ImportSourceKind,
+} from "@dental/shared";
 import {
 	MigrationAutopilotSection,
 	MigrationDicomViewerSection,
@@ -10,127 +16,181 @@ import {
 	MigrationProbeSection,
 	MigrationWorkupSection,
 	useSettingsImportsLogic,
+	type MigrationAutopilotSectionProps,
+	type MigrationDicomViewerSectionProps,
+	type MigrationDiscoverySectionProps,
+	type MigrationImagingDiscoverySectionProps,
+	type MigrationImagingOrganizerSectionProps,
+	type MigrationKickstartPanelProps,
+	type MigrationPreviewSectionProps,
+	type MigrationProbeSectionProps,
+	type MigrationWorkupSectionProps,
+	type UseSettingsImportsLogicParams,
 } from "./imports";
 
 export * from "./imports";
 
-export function SettingsImportsTab(props: Record<string, any>) {
+type SettingsImportsCombinedProps = UseSettingsImportsLogicParams &
+	MigrationKickstartPanelProps &
+	MigrationAutopilotSectionProps &
+	MigrationDiscoverySectionProps &
+	MigrationWorkupSectionProps &
+	MigrationProbeSectionProps &
+	MigrationImagingDiscoverySectionProps &
+	MigrationImagingOrganizerSectionProps &
+	Omit<MigrationDicomViewerSectionProps, "dicomSeriesPreview"> &
+	MigrationPreviewSectionProps;
+
+export type SettingsImportsTabProps = Partial<SettingsImportsCombinedProps> & {
+	readonly [key: string]: unknown;
+};
+
+const EMPTY_STRING_MAP: Record<string, string> = {};
+const EMPTY_SOURCE_LABELS: Record<string, { title?: string; detail?: string }> = {};
+const NOOP = () => {};
+const NOOP_STR = (_v: string) => "";
+const DEFAULT_IMAGING_SOURCE_KIND: ImagingSourceKind = "manual_upload";
+const DEFAULT_IMPORT_SOURCE_KIND: ImportSourceKind = "csv_text";
+const DEFAULT_DOCUMENT_INGESTION_TARGET: DocumentIngestionTarget = "patients";
+
+function isDicomSeriesPreviewResponse(
+	value: UseSettingsImportsLogicParams["dicomSeriesPreview"] | undefined,
+): value is DicomSeriesPreviewResponse {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"sourceKind" in value &&
+		typeof value.sourceKind === "string" &&
+		"sourceName" in value &&
+		typeof value.sourceName === "string" &&
+		"totalRows" in value &&
+		typeof value.totalRows === "number" &&
+		"blockedSeries" in value &&
+		typeof value.blockedSeries === "number"
+	);
+}
+
+export function SettingsImportsTab(props: SettingsImportsTabProps) {
+	const fallbackInputRef = React.useRef<HTMLInputElement>(null);
 	const {
-		addMigrationDiscoveryCandidateToSmartImport,
-		browserDirectoryInputRef,
-		browserDirectoryPickerAvailable,
-		browserImagingFileInputAccept,
-		browserImagingFilesInputRef,
-		browserImagingScanProgress,
-		browserMigrationInputRef,
-		browserMigrationScanProgress,
-		browserPickedImagingFolder,
-		cancelBrowserImagingFolderScan,
-		cancelBrowserMigrationScan,
-		cancelLocalDicomOperation,
-		clearBrowserPickedImagingFolderPreview,
-		clearLocalImagingFolderRecovery,
-		clinicProfileSaveState,
-		clinicPublicLookup,
-		commitImagingImport,
-		commitImport,
-		commitSmartImport,
-		dicomFirstFrameImageStyle,
-		dicomFirstFrameStatusLabels,
-		dicomFolderWorkupPathLabels,
-		dicomLabel,
-		dicomSeriesPreview,
-		dicomSeriesViewerLabels,
-		dicomTextureStrategyLabels,
-		discoverDicomFolders,
-		discoverMigrationSources,
-		documentDetectedKindLabel,
-		documentIngestionQualityLabels,
-		documentIngestionTarget,
-		downloadMigrationHandoffReport,
-		downloadSmartImportSafeHandoffReport,
-		formatByteSize,
-		formatDateTime,
-		handleBrowserDirectoryInputChange,
-		handleBrowserMigrationInputChange,
-		imagingFolderPath,
-		imagingImportCommit,
-		imagingImportText,
-		imagingKindLabels,
-		importCommit,
-		importSourceKind,
-		importSourceLabels,
-		importText,
-		ingestImportFile,
-		ingestionTargetLabels,
-		isBrowserImagingFolderPicking,
-		isBrowserMigrationScanning,
-		isClinicPublicLookupLoading,
-		isDicomFirstFramePreviewing,
-		isDicomFolderWorkupPlanning,
-		isDicomLocalDiscovering,
-		isDicomSeriesPreviewLoading,
-		isDicomWorkbenchBuilding,
-		isDocumentIngesting,
-		isImagingImportCommitting,
-		isImagingImportLoading,
-		isImportCommitting,
-		isImportLoading,
-		isLocalDicomOperationActive,
-		isLocalImagingOrganizing,
-		isMigrationAutopilotLoading,
-		isMigrationSourceDiscovering,
-		isMigrationSourceProbeLoading,
-		isMigrationSourceWorkupLoading,
-		isSmartImportCommitting,
-		isSmartImportLoading,
-		isSmartReportLoading,
-		isSmartSafeReportLoading,
-		localImagingFolderDraft,
-		localImagingModelRoleLabels,
-		localImagingOrganizerActionLabels,
-		lookupClinicPublicProfile,
-		mprLoadStrategyLabels,
-		mprResourceTierLabels,
-		organizeLocalImagingSources,
-		pickBrowserImagingFiles,
-		pickBrowserImagingFolder,
-		pickBrowserMigrationSource,
-		planMigrationDiscoveryCandidate,
-		prepareDicomWorkbenchFromFolder,
-		previewDicomFirstFrame,
-		previewDicomFirstFrameSlice,
-		previewDicomSeries,
-		previewImagingImport,
-		previewImport,
-		previewMigrationAutopilotSources,
-		previewMigrationDiscoveryCandidate,
-		probeMigrationDiscoveryCandidate,
-		rememberLocalImagingFolder,
-		runMigrationAutopilot,
-		saveClinicProfileFromDraft,
-		setDicomFirstFramePreview,
-		setDicomFirstFrameViewerState,
-		setDicomFolderSeriesScan,
-		setDicomFolderWorkupPlan,
-		setDicomSeriesPreview,
-		setDicomLocalFolderDiscovery,
-		setDocumentIngestionTarget,
-		setImagingFolderPath,
-		setImagingFolderScan,
-		setImagingImportCommit,
-		setImagingImportPreview,
-		setImagingImportSourceKind,
-		setImagingImportText,
-		setImportCommit,
-		setImportIntake,
-		setImportPreview,
-		setImportSourceKind,
-		setImportText,
-		setLocalImagingOrganizer,
-		settingsTab,
-		smartImportCommit,
-		stageLocalImagingFolderRecovery,
+		addMigrationDiscoveryCandidateToSmartImport = NOOP,
+		browserDirectoryInputRef = fallbackInputRef,
+		browserDirectoryPickerAvailable = false,
+		browserImagingFileInputAccept = "",
+		browserImagingFilesInputRef = fallbackInputRef,
+		browserImagingScanProgress = null,
+		browserMigrationInputRef = fallbackInputRef,
+		browserMigrationScanProgress = null,
+		browserPickedImagingFolder = null,
+		cancelBrowserImagingFolderScan = NOOP,
+		cancelBrowserMigrationScan = NOOP,
+		cancelLocalDicomOperation = NOOP,
+		clearBrowserPickedImagingFolderPreview = NOOP,
+		clearLocalImagingFolderRecovery = NOOP,
+		clinicProfileSaveState = "idle",
+		clinicPublicLookup = null,
+		commitImagingImport = NOOP,
+		commitImport = NOOP,
+		commitSmartImport = NOOP,
+		dicomFirstFrameImageStyle = EMPTY_STRING_MAP,
+		dicomFirstFrameStatusLabels = EMPTY_STRING_MAP,
+		dicomFolderWorkupPathLabels = EMPTY_STRING_MAP,
+		dicomLabel = (_map, key, fallback) => (key != null ? String(key) : fallback),
+		dicomSeriesPreview = null,
+		dicomSeriesViewerLabels = EMPTY_STRING_MAP,
+		dicomTextureStrategyLabels = EMPTY_STRING_MAP,
+		discoverDicomFolders = NOOP,
+		discoverMigrationSources = NOOP,
+		documentDetectedKindLabel = NOOP_STR,
+		documentIngestionQualityLabels = EMPTY_STRING_MAP,
+		documentIngestionTarget = DEFAULT_DOCUMENT_INGESTION_TARGET,
+		downloadMigrationHandoffReport = NOOP,
+		downloadSmartImportSafeHandoffReport = NOOP,
+		formatByteSize = (b) => `${b} B`,
+		formatDateTime = (d) => (d ? String(d) : ""),
+		handleBrowserDirectoryInputChange = NOOP,
+		handleBrowserMigrationInputChange = NOOP,
+		imagingFolderPath = "",
+		imagingImportCommit = null,
+		imagingImportSourceKind = DEFAULT_IMAGING_SOURCE_KIND,
+		imagingImportText = "",
+		imagingKindLabels = EMPTY_STRING_MAP,
+		imagingSourceDetails = EMPTY_STRING_MAP,
+		imagingSourceLabels = EMPTY_STRING_MAP,
+		importCommit = null,
+		importSourceKind = DEFAULT_IMPORT_SOURCE_KIND,
+		importSourceLabels = EMPTY_SOURCE_LABELS,
+		importText = "",
+		ingestImportFile = NOOP,
+		ingestionTargetLabels = EMPTY_STRING_MAP,
+		isBrowserImagingFolderPicking = false,
+		isBrowserMigrationScanning = false,
+		isClinicPublicLookupLoading = false,
+		isDicomFirstFramePreviewing = false,
+		isDicomFolderWorkupPlanning = false,
+		isDicomLocalDiscovering = false,
+		isDicomSeriesPreviewLoading = false,
+		isDicomWorkbenchBuilding = false,
+		isDocumentIngesting = false,
+		isImagingImportCommitting = false,
+		isImagingImportLoading = false,
+		isImportCommitting = false,
+		isImportLoading = false,
+		isLocalDicomOperationActive = false,
+		isLocalImagingOrganizing = false,
+		isMigrationAutopilotLoading = false,
+		isMigrationSourceDiscovering = false,
+		isMigrationSourceProbeLoading = false,
+		isMigrationSourceWorkupLoading = false,
+		isSmartImportCommitting = false,
+		isSmartImportLoading = false,
+		isSmartReportLoading = false,
+		isSmartSafeReportLoading = false,
+		localImagingFolderDraft = null,
+		localImagingModelRoleLabels = EMPTY_STRING_MAP,
+		localImagingOrganizerActionLabels = EMPTY_STRING_MAP,
+		lookupClinicPublicProfile = NOOP,
+		mprLoadStrategyLabels = EMPTY_STRING_MAP,
+		mprResourceTierLabels = EMPTY_STRING_MAP,
+		organizeLocalImagingSources = NOOP,
+		pickBrowserImagingFiles = NOOP,
+		pickBrowserImagingFolder = NOOP,
+		pickBrowserMigrationSource = NOOP,
+		planMigrationDiscoveryCandidate = NOOP,
+		prepareDicomWorkbenchFromFolder = NOOP,
+		previewDicomFirstFrame = NOOP,
+		previewDicomFirstFrameSlice = NOOP,
+		previewDicomSeries = NOOP,
+		previewImagingImport = NOOP,
+		previewImport = NOOP,
+		previewMigrationAutopilotSources = NOOP,
+		previewMigrationDiscoveryCandidate = NOOP,
+		probeMigrationDiscoveryCandidate = NOOP,
+		rememberLocalImagingFolder = NOOP,
+		runMigrationAutopilot = NOOP,
+		saveClinicProfileFromDraft = NOOP,
+		setDicomFirstFramePreview = NOOP,
+		setDicomFirstFrameViewerState = NOOP,
+		setDicomFolderSeriesScan = NOOP,
+		setDicomFolderWorkupPlan = NOOP,
+		setDicomSeriesPreview = NOOP,
+		setDicomLocalFolderDiscovery = NOOP,
+		setDocumentIngestionTarget = NOOP,
+		setImagingFolderPath = NOOP,
+		setImagingFolderScan = NOOP,
+		setImagingImportCommit = NOOP,
+		setImagingImportPreview = NOOP,
+		setImagingImportSourceKind = NOOP,
+		setImagingImportText = NOOP,
+		setImportCommit = NOOP,
+		setImportIntake = NOOP,
+		setImportPreview = NOOP,
+		setImportSourceKind = NOOP,
+		setImportText = NOOP,
+		setLocalImagingOrganizer = NOOP,
+		settingsTab = "",
+		smartImportCommit = null,
+		stageLocalImagingFolderRecovery = NOOP,
 	} = props;
 
 	const logic = useSettingsImportsLogic(props);
@@ -252,9 +312,9 @@ export function SettingsImportsTab(props: Record<string, any>) {
 			<MigrationImagingDiscoverySection
 				settingsTab={settingsTab}
 				typedImagingSourceChoices={logic.typedImagingSourceChoices}
-				imagingImportSourceKind={props.imagingImportSourceKind}
-				imagingSourceLabels={props.imagingSourceLabels}
-				imagingSourceDetails={props.imagingSourceDetails}
+				imagingImportSourceKind={imagingImportSourceKind}
+				imagingSourceLabels={imagingSourceLabels}
+				imagingSourceDetails={imagingSourceDetails}
 				imagingFolderPath={imagingFolderPath}
 				localImagingFolderDraft={localImagingFolderDraft}
 				browserDirectoryPickerAvailable={browserDirectoryPickerAvailable}
@@ -338,7 +398,11 @@ export function SettingsImportsTab(props: Record<string, any>) {
 				isDicomSeriesPreviewLoading={isDicomSeriesPreviewLoading}
 				isImagingImportLoading={isImagingImportLoading}
 				isImagingImportCommitting={isImagingImportCommitting}
-				dicomSeriesPreview={dicomSeriesPreview}
+				dicomSeriesPreview={
+					isDicomSeriesPreviewResponse(dicomSeriesPreview)
+						? dicomSeriesPreview
+						: null
+				}
 				typedDicomSeriesPreviewSeries={logic.typedDicomSeriesPreviewSeries}
 				imagingKindLabels={imagingKindLabels}
 				dicomSeriesViewerLabels={dicomSeriesViewerLabels}

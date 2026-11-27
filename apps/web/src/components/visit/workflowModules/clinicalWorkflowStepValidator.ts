@@ -25,12 +25,25 @@ export const CLINICAL_DEFAULT_VALUES = {
 	recommendations: "Соблюдение гигиены полости рта, чистка зубов 2 раза в день, плановый профилактический осмотр через 6 месяцев.",
 };
 
+export interface ClinicalWorkflowFormData {
+	complaint?: string | undefined;
+	anamnesis?: string | undefined;
+	statusLocalis?: string | undefined;
+	objectiveStatus?: string | undefined;
+	diagnosisIcd10?: string | undefined;
+	diagnosis?: string | undefined;
+	treatmentDescription?: string | undefined;
+	treatmentPlan?: string | undefined;
+	recommendations?: string | undefined;
+	[key: string]: unknown;
+}
+
 /**
  * Валидирует состояние шага визита и формирует безопасные дефолты или мягкий направляющий фокус.
  */
 export function validateClinicalWorkflowStep(
 	step: ClinicalWorkflowStep,
-	currentFormData: Record<string, any>,
+	currentFormData: ClinicalWorkflowFormData,
 	options?: {
 		allowSafeDefaults?: boolean;
 		strictPromptDoctor?: boolean;

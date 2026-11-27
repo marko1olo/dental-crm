@@ -61,8 +61,8 @@ export async function executeWorkflowStepTransition(
 	context: {
 		visitId?: string;
 		patientId?: string;
-		formData: Record<string, any>;
-		onAutosave?: (data: Record<string, any>) => Promise<void> | void;
+		formData: Record<string, unknown>;
+		onAutosave?: ((data: Record<string, unknown>) => Promise<void> | void) | undefined;
 	},
 ): Promise<{ success: boolean; nextStep: ClinicalWorkflowStep }> {
 	if (context.onAutosave) {

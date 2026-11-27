@@ -1,9 +1,11 @@
+import { resolveDocumentState } from "../documentLogic/documentStateHydrator";
 import { requiredDocumentField as defaultRequiredDocumentField } from "./regexRules";
 import type { DocumentState, ValidationResult } from "./types";
 
 export function validatePaidMedicalServicesContract(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		paidContractNumber,
 		paidContractDate,
@@ -83,8 +85,9 @@ export function validatePaidMedicalServicesContract(
 }
 
 export function validateWarrantyServiceMemo(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		documentTextLines,
 		warrantyServiceOrWorkNameValue,
@@ -151,8 +154,9 @@ export function validateWarrantyServiceMemo(
 }
 
 export function validateInformedConsent(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const allowBlankForPrint = Boolean(state.allowBlankForPrint);
 	if (allowBlankForPrint) {
 		return null;
@@ -193,9 +197,15 @@ export function validateInformedConsent(
 	const effectiveConfirmedAt =
 		informedConsentConfirmedAt.trim() || new Date().toISOString().slice(0, 16);
 
-	const risksCount = documentTextLines(informedConsentRisks).length || (informedConsentRisks.trim() ? 1 : 0);
-	const alternativesCount = documentTextLines(informedConsentAlternatives).length || (informedConsentAlternatives.trim() ? 1 : 0);
-	const aftercareCount = documentTextLines(informedConsentAftercare).length || (informedConsentAftercare.trim() ? 1 : 0);
+	const risksCount =
+		documentTextLines(informedConsentRisks).length ||
+		(typeof informedConsentRisks === "string" && informedConsentRisks.trim() ? 1 : 0);
+	const alternativesCount =
+		documentTextLines(informedConsentAlternatives).length ||
+		(typeof informedConsentAlternatives === "string" && informedConsentAlternatives.trim() ? 1 : 0);
+	const aftercareCount =
+		documentTextLines(informedConsentAftercare).length ||
+		(typeof informedConsentAftercare === "string" && informedConsentAftercare.trim() ? 1 : 0);
 
 	return (
 		requiredDocumentField(
@@ -241,8 +251,9 @@ export function validateInformedConsent(
 }
 
 export function validateProcedureSpecificConsentPacket(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		documentTextLines,
 		inferredTreatmentArea,
@@ -317,8 +328,9 @@ export function validateProcedureSpecificConsentPacket(
 }
 
 export function validateAnesthesiaConsentLog(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		anesthesiaMethod,
 		anesthesiaAnesthetic,
@@ -354,8 +366,9 @@ export function validateAnesthesiaConsentLog(
 }
 
 export function validatePhotoVideoConsent(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		photoVideoClinicalRecordUseConfirmed,
 		photoVideoEducationUseAllowed,
@@ -389,8 +402,9 @@ export function validatePhotoVideoConsent(
 }
 
 export function validateMedicalInterventionRefusal(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		documentTextLines,
 		activeDoctor,

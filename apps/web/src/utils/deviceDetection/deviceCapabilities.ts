@@ -76,7 +76,11 @@ export function getDeviceDiagnosticReport(): Record<string, unknown> {
 		isHighPerformance: isHighPerformanceWorkstation(),
 		dynamicPerformance: getDynamicPerformanceSnapshot(),
 		cores: typeof navigator !== "undefined" ? (navigator.hardwareConcurrency ?? null) : null,
-		deviceMemoryGb: typeof navigator !== "undefined" ? ((navigator as unknown as { deviceMemory?: number }).deviceMemory ?? null) : null,
+		deviceMemoryGb:
+			typeof navigator !== "undefined" &&
+			typeof Reflect.get(navigator, "deviceMemory") === "number"
+				? Number(Reflect.get(navigator, "deviceMemory"))
+				: null,
 		shouldVirtualizeAggressively: shouldVirtualizeListsAggressively(),
 		adaptivePollingInterval10s: getAdaptivePollingIntervalMs(10_000),
 		adaptiveDicomDownscaleFactor: getAdaptiveDicomDownscaleFactor(),

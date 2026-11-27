@@ -11,6 +11,8 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import React from "react";
+import { renderToString } from "react-dom/server";
+import type { LanAssistantCitoEvent, LanP2PMessage } from "@dental/shared";
 import {
 	LanP2PDispatcher,
 	lanP2PDispatcher,
@@ -32,25 +34,35 @@ describe("LAN P2P Mesh & Emergency CITO Subsystem Test Suite", () => {
 	});
 
 	describe("1. Unified Offline & Mesh Exports Authority", () => {
-		it("re-exports all domain queues and resilience functions from services/offline/index", () => {
-			assert.equal(typeof servicesOffline.saveVisitDraftOffline, "function");
-			assert.equal(typeof servicesOffline.getVisitDraftOffline, "function");
-			assert.equal(typeof servicesOffline.enqueueOfflineAppointment, "function");
-			assert.equal(typeof servicesOffline.cachePricelistOffline, "function");
-			assert.equal(typeof servicesOffline.enqueueOfflinePayment, "function");
-			assert.equal(typeof servicesOffline.withOfflineFallback, "function");
-			assert.equal(typeof servicesOffline.lanP2PDispatcher, "object");
-			assert.equal(typeof servicesOffline.lanMeshReplicationService, "object");
+		it("executes withOfflineFallback from services/offline/index on online success and offline fallback", async () => {
+			const onlineValue = await servicesOffline.withOfflineFallback(
+				async () => ({ source: "online", count: 3 }),
+				() => ({ source: "offline", count: 0 }),
+			);
+			assert.deepEqual(onlineValue, { source: "online", count: 3 });
+
+			const fallbackValue = await servicesOffline.withOfflineFallback(
+				async () => {
+					throw new Error("LAN timeout");
+				},
+				() => ({ source: "offline", count: 1 }),
+			);
+			assert.deepEqual(fallbackValue, { source: "offline", count: 1 });
+
+			const status = servicesOffline.lanP2PDispatcher.getStatus();
+			assert.equal(status.nodeId.length > 0, true);
 		});
 
-		it("unified web/offline/index re-exports the identical authority without duplication errors", () => {
-			assert.equal(typeof webOffline.saveVisitDraftOffline, "function");
-			assert.equal(typeof webOffline.enqueueOfflineAppointment, "function");
-			assert.equal(typeof webOffline.cachePricelistOffline, "function");
-			assert.equal(typeof webOffline.enqueueOfflinePayment, "function");
-			assert.equal(typeof webOffline.withOfflineFallback, "function");
-			assert.equal(typeof webOffline.lanP2PDispatcher, "object");
-			assert.equal(typeof webOffline.lanMeshReplicationService, "object");
+		it("unified web/offline/index re-exports the identical authority references without duplication", () => {
+			assert.strictEqual(webOffline.saveVisitDraftOffline, servicesOffline.saveVisitDraftOffline);
+			assert.strictEqual(webOffline.getVisitDraftOffline, servicesOffline.getVisitDraftOffline);
+			assert.strictEqual(webOffline.enqueueOfflineAppointment, servicesOffline.enqueueOfflineAppointment);
+			assert.strictEqual(webOffline.cachePricelistOffline, servicesOffline.cachePricelistOffline);
+			assert.strictEqual(webOffline.enqueueOfflinePayment, servicesOffline.enqueueOfflinePayment);
+			assert.strictEqual(webOffline.withOfflineFallback, servicesOffline.withOfflineFallback);
+			assert.strictEqual(webOffline.lanP2PDispatcher, servicesOffline.lanP2PDispatcher);
+			assert.strictEqual(webOffline.lanMeshReplicationService, servicesOffline.lanMeshReplicationService);
+			assert.strictEqual(webOffline.lanP2PDispatcher, lanP2PDispatcher);
 		});
 	});
 
@@ -70,8 +82,8 @@ describe("LAN P2P Mesh & Emergency CITO Subsystem Test Suite", () => {
 				organizationId: "org-cito-test",
 			});
 
-			let receivedCitoEvent: any = null;
-			let receivedEnvelope: any = null;
+			let receivedCitoEvent: LanAssistantCitoEvent | null = null;
+			let receivedEnvelope: LanP2PMessage<LanAssistantCitoEvent> | null = null;
 
 			assistantDispatcher.onAssistantCitoCall((event, envelope) => {
 				receivedCitoEvent = event;
@@ -104,18 +116,18 @@ describe("LAN P2P Mesh & Emergency CITO Subsystem Test Suite", () => {
 	});
 
 	describe("3. LanCitoEmergencyBanner Component Rendering", () => {
-		it("returns null when no active CITO alerts exist", () => {
-			const element = React.createElement(LanCitoEmergencyBanner, {
-				alerts: [],
-				onDismiss: () => {},
-				onAcknowledge: () => {},
-			});
-
-			const rendered = (LanCitoEmergencyBanner as any)(element.props);
-			assert.equal(rendered, null);
+		it("returns empty markup when no active CITO alerts exist", () => {
+			const html = renderToString(
+				React.createElement(LanCitoEmergencyBanner, {
+					alerts: [],
+					onDismiss: () => {},
+					onAcknowledge: () => {},
+				}),
+			);
+			assert.equal(html, "");
 		});
 
-		it("renders emergency banner with cabinet, doctor, urgency and action controls", () => {
+		it("renders emergency banner with cabinet, doctor, urgency and touch-safe action controls", () => {
 			const alerts: ActiveCitoAlert[] = [
 				{
 					callId: "call-001",
@@ -133,30 +145,22 @@ describe("LAN P2P Mesh & Emergency CITO Subsystem Test Suite", () => {
 				},
 			];
 
-			let dismissedId: string | null = null;
-			let acknowledgedId: string | null = null;
-
-			const element = React.createElement(LanCitoEmergencyBanner, {
-				alerts,
-				onDismiss: (id) => {
-					dismissedId = id;
-				},
-				onAcknowledge: (id) => {
-					acknowledgedId = id;
-				},
-			});
-
-			const rendered = (LanCitoEmergencyBanner as any)(element.props);
-			assert.ok(rendered !== null);
-			assert.equal(rendered.type, "aside");
-			assert.equal(rendered.props.role, "alert");
-			assert.equal(rendered.props["aria-live"], "assertive");
-
-			// Check children structure
-			const alertItems = rendered.props.children;
-			assert.equal(alertItems.length, 1);
-			const alertItem = alertItems[0];
-			assert.equal(alertItem.key, "alert-001");
+			const html = renderToString(
+				React.createElement(LanCitoEmergencyBanner, {
+					alerts,
+					onDismiss: () => {},
+					onAcknowledge: () => {},
+				}),
+			);
+			assert.ok(html.includes("<aside"));
+			assert.ok(html.includes('role="alert"'));
+			assert.ok(html.includes('aria-live="assertive"'));
+			assert.ok(html.includes("Кабинет 2"));
+			assert.ok(html.includes("Д-р Петров П.П."));
+			assert.ok(html.includes("Экстренно"));
+			assert.ok(html.includes("Срочно требуются карпулы артикаина"));
+			assert.ok(html.includes("Принять"));
+			assert.ok(html.includes("min-h-[44px]"));
 		});
 	});
 });

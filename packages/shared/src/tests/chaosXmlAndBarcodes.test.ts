@@ -25,6 +25,7 @@ import {
 } from "../cda/c14n.js";
 import { generateSemd101Xml } from "../cda/generator101.js";
 import { generateSemd104Xml } from "../cda/generator104.js";
+import type { CdaSemd101Params, CdaSemd104Params } from "../cda/types.js";
 import { generateCdaXml } from "../cda/generator.js";
 
 // FNS Tax deduction imports
@@ -199,7 +200,8 @@ describe("Chaos & Adversarial Fuzzing: Government XML Schemes & GS1 DataMatrix",
 		});
 
 		it("Test 1.5: CDA R2 SEMD 101 escapes malicious XML injections in dental odontogram, diagnoses and anamnesis", () => {
-			const toxicSemd101 = {
+			const toxicSemd101: CdaSemd101Params = {
+				docKind: "101",
 				documentId: "doc-101-toxic\"<id_inject>",
 				visitDate: new Date("2026-08-25T10:00:00Z"),
 				patient: {
@@ -209,13 +211,12 @@ describe("Chaos & Adversarial Fuzzing: Government XML Schemes & GS1 DataMatrix",
 						first: "Иван\" & <given_inject>",
 						middle: "Сергеевич<middle_inject>",
 					},
-					gender: "male" as const,
-					birthDate: new Date("1992-04-12"),
+					gender: "male",
+					birthDate: "1992-04-12",
 					address: "г. Москва, ул. Ленина, д. 5 & кв. 10 <addr_inject>",
 					snils: "112-233-445 95",
 				},
 				doctor: {
-					doctorId: "doc-777",
 					name: {
 						last: "Смирнов<doc_last>",
 						first: "Алексей & Врач",
@@ -263,7 +264,7 @@ describe("Chaos & Adversarial Fuzzing: Government XML Schemes & GS1 DataMatrix",
 				],
 			};
 
-			const xml = generateSemd101Xml(toxicSemd101 as any);
+			const xml = generateSemd101Xml(toxicSemd101);
 			assert.ok(xml.includes("<ClinicalDocument"), "Must produce CDA ClinicalDocument root");
 			assert.ok(!xml.includes("<id_inject>"), "Must not contain unescaped id_inject");
 			assert.ok(!xml.includes("<pat_tag>"), "Must not contain unescaped pat_tag");
@@ -276,18 +277,17 @@ describe("Chaos & Adversarial Fuzzing: Government XML Schemes & GS1 DataMatrix",
 		});
 
 		it("Test 1.6: CDA R2 SEMD 104 XML generator escapes surgery protocols and toxic injection tags", () => {
-			const toxicSemd104 = {
-				docKind: "104" as const,
+			const toxicSemd104: CdaSemd104Params = {
+				docKind: "104",
 				documentId: "doc-104-toxic",
 				visitDate: new Date("2026-08-25T10:00:00Z"),
 				patient: {
 					patientId: "pat-104",
 					name: { last: "Иванова", first: "Елена", middle: "Петровна" },
-					gender: "female" as const,
+					gender: "female",
 					birthDate: "1994-06-10",
 				},
 				doctor: {
-					doctorId: "doc-1",
 					name: { last: "Петров", first: "Пётр" },
 					position: "Главный врач",
 				},
@@ -313,7 +313,7 @@ describe("Chaos & Adversarial Fuzzing: Government XML Schemes & GS1 DataMatrix",
 				recommendations: "Контрольный осмотр <rec_inject>",
 			};
 
-			const result = generateSemd104Xml(toxicSemd104 as any);
+			const result = generateSemd104Xml(toxicSemd104);
 			assert.ok(result.includes("<ClinicalDocument"));
 			assert.ok(!result.includes("<clinic_tag>"));
 			assert.ok(!result.includes("<epicrisis_inject>"));
@@ -387,7 +387,7 @@ describe("Chaos & Adversarial Fuzzing: Government XML Schemes & GS1 DataMatrix",
 			];
 
 			for (const d of invalidDates) {
-				const res = parseMdlpExpirationDate(d as string);
+				const res = parseMdlpExpirationDate(d);
 				assert.ok(res.error, `Expected error for invalid date "${d}"`);
 				assert.equal(res.isoDate, null);
 			}
@@ -466,15 +466,17 @@ describe("Chaos & Adversarial Fuzzing: Government XML Schemes & GS1 DataMatrix",
 			];
 
 			for (const input of chaoticInputs) {
-				assert.doesNotThrow(() => {
-					const res = safeParseMdlpDataMatrix(input);
-					assert.equal(typeof res.success, "boolean");
-					assert.ok(res.data);
-					if (!res.success) {
-						assert.ok(res.error.length > 0);
-					}
-				});
+				const res = safeParseMdlpDataMatrix(input);
+				assert.equal(res.success, false, "Chaotic input must fail DataMatrix validation");
+				assert.ok(res.error.length > 0);
+				assert.equal(res.data.isValid, false);
 			}
+
+			const validContinuous = "010460123456789321ABC123456789091ABCD92" + "X".repeat(44);
+			const validRes = safeParseMdlpDataMatrix(validContinuous);
+			assert.equal(validRes.success, true);
+			assert.equal(validRes.data.gtin, "04601234567893");
+			assert.equal(validRes.data.serialNumber, "ABC1234567890");
 		});
 	});
 

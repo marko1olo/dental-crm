@@ -1,10 +1,12 @@
 import type { DocumentPayload, GeneratedDocument } from "@dental/shared";
+import { resolveDocumentState } from "./documentStateHydrator";
 import type { DocumentState } from "./types";
 
 export function buildConsentPayload(
 	kind: GeneratedDocument["kind"],
-	state: DocumentState,
+	incomingState: DocumentState,
 ): DocumentPayload | null {
+	const state = resolveDocumentState(incomingState);
 	if (kind === "minor_legal_representative_consent") {
 		const {
 			minorRepresentativeFullNameValue,

@@ -4,7 +4,7 @@
 
 import React from "react";
 import { Calendar, CalendarRange, Clock, UserCheck, Zap } from "lucide-react";
-import { getMondayOfWeekIso, applyDoctorChairWeeklyTemplate } from "../../roster/DoctorShiftRosterModal";
+import { getMondayOfWeekIso, applyDoctorChairWeeklyTemplate, type DoctorShift } from "../../roster/DoctorShiftRosterModal";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../../../../lib/safeLocalStorage";
 import type { ScheduleChairDoctorPopoverProps, ShiftPresetType } from "./chairDoctorPopoverTypes";
 
@@ -33,7 +33,7 @@ export function DoctorPopoverExtendedShifts({
 		if (!targetDocId) return;
 		if (typeof window !== "undefined") {
 			const mondayIso = getMondayOfWeekIso(dateKey);
-			const currentShifts = safeLocalStorageGetJson<any[]>("dente_doctor_shifts", []);
+			const currentShifts = safeLocalStorageGetJson<DoctorShift[]>("dente_doctor_shifts", []);
 			const updatedShifts = applyDoctorChairWeeklyTemplate(currentShifts, {
 				weekStartDateIso: mondayIso, templateId, doctorId: targetDocId, chairId: chair.id,
 				staffList: dashboard?.clinicSettings?.staff || doctors,

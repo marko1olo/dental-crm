@@ -2,6 +2,9 @@ import type {
 	DoctorShiftAppointment,
 	DoctorAppointmentStatus,
 	EmrBatchSigningSession,
+	RawAppointmentInput,
+	RawChairInput,
+	RawPatientInput,
 	calculateDoctorShiftEarnings,
 } from "@dental/shared";
 import type { DoctorShiftStats } from "../../shift/DoctorShiftControlBar";
@@ -23,9 +26,9 @@ export interface DoctorMobileShiftModalProps {
 	readonly initialDoctorSpecialty?: string | undefined;
 	readonly initialShiftDateIso?: string | undefined;
 	readonly initialAppointments?: readonly DoctorShiftAppointment[] | undefined;
-	readonly rawAppointments?: readonly any[] | undefined;
-	readonly patients?: readonly any[] | undefined;
-	readonly chairs?: readonly any[] | undefined;
+	readonly rawAppointments?: readonly RawAppointmentInput[] | undefined;
+	readonly patients?: readonly RawPatientInput[] | undefined;
+	readonly chairs?: readonly RawChairInput[] | undefined;
 	readonly commissionPercent?: number | undefined;
 	readonly onAppointmentUpdate?: ((appointments: readonly DoctorShiftAppointment[]) => void) | undefined;
 	readonly onEmergencyVisit?: (() => void) | undefined;

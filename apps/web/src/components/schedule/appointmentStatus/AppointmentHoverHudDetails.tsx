@@ -114,7 +114,7 @@ export function AppointmentHoverHudDetails({
           <Clock size={13} className="text-[var(--teal)] shrink-0" />
           <span className="font-semibold text-[var(--ink)]">
             <span className="text-[var(--muted)] font-medium">Жалобы / Услуги: </span>
-            {appointment?.reason || (appointment as Record<string, any>)?.notes || appointment?.comment || "Первичный осмотр и консультация"}
+            {appointment?.reason || (appointment && "notes" in appointment && typeof appointment.notes === "string" ? appointment.notes : undefined) || appointment?.comment || "Первичный осмотр и консультация"}
           </span>
         </div>
         {cardTeeth.length > 0 && (

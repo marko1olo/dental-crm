@@ -56,13 +56,19 @@ describe("documentPayloadForKind: Comprehensive Payload Generators", () => {
 		treatmentEstimatePatientOrPayerFullNameValue: () => "Иванов И.И.",
 		treatmentEstimateTreatmentBasisValue: () => "План лечения №1",
 		plannedServiceLinesForFinancialPayload: () => [
-			{ name: "Анестезия", priceRub: 500 },
+			{
+				serviceName: "Анестезия",
+				quantity: 1,
+				unitPriceRub: 500,
+				discountRub: 0,
+				totalRub: 500,
+			},
 		],
 		treatmentEstimateTotalRubValue: () => 500,
 		treatmentEstimateValidUntil: "2026-08-28",
 		treatmentEstimatePriceChangeRules: "Без изменений",
-		documentTextLines: (val: any) =>
-			Array.isArray(val) ? val : typeof val === "string" ? [val] : [],
+		documentTextLines: (val: unknown) =>
+			Array.isArray(val) ? val.map(String) : typeof val === "string" ? [val] : [],
 		treatmentEstimateExcludedItems: [],
 		treatmentEstimatePaymentMilestoneNotes: "Поэтапно",
 		treatmentEstimateDoctorFullNameValue: () => "Смирнов А.В.",
@@ -182,7 +188,16 @@ describe("documentPayloadForKind: Comprehensive Payload Generators", () => {
 		procedureConsentProcedureName: "Пломбирование",
 		procedureConsentToothOrArea: "Зуб 16",
 		procedureConsentDiagnosisOrIndication: "К02.1",
-		clinicalToothRowsValue: () => [{ tooth: 16, status: "carious" }],
+		clinicalToothRowsValue: () => [
+			{
+				toothOrArea: "16",
+				surfaces: ["O"],
+				status: "Caries",
+				diagnosisOrFinding: "К02.1 Кариес дентина",
+				indication: "Кариозная полость",
+				plannedAction: "Пломбирование",
+			},
+		],
 		procedureConsentAnesthesia: "Ультракаин",
 		procedureConsentMaterials: "Композит",
 		procedureConsentPatientRiskFactors: [],
@@ -280,7 +295,14 @@ describe("documentPayloadForKind: Comprehensive Payload Generators", () => {
 		treatmentPlanDiagnosisSummaryValue: () => "Кариес 16, 26",
 		treatmentPlanTeethOrAreaValue: () => "16, 26",
 		treatmentPlanGoals: ["Купирование воспаления"],
-		treatmentPlanStageRows: () => [{ stage: 1, title: "Лечение 16" }],
+		treatmentPlanStageRows: () => [
+			{
+				stageName: "Этап 1",
+				plannedServices: "Лечение 16",
+				plannedTiming: "1 визит",
+				estimatedAmountRub: 15000,
+			},
+		],
 		treatmentPlanTotalRubValue: () => 15000,
 		treatmentPlanAlternatives: [],
 		treatmentPlanRisks: [],
@@ -357,8 +379,34 @@ describe("documentPayloadForKind: Comprehensive Payload Generators", () => {
 		xrayDueDate: "",
 
 		dentalMedicalCard043uPayloadValue: () => ({
-			cardNumber: "043-100",
-			patientFullName: "Иванов И.И.",
+			formNumber: "043/у" as const,
+			organization: {
+				fullName: "Клиника ДЕНТЕ",
+				shortName: "ДЕНТЕ",
+				address: null,
+				phone: null,
+				ogrn: null,
+				inn: null,
+				licenseNumber: null,
+				licenseIssueDate: null,
+				licenseAuthority: null,
+			},
+			patient: {
+				fullName: "Иванов И.И.",
+				birthDate: null,
+				sex: null,
+				phone: null,
+				address: null,
+				documentSeriesNumber: null,
+				snils: null,
+				medicalCardNumber: "043-100",
+			},
+			doctor: {
+				fullName: "Смирнов А.В.",
+				specialty: null,
+				position: null,
+			},
+			visitDate: "2026-07-28",
 		}),
 
 		recordExtractSourceVisitIds: ["visit-1"],
@@ -405,7 +453,7 @@ describe("documentPayloadForKind: Comprehensive Payload Generators", () => {
 		releaseRecipientFullName: "Иванов И.И.",
 		releaseRecipientIdentityDocument: "Паспорт",
 		releaseRecipientAuthority: "Лично",
-		releaseChannel: "in_person",
+		releaseChannel: "paper",
 		releaseDocumentTypes: ["Выписка"],
 		releasePeriodStart: "",
 		releasePeriodEnd: "",
@@ -618,7 +666,7 @@ describe("documentPayloadForKind: Comprehensive Payload Generators", () => {
 		assert.ok(payload?.medicalDocumentReleaseReceipt);
 		assert.equal(
 			payload.medicalDocumentReleaseReceipt.releaseChannel,
-			"in_person",
+			"paper",
 		);
 	});
 

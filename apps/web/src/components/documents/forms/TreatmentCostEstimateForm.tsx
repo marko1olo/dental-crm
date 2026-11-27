@@ -2,6 +2,7 @@ import React from "react";
 import { Edit3 } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { appendChipToText } from "../documentChipText";
+import type { DocumentPlannedServiceLine } from "../tabs/formSwitch/documentFormSwitchTypes";
 
 export interface TreatmentCostEstimateFormProps {
 	treatmentEstimatePatientOrPayerFullNameValue?: (() => string) | undefined;
@@ -9,7 +10,7 @@ export interface TreatmentCostEstimateFormProps {
 	treatmentEstimateTotalRubValue?: (() => number) | undefined;
 	activeDoctorFullName?: string | null | undefined;
 	money?: ((val: number | null | undefined) => string) | undefined;
-	plannedServiceLinesForFinancialPayload?: (() => any[]) | undefined;
+	plannedServiceLinesForFinancialPayload?: (() => readonly DocumentPlannedServiceLine[]) | undefined;
 }
 
 export const TreatmentCostEstimateForm: React.FC<TreatmentCostEstimateFormProps> =

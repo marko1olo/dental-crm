@@ -6,6 +6,7 @@ import path from "node:path";
 import { PassThrough, Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import zlib from "node:zlib";
+import { createApiLogger } from "../../observability/index.js";
 import {
 	GcmStreamCipher,
 	GcmStreamDecipher,
@@ -25,6 +26,22 @@ import {
 	SCRYPT_P,
 	SCRYPT_R,
 } from "./types.js";
+
+const logger = createApiLogger("gfsRotationAndRestore");
+
+async function cleanupTempBackupFile(filePath: string): Promise<void> {
+	try {
+		await fsPromises.unlink(filePath);
+	} catch (err: unknown) {
+		const code =
+			typeof err === "object" && err !== null && "code" in err
+				? String(err.code)
+				: "";
+		if (code !== "ENOENT") {
+			logger.warn({ err, filePath }, "Failed to remove temporary cloud backup file");
+		}
+	}
+}
 
 export const GFS_RETENTION_LIMITS: Record<CloudBackupType, number> = {
 	daily: 7,
@@ -154,7 +171,7 @@ export async function createCloudBackup(
 	try {
 		await pipeline(inputStream, compressor, cipher, tempWriteStream);
 	} catch (err) {
-		await fsPromises.unlink(tempUploadPath).catch(() => {});
+		await cleanupTempBackupFile(tempUploadPath);
 		throw err;
 	}
 
@@ -167,7 +184,7 @@ export async function createCloudBackup(
 			"application/octet-stream",
 		);
 	} finally {
-		await fsPromises.unlink(tempUploadPath).catch(() => {});
+		await cleanupTempBackupFile(tempUploadPath);
 	}
 
 	const rotation = await rotateCloudBackups(storage, orgId);
@@ -286,7 +303,7 @@ export async function restoreCloudBackupToFile(
 		try {
 			await pipeline(readStream, decipher, decompressor, writeStream);
 		} catch (error) {
-			await fsPromises.unlink(targetPlaintextPath).catch(() => {});
+			await cleanupTempBackupFile(targetPlaintextPath);
 			throw error;
 		}
 
@@ -298,7 +315,7 @@ export async function restoreCloudBackupToFile(
 		};
 	} finally {
 		if (cleanupEncPath && encPath) {
-			await fsPromises.unlink(encPath).catch(() => {});
+			await cleanupTempBackupFile(encPath);
 		}
 	}
 }
@@ -325,7 +342,7 @@ export async function restoreCloudBackup(
 		const plaintext = await fsPromises.readFile(res.verifiedPlaintextPath);
 		return { header: res.header, plaintext };
 	} finally {
-		await fsPromises.unlink(res.verifiedPlaintextPath).catch(() => {});
+		await cleanupTempBackupFile(res.verifiedPlaintextPath);
 	}
 }
 

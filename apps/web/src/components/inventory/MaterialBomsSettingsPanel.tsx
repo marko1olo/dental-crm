@@ -19,11 +19,24 @@ export function MaterialBomsSettingsPanel({
 	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
 	const dashboard = appLogic?.dashboard;
+	const legacyDashboardOrg =
+		dashboard && "organization" in dashboard ? dashboard.organization : undefined;
+	const legacyDashboardOrgId =
+		legacyDashboardOrg &&
+		typeof legacyDashboardOrg === "object" &&
+		"id" in legacyDashboardOrg &&
+		typeof legacyDashboardOrg.id === "string"
+			? legacyDashboardOrg.id
+			: "";
+	const legacyAuthOrgId =
+		auth && "organizationId" in auth && typeof auth.organizationId === "string"
+			? auth.organizationId
+			: "";
 	const orgId =
 		propOrgId ||
 		dashboard?.clinicSettings?.profile?.organizationId ||
-		(dashboard as unknown as { organization?: { id?: string } })?.organization?.id ||
-		(auth as unknown as { organizationId?: string })?.organizationId ||
+		legacyDashboardOrgId ||
+		legacyAuthOrgId ||
 		"";
 
 	const getHeaders = useCallback(

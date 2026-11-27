@@ -55,7 +55,6 @@
 	background-color: var(--paper-soft, #0f172a);
 	border: 1px solid var(--line, rgba(255, 255, 255, 0.1));
 	color: var(--muted, #94a3b8);
-	text-transform: uppercase;
 }
 
 .mdlp-offline-drawer {

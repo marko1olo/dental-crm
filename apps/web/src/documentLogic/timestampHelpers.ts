@@ -52,14 +52,14 @@ export function withDocumentCreationTimestamps(
 	const asIsoDate = formatIsoDate(now);
 	const asDateTimeLocal = formatDateTimeLocal(now);
 
-	const filled: DocumentState = { ...state };
+	const filled = { ...state };
 	for (const [field, shape] of DOCUMENT_TIMESTAMP_FIELDS) {
-		const current = filled[field];
+		const current = Reflect.get(filled, field);
 		if (typeof current === "string" && current.trim() !== "") continue;
-		if (shape === "dateTime") filled[field] = asDateTime;
-		else if (shape === "date") filled[field] = asDate;
-		else if (shape === "dateTimeLocal") filled[field] = asDateTimeLocal;
-		else filled[field] = asIsoDate;
+		if (shape === "dateTime") Reflect.set(filled, field, asDateTime);
+		else if (shape === "date") Reflect.set(filled, field, asDate);
+		else if (shape === "dateTimeLocal") Reflect.set(filled, field, asDateTimeLocal);
+		else Reflect.set(filled, field, asIsoDate);
 	}
 	return filled;
 }

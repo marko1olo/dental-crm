@@ -50,7 +50,8 @@ export function calculateMarketingRomiSummary(channels: readonly AdvertisingChan
 	}
 
 	const totalProfitKopecks = totalRevenueKopecks - totalSpentKopecks;
-	const overallRomiPercent = totalSpentKopecks > 0 ? Number(((totalProfitKopecks / totalSpentKopecks) * 100).toFixed(1)) : null;
+	const overallRoiRatio = totalSpentKopecks > 0 ? totalProfitKopecks / totalSpentKopecks : null;
+	const overallRomiPercent = overallRoiRatio !== null ? Number((overallRoiRatio * 100).toFixed(1)) : null;
 	const overallCacKopecks = totalPrimaryPatientsCount > 0 ? Math.round(totalSpentKopecks / totalPrimaryPatientsCount) : null;
 	const overallAverageCheckKopecks = totalPrimaryPatientsCount > 0 ? Math.round(totalRevenueKopecks / totalPrimaryPatientsCount) : null;
 	const overallShowUpRatePercent = totalLeadsCount > 0

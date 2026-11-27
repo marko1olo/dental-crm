@@ -47,8 +47,8 @@ export async function withOfflineFallback<T>(
  * Schedules a non-urgent task during browser idle periods to prevent mechanical disk seek contention.
  */
 export function deferUntilIdle(task: () => Promise<void> | void, timeoutMs = 2000): void {
-	if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-		(window as unknown as { requestIdleCallback: (cb: () => void, opt: { timeout: number }) => void }).requestIdleCallback(
+	if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+		window.requestIdleCallback(
 			() => {
 				try {
 					void task();

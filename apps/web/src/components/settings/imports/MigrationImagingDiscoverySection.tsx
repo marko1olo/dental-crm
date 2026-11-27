@@ -72,8 +72,8 @@ export interface MigrationImagingDiscoverySectionProps {
 	isDicomWorkbenchBuilding: boolean;
 	browserPickedImagingFolder: BrowserPickedImagingFolderState | null;
 	typedDicomLocalFolderDiscovery: DicomLocalFolderDiscoveryResponse | null | undefined;
-	browserDirectoryInputRef: RefObject<HTMLInputElement>;
-	browserImagingFilesInputRef: RefObject<HTMLInputElement>;
+	browserDirectoryInputRef: RefObject<HTMLInputElement | null>;
+	browserImagingFilesInputRef: RefObject<HTMLInputElement | null>;
 	setImagingImportSourceKind: (k: ImagingSourceKind) => void;
 	setImagingImportPreview: (p: ImagingImportPreviewResponse | null) => void;
 	setImagingImportCommit: (c: ImagingImportCommitResponse | null) => void;

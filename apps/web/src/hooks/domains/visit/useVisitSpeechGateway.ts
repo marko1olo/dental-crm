@@ -20,7 +20,7 @@ export function useVisitSpeechGateway({ auth, setError, dashboard, activeOrganiz
 	const { speechGatewayHealthReport, setSpeechGatewayHealthReport, speechGatewayStatus, setSpeechGatewayStatus, speechProviderRuntimeStatuses, setSpeechProviderRuntimeStatuses, setSpeechRecordingStrategy, setSpeechRecordingRecovery, setPendingSpeechChunkCount, setSpeechStatusNote } = appStore;
 
 	const speechProviderRuntimeById = useMemo(() => new Map((Array.isArray(speechProviderRuntimeStatuses) ? speechProviderRuntimeStatuses : []).map((p) => [p.providerId, p])), [speechProviderRuntimeStatuses]);
-	const speechProviderHealthById = useMemo(() => new Map<string, any>((speechGatewayHealthReport?.providers ?? []).map((p) => [p.providerId, p])), [speechGatewayHealthReport]);
+	const speechProviderHealthById = useMemo(() => new Map((speechGatewayHealthReport?.providers ?? []).map((p) => [p.providerId, p])), [speechGatewayHealthReport]);
 	const activeSpeechProviderHealth = useMemo(() => speechGatewayHealthReport?.providers?.find((p) => p.providerId === speechGatewayHealthReport.activeProviderId) ?? null, [speechGatewayHealthReport]);
 
 	const handleGatewayError = useCallback((title: string, err: unknown, silent?: boolean) => {

@@ -6,12 +6,14 @@ import {
 	normalizeRubAmountInput,
 	validateRubAmountInput,
 } from "../rubAmountInput";
+import { resolveDocumentState } from "../documentLogic/documentStateHydrator";
 import { requiredDocumentField as defaultRequiredDocumentField } from "./regexRules";
 import type { DocumentState, ValidationResult } from "./types";
 
 export function validateCompletedWorksAct(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		completedActNumber,
 		completedActDate,
@@ -74,8 +76,9 @@ export function validateCompletedWorksAct(
 }
 
 export function validateTreatmentCostEstimate(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		treatmentEstimateNumber,
 		treatmentEstimateDate,
@@ -153,8 +156,9 @@ export function validateTreatmentCostEstimate(
 }
 
 export function validatePaymentInvoice(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		plannedServiceLinesForFinancialPayload,
 		paymentInvoiceNumber,
@@ -207,8 +211,9 @@ export function validatePaymentInvoice(
 }
 
 export function validatePaymentReceipt(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		paymentReceiptNumber,
 		paymentReceiptDate,
@@ -286,8 +291,9 @@ export function validatePaymentReceipt(
 }
 
 export function validateInstallmentPaymentSchedule(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		installmentScheduleNumber,
 		installmentScheduleDate,
@@ -350,8 +356,9 @@ export function validateInstallmentPaymentSchedule(
 }
 
 export function validateTaxDeductionApplication(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		taxApplicationTaxpayerFullName,
 		taxApplicationTaxpayerInn,
@@ -409,8 +416,9 @@ export function validateTaxDeductionApplication(
 }
 
 export function validatePaymentRefundCorrectionRequest(
-	state: DocumentState,
+	incomingState: DocumentState,
 ): ValidationResult {
+	const state = resolveDocumentState(incomingState);
 	const {
 		refundSelectedPaymentId,
 		refundAmountRub,

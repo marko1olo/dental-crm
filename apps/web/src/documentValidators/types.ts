@@ -1,4 +1,6 @@
-export type DocumentState = Record<string, any>;
+import type { DocumentState, ResolvedDocumentState } from "../documentLogic/types";
+
+export type { DocumentState, ResolvedDocumentState };
 
 export type ValidationResult = string[] | string | null;
 

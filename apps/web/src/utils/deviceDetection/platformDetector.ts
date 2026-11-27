@@ -58,11 +58,22 @@ export function isLowSpecHardware(): boolean {
 	if (override !== null) return override === "potato" || override === "low";
 
 	if (typeof navigator !== "undefined") {
-		const navMem = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+		const rawMem = Reflect.get(navigator, "deviceMemory");
+		const navMem = typeof rawMem === "number" ? rawMem : undefined;
 		const cores = navigator.hardwareConcurrency;
 		if (typeof navMem === "number" && navMem <= 4) return true;
 		if (typeof cores === "number" && cores > 0 && cores <= 4) return true;
-		const conn = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+		const rawConn = Reflect.get(navigator, "connection");
+		const conn =
+			rawConn && typeof rawConn === "object"
+				? {
+						saveData: Reflect.get(rawConn, "saveData") === true,
+						effectiveType:
+							typeof Reflect.get(rawConn, "effectiveType") === "string"
+								? String(Reflect.get(rawConn, "effectiveType"))
+								: undefined,
+					}
+				: undefined;
 		if (conn?.saveData || conn?.effectiveType === "slow-2g" || conn?.effectiveType === "2g" || conn?.effectiveType === "3g") return true;
 		if (typeof cores === "number" && cores >= 6 && (typeof navMem !== "number" || navMem >= 6)) return false;
 	}
@@ -87,7 +98,8 @@ export function getHardwareResourceTier(): HardwareResourceTier {
 
 	if (typeof navigator !== "undefined") {
 		const cores = navigator.hardwareConcurrency;
-		const navMem = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+		const rawMem = Reflect.get(navigator, "deviceMemory");
+		const navMem = typeof rawMem === "number" ? rawMem : undefined;
 		if (typeof cores === "number" && cores >= 8 && (typeof navMem !== "number" || navMem >= 8)) return "high";
 		if ((typeof cores === "number" && cores >= 6) || (typeof navMem === "number" && navMem >= 6)) return "medium";
 	}

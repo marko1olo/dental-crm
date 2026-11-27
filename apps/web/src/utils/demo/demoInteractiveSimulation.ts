@@ -139,15 +139,13 @@ export function getSimulationStorage(): Storage | null {
 		if (typeof window !== "undefined" && window.localStorage) {
 			return window.localStorage;
 		}
-	} catch {
-		// ignore
-	}
-	try {
-		if (typeof globalThis !== "undefined" && (globalThis as unknown as { localStorage?: Storage }).localStorage) {
-			return (globalThis as unknown as { localStorage?: Storage }).localStorage ?? null;
+		if (typeof globalThis !== "undefined" && globalThis.localStorage) {
+			return globalThis.localStorage;
 		}
-	} catch {
-		// ignore
+	} catch (err) {
+		if (typeof console !== "undefined" && typeof console.warn === "function") {
+			console.warn("[demoInteractiveSimulation] localStorage unavailable", err);
+		}
 	}
 	return null;
 }

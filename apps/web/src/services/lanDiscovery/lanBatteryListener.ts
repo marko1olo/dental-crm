@@ -1,17 +1,30 @@
 import { logger } from "../../utils/logger";
 import { type BatteryState, LOW_BATTERY_THRESHOLD } from "./types";
 
+interface BatteryManagerLike {
+	readonly level?: number | undefined;
+	readonly charging?: boolean | undefined;
+	addEventListener?: ((type: string, listener: () => void) => void) | undefined;
+	removeEventListener?: ((type: string, listener: () => void) => void) | undefined;
+}
+
+function getBatteryProvider(
+	nav: Navigator | undefined,
+): (() => Promise<BatteryManagerLike>) | null {
+	if (!nav) return null;
+	const candidate = Reflect.get(nav, "getBattery");
+	if (typeof candidate !== "function") return null;
+	return () => Promise.resolve(candidate.call(nav) as Promise<BatteryManagerLike>);
+}
+
 export async function getBatteryState(): Promise<BatteryState> {
-	if (
-		typeof navigator === "undefined" ||
-		typeof (navigator as unknown as { getBattery?: () => Promise<unknown> }).getBattery !== "function"
-	) {
+	const getBattery =
+		typeof navigator !== "undefined" ? getBatteryProvider(navigator) : null;
+	if (!getBattery) {
 		return { isSupported: false, level: 1.0, charging: true, isLowBatteryDischarging: false };
 	}
 	try {
-		const battery = await (navigator as unknown as {
-			getBattery: () => Promise<{ level?: number; charging?: boolean }>;
-		}).getBattery();
+		const battery = await getBattery();
 		const level = typeof battery?.level === "number" ? battery.level : 1.0;
 		const charging = typeof battery?.charging === "boolean" ? battery.charging : true;
 		const isLowBatteryDischarging = !charging && level <= LOW_BATTERY_THRESHOLD;
@@ -21,7 +34,8 @@ export async function getBatteryState(): Promise<BatteryState> {
 			charging,
 			isLowBatteryDischarging,
 		};
-	} catch {
+	} catch (err) {
+		logger.warn("[lanBatteryListener] Battery API unavailable", err);
 		return { isSupported: false, level: 1.0, charging: true, isLowBatteryDischarging: false };
 	}
 }
@@ -29,21 +43,13 @@ export async function getBatteryState(): Promise<BatteryState> {
 export async function initBatteryListener(
 	onUpdate: () => void,
 ): Promise<(() => void) | null> {
-	if (
-		typeof navigator === "undefined" ||
-		typeof (navigator as unknown as { getBattery?: () => Promise<unknown> }).getBattery !== "function"
-	) {
+	const getBattery =
+		typeof navigator !== "undefined" ? getBatteryProvider(navigator) : null;
+	if (!getBattery) {
 		return null;
 	}
 	try {
-		const battery = await (navigator as unknown as {
-			getBattery: () => Promise<{
-				level?: number;
-				charging?: boolean;
-				addEventListener?: (type: string, listener: () => void) => void;
-				removeEventListener?: (type: string, listener: () => void) => void;
-			}>;
-		}).getBattery();
+		const battery = await getBattery();
 		if (!battery) return null;
 
 		if (typeof battery.addEventListener === "function") {

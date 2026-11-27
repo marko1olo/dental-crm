@@ -28,7 +28,7 @@ describe("validateDocumentPayloadForKind and state hydrators", () => {
 		attendanceSignedByRole: "Doctor",
 		attendanceDiagnosisDisclosureExcluded: true,
 		attendanceNotSickLeaveAcknowledged: true,
-		requiredDocumentField: (val: any, msg: string) => (val ? null : msg),
+		requiredDocumentField: (val: string | null | undefined, msg: string) => (val ? null : msg),
 		...overrides,
 	});
 
@@ -96,7 +96,7 @@ describe("validateDocumentPayloadForKind and state hydrators", () => {
 	});
 
 	it("withDocumentHelpers injects helper methods into state", () => {
-		const raw: DocumentState = { foo: "bar" };
+		const raw = { foo: "bar" };
 		const augmented = withDocumentHelpers(raw);
 		assert.equal(augmented.foo, "bar");
 		assert.equal(typeof augmented.requiredDocumentField, "function");
@@ -104,15 +104,15 @@ describe("validateDocumentPayloadForKind and state hydrators", () => {
 	});
 
 	it("hydrateDocumentStateWithProfiles safely merges profiles", () => {
-		const base: DocumentState = { test: 123 };
+		const base = { test: 123 };
 		const hydrated = hydrateDocumentStateWithProfiles(base, {
 			clinicProfileDraft: { legalName: "Клиника ДЕНТЕ" },
 			documentPatient: { fullName: "Петров П.П." },
 			activeDoctor: { fullName: "Доктор Айболит" },
 		});
-		assert.equal(hydrated.clinicProfileDraft.legalName, "Клиника ДЕНТЕ");
-		assert.equal(hydrated.documentPatient.fullName, "Петров П.П.");
-		assert.equal(hydrated.activeDoctor.fullName, "Доктор Айболит");
+		assert.equal(hydrated.clinicProfileDraft?.legalName, "Клиника ДЕНТЕ");
+		assert.equal(hydrated.documentPatient?.fullName, "Петров П.П.");
+		assert.equal(hydrated.activeDoctor?.fullName, "Доктор Айболит");
 		assert.equal(hydrated.test, 123);
 	});
 });
@@ -150,7 +150,7 @@ describe("withDocumentCreationTimestamps and date formatters", () => {
 		};
 		const stamped = withDocumentCreationTimestamps(initial);
 		assert.equal(stamped.paidContractSignedAt, "2026-01-01 10:00");
-		assert.ok(stamped.paidContractDate.length > 0);
-		assert.ok(stamped.taxApplicationRequestedAt.includes("T"));
+		assert.ok((stamped.paidContractDate ?? "").length > 0);
+		assert.ok((stamped.taxApplicationRequestedAt ?? "").includes("T"));
 	});
 });

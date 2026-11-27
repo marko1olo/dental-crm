@@ -7,6 +7,9 @@ import {
 	SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,
 	type DoctorShiftAppointment,
 	type DoctorAppointmentStatus,
+	type RawAppointmentInput,
+	type RawChairInput,
+	type RawPatientInput,
 } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode.js";
 import { showToast } from "../../../GlobalToast";
@@ -46,9 +49,9 @@ export interface UseShiftAppointmentsFlowParams {
 	initialDoctorSpecialty: string;
 	initialShiftDateIso: string;
 	initialAppointments?: readonly DoctorShiftAppointment[] | undefined;
-	rawAppointments?: readonly any[] | undefined;
-	patients?: readonly any[] | undefined;
-	chairs?: readonly any[] | undefined;
+	rawAppointments?: readonly RawAppointmentInput[] | undefined;
+	patients?: readonly RawPatientInput[] | undefined;
+	chairs?: readonly RawChairInput[] | undefined;
 	onAppointmentUpdate?: ((appointments: readonly DoctorShiftAppointment[]) => void) | undefined;
 }
 
