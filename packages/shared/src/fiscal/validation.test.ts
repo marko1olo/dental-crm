@@ -43,7 +43,9 @@ describe("54-FZ FFD 1.2 Fiscal Validation & Decomposition Suite", () => {
 				discountKopecks: 50000,
 				amountKopecks: 350000,
 			};
-			assert.doesNotThrow(() => fiscalReceiptItemSchema.parse(itemWithFixedDiscount));
+			const parsedFixed = fiscalReceiptItemSchema.parse(itemWithFixedDiscount);
+			assert.equal(parsedFixed.amountKopecks, 350000);
+			assert.equal(parsedFixed.discountKopecks, 50000);
 
 			const itemWithPercentDiscount = {
 				name: "Установка пломбы светового отверждения",
@@ -52,7 +54,9 @@ describe("54-FZ FFD 1.2 Fiscal Validation & Decomposition Suite", () => {
 				discountPercent: 10,
 				amountKopecks: 360000,
 			};
-			assert.doesNotThrow(() => fiscalReceiptItemSchema.parse(itemWithPercentDiscount));
+			const parsedPercent = fiscalReceiptItemSchema.parse(itemWithPercentDiscount);
+			assert.equal(parsedPercent.amountKopecks, 360000);
+			assert.equal(parsedPercent.discountPercent, 10);
 		});
 
 		it("rejects line item when amountKopecks does not match price * quantity - discount", () => {
@@ -140,7 +144,9 @@ describe("54-FZ FFD 1.2 Fiscal Validation & Decomposition Suite", () => {
 				correctionDocDate: "2026-10-10",
 				correctionDocNumber: "DOC-9912",
 			};
-			assert.doesNotThrow(() => createFiscalReceiptPayloadSchema.parse(correctionPayloadValid));
+			const parsedCorrection = createFiscalReceiptPayloadSchema.parse(correctionPayloadValid);
+			assert.equal(parsedCorrection.correctionType, "self_initiated");
+			assert.equal(parsedCorrection.correctionDocNumber, "DOC-9912");
 		});
 	});
 
@@ -289,10 +295,9 @@ describe("54-FZ FFD 1.2 Fiscal Validation & Decomposition Suite", () => {
 
 		it("returns smart cash preset suggestions", () => {
 			const presets = getCashPresetSuggestions(1350);
-			assert.ok(presets.includes(1350));
-			assert.ok(presets.includes(1400) || presets.includes(1500));
-			assert.ok(presets.includes(2000));
-			assert.ok(presets.length <= 5);
+			assert.equal(presets[0], 1350);
+			assert.equal(presets.includes(2000), true);
+			assert.equal(presets.length > 0 && presets.length <= 5, true);
 		});
 	});
 

@@ -18,6 +18,7 @@ import {
 	withFixtureTenant,
 } from "../tests/support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../tests/support/tenantTestApp.js";
+import { chargeLineOutcome } from "../money/patientDebt.js";
 import type { DocumentCreationFacts } from "./documentGuards/index.js";
 import {
 	installmentScheduleMismatchReason,
@@ -112,11 +113,16 @@ describe("Domain 13 Red Team Proof Suite: Documents, Consents, Contracts & Tax C
 		assert.ok(header.includes(encodeURIComponent("План_лечения_Иванов.pdf")));
 	});
 
-	test("DEF-6: Fractional quantity (1.5 carpules) is preserved without integer truncation", () => {
-		const rawItem = { quantity: "1.5" };
-		const parsedQuantity = Number(rawItem.quantity) || 1;
-		assert.strictEqual(parsedQuantity, 1.5);
-		assert.notStrictEqual(parsedQuantity, 2);
+	test("DEF-6: Fractional quantity (1.5 carpules) is rejected explicitly without silent truncation", () => {
+		const outcome = chargeLineOutcome({
+			unitPriceRub: "1000.00",
+			quantity: "1.5",
+			discountRub: "0.00",
+		});
+		assert.strictEqual(outcome.ok, false);
+		if (!outcome.ok) {
+			assert.ok(outcome.reason.includes("дробное количество"));
+		}
 	});
 
 	describe("HTTP / PG18 Read-Only GET Tax Certificate, 219 NK RF Anonymous Reject & NDFL Calculator Validation", () => {

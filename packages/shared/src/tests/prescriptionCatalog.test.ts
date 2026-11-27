@@ -32,15 +32,15 @@ describe("Prescription Catalog & 1-Click Rx Sets (Top-56 Dental Formulary)", () 
 
 	it("covers all major dental pharmacological groups", () => {
 		const categories = new Set(DENTAL_TOP56_MEDICATIONS.map((m) => m.category));
-		assert.ok(categories.has("antibiotic"), "Must contain antibiotics");
-		assert.ok(categories.has("nsaid"), "Must contain NSAIDs");
-		assert.ok(categories.has("antiseptic"), "Must contain antiseptics");
-		assert.ok(categories.has("topical_dental"), "Must contain dental gels/pastes");
-		assert.ok(categories.has("antihistamine"), "Must contain antihistamines");
-		assert.ok(categories.has("anesthetic"), "Must contain local anesthetics");
-		assert.ok(categories.has("emergency"), "Must contain emergency kit");
-		assert.ok(categories.has("corticosteroid"), "Must contain corticosteroids");
-		assert.ok(categories.has("gastroprotective"), "Must contain gastroprotective/probiotics");
+		assert.equal(categories.has("antibiotic"), true);
+		assert.equal(categories.has("nsaid"), true);
+		assert.equal(categories.has("antiseptic"), true);
+		assert.equal(categories.has("topical_dental"), true);
+		assert.equal(categories.has("antihistamine"), true);
+		assert.equal(categories.has("anesthetic"), true);
+		assert.equal(categories.has("emergency"), true);
+		assert.equal(categories.has("corticosteroid"), true);
+		assert.equal(categories.has("gastroprotective"), true);
 	});
 
 	it("contains all critical Russian clinical dental staples", () => {
@@ -68,12 +68,13 @@ describe("Prescription Catalog & 1-Click Rx Sets (Top-56 Dental Formulary)", () 
 			"Эриус",
 		];
 
-		for (const name of requiredTradeNames) {
-			const found = DENTAL_TOP56_MEDICATIONS.some((m) =>
+		const matchedCount = requiredTradeNames.filter((name) =>
+			DENTAL_TOP56_MEDICATIONS.some((m) =>
 				m.tradeNameRu.toLowerCase().includes(name.toLowerCase()),
-			);
-			assert.ok(found, `Expected clinical staple '${name}' to be present in catalog`);
-		}
+			),
+		).length;
+
+		assert.equal(matchedCount, requiredTradeNames.length);
 	});
 
 	it("defines exactly 14 official dosage forms with Latin patterns", () => {

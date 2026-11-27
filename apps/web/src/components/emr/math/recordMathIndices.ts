@@ -18,7 +18,7 @@ export function calculateCpitnIndex(sextants: {
 	sextant48_44?: CpitnSextantCode;
 	sextant43_33?: CpitnSextantCode;
 	sextant34_38?: CpitnSextantCode;
-}): {
+} = {}): {
 	maxCode: number;
 	maxCodeText: string;
 	treatmentNeedCategory: "0_none" | "1_hygiene_instructions" | "2_scaling_root_planing" | "3_complex_periodontal";
@@ -26,12 +26,12 @@ export function calculateCpitnIndex(sextants: {
 	treatmentRecommendations: string;
 } {
 	const values = [
-		sextants.sextant18_14 || "0_healthy",
-		sextants.sextant13_23 || "0_healthy",
-		sextants.sextant24_28 || "0_healthy",
-		sextants.sextant48_44 || "0_healthy",
-		sextants.sextant43_33 || "0_healthy",
-		sextants.sextant34_38 || "0_healthy",
+		sextants?.sextant18_14 || "0_healthy",
+		sextants?.sextant13_23 || "0_healthy",
+		sextants?.sextant24_28 || "0_healthy",
+		sextants?.sextant48_44 || "0_healthy",
+		sextants?.sextant43_33 || "0_healthy",
+		sextants?.sextant34_38 || "0_healthy",
 	];
 
 	const codeRank = (code: string): number => {

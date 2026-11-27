@@ -87,6 +87,7 @@ export const ScheduleMobileMonthNav: React.FC<ScheduleMobileMonthNavProps> = ({
           <button
             type="button"
             role="tab"
+            data-testid="schedule-mobile-view-mode-agenda"
             aria-selected={viewMode === "agenda"}
             onClick={() => onViewModeChange("agenda")}
             className={`min-h-[38px] px-2 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 whitespace-nowrap shrink-0 cursor-pointer transition-all ${
@@ -101,6 +102,7 @@ export const ScheduleMobileMonthNav: React.FC<ScheduleMobileMonthNavProps> = ({
           <button
             type="button"
             role="tab"
+            data-testid="schedule-mobile-view-mode-grid"
             aria-selected={viewMode === "grid"}
             onClick={() => onViewModeChange("grid")}
             className={`min-h-[38px] px-2 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 whitespace-nowrap shrink-0 cursor-pointer transition-all ${

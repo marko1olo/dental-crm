@@ -13,7 +13,8 @@ export const ScheduleMobileWeekStrip: React.FC<ScheduleMobileWeekStripProps> = (
 }) => {
   return (
     <div
-      className="schedule-mobile-day-strip"
+      className="schedule-mobile-day-strip schedule-mobile-week-strip"
+      data-testid="schedule-mobile-week-strip"
       role="tablist"
       aria-label="Выбор дня недели"
     >

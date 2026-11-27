@@ -1,3 +1,4 @@
+import "../../../../testCssStub.mjs";
 import React from "react";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
@@ -193,29 +194,52 @@ describe("Red Team Schedule & 3-Second Booking Inquisitor Suite (Mandates 8e, 8n
   });
 
   it("5. Conflictless Save & Debounced Draft Continuity: persists draft without state drop and clears upon successful save", () => {
-    // Test that draft format preserves all fast-booking inputs
-    const draftPayload = {
+    const store = useScheduleStore.getState();
+
+    // Set appointment draft in schedule store
+    store.setNewAppointmentDraft({
       patientId: "pat-123",
-      patientName: "Кузнецов Артем",
-      doctorUserId: "doc-1",
+      doctorId: "doc-1",
       chairId: "chair-1",
-      startsAtLocal: "2026-11-06T11:00",
+      date: "2026-11-06",
+      startTime: "11:00",
       durationMinutes: 45,
-      reason: "Консультация ортодонта",
+      type: "consultation",
       comment: "Повторный осмотр",
-      appointmentType: "consultation",
-      timestamp: Date.now(),
-    };
+      color: "#0f766e",
+    });
 
-    // Serialize & deserialize roundtrip
-    const serialized = JSON.stringify(draftPayload);
-    const parsed = JSON.parse(serialized);
+    const activeDraft = useScheduleStore.getState().newAppointmentDraft;
+    assert.strictEqual(activeDraft.patientId, "pat-123");
+    assert.strictEqual(activeDraft.doctorId, "doc-1");
+    assert.strictEqual(activeDraft.chairId, "chair-1");
+    assert.strictEqual(activeDraft.durationMinutes, 45);
 
-    assert.strictEqual(parsed.patientId, "pat-123");
-    assert.strictEqual(parsed.doctorUserId, "doc-1");
-    assert.strictEqual(parsed.chairId, "chair-1");
-    assert.strictEqual(parsed.durationMinutes, 45);
-    assert.strictEqual(parsed.reason, "Консультация ортодонта");
+    // Build quick booking payload from active draft state
+    const payload = buildQuickBookingPayload({
+      params: {
+        doctorUserId: activeDraft.doctorId,
+        chairId: activeDraft.chairId,
+        assistantUserId: null,
+        isSoloClinic: false,
+        reason: "Консультация ортодонта",
+        comment: activeDraft.comment,
+        status: "confirmed",
+        doctors: [{ id: "doc-1", fullName: "Д-р Иванов", specialty: "orthodontist" }],
+        chairs: [{ id: "chair-1", name: "Кресло 1" }],
+        assistants: [],
+      },
+      activePatientId: activeDraft.patientId,
+      startsAtIso: "2026-11-06T11:00:00.000Z",
+      endsAtIso: "2026-11-06T11:45:00.000Z",
+      isEmergency: false,
+    });
+
+    assert.strictEqual(payload.patientId, "pat-123");
+    assert.strictEqual(payload.doctorUserId, "doc-1");
+    assert.strictEqual(payload.chairId, "chair-1");
+    assert.strictEqual(payload.reason, "Консультация ортодонта");
+    assert.strictEqual(isUuidV7(payload.idempotencyKey), true);
   });
 
   it("6. Chair & Doctor Filter Switching Without State Drop: switching chair filter preserves date, doctor and status selections", () => {
@@ -251,7 +275,7 @@ describe("Red Team Schedule & 3-Second Booking Inquisitor Suite (Mandates 8e, 8n
     assert.strictEqual(afterReset.scheduleDoctorFilterId, "doc-active-1");
   });
 
-  it("7. Mobile Apple HIG Segmented Controls: [ Сетка | Лента ] & [ Сегодня | Завтра | + День ] without tab clipping or overlap", () => {
+  it("7. Mobile Apple HIG Segmented Controls: [ Сетка | Лента ] & Apple HIG week calendar strip without clipping", () => {
     const mockDashboard = {
       clinicSettings: {
         profile: { timezone: "Europe/Moscow" },
@@ -281,9 +305,12 @@ describe("Red Team Schedule & 3-Second Booking Inquisitor Suite (Mandates 8e, 8n
     assert.ok(html.includes("Сетка"));
     assert.ok(html.includes("Лента"));
 
-    // Segmented Day Control [ Сегодня | Завтра | + День ]
-    assert.ok(html.includes('data-testid="schedule-mobile-segment-today"'), "Must render [Сегодня] tab");
-    assert.ok(html.includes('data-testid="schedule-mobile-segment-tomorrow"'), "Must render [Завтра] tab");
-    assert.ok(html.includes('data-testid="schedule-mobile-segment-plus-day"'), "Must render [+ День] tab");
+    // Apple HIG 7-day calendar week strip (Mandate 8ze / Wave 5: <= 2 top header bars)
+    assert.ok(
+      html.includes("schedule-mobile-week-strip") ||
+      html.includes("schedule-mobile-day-strip") ||
+      html.includes("schedule-mobile-day-col"),
+      "Must render Apple HIG 7-day week strip"
+    );
   });
 });

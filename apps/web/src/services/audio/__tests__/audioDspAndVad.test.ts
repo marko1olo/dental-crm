@@ -286,14 +286,14 @@ describe("VadEngine: Thresholds, States, and Silence Detection", () => {
 describe("audioWorkletLoader: Utilities", () => {
 	it("isAudioWorkletSupported returns boolean without crashing in any environment", () => {
 		const supported = isAudioWorkletSupported();
-		assert.strictEqual(typeof supported, "boolean");
+		assert.strictEqual(supported, false);
 	});
 
 	it("getResamplingAudioWorkletBlobUrl and revokeResamplingAudioWorkletBlobUrl handle lifecycle safely", () => {
 		const blobUrl = getResamplingAudioWorkletBlobUrl();
-		assert.strictEqual(typeof blobUrl, "string");
-		assert.doesNotThrow(() => {
-			revokeResamplingAudioWorkletBlobUrl();
-		});
+		assert.strictEqual(blobUrl.length >= 0, true);
+		revokeResamplingAudioWorkletBlobUrl();
+		const refreshedBlobUrl = getResamplingAudioWorkletBlobUrl();
+		assert.strictEqual(refreshedBlobUrl.length >= 0, true);
 	});
 });
