@@ -183,8 +183,9 @@ export function parseRadiologyFilename(filename: string): ParsedFilenameMetadata
 	);
 	let hasRanges = false;
 	for (const rm of rangeMatches) {
-		const start = Number.parseInt(rm[1]!, 10);
-		const end = Number.parseInt(rm[2]!, 10);
+		if (!rm[1] || !rm[2]) continue;
+		const start = Number.parseInt(rm[1], 10);
+		const end = Number.parseInt(rm[2], 10);
 		if (start <= end) {
 			hasRanges = true;
 			for (let t = start; t <= end; t++) {
@@ -262,10 +263,10 @@ export function calculateFastBufferHash(buffer: Uint8Array): string {
 	const len = buffer.length;
 
 	for (let i = 0; i < len; i += 4) {
-		const byte = buffer[i]!;
+		const byte = buffer[i] ?? 0;
 		h1 = Math.imul(h1 ^ byte, 0x01000193);
 		if (i + 1 < len) {
-			const b2 = buffer[i + 1]!;
+			const b2 = buffer[i + 1] ?? 0;
 			h2 = Math.imul(h2 ^ b2, 0x01000193);
 		}
 	}

@@ -74,9 +74,11 @@ describe("Wave 124: CBCT Automatic Arch Detection Engine", () => {
 
 		// Verify every control point lies on the bone contour band
 		for (let i = 0; i < cps.length; i++) {
-			const pt = cps[i];
-			assert.ok(pt !== undefined, `Point ${i} must be defined`);
-			const [x, y] = pt;
+			const pt: Point2 | undefined = cps[i];
+			if (pt === undefined) {
+				assert.fail(`Point ${i} must be defined`);
+			}
+			const [x, y]: Point2 = pt;
 			const dx = x - CX;
 			const dy = y - CY;
 			const rNorm = Math.hypot(dx / SEMI_A, dy / SEMI_B);
@@ -226,10 +228,14 @@ describe("Wave 124: CBCT Automatic Arch Detection Engine", () => {
 
 		// LPS world coordinates must properly incorporate origin and spacing
 		for (let i = 0; i < cps.length; i++) {
-			const [wx, wy] = cps[i]!;
+			const pt: Point2 | undefined = cps[i];
+			if (pt === undefined) {
+				assert.fail(`Point ${i} must be defined`);
+			}
+			const [wx, wy]: Point2 = pt;
 			// Index coordinates: ix = (wx - origin[0]) / spacing[0]
-			const ix = (wx - shiftedOrigin[0]) / anisoSpacing[0];
-			const iy = (wy - shiftedOrigin[1]) / anisoSpacing[1];
+			const ix: number = (wx - shiftedOrigin[0]) / anisoSpacing[0];
+			const iy: number = (wy - shiftedOrigin[1]) / anisoSpacing[1];
 			assert.ok(ix >= 0 && ix < anisoDims[0], `Index X (${ix}) must be within bounds`);
 			assert.ok(iy >= 0 && iy < anisoDims[1], `Index Y (${iy}) must be within bounds`);
 		}

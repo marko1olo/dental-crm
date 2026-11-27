@@ -308,7 +308,10 @@ describe("Wave 136: CBCT Auto Arch Detection & BVH Mesh Slicing Engine", () => {
 
 			// Verify all points lie within the elliptical bone band
 			for (let idx = 0; idx < cps.length; idx++) {
-				const pt = cps[idx]!;
+				const pt: Point2 | undefined = cps[idx];
+				if (pt === undefined) {
+					assert.fail(`Point ${idx} must be defined`);
+				}
 				const dx = pt[0] - CX;
 				const dy = pt[1] - CY;
 				const rNorm = Math.hypot(dx / SEMI_A, dy / SEMI_B);

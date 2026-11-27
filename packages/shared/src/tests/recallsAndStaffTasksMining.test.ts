@@ -6,7 +6,7 @@ import {
 	filterDueRecalls,
 	formatRecallMessage,
 	type RecallItem,
-} from "../recalls/recallEngine.js";
+} from "../recalls/index.js";
 import {
 	canTransitionStaffTaskStatus,
 	filterStaffTasks,

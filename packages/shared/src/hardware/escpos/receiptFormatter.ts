@@ -38,14 +38,18 @@ export function buildEscPosFiscalReceiptBuffer(
 	// 1. Clinic Header
 	builder.align("center");
 	builder.doubleBoth(true);
-	builder.line(payload.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»");
+	builder.line(payload.clinicName || "Стоматологическая клиника");
 	builder.doubleBoth(false);
 
-	builder.line(payload.clinicAddress || "г. Москва, Ломоносовский пр-т, 24");
+	if (payload.clinicAddress) {
+		builder.line(payload.clinicAddress);
+	}
 	if (payload.inn) {
 		builder.line(`ИНН: ${payload.inn}${payload.kpp ? ` КПП: ${payload.kpp}` : ""}`);
 	}
-	builder.line(`Лицензия: № ${payload.licenseNumber || "ЛО41-01137-77/00368421"}`);
+	if (payload.licenseNumber) {
+		builder.line(`Лицензия: № ${payload.licenseNumber}`);
+	}
 	builder.separator("-");
 
 	// 2. Receipt Operation Title
@@ -120,22 +124,26 @@ export function buildEscPosFiscalReceiptBuffer(
 	builder.separator("-");
 
 	// 5. Fiscal Attributes & FNS QR Code
-	const fn = payload.fnSerial || "9960440302145896";
-	const fd = payload.fiscalDocNum || "10042";
-	const fpd = payload.fiscalSign || "1234567890";
+	const fn = payload.fnSerial || "";
+	const fd = payload.fiscalDocNum || "";
+	const fpd = payload.fiscalSign || "";
 
-	builder.line(`ФН: ${fn}`);
-	builder.line(`ФД: ${fd}   ФПД: ${fpd}`);
+	if (fn) builder.line(`ФН: ${fn}`);
+	if (fd || fpd) builder.line(`ФД: ${fd}   ФПД: ${fpd}`);
 	builder.line("Сайт ФНС: www.nalog.gov.ru");
 
 	const qrStr =
 		payload.fnsQrString ||
-		`t=${dateObj.toISOString().slice(0, 19).replace(/[-:T]/g, "")}&s=${payload.totalRub.toFixed(2)}&fn=${fn}&i=${fd}&fp=${fpd}&n=${payload.operationType === "income_return" ? "2" : "1"}`;
+		(fn && fd && fpd
+			? `t=${dateObj.toISOString().slice(0, 19).replace(/[-:T]/g, "")}&s=${payload.totalRub.toFixed(2)}&fn=${fn}&i=${fd}&fp=${fpd}&n=${payload.operationType === "income_return" ? "2" : "1"}`
+			: "");
 
-	builder.feed(1);
-	builder.align("center");
-	builder.qrCode(qrStr, { moduleSize: paperWidth === 80 ? 5 : 4, centerAlign: true });
-	builder.feed(1);
+	if (qrStr) {
+		builder.feed(1);
+		builder.align("center");
+		builder.qrCode(qrStr, { moduleSize: paperWidth === 80 ? 5 : 4, centerAlign: true });
+		builder.feed(1);
+	}
 
 	builder.line("Спасибо за доверие!");
 	builder.line("Здоровья вашим зубам!");

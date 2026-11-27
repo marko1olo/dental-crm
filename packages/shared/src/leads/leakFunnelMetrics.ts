@@ -1,3 +1,10 @@
+import {
+	kopecksToRubles,
+	rublesToKopecks,
+	sumKopecks,
+	type Kopecks,
+} from "../money.js";
+
 /**
  * DENTE Dental CRM — Leak Funnel & Reactivation Metrics Engine
  * Centralized calculation of CRM lead leak recovery and conversion funnels.
@@ -6,6 +13,7 @@
 export interface LeakFunnelLeadInput {
 	id: string;
 	leadStatus?: string | null | undefined;
+	uncompletedPlanKopecks?: number | bigint | null | undefined;
 	uncompletedPlanSumRub?: number | string | null | undefined;
 	daysSinceLastVisit?: number | null | undefined;
 }
@@ -17,6 +25,7 @@ export interface LeakFunnelMetricsResult {
 	rebookedCount: number;
 	declinedCount: number;
 	reactivationConversionPct: number;
+	totalUncompletedPlanKopecks: number;
 	totalUncompletedPlanSumRub: number;
 }
 
@@ -34,6 +43,7 @@ export function calculateLeakFunnelMetrics(
 			rebookedCount: 0,
 			declinedCount: 0,
 			reactivationConversionPct: 0,
+			totalUncompletedPlanKopecks: 0,
 			totalUncompletedPlanSumRub: 0,
 		};
 	}
@@ -42,7 +52,7 @@ export function calculateLeakFunnelMetrics(
 	let contactedCount = 0;
 	let rebookedCount = 0;
 	let declinedCount = 0;
-	let totalUncompletedPlanSumRub = 0;
+	const kopeckParts: Kopecks[] = [];
 
 	for (const lead of leads) {
 		const status = lead.leadStatus;
@@ -51,9 +61,16 @@ export function calculateLeakFunnelMetrics(
 		else if (status === "rebooked") rebookedCount++;
 		else if (status === "declined") declinedCount++;
 
-		const sum = Number(lead.uncompletedPlanSumRub) || 0;
-		totalUncompletedPlanSumRub += sum;
+		if (lead.uncompletedPlanKopecks !== undefined && lead.uncompletedPlanKopecks !== null) {
+			kopeckParts.push(Math.round(Number(lead.uncompletedPlanKopecks) || 0) as Kopecks);
+		} else {
+			const rub = Number(lead.uncompletedPlanSumRub) || 0;
+			kopeckParts.push(rublesToKopecks(rub));
+		}
 	}
+
+	const totalUncompletedPlanKopecks = sumKopecks(kopeckParts);
+	const totalUncompletedPlanSumRub = kopecksToRubles(totalUncompletedPlanKopecks);
 
 	const touched = inProgressCount + contactedCount + rebookedCount + declinedCount;
 	const reactivationConversionPct =
@@ -66,6 +83,7 @@ export function calculateLeakFunnelMetrics(
 		rebookedCount,
 		declinedCount,
 		reactivationConversionPct,
+		totalUncompletedPlanKopecks,
 		totalUncompletedPlanSumRub,
 	};
 }

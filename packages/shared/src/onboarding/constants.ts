@@ -161,7 +161,7 @@ export const STARTER_15_ESSENTIAL_DENTAL_SERVICES: readonly StarterDentalService
 		priceKopecks: 100000,
 		durationMinutes: 30,
 		taxDeductible: true,
-		description: "Клинический осмотр, заполнение зубной формулы по Форме 043/у, составление плана лечения",
+		description: "Клинический осмотр, заполнение зубной формулы и медицинской карты приёма, составление плана лечения",
 	},
 	{
 		code: "A11.07.012",

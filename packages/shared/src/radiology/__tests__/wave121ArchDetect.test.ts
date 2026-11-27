@@ -80,9 +80,11 @@ describe("Wave 121: CBCT Automatic Arch Detection Engine", () => {
 
 		// Verify every emitted control point lies directly on the elliptical bone band
 		for (let i = 0; i < cps.length; i++) {
-			const pt = cps[i];
-			assert.ok(pt !== undefined, `Point at index ${i} must be defined`);
-			const [x, y] = pt;
+			const pt: Point2 | undefined = cps[i];
+			if (pt === undefined) {
+				assert.fail(`Point at index ${i} must be defined`);
+			}
+			const [x, y]: Point2 = pt;
 			const dx = x - CX;
 			const dy = y - CY;
 			const rNorm = Math.hypot(dx / A, dy / B);

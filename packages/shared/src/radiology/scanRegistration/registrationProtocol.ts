@@ -80,19 +80,20 @@ export function formatScanRegistrationA4Protocol(
 
 	if (input.transformMatrix && input.transformMatrix.length === 16) {
 		const m = input.transformMatrix;
+		const c = (idx: number, digits: number) => (m[idx] ?? 0).toFixed(digits);
 		lines.push("");
 		lines.push("Матрица жесткой трансформации (Column-Major 4x4):");
 		lines.push(
-			`  [ ${m[0]!.toFixed(6)}, ${m[4]!.toFixed(6)}, ${m[8]!.toFixed(6)}, ${m[12]!.toFixed(4)} ]`,
+			`  [ ${c(0, 6)}, ${c(4, 6)}, ${c(8, 6)}, ${c(12, 4)} ]`,
 		);
 		lines.push(
-			`  [ ${m[1]!.toFixed(6)}, ${m[5]!.toFixed(6)}, ${m[9]!.toFixed(6)}, ${m[13]!.toFixed(4)} ]`,
+			`  [ ${c(1, 6)}, ${c(5, 6)}, ${c(9, 6)}, ${c(13, 4)} ]`,
 		);
 		lines.push(
-			`  [ ${m[2]!.toFixed(6)}, ${m[6]!.toFixed(6)}, ${m[10]!.toFixed(6)}, ${m[14]!.toFixed(4)} ]`,
+			`  [ ${c(2, 6)}, ${c(6, 6)}, ${c(10, 6)}, ${c(14, 4)} ]`,
 		);
 		lines.push(
-			`  [ ${m[3]!.toFixed(6)}, ${m[7]!.toFixed(6)}, ${m[11]!.toFixed(6)}, ${m[15]!.toFixed(4)} ]`,
+			`  [ ${c(3, 6)}, ${c(7, 6)}, ${c(11, 6)}, ${c(15, 4)} ]`,
 		);
 	}
 

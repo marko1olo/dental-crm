@@ -134,17 +134,19 @@ export function calculatePolygonArea3D(points: Vec3[]): {
 } {
 	if (!points || points.length < 3) {
 		let perimeter = 0;
-		if (points && points.length === 2) {
-			perimeter = calculateDistance3D(points[0]!, points[1]!);
+		const p0 = points?.[0];
+		const p1 = points?.[1];
+		if (points && points.length === 2 && p0 && p1) {
+			perimeter = calculateDistance3D(p0, p1);
 		}
 		return { areaMm2: 0, perimeterMm: perimeter };
 	}
 
 	// Filter out duplicate trailing vertex if user passed closed loop
 	const pts = [...points];
-	const first = pts[0]!;
-	const last = pts[pts.length - 1]!;
-	if (pts.length > 3 && calculateDistance3D(first, last) < 1e-6) {
+	const first = pts[0];
+	const last = pts[pts.length - 1];
+	if (pts.length > 3 && first && last && calculateDistance3D(first, last) < 1e-6) {
 		pts.pop();
 	}
 
@@ -159,8 +161,9 @@ export function calculatePolygonArea3D(points: Vec3[]): {
 	let perimeter = 0;
 
 	for (let i = 0; i < n; i++) {
-		const curr = pts[i]!;
-		const next = pts[(i + 1) % n]!;
+		const curr = pts[i];
+		const next = pts[(i + 1) % n];
+		if (!curr || !next) continue;
 
 		nx += curr[1] * next[2] - next[1] * curr[2];
 		ny += curr[2] * next[0] - next[2] * curr[0];
@@ -270,7 +273,7 @@ export function computeHUStats(
 	let sum = 0;
 
 	for (let i = 0; i < count; i++) {
-		const v = values[i]!;
+		const v = values[i] ?? 0;
 		sum += v;
 		if (v < min) min = v;
 		if (v > max) max = v;
@@ -280,7 +283,7 @@ export function computeHUStats(
 
 	let sse = 0;
 	for (let i = 0; i < count; i++) {
-		const diff = values[i]! - mean;
+		const diff = (values[i] ?? 0) - mean;
 		sse += diff * diff;
 	}
 	const stdDev = Math.sqrt(sse / count);
@@ -290,9 +293,9 @@ export function computeHUStats(
 	let median: number;
 	const mid = Math.floor(count / 2);
 	if (count % 2 === 0) {
-		median = (sorted[mid - 1]! + sorted[mid]!) / 2;
+		median = ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2;
 	} else {
-		median = sorted[mid]!;
+		median = sorted[mid] ?? 0;
 	}
 
 	// Misch classification
@@ -369,7 +372,7 @@ export function formatMeasureStatsA4Report(
 ): string {
 	const patientName = input.patientName || "Не указан";
 	const patientBirthDate = input.patientBirthDate || "Не указана";
-	const studyDate = input.studyDate || new Date().toISOString().split("T")[0]!;
+	const studyDate = input.studyDate || new Date().toISOString().slice(0, 10);
 	const doctorName = input.doctorName || "Врач-стоматолог / Рентгенолог";
 	const clinicName = input.clinicName || "Стоматологическая клиника DENTE";
 	const modality = input.studyModality || "КЛКТ (CBCT, 3D компьютерная томография)";
@@ -408,7 +411,8 @@ export function formatMeasureStatsA4Report(
 		lines.push(" № | Точка P1 [X, Y, Z] (мм)        | Точка P2 [X, Y, Z] (мм)        | Расстояние (мм)");
 		lines.push("---+-------------------------------+-------------------------------+----------------");
 		for (let i = 0; i < distances.length; i++) {
-			const d = distances[i]!;
+			const d = distances[i];
+			if (!d) continue;
 			const num = String(i + 1).padStart(2, " ");
 			const p1Str = `[${f1(d.p1[0])}, ${f1(d.p1[1])}, ${f1(d.p1[2])}]`.padEnd(29, " ");
 			const p2Str = `[${f1(d.p2[0])}, ${f1(d.p2[1])}, ${f1(d.p2[2])}]`.padEnd(29, " ");
@@ -435,7 +439,8 @@ export function formatMeasureStatsA4Report(
 		lines.push(" № | Вершина [X, Y, Z] (мм)         | Вектор 1 (P1) (мм)            | Вектор 2 (P2) (мм)            | Угол (град.)");
 		lines.push("---+-------------------------------+-------------------------------+-------------------------------+-------------");
 		for (let i = 0; i < angles.length; i++) {
-			const a = angles[i]!;
+			const a = angles[i];
+			if (!a) continue;
 			const num = String(i + 1).padStart(2, " ");
 			const vertStr = `[${f1(a.vertex[0])}, ${f1(a.vertex[1])}, ${f1(a.vertex[2])}]`.padEnd(29, " ");
 			const p1Str = `[${f1(a.p1[0])}, ${f1(a.p1[1])}, ${f1(a.p1[2])}]`.padEnd(29, " ");
@@ -456,7 +461,8 @@ export function formatMeasureStatsA4Report(
 		lines.push(" № | Количество вершин | Периметр (мм) | Площадь (мм²) | Площадь (см²)");
 		lines.push("---+-------------------+---------------+---------------+---------------");
 		for (let i = 0; i < polygons.length; i++) {
-			const p = polygons[i]!;
+			const p = polygons[i];
+			if (!p) continue;
 			const num = String(i + 1).padStart(2, " ");
 			const ptsStr = String(p.points.length).padStart(17, " ");
 			const perimStr = `${f2(p.perimeterMm)} мм`.padStart(13, " ");
@@ -495,11 +501,12 @@ export function formatMeasureStatsA4Report(
 		lines.push("Профиль плотности по длине траектории (выборка ключевых контрольных точек):");
 		const step = Math.max(1, Math.floor(profileSamples.length / 8));
 		for (let i = 0; i < profileSamples.length; i += step) {
-			const s = profileSamples[i]!;
+			const s = profileSamples[i];
+			if (!s) continue;
 			lines.push(`  Дистанция: ${f1(s.distanceMm)} мм -> Плотность: ${f1(s.hu)} HU`);
 		}
-		const lastSample = profileSamples[profileSamples.length - 1]!;
-		if (profileSamples.length % step !== 1) {
+		const lastSample = profileSamples[profileSamples.length - 1];
+		if (lastSample && profileSamples.length % step !== 1) {
 			lines.push(`  Дистанция: ${f1(lastSample.distanceMm)} мм -> Плотность: ${f1(lastSample.hu)} HU`);
 		}
 	}

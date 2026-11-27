@@ -60,6 +60,7 @@ export const syncPushBatchRequestSchema = z.object({
 	sentAt: z.string(),
 }).strict();
 export type SyncPushBatchRequest = z.infer<typeof syncPushBatchRequestSchema>;
+export type SyncPushRequest = SyncPushBatchRequest;
 
 export const conflictResolutionStrategySchema = z.enum([
 	"field_merge",

@@ -159,6 +159,8 @@ export interface AutoclavePouchLabelPayload {
 // ============================================================================
 
 export interface HardwareDiscoveryOptions {
+	/** Tenant scope for cache isolation */
+	readonly organizationId?: string | undefined;
 	/** If true, scan local subnets on raw TCP port 9100 for network thermal printers */
 	readonly probeNetworkTcp?: boolean | undefined;
 	/** Subnets to scan, e.g. ["192.168.1", "192.168.0"]. Defaults to local network interfaces */
