@@ -201,7 +201,7 @@
 	justify-content: center;
 }
 
-@media (pointer: coarse) {
+@media (max-width: 768px) {
 	.warehouse-touch-target {
 		position: relative;
 	}

@@ -1,10 +1,12 @@
 import React from "react";
-import { ArrowDownRight, ArrowUpRight, FileCheck, History, Plus } from "lucide-react";
+import { AlertCircle, ArrowDownRight, ArrowUpRight, FileCheck, History, Plus } from "lucide-react";
 import { VirtualizedTimeline } from "../../../common/VirtualizedTimeline";
 import type { DepositOperationRecord } from "./types";
 
 export interface DepositOperationsHistoryPanelProps {
 	readonly operationsLog: DepositOperationRecord[];
+	readonly historyError?: string | null | undefined;
+	readonly onRetryHistory?: (() => void) | undefined;
 	readonly patientId?: string | null | undefined;
 	readonly onOpenTaxCertificate?: (() => void) | undefined;
 	readonly onNewAppointment?: ((patientId?: string) => void) | undefined;
@@ -12,6 +14,8 @@ export interface DepositOperationsHistoryPanelProps {
 
 export const DepositOperationsHistoryPanel: React.FC<DepositOperationsHistoryPanelProps> = ({
 	operationsLog,
+	historyError,
+	onRetryHistory,
 	patientId,
 	onOpenTaxCertificate,
 	onNewAppointment,
@@ -37,6 +41,24 @@ export const DepositOperationsHistoryPanel: React.FC<DepositOperationsHistoryPan
 					)}
 				</div>
 			</div>
+
+			{historyError && (
+				<div className="p-3 rounded-xl border border-[var(--danger-soft)] bg-[var(--danger-soft)] text-[var(--danger)] flex items-center justify-between gap-2 text-xs" role="alert">
+					<div className="flex items-center gap-2">
+						<AlertCircle className="w-4 h-4 shrink-0" />
+						<span>{historyError}</span>
+					</div>
+					{onRetryHistory && (
+						<button
+							type="button"
+							onClick={onRetryHistory}
+							className="h-8 px-2.5 rounded-md text-xs font-medium bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] cursor-pointer shrink-0"
+						>
+							Повторить
+						</button>
+					)}
+				</div>
+			)}
 
 			<VirtualizedTimeline<DepositOperationRecord>
 				items={operationsLog}

@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { calculatePlanTaxDeductionBreakdown } from "@dental/shared";
-import { formatKopecksToRubExact } from "../roadmap";
+import { formatKopecksToRubExact, TreatmentPlanRoadmap } from "../roadmap";
 
 describe("TreatmentPlanRoadmap — Tax Deduction & Mobile Styling", () => {
 	it("6. Calculates 13% Tax Deduction correctly for mixed Code 01 and Code 02 services", () => {
@@ -22,16 +24,31 @@ describe("TreatmentPlanRoadmap — Tax Deduction & Mobile Styling", () => {
 		assert.equal(formatKopecksToRubExact(breakdown.netPriceWithRefundKopecks).replace(/\s/g, " "), "52 200,00");
 	});
 
-	it("7. Validates 1-click stage booking callback signatures", () => {
-		const mockStage = {
+	it("7. Renders TreatmentPlanRoadmap with canonical stage controls, tax banner, and touch classes", () => {
+		const stage2 = {
 			stageNumber: 2 as const,
 			stageKind: "stage_2_therapy" as const,
 			titleRu: "Этап 2: Терапевтическая санация",
 			subtitleRu: "Лечение кариеса и каналов",
 			patientGoalRu: "Полностью ликвидировать кариес",
+			timelineRu: "1–2 недели",
+			preparationRu: "Профессиональная гигиена",
+			warrantyRu: "1 год",
 			status: "planned" as const,
 			teethFdiList: ["16", "26"],
-			procedures: [],
+			procedures: [
+				{
+					id: "proc-1",
+					code804n: "A16.07.002.001",
+					medicalTitleRu: "Лечение кариеса",
+					patientFriendlyTitleRu: "Лечение кариеса 1.6",
+					toothFdi: "16",
+					priceRub: 15000,
+					priceKopecks: 1500000,
+					quantity: 1,
+					categoryCode: "1" as const,
+				},
+			],
 			totalRub: 15000,
 			totalKopecks: 1500000,
 			completedRub: 0,
@@ -41,41 +58,26 @@ describe("TreatmentPlanRoadmap — Tax Deduction & Mobile Styling", () => {
 			estimatedVisitsCount: 2,
 		};
 
-		let bookedStage: typeof mockStage | null = null;
-		let selectedStage: typeof mockStage | null = null;
-		let bookedSlotNumber: number | null = null;
+		const html = renderToStaticMarkup(
+			React.createElement(TreatmentPlanRoadmap, {
+				customRoadmapStages: [stage2],
+				planTitle: "Комплексный план санации",
+				patientFullName: "Соколов Дмитрий",
+				curatingDoctorName: "Др. Орлов",
+				onBookStage: () => {},
+				onSelectStage: () => {},
+				onBookStageSlot: () => {},
+				onRequestTaxCertificate: () => {},
+			}),
+		);
 
-		const onBookStage = (s: typeof mockStage) => { bookedStage = s; };
-		const onSelectStage = (s: typeof mockStage) => { selectedStage = s; };
-		const onBookStageSlot = (num: number, _s: typeof mockStage) => { bookedSlotNumber = num; };
-
-		onBookStage(mockStage);
-		onSelectStage(mockStage);
-		onBookStageSlot(mockStage.stageNumber, mockStage);
-
-		if (!bookedStage || !selectedStage) throw new Error("Stage not set");
-		assert.equal((bookedStage as typeof mockStage).stageNumber, 2);
-		assert.equal((selectedStage as typeof mockStage).stageKind, "stage_2_therapy");
-		assert.equal(bookedSlotNumber, 2);
-	});
-
-	it("8. Validates treatmentPlanRoadmap.css for mobile rules and touch targets >= 44px", async () => {
-		const fs = await import("node:fs");
-		const path = await import("node:path");
-
-		const candidatePaths = [
-			path.resolve(process.cwd(), "src/components/treatment-plans/treatmentPlanRoadmap.css"),
-			path.resolve(process.cwd(), "apps/web/src/components/treatment-plans/treatmentPlanRoadmap.css"),
-		];
-		const cssPath = candidatePaths.find((p) => fs.existsSync(p)) ?? candidatePaths[0] ?? "";
-		assert.ok(fs.existsSync(cssPath), `treatmentPlanRoadmap.css must exist at ${cssPath}`);
-
-		const css = fs.readFileSync(cssPath, "utf8");
-		assert.ok(css.includes("min-height: 44px"));
-		assert.ok(css.includes("touch-action: manipulation"));
-		assert.ok(css.includes("@media (max-width: 640px)"));
-		assert.ok(css.includes("roadmap-book-stage-btn"));
-		assert.ok(css.includes("roadmap-tax-banner"));
-		assert.ok(css.includes("overflow-x: hidden") || css.includes("max-width: 100%"));
+		assert.ok(html.includes('data-testid="treatment-plan-roadmap"'));
+		assert.ok(html.includes('data-testid="roadmap-tax-banner"'));
+		assert.ok(html.includes('data-testid="request-tax-cert-btn"'));
+		assert.ok(html.includes("Этап 2: Терапевтическая санация"));
+		assert.ok(html.includes('data-testid="roadmap-send-to-visit-2"'));
+		assert.ok(html.includes('data-testid="roadmap-send-to-invoice-2"'));
+		assert.ok(html.includes("min-h-[44px]"));
+		assert.equal(html.includes("1 клик"), false);
 	});
 });

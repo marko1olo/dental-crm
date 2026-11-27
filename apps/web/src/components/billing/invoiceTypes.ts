@@ -38,7 +38,9 @@ export interface BillingInvoice {
 	 * Canonical invoice total in RUB (SSOT synchronized with @dental/shared Invoice.totalAmountRub).
 	 */
 	totalAmountRub: CanonicalInvoice["totalAmountRub"];
+	totalAmountKopecks?: number | undefined;
 	paidAmountRub: CanonicalInvoice["paidAmountRub"];
+	paidAmountKopecks?: number | undefined;
 	status: CanonicalInvoiceStatus | "warranty_100";
 	items: InvoiceLineItem[];
 	createdAt: string;

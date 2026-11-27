@@ -8,6 +8,7 @@
 
 import React from "react";
 import { CreditCard, Printer, MoreVertical } from "lucide-react";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type { BillingInvoice } from "./invoiceTypes.js";
 import { InvoiceCardIdentity } from "./invoices/InvoiceCardIdentity.js";
 import { InvoiceCardContextMenu } from "./invoices/InvoiceCardContextMenu.js";
@@ -37,6 +38,8 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = (props) => {
 	const isPaid = inv.status === "paid";
 	const isWarranty = inv.status === "warranty_100";
 	const isPending = !isPaid && !isWarranty;
+	const totalKopecks = inv.totalAmountKopecks ?? rublesToKopecks(inv.totalAmountRub ?? 0);
+	const displayRub = kopecksToRubles(totalKopecks);
 
 	return (
 		<div
@@ -46,10 +49,10 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = (props) => {
 		>
 			<InvoiceCardIdentity invoice={inv} isPaid={isPaid} isWarranty={isWarranty} />
 
-			{/* Middle: Amount in Roubles */}
+			{/* Middle: Amount from integer kopecks */}
 			<div className="text-left sm:text-right shrink-0 px-2 sm:px-4">
-				<div className="font-mono text-base sm:text-lg font-black text-[var(--ink,#0f172a)]">
-					{isWarranty ? "0 ₽" : `${(inv.totalAmountRub ?? 0).toLocaleString("ru-RU")} ₽`}
+				<div className="font-mono text-base sm:text-lg font-black text-[var(--ink,#0f172a)] tabular-nums">
+					{isWarranty ? "0 ₽" : `${displayRub.toLocaleString("ru-RU")} ₽`}
 				</div>
 				<div className="text-[11px] text-[var(--muted,#64748b)]">
 					{isPaid ? "Оплачено полностью" : isWarranty ? "Гарантийная скидка 100%" : "Остаток к оплате"}

@@ -56,8 +56,10 @@ export const PatientFinanceTab: React.FC<PatientFinanceTabProps> = React.memo(
 			personalBalance,
 			familyBalance,
 			operationsLog,
+			historyError,
 			isSubmitting,
 			executeOperation,
+			reloadHistory,
 		} = useDepositOperations(
 			patient,
 			initialPersonalBalance,
@@ -95,6 +97,8 @@ export const PatientFinanceTab: React.FC<PatientFinanceTabProps> = React.memo(
 				{/* 3. ЖУРНАЛ ОПЕРАЦИЙ ПО ДЕПОЗИТУ (Хронология, справка для вычета 13%, визит) */}
 				<DepositOperationsHistoryPanel
 					operationsLog={operationsLog}
+					historyError={historyError}
+					onRetryHistory={() => void reloadHistory()}
 					patientId={patient?.id}
 					onOpenTaxCertificate={onOpenTaxCertificate}
 					onNewAppointment={onNewAppointment}

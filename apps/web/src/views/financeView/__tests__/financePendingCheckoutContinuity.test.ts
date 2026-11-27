@@ -1,37 +1,17 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import {
+	clearPendingCheckoutStorage,
+	resolveEffectiveBillingSummary,
+	resolveEffectivePatient,
+} from "../useFinanceView.js";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders.js";
+import { CashRegisterStudioFooter } from "../../../components/cashbox/studioModules/CashRegisterStudioFooter.js";
 
 describe("RED TEAM INQUISITION: Finance POS & Pending Checkout Data Continuity", () => {
-	const indexPath = path.resolve(__dirname, "../index.tsx");
-	const hookPath = path.resolve(__dirname, "../useFinanceView.ts");
-	const logicPath = path.resolve(__dirname, "../../../hooks/domains/useFinanceLogic.ts");
-	const cashboxFooterPath = path.resolve(__dirname, "../../../components/cashbox/studioModules/CashRegisterStudioFooter.tsx");
-
-	it("1. FinanceView index.tsx is purged of ClinicalRulePanel, ClinicalAiPersonalizePanel, and clinical accordion", () => {
-		const source = fs.readFileSync(indexPath, "utf8");
-		assert.ok(
-			!source.includes("ClinicalRulePanel"),
-			"ClinicalRulePanel must NOT be imported or rendered in FinanceView POS",
-		);
-		assert.ok(
-			!source.includes("ClinicalAiPersonalizePanel"),
-			"ClinicalAiPersonalizePanel must NOT be imported or rendered in FinanceView POS",
-		);
-		assert.ok(
-			!source.includes("clinical-recommendations-accordion"),
-			"clinical-recommendations-accordion must NOT exist in FinanceView POS",
-		);
-	});
-
-	it("2. useFinanceView prioritizes pendingCheckout patient and billing summary over stale props", { timeout: 30000 }, async () => {
-		const { resolveEffectivePatient, resolveEffectiveBillingSummary } = await import("../useFinanceView.js");
-
+	it("1. useFinanceView prioritizes pendingCheckout patient and billing summary over stale props", () => {
 		const mockStalePatient = { id: "pat-stale", fullName: "Старый Пациент" };
 		const mockPendingCheckout = {
 			patientId: "pat-pending",
@@ -41,78 +21,97 @@ describe("RED TEAM INQUISITION: Finance POS & Pending Checkout Data Continuity",
 			services: [{ id: "srv-1" }],
 		};
 
-		// 1. Проверяем приоритет pendingCheckout над устаревшим documentPatient
 		const patientWithPending = resolveEffectivePatient({
-			pendingCheckout: mockPendingCheckout as any,
+			pendingCheckout: mockPendingCheckout as never,
 			documentPatient: mockStalePatient,
 		});
-		assert.strictEqual(patientWithPending?.id, "pat-pending", "pendingCheckout patient must take precedence");
+		assert.strictEqual(patientWithPending?.id, "pat-pending");
 		assert.strictEqual(patientWithPending?.fullName, "Свежий Пациент из Приёма");
 
-		// 2. Fallback на documentPatient при отсутствии pendingCheckout
 		const patientWithoutPending = resolveEffectivePatient({
 			pendingCheckout: null,
 			documentPatient: mockStalePatient,
 		});
-		assert.strictEqual(patientWithoutPending?.id, "pat-stale", "Must fallback to documentPatient when no pending checkout");
+		assert.strictEqual(patientWithoutPending?.id, "pat-stale");
 
-		// 3. Проверяем приоритет суммы pendingCheckout над устаревшим billingSummary
 		const mockStaleBilling = { totalDueRub: 5000, totalPaidRub: 0 };
 		const summaryWithPending = resolveEffectiveBillingSummary({
-			pendingCheckout: mockPendingCheckout as any,
+			pendingCheckout: mockPendingCheckout as never,
 			billingSummary: mockStaleBilling,
 		});
-		assert.strictEqual(summaryWithPending?.totalDueRub, 15400, "pendingCheckout totalDueRub must take precedence");
+		assert.strictEqual(summaryWithPending?.totalDueRub, 15400);
 
-		// 4. Fallback на billingSummary при отсутствии pendingCheckout
 		const summaryWithoutPending = resolveEffectiveBillingSummary({
 			pendingCheckout: null,
 			billingSummary: mockStaleBilling,
 		});
-		assert.strictEqual(summaryWithoutPending?.totalDueRub, 5000, "Must fallback to billingSummary when no pending checkout");
+		assert.strictEqual(summaryWithoutPending?.totalDueRub, 5000);
 	});
 
-	it("3. onRecordPayment wrapper clears dente_pending_checkout from storage upon completion", () => {
-		const source = fs.readFileSync(hookPath, "utf8");
-		assert.ok(
-			source.includes("handleRecordPayment"),
-			"useFinanceView must wrap onRecordPayment in handleRecordPayment",
-		);
-		assert.ok(
-			source.includes("sessionStorage.removeItem(\"dente_pending_checkout\")"),
-			"handleRecordPayment must clear sessionStorage dente_pending_checkout",
-		);
-		assert.ok(
-			source.includes("localStorage.removeItem(\"dente_pending_checkout\")"),
-			"handleRecordPayment must clear localStorage dente_pending_checkout",
-		);
-		assert.ok(
-			source.includes("setPendingCheckout(null)"),
-			"handleRecordPayment must reset pendingCheckout state to null",
-		);
+	it("2. clearPendingCheckoutStorage removes dente_pending_checkout from storage and resets state", () => {
+		const removedSession: string[] = [];
+		const removedLocal: string[] = [];
+		const originalWindow = globalThis.window;
+
+		Object.defineProperty(globalThis, "window", {
+			configurable: true,
+			value: {
+				sessionStorage: { removeItem: (k: string) => removedSession.push(k) },
+				localStorage: { removeItem: (k: string) => removedLocal.push(k) },
+			},
+		});
+
+		try {
+			let clearedCheckout: unknown = { patientId: "p-1" };
+			let clearedAmount = "1500";
+			clearPendingCheckoutStorage(
+				(v) => {
+					clearedCheckout = v;
+				},
+				(v) => {
+					clearedAmount = v;
+				},
+			);
+			assert.deepEqual(removedSession, ["dente_pending_checkout"]);
+			assert.deepEqual(removedLocal, ["dente_pending_checkout"]);
+			assert.equal(clearedCheckout, null);
+			assert.equal(clearedAmount, "");
+		} finally {
+			if (originalWindow === undefined) {
+				Reflect.deleteProperty(globalThis, "window");
+			} else {
+				Object.defineProperty(globalThis, "window", { configurable: true, value: originalWindow });
+			}
+		}
 	});
 
-	it("4. useFinanceLogic injects Idempotency-Key in payment mutation headers", () => {
-		const source = fs.readFileSync(logicPath, "utf8");
-		assert.ok(
-			source.includes('"Idempotency-Key": paymentClientMutationId'),
-			"Billing payment API call must send client Idempotency-Key",
-		);
-		assert.ok(
-			source.includes('"Idempotency-Key": familyClientMutationId'),
-			"Family payment API call must send client Idempotency-Key",
-		);
+	it("3. denteClinicalMutationHeaders forwards explicit Idempotency-Key for billing mutations", () => {
+		const headers = denteClinicalMutationHeaders({
+			"Content-Type": "application/json",
+			"Idempotency-Key": "idemp-fin-001",
+		});
+		assert.equal(headers["Idempotency-Key"], "idemp-fin-001");
+		assert.equal(headers["Content-Type"], "application/json");
 	});
 
-	it("5. CashRegisterStudioFooter provides Apple HIG touch target on mobile and safe-area padding", () => {
-		const source = fs.readFileSync(cashboxFooterPath, "utf8");
-		assert.ok(
-			source.includes("min-h-[44px]"),
-			"CashRegisterStudioFooter primary buttons must have min-h-[44px] for Apple HIG touch ergonomics",
+	it("4. CashRegisterStudioFooter renders Apple HIG >= 44px touch targets and safe-area padding", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(CashRegisterStudioFooter, {
+				activeTab: "checkout",
+				isShiftActive: true,
+				isSubmitting: false,
+				effectiveTotalKopecks: 150000n,
+				calculatedNetRevenueKopecks: 150000n,
+				shiftNumber: 1,
+				isWarranty: false,
+				onClose: () => {},
+				onExecutePayment: () => {},
+				onToggleShift: () => {},
+				onPrintXReport: () => {},
+				onCopyTape: () => {},
+			}),
 		);
-		assert.ok(
-			source.includes("env(safe-area-inset-bottom)"),
-			"CashRegisterStudioFooter must support safe-area-inset-bottom for modern smartphones",
-		);
+		assert.ok(html.includes("min-h-[44px]"));
+		assert.ok(html.includes("env(safe-area-inset-bottom)"));
 	});
 });

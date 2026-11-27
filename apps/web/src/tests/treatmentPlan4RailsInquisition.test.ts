@@ -12,6 +12,10 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
+	calculateAdvanceDepositOffset,
+	calculateMultiTenderAllocation,
+} from "@dental/shared";
+import {
 	formatStageItemForBilling,
 	groupTreatmentPlanByStages,
 	buildStageMedicalDiaryText,
@@ -181,47 +185,39 @@ describe("Treatment Plan 4 End-to-End Rails Inquisition", () => {
 	});
 
 	describe("Rail 2: 54-FZ Cashier Checkout & Advance Offset (Tag 1215)", () => {
-		it("calculates remaining stage balance when prior advance payments exist", () => {
-			const stageOption = {
-				id: "stage-implant-2",
-				stageNumber: 2,
-				title: "Имплантация 46",
-				amountRub: 50000,
-				amountKopecks: 5000000,
-				paidAmountRub: 20000,
-				paidAmountKop: 2000000,
-				advanceAlreadyPaidRub: 20000,
-				remainingDueRub: 30000,
-				remainingDueKop: 3000000,
-				items: [],
-			};
+		it("calculates remaining stage balance when prior advance payments exist via @dental/shared", () => {
+			const partial = calculateAdvanceDepositOffset({
+				invoiceTotalKopecks: 5000000,
+				availableDepositKopecks: 2000000,
+			});
+			expect(partial.advanceOffsetKopecks).toBe(2000000);
+			expect(partial.remainingDueKopecks).toBe(3000000);
+			expect(partial.remainingDueRub).toBe(30000);
+			expect(partial.isFullyCoveredByDeposit).toBe(false);
 
-			// Remaining due calculation invariant: Math.max(0, gross - paid)
-			const remainingCalculated = Math.max(0, stageOption.amountRub - stageOption.paidAmountRub);
-			expect(remainingCalculated).toBe(30000);
-			expect(stageOption.remainingDueRub).toBe(30000);
-
-			// If advance paid equals total price, remaining is 0
-			const fullyPaidAdvance = 50000;
-			const remainingZero = Math.max(0, stageOption.amountRub - fullyPaidAdvance);
-			expect(remainingZero).toBe(0);
+			const full = calculateAdvanceDepositOffset({
+				invoiceTotalKopecks: 5000000,
+				availableDepositKopecks: 5000000,
+			});
+			expect(full.remainingDueKopecks).toBe(0);
+			expect(full.isFullyCoveredByDeposit).toBe(true);
 		});
 
 		it("validates FFD 1.2 Tag 1215 advance offset logic without over-crediting", () => {
-			const stageTotalRub = 45000;
-			const stageAdvancePaidRub = 15000;
+			const offset = calculateAdvanceDepositOffset({
+				invoiceTotalKopecks: 4500000,
+				availableDepositKopecks: 1500000,
+			});
+			expect(offset.advanceOffsetRub).toBe(15000);
+			expect(offset.remainingDueRub).toBe(30000);
 
-			// Cashier applies Tag 1215
-			const maxAllowedTag1215Offset = Math.min(stageTotalRub, stageAdvancePaidRub);
-			expect(maxAllowedTag1215Offset).toBe(15000);
-
-			// The patient pays the remainder (30 000 ₽) via card/cash
-			const remainingToPay = stageTotalRub - maxAllowedTag1215Offset;
-			expect(remainingToPay).toBe(30000);
-
-			// Total tenders: Tag 1215 (15 000 ₽) + Card (30 000 ₽) == 45 000 ₽ (0 kopeck divergence)
-			const tenderSum = maxAllowedTag1215Offset + remainingToPay;
-			expect(tenderSum).toBe(stageTotalRub);
+			const allocation = calculateMultiTenderAllocation(4500000, {
+				advanceOffsetRub: offset.advanceOffsetRub,
+				cardRub: offset.remainingDueRub,
+			});
+			expect(allocation.isFullyAllocated).toBe(true);
+			expect(allocation.isOverallocated).toBe(false);
+			expect(allocation.remainingKopecks).toBe(0);
 		});
 	});
 

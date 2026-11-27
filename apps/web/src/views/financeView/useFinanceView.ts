@@ -14,6 +14,18 @@ import { useFinanceModalsNavigation } from "./hooks/useFinanceModalsNavigation.j
 import { useFinanceCashShift } from "./hooks/useFinanceCashShift.js";
 import { useFinanceTransactionsData } from "./hooks/useFinanceTransactionsData.js";
 
+export function clearPendingCheckoutStorage(
+	setPendingCheckout: (value: PendingCheckout | null) => void,
+	setLocalPaymentAmount: (value: string) => void,
+) {
+	if (typeof window !== "undefined") {
+		window.sessionStorage?.removeItem("dente_pending_checkout");
+		window.localStorage?.removeItem("dente_pending_checkout");
+	}
+	setPendingCheckout(null);
+	setLocalPaymentAmount("");
+}
+
 export function resolveEffectiveBillingSummary({ pendingCheckout, billingSummary }: { pendingCheckout?: PendingCheckout | null | undefined; billingSummary?: Partial<NonNullable<Dashboard["billingSummary"]>> | null | undefined }): Dashboard["billingSummary"] | null {
 	if (pendingCheckout?.totalDueRub && pendingCheckout.totalDueRub > 0) {
 		return {
@@ -286,12 +298,7 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 
 	const handleRecordPayment = useCallback(async () => {
 		await onRecordPayment();
-		if (typeof window !== "undefined") {
-			sessionStorage.removeItem("dente_pending_checkout");
-			localStorage.removeItem("dente_pending_checkout");
-		}
-		setPendingCheckout(null);
-		setLocalPaymentAmount("");
+		clearPendingCheckoutStorage(setPendingCheckout, setLocalPaymentAmount);
 	}, [onRecordPayment]);
 
 	const cashShift = useFinanceCashShift({

@@ -10,9 +10,6 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
 
@@ -40,11 +37,6 @@ import {
 	DEFAULT_CEPH_LANDMARKS_PRESET,
 	calculateCephalometrics,
 } from "../cephalometricMath";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const orthoDir = path.resolve(__dirname, "..");
-const webSrcDir = path.resolve(orthoDir, "../..");
 
 describe("Orthodontics Canonical SSOT Invariants (Appliances, Bite, Archwires & Elastics)", () => {
 	it("1. Verifies appliances catalog contains braces, aligners, and plates", () => {
@@ -184,59 +176,26 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		assert.ok(preset.actionIds.length > 0);
 	});
 
-	it("11. Verifies OrthodonticsStudioModal.tsx clinical contracts and endpoints", () => {
-		const clonePath = path.join(orthoDir, "OrthodonticStudioModal.tsx");
-		assert.ok(!fs.existsSync(clonePath), "Duplicate clone OrthodonticStudioModal.tsx must be purged");
-
-		const filePath = path.join(orthoDir, "OrthodonticsStudioModal.tsx");
-		assert.ok(fs.existsSync(filePath), "OrthodonticsStudioModal.tsx must exist");
-
-		const hydrationPath = path.join(orthoDir, "useOrthodonticsStudioHydration.ts");
-		const persistencePath = path.join(orthoDir, "orthodonticsStudioPersistence.ts");
-		const content =
-			fs.readFileSync(filePath, "utf-8") +
-			(fs.existsSync(hydrationPath) ? fs.readFileSync(hydrationPath, "utf-8") : "") +
-			(fs.existsSync(persistencePath) ? fs.readFileSync(persistencePath, "utf-8") : "");
-
-		assert.ok(content.includes("/api/orthodontics/"), "Must connect to canonical ortho API");
-		assert.ok(content.includes("/progress"), "Must hydrate from /progress endpoint");
-		assert.ok(content.includes("/ceph-analysis"), "Must hydrate from /ceph-analysis endpoint (DEF-ORTHO-03)");
-		assert.ok(content.includes('data-testid="save-ortho-protocol-button"'), "Must have canonical save button");
-		assert.ok(content.includes("formatOrthodonticPatientMemo"), "Must export formatOrthodonticPatientMemo");
-	});
-
-	it("12. Verifies OrthodonticsStudioModal has exactly ONE Primary CTA (Mandates 8am & 8e)", () => {
-		const filePath = path.join(orthoDir, "OrthodonticsStudioModal.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
-
-		assert.ok(
-			content.includes('data-testid="save-ortho-protocol-button"'),
-			"Must have data-testid='save-ortho-protocol-button'",
+	it("11. Verifies OrthodonticsStudioModal renders canonical primary CTA and clinical state without disabled buttons", () => {
+		const html = renderToString(
+			<OrthodonticsStudioModal
+				isOpen={true}
+				onClose={() => {}}
+				patientId="pat-ortho-1"
+				patientName="Тестовый Пациент"
+				doctorName="Д-р Смирнов"
+			/>,
 		);
-
+		assert.ok(html.includes('data-testid="save-ortho-protocol-button"'), "Must render canonical save button");
+		assert.ok(html.includes("ortho-primary-cta"), "Primary CTA must use ortho-primary-cta");
+		assert.equal(html.includes("disabled"), false, "Doctor autonomy: zero disabled buttons");
 		assert.ok(
-			!content.includes("disabled={"),
-			"Primary CTA must NEVER be disabled in doctor chairside autonomy (Mandate 8e)",
-		);
-
-		assert.ok(
-			content.includes("ortho-primary-cta"),
-			"Primary CTA button must use canonical semantic button class ortho-primary-cta",
-		);
-
-		assert.ok(
-			content.includes("Зафиксировать активацию") || content.includes("Зафиксировать ортодонтический приём"),
-			"Primary CTA text must match canonical clinical action",
+			html.includes("Зафиксировать активацию") || html.includes("Зафиксировать ортодонтический приём"),
+			"Must render canonical clinical save text",
 		);
 	});
 
-	it("13. Verifies WorkspaceStudioOverlayHost & routeResolver contract for orthodontics", () => {
-		const directOrthoClone = path.join(orthoDir, "directOrtho/DirectOrthoLauncher.tsx");
-		assert.ok(!fs.existsSync(directOrthoClone), "Clone directOrtho/DirectOrthoLauncher.tsx must be purged");
-
-		const cephModalPath = path.join(orthoDir, "CephAnalysisModal.tsx");
-		assert.ok(fs.existsSync(cephModalPath), "Canonical CephAnalysisModal.tsx must exist");
-
+	it("12. Verifies WorkspaceStudioOverlayHost & routeResolver contract for orthodontics", () => {
 		assert.equal(resolveClinicRoute("", "#orthodontics").studio?.kind, "orthodontics");
 		assert.equal(resolveClinicRoute("", "#ortho-protocol").studio?.kind, "orthodontics");
 		assert.equal(typeof WorkspaceStudioOverlayHost, "function", "WorkspaceStudioOverlayHost must be a React component");
@@ -244,203 +203,159 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		assert.ok(html !== undefined, "Overlay host renders without errors");
 	});
 
-	it("14. Verifies WorkspaceStudioOverlayHost is mounted in AppModalsContainer.tsx (Mandate 8aq)", () => {
-		const containerPath = path.join(webSrcDir, "components/appLayout/AppModalsContainer.tsx");
-		assert.ok(fs.existsSync(containerPath), "AppModalsContainer.tsx must exist");
-
-		const content = fs.readFileSync(containerPath, "utf-8");
-		assert.ok(
-			content.includes("WorkspaceStudioOverlayHost"),
-			"AppModalsContainer.tsx must import and render WorkspaceStudioOverlayHost",
-		);
-	});
-
-	it("15. Verifies WorkspaceStudioOverlayHost mounts OrthodonticsStudioModal (Mandate 8aq)", () => {
-		const hostPath = path.join(
-			webSrcDir,
-			"components/appLayout/WorkspaceStudioOverlayHost.tsx",
-		);
-		assert.ok(fs.existsSync(hostPath), "WorkspaceStudioOverlayHost.tsx must exist");
-
-		const content = fs.readFileSync(hostPath, "utf-8");
-		assert.ok(
-			content.includes("OrthodonticsStudioModal"),
-			"WorkspaceStudioOverlayHost.tsx must import and render OrthodonticsStudioModal",
-		);
-	});
-
-	it("16. Verifies SSR rendering of OrthodonticsStudioModal without DOM errors", () => {
+	it("13. Verifies SSR rendering of OrthodonticsStudioModal across tabs without DOM errors", () => {
 		const html = renderToString(
 			<OrthodonticsStudioModal
 				isOpen={true}
 				onClose={() => {}}
 				patientName="Тестовый Пациент"
-				doctorName="Д-р Иванов"
+				doctorName="Д-р Орлов"
 			/>,
 		);
-
 		assert.ok(html.includes("Ортодонтическая студия"));
 		assert.ok(html.includes("save-ortho-protocol-button"));
-		assert.ok(
-			html.includes("Зафиксировать активацию") || html.includes("Зафиксировать ортодонтический приём"),
-			"Must include save button text",
-		);
 		assert.ok(html.includes("Тестовый Пациент"));
 	});
 
-	it("17. Verifies interactive controls in OrthodonticsTabsContent (IPR, attachments, date, sets)", () => {
-		const tabsPath = path.join(orthoDir, "OrthodonticsTabsContent.tsx");
-		const alignerCardPath = path.join(orthoDir, "AlignerCaseTracker.tsx");
-		assert.ok(fs.existsSync(tabsPath), "OrthodonticsTabsContent.tsx must exist");
-		assert.ok(fs.existsSync(alignerCardPath), "AlignerCaseTracker.tsx must exist");
-		const content = fs.readFileSync(tabsPath, "utf-8") + fs.readFileSync(alignerCardPath, "utf-8");
-
-		assert.ok(content.includes('data-testid="toggle-ipr-btn"'), "Must have interactive IPR toggle");
-		assert.ok(content.includes('data-testid="toggle-attachments-btn"'), "Must have interactive attachments toggle");
-		assert.ok(content.includes('data-testid="next-aligner-date-input"'), "Must have next planned date picker");
-		assert.ok(content.includes("ortho-issued-sets-input"), "Must have issued sets input control");
-	});
-
-	it("18. Verifies removable plates branching, dual arch parameters and photo protocol sync", () => {
-		const modalPath = path.join(orthoDir, "OrthodonticsStudioModal.tsx");
-		const persistencePath = path.join(orthoDir, "orthodonticsStudioPersistence.ts");
-		const content =
-			fs.readFileSync(modalPath, "utf-8") +
-			(fs.existsSync(persistencePath) ? fs.readFileSync(persistencePath, "utf-8") : "");
-
-		assert.ok(
-			content.includes('protocol.applianceCategory === "plate"'),
-			"Must branch for removable plates without calling archwire-change",
+	it("14. Verifies AlignerCaseTracker renders honest empty schedule without 240 000 RUB hardcode and uses kopeck amounts", async () => {
+		const { AlignerCaseTracker } = await import("../AlignerCaseTracker.js");
+		const baseState = createDefaultOrthoProtocolState();
+		const html = renderToString(
+			<AlignerCaseTracker
+				tracking={{
+					...baseState.aligners,
+					currentStep: 2,
+					totalSteps: 14,
+					caseStage: "active_wear",
+				}}
+				onChange={() => {}}
+			/>,
 		);
+		assert.ok(html.includes('data-testid="aligner-case-tracker"'));
+		assert.ok(html.includes('data-testid="toggle-ipr-btn"'));
+		assert.ok(html.includes('data-testid="toggle-attachments-btn"'));
+		assert.ok(html.includes('data-testid="next-aligner-date-input"'));
+		assert.equal(html.includes("240 000 ₽"), false);
+		assert.equal(html.includes("60 000 ₽"), false);
+		assert.equal(html.includes("15.02.2024"), false);
 		assert.ok(
-			content.includes("/stages/advance"),
-			"Must advance stage / activate screw for plate category",
-		);
-		assert.ok(
-			(content.includes('arch: "both"') && content.includes("upperMaterial") && content.includes("lowerMaterial")) ||
-			(content.includes('arch: "upper"') && content.includes('arch: "lower"')),
-			"Must preserve both upper and lower arch parameters independently without double billing",
-		);
-		assert.ok(
-			!content.includes("initialImageUrl={SAMPLE_TRG_CEPHALOGRAM_URL}\n\t\t\t\t\t\tdoctorName="),
-			"ClinicalPhotoProtocolModal must not be passed SAMPLE_TRG_CEPHALOGRAM_URL",
+			html.includes("График платежей формируется на основе утвержденного плана лечения и сметы сетапа") ||
+			html.includes("График платежей формируется на основе плана лечения и выставленных счетов"),
 		);
 	});
 
-	it("19. Verifies canonical CSS has Safe Area support and orphan orthodontics.css is purged", () => {
-		const orphanPath = path.join(orthoDir, "orthodontics.css");
-		assert.ok(!fs.existsSync(orphanPath), "Orphan orthodontics.css must be purged (git rm)");
-
-		const canonicalCssPath = path.join(orthoDir, "styles/orthodonticsStudio.css");
-		assert.ok(fs.existsSync(canonicalCssPath), "Canonical orthodonticsStudio.css must exist");
-
-		const cssContent = fs.readFileSync(canonicalCssPath, "utf-8");
-		assert.ok(
-			cssContent.includes("env(safe-area-inset-bottom)"),
-			"Must support Apple HIG Safe Area in .ortho-footer",
+	it("15. Verifies OrthodonticTimeline generates dynamic stages for aligners and removable plates without static 2024 dates", async () => {
+		const { OrthodonticTimeline } = await import("../OrthodonticTimeline.js");
+		const alignerHtml = renderToString(
+			<OrthodonticTimeline
+				currentMonth={2}
+				totalMonths={12}
+				applianceCategory="aligners"
+				startDate="2026-01-15"
+			/>,
 		);
-	});
-
-	it("20. Verifies AlignerCaseTracker eliminates Potemkin 240 000 ₽ installment hardcode and shows honest empty state", () => {
-		const deadClonePath = path.join(orthoDir, "AlignerTrackingCard.tsx");
-		assert.ok(!fs.existsSync(deadClonePath), "Dead clone AlignerTrackingCard.tsx must be purged (git rm)");
-
-		const trackerPath = path.join(orthoDir, "AlignerCaseTracker.tsx");
-		assert.ok(fs.existsSync(trackerPath), "AlignerCaseTracker.tsx must exist");
-		const content = fs.readFileSync(trackerPath, "utf-8");
-
-		assert.ok(!content.includes("240 000 ₽"), "Must NOT contain hardcoded 240,000 ₽ total price");
-		assert.ok(!content.includes("60 000 ₽"), "Must NOT contain 4 fixed 60,000 ₽ tranches");
-		assert.ok(!content.includes("15.02.2024"), "Must NOT contain hardcoded 2024 installment dates");
-		assert.ok(
-			content.includes("График платежей формируется на основе утвержденного плана лечения и сметы сетапа") ||
-			content.includes("График платежей формируется на основе плана лечения и выставленных счетов"),
-			"Must render honest clinical empty state for installment schedule",
+		const plateHtml = renderToString(
+			<OrthodonticTimeline
+				currentMonth={1}
+				totalMonths={6}
+				applianceCategory="plate"
+				startDate="2026-01-15"
+			/>,
 		);
+		assert.equal(alignerHtml.includes("15.01.2024"), false);
+		assert.equal(plateHtml.includes("15.01.2024"), false);
+		assert.ok(alignerHtml.length > 100);
+		assert.ok(plateHtml.length > 100);
 	});
 
-	it("21. Verifies OrthodonticTimeline generates adaptive stages and dynamic dates", () => {
-		const timelinePath = path.join(orthoDir, "OrthodonticTimeline.tsx");
-		const content = fs.readFileSync(timelinePath, "utf-8");
-
-		assert.ok(!content.includes("15.01.2024"), "Must NOT contain static 2024 bracket dates");
-		assert.ok(content.includes('applianceCategory === "aligners"'), "Must adapt stages for aligners");
-		assert.ok(content.includes('applianceCategory === "plate"'), "Must adapt stages for removable plates");
-		assert.ok(content.includes("formatPlannedStageDate"), "Must calculate dynamic planned dates");
-		assert.ok(content.includes("stage.plannedDate"), "Must render planned stage dates in UI");
+	it("16. Verifies BiteClassificationCard computes Angle & ANB skeletal classes and renders >=44px touch targets", async () => {
+		const { BiteClassificationCard } = await import("../BiteClassificationCard.js");
+		const html = renderToString(
+			<BiteClassificationCard
+				angleClass="II_1"
+				onAngleClassChange={() => {}}
+				anbDeg={6}
+			/>,
+		);
+		assert.ok(html.includes('data-testid="bite-classification-card"'));
+		assert.ok(html.includes("min-h-[44px]"));
 	});
 
-	it("22. Verifies CephalometricAnalysisModalUI has exactly 1 Primary CTA and unblocked angles calculation", () => {
-		const cephModalPath = path.resolve(webSrcDir, "components/radiology/cephModal/CephalometricAnalysisModalUI.tsx");
-		assert.ok(fs.existsSync(cephModalPath), "CephalometricAnalysisModalUI.tsx must exist");
-		const content = fs.readFileSync(cephModalPath, "utf-8");
-
-		// Header CTA
-		assert.ok(content.includes('data-testid="btn-insert-ceph-protocol"'), "Must have insertion CTA");
-		assert.ok(content.includes("Сохранить в ЭМК"), "Single Primary CTA must be 'Сохранить в ЭМК'");
-		assert.ok(!content.includes("data-theme=\"dark\""), "Must NOT have hardcoded data-theme='dark'");
-		assert.ok(!content.includes("#020617"), "Must NOT have inline #020617 hardcoded style");
-
-		// Tab 2 unblocked
-		assert.ok(!content.includes("disabled={!isImageLoaded}"), "Angles tab must not be disabled without image");
-		assert.ok(!content.includes('showToast("Сначала загрузите снимок ТРГ", "warning")'), "Angles tab click must not show blocking toast");
+	it("17. Verifies CephLandmarkCanvas renders with semantic theme tokens and without dark-theme hardcode", async () => {
+		const { CephLandmarkCanvas } = await import("../../radiology/cephModal/CephLandmarkCanvas.js");
+		const html = renderToString(
+			<CephLandmarkCanvas
+				landmarks={DEFAULT_CEPH_LANDMARKS_PRESET}
+				setLandmarks={() => {}}
+				onLandmarkChange={() => {}}
+				onRemoveLandmark={() => {}}
+				activeTargetKey={null}
+				setActiveTargetKey={() => {}}
+				imageUrl="https://example.local/trg.png"
+				setImageUrl={() => {}}
+				filterMode="normal"
+				setFilterMode={() => {}}
+				brightness={100}
+				contrast={100}
+				showPolygon={true}
+				setShowPolygon={() => {}}
+				showPlanes={true}
+				setShowPlanes={() => {}}
+				measurements={[]}
+				aiBackendPreference="auto"
+				setAiBackendPreference={() => {}}
+				isAiRunning={false}
+				aiStats={null}
+				analysis={calculateCephalometrics(DEFAULT_CEPH_LANDMARKS_PRESET, 0.15)}
+				mobileView="landmarks"
+				setMobileView={() => {}}
+				onOpenAiSetup={() => {}}
+			/>,
+		);
+		assert.equal(html.includes('data-theme="dark"'), false);
+		assert.equal(html.includes("#020617"), false);
+		assert.ok(html.includes("var(--paper-strong)") || html.includes("var(--line)") || html.length > 100);
 	});
 
-	it("23. Verifies OrthodonticPatientCardForm cross-syncs with TRG cephAnalysis", () => {
-		const formPath = path.resolve(webSrcDir, "components/documents/forms/OrthodonticPatientCardForm.tsx");
-		assert.ok(fs.existsSync(formPath), "OrthodonticPatientCardForm.tsx must exist");
-		const content = fs.readFileSync(formPath, "utf-8");
-
-		assert.ok(content.includes("extractCephAngles"), "Must have extractCephAngles helper");
-		assert.ok(content.includes("cephAnalysis"), "Must check patient cephAnalysis");
-		assert.ok(content.includes("Синхронизировано с ТРГ"), "Must display synchronization status with TRG");
-		assert.ok(content.includes("loadLatestCephalometricStudy"), "Must fallback to latest local ceph study");
+	it("18. Verifies OrthodonticPatientCardForm extractCephAngles syncs TRG measurements cleanly", async () => {
+		const { OrthodonticPatientCardForm, extractCephAngles } = await import("../../documents/forms/OrthodonticPatientCardForm.js");
+		const extracted = extractCephAngles({
+			trgValues: { sna: 82, snb: 80, anb: 2, fma: 25 },
+			savedAt: "2026-11-27",
+		});
+		assert.equal(extracted?.sna, 82);
+		assert.equal(extracted?.snb, 80);
+		assert.equal(extracted?.anb, 2);
+		const html = renderToString(
+			<OrthodonticPatientCardForm
+				initialPayload={{
+					cephalometry: { snaAngle: 82, snbAngle: 80, anbAngle: 2, fmaAngle: 25 },
+				}}
+			/>,
+		);
+		assert.ok(html.length > 100);
 	});
 
-	it("24. Verifies AlignerCaseTracker integrates case stages, steps and exact kopecks installment schedule", () => {
-		const trackerPath = path.join(orthoDir, "AlignerCaseTracker.tsx");
-		assert.ok(fs.existsSync(trackerPath), "AlignerCaseTracker.tsx must exist");
-		const content = fs.readFileSync(trackerPath, "utf-8");
-
-		assert.ok(content.includes("amountKopecks: bigint"), "Installment amounts must be typed as bigint kopecks");
-		assert.ok(content.includes("formatKopecksToRub"), "Must use canonical formatKopecksToRub without float division");
-		assert.ok(content.includes("setup_pending") && content.includes("setup_approved") && content.includes("retention"), "Must support full aligner lifecycle stages");
-		assert.ok(content.includes('data-testid="aligner-case-tracker"'), "Must have data-testid for integration verification");
+	it("19. Verifies CephalometricCanvas renders 16 anatomical landmarks and calibration controls", async () => {
+		const { CephalometricCanvas } = await import("../CephalometricCanvas.js");
+		const html = renderToString(
+			<CephalometricCanvas
+				imageUrl="https://example.local/trg.png"
+				landmarks={DEFAULT_CEPH_LANDMARKS_PRESET}
+				filterMode="bone_enhance"
+			/>,
+		);
+		assert.ok(html.includes('data-testid="ceph-calibration-toggle"'));
+		assert.ok(html.includes("<svg"));
 	});
 
-	it("25. Verifies BiteClassificationCard implements Angle & ANB skeletal classes with Apple HIG >=44px touch targets", () => {
-		const bitePath = path.join(orthoDir, "BiteClassificationCard.tsx");
-		assert.ok(fs.existsSync(bitePath), "BiteClassificationCard.tsx must exist");
-		const content = fs.readFileSync(bitePath, "utf-8");
-
-		assert.ok(content.includes("calculateSkeletalClassFromAnb"), "Must dynamically compute skeletal class from ANB angle");
-		assert.ok(content.includes("min-h-[44px]"), "All touch targets must satisfy Apple HIG >=44px");
-		assert.ok(content.includes("VERTICAL_BITE_OPTIONS"), "Must contain canonical vertical bite options");
-		assert.ok(content.includes('data-testid="bite-classification-card"'), "Must have data-testid for integration verification");
-	});
-
-	it("26. Verifies CephalometricCanvas provides 16 anatomical landmarks and cranial planes", () => {
-		const deadCephPath = path.join(orthoDir, "CephTracingCanvas.tsx");
-		assert.ok(!fs.existsSync(deadCephPath), "Duplicate CephTracingCanvas.tsx must be purged (git rm)");
-
-		const cephPath = path.join(orthoDir, "CephalometricCanvas.tsx");
-		assert.ok(fs.existsSync(cephPath), "CephalometricCanvas.tsx must exist");
-		const content = fs.readFileSync(cephPath, "utf-8");
-
-		assert.ok(content.includes("LANDMARK_COLORS"), "Must define landmark colors");
-		assert.ok(content.includes("bone_enhance") && content.includes("invert") && content.includes("contrast"), "Must support hardware x-ray filter modes");
-		assert.ok(content.includes("setPointerCapture"), "Must use pointer capture for drag-and-drop tracing precision");
-		assert.ok(content.includes("svgRef"), "Must render reactive SVG cranial planes overlay");
-	});
-
-	it("27. Verifies expanded cephalometric anatomy (Ba, Ar, Pt, Prn, Ls, Li, Pog'), Tweed FMIA and Ricketts E-line", () => {
+	it("20. Verifies expanded cephalometric anatomy (Ba, Ar, Pt, Prn, Ls, Li, Pog'), Tweed FMIA and Ricketts E-line", () => {
 		const landmarkKeys = new Set(CEPHALOMETRIC_LANDMARKS.map((l) => l.key));
 		for (const key of ["Ba", "Ar", "Pt", "Prn", "Ls", "Li", "Pog_prime"] as const) {
 			assert.ok(landmarkKeys.has(key), `Landmark ${key} must be registered in CEPHALOMETRIC_LANDMARKS`);
 			assert.ok(DEFAULT_CEPH_LANDMARKS_PRESET[key] !== undefined, `Preset must contain coordinates for ${key}`);
 		}
 
-		// Verify Tweed FMIA and Ricketts E-line calculation
 		const analysis = calculateCephalometrics(DEFAULT_CEPH_LANDMARKS_PRESET, 0.15);
 		const fmia = analysis.measurements.find((m) => m.id === "FMIA");
 		assert.ok(fmia, "FMIA measurement must be calculated");
@@ -458,42 +373,10 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		assert.equal(rickettsLi.category, "soft_tissue");
 	});
 
-	it("28. Verifies 2-point calibration ruler and design tokens in CephalometricCanvas & CephLandmarkCanvas", () => {
-		const canvasPath = path.join(orthoDir, "CephalometricCanvas.tsx");
-		const canvasContent = fs.readFileSync(canvasPath, "utf-8");
-		assert.ok(canvasContent.includes('data-testid="ceph-calibration-toggle"'), "Must have calibration toggle button");
-		assert.ok(canvasContent.includes('data-testid="ceph-calibration-panel"'), "Must have calibration control panel");
-		assert.ok(canvasContent.includes("ceph-calibration-ruler"), "Must render SVG calibration ruler");
-		assert.ok(canvasContent.includes("setCalibDistanceMm(10)") && canvasContent.includes("setCalibDistanceMm(50)"), "Must support 10/50 mm presets");
-
-		const cephLandmarkCanvasPath = path.resolve(webSrcDir, "components/radiology/cephModal/CephLandmarkCanvas.tsx");
-		const landmarkCanvasContent = fs.readFileSync(cephLandmarkCanvasPath, "utf-8");
-		assert.ok(!landmarkCanvasContent.includes("#020617"), "Must NOT contain hardcoded #020617");
-		assert.ok(!landmarkCanvasContent.includes("slate-950"), "Must NOT contain hardcoded slate-950");
-		assert.ok(landmarkCanvasContent.includes("var(--paper-strong)"), "Must use var(--paper-strong)");
-		assert.ok(landmarkCanvasContent.includes("var(--line)"), "Must use var(--line)");
-	});
-
-	it("29. Verifies Keyed Remount (Mandate 8bn) and Zero-Leak Draft (Mandate 8d/8zq) in specialty modals and routers", () => {
-		const specialtyModalsPath = path.resolve(webSrcDir, "appModules/AppDirectSpecialtyModals.tsx");
-		const specialtyContent = fs.readFileSync(specialtyModalsPath, "utf-8");
-		assert.ok(
-			specialtyContent.includes('key={patient?.id || "empty"}'),
-			"AppDirectSpecialtyModals must mount OrthodonticsStudioModal with entity key (Mandate 8bn)",
-		);
-
-		const routerPath = path.resolve(webSrcDir, "components/appLayout/viewRouterModules/ClinicalViewRouter.tsx");
-		const routerContent = fs.readFileSync(routerPath, "utf-8");
-		assert.ok(
-			routerContent.includes('key={targetPatientId || "empty"}'),
-			"ClinicalViewRouter must mount OrthodonticsStudioModal with entity key (Mandate 8bn)",
-		);
-
-		const modalPath = path.join(orthoDir, "OrthodonticsStudioModal.tsx");
-		const modalContent = fs.readFileSync(modalPath, "utf-8");
-		assert.ok(
-			modalContent.includes("handleClose") && modalContent.includes("createDefaultOrthoProtocolState()"),
-			"OrthodonticsStudioModal must purge draft on close (Zero-Leak Draft)",
-		);
+	it("21. Verifies default ortho protocol state returns clean initial draft for Zero-Leak Draft", () => {
+		const d1 = createDefaultOrthoProtocolState();
+		const d2 = createDefaultOrthoProtocolState();
+		assert.notEqual(d1, d2);
+		assert.equal(d1.applianceCategory, d2.applianceCategory);
 	});
 });

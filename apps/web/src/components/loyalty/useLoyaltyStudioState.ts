@@ -19,6 +19,9 @@ import {
 } from "./loyaltyCatalogData";
 import {
 	postLoyaltyJson,
+	readLoyaltyResponseJson,
+	unwrapLoyaltyDataRecord,
+	extractLoyaltyErrorMessage,
 	type VerifiedCertState,
 	actionApplyPoints,
 	actionAccruePoints,
@@ -213,10 +216,14 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 		const gName = newFamilyGroupName.trim() || `Семья ${patientName.split(" ")[0] || "Пациента"}`;
 		try {
 			const res = await postLoyaltyJson("/api/finance/family", { name: gName, headPatientId: patientId });
-			if (!res.ok) { const errJson = await res.json().catch(() => ({})); showToast(errJson.message || "Не удалось создать семейную группу", "warning"); return; }
-			const rawCreated = await res.json().catch(() => ({}));
-			const created = rawCreated?.data ?? rawCreated;
-			if (created?.id) setFamilyGroupId(created.id);
+			if (!res.ok) {
+				const errJson = await readLoyaltyResponseJson(res);
+				showToast(extractLoyaltyErrorMessage(errJson, "Не удалось создать семейную группу"), "warning");
+				return;
+			}
+			const rawCreated = await readLoyaltyResponseJson(res);
+			const created = unwrapLoyaltyDataRecord(rawCreated);
+			if (typeof created.id === "string") setFamilyGroupId(created.id);
 			setFamilyName(gName); setHasFamilyGroup(true);
 			setFamilyMembers([{ patientId: patientId || "", fullName: `${patientName} (Глава)`, roleRu: "Глава семьи", individualPointsBalance: pointsBalance, lifetimeSpentKop, isBonusSpendingAllowed: true }]);
 			setIsCreateFamilyOpen(false); showToast(`Семейный счет «${gName}» активирован`, "success");
@@ -237,8 +244,8 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 					canSpendFamilyWallet: true,
 				});
 				if (!res.ok) {
-					const err = await res.json().catch(() => ({}));
-					showToast(err.message || "Не удалось добавить родственника в семью", "warning");
+					const err = await readLoyaltyResponseJson(res);
+					showToast(extractLoyaltyErrorMessage(err, "Не удалось добавить родственника в семью"), "warning");
 					return;
 				}
 				setFamilyMembers((prev) => [
@@ -262,14 +269,14 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 					relationRole: relativeRoleInput,
 				});
 				if (!res.ok) {
-					const err = await res.json().catch(() => ({}));
-					showToast(err.message || "Пациент не найден в картотеке клиники", "warning");
+					const err = await readLoyaltyResponseJson(res);
+					showToast(extractLoyaltyErrorMessage(err, "Пациент не найден в картотеке клиники"), "warning");
 					return;
 				}
-				const raw = await res.json();
-				const data = raw?.data ?? raw;
-				const rel = data.relative;
-				if (data.familyGroupId) setFamilyGroupId(data.familyGroupId);
+				const raw = await readLoyaltyResponseJson(res);
+				const data = unwrapLoyaltyDataRecord(raw);
+				const rel = data.relative as { id?: string; fullName?: string; individualPointsBalance?: number } | undefined;
+				if (typeof data.familyGroupId === "string") setFamilyGroupId(data.familyGroupId);
 				setHasFamilyGroup(true);
 				setFamilyMembers((prev) => [
 					...prev,
@@ -284,7 +291,7 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 				]);
 				setRelativePatientIdInput("");
 				setIsCreateFamilyOpen(false);
-				showToast(data.message || "Родственник успешно привязан к семейному счету", "success");
+				showToast(typeof data.message === "string" ? data.message : "Родственник успешно привязан к семейному счету", "success");
 			}
 		} catch (err) {
 			clientLogger.warn("[LoyaltyStudioModal] Link relative failed", err, { module: "useLoyaltyStudioState" });
@@ -299,8 +306,8 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 		medicalCardNumber, pointsBalance, setCertFeedback, setVerifiedCertificate, setCertSerial, setLedger, onRedeemSuccess,
 	});
 
-	const handleIssueCertificate = (nominalRub: number, title: string) => actionIssueCertificate({
-		nominalRub, title, patientId, patientName, medicalCardNumber, pointsBalance, setCertSerial, setCertFeedback, setLedger,
+	const handleIssueCertificate = (nominalKop: number, title: string) => actionIssueCertificate({
+		nominalKop, title, patientId, patientName, medicalCardNumber, pointsBalance, setCertSerial, setCertFeedback, setLedger,
 	});
 
 	const handleCopyReferralLink = () => {
@@ -330,8 +337,8 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 				rewardRub: 1000,
 			});
 			if (!res.ok) {
-				const errJson = await res.json().catch(() => ({}));
-				showToast(errJson.message || "Ошибка регистрации реферального приглашения", "error");
+				const errJson = await readLoyaltyResponseJson(res);
+				showToast(extractLoyaltyErrorMessage(errJson, "Ошибка регистрации реферального приглашения"), "error");
 				return;
 			}
 			showToast("Реферальное приглашение создано. Бонус 1 000 ₽ будет начислен после первой оплаты лечения", "success");

@@ -1,110 +1,92 @@
 /**
- * Production UI Purity & Dev Leaks Purge Unit Tests (Wave 106)
+ * Production UI Purity & Dev Leaks Purge Unit Tests (Wave 106 -> Part 6G Real SUT SSR)
  * (Supreme Law: THE HAMMER, Mandate 8p, Mandate 8d)
- *
- * Verifies that production UI components contain zero dev leaks, test SMS codes,
- * or interactive debug test buttons:
- * 1. pages/PublicBookingPage.tsx: No "Тестовый код: 7788", placeholder 7788, or test code error hints.
- * 2. PatientCabinetModal.tsx: No dev leaks or test hints.
- * 3. ImplantPassportModal.tsx: No "Тест задержки накладной" button.
- * 4. MdlpScanningModal.tsx: No "Тест связи" button or "Тестовые образцы" strip.
- * 5. MdlpDisposalQueueModal.tsx: No "Тест ПКУ" block or fast test references in empty state.
- * 6. KraftPackageBarcodeModal.tsx: No "Тестовые образцы" sample chips.
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { PublicBookingPage } from "../../../pages/PublicBookingPage";
+import { PatientCabinetModal } from "../patientCabinet/PatientCabinetModal";
+import { ChairsideSurgeryHubModal } from "../../surgery/ChairsideSurgeryHubModal";
+import { MdlpScanningModal } from "../../mdlp/MdlpScanningModal";
+import { SeniorNurseDisposalActModal } from "../../mdlp/SeniorNurseDisposalActModal";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const FORBIDDEN_DEV_PHRASES = [
+	"Тестовый код: 7788",
+	"Тестовый код:",
+	"7788 для тестового",
+	'placeholder="7788"',
+	"Тест задержки накладной",
+	"btn-toggle-overdraft-test",
+	"Снять овердрафт",
+	"Тест связи",
+	"Тестовые образцы",
+	"mdlp-crpt-test-btn",
+	"mdlp-sample-strip",
+	"Тест ПКУ",
+	"+ Ультракаин форте",
+	"+ Скандонест",
+	"быстрым тестом выше",
+] as const;
 
-// Absolute base path to apps/web/src
-const SRC_DIR = path.resolve(__dirname, "../../..");
-
-const TARGET_FILES = {
-	publicBooking: path.join(SRC_DIR, "pages/PublicBookingPage.tsx"),
-	patientCabinet: path.join(SRC_DIR, "components/portal/patientCabinet/PatientCabinetModal.tsx"),
-	implantPassport: path.join(SRC_DIR, "components/surgery/ChairsideSurgeryHubModal.tsx"),
-	mdlpScanning: path.join(SRC_DIR, "components/mdlp/MdlpScanningModal.tsx"),
-	mdlpDisposalQueue: path.join(SRC_DIR, "components/mdlp/SeniorNurseDisposalActModal.tsx"),
-} as const;
-
-describe("Production UI Purity & Dev Leaks Purge (Wave 106 - Mandate 8p/8d)", () => {
-	it("all 5 target component files exist on disk", () => {
-		for (const [key, filePath] of Object.entries(TARGET_FILES)) {
-			assert.ok(fs.existsSync(filePath), `Target file for ${key} must exist: ${filePath}`);
+describe("Production UI Purity & Dev Leaks Purge (Wave 106 — Real SSR Renders)", () => {
+	it("1. PublicBookingPage renders without 7788 test code exposures", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(PublicBookingPage, { organizationId: "org-test-1" }),
+		);
+		assert.ok(html.length > 0);
+		for (const phrase of FORBIDDEN_DEV_PHRASES) {
+			assert.equal(html.includes(phrase), false, `PublicBookingPage must not expose '${phrase}'`);
 		}
 	});
 
-	it("1. PublicBookingPage contains no dev leaks or 7788 test code exposures", () => {
-		const content = fs.readFileSync(TARGET_FILES.publicBooking, "utf8");
-
-		assert.ok(!content.includes("Тестовый код: 7788"), "Must not expose 'Тестовый код: 7788'");
-		assert.ok(!content.includes("Тестовый код:"), "Must not expose 'Тестовый код:'");
-		assert.ok(!content.includes("7788 для тестового"), "Must not hint 7788 for test confirmation in error text");
-		assert.ok(!content.includes('placeholder="7788"'), "Input placeholder must not reveal test code 7788");
+	it("2. PatientCabinetModal renders without 7788 test code hints", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(PatientCabinetModal, { isOpen: true, onClose: () => {} }),
+		);
+		assert.ok(html.length > 0);
+		for (const phrase of FORBIDDEN_DEV_PHRASES) {
+			assert.equal(html.includes(phrase), false, `PatientCabinetModal must not expose '${phrase}'`);
+		}
 	});
 
-	it("2. PatientCabinetModal contains no dev leaks or 7788 test code hints", () => {
-		const content = fs.readFileSync(TARGET_FILES.patientCabinet, "utf8");
-
-		assert.ok(!content.includes("Тестовый код: 7788"), "Must not expose 'Тестовый код: 7788'");
-		assert.ok(!content.includes("Тестовый код:"), "Must not expose 'Тестовый код:'");
-		assert.ok(!content.includes("7788 для тестового"), "Must not hint 7788 for test login in auth error");
-		assert.ok(!content.includes('placeholder="7788"'), "Input placeholder must not reveal test code 7788");
+	it("3. ChairsideSurgeryHubModal renders without debug overdraft toggle button", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(ChairsideSurgeryHubModal, {
+				isOpen: true,
+				onClose: () => {},
+				inventoryOverdraftActive: false,
+			}),
+		);
+		assert.ok(html.length > 0);
+		for (const phrase of FORBIDDEN_DEV_PHRASES) {
+			assert.equal(html.includes(phrase), false, `ChairsideSurgeryHubModal must not expose '${phrase}'`);
+		}
 	});
 
-	it("3. ChairsideSurgeryHubModal contains no 'Тест задержки накладной' interactive debug button", () => {
-		const content = fs.readFileSync(TARGET_FILES.implantPassport, "utf8");
-
-		assert.ok(!content.includes("Тест задержки накладной"), "Must not contain 'Тест задержки накладной'");
-		assert.ok(!content.includes("btn-toggle-overdraft-test"), "Must not contain debug test toggle button");
-		assert.ok(!content.includes("Снять овердрафт"), "Must not contain toggle action in UI");
-		assert.ok(content.includes("inventoryOverdraftActive"), "Must receive overdraft status from warehouse context prop");
+	it("4. MdlpScanningModal renders clean scanner instruction without 'Тест связи' or sample chips", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(MdlpScanningModal, { isOpen: true, onClose: () => {} }),
+		);
+		assert.ok(html.includes("Поднесите 2D-сканер к коду DataMatrix на упаковке"));
+		for (const phrase of FORBIDDEN_DEV_PHRASES) {
+			assert.equal(html.includes(phrase), false, `MdlpScanningModal must not expose '${phrase}'`);
+		}
 	});
 
-	it("4. MdlpScanningModal contains no 'Тест связи' button or 'Тестовые образцы' strip", () => {
-		const modalContent = fs.readFileSync(TARGET_FILES.mdlpScanning, "utf8");
-		const scannerInputFile = path.join(SRC_DIR, "components/mdlp/mdlpModal/MdlpScannerInput.tsx");
-		const inputContent = fs.existsSync(scannerInputFile) ? fs.readFileSync(scannerInputFile, "utf8") : "";
-		const content = modalContent + "\n" + inputContent;
-
-		assert.ok(!content.includes("Тест связи"), "Must not contain 'Тест связи' button");
-		assert.ok(!content.includes("Тестовые образцы"), "Must not contain 'Тестовые образцы' strip");
-		assert.ok(!content.includes("mdlp-crpt-test-btn"), "Must not contain crpt test button CSS class");
-		assert.ok(!content.includes("mdlp-sample-strip"), "Must not render sample strip in UI");
-		assert.ok(content.includes("Поднесите 2D-сканер к коду DataMatrix на упаковке"), "Must contain clean scanner instruction");
-	});
-
-	it("5. SeniorNurseDisposalActModal contains no 'Тест ПКУ' block or test references", () => {
-		const content = fs.readFileSync(TARGET_FILES.mdlpDisposalQueue, "utf8");
-
-		assert.ok(!content.includes("Тест ПКУ"), "Must not contain 'Тест ПКУ' block");
-		assert.ok(!content.includes("+ Ультракаин форте"), "Must not render demo drug addition buttons");
-		assert.ok(!content.includes("+ Скандонест"), "Must not render demo drug addition buttons");
-		assert.ok(!content.includes("быстрым тестом выше"), "Empty queue table must not reference fast test above");
-	});
-
-	it("6. Universal check: zero forbidden debug substrings in all 5 files", () => {
-		const forbiddenPhrases = [
-			"Тестовый код: 7788",
-			"Тест задержки накладной",
-			"Тест связи",
-			"Тестовые образцы",
-			"Тест ПКУ",
-		];
-
-		for (const [name, filePath] of Object.entries(TARGET_FILES)) {
-			const text = fs.readFileSync(filePath, "utf8");
-			for (const phrase of forbiddenPhrases) {
-				assert.ok(
-					!text.includes(phrase),
-					`File ${name} (${path.basename(filePath)}) must not contain forbidden phrase "${phrase}"`,
-				);
-			}
+	it("5. SeniorNurseDisposalActModal renders clean empty state without 'Тест ПКУ' or demo drug chips", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(SeniorNurseDisposalActModal, {
+				isOpen: true,
+				onClose: () => {},
+				items: [],
+			}),
+		);
+		assert.ok(html.length > 0);
+		for (const phrase of FORBIDDEN_DEV_PHRASES) {
+			assert.equal(html.includes(phrase), false, `SeniorNurseDisposalActModal must not expose '${phrase}'`);
 		}
 	});
 });

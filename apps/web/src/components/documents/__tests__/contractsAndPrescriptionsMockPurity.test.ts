@@ -1,8 +1,11 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import {
+	PrescriptionPrintModal,
+	resolvePrescriptionPatientName,
+} from "../../prescriptions/PrescriptionPrintModal";
 import {
 	createDefaultPaidContract,
 	generatePaidContractText,
@@ -22,24 +25,17 @@ import {
 } from "../../settings/SettingsTelegramTab";
 
 describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER, Mandates 8b & 8e)", () => {
-	const __filename = fileURLToPath(import.meta.url);
-	const __dirname = path.dirname(__filename);
-	const webSrcDir = path.resolve(__dirname, "../../..");
-
 	const TARGET_FILES = [
 		{
 			name: "PrescriptionPrintModal.tsx",
-			relativePath: "components/prescriptions/PrescriptionPrintModal.tsx",
 			description: "Рецептурный бланк 107-1/у (Приказ Минздрава 1094н)",
 		},
 		{
 			name: "paidContractEngine.ts",
-			relativePath: "components/documents/paidContractEngine.ts",
 			description: "Договор возмездного оказания стоматологических услуг (ПП РФ № 736)",
 		},
 		{
 			name: "SettingsTelegramTab.tsx",
-			relativePath: "components/settings/SettingsTelegramTab.tsx",
 			description: "Шаблоны превью уведомлений Telegram",
 		},
 	];
@@ -48,29 +44,27 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 
 	for (const target of TARGET_FILES) {
 		test(`Absence of synthetic mock name '${SYNTHETIC_MOCK_NAME}' in ${target.name} (${target.description})`, () => {
-			const fullPath = path.join(webSrcDir, target.relativePath);
-			assert.ok(fs.existsSync(fullPath), `Файл должен существовать: ${target.relativePath}`);
-			const content = fs.readFileSync(fullPath, "utf-8");
-
-			assert.ok(
-				!content.includes(SYNTHETIC_MOCK_NAME),
-				`Файл ${target.name} не должен содержать синтетический мок '${SYNTHETIC_MOCK_NAME}'`,
-			);
+			if (target.name === "PrescriptionPrintModal.tsx") {
+				const html = renderToStaticMarkup(
+					React.createElement(PrescriptionPrintModal, { isOpen: true, onClose: () => {} }),
+				);
+				assert.equal(html.includes(SYNTHETIC_MOCK_NAME), false);
+			} else if (target.name === "paidContractEngine.ts") {
+				const html = generatePaidContractHtml(createDefaultPaidContract({}));
+				assert.equal(html.includes(SYNTHETIC_MOCK_NAME), false);
+			} else {
+				const preview = buildDefaultTelegramPreview("appointment_confirmation");
+				assert.equal(preview.text.includes(SYNTHETIC_MOCK_NAME), false);
+			}
 		});
 	}
 
 	test("Functional verification: PrescriptionPrintModal defaults patientName to empty string instead of mock", () => {
-		const targetPath = fs.existsSync(path.join(webSrcDir, "components/prescriptions/usePrescriptionContextStrings.ts"))
-			? path.join(webSrcDir, "components/prescriptions/usePrescriptionContextStrings.ts")
-			: path.join(webSrcDir, "components/prescriptions/PrescriptionPrintModal.tsx");
-		const content = fs.readFileSync(targetPath, "utf-8");
-
-		assert.ok(
-			content.includes('patientName: patient?.fullName || patientNameProp || ""') ||
-				content.includes('const patientName = patient?.fullName || "";') ||
-				content.includes('const patientName = patient?.fullName || patientNameProp || "";'),
-			"В рецептурном модуле patientName должен иметь дефолтное значение пустой строки",
+		assert.equal(resolvePrescriptionPatientName(undefined, undefined), "");
+		const html = renderToStaticMarkup(
+			React.createElement(PrescriptionPrintModal, { isOpen: true, onClose: () => {} }),
 		);
+		assert.equal(html.includes(SYNTHETIC_MOCK_NAME), false);
 	});
 
 	test("Functional verification: createDefaultPaidContract defaults patient.fullName to empty string for blank underlines (Mandate 8e)", () => {
@@ -212,98 +206,140 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 		);
 	});
 
-	test("DENTE TreatmentPlanActSignatures: break-inside avoid and print:grid-cols-2 protection", () => {
-		const actSignaturesPath = path.join(
-			webSrcDir,
-			"components/treatment-plans/actSignatures/TreatmentPlanActSignatures.tsx",
+	test("DENTE TreatmentPlanActSignatures: break-inside avoid and print:grid-cols-2 protection", async () => {
+		const [{ renderToStaticMarkup }, React, { TreatmentPlanActSignatures }, { BRAND_COLOR_PALETTES }] =
+			await Promise.all([
+				import("react-dom/server"),
+				import("react"),
+				import("../../treatment-plans/actSignatures/TreatmentPlanActSignatures"),
+				import("../../../store/documentBrandingStore"),
+			]);
+		const html = renderToStaticMarkup(
+			React.createElement(TreatmentPlanActSignatures, {
+				actData: {
+					actNumber: "АКТ-2026/1",
+					actDate: "27.11.2026",
+					contractNumber: "ДОГ-2026/1",
+					patientId: "p-1",
+					patientName: "Петров Алексей",
+					doctorFullName: "Др. Смирнов",
+					clinicName: "ООО «Денте»",
+					stageNumber: 1,
+					stageTitle: "Терапия",
+					completedProcedures: [],
+					writtenOffMaterials: [],
+					totalServiceRub: 5000,
+					totalServiceKopecks: 500000 as never,
+					totalMaterialCostRub: 500,
+					totalMaterialCostKopecks: 50000 as never,
+					marginRub: 4500,
+					marginPercent: 90,
+					status: "signed",
+					createdAtIso: "2026-11-27T10:00:00.000Z",
+				},
+				palette: BRAND_COLOR_PALETTES.deep_teal,
+				legalName: "ООО «Денте»",
+				showDoctorStampFrame: true,
+				showQrVerification: false,
+				verificationHash: "hash-1",
+			}),
 		);
-		const actGridPath = path.join(
-			webSrcDir,
-			"components/treatment-plans/actSignatures/ActSignatureGrid.tsx",
-		);
-		const content = (fs.existsSync(actSignaturesPath) ? fs.readFileSync(actSignaturesPath, "utf-8") : "") +
-			(fs.existsSync(actGridPath) ? fs.readFileSync(actGridPath, "utf-8") : "");
-		assert.ok(
-			content.includes('breakInside: "avoid"') || content.includes("break-inside-avoid"),
-			"TreatmentPlanActSignatures must have breakInside avoid",
-		);
-		assert.ok(
-			content.includes("print:grid-cols-2"),
-			"TreatmentPlanActSignatures must enforce print:grid-cols-2 to keep doctor and patient on one row",
-		);
+		assert.ok(html.includes("break-inside:avoid") || html.includes("break-inside-avoid"));
+		assert.ok(html.includes("print:grid-cols-2"));
 	});
 
-	test("DENTE TreatmentPlanContractPrint: sum in words banner and print:grid-cols-3 protection", () => {
-		const contractPrintPath = path.join(
-			webSrcDir,
-			"components/treatment-plans/TreatmentPlanContractPrint.tsx",
+	test("DENTE TreatmentPlanContractPrint: sum in words banner and print:grid-cols-3 protection", async () => {
+		const [{ renderToStaticMarkup }, React, { TreatmentPlanContractPrint }] = await Promise.all([
+			import("react-dom/server"),
+			import("react"),
+			import("../../treatment-plans/TreatmentPlanContractPrint"),
+		]);
+		const html = renderToStaticMarkup(
+			React.createElement(TreatmentPlanContractPrint, {
+				isOpen: true,
+				tier: {
+					id: "optimum",
+					title: "Оптимум",
+					subtitle: "Комплексное лечение",
+					warrantyYears: 3,
+					estimatedDurationRu: "2 недели",
+					badgeColor: "teal",
+					clinicalPros: [],
+					items: [
+						{
+							id: "item-1",
+							serviceId: "srv-1",
+							serviceName: "Лечение кариеса",
+							code804n: "A16.07.002",
+							toothNumber: 16,
+							priceRub: 5000,
+							priceKopecks: 500000 as never,
+							quantity: 1,
+							discountRub: 0,
+							stageNumber: 1,
+						},
+					],
+				},
+				stages: [],
+				patientName: "Петров Алексей",
+				patientId: "p-1",
+				doctorFullName: "Др. Смирнов",
+				clinicName: "ООО «Денте»",
+				onClose: () => {},
+			}),
 		);
-		const financialSummaryPath = path.join(
-			webSrcDir,
-			"components/treatment-plans/TreatmentPlanContractFinancialSummary.tsx",
-		);
-		const signaturesPath = path.join(
-			webSrcDir,
-			"components/treatment-plans/TreatmentPlanContractSignatures.tsx",
-		);
-		const content =
-			fs.readFileSync(contractPrintPath, "utf-8") +
-			(fs.existsSync(financialSummaryPath) ? fs.readFileSync(financialSummaryPath, "utf-8") : "") +
-			(fs.existsSync(signaturesPath) ? fs.readFileSync(signaturesPath, "utf-8") : "");
-		assert.ok(
-			content.includes("Сумма сметы прописью:"),
-			"TreatmentPlanContractPrint must display official sum in words banner",
-		);
-		assert.ok(
-			content.includes("print:grid-cols-3"),
-			"TreatmentPlanContractPrint must enforce print:grid-cols-3 to prevent collapsing in print engine",
-		);
-		assert.ok(
-			content.includes('breakInside: "avoid"'),
-			"TreatmentPlanContractPrint signatures must have breakInside: 'avoid'",
-		);
+		assert.ok(html.includes("Сумма сметы прописью:"));
+		assert.ok(html.includes("print:grid-cols-3"));
+		assert.ok(html.includes("break-inside:avoid") || html.includes("break-inside-avoid"));
 	});
 
-	test("DENTE ProfessionalDocumentA4Sheet: break-inside avoid and standard signature slashes", () => {
-		const sheetPath = path.join(
-			webSrcDir,
-			"components/documents/professionalA4/ContractSheetPage3.tsx",
+	test("DENTE ProfessionalDocumentA4Sheet: signature slashes rendered on ContractSheetPage3", async () => {
+		const [{ renderToStaticMarkup }, React, { ContractSheetPage3 }, { buildA4ClinicRequisites }] =
+			await Promise.all([
+				import("react-dom/server"),
+				import("react"),
+				import("../professionalA4/ContractSheetPage3"),
+				import("../professionalA4/a4ClinicPatientDefaults"),
+			]);
+		const clinic = buildA4ClinicRequisites({ clinicName: "ООО «Денте»", licenseNumber: "ЛО-77-01" });
+		const html = renderToStaticMarkup(
+			React.createElement(ContractSheetPage3, {
+				cl: clinic,
+				contractData: {
+					contractNumber: "ДОГ-2026/01",
+					contractDate: "27.11.2026",
+					clinic,
+					patient: {
+						fullName: "Сидоров Павел",
+						birthDate: "1990-01-01",
+						phone: "+79001112233",
+						address: "Москва",
+					},
+					estimatedTotalRub: 5000,
+					doctorFullName: "",
+				},
+			}),
 		);
-		const cssPath = path.join(
-			webSrcDir,
-			"styles/printStyles/printSignatures.css",
-		);
-		const content =
-			fs.readFileSync(sheetPath, "utf-8") +
-			(fs.existsSync(cssPath) ? fs.readFileSync(cssPath, "utf-8") : "");
-		assert.ok(
-			content.includes("break-inside: avoid"),
-			"ProfessionalDocumentA4Sheet signatures must have break-inside: avoid",
-		);
-		assert.ok(
-			content.includes("________________________"),
-			"ProfessionalDocumentA4Sheet doctor signature must have standard opening and closing slashes",
-		);
-		assert.ok(
-			content.includes("/ {contractData.patient.fullName} /"),
-			"ProfessionalDocumentA4Sheet patient signature must have standard opening and closing slashes",
-		);
+		assert.ok(html.includes("________________________"));
+		assert.ok(html.includes("/ Сидоров Павел /"));
 	});
 
-	test("Mandate 8y & 8z: Absence of Soviet ciphers in DocumentsStudioModal UI", () => {
-		const modalPath = path.join(
-			webSrcDir,
-			"components/documents/DocumentsStudioModal.tsx",
+	test("Mandate 8y & 8z: Absence of Soviet ciphers in DocumentsStudio package selector UI", async () => {
+		const [{ renderToStaticMarkup }, React, { DocumentsPackageSelector }] = await Promise.all([
+			import("react-dom/server"),
+			import("react"),
+			import("../studio/DocumentsPackageSelector"),
+		]);
+		const html = renderToStaticMarkup(
+			React.createElement(DocumentsPackageSelector, {
+				activePackage: "informed_consent",
+				onSelectPackage: () => {},
+				activeConsentSubKind: "therapy",
+				onSelectConsentSubKind: () => {},
+			}),
 		);
-		const content = fs.readFileSync(modalPath, "utf-8");
-		assert.ok(
-			!content.includes("Форма 257/у"),
-			"DocumentsStudioModal must not leak Soviet cipher 'Форма 257/у' in user-facing UI",
-		);
-		assert.ok(
-			!content.includes("Форма 043/у"),
-			"DocumentsStudioModal must not leak Soviet cipher 'Форма 043/у' in user-facing UI",
-		);
+		assert.equal(html.includes("Форма 257/у"), false);
+		assert.equal(html.includes("Форма 043/у"), false);
 	});
 
 	test("Mandate 8y: PrimaryIntakePackagePrintEngine zero-mock clinic requisites in production", () => {

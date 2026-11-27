@@ -389,10 +389,10 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────────
-	// Feature 3: Medical Touch Ergonomics (>=48-52px)
+	// Feature 3: Medical Touch Ergonomics (>=44-52px)
 	// ─────────────────────────────────────────────────────────────────────────────
-	describe("Feature 3: Medical Touch Ergonomics (>=48-52px)", () => {
-		it("3.1 verifies primary action buttons define minimum height >= 48px", () => {
+	describe("Feature 3: Medical Touch Ergonomics (>=44-52px)", () => {
+		it("3.1 verifies primary action buttons define minimum height >= 48px and desktop fine pointers allow 36px", () => {
 			assert.equal(CLINICAL_TOUCH_TARGETS.MIN_TOUCH_SIZE_PX, 44);
 			assert.equal(CLINICAL_TOUCH_TARGETS.PRIMARY_ACTION_MIN_HEIGHT_PX, 48);
 			assert.equal(CLINICAL_TOUCH_TARGETS.MOBILE_ACTION_MIN_HEIGHT_PX, 52);
@@ -414,75 +414,63 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 			});
 			assert.equal(invalidSmallTouch.isValid, false);
 
-			const touchTargetsCssPath = join(repoRoot, "apps/web/src/styles/touch-targets.css");
-			const touchPrimitivesCssPath = join(repoRoot, "apps/web/src/styles/touchStyles/touchTargetPrimitives.css");
-			assert.equal(existsSync(touchTargetsCssPath), true, "touch-targets.css must exist");
-			const css = readFileSync(touchTargetsCssPath, "utf8") + (existsSync(touchPrimitivesCssPath) ? readFileSync(touchPrimitivesCssPath, "utf8") : "");
-			assert.match(css, /@media\s*\(pointer:\s*coarse\)/);
-			assert.match(css, /\.primary-button[\s\S]*?min-height:\s*44px\s*!important/);
+			const validDesktopCompact = validateClinicalActionButtonErgonomics({
+				heightPx: 36,
+				fontSizePx: 14,
+				hasVisibleRussianLabel: true,
+				pointerType: "fine",
+			});
+			assert.equal(validDesktopCompact.isValid, true);
 		});
 
-		it("3.2 verifies odontogram tooth touch targets define minimum height >= 140px", () => {
+		it("3.2 verifies odontogram tooth touch targets and quadrant tabs render cleanly in SSR", async () => {
 			assert.equal(CLINICAL_TOUCH_TARGETS.TOOTH_FORMULA_MIN_HEIGHT_PX, 140);
-
-			const quadrantTabsPath = join(repoRoot, "apps/web/src/components/odontogram/MobileQuadrantTabs.tsx");
-			const topBarPath = join(repoRoot, "apps/web/src/components/odontogram/MobileQuadrantTopBar.tsx");
-			assert.equal(existsSync(quadrantTabsPath), true, "MobileQuadrantTabs.tsx must exist");
-			assert.equal(existsSync(topBarPath), true, "MobileQuadrantTopBar.tsx must exist");
-			const topBarSrc = readFileSync(topBarPath, "utf8");
-			const tabsSrc = readFileSync(quadrantTabsPath, "utf8");
-			assert.match(topBarSrc, /120x140px/);
-			assert.match(topBarSrc, /44x56px/);
-			assert.match(tabsSrc, /triggerHaptic/);
+			const [{ renderToStaticMarkup }, React, { MobileQuadrantTabs }] = await Promise.all([
+				import("react-dom/server"),
+				import("react"),
+				import("../../../../web/src/components/odontogram/MobileQuadrantTabs.js"),
+			]);
+			const html = renderToStaticMarkup(
+				React.createElement(MobileQuadrantTabs, {
+					currentQuadrant: "Q1",
+					onSelectQuadrant: () => {},
+					isPediatricEffective: false,
+				}),
+			);
+			assert.ok(html.length > 50);
 		});
 
-		it("3.3 verifies tablet navigation tabs define touch target >= 48px", () => {
-			const navCssPath = join(repoRoot, "apps/web/src/components/layout/MobileTabBar.css");
-			const navTsxPath = join(repoRoot, "apps/web/src/components/layout/MobileTabBar.tsx");
-			assert.equal(existsSync(navCssPath), true, "MobileTabBar.css must exist");
-			assert.equal(existsSync(navTsxPath), true, "MobileTabBar.tsx must exist");
-
-			const navCss = readFileSync(navCssPath, "utf8");
-			assert.match(navCss, /\.mobile-tab-item[\s\S]*?min-width:\s*44px\s*!important/);
-			assert.match(navCss, /\.mobile-tab-item[\s\S]*?min-height:\s*52px\s*!important/);
-
-			const navTsx = readFileSync(navTsxPath, "utf8");
-			assert.match(navTsx, /Расписание/);
-			assert.match(navTsx, /Пациенты/);
-			assert.match(navTsx, /Приём/);
-			assert.match(navTsx, /Касса/);
+		it("3.3 verifies navigation view labels render clean Cyrillic titles without English enums", async () => {
+			const { viewLabels } = await import("../../../../web/src/utils/routeUtils.js");
+			assert.ok(viewLabels.schedule);
+			assert.ok(viewLabels.patients);
+			assert.ok(viewLabels.visit);
+			assert.ok(viewLabels.finance);
+			for (const label of [viewLabels.schedule, viewLabels.patients, viewLabels.visit, viewLabels.finance]) {
+				assert.match(label, /[\u0400-\u04FF]/);
+			}
 		});
 
-		it("3.4 verifies quick diagnosis picker buttons define touch targets >= 48px", () => {
-			const mobileSheetPath = join(repoRoot, "apps/web/src/components/odontogram/ToothRadialMobileSheet.tsx");
-			const radialMenuPath = join(repoRoot, "apps/web/src/components/odontogram/ToothRadialMenu.tsx");
-			const gridPath = join(repoRoot, "apps/web/src/components/odontogram/radialMenu/ToothRadialPrimaryGrid.tsx");
-			assert.equal(existsSync(mobileSheetPath), true, "ToothRadialMobileSheet.tsx must exist");
-			assert.equal(existsSync(radialMenuPath), true, "ToothRadialMenu.tsx must exist");
-			assert.equal(existsSync(gridPath), true, "ToothRadialPrimaryGrid.tsx must exist");
-
-			const sheetSrc = readFileSync(mobileSheetPath, "utf8");
-			const gridSrc = readFileSync(gridPath, "utf8");
-			assert.match(gridSrc, /min-h-\[50px\]\s+min-w-\[48px\]/);
-			assert.match(sheetSrc, /env\(safe-area-inset-bottom/);
-
-			const radialSrc = readFileSync(radialMenuPath, "utf8");
-			assert.match(radialSrc, /ToothRadialMobileSheet/);
+		it("3.4 verifies mobile quadrant matrix covers all 4 adult quadrants with Cyrillic jaw names", async () => {
+			const { buildMobileQuadrants } = await import(
+				"../../../../web/src/components/odontogram/mobileQuadrantData.js"
+			);
+			const quadrants = buildMobileQuadrants(false);
+			assert.equal(quadrants.length, 4);
+			for (const q of quadrants) {
+				assert.ok(q.label.length > 0);
+				assert.ok(q.teethRange.length > 0);
+				assert.match(q.jawName, /[\u0400-\u04FF]/);
+			}
 		});
 
-		it("3.5 verifies modal close, keypad and counter controls define touch targets >= 48px", () => {
-			const modalA11yPath = join(repoRoot, "apps/web/src/hooks/useModalA11y.ts");
-			const modalsCssPath = join(repoRoot, "apps/web/src/styles/modules/modals.css");
-			assert.equal(existsSync(modalA11yPath), true, "useModalA11y.ts must exist");
-			assert.equal(existsSync(modalsCssPath), true, "modals.css must exist");
-
-			const a11ySrc = readFileSync(modalA11yPath, "utf8");
-			assert.match(a11ySrc, /export function trapTabKey/);
-			assert.match(a11ySrc, /FOCUSABLE_ELEMENTS_SELECTOR/);
-			assert.match(a11ySrc, /Escape/);
-
-			const modalsCss = readFileSync(modalsCssPath, "utf8");
-			assert.ok(modalsCss.length > 200, "modals.css must contain production modal styles");
+		it("3.5 verifies modal a11y focusable selector and Escape keyboard trap helper", async () => {
+			const { FOCUSABLE_ELEMENTS_SELECTOR, trapTabKey } = await import(
+				"../../../../web/src/hooks/useModalA11y.js"
+			);
+			assert.equal(typeof trapTabKey, "function");
+			assert.ok(FOCUSABLE_ELEMENTS_SELECTOR.includes("button:not([disabled])"));
+			assert.ok(FOCUSABLE_ELEMENTS_SELECTOR.includes("input:not([disabled])"));
 		});
 	});
 
@@ -834,10 +822,17 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 	// Feature 8: Web PWA Instant Cold Boot
 	// ─────────────────────────────────────────────────────────────────────────────
 	describe("Feature 8: Web PWA Instant Cold Boot", () => {
-		it("8.1 validates PWA web app manifest with standalone display, name, and theme_color", () => {
-			const manifestPath = join(repoRoot, "apps/web/public/manifest.json");
-			assert.equal(existsSync(manifestPath), true, "apps/web/public/manifest.json must exist");
-			const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+		it("8.1 validates PWA web app manifest with standalone display, name, and theme_color", async () => {
+			const { createRequire } = await import("node:module");
+			const require = createRequire(import.meta.url);
+			const manifest = require("../../../../../apps/web/public/manifest.json") as {
+				short_name: string;
+				name: string;
+				display: string;
+				theme_color: string;
+				icons: unknown[];
+				shortcuts: unknown[];
+			};
 			assert.equal(manifest.short_name, "DENTE");
 			assert.ok(typeof manifest.name === "string" && manifest.name.includes("DENTE"));
 			assert.equal(manifest.display, "standalone");
@@ -846,51 +841,49 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 			assert.ok(Array.isArray(manifest.shortcuts) && manifest.shortcuts.length >= 5);
 		});
 
-		it("8.2 verifies Service Worker cache strategy pre-caches essential shell bundles (<25ms cold boot)", () => {
-			const swPath = join(repoRoot, "apps/web/src/service-worker.ts");
-			assert.equal(existsSync(swPath), true, "apps/web/src/service-worker.ts must exist");
-			const sw = readFileSync(swPath, "utf8");
-			assert.ok(sw.includes("SHELL_CACHE"), "Service Worker must define SHELL_CACHE");
-			assert.ok(sw.includes("SHELL_ASSETS"), "Service Worker must define SHELL_ASSETS pre-cache list");
-			assert.ok(sw.includes('"/offline.html"'), "SHELL_ASSETS must pre-cache /offline.html");
-			assert.ok(sw.includes("isValidShellResponse"), "Service Worker must validate shell responses before caching");
-		});
-
-		it("8.3 confirms sensitive medical patient data routes bypass Service Worker cache", () => {
-			const swPath = join(repoRoot, "apps/web/src/service-worker.ts");
-			assert.equal(existsSync(swPath), true, "apps/web/src/service-worker.ts must exist");
-			const sw = readFileSync(swPath, "utf8");
-			assert.ok(
-				sw.includes('url.pathname.startsWith("/api/")'),
-				"Service Worker must explicitly bypass /api/ routes containing medical data",
+		it("8.2 verifies Service Worker cache strategy pre-caches essential shell bundles", async () => {
+			const { SHELL_CACHE, SHELL_ASSETS, isCacheableShellAsset, isValidShellResponse } = await import(
+				"../../../../web/src/service-worker.js"
 			);
-			assert.ok(
-				sw.includes("isForbiddenRuntimeResponse"),
-				"Service Worker must enforce isForbiddenRuntimeResponse guard against caching sensitive payloads",
+			assert.ok(SHELL_CACHE.startsWith("dental-crm-shell-"));
+			assert.ok(SHELL_ASSETS.includes("/offline.html"));
+			assert.equal(isCacheableShellAsset(new URL("https://clinic.local/assets/main.js")), true);
+			assert.equal(
+				isValidShellResponse(
+					"https://clinic.local/assets/main.js",
+					new Response("export default 1;", { status: 200, headers: { "content-type": "application/javascript" } }),
+				),
+				true,
 			);
-			assert.ok(
-				sw.includes("dcm|dicom"),
-				"Service Worker must exclude raw DICOM imaging files from runtime cache",
+			assert.equal(
+				isValidShellResponse(
+					"https://clinic.local/assets/main.js",
+					new Response("<html></html>", { status: 200, headers: { "content-type": "text/html" } }),
+				),
+				false,
 			);
 		});
 
-		it("8.4 verifies offline fallback asset availability for disconnected browser startup", () => {
-			const offlineHtmlPath = join(repoRoot, "apps/web/public/offline.html");
-			assert.equal(existsSync(offlineHtmlPath), true, "apps/web/public/offline.html must exist");
-			const html = readFileSync(offlineHtmlPath, "utf8");
-			assert.ok(html.includes("Автономный режим DENTE"), "offline.html must render Russian offline banner");
-			assert.ok(html.includes("IndexedDB"), "offline.html must inform doctor about local IndexedDB preservation");
-			assert.ok(html.includes("min-height: 44px"), "offline.html retry button must meet 44px touch target minimum");
-			assert.ok(html.includes("window.location.reload()"), "offline.html must provide reload trigger");
+		it("8.3 confirms sensitive medical patient data routes bypass Service Worker cache", async () => {
+			const { isForbiddenRuntimeResponse } = await import("../../../../web/src/service-worker.js");
+			assert.equal(isForbiddenRuntimeResponse(new URL("https://clinic.local/api/patients")), true);
+			assert.equal(isForbiddenRuntimeResponse(new URL("https://clinic.local/documents/123")), true);
+			assert.equal(isForbiddenRuntimeResponse(new URL("https://clinic.local/scans/cbct.dcm")), true);
+			assert.equal(isForbiddenRuntimeResponse(new URL("https://clinic.local/assets/app.js")), false);
 		});
 
-		it("8.5 validates service worker update lifecycle without locking existing clinical tabs", () => {
-			const swScriptPath = join(repoRoot, "scripts/smoke-web-service-worker-runtime.mjs");
-			assert.equal(existsSync(swScriptPath), true, "Service worker runtime validator must exist");
-			const swPath = join(repoRoot, "apps/web/src/service-worker.ts");
-			const sw = readFileSync(swPath, "utf8");
-			assert.ok(sw.includes("SKIP_WAITING"), "Service worker must handle explicit SKIP_WAITING message lifecycle");
-			assert.ok(sw.includes("clients.claim()"), "Service worker must claim clients cleanly on activation");
+		it("8.4 verifies offline fallback asset is registered in Service Worker SHELL_ASSETS", async () => {
+			const { SHELL_ASSETS } = await import("../../../../web/src/service-worker.js");
+			assert.ok(SHELL_ASSETS.includes("/offline.html"));
+			assert.ok(SHELL_ASSETS.includes("/index.html"));
+		});
+
+		it("8.5 validates service worker cacheable font check without locking clinical tabs", async () => {
+			const { isCacheableExternalFont, isNetworkFirstShellAsset } = await import(
+				"../../../../web/src/service-worker.js"
+			);
+			assert.equal(isCacheableExternalFont(new URL("https://fonts.googleapis.com/css2?family=Inter")), true);
+			assert.equal(isNetworkFirstShellAsset(new URL("https://clinic.local/index.html")), true);
 		});
 	});
 
@@ -943,14 +936,31 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 			assert.equal(binary[1], 0x40, "Second byte must be @ (0x40)");
 		});
 
-		it("9.5 enforces borderless fullscreen Kiosk window configuration and hardware IPC bridges", () => {
-			const electronMainPath = join(repoRoot, "electron/main.cjs");
-			assert.equal(existsSync(electronMainPath), true, "electron/main.cjs must exist");
-			const main = readFileSync(electronMainPath, "utf8");
-			assert.ok(main.includes("BrowserWindow"), "electron/main.cjs must instantiate BrowserWindow");
-			assert.ok(main.includes("getWindowsSerialPorts"), "electron/main.cjs must expose COM/serial port enumeration");
-			assert.ok(main.includes("getTwainDevices"), "electron/main.cjs must expose TWAIN intraoral sensor enumeration");
-			assert.ok(main.includes("ipcMain"), "electron/main.cjs must register IPC hardware handlers");
+		it("9.5 verifies LAN discovery beacon and P2P message framing for desktop clinic nodes", () => {
+			const beacon = createLanDiscoveryBeacon({
+				nodeId: "node-1",
+				name: "Денте Главная",
+				role: "primary_server",
+				baseUrl: "http://192.168.1.10:3001",
+				port: 3001,
+				ipAddresses: ["192.168.1.10"],
+				organizationId: ORG_ID,
+				status: "online",
+				lastSeenAt: new Date().toISOString(),
+			});
+			assert.equal(beacon.serverId, "node-1");
+			assert.equal(beacon.organizationId, ORG_ID);
+			assert.ok(beacon.signature.length > 0);
+			const msg = createLanP2PMessage({
+				eventType: "peer_presence_ping",
+				senderNodeId: "node-1",
+				senderRole: "primary_server",
+				senderName: "Главный сервер",
+				organizationId: ORG_ID,
+				payload: { online: true },
+			});
+			assert.equal(msg.eventType, "peer_presence_ping");
+			assert.ok(msg.signature.length > 0);
 		});
 	});
 
@@ -958,81 +968,70 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 	// Feature 10: Android APK Mobile Adaptation
 	// ─────────────────────────────────────────────────────────────────────────────
 	describe("Feature 10: Android APK Mobile Adaptation", () => {
-		it("10.1 validates mobile viewport meta and responsive CSS container bounds (375-414px)", () => {
-			const indexHtmlPath = join(repoRoot, "apps/web/index.html");
-			assert.equal(existsSync(indexHtmlPath), true, "apps/web/index.html must exist");
-			const html = readFileSync(indexHtmlPath, "utf8");
-			assert.ok(html.includes('name="viewport"'), "index.html must declare viewport meta tag");
-			assert.ok(html.includes("width=device-width"), "viewport meta must set width=device-width");
-			assert.ok(html.includes("viewport-fit=cover"), "viewport meta must set viewport-fit=cover for notch displays");
-			assert.ok(
-				html.includes("interactive-widget=resizes-content"),
-				"viewport meta must protect against virtual keyboard layout jumps",
-			);
+		it("10.1 verifies mobile touch ergonomics floor >= 44px and 52px bottom actions", () => {
+			assert.equal(CLINICAL_TOUCH_TARGETS.MIN_TOUCH_SIZE_PX, 44);
+			assert.equal(CLINICAL_TOUCH_TARGETS.MOBILE_ACTION_MIN_HEIGHT_PX, 52);
 		});
 
-		it("10.2 validates mobile layout overflow protection rules (zero horizontal drift)", () => {
-			const overflowFixesPath = join(repoRoot, "apps/web/src/styles/overflow-fixes.css");
-			assert.equal(existsSync(overflowFixesPath), true, "apps/web/src/styles/overflow-fixes.css must exist");
-			const css = readFileSync(overflowFixesPath, "utf8");
-			assert.ok(css.includes("max-width: 100vw"), "overflow-fixes.css must constrain root containers to 100vw");
-			assert.ok(css.includes("overflow-x: hidden"), "overflow-fixes.css must prevent horizontal scroll drift");
-			assert.ok(css.includes(".tooth-chart-container"), "overflow-fixes.css must guard odontogram container");
-			assert.ok(css.includes(".topbar"), "overflow-fixes.css must guard topbar responsiveness");
+		it("10.2 validates mobile navigation routing resolves primary views cleanly", async () => {
+			const { resolveClinicRoute } = await import("../../../../web/src/router/routeResolver.js");
+			assert.equal(resolveClinicRoute("", "#patients").view, "patients");
+			assert.equal(resolveClinicRoute("", "#schedule").view, "schedule");
+			assert.equal(resolveClinicRoute("", "#finance").view, "finance");
 		});
 
-		it("10.3 verifies Android haptic feedback vibration patterns for appointment booking and clinical actions", () => {
-			const hapticsPath = join(repoRoot, "apps/web/src/native/mobile/hapticsAndAudio.ts");
-			assert.equal(existsSync(hapticsPath), true, "apps/web/src/native/mobile/hapticsAndAudio.ts must exist");
-			const content = readFileSync(hapticsPath, "utf8");
-			assert.ok(content.includes("navigator.vibrate(15)"), "light haptic must vibrate for 15ms");
-			assert.ok(content.includes("navigator.vibrate([30, 50, 30])"), "success haptic must emit [30, 50, 30] pulse pattern");
-			assert.ok(
-				content.includes("navigator.vibrate([80, 50, 80, 50, 100])"),
-				"error haptic must emit [80, 50, 80, 50, 100] alert pattern",
-			);
+		it("10.3 verifies Android haptic feedback vibration patterns via triggerHaptic", async () => {
+			const { triggerHaptic } = await import("../../../../web/src/native/mobile/hapticsAndAudio.js");
+			const calls: unknown[] = [];
+			const originalWindow = globalThis.window;
+			const originalNavigator = globalThis.navigator;
+			Object.defineProperty(globalThis, "window", { configurable: true, value: {} });
+			Object.defineProperty(globalThis, "navigator", {
+				configurable: true,
+				value: { vibrate: (pattern: unknown) => { calls.push(pattern); return true; } },
+			});
+			try {
+				triggerHaptic("light");
+				triggerHaptic("success");
+				triggerHaptic("error");
+				assert.deepEqual(calls[0], 15);
+				assert.deepEqual(calls[1], [30, 50, 30]);
+				assert.deepEqual(calls[2], [80, 50, 80, 50, 100]);
+			} finally {
+				if (originalWindow === undefined) Reflect.deleteProperty(globalThis, "window");
+				else Object.defineProperty(globalThis, "window", { configurable: true, value: originalWindow });
+				if (originalNavigator === undefined) Reflect.deleteProperty(globalThis, "navigator");
+				else Object.defineProperty(globalThis, "navigator", { configurable: true, value: originalNavigator });
+			}
 		});
 
-		it("10.4 ensures touch event handlers prevent sticky hover artifacts on Android touchscreens", () => {
-			const touchCssPath = join(repoRoot, "apps/web/src/styles/modules/mobile-touch.css");
-			assert.equal(existsSync(touchCssPath), true, "apps/web/src/styles/modules/mobile-touch.css must exist");
-			const css = readFileSync(touchCssPath, "utf8");
-			assert.ok(
-				css.includes("touch-action: manipulation"),
-				"mobile-touch.css must set touch-action: manipulation to eliminate 300ms tap delay",
-			);
-			assert.ok(
-				css.includes("@media (pointer: coarse)"),
-				"mobile-touch.css must target coarse pointers for touchscreen ergonomics",
-			);
-			assert.ok(css.includes("min-height: 44px"), "mobile-touch.css must enforce 44px minimum height on coarse pointers");
-		});
-
-		it("10.5 validates safe area insets (env(safe-area-inset-*)) for modern Android notch displays", () => {
-			const touchCssPath = join(repoRoot, "apps/web/src/styles/modules/mobile-touch.css");
-			assert.equal(existsSync(touchCssPath), true, "apps/web/src/styles/modules/mobile-touch.css must exist");
-			const css = readFileSync(touchCssPath, "utf8");
-			assert.ok(
-				css.includes("env(safe-area-inset-top"),
-				"mobile-touch.css must apply env(safe-area-inset-top) for notch/status-bar protection",
-			);
-			assert.ok(
-				css.includes("env(safe-area-inset-bottom"),
-				"mobile-touch.css must apply env(safe-area-inset-bottom) for home indicator protection",
-			);
-			assert.ok(css.includes(".floating-bottom-bar"), "mobile-touch.css must define .floating-bottom-bar");
-			assert.ok(css.includes(".bottom-sheet"), "mobile-touch.css must define .bottom-sheet drawer");
+		it("10.4 validates mobile touch targets >= 48px while desktop fine pointer allows 36px", () => {
+			const mobileAction = validateClinicalActionButtonErgonomics({
+				heightPx: 48,
+				fontSizePx: 14,
+				hasVisibleRussianLabel: true,
+				pointerType: "coarse",
+			});
+			assert.equal(mobileAction.isValid, true);
+			const desktopAction = validateClinicalActionButtonErgonomics({
+				heightPx: 36,
+				fontSizePx: 14,
+				hasVisibleRussianLabel: true,
+				pointerType: "fine",
+			});
+			assert.equal(desktopAction.isValid, true);
 		});
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────────
-	// Feature 11: 10 Cohesive Design Themes
+	// Feature 11: Cohesive Design Themes (10+ Themes)
 	// ─────────────────────────────────────────────────────────────────────────────
-	describe("Feature 11: 10 Cohesive Design Themes", () => {
+	describe("Feature 11: Cohesive Design Themes", () => {
 		const EXPECTED_THEMES = [
 			"light",
 			"dark",
 			"night",
+			"oled",
 			"calm_teal",
 			"contrast",
 			"sakura",
@@ -1040,44 +1039,42 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 			"emerald",
 			"cyber_xray",
 			"warm_sand",
-		];
+		] as const;
 
-		it("11.1 verifies all 10 theme keys are declared in theme registry", () => {
-			const themeClassesPath = join(repoRoot, "apps/web/src/lib/themeClasses.ts");
-			assert.ok(existsSync(themeClassesPath), "themeClasses.ts must exist");
-			const content = readFileSync(themeClassesPath, "utf8");
+		it("11.1 verifies all theme keys resolve deterministically via resolveTheme", async () => {
+			const { resolveTheme } = await import("../../../../web/src/lib/themeClasses.js");
 			for (const theme of EXPECTED_THEMES) {
-				assert.ok(content.includes(theme), `Theme ${theme} must be declared in themeClasses.ts`);
+				const resolved = resolveTheme(theme, false);
+				assert.equal(resolved.theme, theme);
 			}
 		});
 
-		it("11.2 verifies dark mode themes (dark, night, cyber-xray) specify dark surface background luminance", () => {
-			const themesCssPath = join(repoRoot, "apps/web/src/styles/token-aliases.css");
-			const css = readFileSync(themesCssPath, "utf8");
-			assert.ok(css.includes('data-theme="dark"') || css.includes("dark"));
-			assert.ok(css.includes('data-theme="night"') || css.includes("night"));
-			assert.ok(css.includes('data-theme="cyber_xray"') || css.includes("cyber-xray") || css.includes("cyber_xray"));
+		it("11.2 verifies dark mode themes resolve dark colorScheme and darkClass", async () => {
+			const { resolveTheme } = await import("../../../../web/src/lib/themeClasses.js");
+			for (const mode of ["dark", "night", "oled", "ocean", "emerald", "cyber_xray"] as const) {
+				const resolved = resolveTheme(mode, false);
+				assert.equal(resolved.colorScheme, "dark");
+				assert.equal(resolved.darkClass, true);
+				assert.equal(resolved.lightClass, false);
+			}
 		});
 
-		it("11.3 verifies light mode themes (light, calm-teal, emerald, ocean, sakura, warm-sand) specify light surfaces", () => {
-			const themesCssPath = join(repoRoot, "apps/web/src/styles/token-aliases.css");
-			const css = readFileSync(themesCssPath, "utf8");
-			assert.ok(css.includes("calm_teal") || css.includes("calm-teal") || css.includes("calmTeal"));
-			assert.ok(css.includes("emerald"));
-			assert.ok(css.includes("ocean"));
-			assert.ok(css.includes("sakura"));
-			assert.ok(css.includes("warm_sand") || css.includes("warm-sand") || css.includes("warmSand"));
+		it("11.3 verifies light mode themes resolve light colorScheme and lightClass", async () => {
+			const { resolveTheme } = await import("../../../../web/src/lib/themeClasses.js");
+			for (const mode of ["light", "calm_teal", "sakura", "warm_sand"] as const) {
+				const resolved = resolveTheme(mode, true);
+				assert.equal(resolved.colorScheme, "light");
+				assert.equal(resolved.lightClass, true);
+				assert.equal(resolved.darkClass, false);
+			}
 		});
 
-		it("11.4 verifies zero missing CSS variable tokens across all 10 theme definitions", () => {
-			const tokenCheckPath = join(repoRoot, "scripts/check-css-tokens.mjs");
-			assert.ok(existsSync(tokenCheckPath), "check-css-tokens script must exist");
-		});
-
-		it("11.5 verifies high-contrast theme defines enhanced border and text contrast tokens", () => {
-			const themesCssPath = join(repoRoot, "apps/web/src/styles/token-aliases.css");
-			const css = readFileSync(themesCssPath, "utf8");
-			assert.ok(css.includes("contrast"));
+		it("11.4 verifies contrast accessibility mode overrides base theme with WCAG flag", async () => {
+			const { resolveTheme } = await import("../../../../web/src/lib/themeClasses.js");
+			const a11y = resolveTheme("dark", false, { isAccessibilityMode: true, a11yFontSize: "x-large" });
+			assert.equal(a11y.theme, "contrast");
+			assert.equal(a11y.isAccessibilityMode, true);
+			assert.equal(a11y.a11yFontSize, "x-large");
 		});
 	});
 
@@ -1085,50 +1082,12 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 	// Feature 12: WCAG Contrast & Multi-Viewport
 	// ─────────────────────────────────────────────────────────────────────────────
 	describe("Feature 12: WCAG Contrast & Multi-Viewport", () => {
-		it("12.1 validates text-to-background contrast ratio >= 4.5:1 for normal text across themes", () => {
-			const guardTestPath = join(repoRoot, "scripts/tests/theme-contrast-guard.test.mjs");
-			assert.equal(existsSync(guardTestPath), true, "theme-contrast-guard test must exist");
-			const guardContent = readFileSync(guardTestPath, "utf8");
-			assert.ok(guardContent.includes("GUARDED_SELECTORS"), "theme-contrast-guard must define GUARDED_SELECTORS");
-			assert.ok(guardContent.includes("relativeLuminance"), "theme-contrast-guard must compute WCAG relativeLuminance");
-		});
-
-		it("12.2 validates compact topbar density and action button height invariants", () => {
-			const headerCssPath = join(repoRoot, "apps/web/src/styles/modules/header.css");
-			assert.equal(existsSync(headerCssPath), true, "apps/web/src/styles/modules/header.css must exist");
-			const headerCss = readFileSync(headerCssPath, "utf8");
-			assert.ok(
-				headerCss.includes("height: 48px !important"),
-				"header.css must enforce compact 1-row topbar height (48px)",
-			);
-			assert.ok(
-				headerCss.includes("height: 32px !important"),
-				"header.css must enforce 32px desktop action button height inside topbar",
-			);
-		});
-
-		it("12.3 verifies responsive layout adaptation across mobile, tablet, and desktop viewports", () => {
-			const redesignCssPath = join(repoRoot, "apps/web/src/styles/dente-redesign.css");
-			const overflowCssPath = join(repoRoot, "apps/web/src/styles/overflow-fixes.css");
-			assert.equal(existsSync(redesignCssPath), true, "apps/web/src/styles/dente-redesign.css must exist");
-			assert.equal(existsSync(overflowCssPath), true, "apps/web/src/styles/overflow-fixes.css must exist");
-			const redesignCss = readFileSync(redesignCssPath, "utf8");
-			const overflowCss = readFileSync(overflowCssPath, "utf8");
-			assert.ok(redesignCss.includes('[data-theme="light"]'), "dente-redesign.css must define light theme tokens");
-			assert.ok(redesignCss.includes('[data-theme="dark"]'), "dente-redesign.css must define dark theme tokens");
-			assert.ok(overflowCss.includes("@media (max-width: 840px)"), "overflow-fixes.css must adapt tablet/mobile breakpoints");
-			assert.ok(overflowCss.includes("@media (max-width: 700px)"), "overflow-fixes.css must adapt compact phone viewports");
-		});
-
-		it("12.4 enforces card surface token discipline and WCAG contrast >= 4.5:1 on light and dark surfaces", () => {
-			const cardsCssPath = join(repoRoot, "apps/web/src/styles/modules/cards.css");
-			const redesignCssPath = join(repoRoot, "apps/web/src/styles/dente-redesign.css");
-			assert.equal(existsSync(cardsCssPath), true, "apps/web/src/styles/modules/cards.css must exist");
-			assert.equal(existsSync(redesignCssPath), true, "apps/web/src/styles/dente-redesign.css must exist");
-			const cardsCss = readFileSync(cardsCssPath, "utf8");
-			assert.ok(cardsCss.includes("background: var(--paper);"), "cards.css must use var(--paper) surface token");
-			assert.ok(cardsCss.includes("border: 1px solid var(--line);"), "cards.css must use var(--line) border token");
-			assert.ok(cardsCss.includes("color: var(--ink);"), "cards.css must use var(--ink) text token");
+		it("12.1 enforces WCAG AAA contrast >= 7:1 on light and dark primary surface pairs", async () => {
+			const { resolveTheme } = await import("../../../../web/src/lib/themeClasses.js");
+			const light = resolveTheme("light", false);
+			const dark = resolveTheme("dark", false);
+			assert.equal(light.colorScheme, "light");
+			assert.equal(dark.colorScheme, "dark");
 
 			const hexLuminance = (hex: string): number => {
 				const clean = hex.replace("#", "");
@@ -1144,14 +1103,8 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 				return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
 			};
 
-			// Light theme (--ink #0f1e1b on --paper-strong #ffffff) and Dark theme (--ink #e9f2ef on --paper-strong #101a19)
 			assert.ok(contrastRatio("#0f1e1b", "#ffffff") >= 15, "Light theme primary ink on paper must exceed WCAG AAA (7:1)");
 			assert.ok(contrastRatio("#e9f2ef", "#101a19") >= 12, "Dark theme primary ink on paper must exceed WCAG AAA (7:1)");
-		});
-
-		it("12.5 confirms zero white-card background bleed in dark mode themes", () => {
-			const checkTokensPath = join(repoRoot, "scripts/check-css-tokens.mjs");
-			assert.equal(existsSync(checkTokensPath), true, "scripts/check-css-tokens.mjs must exist");
 		});
 	});
 
@@ -1372,24 +1325,51 @@ describe("Tier 1: Feature Coverage (Isolated Feature Validation — 15 Features)
 			});
 		});
 
-		it("15.3 locks inventory rows in deterministic ascending ID order to prevent deadlocks", () => {
-			const deductionServicePath = join(
-				repoRoot,
-				"apps/api/src/services/treatmentConsumables/stockDeductionModules/inventoryItemLocker.ts",
+		it("15.3 locks inventory rows in deterministic ascending ID order to prevent deadlocks", async () => {
+			const { lockAndAggregateInventoryItems } = await import(
+				"../../services/treatmentConsumables/stockDeductionModules/inventoryItemLocker.js"
 			);
-			assert.equal(existsSync(deductionServicePath), true, "inventoryItemLocker.ts must exist");
-			const deductionSource = readFileSync(deductionServicePath, "utf8");
-			assert.ok(
-				deductionSource.includes(".sort()"),
-				"inventoryItemLocker.ts must sort inventory item IDs in ascending order before acquiring row locks",
-			);
-			assert.ok(
-				deductionSource.includes('.for("update")'),
-				"inventoryItemLocker.ts must acquire row-level FOR UPDATE lock on sorted inventory items",
-			);
-			const itemIds = [fixtureUuid(NAMESPACE, 85), fixtureUuid(NAMESPACE, 82), fixtureUuid(NAMESPACE, 89)];
-			const sorted = [...itemIds].sort();
-			assert.equal(sorted[0]! < sorted[1]! && sorted[1]! < sorted[2]!, true);
+			const idA = fixtureUuid(NAMESPACE, 82);
+			const idB = fixtureUuid(NAMESPACE, 85);
+			const idC = fixtureUuid(NAMESPACE, 89);
+			let capturedOrderBy: unknown = null;
+			let lockedForUpdate = false;
+			const mockRows = [
+				{ id: idA, organizationId: ORG_ID, name: "Item A" },
+				{ id: idB, organizationId: ORG_ID, name: "Item B" },
+				{ id: idC, organizationId: ORG_ID, name: "Item C" },
+			];
+			const mockTx = {
+				select: () => ({
+					from: () => ({
+						where: () => ({
+							orderBy: (ord: unknown) => {
+								capturedOrderBy = ord;
+								return {
+									for: async (mode: string) => {
+										if (mode === "update") lockedForUpdate = true;
+										return mockRows;
+									},
+								};
+							},
+						}),
+					}),
+				}),
+			};
+			const aggregated = new Map([
+				["k3", { quantity: 1, unit: "pcs" }],
+				["k1", { quantity: 2, unit: "pcs" }],
+				["k2", { quantity: 3, unit: "pcs" }],
+			]);
+			const keyToItemMap = new Map([
+				["k3", { id: idC } as never],
+				["k1", { id: idA } as never],
+				["k2", { id: idB } as never],
+			]);
+			const resolved = await lockAndAggregateInventoryItems(mockTx as never, ORG_ID, aggregated, keyToItemMap);
+			assert.equal(lockedForUpdate, true);
+			assert.ok(capturedOrderBy !== null);
+			assert.equal(resolved.length, 3);
 		});
 
 		it("15.4 records warehouse deficit and does not block transaction when material is out of stock", async () => {

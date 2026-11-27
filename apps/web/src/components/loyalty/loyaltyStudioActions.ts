@@ -30,6 +30,37 @@ export const postLoyaltyJson = (url: string, body: unknown) =>
 		body: JSON.stringify(body),
 	});
 
+export function toLoyaltyRecord(value: unknown): Record<string, unknown> {
+	if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+	return Object.fromEntries(Object.entries(value));
+}
+
+export function unwrapLoyaltyDataRecord(raw: Record<string, unknown>): Record<string, unknown> {
+	return raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)
+		? toLoyaltyRecord(raw.data)
+		: raw;
+}
+
+export async function readLoyaltyResponseJson(res: Response): Promise<Record<string, unknown>> {
+	try {
+		const text = await res.text();
+		if (!text.trim()) return {};
+		const parsed: unknown = JSON.parse(text);
+		return toLoyaltyRecord(parsed);
+	} catch (err) {
+		clientLogger.warn("[LoyaltyStudioActions] Failed to parse JSON response", err, {
+			module: "loyaltyStudioActions",
+			status: res.status,
+		});
+		return {};
+	}
+}
+
+export function extractLoyaltyErrorMessage(errJson: Record<string, unknown>, fallback: string): string {
+	const msg = errJson.message ?? errJson.error;
+	return typeof msg === "string" && msg.trim().length > 0 ? msg : fallback;
+}
+
 export interface VerifiedCertState {
 	readonly id: string;
 	readonly serialNumber: string;
@@ -104,8 +135,8 @@ export async function actionApplyPoints(params: {
 				description: `Списание из семейного кошелька за ${member?.fullName ?? patientName}`,
 			});
 			if (!res.ok) {
-				const errJson = await res.json().catch(() => ({}));
-				showToast(errJson.message || "Ошибка списания баллов с семейного счета", "error");
+				const errJson = await readLoyaltyResponseJson(res);
+				showToast(extractLoyaltyErrorMessage(errJson, "Ошибка списания баллов с семейного счета"), "error");
 				setPointsBalance(prevPointsBalance);
 				setLedger(() => prevLedger);
 				return;
@@ -153,14 +184,14 @@ export async function actionApplyPoints(params: {
 				allowFullCoverage: isDoctorOverride,
 			});
 			if (!res.ok) {
-				const errJson = await res.json().catch(() => ({}));
-				showToast(errJson.message || "Не удалось списать бонусы в базе данных", "error");
+				const errJson = await readLoyaltyResponseJson(res);
+				showToast(extractLoyaltyErrorMessage(errJson, "Не удалось списать бонусы в базе данных"), "error");
 				setPointsBalance(prevPointsBalance);
 				setLedger(() => prevLedger);
 				return;
 			}
-			const raw = await res.json().catch(() => ({}));
-			const data = raw?.data ?? raw;
+			const raw = await readLoyaltyResponseJson(res);
+			const data = unwrapLoyaltyDataRecord(raw);
 			if (typeof data.activePoints === "number") setPointsBalance(data.activePoints);
 			showToast(`Успешно списано ${redemption.actualRedeemedPointsRub} бонусов. К оплате: ${formatKopecksToRubles(redemption.remainingPayableKop)}`, "success");
 			if (onRedeemSuccess) onRedeemSuccess(redemption.actualRedeemedPointsRub, redemption.fiscal54FzSplit);
@@ -226,14 +257,14 @@ export async function actionAccruePoints(params: {
 			description: "Ручное начисление бонусов",
 		});
 		if (!res.ok) {
-			const errJson = await res.json().catch(() => ({}));
-			showToast(errJson.message || "Ошибка начисления бонусов", "error");
+			const errJson = await readLoyaltyResponseJson(res);
+			showToast(extractLoyaltyErrorMessage(errJson, "Ошибка начисления бонусов"), "error");
 			setPointsBalance(prevPointsBalance);
 			setLedger(() => prevLedger);
 			return;
 		}
-		const raw = await res.json().catch(() => ({}));
-		const data = raw?.data ?? raw;
+		const raw = await readLoyaltyResponseJson(res);
+		const data = unwrapLoyaltyDataRecord(raw);
 		const actualBal = typeof data.activePoints === "number" ? data.activePoints : newBal;
 		if (typeof data.activePoints === "number") setPointsBalance(data.activePoints);
 		showToast(`Начислено ${amount} бонусов! Новый баланс: ${actualBal} ₽`, "success");
@@ -286,17 +317,19 @@ export async function actionRedeemCertificate(params: {
 			description: `Погашение сертификата ${verifiedCertificate.serialNumber} в Студии лояльности`,
 		});
 		if (!res.ok) {
-			const err = await res.json().catch(() => ({}));
-			showToast(err.message || "Не удалось списать сертификат", "warning");
+			const err = await readLoyaltyResponseJson(res);
+			showToast(extractLoyaltyErrorMessage(err, "Не удалось списать сертификат"), "warning");
 			return;
 		}
-		const raw = await res.json();
-		const data = raw?.data ?? raw;
-		showToast(`Сертификат успешно зачтён на сумму ${data.redeemedAmountRub} ₽!`, "success");
-		setCertFeedback(`Зачтено ${data.redeemedAmountRub} ₽. Новый остаток: ${data.newBalanceRub} ₽`);
+		const raw = await readLoyaltyResponseJson(res);
+		const data = unwrapLoyaltyDataRecord(raw);
+		const redeemedAmountRub = Number(data.redeemedAmountRub ?? 0);
+		const newBalanceRub = Number(data.newBalanceRub ?? 0);
+		showToast(`Сертификат успешно зачтён на сумму ${redeemedAmountRub} ₽!`, "success");
+		setCertFeedback(`Зачтено ${redeemedAmountRub} ₽. Новый остаток: ${newBalanceRub} ₽`);
 		setVerifiedCertificate(null);
 		setCertSerial("");
-		const redeemedKop = rublesToKopecks(Number(data.redeemedAmountRub) || 0);
+		const redeemedKop = typeof data.redeemedAmountKopecks === "number" ? data.redeemedAmountKopecks : rublesToKopecks(redeemedAmountRub);
 		setLedger((prev) => [
 			{
 				id: `redeem-cert-${Date.now().toString().slice(-4)}`,
@@ -312,7 +345,7 @@ export async function actionRedeemCertificate(params: {
 				paymentMethodRu: "Сертификат (аванс 1215)",
 				fiscalReceiptNumber: `CERT-${Date.now().toString().slice(-6)}`,
 				staffNameRu: "Администратор",
-				noteRu: `Погашение сертификата ${verifiedCertificate.serialNumber} на ${data.redeemedAmountRub} ₽`,
+				noteRu: `Погашение сертификата ${verifiedCertificate.serialNumber} на ${redeemedAmountRub} ₽`,
 			},
 			...prev,
 		]);
@@ -333,7 +366,8 @@ export async function actionRedeemCertificate(params: {
 }
 
 export async function actionIssueCertificate(params: {
-	readonly nominalRub: number;
+	readonly nominalKop?: number;
+	readonly nominalRub?: number;
 	readonly title: string;
 	readonly patientId: string | undefined;
 	readonly patientName: string;
@@ -344,31 +378,35 @@ export async function actionIssueCertificate(params: {
 	readonly setLedger: (fn: (prev: readonly LoyaltyLedgerEntry[]) => readonly LoyaltyLedgerEntry[]) => void;
 }): Promise<void> {
 	const {
-		nominalRub, title, patientId, patientName, medicalCardNumber,
+		nominalKop, nominalRub, title, patientId, patientName, medicalCardNumber,
 		pointsBalance, setCertSerial, setCertFeedback, setLedger,
 	} = params;
 
 	try {
-		const nominalKopecks = rublesToKopecks(nominalRub);
+		const nominalKopecks = typeof nominalKop === "number" ? nominalKop : rublesToKopecks(nominalRub ?? 0);
+		const effectiveRub = typeof nominalRub === "number" ? nominalRub : kopecksToRubles(nominalKopecks);
 		const res = await postLoyaltyJson("/api/loyalty/certificates/issue", {
 			purchaserPatientId: patientId,
 			purchaserName: patientName,
-			nominalRub,
+			nominalRub: effectiveRub,
 			nominalKopecks,
 			expiresInDays: 365,
 			notes: `Продажа сертификата «${title}» для ${patientName}`,
 		});
 		if (!res.ok) {
-			const errJson = await res.json().catch(() => ({}));
-			showToast(errJson.message || "Не удалось оформить сертификат", "warning");
+			const errJson = await readLoyaltyResponseJson(res);
+			const msg = extractLoyaltyErrorMessage(errJson, "Не удалось оформить сертификат");
+			setCertFeedback(msg);
+			showToast(msg, "warning");
 			return;
 		}
-		const raw = await res.json().catch(() => ({}));
-		const data = raw?.data ?? raw;
-		const serial = data.certificate?.serialNumber || "—";
+		const raw = await readLoyaltyResponseJson(res);
+		const data = unwrapLoyaltyDataRecord(raw);
+		const certificate = data.certificate as { serialNumber?: string } | undefined;
+		const serial = certificate?.serialNumber || "—";
 		setCertSerial(serial);
-		setCertFeedback(`Оформлен сертификат ${serial} на сумму ${nominalRub.toLocaleString("ru-RU")} ₽`);
-		showToast(`Сертификат на ${nominalRub.toLocaleString("ru-RU")} ₽ успешно оформлен! Номер: ${serial}`, "success");
+		setCertFeedback(`Оформлен сертификат ${serial} на сумму ${formatKopecksToRubles(nominalKopecks)}`);
+		showToast(`Сертификат на ${formatKopecksToRubles(nominalKopecks)} успешно оформлен! Номер: ${serial}`, "success");
 		setLedger((prev) => [
 			{
 				id: `cert-${Date.now().toString().slice(-4)}`,
@@ -383,7 +421,7 @@ export async function actionIssueCertificate(params: {
 				balanceAfterRub: pointsBalance,
 				paymentMethodRu: "Касса клиники",
 				staffNameRu: "Администратор",
-				noteRu: `Оформлен сертификат ${serial} (${nominalRub.toLocaleString("ru-RU")} ₽)`,
+				noteRu: `Оформлен сертификат ${serial} (${formatKopecksToRubles(nominalKopecks)})`,
 			},
 			...prev,
 		]);
@@ -457,8 +495,8 @@ export async function actionVerifyCertificate(params: {
 				return;
 			}
 		}
-		const err = await res.json().catch(() => ({}));
-		const msg = err.message || "Сертификат не найден в базе клиники или аннулирован";
+		const err = await readLoyaltyResponseJson(res);
+		const msg = extractLoyaltyErrorMessage(err, "Сертификат не найден в базе клиники или аннулирован");
 		setCertFeedback(msg);
 		setVerifiedCertificate(null);
 		showToast(msg, "warning");

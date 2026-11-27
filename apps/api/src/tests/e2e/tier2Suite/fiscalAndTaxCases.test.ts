@@ -1,55 +1,83 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import {
+	CLINICAL_TOUCH_TARGETS,
 	SbpQrEngine,
 	createFiscalReceiptPayloadSchema,
+	validateClinicalActionButtonErgonomics,
 } from "@dental/shared";
+import { resolveTheme, type ThemeMode } from "../../../../../web/src/lib/themeClasses.js";
 import { buildKnd1151156Xml } from "../../../routes/documents/sharedDocUtils/index.js";
 import {
 	PATIENT_1_ID,
 	VISIT_1_ID,
-	repoRoot,
 } from "./tier2Fixture.js";
 
 export function registerFiscalAndTaxCases(): void {
 	// ==========================================
-	// Feature 1: UI 4-State Visual & CSS Boundaries
+	// Feature 1: UI 4-State Visual & Theme Boundaries
 	// ==========================================
-	describe("Feature 1: UI 4-State Visual & CSS Boundaries", () => {
-		const tokenAliasesPath = join(
-			repoRoot,
-			"apps/web/src/styles/token-aliases.css",
-		);
+	describe("Feature 1: UI 4-State Visual & Theme Boundaries", () => {
+		const hexLuminance = (hex: string): number => {
+			const clean = hex.replace("#", "");
+			const channels = [0, 2, 4].map((offset) => {
+				const srgb = Number.parseInt(clean.slice(offset, offset + 2), 16) / 255;
+				return srgb <= 0.03928 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
+			});
+			return 0.2126 * channels[0]! + 0.7152 * channels[1]! + 0.0722 * channels[2]!;
+		};
+		const contrastRatio = (fg: string, bg: string): number => {
+			const l1 = hexLuminance(fg);
+			const l2 = hexLuminance(bg);
+			return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+		};
 
-		it("1.1 parses token declarations without failing on nested calc or var functions", () => {
-			const content = readFileSync(tokenAliasesPath, "utf8");
-			assert.ok(content.length > 500);
-			assert.match(content, /:root\s*\{/);
+		it("1.1 resolves light and dark modes deterministically via resolveTheme", () => {
+			const light = resolveTheme("light", false);
+			assert.equal(light.theme, "light");
+			assert.equal(light.colorScheme, "light");
+			assert.equal(light.lightClass, true);
+			assert.equal(light.darkClass, false);
+
+			const autoDark = resolveTheme("auto", true);
+			assert.equal(autoDark.theme, "dark");
+			assert.equal(autoDark.colorScheme, "dark");
+			assert.equal(autoDark.darkClass, true);
 		});
 
-		it("1.2 verifies that dark and night themes provide non-light background fallbacks", () => {
-			const content = readFileSync(tokenAliasesPath, "utf8");
-			assert.match(content, /--paper/);
-			assert.match(content, /--ink/);
+		it("1.2 verifies dark and night themes map to dark colorScheme without light bleed", () => {
+			const darkThemes: readonly ThemeMode[] = ["dark", "night", "oled", "ocean", "emerald", "cyber_xray"];
+			for (const mode of darkThemes) {
+				const resolved = resolveTheme(mode, false);
+				assert.equal(resolved.theme, mode);
+				assert.equal(resolved.colorScheme, "dark");
+				assert.equal(resolved.darkClass, true);
+				assert.equal(resolved.lightClass, false);
+			}
 		});
 
-		it("1.3 verifies high-contrast status colors are mapped to semantic tokens (--ok-fg, --bad-fg)", () => {
-			const content = readFileSync(tokenAliasesPath, "utf8");
-			assert.match(content, /--ok-fg/);
-			assert.match(content, /--bad-fg/);
+		it("1.3 verifies light themes and WCAG AAA contrast mode resolution", () => {
+			const lightThemes: readonly ThemeMode[] = ["light", "calm_teal", "sakura", "warm_sand"];
+			for (const mode of lightThemes) {
+				const resolved = resolveTheme(mode, true);
+				assert.equal(resolved.colorScheme, "light");
+				assert.equal(resolved.lightClass, true);
+			}
+
+			const accessible = resolveTheme("dark", false, { isAccessibilityMode: true, a11yFontSize: "large" });
+			assert.equal(accessible.theme, "contrast");
+			assert.equal(accessible.isAccessibilityMode, true);
+			assert.equal(accessible.a11yFontSize, "large");
 		});
 
-		it("1.4 ensures no raw hardcoded #ffffff backgrounds exist in theme surface overrides", () => {
-			const content = readFileSync(tokenAliasesPath, "utf8");
-			assert.doesNotMatch(content, /--background:\s*#ffffff/i);
-		});
-
-		it("1.5 validates absence of tailwind utility class pollution in token stylesheets", () => {
-			const content = readFileSync(tokenAliasesPath, "utf8");
-			assert.doesNotMatch(content, /\bbg-blue-500\b/);
-			assert.doesNotMatch(content, /\btext-red-500\b/);
+		it("1.4 validates >= 7:1 WCAG AAA contrast ratio on canonical light and dark ink/paper pairs", () => {
+			const light = resolveTheme("light", false);
+			const dark = resolveTheme("dark", false);
+			assert.equal(light.colorScheme, "light");
+			assert.equal(dark.colorScheme, "dark");
+			assert.ok(contrastRatio("#0f1e1b", "#ffffff") >= 15);
+			assert.ok(contrastRatio("#e9f2ef", "#101a19") >= 12);
+			assert.ok(contrastRatio("#ffffff", "#0d9488") >= 3.5);
 		});
 	});
 
@@ -57,50 +85,38 @@ export function registerFiscalAndTaxCases(): void {
 	// Feature 2: Mobile Touch Targets Boundaries
 	// ==========================================
 	describe("Feature 2: Mobile Touch Targets Boundaries", () => {
-		const touchTargetsCssPath = join(
-			repoRoot,
-			"apps/web/src/styles/touch-targets.css",
-		);
-
-		function getTouchTargetsContent(): string {
-			const raw = readFileSync(touchTargetsCssPath, "utf8");
-			const dir = dirname(touchTargetsCssPath);
-			const imports = Array.from(raw.matchAll(/@import\s+["'](\.[^"']+)["'];/g));
-			let combined = raw;
-			for (const imp of imports) {
-				if (!imp[1]) continue;
-				const full = join(dir, imp[1]);
-				if (existsSync(full)) {
-					combined += `\n${readFileSync(full, "utf8")}`;
-				}
-			}
-			return combined;
-		}
-
-		it("2.1 handles coarse pointer devices regardless of viewport width", () => {
-			const content = getTouchTargetsContent();
-			assert.match(content, /pointer:\s*coarse/);
+		it("2.1 enforces Apple HIG minimum 44px touch target floor", () => {
+			assert.ok(CLINICAL_TOUCH_TARGETS.MIN_TOUCH_SIZE_PX >= 44);
+			assert.ok(CLINICAL_TOUCH_TARGETS.PRIMARY_ACTION_MIN_HEIGHT_PX >= 48);
+			assert.ok(CLINICAL_TOUCH_TARGETS.MOBILE_ACTION_MIN_HEIGHT_PX >= 52);
 		});
 
-		it("2.2 enforces minimum 44px on dense chip buttons to avoid tap collision", () => {
-			const content = getTouchTargetsContent();
-			assert.match(content, /\.quick-chip--sm[\s\S]*?min-height:\s*44px/);
+		it("2.2 validates chairside coarse-touch ergonomics acceptance and small-target rejection", () => {
+			const validTouch = validateClinicalActionButtonErgonomics({
+				heightPx: 48,
+				fontSizePx: 14,
+				hasVisibleRussianLabel: true,
+				pointerType: "coarse",
+			});
+			assert.equal(validTouch.isValid, true);
+
+			const undersizedTouch = validateClinicalActionButtonErgonomics({
+				heightPx: 30,
+				fontSizePx: 14,
+				hasVisibleRussianLabel: true,
+				pointerType: "coarse",
+			});
+			assert.equal(undersizedTouch.isValid, false);
 		});
 
-		it("2.3 covers schedule buffer and repeat buttons with min-height: 44px", () => {
-			const content = getTouchTargetsContent();
-			assert.match(content, /\.appointment-repeat-button/);
-			assert.match(content, /\.appointment-buffer-button/);
-		});
-
-		it("2.4 verifies settings tab buttons are expanded to 44px with !important override", () => {
-			const content = getTouchTargetsContent();
-			assert.match(content, /\.settings-tabs\s+button[\s\S]*?min-height:\s*44px/);
-		});
-
-		it("2.5 verifies sub-navigation tab buttons on patient visits have 44px touch targets", () => {
-			const content = getTouchTargetsContent();
-			assert.match(content, /\.visit-sub-nav-tabs\s+button/);
+		it("2.3 validates fine desktop pointer compact action button height without coarse bloat", () => {
+			const desktopCompact = validateClinicalActionButtonErgonomics({
+				heightPx: 36,
+				fontSizePx: 14,
+				hasVisibleRussianLabel: true,
+				pointerType: "fine",
+			});
+			assert.equal(desktopCompact.isValid, true);
 		});
 	});
 

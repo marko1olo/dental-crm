@@ -25,6 +25,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { resolveTheme, type ThemeMode } from "../lib/themeClasses.js";
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cssPath = path.join(webSrc, "styles/token-aliases.css");
@@ -192,8 +193,18 @@ const SURFACE_TOKENS = [
 ] as const;
 
 describe("token-aliases.css: палитру решает data-theme, а не класс", () => {
+	test("resolveTheme возвращает согласованные data-theme и классы для каждой темы", () => {
+		const modes: readonly ThemeMode[] = ["light", "dark", "night", "oled", "calm_teal", "contrast", "sakura", "ocean", "emerald", "cyber_xray", "warm_sand"];
+		for (const mode of modes) {
+			const resolved = resolveTheme(mode, false);
+			assert.equal(resolved.theme, mode);
+			assert.notEqual(resolved.darkClass, resolved.lightClass);
+		}
+	});
+
 	test("светлая тема со согласованным классом", () => {
-		const state: RootState = { theme: "light", classes: ["light"] };
+		const resolved = resolveTheme("light", false);
+		const state: RootState = { theme: resolved.theme, classes: resolved.lightClass ? ["light"] : ["dark"] };
 		assert.equal(winningValue(rules, "--srf-chip-soft", state), "#f7fbf9");
 	});
 

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { AlertCircle, Download, RefreshCw, Users, Wallet } from "lucide-react";
+import { z } from "zod";
 import { formatKopecksToRub, rublesToKopecks } from "@dental/shared";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 import { clientLogger } from "../../services/logging/clientLogger";
@@ -48,6 +49,64 @@ const BUCKET_LABELS_RU: Readonly<Record<string, string>> = {
 	"90+": "Свыше 90 дней",
 };
 
+const managerSummarySchema = z.object({
+	revenue: z
+		.object({
+			totalRub: z.number().optional(),
+			points: z
+				.array(
+					z.object({
+						bucket: z.string(),
+						revenueRub: z.number(),
+						paymentCount: z.number(),
+						payingPatients: z.number(),
+					}),
+				)
+				.optional(),
+		})
+		.optional(),
+	appointments: z
+		.object({
+			total: z.number().optional(),
+			completionRate: z.number().nullable().optional(),
+			noShowRate: z.number().nullable().optional(),
+		})
+		.optional(),
+	doctors: z
+		.object({
+			rows: z
+				.array(
+					z.object({
+						doctorName: z.string(),
+						revenueRub: z.number(),
+						appointmentsTotal: z.number(),
+						appointmentsCompleted: z.number(),
+						appointmentsCancelled: z.number(),
+						appointmentsNoShow: z.number(),
+						completionRate: z.number().nullable().optional(),
+						averageTicketRub: z.number().nullable().optional(),
+					}),
+				)
+				.optional(),
+			unattributedRevenueRub: z.number().optional(),
+		})
+		.optional(),
+	chairs: z
+		.object({
+			rows: z
+				.array(
+					z.object({
+						chairName: z.string(),
+						appointments: z.number(),
+						bookedMinutes: z.number(),
+						utilization: z.number().nullable().optional(),
+					}),
+				)
+				.optional(),
+		})
+		.optional(),
+});
+
 function formatRubMoney(rub: number | undefined): string {
 	return formatKopecksToRub(rublesToKopecks(Number(rub) || 0));
 }
@@ -92,9 +151,16 @@ export const ExecutiveReceivablesPanel: React.FC<ExecutiveReceivablesPanelProps>
 					sumJson && typeof sumJson === "object" && "data" in sumJson
 						? ((sumJson as { data?: unknown }).data ?? sumJson)
 						: sumJson;
+				const parsedSummary = managerSummarySchema.safeParse(sumPayload);
+				if (parsedSummary.success) {
+					setSummary(parsedSummary.data as ManagerReportsDataBundle["summary"]);
+				} else {
+					clientLogger.warn("[ExecutiveReceivablesPanel] Invalid summary payload shape", parsedSummary.error.flatten(), {
+						module: "Analytics",
+					});
+				}
 				const sumObj = (sumPayload && typeof sumPayload === "object" ? sumPayload : null) as Record<string, unknown> | null;
 				if (sumObj) {
-					setSummary(sumObj as unknown as ManagerReportsDataBundle["summary"]);
 					const p = sumObj.period as { from?: string; to?: string } | undefined;
 					if (p?.from && p?.to) {
 						setPeriodBounds({ from: String(p.from).slice(0, 10), to: String(p.to).slice(0, 10) });

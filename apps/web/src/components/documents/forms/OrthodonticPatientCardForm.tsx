@@ -32,7 +32,7 @@ export interface OrthodonticPatientCardFormProps {
 	patient?: Patient | OrthodonticPatientCandidate | null | undefined;
 }
 
-function extractCephAngles(source: unknown): { sna?: number | undefined; snb?: number | undefined; anb?: number | undefined; fma?: number | undefined; savedAt?: string | undefined } | null {
+export function extractCephAngles(source: unknown): { sna?: number | undefined; snb?: number | undefined; anb?: number | undefined; fma?: number | undefined; savedAt?: string | undefined } | null {
 	if (!source || typeof source !== "object") return null;
 	const src = source as Record<string, unknown>;
 	const analysis = (src.analysis && typeof src.analysis === "object" ? src.analysis : src) as Record<string, unknown>;

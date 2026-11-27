@@ -8,6 +8,7 @@ import { useCallback } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
+import { useOfflineStore } from "../../../store/offlineStore";
 import {
 	printTaxCertificate,
 	buildTaxCertificateDocumentData,
@@ -24,7 +25,24 @@ import type {
 	DocumentPackageKey,
 	PatientRequisites,
 } from "../../consents/consentCatalogData";
-import { generateUuidV7, kopecksToRubles, type TaxDeductionRelationship } from "@dental/shared";
+import { generateUuidV7, kopecksToRubles, rublesToKopecks, type TaxDeductionRelationship } from "@dental/shared";
+
+function toPlainRecord(value: unknown): Record<string, unknown> | null {
+	if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+	return Object.fromEntries(Object.entries(value));
+}
+
+async function safeReadJsonRecord(res: Response): Promise<Record<string, unknown> | null> {
+	try {
+		const text = await res.text();
+		if (!text.trim()) return null;
+		const parsed: unknown = JSON.parse(text);
+		return toPlainRecord(parsed);
+	} catch (err) {
+		clientLogger.warn("[useDocumentStudioSignAndIssue] Failed to parse response JSON", err, { status: res.status });
+		return null;
+	}
+}
 
 export interface ClinicRequisitesDto {
 	readonly name: string;
@@ -73,6 +91,435 @@ export interface UseDocumentStudioSignAndIssueOptions {
 	readonly recordConsentLocally: (key: string, grantedAtIso: string) => void;
 	readonly setHasSigned: (val: boolean) => void;
 	readonly showToast: (msg: string, type?: "success" | "error" | "info") => void;
+}
+
+export interface IssueAndSignResult {
+	readonly nowStr: string;
+	readonly nowIso: string;
+	readonly isDigital: boolean;
+	readonly queuedOffline: boolean;
+}
+
+export async function executePaperConsentConfirm(
+	options: UseDocumentStudioSignAndIssueOptions,
+	onInvalidate?: (patientId: string) => void,
+): Promise<{ ok: boolean; queuedOffline: boolean }> {
+	const nowIso = new Date().toISOString();
+	const consentPayload = {
+		consentType: options.currentConsentKey,
+		kind: options.activePackage === "informed_consent" ? "procedure_specific_consent_packet" : "informed_consent",
+		title: options.activePackage === "informed_consent"
+			? `Информированное согласие: ${options.activeConsentSubKind}`
+			: "Информированное добровольное согласие",
+		verificationMethod: "paper_signed",
+		signatureType: "paper_signed",
+		isSigned: true,
+		signedAt: nowIso,
+		doctorFullName: options.effectiveDoctorName,
+		notes: "Подписание на бумажном носителе подтверждено врачом",
+	};
+
+	if (options.effectivePatientId) {
+		const mutationId = generateUuidV7();
+		const endpoint = `/api/patients/${encodeURIComponent(options.effectivePatientId)}/consents`;
+		const headers = denteClinicalMutationHeaders({
+			"Content-Type": "application/json",
+			"Idempotency-Key": mutationId,
+		});
+		try {
+			const consentRes = await fetch(endpoint, {
+				method: "POST",
+				headers,
+				body: JSON.stringify(consentPayload),
+			});
+			if (!consentRes.ok) {
+				const errJson = await safeReadJsonRecord(consentRes);
+				const errMsg =
+					(typeof errJson?.message === "string" && errJson.message.trim()) ||
+					`Не удалось сохранить согласие на сервере (HTTP ${consentRes.status})`;
+				clientLogger.warn("[useDocumentStudioSignAndIssue] Ошибка сохранения бумажного согласия на сервере:", consentRes.status);
+				options.showToast(errMsg, "error");
+				return { ok: false, queuedOffline: false };
+			}
+			onInvalidate?.(options.effectivePatientId);
+		} catch (err) {
+			clientLogger.warn("[useDocumentStudioSignAndIssue] Сетевой сбой сохранения бумажного согласия, ставим в офлайн-очередь:", err);
+			try {
+				await useOfflineStore.getState().enqueue({
+					mutationId,
+					idempotencyKey: mutationId,
+					entityType: "DOCUMENT_DRAFT",
+					entityId: options.effectivePatientId,
+					action: "create",
+					endpoint,
+					payload: consentPayload,
+				});
+				options.showToast("Нет связи с сервером: согласие сохранено в офлайн-очередь и будет отправлено автоматически", "info");
+				return { ok: false, queuedOffline: true };
+			} catch (queueErr) {
+				clientLogger.error("[useDocumentStudioSignAndIssue] Ошибка записи бумажного согласия в офлайн-очередь:", queueErr);
+				options.showToast("Не удалось сохранить согласие на сервере", "error");
+				return { ok: false, queuedOffline: false };
+			}
+		}
+	}
+
+	options.setHasSigned(true);
+	options.recordConsentLocally(options.currentConsentKey, nowIso);
+	options.onConsentSigned?.({
+		verificationMethod: "paper_signed",
+		paperOriginalStored: true,
+		status: "signed_paper",
+		signedAt: nowIso,
+		patientName: options.patient.fullName,
+	});
+	options.showToast("Подписание на бумаге подтверждено и зарегистрировано в истории", "success");
+	return { ok: true, queuedOffline: false };
+}
+
+export async function executeDocumentIssueAndSign(
+	options: UseDocumentStudioSignAndIssueOptions,
+): Promise<IssueAndSignResult> {
+	const now = new Date();
+	const nowStr = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+	const nowIso = now.toISOString();
+	const isDigital = options.isSignPadOpen;
+	const signatureType = isDigital ? "digital_canvas" : "paper_scanned";
+
+	if (options.effectivePatientId) {
+		const signatureDataUrl = isDigital ? options.getSignatureDataUrl() : undefined;
+		const docKind = options.activePackage === "informed_consent"
+			? "informed_consent"
+			: options.activePackage === "tax_certificate"
+				? "tax_deduction_certificate"
+				: options.activePackage === "card_extract"
+					? "completed_works_act"
+					: "paid_medical_services_contract";
+
+		const docTitle = options.activePackage === "informed_consent"
+			? `Информированное согласие: ${options.activeConsentSubKind}`
+			: options.activePackage === "tax_certificate"
+				? `Справка для налогового вычета за ${options.taxYear} г.`
+				: options.activePackage === "card_extract"
+					? "Выписка из медицинской карты"
+					: "Договор на оказание платных медицинских услуг";
+
+		const totalRub = kopecksToRubles(options.totalAmountKopecks);
+		const effectiveDoctor = options.effectiveDoctorName || "Врач-стоматолог";
+		const effectivePayerName = options.taxpayer?.fullName || options.directPayerFullName || options.patient.fullName.trim() || "Пациент";
+
+		let structuredPayload: Record<string, unknown> | undefined;
+
+		if (docKind === "paid_medical_services_contract") {
+			structuredPayload = {
+				paidMedicalServicesContract: {
+					contractNumber: `ДОГ-${new Date().getFullYear()}/${(options.patient.fullName.slice(0, 3) || "ПАЦ").toUpperCase()}`,
+					contractDate: nowIso.slice(0, 10),
+					serviceStart: nowIso.slice(0, 10),
+					serviceEndOrCondition: "До полного оказания согласованного объема медицинских услуг",
+					customerFullName: effectivePayerName,
+					representativeFullName: null,
+					plannedCareReason: "Оказание стоматологических услуг согласно плану лечения",
+					serviceScopeSummary: "Стоматологические услуги по прейскуранту клиники и плану лечения",
+					estimatedTotalRub: totalRub,
+					paymentTerms: "Оплата по факту оказания услуг либо авансовым платежом",
+					priceChangeRules: "Изменение плана лечения и стоимости оформляется дополнительным соглашением",
+					freeCareAvailabilityNotice: "Пациент уведомлен о возможности получения бесплатной медицинской помощи по программе государственных гарантий",
+					medicalRecommendationWarning: "Пациент предупрежден о необходимости соблюдения предписаний и рекомендаций врача",
+					refusalAndRefundTerms: "Пациент вправе отказаться от исполнения договора при условии оплаты фактически понесенных расходов",
+					warrantyAndClaimsTerms: "Гарантийные обязательства исчисляются с момента завершения лечения по положению о гарантиях",
+					doctorFullName: effectiveDoctor,
+					signedAt: nowIso.slice(0, 10),
+					patientReceivedClinicInfo: true,
+					patientReceivedPriceAndServiceList: true,
+					patientUnderstandsPaidBasis: true,
+					changesRequireWrittenAgreement: true,
+				},
+			};
+		} else if (docKind === "informed_consent") {
+			structuredPayload = {
+				informedConsent: {
+					intervention: `Стоматологическое вмешательство: ${options.activeConsentSubKind || "терапевтическое/хирургическое лечение"}`,
+					toothOrArea: "Полость рта",
+					diagnosisOrIndication: "Санация полости рта по клиническим показаниям",
+					expectedBenefit: "Восстановление анатомической формы, функции зубочелюстной системы и эстетики",
+					plannedAnesthesia: "Местная инфильтрационная или проводниковая анестезия",
+					materialOrMedicationNotes: "Сертифицированные стоматологические материалы",
+					trustedContactForMedicalInfo: null,
+					explainedRisks: [
+						"Возможная индивидуальная чувствительность или аллергическая реакция",
+						"Кратковременный отек или болезненность в зоне вмешательства",
+						"Необходимость коррекции пломбы или ортопедической конструкции по прикусу",
+					],
+					alternatives: [
+						"Отказ от медицинского вмешательства с сохранением риска прогрессирования заболевания",
+						"Альтернативные методы лечения в соответствии с клиническими рекомендациями",
+					],
+					aftercareRequirements: [
+						"Воздержаться от приема пищи в течение 2 часов до окончания действия анестезии",
+						"Соблюдать гигиену полости рта и щадящий температурный режим",
+						"При возникновении боли или дискомфорта незамедлительно обратиться к лечащему врачу",
+					],
+					doctorFullName: effectiveDoctor,
+					consentConfirmedAt: nowIso.slice(0, 10),
+					patientQuestionsAnswered: true,
+					patientUnderstandsRisks: true,
+					patientMayWithdrawBeforeIntervention: true,
+				},
+			};
+		}
+
+		const createPayload: Record<string, unknown> = {
+			patientId: options.effectivePatientId,
+			kind: docKind,
+			title: docTitle,
+			totalAmountRub: totalRub,
+			totalAmountKopecks: options.totalAmountKopecks,
+			...(structuredPayload ? { payload: structuredPayload } : {}),
+		};
+		if (options.activePackage === "tax_certificate") {
+			createPayload.taxYear = options.taxYear;
+			// Мандат 8n / Red Team: при оплате третьими лицами (супруг, родитель) используем ИНН реального плательщика
+			const effectivePayerInn = options.taxpayer?.inn || options.directPayerInn || options.patient.inn;
+			if (effectivePayerInn) createPayload.taxPayerInn = effectivePayerInn;
+		}
+
+		let createdDocId: string | undefined;
+		const createMutationId = generateUuidV7();
+		let docCreateRes: Response;
+		try {
+			const createHeaders = denteClinicalMutationHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": createMutationId,
+			});
+			docCreateRes = await fetch("/api/documents", {
+				method: "POST",
+				headers: createHeaders,
+				body: JSON.stringify(createPayload),
+			});
+		} catch (networkErr) {
+			clientLogger.warn("[useDocumentStudioSignAndIssue] Сетевой сбой создания документа, ставим в офлайн-очередь:", networkErr);
+			await useOfflineStore.getState().enqueue({
+				mutationId: createMutationId,
+				idempotencyKey: createMutationId,
+				entityType: "DOCUMENT_DRAFT",
+				entityId: options.effectivePatientId,
+				action: "create",
+				endpoint: "/api/documents",
+				payload: createPayload,
+			});
+			options.showToast("Нет связи с сервером: документ сохранён в офлайн-очередь и будет подписан при подключении", "info");
+			return { nowStr, nowIso, isDigital, queuedOffline: true };
+		}
+
+		if (!docCreateRes.ok) {
+			const errJson = await safeReadJsonRecord(docCreateRes);
+			const errMsg =
+				(typeof errJson?.message === "string" && errJson.message.trim()) ||
+				`Не удалось зарегистрировать документ на сервере (HTTP ${docCreateRes.status})`;
+			clientLogger.warn("[useDocumentStudioSignAndIssue] Ошибка создания документа на сервере:", docCreateRes.status);
+			options.showToast(errMsg, "error");
+			throw new Error(errMsg);
+		}
+
+		const createdDoc = await safeReadJsonRecord(docCreateRes);
+		const unwrappedDoc = toPlainRecord(createdDoc?.data) ?? createdDoc;
+		const docId = typeof unwrappedDoc?.id === "string" ? unwrappedDoc.id : undefined;
+
+		if (docId) {
+			createdDocId = docId;
+			const issueMutationId = generateUuidV7();
+			const issueBody = {
+				signatureAttestation: {
+					mode: isDigital ? "simple_electronic_signature" : "paper_signed",
+					signedAt: nowIso,
+					recipientFullName: effectivePayerName,
+					recipientRole: "пациент/законный представитель",
+					staffFullName: effectiveDoctor,
+					staffRole: "врач",
+					identityChecked: true,
+					documentOpenedAndChecked: true,
+					recipientSigned: true,
+					clinicRepresentativeSigned: true,
+				},
+				signatureSvg: signatureDataUrl ?? null,
+			};
+			let issueRes: Response;
+			try {
+				issueRes = await fetch(`/api/documents/${encodeURIComponent(docId)}/issue`, {
+					method: "POST",
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": issueMutationId,
+					}),
+					body: JSON.stringify(issueBody),
+				});
+			} catch (networkErr) {
+				clientLogger.warn("[useDocumentStudioSignAndIssue] Сетевой сбой выпуска документа, ставим в офлайн-очередь:", networkErr);
+				await useOfflineStore.getState().enqueue({
+					mutationId: issueMutationId,
+					idempotencyKey: issueMutationId,
+					entityType: "DOCUMENT_DRAFT",
+					entityId: docId,
+					action: "update",
+					endpoint: `/api/documents/${encodeURIComponent(docId)}/issue`,
+					payload: issueBody,
+				});
+				options.showToast("Нет связи с сервером: подписание документа поставлено в офлайн-очередь", "info");
+				return { nowStr, nowIso, isDigital, queuedOffline: true };
+			}
+
+			if (!issueRes.ok) {
+				const errJson = await safeReadJsonRecord(issueRes);
+				const errMsg =
+					(typeof errJson?.message === "string" && errJson.message.trim()) ||
+					`Документ создан, но не удалось зафиксировать выпуск на сервере (HTTP ${issueRes.status})`;
+				clientLogger.warn("[useDocumentStudioSignAndIssue] Ошибка выпуска документа на сервере:", issueRes.status);
+				options.showToast(errMsg, "error");
+				throw new Error(errMsg);
+			}
+		}
+
+		const consentPayload = {
+			consentType: options.currentConsentKey,
+			kind: options.activePackage === "informed_consent" ? "procedure_specific_consent_packet" : "informed_consent",
+			title: docTitle,
+			documentId: createdDocId,
+			isSigned: true,
+			signedAt: nowIso,
+			signatureType,
+			verificationMethod: isDigital ? "tablet_stylus" : "paper_signed",
+			doctorFullName: options.effectiveDoctorName,
+			signatureSvg: signatureDataUrl,
+			notes: isDigital ? `Подписано пациентом на экране (Canvas, ${nowStr})` : `Подписано на бумажном носителе (${nowStr})`,
+		};
+
+		const consentMutationId = generateUuidV7();
+		const consentEndpoint = `/api/patients/${encodeURIComponent(options.effectivePatientId)}/consents`;
+		let consentRes: Response;
+		try {
+			consentRes = await fetch(consentEndpoint, {
+				method: "POST",
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": consentMutationId,
+				}),
+				body: JSON.stringify(consentPayload),
+			});
+		} catch (networkErr) {
+			clientLogger.warn("[useDocumentStudioSignAndIssue] Сетевой сбой сохранения согласия, ставим в офлайн-очередь:", networkErr);
+			await useOfflineStore.getState().enqueue({
+				mutationId: consentMutationId,
+				idempotencyKey: consentMutationId,
+				entityType: "DOCUMENT_DRAFT",
+				entityId: options.effectivePatientId,
+				action: "create",
+				endpoint: consentEndpoint,
+				payload: consentPayload,
+			});
+			options.showToast("Нет связи с сервером: согласие поставлено в офлайн-очередь", "info");
+			return { nowStr, nowIso, isDigital, queuedOffline: true };
+		}
+
+		if (!consentRes.ok) {
+			const errJson = await safeReadJsonRecord(consentRes);
+			const errMsg =
+				(typeof errJson?.message === "string" && errJson.message.trim()) ||
+				`Не удалось сохранить согласие в карте пациента на сервере (HTTP ${consentRes.status})`;
+			clientLogger.warn("[useDocumentStudioSignAndIssue] Ошибка сохранения согласия на сервере:", consentRes.status);
+			options.showToast(errMsg, "error");
+			throw new Error(errMsg);
+		}
+
+		options.recordConsentLocally(options.currentConsentKey, nowIso);
+	}
+
+	// Выполнение печати строго после подтверждения сервера
+	if (options.activePackage === "tax_certificate") {
+		const payerFullName = options.taxpayer?.fullName || options.directPayerFullName || options.patient.fullName || undefined;
+		const payerInn = options.taxpayer?.inn || options.directPayerInn || options.patient.inn || undefined;
+		const payerBirthDate = options.taxpayer?.birthDate || options.directPayerBirthDate || options.patient.birthDate || undefined;
+		const payerPassport = options.taxpayer?.passport || options.directPayerPassport || undefined;
+		const payerRelationship = options.taxpayer?.relationship || options.directPayerRelationship || "patient";
+
+		printTaxCertificate(
+			buildTaxCertificateDocumentData({
+				documentNumber: options.legalContext.documentNumber,
+				issueDateIso: nowIso,
+				taxYear: options.taxYear,
+				clinicName: options.clinicRequisites.name,
+				clinicInn: options.clinicRequisites.inn,
+				clinicOgrn: options.clinicRequisites.ogrn || "",
+				clinicLicense: options.clinicRequisites.license,
+				clinicAddress: options.clinicRequisites.address,
+				doctorFullName: options.effectiveDoctorName,
+				patient: options.patient,
+				taxpayer: {
+					fullName: payerFullName,
+					inn: payerInn,
+					birthDate: payerBirthDate,
+					passport: payerPassport,
+					relationship: payerRelationship,
+				},
+				receiptsCount: options.taxReceiptItems.length,
+				totalAmountKopecks: options.taxTotalAmountKopecks,
+				code01Kopecks: options.taxCode01Kopecks,
+				code02Kopecks: options.taxCode02Kopecks,
+			}),
+		);
+		options.showToast("Справка для налогового вычета сформирована и отправлена на печать", "success");
+	} else if (options.activePackage === "intake") {
+		printPrimaryIntakePackage({
+			patient: {
+				fullName: options.patient.fullName || "____________________________________",
+				birthDate: options.patient.birthDate || "",
+				phone: options.patient.phone || "",
+				address: options.patient.address || "",
+			},
+			clinic: options.clinicRequisites,
+			doctorFullName: options.effectiveDoctorName,
+		});
+		options.showToast("Комплект документов первичного приёма отправлен на печать", "success");
+	} else {
+		const a4Html = generateA4PrintHtml({
+			clinic: options.clinicRequisites,
+			patient: options.patient,
+			doctorFullName: options.effectiveDoctorName,
+			currentDate: options.currentDate,
+			totalAmountKopecks: options.totalAmountKopecks,
+			documentText: options.renderedDocumentText,
+			hasSigned: true,
+			signedAtTimeStr: nowStr,
+		});
+		printHtmlViaIframe(a4Html, "dente-docs-studio-print-iframe");
+		options.showToast("Комплект документов утвержден и отправлен на печать", "success");
+	}
+
+	return { nowStr, nowIso, isDigital, queuedOffline: false };
+}
+
+export function applyDocumentIssueSuccess(
+	options: UseDocumentStudioSignAndIssueOptions,
+	result: IssueAndSignResult,
+): boolean {
+	if (result.queuedOffline) return false;
+	options.setHasSigned(true);
+	options.onSigned?.({
+		packageKey: options.activePackage,
+		signedAt: result.nowStr,
+		isDigital: result.isDigital,
+	});
+	options.onDocumentSigned?.({
+		packageKey: options.activePackage,
+		signedAt: result.nowIso,
+		status: "signed",
+	});
+	options.onConsentSigned?.({
+		verificationMethod: result.isDigital ? "tablet_stylus" : "paper_signed",
+		signedAt: result.nowIso,
+		status: "signed",
+	});
+	return true;
 }
 
 export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndIssueOptions) {
@@ -236,11 +683,11 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 			const clinicOgrn = (certParams.clinic.ogrn || "").replace(/\D/g, "");
 			const receipts = certParams.payments
 				.filter((item) => {
-					const kop = typeof item.amountKopecks === "number" ? item.amountKopecks : Math.round((item.amountRub || 0) * 100);
+					const kop = typeof item.amountKopecks === "number" ? item.amountKopecks : rublesToKopecks(item.amountRub || 0);
 					return kop > 0;
 				})
 				.map((item, idx) => {
-					const kop = typeof item.amountKopecks === "number" ? item.amountKopecks : Math.round((item.amountRub || 0) * 100);
+					const kop = typeof item.amountKopecks === "number" ? item.amountKopecks : rublesToKopecks(item.amountRub || 0);
 					return {
 						id: item.id || `receipt-${idx + 1}`,
 						receiptNumber: item.receiptNumber || `ЧК-${idx + 1}`,
@@ -313,7 +760,7 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 				});
 
 				if (!res.ok) {
-					const errJson = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+					const errJson = await safeReadJsonRecord(res);
 					const errMsg =
 						(typeof errJson?.message === "string" && errJson.message.trim()) ||
 						`Не удалось сформировать XML ФНС на сервере (HTTP ${res.status})`;
@@ -321,12 +768,8 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 					return;
 				}
 
-				const rawJson = (await res.json()) as unknown;
-				const result =
-					rawJson && typeof rawJson === "object" && "data" in rawJson
-						? ((rawJson as { data?: unknown }).data ?? rawJson)
-						: rawJson;
-				const rec = (result && typeof result === "object" ? result : {}) as Record<string, unknown>;
+				const rawRecord = await safeReadJsonRecord(res);
+				const rec = toPlainRecord(rawRecord?.data) ?? rawRecord ?? {};
 				const xmlContent = typeof rec.xmlContent === "string" ? rec.xmlContent : "";
 				const fileName =
 					typeof rec.fileName === "string" && rec.fileName.trim()
@@ -371,334 +814,17 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 	}, [requestServerTaxXml]);
 
 	const paperConfirmMutation = useCallback(async () => {
-		options.setHasSigned(true);
-		const nowIso = new Date().toISOString();
-		options.recordConsentLocally(options.currentConsentKey, nowIso);
-		options.onConsentSigned?.({
-			verificationMethod: "paper_signed",
-			paperOriginalStored: true,
-			status: "signed_paper",
-			signedAt: nowIso,
-			patientName: options.patient.fullName,
+		await executePaperConsentConfirm(options, (patientId) => {
+			void queryClient.invalidateQueries({ queryKey: ["documents"] });
+			void queryClient.invalidateQueries({ queryKey: ["patient-consents", patientId] });
+			void queryClient.invalidateQueries({ queryKey: ["patient", patientId] });
 		});
-
-		if (options.effectivePatientId) {
-			const headers = denteClinicalMutationHeaders({
-				"Content-Type": "application/json",
-				"Idempotency-Key": generateUuidV7(),
-			});
-			try {
-				const consentRes = await fetch(`/api/patients/${encodeURIComponent(options.effectivePatientId)}/consents`, {
-					method: "POST",
-					headers,
-					body: JSON.stringify({
-						consentType: options.currentConsentKey,
-						kind: options.activePackage === "informed_consent" ? "procedure_specific_consent_packet" : "informed_consent",
-						title: options.activePackage === "informed_consent"
-							? `Информированное согласие: ${options.activeConsentSubKind}`
-							: "Информированное добровольное согласие",
-						verificationMethod: "paper_signed",
-						signatureType: "paper_signed",
-						isSigned: true,
-						signedAt: nowIso,
-						doctorFullName: options.effectiveDoctorName,
-						notes: "Подписание на бумажном носителе подтверждено врачом",
-					}),
-				});
-				if (!consentRes.ok) {
-					clientLogger.warn("[useDocumentStudioSignAndIssue] Ошибка сохранения бумажного согласия на сервере:", consentRes.status);
-					options.showToast("Подписание подтверждено локально, но не удалось сохранить согласие на сервере", "error");
-					return;
-				}
-				void queryClient.invalidateQueries({ queryKey: ["documents"] });
-				void queryClient.invalidateQueries({ queryKey: ["patient-consents", options.effectivePatientId] });
-				void queryClient.invalidateQueries({ queryKey: ["patient", options.effectivePatientId] });
-			} catch (err) {
-				clientLogger.warn("[useDocumentStudioSignAndIssue] Ошибка сохранения бумажного согласия:", err);
-				options.showToast("Подписание подтверждено локально, но не удалось сохранить согласие на сервере", "error");
-				return;
-			}
-		}
-
-		options.showToast("Подписание на бумаге подтверждено и зарегистрировано в истории", "success");
 	}, [options, queryClient]);
 
 	const issueAndSignMutation = useMutation({
-		mutationFn: async () => {
-			const now = new Date();
-			const nowStr = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-			const nowIso = now.toISOString();
-			const isDigital = options.isSignPadOpen;
-			const signatureType = isDigital ? "digital_canvas" : "paper_scanned";
-
-			options.setHasSigned(true);
-			options.onSigned?.({
-				packageKey: options.activePackage,
-				signedAt: nowStr,
-				isDigital,
-			});
-			options.onDocumentSigned?.({
-				packageKey: options.activePackage,
-				signedAt: nowIso,
-				status: "signed",
-			});
-			options.onConsentSigned?.({
-				verificationMethod: isDigital ? "tablet_stylus" : "paper_signed",
-				signedAt: nowIso,
-				status: "signed",
-			});
-
-			if (options.effectivePatientId) {
-				const signatureDataUrl = isDigital ? options.getSignatureDataUrl() : undefined;
-				const docKind = options.activePackage === "informed_consent"
-					? "informed_consent"
-					: options.activePackage === "tax_certificate"
-						? "tax_deduction_certificate"
-						: options.activePackage === "card_extract"
-							? "completed_works_act"
-							: "paid_medical_services_contract";
-
-				const docTitle = options.activePackage === "informed_consent"
-					? `Информированное согласие: ${options.activeConsentSubKind}`
-					: options.activePackage === "tax_certificate"
-						? `Справка для налогового вычета за ${options.taxYear} г.`
-						: options.activePackage === "card_extract"
-							? "Выписка из медицинской карты"
-							: "Договор на оказание платных медицинских услуг";
-
-				const headers = denteClinicalMutationHeaders({
-					"Content-Type": "application/json",
-					"Idempotency-Key": generateUuidV7(),
-				});
-				const totalRub = kopecksToRubles(options.totalAmountKopecks);
-				const effectiveDoctor = options.effectiveDoctorName || "Врач-стоматолог";
-				const effectivePayerName = options.taxpayer?.fullName || options.directPayerFullName || options.patient.fullName.trim() || "Пациент";
-
-				let structuredPayload: Record<string, unknown> | undefined;
-
-				if (docKind === "paid_medical_services_contract") {
-					structuredPayload = {
-						paidMedicalServicesContract: {
-							contractNumber: `ДОГ-${new Date().getFullYear()}/${(options.patient.fullName.slice(0, 3) || "ПАЦ").toUpperCase()}`,
-							contractDate: nowIso.slice(0, 10),
-							serviceStart: nowIso.slice(0, 10),
-							serviceEndOrCondition: "До полного оказания согласованного объема медицинских услуг",
-							customerFullName: effectivePayerName,
-							representativeFullName: null,
-							plannedCareReason: "Оказание стоматологических услуг согласно плану лечения",
-							serviceScopeSummary: "Стоматологические услуги по прейскуранту клиники и плану лечения",
-							estimatedTotalRub: totalRub,
-							paymentTerms: "Оплата по факту оказания услуг либо авансовым платежом",
-							priceChangeRules: "Изменение плана лечения и стоимости оформляется дополнительным соглашением",
-							freeCareAvailabilityNotice: "Пациент уведомлен о возможности получения бесплатной медицинской помощи по программе государственных гарантий",
-							medicalRecommendationWarning: "Пациент предупрежден о необходимости соблюдения предписаний и рекомендаций врача",
-							refusalAndRefundTerms: "Пациент вправе отказаться от исполнения договора при условии оплаты фактически понесенных расходов",
-							warrantyAndClaimsTerms: "Гарантийные обязательства исчисляются с момента завершения лечения по положению о гарантиях",
-							doctorFullName: effectiveDoctor,
-							signedAt: nowIso.slice(0, 10),
-							patientReceivedClinicInfo: true,
-							patientReceivedPriceAndServiceList: true,
-							patientUnderstandsPaidBasis: true,
-							changesRequireWrittenAgreement: true,
-						},
-					};
-				} else if (docKind === "informed_consent") {
-					structuredPayload = {
-						informedConsent: {
-							intervention: `Стоматологическое вмешательство: ${options.activeConsentSubKind || "терапевтическое/хирургическое лечение"}`,
-							toothOrArea: "Полость рта",
-							diagnosisOrIndication: "Санация полости рта по клиническим показаниям",
-							expectedBenefit: "Восстановление анатомической формы, функции зубочелюстной системы и эстетики",
-							plannedAnesthesia: "Местная инфильтрационная или проводниковая анестезия",
-							materialOrMedicationNotes: "Сертифицированные стоматологические материалы",
-							trustedContactForMedicalInfo: null,
-							explainedRisks: [
-								"Возможная индивидуальная чувствительность или аллергическая реакция",
-								"Кратковременный отек или болезненность в зоне вмешательства",
-								"Необходимость коррекции пломбы или ортопедической конструкции по прикусу",
-							],
-							alternatives: [
-								"Отказ от медицинского вмешательства с сохранением риска прогрессирования заболевания",
-								"Альтернативные методы лечения в соответствии с клиническими рекомендациями",
-							],
-							aftercareRequirements: [
-								"Воздержаться от приема пищи в течение 2 часов до окончания действия анестезии",
-								"Соблюдать гигиену полости рта и щадящий температурный режим",
-								"При возникновении боли или дискомфорта незамедлительно обратиться к лечащему врачу",
-							],
-							doctorFullName: effectiveDoctor,
-							consentConfirmedAt: nowIso.slice(0, 10),
-							patientQuestionsAnswered: true,
-							patientUnderstandsRisks: true,
-							patientMayWithdrawBeforeIntervention: true,
-						},
-					};
-				}
-
-				const createPayload: Record<string, unknown> = {
-					patientId: options.effectivePatientId,
-					kind: docKind,
-					title: docTitle,
-					totalAmountRub: totalRub,
-					...(structuredPayload ? { payload: structuredPayload } : {}),
-				};
-				if (options.activePackage === "tax_certificate") {
-					createPayload.taxYear = options.taxYear;
-					// Мандат 8n / Red Team: при оплате третьими лицами (супруг, родитель) используем ИНН реального плательщика
-					const effectivePayerInn = options.taxpayer?.inn || options.directPayerInn || options.patient.inn;
-					if (effectivePayerInn) createPayload.taxPayerInn = effectivePayerInn;
-				}
-
-				let createdDocId: string | undefined;
-				try {
-					const createHeaders = denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-						"Idempotency-Key": generateUuidV7(),
-					});
-					const res = await fetch("/api/documents", {
-						method: "POST",
-						headers: createHeaders,
-						body: JSON.stringify(createPayload),
-					});
-					if (res.ok) {
-						const createdDoc: unknown = await res.json();
-						const docObj = (createdDoc && typeof createdDoc === "object") ? (createdDoc as { id?: string }) : undefined;
-						if (docObj?.id) {
-							createdDocId = docObj.id;
-							const issueHeaders = denteClinicalMutationHeaders({
-								"Content-Type": "application/json",
-								"Idempotency-Key": generateUuidV7(),
-							});
-							const issueRes = await fetch(`/api/documents/${encodeURIComponent(docObj.id)}/issue`, {
-								method: "POST",
-								headers: issueHeaders,
-								body: JSON.stringify({
-									signatureAttestation: {
-										mode: isDigital ? "simple_electronic_signature" : "paper_signed",
-										signedAt: nowIso,
-										recipientFullName: effectivePayerName,
-										recipientRole: "пациент/законный представитель",
-										staffFullName: effectiveDoctor,
-										staffRole: "врач",
-										identityChecked: true,
-										documentOpenedAndChecked: true,
-										recipientSigned: true,
-										clinicRepresentativeSigned: true,
-									},
-									signatureSvg: signatureDataUrl ?? null,
-								}),
-							});
-							if (!issueRes.ok) {
-								clientLogger.warn("[useDocumentStudioSignAndIssue] Ошибка выпуска документа на сервере:", issueRes.status);
-								options.showToast("Документ создан, но не удалось зафиксировать выпуск на сервере", "error");
-							}
-						}
-						options.recordConsentLocally(options.currentConsentKey, nowIso);
-					} else {
-						clientLogger.warn("[useDocumentStudioSignAndIssue] Ошибка создания документа на сервере:", res.status);
-						options.showToast("Не удалось зарегистрировать документ на сервере", "error");
-					}
-				} catch (err) {
-					clientLogger.warn("[useDocumentStudioSignAndIssue] Сбой регистрации документа:", err);
-					options.showToast("Сбой регистрации документа на сервере", "error");
-				}
-
-				const consentPayload = {
-					consentType: options.currentConsentKey,
-					kind: options.activePackage === "informed_consent" ? "procedure_specific_consent_packet" : "informed_consent",
-					title: docTitle,
-					documentId: createdDocId,
-					isSigned: true,
-					signedAt: nowIso,
-					signatureType,
-					verificationMethod: isDigital ? "tablet_stylus" : "paper_signed",
-					doctorFullName: options.effectiveDoctorName,
-					signatureSvg: signatureDataUrl,
-					notes: isDigital ? `Подписано пациентом на экране (Canvas, ${nowStr})` : `Подписано на бумажном носителе (${nowStr})`,
-				};
-
-				try {
-					const consentHeaders = denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-						"Idempotency-Key": generateUuidV7(),
-					});
-					const consentRes = await fetch(`/api/patients/${encodeURIComponent(options.effectivePatientId)}/consents`, {
-						method: "POST",
-						headers: consentHeaders,
-						body: JSON.stringify(consentPayload),
-					});
-					if (!consentRes.ok) {
-						clientLogger.warn("[useDocumentStudioSignAndIssue] Ошибка сохранения согласия на сервере:", consentRes.status);
-						options.showToast("Не удалось сохранить согласие в карте пациента на сервере", "error");
-					}
-				} catch (err) {
-					clientLogger.warn("[useDocumentStudioSignAndIssue] Сбой сохранения согласия на сервере:", err);
-					options.showToast("Сбой сохранения согласия на сервере", "error");
-				}
-			}
-
-			// Выполнение печати
-			if (options.activePackage === "tax_certificate") {
-				const payerFullName = options.taxpayer?.fullName || options.directPayerFullName || options.patient.fullName || undefined;
-				const payerInn = options.taxpayer?.inn || options.directPayerInn || options.patient.inn || undefined;
-				const payerBirthDate = options.taxpayer?.birthDate || options.directPayerBirthDate || options.patient.birthDate || undefined;
-				const payerPassport = options.taxpayer?.passport || options.directPayerPassport || undefined;
-				const payerRelationship = options.taxpayer?.relationship || options.directPayerRelationship || "patient";
-
-				printTaxCertificate(
-					buildTaxCertificateDocumentData({
-						documentNumber: options.legalContext.documentNumber,
-						issueDateIso: nowIso,
-						taxYear: options.taxYear,
-						clinicName: options.clinicRequisites.name,
-						clinicInn: options.clinicRequisites.inn,
-						clinicOgrn: options.clinicRequisites.ogrn || "",
-						clinicLicense: options.clinicRequisites.license,
-						clinicAddress: options.clinicRequisites.address,
-						doctorFullName: options.effectiveDoctorName,
-						patient: options.patient,
-						taxpayer: {
-							fullName: payerFullName,
-							inn: payerInn,
-							birthDate: payerBirthDate,
-							passport: payerPassport,
-							relationship: payerRelationship,
-						},
-						receiptsCount: options.taxReceiptItems.length,
-						totalAmountKopecks: options.taxTotalAmountKopecks,
-						code01Kopecks: options.taxCode01Kopecks,
-						code02Kopecks: options.taxCode02Kopecks,
-					}),
-				);
-				options.showToast("Справка для налогового вычета сформирована и отправлена на печать", "success");
-			} else if (options.activePackage === "intake") {
-				printPrimaryIntakePackage({
-					patient: {
-						fullName: options.patient.fullName || "____________________________________",
-						birthDate: options.patient.birthDate || "",
-						phone: options.patient.phone || "",
-						address: options.patient.address || "",
-					},
-					clinic: options.clinicRequisites,
-					doctorFullName: options.effectiveDoctorName,
-				});
-				options.showToast("Комплект документов первичного приёма отправлен на печать", "success");
-			} else {
-				const a4Html = generateA4PrintHtml({
-					clinic: options.clinicRequisites,
-					patient: options.patient,
-					doctorFullName: options.effectiveDoctorName,
-					currentDate: options.currentDate,
-					totalAmountKopecks: options.totalAmountKopecks,
-					documentText: options.renderedDocumentText,
-					hasSigned: true,
-					signedAtTimeStr: nowStr,
-				});
-				printHtmlViaIframe(a4Html, "dente-docs-studio-print-iframe");
-				options.showToast("Комплект документов утвержден и отправлен на печать", "success");
-			}
-		},
-		onSuccess: () => {
+		mutationFn: async (): Promise<IssueAndSignResult> => executeDocumentIssueAndSign(options),
+		onSuccess: (result) => {
+			if (!applyDocumentIssueSuccess(options, result)) return;
 			void queryClient.invalidateQueries({ queryKey: ["documents"] });
 			if (options.effectivePatientId) {
 				void queryClient.invalidateQueries({ queryKey: ["patient-consents", options.effectivePatientId] });

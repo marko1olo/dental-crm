@@ -9,33 +9,13 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { registerHooks } from "node:module";
 import React from "react";
 import { renderToString } from "react-dom/server";
-
-if (!process.env.VITEST) {
-	try {
-		registerHooks({
-			resolve(specifier, context, nextResolve) {
-				if (specifier.endsWith(".css") || specifier.includes(".css")) {
-					return {
-						format: "module",
-						shortCircuit: true,
-						url: "data:text/javascript," + encodeURIComponent("export default {};"),
-					};
-				}
-				return nextResolve(specifier, context);
-			},
-		});
-	} catch {
-		// Hooks already registered by runner
-	}
-}
-
-const { FamilyWalletModal } = await import("../../patients/family/FamilyWalletModal.js");
-const { BankInstallmentQrModal } = await import("../../payments/BankInstallmentQrModal.js");
-const { DmsStudioModal } = await import("../../insurance/DmsStudioModal.js");
-const { PatientInstallmentsModal } = await import("../../billing/PatientInstallmentsModal.js");
+import "../../../../testCssStub.mjs";
+import { FamilyWalletModal } from "../../patients/family/FamilyWalletModal.js";
+import { BankInstallmentQrModal } from "../../payments/BankInstallmentQrModal.js";
+import { DmsStudioModal } from "../../insurance/DmsStudioModal.js";
+import { PatientInstallmentsModal } from "../../billing/PatientInstallmentsModal.js";
 
 describe("Wave 107: Billing, Insurance & Family Wallet Mock Purity (Real Component Renders)", () => {
 	it("DmsStudioModal: renders clean empty state without synthetic clown name 'Иванов Иван Иванович'", () => {

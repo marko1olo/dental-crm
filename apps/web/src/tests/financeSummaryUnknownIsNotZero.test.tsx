@@ -1,8 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import type { Dashboard } from "@dental/shared";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -212,77 +209,44 @@ describe("финансовая сводка: непосчитанное не р�
 	});
 });
 
-/*
- * ДВЕРЬ В ИСТОЧНИКЕ. Отрисовка выше доказывает, что компонент правильно рисует
- * null. Она НЕ доказывает, что null до него доезжает: пока useAppLogic отдаёт
- * объект из нулей, компонент честно печатает «0 ₽», и все проверки выше зелёные.
- * Поэтому дверь проверяется по исходнику — так же, как это делает
- * tests/moneyUnknownNotZero.test.ts для вызовов money().
- */
-const webSrcDir = fileURLToPath(new URL("..", import.meta.url));
-const memoAnchors = [
-	"const patientBillingSummary = useMemo",
-	'return useMemo<Dashboard["billingSummary"] | null>',
-];
+import { computeDocumentPatientBillingSummary } from "../hooks/domains/documents/workflow/useDocumentPatientBillingSummary.js";
 
-/** Тело мемо от объявления и на 600 знаков вперёд: ранний возврат и его форма. */
-const unknownTotalDoor = (source: string) => {
-	const at = memoAnchors
-		.map((anchor) => source.indexOf(anchor))
-		.find((idx) => idx !== -1) ?? -1;
-	assert.notEqual(
-		at,
-		-1,
-		"мемо patientBillingSummary исчезло из useDocumentPatientBillingSummary.ts",
-	);
-	return source.slice(at, at + 600);
-};
+describe("computeDocumentPatientBillingSummary: отсутствие данных возвращается как null (Part 6G Real SUT)", () => {
+	it("возвращает null при отсутствии дашборда или пациента без подмены нулями", () => {
+		const resNoDashboard = computeDocumentPatientBillingSummary({
+			dashboard: null,
+			documentPatient: { id: "p-1", fullName: "Тестов Иван", phone: "+79001112233" } as never,
+			activeTreatmentPlanItems: [],
+			activePayments: [],
+			activeUsableDocuments: [],
+		});
+		assert.equal(resNoDashboard, null);
 
-const doorReportsUnknown = (door: string) =>
-	/if \(!dashboard \|\| !documentPatient\) return null;/.test(door) &&
-	!/totalDueRub:\s*0/.test(door);
-
-const loadLogicSource = () => {
-	const summaryHookPath = join(
-		webSrcDir,
-		"hooks",
-		"domains",
-		"documents",
-		"workflow",
-		"useDocumentPatientBillingSummary.ts",
-	);
-	try {
-		return readFileSync(summaryHookPath, "utf8");
-	} catch {
-		return readFileSync(join(webSrcDir, "useAppLogic.tsx"), "utf8");
-	}
-};
-
-describe("источник сводки: отсутствие данных возвращается как null", () => {
-	it("useDocumentWorkflowModule.ts не подставляет сводку из нулей", () => {
-		const door = unknownTotalDoor(loadLogicSource());
-		assert.ok(
-			doorReportsUnknown(door),
-			`при отсутствии дашборда или пациента сводка снова собирается из нулей:\n${door}`,
-		);
+		const resNoPatient = computeDocumentPatientBillingSummary({
+			dashboard: { serviceCatalog: [], insuranceContracts: [] } as never,
+			documentPatient: null,
+			activeTreatmentPlanItems: [],
+			activePayments: [],
+			activeUsableDocuments: [],
+		});
+		assert.equal(resNoPatient, null);
 	});
 
-	it("тип мемо допускает признак «не посчитано»", () => {
-		const door = unknownTotalDoor(loadLogicSource());
-		assert.match(door, /useMemo<[\s\n]*Dashboard\["billingSummary"\]\s*\|\s*null>/);
-	});
-
-	it("сама проверка видит дефект", () => {
-		// Пустой результат поиска — обычный признак сломанного шаблона, а не
-		// чистого кода. Образец — дословно то, что стояло в useAppLogic до правки.
-		const before = [
-			'const patientBillingSummary = useMemo<Dashboard["billingSummary"]>(() => {',
-			"\t\tif (!dashboard || !documentPatient)",
-			"\t\t\treturn {",
-			"\t\t\t\ttotalPlannedRub: 0,",
-			"\t\t\t\ttotalDueRub: 0,",
-			"\t\t\t};",
-		].join("\n");
-		assert.equal(doorReportsUnknown(before), false);
+	it("корректно рассчитывает план, оплату и остаток в рублях из копеек при наличии пациента и дашборда", () => {
+		const summary = computeDocumentPatientBillingSummary({
+			dashboard: { serviceCatalog: [], insuranceContracts: [] } as never,
+			documentPatient: { id: "p-1", fullName: "Тестов Иван", phone: "+79001112233" } as never,
+			activeTreatmentPlanItems: [
+				{ id: "i-1", serviceId: "s-1", unitPriceRub: 5000, quantity: 1, discountRub: 500, status: "planned" } as never,
+			],
+			activePayments: [
+				{ id: "pay-1", amountRub: 1500, status: "paid", documentId: "doc-1" } as never,
+			],
+			activeUsableDocuments: [],
+		});
+		assert.ok(summary !== null);
+		assert.equal(summary.totalPlannedRub, 4500);
+		assert.equal(summary.totalPaidRub, 1500);
+		assert.equal(summary.totalDueRub, 3000);
 	});
 });

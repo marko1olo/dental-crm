@@ -9,8 +9,10 @@
 
 import { useState, useEffect } from "react";
 import {
+	kopecksToRubles,
 	normalizeInvoiceStatus,
 	resolveInvoiceTotalAmountRub,
+	rublesToKopecks,
 } from "@dental/shared";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders.js";
 import { clientLogger } from "../../services/logging/clientLogger.js";
@@ -80,18 +82,28 @@ export function useInvoicesData({
 						discountRub: raw.discountRub as number | string | null | undefined,
 					});
 
+					const totalAmountKopecks =
+						typeof raw.totalAmountKopecks === "number"
+							? raw.totalAmountKopecks
+							: typeof raw.totalKopecks === "number"
+								? raw.totalKopecks
+								: rublesToKopecks(resolvedTotal);
+
 					const invoiceNumber = String(
 						raw.number ||
 							raw.invoiceNumber ||
 							`СЧ-${(raw.id || idx).toString().slice(-6)}`,
 					);
-					const total = resolvedTotal;
-					const paid =
-						typeof raw.paidAmountRub === "number" || typeof raw.paidAmountRub === "string"
-							? Number(raw.paidAmountRub) || 0
-							: raw.status === "paid"
-								? total
-								: 0;
+					const total = kopecksToRubles(totalAmountKopecks);
+					const paidAmountKopecks =
+						typeof raw.paidAmountKopecks === "number"
+							? raw.paidAmountKopecks
+							: typeof raw.paidAmountRub === "number" || typeof raw.paidAmountRub === "string"
+								? rublesToKopecks(Number(raw.paidAmountRub) || 0)
+								: raw.status === "paid"
+									? totalAmountKopecks
+									: 0;
+					const paid = kopecksToRubles(paidAmountKopecks);
 					const normalizedStatus: BillingInvoice["status"] =
 						raw.status === "warranty_100"
 							? "warranty_100"
@@ -168,7 +180,9 @@ export function useInvoicesData({
 									? new Date(raw.createdAt).toLocaleDateString("ru-RU")
 									: new Date().toLocaleDateString("ru-RU"),
 						totalAmountRub: total,
+						totalAmountKopecks,
 						paidAmountRub: paid,
+						paidAmountKopecks,
 						status: normalizedStatus,
 						items,
 						createdAt:

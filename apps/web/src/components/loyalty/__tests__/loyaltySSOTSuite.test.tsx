@@ -12,10 +12,12 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { LoyaltyStudioModal } from "../LoyaltyStudioModal";
+import { actionIssueCertificate } from "../loyaltyStudioActions";
+import { resolveClinicRoute } from "../../../router/routeResolver";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
 import {
 	calculateLoyaltyAccrual,
 	calculateLoyaltyRedemption,
@@ -38,28 +40,20 @@ import {
 	type GiftCertificate,
 } from "../loyaltyCatalogData";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const webSrcRoot = path.resolve(__dirname, "../../..");
-
 describe("DENTE Dental Loyalty, Family Balance & Certificates SSOT Suite", () => {
 	// =========================================================================
-	// 1. MANDATE 8b: SWEET SPOT FILE SIZE INQUISITION
+	// 1. MANDATE 8aq & SSOT: CANONICAL EXPORTS & ROUTE RESOLVER
 	// =========================================================================
-	describe("1. Mandate 8b — Canonical File Presence Verification", () => {
-		it("verifies loyaltyCatalogData.ts exists", () => {
-			const filePath = path.join(webSrcRoot, "components/loyalty/loyaltyCatalogData.ts");
-			assert.ok(fs.existsSync(filePath), "loyaltyCatalogData.ts must exist");
+	describe("1. Mandate 8aq — Canonical Exports & Route Resolver", () => {
+		it("exports LoyaltyStudioModal and WorkspaceStudioOverlayHost as React components", () => {
+			assert.equal(typeof LoyaltyStudioModal, "function");
+			assert.equal(typeof WorkspaceStudioOverlayHost, "function");
+			assert.ok(GIFT_CERTIFICATE_CATALOG.length > 0);
 		});
 
-		it("verifies LoyaltyStudioModal.tsx exists", () => {
-			const filePath = path.join(webSrcRoot, "components/loyalty/LoyaltyStudioModal.tsx");
-			assert.ok(fs.existsSync(filePath), "LoyaltyStudioModal.tsx must exist");
-		});
-
-		it("verifies obsolete DirectLoyaltyLauncher.tsx stays purged", () => {
-			const filePath = path.join(webSrcRoot, "components/loyalty/DirectLoyaltyLauncher.tsx");
-			assert.equal(fs.existsSync(filePath), false, "DirectLoyaltyLauncher.tsx must remain removed");
+		it("routes #loyalty via resolveClinicRoute without standalone launcher", () => {
+			const route = resolveClinicRoute("", "#loyalty");
+			assert.equal(route.studio?.kind, "loyalty");
 		});
 	});
 
@@ -138,9 +132,17 @@ describe("DENTE Dental Loyalty, Family Balance & Certificates SSOT Suite", () =>
 		});
 
 		it("verifies LoyaltyStudioModal does NOT contain disabled attribute on redemption buttons", () => {
-			const studioCode = fs.readFileSync(path.join(webSrcRoot, "components/loyalty/LoyaltyStudioModal.tsx"), "utf8");
-			assert.doesNotMatch(studioCode, /data-testid="loyalty-execute-redemption-btn"[^>]*disabled=/s, "Execute redemption button must NOT have disabled attribute");
-			assert.doesNotMatch(studioCode, /className="loyalty-quick-btn one-click-btn"[^>]*disabled=/s, "Quick buttons must NOT have disabled attribute");
+			const html = renderToStaticMarkup(
+				React.createElement(LoyaltyStudioModal, {
+					isOpen: true,
+					onClose: () => {},
+					patientId: "pat-loyalty-1",
+					patientName: "Тестовый Пациент",
+					initialPointsBalance: 500,
+					currentInvoiceAmountKop: 200000,
+				}),
+			);
+			assert.equal(html.includes("disabled"), false, "Redemption and quick buttons must NOT have disabled attribute");
 		});
 	});
 
@@ -236,10 +238,44 @@ describe("DENTE Dental Loyalty, Family Balance & Certificates SSOT Suite", () =>
 			assert.equal(res.newStatus, "expired");
 		});
 
-		it("verifies LoyaltyStudioModal does NOT contain mockCert or fake 5000 fallback money", () => {
-			const studioCode = fs.readFileSync(path.join(webSrcRoot, "components/loyalty/LoyaltyStudioModal.tsx"), "utf8");
-			assert.doesNotMatch(studioCode, /mockCert/, "LoyaltyStudioModal must not contain mockCert");
-			assert.doesNotMatch(studioCode, /5\s*000\s*₽\s*успешно\s*активирован/, "Must not contain fake 5000 ₽ toast");
+		it("verifies LoyaltyStudioModal renders without mockCert or fake 5000 fallback money", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(LoyaltyStudioModal, {
+					isOpen: true,
+					onClose: () => {},
+					patientId: "pat-loyalty-1",
+					patientName: "Тестовый Пациент",
+					initialPointsBalance: 1200,
+				}),
+			);
+			assert.equal(html.includes("mockCert"), false);
+			assert.equal(html.includes("5 000 ₽ успешно активирован"), false);
+		});
+
+		it("surfaces error feedback cleanly when certificate issuance API returns HTTP 500", async () => {
+			const originalFetch = globalThis.fetch;
+			let feedbackMsg: string | null = null;
+			try {
+				globalThis.fetch = (async () =>
+					new Response(JSON.stringify({ message: "Ошибка выпуска сертификата" }), { status: 500 })) as typeof fetch;
+
+				await actionIssueCertificate({
+					nominalKop: 500000,
+					title: "Подарочный сертификат 5 000 ₽",
+					patientId: "pat-loyalty-1",
+					patientName: "Тестовый Пациент",
+					medicalCardNumber: "MK-100",
+					pointsBalance: 1200,
+					setCertSerial: () => {},
+					setCertFeedback: (msg) => {
+						feedbackMsg = msg;
+					},
+					setLedger: () => {},
+				});
+				assert.equal(feedbackMsg, "Ошибка выпуска сертификата");
+			} finally {
+				globalThis.fetch = originalFetch;
+			}
 		});
 	});
 
@@ -268,55 +304,47 @@ describe("DENTE Dental Loyalty, Family Balance & Certificates SSOT Suite", () =>
 	// 7. MANDATES 8am, 8ze: APPLE HIG & SINGLE PRIMARY CTA
 	// =========================================================================
 	describe("7. Mandates 8am, 8ze — Single Primary CTA & Apple HIG", () => {
-		it("verifies single primary CTA class in LoyaltyStudioModal", () => {
-			const code = fs.readFileSync(path.join(webSrcRoot, "components/loyalty/LoyaltyStudioModal.tsx"), "utf8");
-			const matches = code.match(/className="loyalty-primary-cta"/g);
-			assert.equal(matches?.length, 2, "Must contain exactly ONE Primary CTA button per transactional tab (balance, certificates)");
-		});
-
-		it("verifies touch ergonomics and mobile drag handle in stylesheet", () => {
-			const cssCode = fs.readFileSync(path.join(webSrcRoot, "components/loyalty/loyaltyStudio.css"), "utf8");
-			assert.ok(cssCode.includes("loyalty-modal-drag-handle"), "Must contain drag handle for mobile bottom sheet");
-			assert.ok(cssCode.includes("min-height: 44px") || cssCode.includes("height: 44px") || cssCode.includes("min-height: 48px"), "Must respect touch target ergonomics >= 44px");
-			assert.ok(cssCode.includes("rounded-t-[24px]") || cssCode.includes("border-radius: 24px 24px 0 0"), "Must style top rounded corners for Apple HIG");
-		});
-	});
-
-	// =========================================================================
-	// 8. MANDATE 8aq: LIVE UI MOUNTING VIA ROUTER & OVERLAY HOST
-	// =========================================================================
-	describe("8. Mandate 8aq — Live UI Mounting", () => {
-		it("verifies App.tsx routes #loyalty via resolveClinicRoute", () => {
-			const appCode = fs.readFileSync(path.join(webSrcRoot, "App.tsx"), "utf8");
-			assert.ok(appCode.includes("resolveClinicRoute"), "App.tsx must resolve #loyalty routes");
-		});
-
-		it("verifies WorkspaceStudioOverlayHost is mounted in AppModalsContainer.tsx and handles loyalty", () => {
-			const containerCode = fs.readFileSync(path.join(webSrcRoot, "components/appLayout/AppModalsContainer.tsx"), "utf8");
-			const hostCode = fs.readFileSync(path.join(webSrcRoot, "components/appLayout/WorkspaceStudioOverlayHost.tsx"), "utf8");
-			assert.ok(containerCode.includes("WorkspaceStudioOverlayHost"), "AppModalsContainer.tsx must mount WorkspaceStudioOverlayHost");
-			assert.ok(hostCode.includes("LoyaltyStudioModal"), "WorkspaceStudioOverlayHost must render LoyaltyStudioModal");
+		it("renders exactly ONE Primary CTA on the visible balance tab and mobile drag handle", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(LoyaltyStudioModal, {
+					isOpen: true,
+					onClose: () => {},
+					patientId: "pat-loyalty-1",
+					patientName: "Соколова Ольга",
+					initialPointsBalance: 1500,
+					currentInvoiceAmountKop: 400000,
+				}),
+			);
+			const primaryCtas = html.match(/loyalty-primary-cta/g) ?? [];
+			assert.equal(primaryCtas.length, 1, "Visible balance tab must render strictly 1 Primary CTA");
+			assert.ok(html.includes("loyalty-modal-drag-handle"), "Must render Apple HIG drag handle");
+			assert.equal(html.includes("disabled"), false, "Doctor autonomy: no disabled buttons");
 		});
 	});
 
 	// =========================================================================
-	// 9. MANDATES 8x, 8ap, 8d pt 7: CLEAN RUSSIAN CLINICAL LANGUAGE
+	// 8. MANDATES 8x, 8ap, 8d pt 7: CLEAN RUSSIAN CLINICAL LANGUAGE
 	// =========================================================================
-	describe("9. Mandates 8x, 8ap, 8d pt 7 — Clean Clinical Language & Zero Cartoon Emojis", () => {
-		it("verifies zero forbidden competitors (IDENT, DentalPRO, StomX, iStom)", () => {
-			const catalogCode = fs.readFileSync(path.join(webSrcRoot, "components/loyalty/loyaltyCatalogData.ts"), "utf8");
-			const studioCode = fs.readFileSync(path.join(webSrcRoot, "components/loyalty/LoyaltyStudioModal.tsx"), "utf8");
+	describe("8. Mandates 8x, 8ap, 8d pt 7 — Clean Clinical Language & Zero Forbidden Brands", () => {
+		it("renders clean clinical Russian labels without competitor names or dev slang", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(LoyaltyStudioModal, {
+					isOpen: true,
+					onClose: () => {},
+					patientId: "pat-loyalty-1",
+					patientName: "Соколова Ольга",
+					initialPointsBalance: 1500,
+				}),
+			);
+			const catalogStr = JSON.stringify({ LOYALTY_TIER_PRESETS, DENTAL_LOYALTY_STANDARDS, GIFT_CERTIFICATE_CATALOG });
 			for (const brand of ["IDENT", "DentalPRO", "StomX", "iStom"]) {
-				assert.ok(!catalogCode.includes(brand), `Must not contain ${brand}`);
-				assert.ok(!studioCode.includes(brand), `Must not contain ${brand}`);
+				assert.equal(html.includes(brand), false, `UI must not contain ${brand}`);
+				assert.equal(catalogStr.includes(brand), false, `Catalog must not contain ${brand}`);
 			}
-		});
-
-		it("verifies clean human clinical terms instead of dev slang", () => {
-			const studioCode = fs.readFileSync(path.join(webSrcRoot, "components/loyalty/LoyaltyStudioModal.tsx"), "utf8");
-			assert.ok(studioCode.includes("Семейный баланс") || studioCode.includes("Семейный счет"));
-			assert.ok(studioCode.includes("Оплата бонусами на кассе"));
-			assert.ok(studioCode.includes("Программа лояльности и скидок"));
+			assert.ok(html.includes("Программа лояльности и скидок"));
+			assert.ok(html.includes("Оплата бонусами на кассе"));
+			assert.ok(html.includes("Семейный счет"));
+			assert.equal(html.includes("1 клик"), false);
 		});
 	});
 });

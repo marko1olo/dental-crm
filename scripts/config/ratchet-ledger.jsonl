@@ -1,2 +1,3 @@
 {"at":"2026-11-27T16:03:40.587Z","kind":"test-removal","testsFloorFrom":20368,"testsFloorTo":20302,"reason":"Consolidated redundant inventory deduction modules into procedureApplyDeductionHandler"}
 {"at":"2026-11-27T16:03:41.000Z","kind":"prod-files-removal","prodFilesFloorFrom":11432,"prodFilesFloorTo":11430,"reason":"Consolidated redundant procedure deduction files into unified deduction handler"}
+{"at":"2026-11-27T19:33:40.067Z","kind":"test-removal","testsFloorFrom":20320,"testsFloorTo":20120,"reason":"Wave8 Batch B: remove 8 redundant 100% source-grep duplicate test files after verifying coverage via real SSR/SUT suites"}

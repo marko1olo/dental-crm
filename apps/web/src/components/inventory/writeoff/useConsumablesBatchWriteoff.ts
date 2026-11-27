@@ -16,7 +16,20 @@ import {
 	type MaterialWriteoffTier,
 } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { useInventoryStore } from "../../../store/inventoryStore.js";
+
+async function safeReadWriteoffErrorMessage(res: Response, fallback: string): Promise<string> {
+	try {
+		const text = await res.text();
+		if (!text.trim()) return fallback;
+		const parsed = JSON.parse(text) as { message?: string; error?: string } | null;
+		return parsed?.message || parsed?.error || fallback;
+	} catch (err) {
+		clientLogger.warn("[useConsumablesBatchWriteoff] Failed to parse error JSON", err, { status: res.status });
+		return fallback;
+	}
+}
 
 export interface ShiftConsumableItem {
 	itemId: string;
@@ -151,8 +164,8 @@ export function useConsumablesBatchWriteoff({
 							: (resJson as ShiftBatchWriteoffData);
 					if (isMounted && payload) setData(payload);
 				}
-			} catch {
-				// В офлайн-режиме дефолтные техкарты смены
+			} catch (err) {
+				clientLogger.warn("[useConsumablesBatchWriteoff] Не удалось загрузить сводку списания смены, используются техкарты по умолчанию", err, { module: "Inventory" });
 			} finally {
 				if (isMounted) setIsLoading(false);
 			}
@@ -299,8 +312,7 @@ export function useConsumablesBatchWriteoff({
 				if (onConfirmWriteoff) await onConfirmWriteoff(data);
 				setTimeout(() => onClose(), 400);
 			} else {
-				const resData = await res.json().catch(() => null);
-				const errMsg = (resData as { message?: string; error?: string } | null)?.message || (resData as { message?: string; error?: string } | null)?.error || "Не удалось списать материалы: сбой сервера";
+				const errMsg = await safeReadWriteoffErrorMessage(res, "Не удалось списать материалы: сбой сервера");
 				setStatusMessage(errMsg);
 				showToast(errMsg, "error");
 			}
@@ -348,8 +360,7 @@ export function useConsumablesBatchWriteoff({
 				const d = await res.json();
 				showToast(d.message || "Пакет анестезии списан по техкарте (мягкий овердрафт активен)", "success");
 			} else {
-				const d = await res.json().catch(() => null);
-				const msg = (d as { message?: string; error?: string } | null)?.message || (d as { message?: string; error?: string } | null)?.error || "Не удалось списать анестезию: сбой сервера";
+				const msg = await safeReadWriteoffErrorMessage(res, "Не удалось списать анестезию: сбой сервера");
 				showToast(msg, "error");
 			}
 		} catch (err: unknown) {
@@ -374,8 +385,7 @@ export function useConsumablesBatchWriteoff({
 				const d = await res.json();
 				showToast(d.message || "Полный пакет анестезии списан по техкарте", "success");
 			} else {
-				const d = await res.json().catch(() => null);
-				const msg = (d as { message?: string; error?: string } | null)?.message || (d as { message?: string; error?: string } | null)?.error || "Не удалось списать пакет анестезии: сбой сервера";
+				const msg = await safeReadWriteoffErrorMessage(res, "Не удалось списать пакет анестезии: сбой сервера");
 				showToast(msg, "error");
 			}
 		} catch (err: unknown) {
@@ -400,8 +410,7 @@ export function useConsumablesBatchWriteoff({
 				const d = await res.json();
 				showToast(d.message || "Расходники терапии списаны по техкарте", "success");
 			} else {
-				const d = await res.json().catch(() => null);
-				const msg = (d as { message?: string; error?: string } | null)?.message || (d as { message?: string; error?: string } | null)?.error || "Не удалось списать расходники терапии: сбой сервера";
+				const msg = await safeReadWriteoffErrorMessage(res, "Не удалось списать расходники терапии: сбой сервера");
 				showToast(msg, "error");
 			}
 		} catch (err: unknown) {
@@ -426,8 +435,7 @@ export function useConsumablesBatchWriteoff({
 				const d = await res.json();
 				showToast(d.message || "Расходники хирургии списаны по техкарте", "success");
 			} else {
-				const d = await res.json().catch(() => null);
-				const msg = (d as { message?: string; error?: string } | null)?.message || (d as { message?: string; error?: string } | null)?.error || "Не удалось списать расходники хирургии: сбой сервера";
+				const msg = await safeReadWriteoffErrorMessage(res, "Не удалось списать расходники хирургии: сбой сервера");
 				showToast(msg, "error");
 			}
 		} catch (err: unknown) {
@@ -459,8 +467,7 @@ export function useConsumablesBatchWriteoff({
 				const d = await res.json();
 				showToast(d.message || "Расходники профгигиены списаны по техкарте", "success");
 			} else {
-				const d = await res.json().catch(() => null);
-				const msg = (d as { message?: string; error?: string } | null)?.message || (d as { message?: string; error?: string } | null)?.error || "Не удалось списать расходники профгигиены: сбой сервера";
+				const msg = await safeReadWriteoffErrorMessage(res, "Не удалось списать расходники профгигиены: сбой сервера");
 				showToast(msg, "error");
 			}
 		} catch (err: unknown) {

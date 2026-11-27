@@ -5,7 +5,7 @@ import React, { createElement } from "react";
 globalThis.React = React;
 import { renderToStaticMarkup } from "react-dom/server";
 
-const {
+import {
 	MobileSelfCheckinModal,
 	SelfCheckinPhoneAuthSection,
 	SelfCheckinNumericKeypad,
@@ -13,7 +13,7 @@ const {
 	MobileCheckinHeader,
 	MobileCheckinAppointmentCard,
 	formatRussianPhoneMask,
-} = await import("../index");
+} from "../index";
 
 describe("Red Team Decomposition & Phone Auth SSOT Test Suite", () => {
 	it("formats Russian phone numbers accurately with +7 mask", () => {

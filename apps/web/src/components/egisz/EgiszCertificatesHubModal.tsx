@@ -4,6 +4,7 @@ import { Archive, CheckCircle2, FileText, Receipt, ShieldCheck, X } from "lucide
 import { EgiszBackgroundQueueTable } from "./EgiszBackgroundQueueTable";
 import { MedicalRecordExtractDrawer } from "./MedicalRecordExtractDrawer";
 import type { RemdDocumentRecord } from "./egiszJournalData";
+import { SAMPLE_REMD_JOURNAL_RECORDS } from "./egiszJournalData";
 import { generateFnsTaxCertificatePrintHtml, generateMedicalRecordExtractPrintHtml } from "./egiszRemdPrintTemplates";
 import { SAMPLE_FNS_TAX_1151156_PRESET } from "./sampleFnsTaxPreset";
 import type { FnsTaxPaymentItem } from "./cdaR2/fnsTaxTypes";
@@ -142,18 +143,17 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 	isOpen = true,
 	onClose,
 	initialSection = "queue",
-	patientName = "Смирнова Елена Васильевна",
+	patientName = "Пациент",
 	patientInn = "",
 	payments,
-	records = [
-		{ id: "remd-1", docTitle: "СЭМД 105: Протокол консультации", patientFullName: patientName, status: "accepted_by_egisz", createdAt: "2026-10-15T10:30:00Z" } as unknown as RemdDocumentRecord,
-		{ id: "remd-2", docTitle: "СЭМД 303: Протокол операции", patientFullName: patientName, status: "sent", createdAt: "2026-10-15T11:45:00Z" } as unknown as RemdDocumentRecord,
-	],
+	records,
 	onRetryRecord,
 }) => {
 	const [activeSection, setActiveSection] = useState<EgiszHubSection>(initialSection);
 	if (!isOpen) return null;
 
+	const effectiveRecords: readonly RemdDocumentRecord[] =
+		records ?? (isDemoShowcaseMode() ? SAMPLE_REMD_JOURNAL_RECORDS : []);
 	const effectivePayments = payments ?? (isDemoShowcaseMode() ? SAMPLE_FNS_TAX_1151156_PRESET.payments : []);
 
 	const openPrint = (html: string) => {
@@ -208,7 +208,7 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 				</header>
 
 				<div className="egisz-hub-body">
-					{activeSection === "queue" && <EgiszBackgroundQueueTable records={records} onRetryRecord={onRetryRecord} />}
+					{activeSection === "queue" && <EgiszBackgroundQueueTable records={effectiveRecords} onRetryRecord={onRetryRecord} />}
 					{activeSection === "tax_deduction" && <TaxDeductionCertificateDrawer patientName={patientName} patientInn={patientInn} payments={effectivePayments} onPrintCertificate={handlePrintFns} />}
 					{activeSection === "extracts" && <MedicalRecordExtractDrawer patientName={patientName} onPrintExtract={(p) => openPrint(generateMedicalRecordExtractPrintHtml(p))} />}
 				</div>

@@ -8,7 +8,7 @@ import React from "react";
 import { Sparkles, Users, Award, Gift, FileText, X, Check, Download, Plus, Copy, QrCode } from "lucide-react";
 import {
 	GIFT_CERTIFICATE_CATALOG, REFERRAL_HYGIENE_1000_PRESET, QUICK_REDEMPTION_PRESETS_RUB,
-	formatKopecksToRubles, type Fiscal54FzSplitResult,
+	formatKopecksToRubles, rublesToKopecks, type Fiscal54FzSplitResult,
 } from "./loyaltyCatalogData";
 import { useLoyaltyStudioState } from "./useLoyaltyStudioState";
 import "./loyaltyStudio.css";
@@ -113,10 +113,10 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 							<div className="loyalty-card">
 								<div className="loyalty-card-title"><span>Оплата бонусами на кассе</span><span style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>Счет: {formatKopecksToRubles(currentInvoiceAmountKop)}</span></div>
 								<div className="loyalty-quick-row">{QUICK_REDEMPTION_PRESETS_RUB.map((amt) => (<button key={amt} type="button" className="loyalty-quick-btn" onClick={() => state.setRequestedPointsRub(amt)}>{amt} ₽</button>))}<button type="button" className="loyalty-quick-btn" onClick={() => state.setRequestedPointsRub(state.redemption.maxAllowedRedemptionRub)}>Максимум</button></div>
-								<div className="loyalty-input-row"><input type="number" className="loyalty-input" value={state.requestedPointsRub || ""} onChange={(e) => state.setRequestedPointsRub(Math.max(0, Number(e.target.value)))} placeholder="Сумма баллов" /><span style={{ fontWeight: 600, color: "var(--muted)" }}>из {state.activeEffectiveBalanceRub} ₽</span></div>
+								<div className="loyalty-input-row"><input type="number" className="loyalty-input" value={state.requestedPointsRub || ""} onChange={(e) => state.setRequestedPointsRub(Math.max(0, Number(e.target.value)))} placeholder="Сумма баллов" /><span style={{ fontWeight: 600, color: "var(--muted)" }}>из {formatKopecksToRubles(rublesToKopecks(state.activeEffectiveBalanceRub))}</span></div>
 								<div className="loyalty-fiscal-box">
 									<div className="loyalty-fiscal-row"><span>Счет до скидки:</span><span>{formatKopecksToRubles(currentInvoiceAmountKop)}</span></div>
-									<div className="loyalty-fiscal-row"><span>Оплата бонусами (Чек кассы):</span><span style={{ color: "var(--teal)", fontWeight: 700 }}>-{state.redemption.actualRedeemedPointsRub.toLocaleString("ru-RU")} ₽</span></div>
+									<div className="loyalty-fiscal-row"><span>Оплата бонусами (Чек кассы):</span><span style={{ color: "var(--teal)", fontWeight: 700 }}>-{formatKopecksToRubles(state.redemption.actualRedeemedPointsKop)}</span></div>
 									<div className="loyalty-fiscal-row total"><span>К оплате картой / наличными:</span><span>{formatKopecksToRubles(state.redemption.remainingPayableKop)}</span></div>
 								</div>
 								<button type="button" data-testid="loyalty-execute-redemption-btn" className="loyalty-primary-cta" onClick={state.handleApplyPoints}><Check size={18} /> Применить бонусы к оплате</button>
@@ -132,7 +132,7 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 									<p className="loyalty-toggle-desc">Единый кошелек семьи позволяет оплачивать лечение любого родственника без комиссии.</p>
 									<div className="loyalty-family-list">
 										{state.familyPool.members.map((m) => (
-											<div key={m.patientId} className={`loyalty-family-item ${state.selectedFamilyMemberId === m.patientId ? "selected" : ""}`} onClick={() => state.setSelectedFamilyMemberId(state.selectedFamilyMemberId === m.patientId ? null : m.patientId)}><div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{m.fullName}</div><div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>{m.roleRu} • Баланс: {m.individualPointsBalance} ₽</div></div><button type="button" className="loyalty-secondary-btn" style={{ height: "36px", fontSize: "0.75rem" }}>{state.selectedFamilyMemberId === m.patientId ? "Выбран для списания" : "Выбрать для списания"}</button></div>
+											<div key={m.patientId} className={`loyalty-family-item ${state.selectedFamilyMemberId === m.patientId ? "selected" : ""}`} onClick={() => state.setSelectedFamilyMemberId(state.selectedFamilyMemberId === m.patientId ? null : m.patientId)}><div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{m.fullName}</div><div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>{m.roleRu} • Баланс: {formatKopecksToRubles(rublesToKopecks(m.individualPointsBalance))}</div></div><button type="button" className="loyalty-secondary-btn loyalty-secondary-btn--compact">{state.selectedFamilyMemberId === m.patientId ? "Выбран для списания" : "Выбрать для списания"}</button></div>
 										))}
 									</div>
 									<div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}><button type="button" className="loyalty-secondary-btn" onClick={() => state.setIsCreateFamilyOpen(!state.isCreateFamilyOpen)}><Plus size={16} /> Привязать родственника</button></div>
@@ -165,12 +165,11 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 								<div className="loyalty-card-title"><span>Активация подарочного сертификата</span></div>
 								<div className="loyalty-input-row"><input type="text" className="loyalty-input" value={state.certSerial} onChange={(e) => state.setCertSerial(e.target.value)} placeholder="7701-XXXX-XXXX-XXXX" /><button type="button" className="loyalty-secondary-btn" onClick={state.handleVerifyCertificate}>Проверить</button></div>
 								{state.certFeedback && <div style={{ fontSize: "0.8125rem", color: "var(--teal)", fontWeight: 600 }}>{state.certFeedback}</div>}
-								{state.verifiedCertificate && state.verifiedCertificate.currentBalanceRub > 0 && (
+								{state.verifiedCertificate && state.verifiedCertificate.currentBalanceKop > 0 && (
 									<div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid var(--line)" }}>
 										<button
 											type="button"
 											className="loyalty-primary-cta"
-											style={{ width: "100%", justifyContent: "center" }}
 											onClick={state.handleRedeemCertificate}
 										>
 											Зачесть сертификат в счёт ({formatKopecksToRubles(currentInvoiceAmountKop > 0 ? Math.min(state.verifiedCertificate.currentBalanceKop, currentInvoiceAmountKop) : state.verifiedCertificate.currentBalanceKop)})
@@ -188,7 +187,7 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 									{GIFT_CERTIFICATE_CATALOG.filter((c) => !c.isCustomNominal).slice(0, 4).map((c) => (
 										<div key={c.id} className="loyalty-fiscal-row" style={{ padding: "0.5rem 0.75rem", background: "var(--paper)", borderRadius: "8px", border: "1px solid var(--line)", alignItems: "center", justifyContent: "space-between" }}>
 											<div style={{ display: "flex", flexDirection: "column", gap: "2px" }}><span style={{ fontWeight: 600, color: "var(--ink)", fontSize: "0.875rem" }}>{c.titleRu}</span><span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>{c.descriptionRu}</span></div>
-											<div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}><span style={{ color: "var(--teal)", fontWeight: 700 }}>{formatKopecksToRubles(c.nominalKop)}</span><button type="button" className="loyalty-secondary-btn" style={{ height: "32px", fontSize: "0.75rem", whiteSpace: "nowrap" }} onClick={() => state.handleIssueCertificate(c.nominalRub, c.titleRu)}>Оформить</button></div>
+											<div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}><span style={{ color: "var(--teal)", fontWeight: 700 }}>{formatKopecksToRubles(c.nominalKop)}</span><button type="button" className="loyalty-secondary-btn loyalty-secondary-btn--sm" onClick={() => state.handleIssueCertificate(c.nominalKop, c.titleRu)}>Оформить</button></div>
 										</div>
 									))}
 								</div>
@@ -217,7 +216,7 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 
 					{state.activeTab === "history" && (
 						<div className="loyalty-card">
-							<div className="loyalty-card-title"><span>Реестр начислений и списаний</span><button type="button" className="loyalty-secondary-btn" style={{ height: "36px" }} onClick={state.handleDownloadCsv}><Download size={14} />Выгрузить CSV</button></div>
+							<div className="loyalty-card-title"><span>Реестр начислений и списаний</span><button type="button" className="loyalty-secondary-btn loyalty-secondary-btn--compact" onClick={state.handleDownloadCsv}><Download size={14} />Выгрузить CSV</button></div>
 							<div style={{ overflowX: "auto" }}>
 								<table className="loyalty-table">
 									<thead><tr><th>Дата</th><th>Операция</th><th>Сумма чека</th><th>Баллы</th><th>Баланс</th><th>Примечание</th></tr></thead>
@@ -229,7 +228,7 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 												<tr key={tx.id}>
 													<td>{tx.timestampIso}</td><td>{tx.operationTypeRu}</td><td>{formatKopecksToRubles(tx.invoiceAmountKop)}</td>
 													<td style={{ fontWeight: 700, color: tx.operationType === "expired" ? "var(--danger)" : tx.pointsDeltaRub >= 0 ? "var(--ok-fg)" : "var(--warn-fg)" }}>{tx.pointsDeltaRub >= 0 ? `+${tx.pointsDeltaRub}` : tx.pointsDeltaRub}</td>
-													<td>{tx.balanceAfterRub.toLocaleString("ru-RU")} ₽</td><td>{tx.noteRu}</td>
+													<td>{formatKopecksToRubles(rublesToKopecks(tx.balanceAfterRub))}</td><td>{tx.noteRu}</td>
 												</tr>
 											))
 										)}

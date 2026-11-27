@@ -8,6 +8,35 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { rublesToKopecks, kopecksToRubles, generateUuidV7 } from "@dental/shared";
 import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
+
+async function safeReadPlanJson(res: Response): Promise<Record<string, unknown>> {
+	try {
+		const text = await res.text();
+		if (!text.trim()) return {};
+		const parsed: unknown = JSON.parse(text);
+		return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+			? Object.fromEntries(Object.entries(parsed))
+			: {};
+	} catch (err) {
+		clientLogger.warn("[useStudioPlanLifecycle] Failed to parse JSON response", err, {
+			module: "TreatmentPlans",
+			status: res.status,
+		});
+		return {};
+	}
+}
+
+async function safeReadPlanText(res: Response): Promise<string> {
+	try {
+		return await res.text();
+	} catch (err) {
+		clientLogger.warn("[useStudioPlanLifecycle] Failed to read error response text", err, {
+			module: "TreatmentPlans",
+			status: res.status,
+		});
+		return "";
+	}
+}
 import type {
 	TreatmentPlanTier,
 	TreatmentPlanTierId,
@@ -540,15 +569,15 @@ export function useStudioPlanLifecycle({
 			});
 
 			if (!res.ok) {
-				const errJson = await res.json().catch(() => ({}));
-				const msg = errJson?.message || "Не удалось выставить счёт на этап";
+				const errJson = await safeReadPlanJson(res);
+				const msg = (typeof errJson.message === "string" && errJson.message) || "Не удалось выставить счёт на этап";
 				setApprovalErrorMessage(msg);
 				setTimeout(() => setApprovalErrorMessage(null), 4000);
 				return false;
 			}
 
-			const rawJson = await res.json().catch(() => ({}));
-			const resJson = rawJson?.data ?? rawJson;
+			const rawJson = await safeReadPlanJson(res);
+			const resJson = rawJson.data ?? rawJson;
 			window.dispatchEvent(new CustomEvent("dente:invoice-created", { detail: { invoice: resJson, patientId } }));
 			window.dispatchEvent(new CustomEvent("dente:cashbox-updated", { detail: { patientId } }));
 
@@ -647,15 +676,20 @@ export function useStudioPlanLifecycle({
 			});
 
 			if (res.ok) {
-				const json = await res.json().catch(() => ({}));
-				const payload = json?.data ?? json;
+				const json = await safeReadPlanJson(res);
+				const payload = (json.data && typeof json.data === "object" ? json.data : json) as {
+					planId?: string;
+					plan?: { id?: string };
+					treatmentPlan?: { id?: string };
+				};
+				const rootJson = json as { planId?: string; plan?: { id?: string }; treatmentPlan?: { id?: string } };
 				const savedId =
 					payload?.planId ||
 					payload?.plan?.id ||
 					payload?.treatmentPlan?.id ||
-					json?.planId ||
-					json?.plan?.id ||
-					json?.treatmentPlan?.id ||
+					rootJson?.planId ||
+					rootJson?.plan?.id ||
+					rootJson?.treatmentPlan?.id ||
 					currentPlanId;
 				if (savedId) {
 					setCurrentPlanId(savedId);
@@ -663,7 +697,7 @@ export function useStudioPlanLifecycle({
 				}
 				return currentPlanId;
 			}
-			const errText = await res.text().catch(() => "");
+			const errText = await safeReadPlanText(res);
 			clientLogger.warn("[useStudioPlanLifecycle] Ошибка сохранения плана на сервере", errText, {
 				module: "TreatmentPlans",
 			});
@@ -710,8 +744,11 @@ export function useStudioPlanLifecycle({
 						}),
 					});
 					if (!approveRes.ok) {
-						const errJson = await approveRes.json().catch(() => ({}));
-						const errMsg = errJson?.message || errJson?.error || "Ошибка утверждения плана лечения на сервере";
+						const errJson = await safeReadPlanJson(approveRes);
+						const errMsg =
+							(typeof errJson.message === "string" && errJson.message) ||
+							(typeof errJson.error === "string" && errJson.error) ||
+							"Ошибка утверждения плана лечения на сервере";
 						clientLogger.warn("[useStudioPlanLifecycle] Ошибка утверждения плана лечения", errJson, {
 							module: "TreatmentPlans",
 						});
@@ -719,13 +756,17 @@ export function useStudioPlanLifecycle({
 						return;
 					}
 
-					const resJson = await approveRes.json().catch(() => ({}));
-					const approvePayload = resJson?.data ?? resJson;
+					const resJson = await safeReadPlanJson(approveRes);
+					const approvePayload = (resJson.data && typeof resJson.data === "object" ? resJson.data : resJson) as {
+						invoice?: unknown;
+						createdInvoice?: unknown;
+					};
+					const rootApprove = resJson as { invoice?: unknown; createdInvoice?: unknown };
 					const createdInv =
 						approvePayload?.invoice ||
 						approvePayload?.createdInvoice ||
-						resJson?.invoice ||
-						resJson?.createdInvoice;
+						rootApprove?.invoice ||
+						rootApprove?.createdInvoice;
 					if (createdInv) {
 						window.dispatchEvent(new CustomEvent("dente:invoice-created", { detail: { invoice: createdInv, patientId } }));
 						window.dispatchEvent(new CustomEvent("dente:cashbox-updated", { detail: { patientId } }));
