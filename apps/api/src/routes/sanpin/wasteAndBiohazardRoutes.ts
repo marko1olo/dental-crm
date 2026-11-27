@@ -5,6 +5,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	handleGetEmergencyBiohazard,
 	handlePostEmergencyBiohazard,
@@ -15,29 +16,55 @@ import {
 } from "./wasteModules/medicalWasteCrudHandlers.js";
 import { handlePostMedicalWasteQuickShiftBundle } from "./wasteModules/medicalWasteQuickShiftHandler.js";
 
-const sanpinMutationOptions = {
-	schema: {
-		description:
-			"SanPiN medical waste & biohazard mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-		headers: {
-			type: "object",
-			properties: {
-				"idempotency-key": { type: "string" },
-				"x-idempotency-key": { type: "string" },
-				"organizationid": { type: "string" },
-				"x-organization-id": { type: "string" },
-			},
+const sanpinMutationSchema = {
+	description:
+		"SanPiN medical waste & biohazard mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+	headers: {
+		type: "object",
+		properties: {
+			"idempotency-key": { type: "string" },
+			"x-idempotency-key": { type: "string" },
+			"organizationid": { type: "string" },
+			"x-organization-id": { type: "string" },
 		},
 	},
-};
+} as const;
 
 export function registerSanpinWasteAndBiohazardRoutes(app: FastifyInstance) {
 	// 1. Медицинские отходы классов А и Б
-	app.get("/api/registers/medical-waste", handleGetMedicalWaste);
-	app.post("/api/registers/medical-waste", sanpinMutationOptions, handlePostMedicalWaste);
-	app.post("/api/registers/medical-waste/quick-shift-bundle", sanpinMutationOptions, handlePostMedicalWasteQuickShiftBundle);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/registers/medical-waste",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetMedicalWaste(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/registers/medical-waste",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handlePostMedicalWaste(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/registers/medical-waste/quick-shift-bundle",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handlePostMedicalWasteQuickShiftBundle(request, reply),
+	});
 
 	// 2. Журнал аварийных ситуаций («Анти-ВИЧ»)
-	app.get("/api/registers/emergency-biohazard", handleGetEmergencyBiohazard);
-	app.post("/api/registers/emergency-biohazard", sanpinMutationOptions, handlePostEmergencyBiohazard);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/registers/emergency-biohazard",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetEmergencyBiohazard(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/registers/emergency-biohazard",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handlePostEmergencyBiohazard(request, reply),
+	});
 }

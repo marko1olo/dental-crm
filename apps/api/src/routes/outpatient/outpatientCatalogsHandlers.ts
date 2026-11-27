@@ -1,14 +1,16 @@
 import { and, eq, type SQL } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../db/client.js";
+import { withSuperuserBypass } from "../../db/rls.js";
 import { clinicalTeethCatalog, toothDefectsCatalog } from "../../db/schema.js";
 import { getToothDefectsQuerySchema } from "./outpatientTypes.js";
 
 export async function getTeethCatalogHandler(_req: FastifyRequest, reply: FastifyReply) {
-	const teeth = await db
-		.select()
-		.from(clinicalTeethCatalog)
-		.orderBy(clinicalTeethCatalog.order, clinicalTeethCatalog.id);
+	const teeth = await withSuperuserBypass((tx) =>
+		tx
+			.select()
+			.from(clinicalTeethCatalog)
+			.orderBy(clinicalTeethCatalog.order, clinicalTeethCatalog.id),
+	);
 
 	return reply.send({ count: teeth.length, teeth });
 }
@@ -30,21 +32,25 @@ export async function getToothDefectsHandler(request: FastifyRequest, reply: Fas
 		conditions.push(eq(toothDefectsCatalog.isActive, true));
 	}
 
-	const defects = await db
-		.select()
-		.from(toothDefectsCatalog)
-		.where(conditions.length > 0 ? and(...conditions) : undefined)
-		.orderBy(toothDefectsCatalog.order, toothDefectsCatalog.id);
+	const defects = await withSuperuserBypass((tx) =>
+		tx
+			.select()
+			.from(toothDefectsCatalog)
+			.where(conditions.length > 0 ? and(...conditions) : undefined)
+			.orderBy(toothDefectsCatalog.order, toothDefectsCatalog.id),
+	);
 
 	return reply.send({ count: defects.length, defects });
 }
 
 export async function getToothDefectsTreeHandler(_req: FastifyRequest, reply: FastifyReply) {
-	const allDefects = await db
-		.select()
-		.from(toothDefectsCatalog)
-		.where(eq(toothDefectsCatalog.isActive, true))
-		.orderBy(toothDefectsCatalog.order, toothDefectsCatalog.id);
+	const allDefects = await withSuperuserBypass((tx) =>
+		tx
+			.select()
+			.from(toothDefectsCatalog)
+			.where(eq(toothDefectsCatalog.isActive, true))
+			.orderBy(toothDefectsCatalog.order, toothDefectsCatalog.id),
+	);
 
 	const tree: Record<string, Record<string, typeof allDefects>> = {
 		outpatient: {},

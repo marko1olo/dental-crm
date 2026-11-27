@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import { createPatientInDb } from "../../db/patientsQuery.js";
 import { createAppointmentInDb } from "../../db/appointmentsQuery.js";
 import { openVisitForAppointmentInDb } from "../../db/visitsQuery.js";
@@ -56,7 +57,7 @@ export function registerVisitQuickRoutes(app: FastifyInstance) {
 		const startsAt = new Date().toISOString();
 		const endsAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 		try {
-			const txResult = await withTenantCtx(orgId, async (tx) => {
+			const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 				const chairId = await resolveDefaultChairForCreate(tx, orgId);
 				if (!chairId) {
 					return { kind: "no_chair" as const };
@@ -123,22 +124,32 @@ export function registerVisitQuickRoutes(app: FastifyInstance) {
 		}
 	};
 
-	const quickVisitRouteOptions = {
-		schema: {
-			description:
-				"Fast visit creation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-			headers: {
-				type: "object",
-				properties: {
-					"idempotency-key": { type: "string" },
-					"x-idempotency-key": { type: "string" },
-					"organizationid": { type: "string" },
-					"x-organization-id": { type: "string" },
-				},
+	const quickVisitRouteSchema: Record<string, unknown> = {
+		description:
+			"Fast visit creation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				organizationid: { type: "string" },
+				"x-organization-id": { type: "string" },
 			},
 		},
 	};
 
-	app.post("/api/visits/quick", quickVisitRouteOptions, quickVisitHandler);
-	app.post("/api/visits/fast", quickVisitRouteOptions, quickVisitHandler);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/visits/quick",
+		permission: "public",
+		schema: quickVisitRouteSchema,
+		handler: async ({ request, reply }) => quickVisitHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/visits/fast",
+		permission: "public",
+		schema: quickVisitRouteSchema,
+		handler: async ({ request, reply }) => quickVisitHandler(request, reply),
+	});
 }

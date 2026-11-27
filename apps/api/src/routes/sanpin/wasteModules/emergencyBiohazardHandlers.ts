@@ -12,7 +12,7 @@ import {
 import { desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
 import { emergencyBiohazardLogs } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 
@@ -24,7 +24,7 @@ export async function handleGetEmergencyBiohazard(req: FastifyRequest, reply: Fa
 	);
 	if (!organizationId) return;
 
-	const logs = await withTenantCtx(organizationId, async (tx) => {
+	const logs = await withTenantReadCtx(organizationId, async (tx) => {
 		return tx
 			.select()
 			.from(emergencyBiohazardLogs)
@@ -63,7 +63,7 @@ export async function handlePostEmergencyBiohazard(req: FastifyRequest, reply: F
 	const year = new Date().getFullYear();
 	const actNumber = data.actSanPiNNumber || `АКТ-ВБИ-${year}-${crypto.randomInt(100, 999)}`;
 
-	const [log] = await withTenantCtx(organizationId, async (tx) => {
+	const [log] = await withTenantWriteCtx(organizationId, async (tx) => {
 		return tx
 			.insert(emergencyBiohazardLogs)
 			.values({

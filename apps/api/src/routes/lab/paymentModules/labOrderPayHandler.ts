@@ -17,7 +17,7 @@ const payBodySchema = z.object({
 }).strict();
 
 export async function labOrderPayHandler(
-	request: FastifyRequest<{ Params: { id: string } }>,
+	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
 	const orgId = await requireResolvedStaffOrAdminOrganizationId(

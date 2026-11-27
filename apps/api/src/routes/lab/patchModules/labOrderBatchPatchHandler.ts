@@ -7,7 +7,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -81,7 +81,7 @@ export async function batchPatchLabOrdersHandler(request: FastifyRequest, reply:
 	const targetStatus = status as LabOrderStatus;
 
 	try {
-		const batchResult = await withTenantCtx(orgId, async (tx) => {
+		const batchResult = await withTenantWriteCtx(orgId, async (tx) => {
 			const updatedOrders: Array<typeof labOrders.$inferSelect> = [];
 			const skippedOrders: Array<{ id: string; reason: string }> = [];
 

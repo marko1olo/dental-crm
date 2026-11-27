@@ -9,7 +9,7 @@ import { computePackagingExpirationDate, type SterilizationPackagingType } from 
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../../db/rls.js";
 import { sterilizationLogs, users } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
@@ -39,7 +39,7 @@ export async function handleScanSterilization(req: FastifyRequest, reply: Fastif
 
 	const passedIndicator = data.status === "passed";
 
-	const log = await withTenantCtx(organizationId, async (tx) => {
+	const log = await withTenantWriteCtx(organizationId, async (tx) => {
 		let verifiedOperatorId: string | null = null;
 		if (data.operatorId) {
 			const [operator] = await tx

@@ -1,7 +1,8 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { onTenantTxCommit, withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	toothStateHistory,
 	toothStates,
@@ -182,8 +183,46 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		}
 
 		let patientExists: { id: string } | null = null;
+		let firstRow: {
+			toothNumber: number;
+			state: string;
+			surfaces: unknown;
+			notes: string | null;
+			canalMeasurements: unknown;
+			clinicalData: unknown;
+		} | undefined;
 		try {
-			patientExists = await ensurePatientInOrganization(patientId, organizationId);
+			const loaded = await withTenantReadCtx(organizationId, async (tx) => {
+				const foundPatient = await ensurePatientInOrganization(
+					patientId,
+					organizationId,
+					tx,
+				);
+				if (!foundPatient) {
+					return { patientExists: null, firstRow: undefined };
+				}
+				const [row] = await tx
+					.select({
+						toothNumber: toothStates.toothNumber,
+						state: toothStates.state,
+						surfaces: toothStates.surfaces,
+						notes: toothStates.notes,
+						canalMeasurements: toothStates.canalMeasurements,
+						clinicalData: toothStates.clinicalData,
+					})
+					.from(toothStates)
+					.where(
+						and(
+							eq(toothStates.organizationId, organizationId),
+							eq(toothStates.patientId, patientId),
+							eq(toothStates.toothNumber, toothNumber),
+						),
+					)
+					.limit(1);
+				return { patientExists: foundPatient, firstRow: row };
+			});
+			patientExists = loaded.patientExists;
+			firstRow = loaded.firstRow;
 		} catch (dbErr) {
 			if (isDbUnavailable(dbErr)) {
 				return reply.code(503).send({
@@ -206,50 +245,19 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			canalMeasurements: EndoToothClinicalData["canals"] | null;
 			clinicalData: EndoToothClinicalData | null;
 		} | undefined;
-		try {
-			const firstRow = await withTenantCtx(organizationId, async (tx) => {
-				const [row] = await tx
-					.select({
-						toothNumber: toothStates.toothNumber,
-						state: toothStates.state,
-						surfaces: toothStates.surfaces,
-						notes: toothStates.notes,
-						canalMeasurements: toothStates.canalMeasurements,
-						clinicalData: toothStates.clinicalData,
-					})
-					.from(toothStates)
-					.where(
-						and(
-							eq(toothStates.organizationId, organizationId),
-							eq(toothStates.patientId, patientId),
-							eq(toothStates.toothNumber, toothNumber),
-						),
-					)
-					.limit(1);
-				return row;
-			});
-			if (firstRow) {
-				tooth = {
-					toothNumber: firstRow.toothNumber,
-					state: firstRow.state,
-					surfaces: Array.isArray(firstRow.surfaces) ? (firstRow.surfaces as string[]) : null,
-					notes: firstRow.notes,
-					canalMeasurements: Array.isArray(firstRow.canalMeasurements)
-						? (firstRow.canalMeasurements as EndoToothClinicalData["canals"])
-						: null,
-					clinicalData: (firstRow.clinicalData && typeof firstRow.clinicalData === "object")
-						? (firstRow.clinicalData as EndoToothClinicalData)
-						: null,
-				};
-			}
-		} catch (dbErr) {
-			if (isDbUnavailable(dbErr)) {
-				return reply.code(503).send({
-					error: "ServiceUnavailable",
-					message: "База данных временно недоступна. Параметры корневых каналов недоступны.",
-				});
-			}
-			throw dbErr;
+		if (firstRow) {
+			tooth = {
+				toothNumber: firstRow.toothNumber,
+				state: firstRow.state,
+				surfaces: Array.isArray(firstRow.surfaces) ? (firstRow.surfaces as string[]) : null,
+				notes: firstRow.notes,
+				canalMeasurements: Array.isArray(firstRow.canalMeasurements)
+					? (firstRow.canalMeasurements as EndoToothClinicalData["canals"])
+					: null,
+				clinicalData: (firstRow.clinicalData && typeof firstRow.clinicalData === "object")
+					? (firstRow.clinicalData as EndoToothClinicalData)
+					: null,
+			};
 		}
 
 		await auditMedicalAccessFromRequest(request, {
@@ -374,23 +382,6 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			return reply.code(400).send({ error: "InvalidParameters", message: "Некорректный ID пациента или номер зуба" });
 		}
 
-		let patientExists: { id: string } | null = null;
-		try {
-			patientExists = await ensurePatientInOrganization(patientId, organizationId);
-		} catch (dbErr) {
-			if (isDbUnavailable(dbErr)) {
-				return reply.code(503).send({
-					error: "ServiceUnavailable",
-					message: "База данных временно недоступна. Параметры корневых каналов не сохранены.",
-				});
-			}
-			throw dbErr;
-		}
-
-		if (!patientExists) {
-			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
-		}
-
 		const parsed = endoUpsertPayloadSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -492,7 +483,10 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		};
 
 		try {
-			const updated = await withTenantCtx(organizationId, async (tx) => {
+			const txResult = await withTenantWriteCtx(organizationId, async (tx) => {
+				if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+					return { kind: "patient_not_found" as const };
+				}
 				const [existing] = await tx
 					.select({
 						state: toothStates.state,
@@ -605,13 +599,20 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 					clinicalData: resolvedClinicalData,
 				};
 
-				return responsePayload;
+				onTenantTxCommit(() => {
+					wsBroker.broadcastToOrganization(organizationId, {
+						type: "UPDATE_ODONTOGRAM",
+						payload: { patientId, states: [responsePayload] },
+					});
+				});
+
+				return { kind: "ok" as const, payload: responsePayload };
 			});
 
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "UPDATE_ODONTOGRAM",
-				payload: { patientId, states: [updated] },
-			});
+			if (txResult.kind === "patient_not_found") {
+				return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
+			}
+			const updated = txResult.payload;
 
 			return reply.send({ success: true, data: updated, ...updated });
 		} catch (dbErr) {
@@ -626,8 +627,18 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 	};
 
 	// Регистрация канонического пути (в хендлере поддержан алиас :tooth)
-	app.get("/api/patients/:patientId/tooth-states/:toothNumber/endo", getEndoHandler);
-	app.post("/api/patients/:patientId/tooth-states/:toothNumber/endo", postEndoHandler);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/tooth-states/:toothNumber/endo",
+		permission: "public",
+		handler: async ({ request, reply }) => getEndoHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/:patientId/tooth-states/:toothNumber/endo",
+		permission: "public",
+		handler: async ({ request, reply }) => postEndoHandler(request, reply),
+	});
 }
 
 export default registerEndoRoutes;

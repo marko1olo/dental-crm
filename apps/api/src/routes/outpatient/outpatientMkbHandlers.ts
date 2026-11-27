@@ -1,6 +1,6 @@
 import { and, eq, ilike, or, type SQL } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../db/client.js";
+import { withSuperuserBypass } from "../../db/rls.js";
 import { mkbCategories } from "../../db/schema.js";
 import { getMkbCategoriesQuerySchema } from "./outpatientTypes.js";
 
@@ -44,13 +44,15 @@ export async function getMkbCategoriesTreeHandler(request: FastifyRequest, reply
 
 	const filtered = conditions.filter((c): c is SQL => c !== undefined);
 
-	const items = await db
-		.select()
-		.from(mkbCategories)
-		.where(filtered.length > 0 ? and(...filtered) : undefined)
-		.orderBy(mkbCategories.order, mkbCategories.code)
-		.limit(parsed.data.limit)
-		.offset(parsed.data.offset);
+	const items = await withSuperuserBypass((tx) =>
+		tx
+			.select()
+			.from(mkbCategories)
+			.where(filtered.length > 0 ? and(...filtered) : undefined)
+			.orderBy(mkbCategories.order, mkbCategories.code)
+			.limit(parsed.data.limit)
+			.offset(parsed.data.offset),
+	);
 
 	return reply.send({ count: items.length, dentalOnly: isDentalOnly, items });
 }

@@ -9,7 +9,7 @@ import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
 import { generalCleaningLogs, users } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 
@@ -21,7 +21,7 @@ export async function handleGetCleaning(req: FastifyRequest, reply: FastifyReply
 	);
 	if (!organizationId) return;
 
-	const logs = await withTenantCtx(organizationId, async (tx) => {
+	const logs = await withTenantReadCtx(organizationId, async (tx) => {
 		return tx
 			.select({
 				id: generalCleaningLogs.id,
@@ -75,7 +75,7 @@ export async function handlePostCleaning(req: FastifyRequest, reply: FastifyRepl
 	}
 	const data = parsed.data;
 
-	const [log] = await withTenantCtx(organizationId, async (tx) => {
+	const [log] = await withTenantWriteCtx(organizationId, async (tx) => {
 		return tx
 			.insert(generalCleaningLogs)
 			.values({
@@ -124,7 +124,7 @@ export async function handleVerifyCleaning(req: FastifyRequest, reply: FastifyRe
 		});
 	}
 	const id = idParsed.data;
-	const [updated] = await withTenantCtx(organizationId, async (tx) => {
+	const [updated] = await withTenantWriteCtx(organizationId, async (tx) => {
 		return tx
 			.update(generalCleaningLogs)
 			.set({ status: "verified_by_inspector" })

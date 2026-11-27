@@ -1,7 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../../db/rls.js";
 import { sterilizerEquipments } from "../../../../db/schema.js";
 import { createSterilizerEquipmentDtoSchema } from "../sterilizationSchemas.js";
 
@@ -25,7 +24,7 @@ export async function handleCreateSterilizerEquipment(
 	}
 	const data = parsed.data;
 
-	const [created] = await withTenantCtx(organizationId, async (tx) => {
+	const [created] = await withTenantWriteCtx(organizationId, async (tx) => {
 		return tx
 			.insert(sterilizerEquipments)
 			.values({

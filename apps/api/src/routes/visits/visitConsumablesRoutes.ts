@@ -25,7 +25,8 @@ import {
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
-import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { onTenantTxCommit, withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	inventoryTransactions,
 	treatmentConsumableDeductions,
@@ -152,7 +153,7 @@ async function handlePostVisitConsumables(
 	const doctorUserId = identity.userId ?? request.user?.id ?? null;
 
 	try {
-		const outcome = await withTenantCtx(orgId, async (tx) => {
+		const outcome = await withTenantWriteCtx(orgId, async (tx) => {
 			if (effectiveIdemKey) {
 				const [existingDeduction] = await tx
 					.select()
@@ -395,7 +396,7 @@ async function handleGetVisitConsumables(
 		});
 	}
 
-	const transactions = await withTenantCtx(orgId, async (tx) => {
+	const transactions = await withTenantReadCtx(orgId, async (tx) => {
 		return tx
 			.select()
 			.from(inventoryTransactions)
@@ -415,25 +416,49 @@ async function handleGetVisitConsumables(
 	});
 }
 
-const consumablesMutationOptions = {
-	schema: {
-		description: "Visit consumables mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-		headers: {
-			type: "object",
-			properties: {
-				"idempotency-key": { type: "string" },
-				"x-idempotency-key": { type: "string" },
-				organizationid: { type: "string" },
-				"x-organization-id": { type: "string" },
-			},
+const consumablesMutationSchema: Record<string, unknown> = {
+	description: "Visit consumables mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+	headers: {
+		type: "object",
+		properties: {
+			"idempotency-key": { type: "string" },
+			"x-idempotency-key": { type: "string" },
+			organizationid: { type: "string" },
+			"x-organization-id": { type: "string" },
 		},
 	},
-} as const;
+};
 
 export function registerVisitConsumablesRoutes(app: FastifyInstance) {
-	app.post("/api/visits/:visitId/consumables", consumablesMutationOptions, handlePostVisitConsumables);
-	app.post("/api/v1/visits/:visitId/consumables", consumablesMutationOptions, handlePostVisitConsumables);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/visits/:visitId/consumables",
+		permission: "public",
+		schema: consumablesMutationSchema,
+		handler: async ({ request, reply }) =>
+			handlePostVisitConsumables(request as FastifyRequest<{ Params: VisitConsumablesRouteParams }>, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/v1/visits/:visitId/consumables",
+		permission: "public",
+		schema: consumablesMutationSchema,
+		handler: async ({ request, reply }) =>
+			handlePostVisitConsumables(request as FastifyRequest<{ Params: VisitConsumablesRouteParams }>, reply),
+	});
 
-	app.get("/api/visits/:visitId/consumables", handleGetVisitConsumables);
-	app.get("/api/v1/visits/:visitId/consumables", handleGetVisitConsumables);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/visits/:visitId/consumables",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleGetVisitConsumables(request as FastifyRequest<{ Params: VisitConsumablesRouteParams }>, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/v1/visits/:visitId/consumables",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleGetVisitConsumables(request as FastifyRequest<{ Params: VisitConsumablesRouteParams }>, reply),
+	});
 }

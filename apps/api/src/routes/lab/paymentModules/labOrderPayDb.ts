@@ -1,6 +1,6 @@
 import { kopecksToRub, rubToKopecks } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { cashBoxes, cashExpenseReasons, cashOperations, labOrders } from "../../../db/schema.js";
 import { ensureOrganizationExpenseReasons } from "../../../db/seeds/seed_cash_and_reasons.js";
 import { resolveAmountToPayKopecks, resolveTargetCashBox } from "./labOrderCashBoxFinder.js";
@@ -32,7 +32,7 @@ export async function executeLabOrderPayment(
 	orderId: string,
 	input: LabOrderPayInput,
 ): Promise<LabOrderPayResult> {
-	return withTenantCtx(orgId, async (tx) => {
+	return withTenantWriteCtx(orgId, async (tx) => {
 		const [order] = await tx
 			.select()
 			.from(labOrders)

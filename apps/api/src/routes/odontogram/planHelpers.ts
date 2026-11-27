@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { generateUuidV7, rublesToKopecks } from "@dental/shared";
-import { withTenantCtx, type TenantDb } from "../../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../../db/rls.js";
 import {
 	patients,
 	treatmentItems,
@@ -45,7 +45,7 @@ export async function ensurePatientInOrganization(
 			.limit(1);
 		return patient ?? null;
 	};
-	return tx ? run(tx) : withTenantCtx(organizationId, run);
+	return tx ? run(tx) : withTenantReadCtx(organizationId, run);
 }
 
 export function numeric(value: unknown): number {
@@ -271,7 +271,7 @@ export async function loadTreatmentPlansForPatient(
 		);
 	};
 
-	return tx ? run(tx) : withTenantCtx(organizationId, run);
+	return tx ? run(tx) : withTenantReadCtx(organizationId, run);
 }
 
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";

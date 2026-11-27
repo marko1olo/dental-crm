@@ -8,8 +8,9 @@
 
 import type { FastifyInstance } from "fastify";
 import { and, eq } from "drizzle-orm";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { patients } from "../../db/schema.js";
 import { imagingStudies } from "../../db/schema/imaging.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
@@ -21,11 +22,13 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 	 * POST /api/orthodontics/:patientId/ceph-analysis
 	 * Фиксация цефалометрического исследования ТРГ в карте пациента (PostgreSQL 18).
 	 */
-	app.post<{ Params: { patientId: string } }>(
-		`${prefix}/:patientId/ceph-analysis`,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: `${prefix}/:patientId/ceph-analysis`,
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
+			if (!orgId) return reply;
 
 			const identity = getRequestIdentity(request);
 			const staffRole = identity.role ?? request.user?.role ?? null;
@@ -58,7 +61,7 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 			}
 			const body = parsedBody.data;
 
-			const txResult = await withTenantCtx(orgId, async (tx) => {
+			const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 				const [patient] = await tx
 					.select({
 						id: patients.id,
@@ -181,17 +184,19 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 
 			return reply.send(txResult.payload);
 		},
-	);
+	});
 
 	/**
 	 * GET /api/orthodontics/:patientId/ceph-analysis
 	 * Получение актуального цефалометрического анализа ТРГ из PostgreSQL 18.
 	 */
-	app.get<{ Params: { patientId: string } }>(
-		`${prefix}/:patientId/ceph-analysis`,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: `${prefix}/:patientId/ceph-analysis`,
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
+			if (!orgId) return reply;
 
 			const identity = getRequestIdentity(request);
 			const staffRole = identity.role ?? request.user?.role ?? null;
@@ -214,7 +219,7 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 			}
 			const { patientId } = parsedParams.data;
 
-			const patient = await withTenantCtx(orgId, async (tx) => {
+			const patient = await withTenantReadCtx(orgId, async (tx) => {
 				const [row] = await tx
 					.select({
 						id: patients.id,
@@ -238,5 +243,5 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 				study,
 			});
 		},
-	);
+	});
 }

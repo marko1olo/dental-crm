@@ -6,7 +6,7 @@ import { computePackagingExpirationDate, type SterilizationPackagingType } from 
 import { and, desc, eq, gte } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { onTenantTxCommit, withTenantCtx } from "../../../../db/rls.js";
+import { onTenantTxCommit, withTenantWriteCtx } from "../../../../db/rls.js";
 import { preSterilizationCleaningLogs, sterilizationLogs } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
@@ -33,7 +33,7 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 	const packagingType = String(body.packagingType || (isDelicate ? "kraft_heat_sealed" : "kraft_self_adhesive"));
 	const now = new Date();
 	const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-	const { log, stockDeduction, cycleNumber, cycleTimeLabel } = await withTenantCtx(organizationId, async (tx) => {
+	const { log, stockDeduction, cycleNumber, cycleTimeLabel } = await withTenantWriteCtx(organizationId, async (tx) => {
 		const [lastCycle] = await tx
 			.select({ cycleNumber: sterilizationLogs.cycleNumber })
 			.from(sterilizationLogs)

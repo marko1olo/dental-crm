@@ -3,7 +3,8 @@ import type { FastifyInstance } from "fastify";
 import { isValidUuid, multiplyKopecks, rublesToKopecks, toExactKopecks } from "@dental/shared";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { onTenantTxCommit, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	treatmentItems,
 	treatmentPlanItemsNew,
@@ -68,15 +69,17 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 	 * Завершение позиций плана лечения (или целого этапа) при проведении приема
 	 * (Closed Loop Lifecycle: useVisitCompletion -> complete-items -> TreatmentPlanRoadmap)
 	 */
-	app.post<{ Params: PlanCompletionParams }>(
-		"/api/patients/:patientId/treatment-plans/:planId/complete-items",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/:patientId/treatment-plans/:planId/complete-items",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 				request,
 				reply,
 				"complete treatment plan items",
 			);
-			if (!organizationId) return;
+			if (!organizationId) return reply;
 
 			const identity = getRequestIdentity(request);
 			const staffRole = identity.role ?? request.user?.role ?? null;
@@ -90,7 +93,15 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const { patientId, planId } = request.params;
+			const rawParams = request.params;
+			const patientId =
+				typeof rawParams === "object" && rawParams !== null && "patientId" in rawParams && typeof rawParams.patientId === "string"
+					? rawParams.patientId
+					: "";
+			const planId =
+				typeof rawParams === "object" && rawParams !== null && "planId" in rawParams && typeof rawParams.planId === "string"
+					? rawParams.planId
+					: "";
 			if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(planId)) {
 				return reply.code(400).send({ error: "InvalidParameters" });
 			}
@@ -132,7 +143,7 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 
 			const body = parsed.data;
 
-			const result = await withTenantCtx(organizationId, async (tx) => {
+			const result = await withTenantWriteCtx(organizationId, async (tx) => {
 				if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
 					return { patientNotFound: true as const };
 				}
@@ -537,5 +548,5 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 				plan: updatedPlan,
 			});
 		},
-	);
+	});
 }

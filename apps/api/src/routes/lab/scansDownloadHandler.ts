@@ -12,13 +12,14 @@ import {
 } from "../../services/labScanDirectUpload.js";
 
 export async function handleLabScanDownloadUrl(
-	request: FastifyRequest<{
-		Params: { id: string };
-		Querystring: { storageKey?: string; expiresInSeconds?: string };
-	}>,
+	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
-	const id = request.params.id;
+	const rawId =
+		typeof request.params === "object" && request.params !== null && "id" in request.params
+			? request.params.id
+			: undefined;
+	const id = typeof rawId === "string" ? rawId : "";
 	const identity = getRequestIdentity(request);
 	const orgId = identity?.organizationId;
 	if (!orgId) {
@@ -38,7 +39,10 @@ export async function handleLabScanDownloadUrl(
 		if (!sessionValid) return;
 	}
 
-	const query = request.query;
+	const query =
+		typeof request.query === "object" && request.query !== null
+			? (request.query as Record<string, unknown>)
+			: undefined;
 	const storageKey = query?.storageKey;
 	if (!storageKey || typeof storageKey !== "string" || !storageKey.trim()) {
 		return reply.code(400).send({
@@ -73,7 +77,10 @@ export async function handleLabScanDownloadUrl(
 		});
 	}
 
-	const expiresInSeconds = query.expiresInSeconds ? Number.parseInt(query.expiresInSeconds, 10) : undefined;
+	const expiresInSeconds =
+		typeof query.expiresInSeconds === "string"
+			? Number.parseInt(query.expiresInSeconds, 10)
+			: undefined;
 	const presigned = getLabScanDownloadPresignedUrl({
 		storageKey,
 		expiresInSeconds: Number.isNaN(expiresInSeconds) ? undefined : expiresInSeconds,

@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { outpatientVerifications } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { checkLockParamsSchema } from "./outpatientTypes.js";
@@ -19,7 +19,7 @@ export async function checkLockStatusHandler(request: FastifyRequest, reply: Fas
 		});
 	}
 
-	const [verif] = await withTenantCtx(orgId, async (tx) =>
+	const [verif] = await withTenantReadCtx(orgId, async (tx) =>
 		tx
 			.select()
 			.from(outpatientVerifications)

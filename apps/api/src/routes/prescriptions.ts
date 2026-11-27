@@ -4,7 +4,8 @@
  * Decomposed facade strictly <= 80 lines (Mandate 8b).
  */
 
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import { defineStreamRoute } from "../core/routeFactories.js";
 import {
 	handlePrescriptionPreviewHtml,
 	handlePrescriptionReferenceCatalog,
@@ -32,38 +33,95 @@ export {
 	signUkepBodySchema,
 };
 
-const prescriptionMutationOptions = {
-	schema: {
-		description: "Prescription mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-		headers: {
-			type: "object",
-			properties: {
-				"idempotency-key": { type: "string" },
-				"x-idempotency-key": { type: "string" },
-				organizationid: { type: "string" },
-				"x-organization-id": { type: "string" },
-			},
+const prescriptionMutationSchema: Record<string, unknown> = {
+	description: "Prescription mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+	headers: {
+		type: "object",
+		properties: {
+			"idempotency-key": { type: "string" },
+			"x-idempotency-key": { type: "string" },
+			organizationid: { type: "string" },
+			"x-organization-id": { type: "string" },
 		},
 	},
-} as const;
+};
 
 export async function registerPrescriptionRoutes(app: FastifyInstance) {
 	// 1. Reference catalog & preview
-	app.get("/api/prescriptions/reference-catalog", handlePrescriptionReferenceCatalog);
-	app.post("/api/prescriptions/preview-html", prescriptionMutationOptions, handlePrescriptionPreviewHtml);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/prescriptions/reference-catalog",
+		permission: "public",
+		handler: async ({ request, reply }) => handlePrescriptionReferenceCatalog(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/prescriptions/preview-html",
+		permission: "public",
+		schema: prescriptionMutationSchema,
+		handler: async ({ request, reply }) => handlePrescriptionPreviewHtml(request, reply),
+	});
 
 	// 2. Statutory validation & verification
-	app.post("/api/prescriptions/validate", prescriptionMutationOptions, handleValidatePrescription);
-	app.post("/api/prescriptions/:id/verify", prescriptionMutationOptions, handleVerifyPrescription);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/prescriptions/validate",
+		permission: "public",
+		schema: prescriptionMutationSchema,
+		handler: async ({ request, reply }) => handleValidatePrescription(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/prescriptions/:id/verify",
+		permission: "public",
+		schema: prescriptionMutationSchema,
+		handler: async ({ request, reply }) => handleVerifyPrescription(request, reply),
+	});
 
 	// 3. Clinical queries
-	app.get("/api/prescriptions", handleListPrescriptions);
-	app.get("/api/prescriptions/:id", handleGetPrescriptionById);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/prescriptions",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleListPrescriptions(
+				request as FastifyRequest<{ Querystring: { patientId?: string; visitId?: string; formType?: string; status?: string } }>,
+				reply,
+			),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/prescriptions/:id",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleGetPrescriptionById(request as FastifyRequest<{ Params: { id: string } }>, reply),
+	});
 
 	// 4. Clinical authoring & UKEP signing
-	app.post("/api/prescriptions", prescriptionMutationOptions, handleCreatePrescription);
-	app.post("/api/prescriptions/:id/sign-ukep", prescriptionMutationOptions, handleSignUkepPrescription);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/prescriptions",
+		permission: "public",
+		schema: prescriptionMutationSchema,
+		handler: async ({ request, reply }) => handleCreatePrescription(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/prescriptions/:id/sign-ukep",
+		permission: "public",
+		schema: prescriptionMutationSchema,
+		handler: async ({ request, reply }) => handleSignUkepPrescription(request, reply),
+	});
 
 	// 5. Official print-ready HTML
-	app.get("/api/prescriptions/:id/print-html", handlePrescriptionPrintHtml);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/prescriptions/:id/print-html",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handlePrescriptionPrintHtml(
+				request as FastifyRequest<{ Params: { id: string }; Querystring: { withStamp?: string; autoprint?: string } }>,
+				reply,
+			),
+	});
 }

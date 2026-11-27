@@ -4,7 +4,8 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
 	fetchPatientLatestPeriodontogram,
@@ -59,7 +60,7 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 		let patientId: string;
 		let data: Awaited<ReturnType<typeof fetchPatientLatestPeriodontogram>>;
 		try {
-			const result = await withTenantCtx(orgId, async (tx) => {
+			const result = await withTenantReadCtx(orgId, async (tx) => {
 				const resolvedPatientId = await resolvePerioPatientId(orgId, rawPatientId, tx);
 				const latestData = await fetchPatientLatestPeriodontogram(
 					orgId,
@@ -162,7 +163,7 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 				: undefined;
 
 		try {
-			const { patientId, result } = await withTenantCtx(orgId, async (tx) => {
+			const { patientId, result } = await withTenantWriteCtx(orgId, async (tx) => {
 				const resolvedPatientId = await resolvePerioPatientId(orgId, rawPatientId, tx);
 				const upsertResult = await upsertPatientFullPeriodontogram({
 					orgId,
@@ -214,24 +215,38 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 	};
 
 	// Единые SSOT роуты: /api/periodontogram/:patientId и /api/perio/:patientId
-	const perioMutationOptions = {
-		schema: {
-			description: "Periodontogram mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-			headers: {
-				type: "object",
-				properties: {
-					"idempotency-key": { type: "string" },
-					"x-idempotency-key": { type: "string" },
-					organizationid: { type: "string" },
-					"x-organization-id": { type: "string" },
-				},
+	const perioMutationSchema = {
+		description: "Periodontogram mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				organizationid: { type: "string" },
+				"x-organization-id": { type: "string" },
 			},
 		},
 	} as const;
-	app.get("/api/periodontogram/:patientId", handleGet);
-	app.get("/api/perio/:patientId", handleGet);
-	app.post("/api/periodontogram/:patientId", perioMutationOptions, handlePost);
-	app.post("/api/perio/:patientId", perioMutationOptions, handlePost);
-	app.put("/api/periodontogram/:patientId", perioMutationOptions, handlePost);
-	app.put("/api/perio/:patientId", perioMutationOptions, handlePost);
+	for (const path of ["/api/periodontogram/:patientId", "/api/perio/:patientId"]) {
+		defineStreamRoute(app, {
+			method: "GET",
+			path,
+			permission: "public",
+			handler: async ({ request, reply }) => handleGet(request, reply),
+		});
+		defineStreamRoute(app, {
+			method: "POST",
+			path,
+			permission: "public",
+			schema: perioMutationSchema,
+			handler: async ({ request, reply }) => handlePost(request, reply),
+		});
+		defineStreamRoute(app, {
+			method: "PUT",
+			path,
+			permission: "public",
+			schema: perioMutationSchema,
+			handler: async ({ request, reply }) => handlePost(request, reply),
+		});
+	}
 }

@@ -6,8 +6,9 @@ import {
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireClinicalMutationAccess } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	getDocumentById,
 	getDocumentsByPatientId,
@@ -61,316 +62,326 @@ const documentIdParamsSchema = z
 	.strict();
 
 export async function register(app: FastifyInstance) {
-	app.post("/api/documents/:id/issue", async (request, reply) => {
-		if (
-			!(await requireClinicalMutationAccess(request, reply, "document issue"))
-		)
-			return;
-		// БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
-		// Все проверки принадлежности сравнивали подделку саму с собой и сходились,
-		// а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
-		// Организация теперь берётся только из проверенного токена (401 иначе).
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const parsedParams = documentIdParamsSchema.safeParse(request.params);
-		if (!parsedParams.success) {
-			return reply
-				.code(400)
-				.send(
-					apiError("Некорректный идентификатор документа (ожидается UUID)"),
-				);
-		}
-		const { id } = parsedParams.data;
-		const existing = await getDocumentById(orgId, id);
-		if (!existing) {
-			return reply.code(404).send(apiError("Документ не найден"));
-		}
-
-		// Выдача клинических медицинских документов разрешена только клиническому персоналу
-		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? request.user?.role ?? null;
-		const evalAccess = evaluateClinicalAccess(staffRole, {
-			clinicalRole: identity.clinicalRole ?? null,
-			canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
-			specialties: identity.specialties ?? null,
-		});
-		if (
-			clinicalDocKinds.has(existing.kind) &&
-			!evalAccess.hasClinicalAccess &&
-			!isReceptionistAllowedPrimaryDoc(existing.kind, staffRole)
-		) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "clinical.document.issue",
-				role: staffRole,
-				message:
-					"Выдача клинических медицинских документов доступна только медицинскому персоналу (врачу или ассистенту).",
-			});
-		}
-		if (existing.status === "voided") {
-			return reply
-				.code(409)
-				.send(apiError("Аннулированный документ нельзя выдать."));
-		}
-		if (existing.status === "issued") {
-			return reply.code(409).send(apiError("Документ уже выдан."));
-		}
-		const earlyParsedIssueInput = issueDocumentSchema.safeParse(request.body);
-		if (!earlyParsedIssueInput.success) {
-			return reply.code(400).send({
-				error: "DocumentIssueValidationFailed",
-				message: repairMojibakeText(documentIssueValidationMessage),
-			});
-		}
-		const patient = await getPatientByIdFromDb(orgId, existing.patientId);
-		if (!patient) {
-			return reply.code(404).send(apiError("Пациент не найден"));
-		}
-		if (patient.status === "archived" && !evalAccess.hasClinicalAccess) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "patients.archived.read",
-				role: staffRole,
-				message:
-					"Отказ в доступе к документам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13).",
-			});
-		}
-		const patientPayments =
-			taxDocumentUsesPaymentSnapshot(existing.kind) ||
-			taxDocumentDuplicateSensitive(existing.kind)
-				? await getPaymentsByPatientIdInDb(orgId, existing.patientId)
-				: [];
-		const taxPaymentSnapshot = taxDocumentUsesPaymentSnapshot(existing.kind)
-			? buildTaxPaymentSnapshotForIssue(
-					existing,
-					patientPayments,
-					await getDocumentsByPatientId(orgId, existing.patientId),
-				)
-			: null;
-		if (taxDocumentUsesPaymentSnapshot(existing.kind) && !taxPaymentSnapshot) {
-			const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(
-				existing,
-				patientPayments,
-			);
-			if (duplicateTaxCertificate) {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/documents/:id/issue",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (
+				!(await requireClinicalMutationAccess(request, reply, "document issue"))
+			)
+				return reply;
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return reply;
+			const parsedParams = documentIdParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
 				return reply
-					.code(409)
+					.code(400)
 					.send(
-						apiError(
-							"За этот налоговый год и этого налогоплательщика уже выдана налоговая справка. Справка должна быть годовой; сначала аннулируйте или корректно оформите предыдущую справку.",
-						),
+						apiError("Некорректный идентификатор документа (ожидается UUID)"),
 					);
 			}
-			return reply
-				.code(409)
-				.send(
-					apiError(
-						"Для налогового документа нет новых оплаченных фискальных чеков за выбранный год.",
-					),
-				);
-		}
+			const { id } = parsedParams.data;
 
-		const issueCandidate = taxSnapshotDocument(existing, taxPaymentSnapshot);
-		const requestHost = request.headers.host ?? "127.0.0.1:4100";
-		const requestProto =
-			(request.headers["x-forwarded-proto"] as string) ?? "http";
-		const origin = `${requestProto}://${requestHost}`;
-
-		// Реальный контекст вместо пустой заглушки: без профиля клиники выдача
-		// договоров и актов отклонялась как «профиль заполнен не полностью».
-		const renderContext = {
-			...(await resolveDocumentRenderContext(orgId, existing.patientId)),
-			origin,
-		};
-		const chainBlockReason =
-			await documentIssueChainBlockReason(issueCandidate);
-		if (chainBlockReason) {
-			return reply.code(409).send(apiError(chainBlockReason));
-		}
-		const blockReason = documentIssueBlockReason(
-			issueCandidate,
-			patient,
-			renderContext,
-		);
-		if (blockReason) {
-			return reply.code(409).send(apiError(blockReason));
-		}
-
-		// Контроль суммарных возвратов именно в момент ВЫДАЧИ — здесь деньги реально
-		// покидают кассу. Проверка при создании черновика недостаточна: между
-		// созданием и выдачей мог быть выдан другой возврат по тому же чеку.
-		if (issueCandidate.kind === "payment_refund_correction_request") {
-			const [refundPayments, refundDocuments] = await Promise.all([
-				getPaymentsByPatientIdInDb(orgId, existing.patientId),
-				getDocumentsByPatientId(orgId, existing.patientId),
-			]);
-			const refundLimitError = paymentRefundCorrectionSelectionErrorForDocument(
-				issueCandidate,
-				refundPayments,
-				refundDocuments,
-				existing.id,
-			);
-			if (refundLimitError) {
-				return reply.code(409).send(apiError(refundLimitError));
+			const earlyParsedIssueInput = issueDocumentSchema.safeParse(request.body);
+			if (!earlyParsedIssueInput.success) {
+				return reply.code(400).send({
+					error: "DocumentIssueValidationFailed",
+					message: repairMojibakeText(documentIssueValidationMessage),
+				});
 			}
-		}
-		const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(
-			issueCandidate,
-			patientPayments,
-		);
-		if (duplicateTaxCertificate) {
-			return reply
-				.code(409)
-				.send(
-					apiError(
-						"За этот налоговый год и этого налогоплательщика уже выдана налоговая справка. Справка должна быть годовой; сначала аннулируйте или корректно оформите предыдущую справку.",
-					),
-				);
-		}
 
-		const parsedIssueInput = issueDocumentSchema.safeParse(request.body);
-		if (!parsedIssueInput.success) {
-			return reply.code(400).send({
-				error: "DocumentIssueValidationFailed",
-				message: repairMojibakeText(documentIssueValidationMessage),
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole, {
+				clinicalRole: identity.clinicalRole ?? null,
+				canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+				specialties: identity.specialties ?? null,
 			});
-		}
 
-		const signatureAttestation = repairMojibakeDeep(
-			parsedIssueInput.data.signatureAttestation,
-		);
-		const issuedAt = new Date().toISOString();
-		const releaseJournalEntry = await buildMedicalDocumentReleaseJournalEntry(
-			issueCandidate,
-			issuedAt,
-			signatureAttestation,
-		);
-		const taxXmlSourceSnapshot = taxXmlSourceSnapshotForIssue(
-			issueCandidate,
-			patient,
-			taxPaymentSnapshot,
-			issuedAt,
-			renderContext?.clinicProfile,
-		);
-		let taxXmlSnapshot: TaxXmlSnapshot | null = null;
-		if (issueCandidate.kind === "tax_deduction_certificate" && taxXmlSourceSnapshot) {
-			const taxOfficeCode = configuredTaxOfficeCode();
-			const xmlPatient = frozenTaxXmlPatient(issueCandidate, patient);
-			const xmlClinicProfile = frozenTaxXmlClinicProfile(
-				issueCandidate,
-				renderContext?.clinicProfile ?? taxXmlSourceSnapshot.clinicProfile,
-			);
-			const xmlPayments = frozenTaxXmlPayments(
-				issueCandidate,
-				renderContext?.payments ?? [],
-			);
-			const xmlResult = buildKnd1151156Xml(issueCandidate, xmlPatient, {
-				clinicProfile: xmlClinicProfile,
-				payments: xmlPayments,
-				taxOfficeCode,
-			});
-			if (xmlResult.ok) {
-				const xmlSourceSha256 = taxXmlSourceSnapshotSha256(taxXmlSourceSnapshot);
-				taxXmlSnapshot = {
-					fileName: xmlResult.fileName,
-					xml: xmlResult.xml,
-					taxOfficeCode: (taxOfficeCode ?? "").replace(/\D+/g, ""),
-					sourceSnapshotSha256: xmlSourceSha256 ?? "",
-					createdAt: issuedAt,
-					sha256: createHash("sha256").update(xmlResult.xml).digest("hex"),
+			const requestHost = request.headers.host ?? "127.0.0.1:4100";
+			const requestProto =
+				(request.headers["x-forwarded-proto"] as string) ?? "http";
+			const origin = `${requestProto}://${requestHost}`;
+
+			const prep = await withTenantReadCtx(orgId, async () => {
+				const existing = await getDocumentById(orgId, id);
+				if (!existing) {
+					return { kind: "error" as const, status: 404, body: apiError("Документ не найден") };
+				}
+
+				if (
+					clinicalDocKinds.has(existing.kind) &&
+					!evalAccess.hasClinicalAccess &&
+					!isReceptionistAllowedPrimaryDoc(existing.kind, staffRole)
+				) {
+					return {
+						kind: "error" as const,
+						status: 403,
+						body: {
+							error: "PermissionDenied",
+							permission: "clinical.document.issue",
+							role: staffRole,
+							message:
+								"Выдача клинических медицинских документов доступна только медицинскому персоналу (врачу или ассистенту).",
+						},
+					};
+				}
+				if (existing.status === "voided") {
+					return {
+						kind: "error" as const,
+						status: 409,
+						body: apiError("Аннулированный документ нельзя выдать."),
+					};
+				}
+				if (existing.status === "issued") {
+					return { kind: "error" as const, status: 409, body: apiError("Документ уже выдан.") };
+				}
+
+				const patient = await getPatientByIdFromDb(orgId, existing.patientId);
+				if (!patient) {
+					return { kind: "error" as const, status: 404, body: apiError("Пациент не найден") };
+				}
+				if (patient.status === "archived" && !evalAccess.hasClinicalAccess) {
+					return {
+						kind: "error" as const,
+						status: 403,
+						body: {
+							error: "PermissionDenied",
+							permission: "patients.archived.read",
+							role: staffRole,
+							message:
+								"Отказ в доступе к документам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13).",
+						},
+					};
+				}
+
+				const patientPayments =
+					taxDocumentUsesPaymentSnapshot(existing.kind) ||
+					taxDocumentDuplicateSensitive(existing.kind)
+						? await getPaymentsByPatientIdInDb(orgId, existing.patientId)
+						: [];
+				const taxPaymentSnapshot = taxDocumentUsesPaymentSnapshot(existing.kind)
+					? buildTaxPaymentSnapshotForIssue(
+							existing,
+							patientPayments,
+							await getDocumentsByPatientId(orgId, existing.patientId),
+						)
+					: null;
+				if (taxDocumentUsesPaymentSnapshot(existing.kind) && !taxPaymentSnapshot) {
+					const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(
+						existing,
+						patientPayments,
+					);
+					if (duplicateTaxCertificate) {
+						return {
+							kind: "error" as const,
+							status: 409,
+							body: apiError(
+								"За этот налоговый год и этого налогоплательщика уже выдана налоговая справка. Справка должна быть годовой; сначала аннулируйте или корректно оформите предыдущую справку.",
+							),
+						};
+					}
+					return {
+						kind: "error" as const,
+						status: 409,
+						body: apiError(
+							"Для налогового документа нет новых оплаченных фискальных чеков за выбранный год.",
+						),
+					};
+				}
+
+				const issueCandidate = taxSnapshotDocument(existing, taxPaymentSnapshot);
+				const renderContext = {
+					...(await resolveDocumentRenderContext(orgId, existing.patientId)),
+					origin,
 				};
-			}
-		}
+				const chainBlockReason =
+					await documentIssueChainBlockReason(issueCandidate);
+				if (chainBlockReason) {
+					return { kind: "error" as const, status: 409, body: apiError(chainBlockReason) };
+				}
+				const blockReason = documentIssueBlockReason(
+					issueCandidate,
+					patient,
+					renderContext,
+				);
+				if (blockReason) {
+					return { kind: "error" as const, status: 409, body: apiError(blockReason) };
+				}
 
-		const issuedDocumentCandidate = {
-			...issueCandidate,
-			status: "issued" as const,
-			issuedAt,
-			signatureAttestation,
-			releaseJournalEntry,
-			taxXmlSourceSnapshot,
-			taxXmlSnapshot,
-		};
-		const issuedHtml = renderDocumentHtml(
-			issuedDocumentCandidate,
-			patient,
-			renderContext,
-		);
-		// БЫЛО: слой БД писал в issued_by_user_id литерал "doctor". Колонка —
-		// uuid с внешним ключом на users.id, поэтому выдача документа не просто
-		// указывала фиктивного подписанта, а падала в Postgres (22P02). Реальный
-		// сотрудник берётся из подписанного staff-токена; если авторизованного
-		// человека в запросе нет, пишем null — «подписант не установлен», а не
-		// подставляем чужой идентификатор.
-		// Неделимая ACID транзакция (Мандат 8bo): атомарная выдача документа,
-		// погашение возвратов и синхронизация выданных медицинских согласий.
-		const document = await withTenantCtx(orgId, async (tx) => {
-			const issuedDoc = await issueGeneratedDocumentInDb(orgId, id, {
-				issuedByUserId: getRequestIdentity(request).userId,
+				if (issueCandidate.kind === "payment_refund_correction_request") {
+					const [refundPayments, refundDocuments] = await Promise.all([
+						getPaymentsByPatientIdInDb(orgId, existing.patientId),
+						getDocumentsByPatientId(orgId, existing.patientId),
+					]);
+					const refundLimitError = paymentRefundCorrectionSelectionErrorForDocument(
+						issueCandidate,
+						refundPayments,
+						refundDocuments,
+						existing.id,
+					);
+					if (refundLimitError) {
+						return { kind: "error" as const, status: 409, body: apiError(refundLimitError) };
+					}
+				}
+				const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(
+					issueCandidate,
+					patientPayments,
+				);
+				if (duplicateTaxCertificate) {
+					return {
+						kind: "error" as const,
+						status: 409,
+						body: apiError(
+							"За этот налоговый год и этого налогоплательщика уже выдана налоговая справка. Справка должна быть годовой; сначала аннулируйте или корректно оформите предыдущую справку.",
+						),
+					};
+				}
+
+				return {
+					kind: "ok" as const,
+					patient,
+					taxPaymentSnapshot,
+					issueCandidate,
+					renderContext,
+				};
+			});
+
+			if (prep.kind === "error") {
+				return reply.code(prep.status).send(prep.body);
+			}
+
+			const { patient, taxPaymentSnapshot, issueCandidate, renderContext } = prep;
+			const parsedIssueInput = earlyParsedIssueInput;
+
+			const signatureAttestation = repairMojibakeDeep(
+				parsedIssueInput.data.signatureAttestation,
+			);
+			const issuedAt = new Date().toISOString();
+			const releaseJournalEntry = await buildMedicalDocumentReleaseJournalEntry(
+				issueCandidate,
 				issuedAt,
-				releaseJournalEntry,
-				snapshotHtml: issuedHtml,
 				signatureAttestation,
-				signatureSvg: parsedIssueInput.data.signatureSvg ?? null,
+			);
+			const taxXmlSourceSnapshot = taxXmlSourceSnapshotForIssue(
+				issueCandidate,
+				patient,
 				taxPaymentSnapshot,
+				issuedAt,
+				renderContext?.clinicProfile,
+			);
+			let taxXmlSnapshot: TaxXmlSnapshot | null = null;
+			if (issueCandidate.kind === "tax_deduction_certificate" && taxXmlSourceSnapshot) {
+				const taxOfficeCode = configuredTaxOfficeCode();
+				const xmlPatient = frozenTaxXmlPatient(issueCandidate, patient);
+				const xmlClinicProfile = frozenTaxXmlClinicProfile(
+					issueCandidate,
+					renderContext?.clinicProfile ?? taxXmlSourceSnapshot.clinicProfile,
+				);
+				const xmlPayments = frozenTaxXmlPayments(
+					issueCandidate,
+					renderContext?.payments ?? [],
+				);
+				const xmlResult = buildKnd1151156Xml(issueCandidate, xmlPatient, {
+					clinicProfile: xmlClinicProfile,
+					payments: xmlPayments,
+					taxOfficeCode,
+				});
+				if (xmlResult.ok) {
+					const xmlSourceSha256 = taxXmlSourceSnapshotSha256(taxXmlSourceSnapshot);
+					taxXmlSnapshot = {
+						fileName: xmlResult.fileName,
+						xml: xmlResult.xml,
+						taxOfficeCode: (taxOfficeCode ?? "").replace(/\D+/g, ""),
+						sourceSnapshotSha256: xmlSourceSha256 ?? "",
+						createdAt: issuedAt,
+						sha256: createHash("sha256").update(xmlResult.xml).digest("hex"),
+					};
+				}
+			}
+
+			const issuedDocumentCandidate = {
+				...issueCandidate,
+				status: "issued" as const,
+				issuedAt,
+				signatureAttestation,
+				releaseJournalEntry,
 				taxXmlSourceSnapshot,
 				taxXmlSnapshot,
-				totalAmountRub: issueCandidate.totalAmountRub,
-				tx,
+			};
+			const issuedHtml = renderDocumentHtml(
+				issuedDocumentCandidate,
+				patient,
+				renderContext,
+			);
+
+			const document = await withTenantWriteCtx(orgId, async (tx) => {
+				const issuedDoc = await issueGeneratedDocumentInDb(orgId, id, {
+					issuedByUserId: getRequestIdentity(request).userId,
+					issuedAt,
+					releaseJournalEntry,
+					snapshotHtml: issuedHtml,
+					signatureAttestation,
+					signatureSvg: parsedIssueInput.data.signatureSvg ?? null,
+					taxPaymentSnapshot,
+					taxXmlSourceSnapshot,
+					taxXmlSnapshot,
+					totalAmountRub: issueCandidate.totalAmountRub,
+					tx,
+				});
+				if (!issuedDoc) {
+					return null;
+				}
+
+				if (issuedDoc.kind === "payment_refund_correction_request") {
+					const settlement = await settleRefundedPaymentsForPatient(
+						orgId,
+						issuedDoc.patientId,
+						tx,
+					);
+					request.log.info(
+						{
+							documentId: issuedDoc.id,
+							refundedPaymentIds: settlement.refunded,
+							partiallyRefundedPaymentIds: settlement.partiallyRefunded.map(
+								(item) => item.paymentId,
+							),
+						},
+						"возврат сведён с кассой при выдаче заявления",
+					);
+				}
+
+				const consentKinds = new Set([
+					"informed_consent",
+					"procedure_specific_consent_packet",
+					"anesthesia_consent_log",
+					"personal_data_processing_consent",
+					"minor_legal_representative_consent",
+					"photo_video_consent",
+					"medical_intervention_refusal",
+				]);
+				if (consentKinds.has(issuedDoc.kind)) {
+					await syncDocumentToPatientConsent(
+						orgId,
+						issuedDoc.patientId,
+						issuedDoc.kind,
+						issuedDoc.id,
+						new Date(issuedAt),
+						tx,
+					);
+				}
+
+				return issuedDoc;
 			});
-			if (!issuedDoc) {
-				return null;
+
+			if (!document) {
+				return reply
+					.code(409)
+					.send(apiError("Статус документа нельзя изменить."));
 			}
 
-			// ВЫДАЧА ЗАЯВЛЕНИЯ НА ВОЗВРАТ — ЭТО МОМЕНТ, КОГДА ДЕНЬГИ ПОКИДАЮТ КАССУ.
-			if (issuedDoc.kind === "payment_refund_correction_request") {
-				const settlement = await settleRefundedPaymentsForPatient(
-					orgId,
-					issuedDoc.patientId,
-					tx,
-				);
-				request.log.info(
-					{
-						documentId: issuedDoc.id,
-						refundedPaymentIds: settlement.refunded,
-						partiallyRefundedPaymentIds: settlement.partiallyRefunded.map(
-							(item) => item.paymentId,
-						),
-					},
-					"возврат сведён с кассой при выдаче заявления",
-				);
-			}
-
-			// Синхронизация выданных медицинских согласий в таблицу patient_consents (Мандат 8e и 8n)
-			const consentKinds = new Set([
-				"informed_consent",
-				"procedure_specific_consent_packet",
-				"anesthesia_consent_log",
-				"personal_data_processing_consent",
-				"minor_legal_representative_consent",
-				"photo_video_consent",
-				"medical_intervention_refusal",
-			]);
-			if (consentKinds.has(issuedDoc.kind)) {
-				await syncDocumentToPatientConsent(
-					orgId,
-					issuedDoc.patientId,
-					issuedDoc.kind,
-					issuedDoc.id,
-					new Date(issuedAt),
-					tx,
-				);
-			}
-
-			return issuedDoc;
-		});
-
-		if (!document) {
-			return reply
-				.code(409)
-				.send(apiError("Статус документа нельзя изменить."));
-		}
-
-		return reply.send(toPublicGeneratedDocument(document));
+			return reply.send(toPublicGeneratedDocument(document));
+		},
 	});
 }

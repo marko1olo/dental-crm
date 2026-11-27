@@ -5,7 +5,7 @@
  */
 
 import { and, eq, gte, sql } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import {
 	bactericidalEquipments,
 	emergencyBiohazardLogs,
@@ -28,7 +28,7 @@ export async function collectSanpinSummary(organizationId: string, todayStr: str
 		wasteStats,
 		tempStats,
 		emergencyStats,
-	} = await withTenantCtx(organizationId, async (tx) => {
+	} = await withTenantReadCtx(organizationId, async (tx) => {
 		const [pso] = await tx.select({
 			totalToday: sql<number>`count(*)::int`,
 			approvedToday: sql<number>`count(*) filter (where ${preSterilizationCleaningLogs.isBatchApproved} = true)::int`,

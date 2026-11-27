@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	autofillMonthSchema,
 	autofillShiftSchema,
@@ -37,21 +38,19 @@ export {
 	generateMonthBatchRows,
 } from "./shiftAutofillModules/shiftAutofillCalculators.js";
 
-const sanpinAutofillMutationOptions = {
-	schema: {
-		description:
-			"SanPiN autofill mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-		headers: {
-			type: "object",
-			properties: {
-				"idempotency-key": { type: "string" },
-				"x-idempotency-key": { type: "string" },
-				"organizationid": { type: "string" },
-				"x-organization-id": { type: "string" },
-			},
+const sanpinAutofillMutationSchema = {
+	description:
+		"SanPiN autofill mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+	headers: {
+		type: "object",
+		properties: {
+			"idempotency-key": { type: "string" },
+			"x-idempotency-key": { type: "string" },
+			"organizationid": { type: "string" },
+			"x-organization-id": { type: "string" },
 		},
 	},
-};
+} as const;
 
 /**
  * Canonical Facade: Автопилот смены и месяца журналов СанПиН (Журнал автоклавирования и предстерилизационной очистки)
@@ -64,26 +63,34 @@ const sanpinAutofillMutationOptions = {
  */
 export function registerSanpinShiftAutofillRoutes(app: FastifyInstance) {
 	// 7. Автопилот смены журналов СанПиН
-	app.post(
-		"/api/registers/autofill-shift",
-		sanpinAutofillMutationOptions,
-		handleAutofillShift,
-	);
-	app.post(
-		"/api/sanpin/shift-autofill",
-		sanpinAutofillMutationOptions,
-		handleAutofillShift,
-	);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/registers/autofill-shift",
+		permission: "public",
+		schema: sanpinAutofillMutationSchema,
+		handler: async ({ request, reply }) => handleAutofillShift(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/shift-autofill",
+		permission: "public",
+		schema: sanpinAutofillMutationSchema,
+		handler: async ({ request, reply }) => handleAutofillShift(request, reply),
+	});
 
 	// 8. Автопилот месяца журналов СанПиН
-	app.post(
-		"/api/registers/autofill-month",
-		sanpinAutofillMutationOptions,
-		handleAutofillMonth,
-	);
-	app.post(
-		"/api/sanpin/month-autofill",
-		sanpinAutofillMutationOptions,
-		handleAutofillMonth,
-	);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/registers/autofill-month",
+		permission: "public",
+		schema: sanpinAutofillMutationSchema,
+		handler: async ({ request, reply }) => handleAutofillMonth(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/month-autofill",
+		permission: "public",
+		schema: sanpinAutofillMutationSchema,
+		handler: async ({ request, reply }) => handleAutofillMonth(request, reply),
+	});
 }

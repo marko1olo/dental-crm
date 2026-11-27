@@ -8,7 +8,7 @@ import { createTemperatureHumidityEquipmentDtoSchema } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
 import { temperatureHumidityEquipments } from "../../../db/schema.js";
 
 export async function handleGetTemperatureEquipments(req: FastifyRequest, reply: FastifyReply) {
@@ -19,7 +19,7 @@ export async function handleGetTemperatureEquipments(req: FastifyRequest, reply:
 	);
 	if (!organizationId) return;
 
-	const list = await withTenantCtx(organizationId, async (tx) => {
+	const list = await withTenantReadCtx(organizationId, async (tx) => {
 		return tx
 			.select()
 			.from(temperatureHumidityEquipments)
@@ -53,7 +53,7 @@ export async function handlePostTemperatureEquipment(req: FastifyRequest, reply:
 	}
 	const data = parsed.data;
 
-	const [created] = await withTenantCtx(organizationId, async (tx) => {
+	const [created] = await withTenantWriteCtx(organizationId, async (tx) => {
 		return tx
 			.insert(temperatureHumidityEquipments)
 			.values({

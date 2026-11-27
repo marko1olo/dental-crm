@@ -4,7 +4,8 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { calculateAge } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { generatedDocuments, patientRelationships, patients } from "../../db/schema.js";
 import { ensurePatientInOrganization } from "../odontogram/planHelpers.js";
 
@@ -90,19 +91,23 @@ const syncLegalRepresentativeSchema = z.object({
 }).strict();
 
 export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
-	app.get<{ Params: { patientId: string } }>("/api/patients/:patientId/pediatric/bravery-diploma", async (request, reply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "pediatric diploma audit");
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/pediatric/bravery-diploma",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "pediatric diploma audit");
+			if (!organizationId) return reply;
 
-		const { patientId } = request.params;
-		if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
+			const { patientId } = request.params as { patientId: string };
+			if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
 
-		if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
-		}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
+			}
 
-		try {
-			const dbDocs = await withTenantCtx(organizationId, async (tx) =>
+			try {
+				const dbDocs = await withTenantReadCtx(organizationId, async (tx) =>
 				tx.select().from(generatedDocuments)
 					.where(
 						and(
@@ -146,30 +151,35 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 			request.log.error({ error, patientId }, "Failed to fetch bravery diplomas from PostgreSQL 18");
 			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось получить список дипломов за храбрость" });
 		}
+		},
 	});
 
-	app.post<{ Params: { patientId: string } }>("/api/patients/:patientId/pediatric/bravery-diploma", async (request, reply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "issue pediatric diploma");
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/:patientId/pediatric/bravery-diploma",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "issue pediatric diploma");
+			if (!organizationId) return reply;
 
-		const { patientId } = request.params;
-		if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
+			const { patientId } = request.params as { patientId: string };
+			if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
 
-		if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
-		}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
+			}
 
-		const parsed = issueDiplomaSchema.safeParse(request.body ?? {});
-		if (!parsed.success) return reply.code(400).send({ error: "ValidationFailed", issues: parsed.error.issues });
+			const parsed = issueDiplomaSchema.safeParse(request.body ?? {});
+			if (!parsed.success) return reply.code(400).send({ error: "ValidationFailed", issues: parsed.error.issues });
 
-		const now = new Date();
-		const entropy = randomUUID().replace(/-/g, "").substring(0, 6).toUpperCase();
-		const diplomaNumber = `ДИПЛОМ-ГЕРОЙ-${now.getFullYear()}-${entropy}`;
-		const issueDateRu = now.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
-		const diplomaId = randomUUID();
+			const now = new Date();
+			const entropy = randomUUID().replace(/-/g, "").substring(0, 6).toUpperCase();
+			const diplomaNumber = `ДИПЛОМ-ГЕРОЙ-${now.getFullYear()}-${entropy}`;
+			const issueDateRu = now.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+			const diplomaId = randomUUID();
 
-		try {
-			const responsePayload = await withTenantCtx(organizationId, async (tx) => {
+			try {
+				const responsePayload = await withTenantWriteCtx(organizationId, async (tx) => {
 				const [patientRow] = await tx
 					.select({
 						fullName: patients.fullName,
@@ -224,21 +234,26 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 			request.log.error({ error, patientId, diplomaId }, "Failed to persist bravery diploma into PostgreSQL 18");
 			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось сохранить диплом за храбрость в базу данных" });
 		}
+		},
 	});
 
-	app.get<{ Params: { patientId: string } }>("/api/patients/:patientId/pediatric/parent-memo", async (request, reply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "pediatric parent memo audit");
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/pediatric/parent-memo",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "pediatric parent memo audit");
+			if (!organizationId) return reply;
 
-		const { patientId } = request.params;
-		if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
+			const { patientId } = request.params as { patientId: string };
+			if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
 
-		if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
-		}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
+			}
 
-		try {
-			const dbDocs = await withTenantCtx(organizationId, async (tx) =>
+			try {
+				const dbDocs = await withTenantReadCtx(organizationId, async (tx) =>
 				tx.select().from(generatedDocuments)
 					.where(
 						and(
@@ -293,30 +308,35 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 			request.log.error({ error, patientId }, "Failed to fetch parent memos from PostgreSQL 18");
 			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось получить список памяток родителям" });
 		}
+		},
 	});
 
-	app.post<{ Params: { patientId: string } }>("/api/patients/:patientId/pediatric/parent-memo", async (request, reply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "issue pediatric parent memo");
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/:patientId/pediatric/parent-memo",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "issue pediatric parent memo");
+			if (!organizationId) return reply;
 
-		const { patientId } = request.params;
-		if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
+			const { patientId } = request.params as { patientId: string };
+			if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
 
-		if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
-		}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
+			}
 
-		const parsed = issueParentMemoSchema.safeParse(request.body ?? {});
-		if (!parsed.success) return reply.code(400).send({ error: "ValidationFailed", issues: parsed.error.issues });
+			const parsed = issueParentMemoSchema.safeParse(request.body ?? {});
+			if (!parsed.success) return reply.code(400).send({ error: "ValidationFailed", issues: parsed.error.issues });
 
-		const now = new Date();
-		const entropy = randomUUID().replace(/-/g, "").substring(0, 6).toUpperCase();
-		const memoNumber = `ПАМЯТКА-РОДИТЕЛЯМ-${now.getFullYear()}-${entropy}`;
-		const issueDateRu = now.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
-		const memoId = randomUUID();
+			const now = new Date();
+			const entropy = randomUUID().replace(/-/g, "").substring(0, 6).toUpperCase();
+			const memoNumber = `ПАМЯТКА-РОДИТЕЛЯМ-${now.getFullYear()}-${entropy}`;
+			const issueDateRu = now.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+			const memoId = randomUUID();
 
-		try {
-			const responsePayload = await withTenantCtx(organizationId, async (tx) => {
+			try {
+				const responsePayload = await withTenantWriteCtx(organizationId, async (tx) => {
 				const [patientRow] = await tx
 					.select({
 						fullName: patients.fullName,
@@ -388,21 +408,26 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 			request.log.error({ error, patientId, memoId }, "Failed to persist parent memo into PostgreSQL 18");
 			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось сохранить памятку родителям в базу данных" });
 		}
+		},
 	});
 
-	app.get<{ Params: { patientId: string } }>("/api/patients/:patientId/pediatric/legal-representative", async (request, reply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "get pediatric legal representative");
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/pediatric/legal-representative",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "get pediatric legal representative");
+			if (!organizationId) return reply;
 
-		const { patientId } = request.params;
-		if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
+			const { patientId } = request.params as { patientId: string };
+			if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
 
-		if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
-		}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
+			}
 
-		try {
-			const representative = await withTenantCtx(organizationId, async (tx) => {
+			try {
+				const representative = await withTenantReadCtx(organizationId, async (tx) => {
 				const rels = await tx
 					.select({
 						id: patientRelationships.id,
@@ -474,39 +499,44 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 			request.log.error({ error, patientId }, "Failed to fetch legal representative from PostgreSQL 18");
 			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось получить законного представителя" });
 		}
+		},
 	});
 
-	app.post<{ Params: { patientId: string } }>("/api/patients/:patientId/pediatric/legal-representative", async (request, reply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "sync pediatric legal representative");
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/:patientId/pediatric/legal-representative",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "sync pediatric legal representative");
+			if (!organizationId) return reply;
 
-		const { patientId } = request.params;
-		if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
+			const { patientId } = request.params as { patientId: string };
+			if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
 
-		if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
-		}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
+			}
 
-		const parsed = syncLegalRepresentativeSchema.safeParse(request.body ?? {});
-		if (!parsed.success) return reply.code(400).send({ error: "ValidationFailed", issues: parsed.error.issues });
+			const parsed = syncLegalRepresentativeSchema.safeParse(request.body ?? {});
+			if (!parsed.success) return reply.code(400).send({ error: "ValidationFailed", issues: parsed.error.issues });
 
-		const roleToDbKind: Record<string, string> = {
-			"Мать": "mother",
-			"Отец": "father",
-			"Опекун": "guardian",
-			"Усыновитель": "guardian",
-			"Родитель": "parent",
-		};
-		const relationshipType = roleToDbKind[parsed.data.role] ?? "parent";
-		const statutoryDocument =
-			parsed.data.statutoryDocument ||
-			(parsed.data.role === "Опекун"
-				? "Распоряжение органа опеки и попечительства"
-				: "Законный представитель (родитель / опекун)");
+			const roleToDbKind: Record<string, string> = {
+				"Мать": "mother",
+				"Отец": "father",
+				"Опекун": "guardian",
+				"Усыновитель": "guardian",
+				"Родитель": "parent",
+			};
+			const relationshipType = roleToDbKind[parsed.data.role] ?? "parent";
+			const statutoryDocument =
+				parsed.data.statutoryDocument ||
+				(parsed.data.role === "Опекун"
+					? "Распоряжение органа опеки и попечительства"
+					: "Законный представитель (родитель / опекун)");
 
-		try {
-			let responsePayload: Record<string, unknown> | null = null;
-			await withTenantCtx(organizationId, async (tx) => {
+			try {
+				let responsePayload: Record<string, unknown> | null = null;
+				await withTenantWriteCtx(organizationId, async (tx) => {
 				const existingRels = await tx
 					.select()
 					.from(patientRelationships)
@@ -636,5 +666,6 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 			request.log.error({ error, patientId }, "Failed to sync legal representative into PostgreSQL 18");
 			return reply.code(500).send({ error: "DatabaseError", message: "Не удалось сохранить законного представителя в базу данных" });
 		}
+		},
 	});
 }

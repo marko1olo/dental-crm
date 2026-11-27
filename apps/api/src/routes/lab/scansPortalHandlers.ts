@@ -6,13 +6,14 @@ import {
 } from "../../services/labScanDirectUpload.js";
 
 export async function handlePortalLabScanDownloadUrl(
-	request: FastifyRequest<{
-		Params: { token: string };
-		Querystring: { storageKey?: string; expiresInSeconds?: string };
-	}>,
+	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
-	const token = request.params.token;
+	const rawToken =
+		typeof request.params === "object" && request.params !== null && "token" in request.params
+			? request.params.token
+			: undefined;
+	const token = typeof rawToken === "string" ? rawToken : "";
 	if (!token) {
 		return reply.code(400).send({
 			error: "TokenRequired",
@@ -28,7 +29,10 @@ export async function handlePortalLabScanDownloadUrl(
 		});
 	}
 
-	const query = request.query;
+	const query =
+		typeof request.query === "object" && request.query !== null
+			? (request.query as Record<string, unknown>)
+			: undefined;
 	const storageKey = query?.storageKey;
 	if (!storageKey || typeof storageKey !== "string" || !storageKey.trim()) {
 		return reply.code(400).send({
@@ -47,7 +51,10 @@ export async function handlePortalLabScanDownloadUrl(
 		});
 	}
 
-	const expiresInSeconds = query.expiresInSeconds ? Number.parseInt(query.expiresInSeconds, 10) : undefined;
+	const expiresInSeconds =
+		typeof query.expiresInSeconds === "string"
+			? Number.parseInt(query.expiresInSeconds, 10)
+			: undefined;
 	const presigned = getLabScanDownloadPresignedUrl({
 		storageKey,
 		expiresInSeconds: Number.isNaN(expiresInSeconds) ? undefined : expiresInSeconds,

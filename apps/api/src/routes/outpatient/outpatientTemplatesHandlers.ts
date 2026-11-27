@@ -1,6 +1,6 @@
 import { and, eq, ilike, or, sql, type SQL } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../db/client.js";
+import { withSuperuserBypass } from "../../db/rls.js";
 import { outpatientTemplateCategories, outpatientTemplates } from "../../db/schema.js";
 import { outpatientTemplatesFilterSchema } from "./outpatientTypes.js";
 
@@ -33,31 +33,35 @@ export async function handleGetOutpatientTemplates(request: FastifyRequest, repl
 
 	const filtered = conditions.filter((c): c is SQL => c !== undefined);
 
-	const categories = await db
-		.select()
-		.from(outpatientTemplateCategories)
-		.orderBy(outpatientTemplateCategories.order, outpatientTemplateCategories.id);
+	const { categories, templates } = await withSuperuserBypass(async (tx) => {
+		const cats = await tx
+			.select()
+			.from(outpatientTemplateCategories)
+			.orderBy(outpatientTemplateCategories.order, outpatientTemplateCategories.id);
 
-	const templates = await db
-		.select({
-			id: outpatientTemplates.id,
-			categoryId: outpatientTemplates.categoryId,
-			categoryName: outpatientTemplateCategories.name,
-			categorySpecialty: outpatientTemplateCategories.specialty,
-			name: outpatientTemplates.name,
-			contentJson: outpatientTemplates.contentJson,
-			mkbCode: outpatientTemplates.mkbCode,
-			order: outpatientTemplates.order,
-		})
-		.from(outpatientTemplates)
-		.leftJoin(
-			outpatientTemplateCategories,
-			eq(outpatientTemplates.categoryId, outpatientTemplateCategories.id),
-		)
-		.where(filtered.length > 0 ? and(...filtered) : undefined)
-		.orderBy(outpatientTemplates.order, outpatientTemplates.id)
-		.limit(parsed.data.limit)
-		.offset(parsed.data.offset);
+		const tmpls = await tx
+			.select({
+				id: outpatientTemplates.id,
+				categoryId: outpatientTemplates.categoryId,
+				categoryName: outpatientTemplateCategories.name,
+				categorySpecialty: outpatientTemplateCategories.specialty,
+				name: outpatientTemplates.name,
+				contentJson: outpatientTemplates.contentJson,
+				mkbCode: outpatientTemplates.mkbCode,
+				order: outpatientTemplates.order,
+			})
+			.from(outpatientTemplates)
+			.leftJoin(
+				outpatientTemplateCategories,
+				eq(outpatientTemplates.categoryId, outpatientTemplateCategories.id),
+			)
+			.where(filtered.length > 0 ? and(...filtered) : undefined)
+			.orderBy(outpatientTemplates.order, outpatientTemplates.id)
+			.limit(parsed.data.limit)
+			.offset(parsed.data.offset);
+
+		return { categories: cats, templates: tmpls };
+	});
 
 	return reply.send({ count: templates.length, categories, templates });
 }

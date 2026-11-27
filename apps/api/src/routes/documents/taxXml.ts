@@ -1,12 +1,14 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import {
 	getDocumentById,
 	getDocumentsByPatientId,
 } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { getClinicSettingsFromDb } from "../../db/settingsQuery.js";
 import {
 	documentIssueBlockReason,
@@ -37,7 +39,12 @@ import {
 } from "./shared.js";
 
 export async function register(app: FastifyInstance) {
-	app.get("/api/documents/:id/tax-xml", handleGetTaxXml);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/documents/:id/tax-xml",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetTaxXml(request, reply),
+	});
 }
 
 const documentIdParamsSchema = z
@@ -63,188 +70,215 @@ async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
 	// а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
 	// Организация теперь берётся только из проверенного токена (401 иначе).
 	const orgId = requireOrganizationId(request, reply);
-	if (!orgId) return;
-	const document = await getDocumentById(orgId, id);
-	if (!document) {
-		return reply.code(404).send(apiError("Документ не найден"));
-	}
-	if (document.status === "voided") {
-		return reply
-			.code(409)
-			.send(apiError("Аннулированный документ нельзя выгрузить в XML ФНС."));
-	}
-	if (document.status !== "issued") {
-		return reply
-			.code(409)
-			.send(
-				apiError(
+	if (!orgId) return reply;
+
+	const prep = await withTenantReadCtx(orgId, async () => {
+		const document = await getDocumentById(orgId, id);
+		if (!document) {
+			return { kind: "error" as const, status: 404, body: apiError("Документ не найден") };
+		}
+		if (document.status === "voided") {
+			return {
+				kind: "error" as const,
+				status: 409,
+				body: apiError("Аннулированный документ нельзя выгрузить в XML ФНС."),
+			};
+		}
+		if (document.status !== "issued") {
+			return {
+				kind: "error" as const,
+				status: 409,
+				body: apiError(
 					"XML ФНС можно выгрузить только после выдачи налоговой справки. Сначала выпустите справку и заморозьте состав оплат.",
 				),
-			);
-	}
-	if (!document.signatureAttestation) {
-		return reply
-			.code(409)
-			.send(
-				apiError(
+			};
+		}
+		if (!document.signatureAttestation) {
+			return {
+				kind: "error" as const,
+				status: 409,
+				body: apiError(
 					"XML ФНС нельзя выгрузить без отметки подписания и получения выданного документа.",
 				),
-			);
-	}
+			};
+		}
 
-	if (document.taxXmlSnapshot) {
+		if (document.taxXmlSnapshot) {
+			const patient = await getPatientByIdFromDb(orgId, document.patientId);
+			const identity = getRequestIdentity(request);
+			const access = evaluateClinicalAccess(identity.role, {
+				clinicalRole: identity.clinicalRole ?? null,
+				canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+				specialties: identity.specialties ?? null,
+			});
+			if (patient?.status === "archived" && !access.hasClinicalAccess) {
+				return {
+					kind: "error" as const,
+					status: 403,
+					body: {
+						error: "PermissionDenied",
+						permission: "patients.archived.read",
+						role: identity.role,
+						message:
+							"Отказ в доступе к документам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13).",
+					},
+				};
+			}
+			return { kind: "snapshot" as const, taxXmlSnapshot: document.taxXmlSnapshot };
+		}
+
 		const patient = await getPatientByIdFromDb(orgId, document.patientId);
+		if (!patient) {
+			return { kind: "error" as const, status: 404, body: apiError("Пациент не найден") };
+		}
+
 		const identity = getRequestIdentity(request);
 		const access = evaluateClinicalAccess(identity.role, {
 			clinicalRole: identity.clinicalRole ?? null,
 			canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
 			specialties: identity.specialties ?? null,
 		});
-		if (patient?.status === "archived" && !access.hasClinicalAccess) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "patients.archived.read",
-				role: identity.role,
-				message:
-					"Отказ в доступе к документам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13).",
-			});
+		if (patient.status === "archived" && !access.hasClinicalAccess) {
+			return {
+				kind: "error" as const,
+				status: 403,
+				body: {
+					error: "PermissionDenied",
+					permission: "patients.archived.read",
+					role: identity.role,
+					message:
+						"Отказ в доступе к документам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13).",
+				},
+			};
 		}
-		const xmlFilename = `${document.taxXmlSnapshot.fileName}.xml`;
+
+		const patientPayments = await getPaymentsByPatientIdInDb(
+			orgId,
+			document.patientId,
+		);
+		const taxPaymentSnapshot =
+			document.taxPaymentSnapshot ??
+			(taxDocumentUsesPaymentSnapshot(document.kind)
+				? buildTaxPaymentSnapshotForIssue(
+						document,
+						patientPayments,
+						await getDocumentsByPatientId(orgId, document.patientId),
+					)
+				: null);
+		if (taxDocumentUsesPaymentSnapshot(document.kind) && !taxPaymentSnapshot) {
+			const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(
+				document,
+				patientPayments,
+			);
+			if (duplicateTaxCertificate) {
+				return {
+					kind: "error" as const,
+					status: 409,
+					body: apiError(
+						"За этот налоговый год и этого налогоплательщика уже выдана налоговая справка. XML ФНС нельзя собирать до аннулирования или корректировки предыдущей справки.",
+					),
+				};
+			}
+			return {
+				kind: "error" as const,
+				status: 409,
+				body: apiError(
+					"Для XML ФНС нет новых оплаченных фискальных чеков за выбранный год.",
+				),
+			};
+		}
+		const xmlDocument = taxSnapshotDocument(document, taxPaymentSnapshot);
+		const xmlSourceSnapshotSha256 = taxXmlSourceSnapshotSha256(
+			xmlDocument.taxXmlSourceSnapshot,
+		);
+		if (!xmlSourceSnapshotSha256) {
+			return {
+				kind: "error" as const,
+				status: 409,
+				body: apiError(
+					"XML ФНС нельзя собрать без снимка данных пациента, клиники и платежей на момент выдачи. Аннулируйте и выдайте исправленную справку.",
+				),
+			};
+		}
+		const renderContext = await resolveDocumentRenderContext(
+			orgId,
+			document.patientId,
+		);
+		const xmlPatient = frozenTaxXmlPatient(xmlDocument, patient);
+		const xmlClinicProfile = frozenTaxXmlClinicProfile(
+			xmlDocument,
+			await getClinicSettingsFromDb(orgId).then((s) => s.profile),
+		);
+		const xmlPayments = frozenTaxXmlPayments(
+			xmlDocument,
+			await getPaymentsByPatientIdInDb(orgId, xmlDocument.patientId),
+		);
+		const xmlRenderContext = {
+			...renderContext,
+			clinicProfile: xmlClinicProfile,
+			payments: xmlPayments,
+		};
+		const blockReason = documentIssueBlockReason(
+			xmlDocument,
+			xmlPatient,
+			xmlRenderContext,
+		);
+		if (blockReason) {
+			return { kind: "error" as const, status: 409, body: apiError(blockReason) };
+		}
+		const taxBlockReason = taxFiscalDocumentBlockReason(
+			xmlDocument,
+			xmlPatient,
+			xmlRenderContext,
+		);
+		if (taxBlockReason) {
+			return { kind: "error" as const, status: 409, body: apiError(taxBlockReason) };
+		}
+		const chainBlockReason = await documentIssueChainBlockReason(xmlDocument);
+		if (chainBlockReason) {
+			return { kind: "error" as const, status: 409, body: apiError(chainBlockReason) };
+		}
+		const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(
+			xmlDocument,
+			patientPayments,
+		);
+		if (duplicateTaxCertificate) {
+			return {
+				kind: "error" as const,
+				status: 409,
+				body: apiError(
+					"За этот налоговый год и этого налогоплательщика уже выдана налоговая справка. XML ФНС нельзя собирать до аннулирования или корректировки предыдущей справки.",
+				),
+			};
+		}
+
+		return {
+			kind: "build" as const,
+			xmlDocument,
+			xmlPatient,
+			xmlClinicProfile,
+			xmlPayments,
+		};
+	});
+
+	if (prep.kind === "error") {
+		return reply.code(prep.status).send(prep.body);
+	}
+	if (prep.kind === "snapshot") {
+		const xmlFilename = `${prep.taxXmlSnapshot.fileName}.xml`;
 		return reply
 			.header(
 				"Content-Disposition",
 				buildPdfContentDispositionHeader(xmlFilename, xmlFilename),
 			)
 			.type("application/xml; charset=utf-8")
-			.send(document.taxXmlSnapshot.xml);
-	}
-
-	const patient = await getPatientByIdFromDb(orgId, document.patientId);
-	if (!patient) {
-		return reply.code(404).send(apiError("Пациент не найден"));
-	}
-
-	const identity = getRequestIdentity(request);
-	const access = evaluateClinicalAccess(identity.role, {
-		clinicalRole: identity.clinicalRole ?? null,
-		canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
-		specialties: identity.specialties ?? null,
-	});
-	if (patient.status === "archived" && !access.hasClinicalAccess) {
-		return reply.code(403).send({
-			error: "PermissionDenied",
-			permission: "patients.archived.read",
-			role: identity.role,
-			message:
-				"Отказ в доступе к документам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13).",
-		});
-	}
-
-	const patientPayments = await getPaymentsByPatientIdInDb(
-		orgId,
-		document.patientId,
-	);
-	const taxPaymentSnapshot =
-		document.taxPaymentSnapshot ??
-		(taxDocumentUsesPaymentSnapshot(document.kind)
-			? buildTaxPaymentSnapshotForIssue(
-					document,
-					patientPayments,
-					await getDocumentsByPatientId(orgId, document.patientId),
-				)
-			: null);
-	if (taxDocumentUsesPaymentSnapshot(document.kind) && !taxPaymentSnapshot) {
-		const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(
-			document,
-			patientPayments,
-		);
-		if (duplicateTaxCertificate) {
-			return reply
-				.code(409)
-				.send(
-					apiError(
-						"За этот налоговый год и этого налогоплательщика уже выдана налоговая справка. XML ФНС нельзя собирать до аннулирования или корректировки предыдущей справки.",
-					),
-				);
-		}
-		return reply
-			.code(409)
-			.send(
-				apiError(
-					"Для XML ФНС нет новых оплаченных фискальных чеков за выбранный год.",
-				),
-			);
-	}
-	const xmlDocument = taxSnapshotDocument(document, taxPaymentSnapshot);
-	const xmlSourceSnapshotSha256 = taxXmlSourceSnapshotSha256(
-		xmlDocument.taxXmlSourceSnapshot,
-	);
-	if (!xmlSourceSnapshotSha256) {
-		return reply
-			.code(409)
-			.send(
-				apiError(
-					"XML ФНС нельзя собрать без снимка данных пациента, клиники и платежей на момент выдачи. Аннулируйте и выдайте исправленную справку.",
-				),
-			);
-	}
-	// Реальный контекст вместо пустой заглушки (см. documents.ts).
-	const renderContext = await resolveDocumentRenderContext(
-		orgId,
-		document.patientId,
-	);
-	const xmlPatient = frozenTaxXmlPatient(xmlDocument, patient);
-	const xmlClinicProfile = frozenTaxXmlClinicProfile(
-		xmlDocument,
-		await getClinicSettingsFromDb(orgId).then((s) => s.profile),
-	);
-	const xmlPayments = frozenTaxXmlPayments(
-		xmlDocument,
-		await getPaymentsByPatientIdInDb(orgId, xmlDocument.patientId),
-	);
-	const xmlRenderContext = {
-		...renderContext,
-		clinicProfile: xmlClinicProfile,
-		payments: xmlPayments,
-	};
-	const blockReason = documentIssueBlockReason(
-		xmlDocument,
-		xmlPatient,
-		xmlRenderContext,
-	);
-	if (blockReason) {
-		return reply.code(409).send(apiError(blockReason));
-	}
-	const taxBlockReason = taxFiscalDocumentBlockReason(
-		xmlDocument,
-		xmlPatient,
-		xmlRenderContext,
-	);
-	if (taxBlockReason) {
-		return reply.code(409).send(apiError(taxBlockReason));
-	}
-	const chainBlockReason = await documentIssueChainBlockReason(xmlDocument);
-	if (chainBlockReason) {
-		return reply.code(409).send(apiError(chainBlockReason));
-	}
-	const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(
-		xmlDocument,
-		patientPayments,
-	);
-	if (duplicateTaxCertificate) {
-		return reply
-			.code(409)
-			.send(
-				apiError(
-					"За этот налоговый год и этого налогоплательщика уже выдана налоговая справка. XML ФНС нельзя собирать до аннулирования или корректировки предыдущей справки.",
-				),
-			);
+			.send(prep.taxXmlSnapshot.xml);
 	}
 
 	const taxOfficeCode = configuredTaxOfficeCode();
-	const result = buildKnd1151156Xml(xmlDocument, xmlPatient, {
-		clinicProfile: xmlClinicProfile,
-		payments: xmlPayments,
+	const result = buildKnd1151156Xml(prep.xmlDocument, prep.xmlPatient, {
+		clinicProfile: prep.xmlClinicProfile,
+		payments: prep.xmlPayments,
 		taxOfficeCode,
 	});
 	if (!result.ok) {

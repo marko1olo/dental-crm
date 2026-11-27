@@ -9,7 +9,8 @@ import {
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { onTenantTxCommit, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	implantCatalogItems,
 	implantIsqMeasurements,
@@ -283,7 +284,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 			effectiveInput.finalInsertionTorqueNcm <= 55;
 
 		// Единая неделимая ACID транзакция для всех имплантатов пакета (Мандаты 8bo, All-on-4)
-		const txResult = await withTenantCtx(orgId, async (tx) => {
+		const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 			const [patient] = await tx
 				.select({ id: patients.id })
 				.from(patients)
@@ -610,6 +611,20 @@ export function registerInstallationRoute(app: FastifyInstance) {
 				decisionRationale,
 			};
 
+			onTenantTxCommit(() => {
+				wsBroker.broadcastToOrganization(orgId, {
+					type: "UPDATE_IMPLANT_RECORD",
+					payload: {
+						patientId: effectiveInput.patientId,
+						toothNumberFdi: effectiveInput.toothNumberFdi,
+						teeth: teethToProcess,
+						installationId: firstInstallationRecord?.id ?? "",
+						inventoryDeduction: firstInventoryDeduction,
+						financials: primaryFinancials,
+					},
+				});
+			});
+
 			return {
 				patientNotFound: false as const,
 				firstInstallationRecord,
@@ -628,21 +643,19 @@ export function registerInstallationRoute(app: FastifyInstance) {
 			});
 		}
 
-		wsBroker.broadcastToOrganization(orgId, {
-			type: "UPDATE_IMPLANT_RECORD",
-			payload: {
-				patientId: effectiveInput.patientId,
-				toothNumberFdi: effectiveInput.toothNumberFdi,
-				teeth: teethToProcess,
-				installationId: txResult.firstInstallationRecord?.id ?? "",
-				inventoryDeduction: txResult.firstInventoryDeduction,
-				financials: txResult.primaryFinancials,
-			},
-		});
-
 		return reply.code(201).send(txResult.responsePayload);
 	};
 
-	app.post("/api/clinical/implants/installations", handleInstallation);
-	app.post("/api/clinical/implants/installations/batch", handleInstallation);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/clinical/implants/installations",
+		permission: "public",
+		handler: async ({ request, reply }) => handleInstallation(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/clinical/implants/installations/batch",
+		permission: "public",
+		handler: async ({ request, reply }) => handleInstallation(request, reply),
+	});
 }

@@ -2,14 +2,13 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../../db/rls.js";
 import { sterilizerEquipments } from "../../../../db/schema.js";
 import { updateSterilizerEquipmentDtoSchema } from "../sterilizationSchemas.js";
 import { executeEquipmentLifecycleAction } from "./updateSterilizerEquipmentActions.js";
 
 export async function handleUpdateSterilizerEquipment(
-	req: FastifyRequest<{ Params: { id: string } }>,
+	req: FastifyRequest,
 	reply: FastifyReply,
 ) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -19,7 +18,11 @@ export async function handleUpdateSterilizerEquipment(
 	);
 	if (!organizationId) return;
 
-	const idParsed = z.string().uuid().safeParse(req.params?.id);
+	const rawId =
+		typeof req.params === "object" && req.params !== null && "id" in req.params
+			? req.params.id
+			: undefined;
+	const idParsed = z.string().uuid().safeParse(rawId);
 	if (!idParsed.success) {
 		return reply.code(400).send({
 			error: "ValidationError",
@@ -49,7 +52,7 @@ export async function handleUpdateSterilizerEquipment(
 		return { ...updated, chamberVolumeLiters: Number(updated.chamberVolumeLiters) };
 	}
 
-	const [updated] = await withTenantCtx(organizationId, async (tx) => {
+	const [updated] = await withTenantWriteCtx(organizationId, async (tx) => {
 		return tx
 			.update(sterilizerEquipments)
 			.set({

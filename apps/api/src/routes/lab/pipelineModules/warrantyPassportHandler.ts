@@ -3,7 +3,7 @@ import { calculateWarrantyTerms, generateProstheticWarrantyPassport, generateUui
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import {
 	inventoryItems,
 	inventoryTransactions,
@@ -28,7 +28,7 @@ function formatLocalDateToYmd(dateInput: Date | string | null | undefined): stri
 	return `${year}-${month}-${day}`;
 }
 
-export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+export async function handleGetWarrantyPassport(request: FastifyRequest, reply: FastifyReply) {
 	const orgId = await requireResolvedOrganizationId(request, reply, "lab orders passport read");
 	if (!orgId) return;
 
@@ -54,7 +54,11 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 		});
 	}
 
-	const id = request.params.id;
+	const rawId =
+		typeof request.params === "object" && request.params !== null && "id" in request.params
+			? request.params.id
+			: undefined;
+	const id = typeof rawId === "string" ? rawId : "";
 	const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 	if (!id || !UUID_REGEX.test(id)) {
 		return reply.code(400).send({
@@ -64,7 +68,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 	}
 
 	try {
-		const txResult = await withTenantCtx(orgId, async (tx) => {
+		const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 			const [order] = await tx
 				.select({
 					id: labOrders.id,
@@ -354,7 +358,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 		});
 	} catch (err: unknown) {
 		request.log.error(
-			{ err, id: request.params.id, orgId },
+			{ err, id, orgId },
 			"Failed to generate prosthetic warranty passport in handleGetWarrantyPassport",
 		);
 		return reply.code(500).send({

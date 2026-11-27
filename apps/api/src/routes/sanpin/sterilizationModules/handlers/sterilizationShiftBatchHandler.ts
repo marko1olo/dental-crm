@@ -9,7 +9,7 @@ import type { SterilizationPackagingType } from "@dental/shared";
 import { and, desc, eq, gte } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { onTenantTxCommit, withTenantCtx } from "../../../../db/rls.js";
+import { onTenantTxCommit, withTenantWriteCtx } from "../../../../db/rls.js";
 import { preSterilizationCleaningLogs, sterilizationLogs } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
@@ -38,7 +38,7 @@ export async function handleSterilizationShiftBatch(req: FastifyRequest, reply: 
 	const itemsDescription = body.itemsDescription || "Базовый стоматологический набор смены (лотки, зеркала, зонды, пинцеты, боры)";
 	const now = new Date();
 
-	const { inserted } = await withTenantCtx(organizationId, async (tx) => {
+	const { inserted } = await withTenantWriteCtx(organizationId, async (tx) => {
 		const existingToday = await tx
 			.select({ cycleNumber: sterilizationLogs.cycleNumber })
 			.from(sterilizationLogs)

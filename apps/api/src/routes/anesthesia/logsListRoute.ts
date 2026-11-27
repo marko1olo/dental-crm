@@ -5,8 +5,8 @@
 
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { anesthesiaLogs } from "../../db/schema.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
@@ -18,37 +18,46 @@ interface PatientAnesthesiaLogsParams {
 }
 
 export function registerLogsListRoute(app: FastifyInstance): void {
-	app.get<{ Params: PatientAnesthesiaLogsParams }>("/api/anesthesia/patients/:patientId/logs", async (request, reply) => {
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/anesthesia/patients/:patientId/logs",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return reply;
 
-		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? request.user?.role ?? null;
-		const evalAccess = evaluateClinicalAccess(staffRole);
-		if (!evalAccess.hasClinicalAccess) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "clinical.anesthesia.read",
-				role: staffRole,
-				message: `Отказ в доступе к журналу анестезии (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
-			});
-		}
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.anesthesia.read",
+					role: staffRole,
+					message: `Отказ в доступе к журналу анестезии (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
 
-		const { patientId } = request.params;
-		if (!patientId || !UUID_REGEX.test(patientId)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный идентификатор пациента (ожидается UUID).",
-			});
-		}
+			const rawParams = request.params;
+			const patientId =
+				typeof rawParams === "object" && rawParams !== null && "patientId" in rawParams && typeof rawParams.patientId === "string"
+					? rawParams.patientId
+					: "";
+			if (!patientId || !UUID_REGEX.test(patientId)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор пациента (ожидается UUID).",
+				});
+			}
 
-		return withTenantCtx(orgId, async () => {
-			const rows = await db
-				.select()
-				.from(anesthesiaLogs)
-				.where(and(eq(anesthesiaLogs.organizationId, orgId), eq(anesthesiaLogs.patientId, patientId)))
-				.orderBy(desc(anesthesiaLogs.createdAt))
-				.limit(50);
+			const rows = await withTenantReadCtx(orgId, (tx) =>
+				tx
+					.select()
+					.from(anesthesiaLogs)
+					.where(and(eq(anesthesiaLogs.organizationId, orgId), eq(anesthesiaLogs.patientId, patientId)))
+					.orderBy(desc(anesthesiaLogs.createdAt))
+					.limit(50),
+			);
 
 			if (rows.length > 0) {
 				await auditMedicalAccessFromRequest(request, {
@@ -89,6 +98,6 @@ export function registerLogsListRoute(app: FastifyInstance): void {
 					createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : new Date(r.createdAt).toISOString(),
 				})),
 			});
-		});
+		},
 	});
 }

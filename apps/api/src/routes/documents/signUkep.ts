@@ -10,7 +10,8 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { recordAuditEvent } from "../../audit.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	readIssuedDocumentSnapshot,
 	writeStampedDocumentSnapshot,
@@ -50,316 +51,298 @@ const documentUkepSignBodySchema = z
 	})
 	.strict();
 
-const ukepSignMutationOptions = {
-	schema: {
-		description: "UKEP document sign mutation with mandatory RFC 9562 Idempotency-Key",
-		headers: {
-			type: "object",
-			properties: {
-				"idempotency-key": { type: "string" },
-				"x-idempotency-key": { type: "string" },
-				organizationid: { type: "string" },
-				"x-organization-id": { type: "string" },
-			},
+const ukepSignMutationSchema: Record<string, unknown> = {
+	description: "UKEP document sign mutation with mandatory RFC 9562 Idempotency-Key",
+	headers: {
+		type: "object",
+		properties: {
+			"idempotency-key": { type: "string" },
+			"x-idempotency-key": { type: "string" },
+			organizationid: { type: "string" },
+			"x-organization-id": { type: "string" },
 		},
 	},
-} as const;
+};
 
 export async function register(app: FastifyInstance) {
-	app.post("/api/documents/:id/sign-ukep", ukepSignMutationOptions, async (request, reply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"document ukep signature",
-		);
-		if (!orgId) return;
-
-		const parsedParams = documentUkepSignParamsSchema.safeParse(request.params);
-		const parsedBody = documentUkepSignBodySchema.safeParse(request.body);
-		if (!parsedParams.success || !parsedBody.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Не указан идентификатор документа или электронная подпись.",
-			});
-		}
-
-		const { id } = parsedParams.data;
-		const { pkcs7Signature } = parsedBody.data;
-
-		try {
-			// First verify the document exists and is in a state that allows signing
-			const [doc] = await withTenantCtx(orgId, (tx) =>
-				tx
-					.select({
-						id: generatedDocuments.id,
-						kind: generatedDocuments.kind,
-						status: generatedDocuments.status,
-						cryptoSignaturePkcs7: generatedDocuments.cryptoSignaturePkcs7,
-						issuedSnapshotSha256: generatedDocuments.issuedSnapshotSha256,
-						storagePath: generatedDocuments.storagePath,
-						issuedAt: generatedDocuments.issuedAt,
-						signatureAttestation: generatedDocuments.signatureAttestation,
-						doctorCertSerial: generatedDocuments.doctorCertSerial,
-						doctorCertSubject: generatedDocuments.doctorCertSubject,
-					})
-					.from(generatedDocuments)
-					.where(
-						and(
-							eq(generatedDocuments.id, id),
-							eq(generatedDocuments.organizationId, orgId),
-						),
-					)
-					.limit(1),
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/documents/:id/sign-ukep",
+		permission: "public",
+		schema: ukepSignMutationSchema,
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"document ukep signature",
 			);
+			if (!orgId) return reply;
 
-			if (!doc) {
-				return reply.code(404).send({
-					error: "DocumentNotFound",
-					message: "Документ не найден.",
-				});
-			}
-
-			// Медицинские документы могут подписываться электронной подписью только медицинским персоналом (врачом/главным врачом)
-			const identity = getRequestIdentity(request);
-			const staffRole = identity.role ?? request.user?.role ?? null;
-			const evalAccess = evaluateClinicalAccess(staffRole, {
-				clinicalRole: identity.clinicalRole ?? null,
-				canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
-				specialties: identity.specialties ?? null,
-			});
-			if (clinicalDocKinds.has(doc.kind) && !evalAccess.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "clinical.document.sign_ukep",
-					role: staffRole,
-					message:
-						"Подписание клинических медицинских документов электронной подписью доступно только врачу или главному врачу.",
-				});
-			}
-
-			// Валидация криптографического формата отсоединенной подписи
-			const signatureValidation = validateGostCmsPkcs7Signature(pkcs7Signature);
-			if (!signatureValidation.valid) {
+			const parsedParams = documentUkepSignParamsSchema.safeParse(request.params);
+			const parsedBody = documentUkepSignBodySchema.safeParse(request.body);
+			if (!parsedParams.success || !parsedBody.success) {
 				return reply.code(400).send({
-					error: "SignatureVerificationFailed",
-					errorCode: signatureValidation.errorCode ?? "SignatureVerificationFailed",
-					message: `Файл электронной подписи поврежден или имеет неверный формат. ${signatureValidation.error ?? ""}`.trim(),
+					error: "ValidationError",
+					message: "Не указан идентификатор документа или электронная подпись.",
 				});
 			}
 
-			// Валидация срока действия сертификата, времени подписания и проверка по списку отзыва (CRL)
-			const certStatus = validateCertificateStatus({
-				validFrom: parsedBody.data.validFrom,
-				validTo: parsedBody.data.validTo,
-				signedAt: parsedBody.data.signedAt,
-				certificateSerialNumber: parsedBody.data.certificateSerialNumber,
-			});
-			if (!certStatus.valid) {
-				return reply.code(400).send({
-					error: certStatus.errorCode ?? "InvalidCertificateStatus",
-					message: certStatus.error,
-				});
-			}
+			const { id } = parsedParams.data;
+			const { pkcs7Signature } = parsedBody.data;
 
-			// In our workflow, UKEP signs an already issued document (to hash the final PDF)
-			// So we allow signing if it's issued, or draft. Usually it's "issued".
-			if (doc.status === "voided") {
-				return reply.code(409).send({
-					error: "Conflict",
-					message: "Невозможно подписать аннулированный документ электронной подписью.",
-				});
-			}
+			try {
+				const [doc] = await withTenantReadCtx(orgId, (tx) =>
+					tx
+						.select({
+							id: generatedDocuments.id,
+							kind: generatedDocuments.kind,
+							status: generatedDocuments.status,
+							cryptoSignaturePkcs7: generatedDocuments.cryptoSignaturePkcs7,
+							issuedSnapshotSha256: generatedDocuments.issuedSnapshotSha256,
+							storagePath: generatedDocuments.storagePath,
+							issuedAt: generatedDocuments.issuedAt,
+							signatureAttestation: generatedDocuments.signatureAttestation,
+							doctorCertSerial: generatedDocuments.doctorCertSerial,
+							doctorCertSubject: generatedDocuments.doctorCertSubject,
+						})
+						.from(generatedDocuments)
+						.where(
+							and(
+								eq(generatedDocuments.id, id),
+								eq(generatedDocuments.organizationId, orgId),
+							),
+						)
+						.limit(1),
+				);
 
-			// БЫЛО: не проверялось, подписан ли документ УЖЕ. Любой сотрудник мог
-			// заменить подпись главного врача своей — прежняя затиралась в той же
-			// колонке, и определить, чья подпись заверяла архивный PDF, было
-			// невозможно (ни автора, ни времени подписи в схеме не хранится).
-			if (doc.cryptoSignaturePkcs7) {
-				return reply.code(409).send({
-					error: "AlreadySigned",
-					message:
-						"Документ уже подписан электронной подписью. Замена подписи запрещена: аннулируйте документ и выпустите исправляющий.",
-				});
-			}
-
-			// Проверка целостности документа: сверка хэша архивного снимка со значением в подписи.
-			// Документ ОБЯЗАН иметь реальный issuedSnapshotSha256 перед подписанием УКЭП (63-ФЗ).
-			if (!doc.issuedSnapshotSha256) {
-				return reply.code(400).send({
-					error: "DocumentNotIssued",
-					message:
-						"Документ должен быть сформирован (выпущен) перед подписанием УКЭП.",
-				});
-			}
-
-			const tamperCheck = validateGostCmsPkcs7Signature(
-				pkcs7Signature,
-				doc.issuedSnapshotSha256,
-			);
-			if (!tamperCheck.valid) {
-				return reply.code(400).send({
-					error: "SignatureVerificationFailed",
-					errorCode: tamperCheck.errorCode ?? "TamperDetected",
-					tamperDetected: tamperCheck.tamperDetected ?? true,
-					message:
-						"Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
-				});
-			}
-
-			// Prevent replay of the exact same PKCS#7 signature.
-			// Поиск ограничен своей организацией: раньше он шёл по всей базе и
-			// сообщал о существовании подписи в ЧУЖОЙ клинике.
-			const [replayed] = await withTenantCtx(orgId, (tx) =>
-				tx
-					.select({ id: generatedDocuments.id })
-					.from(generatedDocuments)
-					.where(
-						and(
-							eq(generatedDocuments.organizationId, orgId),
-							eq(generatedDocuments.cryptoSignaturePkcs7, pkcs7Signature),
-						),
-					)
-					.limit(1),
-			);
-
-			if (replayed) {
-				return reply.code(409).send({
-					error: "SignatureReplay",
-					message: "Эта крипто-подпись уже использована для другого документа.",
-				});
-			}
-
-			const now = new Date();
-			let certSerial =
-				parsedBody.data.certificateSerialNumber || doc.doctorCertSerial;
-			let certSubject =
-				parsedBody.data.certificateSubject || doc.doctorCertSubject;
-
-			if (!certSerial) {
-				try {
-					const derBuffer = Buffer.from(pkcs7Signature, "base64");
-					const meta = extractGostCmsMetadata(derBuffer);
-					if (meta.certificateSerialNumber) {
-						certSerial = meta.certificateSerialNumber;
-					}
-				} catch (derErr) {
-					request.log.warn(
-						{ err: derErr, documentId: id },
-						"[DocumentSignUkep] Не удалось извлечь серийный номер из DER CMS",
-					);
-				}
-			}
-
-			if (!certSerial) {
-				return reply.code(400).send({
-					error: "MissingCertificateSerialNumber",
-					message:
-						"Не удалось определить серийный номер сертификата электронной подписи. Выберите действующий сертификат врача и повторите подписание.",
-				});
-			}
-
-			if (!certSubject) {
-				certSubject =
-					doc.signatureAttestation?.staffFullName || "Врач-стоматолог";
-			}
-			const signedAtDate = parsedBody.data.signedAt
-				? new Date(parsedBody.data.signedAt)
-				: now;
-
-			const signResult = await withTenantCtx(orgId, async (tx) => {
-				const updated = await tx
-					.update(generatedDocuments)
-					.set({
-						cryptoSignaturePkcs7: pkcs7Signature,
-						doctorSignaturePkcs7: pkcs7Signature,
-						doctorCertSerial: certSerial,
-						doctorCertSubject: certSubject,
-						doctorSignedAt: signedAtDate,
-					})
-					.where(
-						and(
-							eq(generatedDocuments.id, id),
-							eq(generatedDocuments.organizationId, orgId),
-							// Условие в самом UPDATE: два одновременных подписания
-							// не смогут перезаписать друг друга.
-							isNull(generatedDocuments.cryptoSignaturePkcs7),
-						),
-					)
-					.returning();
-
-				if (!updated.length) {
-					return { conflict: true as const };
+				if (!doc) {
+					return reply.code(404).send({
+						error: "DocumentNotFound",
+						message: "Документ не найден.",
+					});
 				}
 
-				// Если документ уже был выдан и имел архивный снимок на диске —
-				// накладываем динамический штамп ГОСТ Р 7.0.97-2016 и обновляем хэш снимка
-				if (doc.status === "issued" && doc.issuedSnapshotSha256) {
-					const snapshotHtml = readIssuedDocumentSnapshot(doc);
-					if (snapshotHtml) {
-						const validFrom =
-							parsedBody.data.validFrom ??
-							doc.issuedAt?.toISOString() ??
-							now.toISOString();
-						const validToDate = new Date(validFrom);
-						validToDate.setFullYear(validToDate.getFullYear() + 1);
+				const identity = getRequestIdentity(request);
+				const staffRole = identity.role ?? request.user?.role ?? null;
+				const evalAccess = evaluateClinicalAccess(staffRole, {
+					clinicalRole: identity.clinicalRole ?? null,
+					canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+					specialties: identity.specialties ?? null,
+				});
+				if (clinicalDocKinds.has(doc.kind) && !evalAccess.hasClinicalAccess) {
+					return reply.code(403).send({
+						error: "PermissionDenied",
+						permission: "clinical.document.sign_ukep",
+						role: staffRole,
+						message:
+							"Подписание клинических медицинских документов электронной подписью доступно только врачу или главному врачу.",
+					});
+				}
 
-						const stampHtml = renderDigitalSignatureStampHtml({
-							certificateSerialNumber: certSerial,
-							certificateSubject: certSubject,
-							certificateIssuer:
-								parsedBody.data.certificateIssuer ??
-								"Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
-							validFrom,
-							validTo: parsedBody.data.validTo ?? validToDate.toISOString(),
-							signedAt: signedAtDate.toISOString(),
-							signatureType: parsedBody.data.signatureType ?? "ukep",
-							documentId: doc.id,
-						});
+				const signatureValidation = validateGostCmsPkcs7Signature(pkcs7Signature);
+				if (!signatureValidation.valid) {
+					return reply.code(400).send({
+						error: "SignatureVerificationFailed",
+						errorCode: signatureValidation.errorCode ?? "SignatureVerificationFailed",
+						message: `Файл электронной подписи поврежден или имеет неверный формат. ${signatureValidation.error ?? ""}`.trim(),
+					});
+				}
 
-						const stampedHtml = injectVisualSignatureStampIntoHtml(
-							snapshotHtml,
-							stampHtml,
+				const certStatus = validateCertificateStatus({
+					validFrom: parsedBody.data.validFrom,
+					validTo: parsedBody.data.validTo,
+					signedAt: parsedBody.data.signedAt,
+					certificateSerialNumber: parsedBody.data.certificateSerialNumber,
+				});
+				if (!certStatus.valid) {
+					return reply.code(400).send({
+						error: certStatus.errorCode ?? "InvalidCertificateStatus",
+						message: certStatus.error,
+					});
+				}
+
+				if (doc.status === "voided") {
+					return reply.code(409).send({
+						error: "Conflict",
+						message: "Невозможно подписать аннулированный документ электронной подписью.",
+					});
+				}
+
+				if (doc.cryptoSignaturePkcs7) {
+					return reply.code(409).send({
+						error: "AlreadySigned",
+						message:
+							"Документ уже подписан электронной подписью. Замена подписи запрещена: аннулируйте документ и выпустите исправляющий.",
+					});
+				}
+
+				if (!doc.issuedSnapshotSha256) {
+					return reply.code(400).send({
+						error: "DocumentNotIssued",
+						message:
+							"Документ должен быть сформирован (выпущен) перед подписанием УКЭП.",
+					});
+				}
+
+				const tamperCheck = validateGostCmsPkcs7Signature(
+					pkcs7Signature,
+					doc.issuedSnapshotSha256,
+				);
+				if (!tamperCheck.valid) {
+					return reply.code(400).send({
+						error: "SignatureVerificationFailed",
+						errorCode: tamperCheck.errorCode ?? "TamperDetected",
+						tamperDetected: tamperCheck.tamperDetected ?? true,
+						message:
+							"Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
+					});
+				}
+
+				const [replayed] = await withTenantReadCtx(orgId, (tx) =>
+					tx
+						.select({ id: generatedDocuments.id })
+						.from(generatedDocuments)
+						.where(
+							and(
+								eq(generatedDocuments.organizationId, orgId),
+								eq(generatedDocuments.cryptoSignaturePkcs7, pkcs7Signature),
+							),
+						)
+						.limit(1),
+				);
+
+				if (replayed) {
+					return reply.code(409).send({
+						error: "SignatureReplay",
+						message: "Эта крипто-подпись уже использована для другого документа.",
+					});
+				}
+
+				const now = new Date();
+				let certSerial =
+					parsedBody.data.certificateSerialNumber || doc.doctorCertSerial;
+				let certSubject =
+					parsedBody.data.certificateSubject || doc.doctorCertSubject;
+
+				if (!certSerial) {
+					try {
+						const derBuffer = Buffer.from(pkcs7Signature, "base64");
+						const meta = extractGostCmsMetadata(derBuffer);
+						if (meta.certificateSerialNumber) {
+							certSerial = meta.certificateSerialNumber;
+						}
+					} catch (derErr) {
+						request.log.warn(
+							{ err: derErr, documentId: id },
+							"[DocumentSignUkep] Не удалось извлечь серийный номер из DER CMS",
 						);
-						// Сохраняем штампованный HTML в отдельный файл .stamped.html для архивного просмотра,
-						// НИКОГДА не перезаписывая базовый криптографический хэш doc.issuedSnapshotSha256
-						// подписанного контента (иначе повторная валидация УКЭП давала TamperDetected по 63-ФЗ!).
-						writeStampedDocumentSnapshot(doc.id, stampedHtml);
 					}
 				}
 
-				await recordAuditEvent({
-					organizationId: orgId,
-					actorUserId: identity.userId ?? null,
-					entityType: "generated_document",
-					entityId: doc.id,
-					action: "document_signed_ukep_63fz",
-					reason: JSON.stringify({
-						law: "63-FZ",
-						signatureType: parsedBody.data.signatureType ?? "ukep",
-						certSerial,
-						certSubject,
-						signedAt: signedAtDate.toISOString(),
-					}),
-					tx,
+				if (!certSerial) {
+					return reply.code(400).send({
+						error: "MissingCertificateSerialNumber",
+						message:
+							"Не удалось определить серийный номер сертификата электронной подписи. Выберите действующий сертификат врача и повторите подписание.",
+					});
+				}
+
+				if (!certSubject) {
+					certSubject =
+						doc.signatureAttestation?.staffFullName || "Врач-стоматолог";
+				}
+				const signedAtDate = parsedBody.data.signedAt
+					? new Date(parsedBody.data.signedAt)
+					: now;
+
+				const signResult = await withTenantWriteCtx(orgId, async (tx) => {
+					const updated = await tx
+						.update(generatedDocuments)
+						.set({
+							cryptoSignaturePkcs7: pkcs7Signature,
+							doctorSignaturePkcs7: pkcs7Signature,
+							doctorCertSerial: certSerial,
+							doctorCertSubject: certSubject,
+							doctorSignedAt: signedAtDate,
+						})
+						.where(
+							and(
+								eq(generatedDocuments.id, id),
+								eq(generatedDocuments.organizationId, orgId),
+								isNull(generatedDocuments.cryptoSignaturePkcs7),
+							),
+						)
+						.returning();
+
+					if (!updated.length) {
+						return { conflict: true as const };
+					}
+
+					if (doc.status === "issued" && doc.issuedSnapshotSha256) {
+						const snapshotHtml = readIssuedDocumentSnapshot(doc);
+						if (snapshotHtml) {
+							const validFrom =
+								parsedBody.data.validFrom ??
+								doc.issuedAt?.toISOString() ??
+								now.toISOString();
+							const validToDate = new Date(validFrom);
+							validToDate.setFullYear(validToDate.getFullYear() + 1);
+
+							const stampHtml = renderDigitalSignatureStampHtml({
+								certificateSerialNumber: certSerial,
+								certificateSubject: certSubject,
+								certificateIssuer:
+									parsedBody.data.certificateIssuer ??
+									"Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
+								validFrom,
+								validTo: parsedBody.data.validTo ?? validToDate.toISOString(),
+								signedAt: signedAtDate.toISOString(),
+								signatureType: parsedBody.data.signatureType ?? "ukep",
+								documentId: doc.id,
+							});
+
+							const stampedHtml = injectVisualSignatureStampIntoHtml(
+								snapshotHtml,
+								stampHtml,
+							);
+							writeStampedDocumentSnapshot(doc.id, stampedHtml);
+						}
+					}
+
+					await recordAuditEvent({
+						organizationId: orgId,
+						actorUserId: identity.userId ?? null,
+						entityType: "generated_document",
+						entityId: doc.id,
+						action: "document_signed_ukep_63fz",
+						reason: JSON.stringify({
+							law: "63-FZ",
+							signatureType: parsedBody.data.signatureType ?? "ukep",
+							certSerial,
+							certSubject,
+							signedAt: signedAtDate.toISOString(),
+						}),
+						tx,
+					});
+
+					return { success: true as const, id: updated[0]?.id };
 				});
 
-				return { success: true as const, id: updated[0]?.id };
-			});
+				if ("conflict" in signResult && signResult.conflict) {
+					return reply.code(409).send({
+						error: "AlreadySigned",
+						message: "Документ уже подписан электронной подписью или недоступен.",
+					});
+				}
 
-			if ("conflict" in signResult && signResult.conflict) {
-				return reply.code(409).send({
-					error: "AlreadySigned",
-					message: "Документ уже подписан электронной подписью или недоступен.",
+				return reply.send({ success: true, id: signResult.id });
+			} catch (e: unknown) {
+				request.log.error(e, "[DocumentSignUkep] Error");
+				return reply.code(500).send({
+					error: "DatabaseError",
+					message: "Не удалось сохранить электронную подпись документа. Повторите попытку.",
 				});
 			}
-
-			return { success: true, id: signResult.id };
-		} catch (e: unknown) {
-			request.log.error(e, "[DocumentSignUkep] Error");
-			return reply.code(500).send({
-				error: "DatabaseError",
-				message: "Не удалось сохранить электронную подпись документа. Повторите попытку.",
-			});
-		}
+		},
 	});
 }

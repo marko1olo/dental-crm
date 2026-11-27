@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { CANONICAL_PG_LAB_STATUSES, mapStageToCanonicalPgStatus } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { LabOrderStatus } from "../../../db/labQuery.js";
-import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
+import { withTenantWriteCtx, type TenantDb } from "../../../db/rls.js";
 import { labItems, labOrderEvents, labOrders } from "../../../db/schema.js";
 import { isPermittedLabStatusTransition } from "../ordersCrudModules/labOrderStatusTransitions.js";
 import { generateLabGuestPortalToken } from "../portalModules/labPortalTokenSecurity.js";
@@ -349,7 +349,7 @@ export async function executeLabOrderPatch(
 	body: LabOrderPatchBody,
 	targetStatus: LabOrderStatus | undefined,
 ): Promise<PatchDbResult> {
-	return await withTenantCtx(orgId, async (tx) => {
+	return await withTenantWriteCtx(orgId, async (tx) => {
 		return executeLabOrderPatchTx(tx, orgId, id, body, targetStatus);
 	});
 }

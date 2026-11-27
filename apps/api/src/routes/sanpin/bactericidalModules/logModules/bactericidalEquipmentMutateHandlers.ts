@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../../db/rls.js";
 import { bactericidalEquipments } from "../../../../db/schema.js";
 import {
 	createBactericidalEquipmentDtoSchema,
@@ -30,7 +30,7 @@ export async function handleCreateBactericidalEquipment(
 	}
 	const data = parsed.data;
 
-	const [created] = await withTenantCtx(organizationId, async (tx) =>
+	const [created] = await withTenantWriteCtx(organizationId, async (tx) =>
 		tx
 			.insert(bactericidalEquipments)
 			.values({
@@ -57,7 +57,7 @@ export async function handleCreateBactericidalEquipment(
 }
 
 export async function handleUpdateBactericidalEquipment(
-	req: FastifyRequest<{ Params: { id: string } }>,
+	req: FastifyRequest,
 	reply: FastifyReply,
 ) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -67,7 +67,11 @@ export async function handleUpdateBactericidalEquipment(
 	);
 	if (!organizationId) return;
 
-	const { id } = req.params;
+	const rawId =
+		typeof req.params === "object" && req.params !== null && "id" in req.params
+			? req.params.id
+			: undefined;
+	const id = typeof rawId === "string" ? rawId : "";
 	if (!UUID_PATTERN.test(id)) {
 		return reply.code(400).send({
 			error: "ValidationError",
@@ -86,7 +90,7 @@ export async function handleUpdateBactericidalEquipment(
 
 	if (body.action === "replace_lamps") {
 		const today = new Date().toISOString().slice(0, 10);
-		const [updated] = await withTenantCtx(organizationId, async (tx) =>
+		const [updated] = await withTenantWriteCtx(organizationId, async (tx) =>
 			tx
 				.update(bactericidalEquipments)
 				.set({
@@ -113,7 +117,7 @@ export async function handleUpdateBactericidalEquipment(
 		return reply.send(updated);
 	}
 
-	const [updated] = await withTenantCtx(organizationId, async (tx) =>
+	const [updated] = await withTenantWriteCtx(organizationId, async (tx) =>
 		tx
 			.update(bactericidalEquipments)
 			.set({
@@ -143,7 +147,7 @@ export async function handleUpdateBactericidalEquipment(
 }
 
 export async function handleDeleteBactericidalEquipment(
-	req: FastifyRequest<{ Params: { id: string } }>,
+	req: FastifyRequest,
 	reply: FastifyReply,
 ) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -153,7 +157,11 @@ export async function handleDeleteBactericidalEquipment(
 	);
 	if (!organizationId) return;
 
-	const { id } = req.params;
+	const rawId =
+		typeof req.params === "object" && req.params !== null && "id" in req.params
+			? req.params.id
+			: undefined;
+	const id = typeof rawId === "string" ? rawId : "";
 	if (!UUID_PATTERN.test(id)) {
 		return reply.code(400).send({
 			error: "ValidationError",
@@ -161,7 +169,7 @@ export async function handleDeleteBactericidalEquipment(
 		});
 	}
 
-	const [deleted] = await withTenantCtx(organizationId, async (tx) =>
+	const [deleted] = await withTenantWriteCtx(organizationId, async (tx) =>
 		tx
 			.update(bactericidalEquipments)
 			.set({

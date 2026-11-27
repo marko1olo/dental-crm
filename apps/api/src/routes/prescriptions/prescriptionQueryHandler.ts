@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { and, desc, eq } from "drizzle-orm";
 import { verifyPrescriptionStatutoryValidity } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { electronicPrescriptionItems, electronicPrescriptions } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
@@ -57,13 +57,7 @@ export async function handleListPrescriptions(
 		});
 	}
 
-	const prescriptions = await withTenantCtx(orgId, async (tx) => {
-		await auditMedicalAccessFromRequest(request, {
-			organizationId: orgId,
-			action: "VIEW_PRESCRIPTIONS",
-			diagnosis: "Реестр электронных рецептов",
-		});
-
+	const prescriptions = await withTenantReadCtx(orgId, async (tx) => {
 		const conditions = [eq(electronicPrescriptions.organizationId, orgId)];
 		if (query.patientId) conditions.push(eq(electronicPrescriptions.patientId, query.patientId));
 		if (query.visitId) conditions.push(eq(electronicPrescriptions.visitId, query.visitId));
@@ -76,6 +70,12 @@ export async function handleListPrescriptions(
 			.where(and(...conditions))
 			.orderBy(desc(electronicPrescriptions.createdAt))
 			.limit(100);
+	});
+
+	await auditMedicalAccessFromRequest(request, {
+		organizationId: orgId,
+		action: "VIEW_PRESCRIPTIONS",
+		diagnosis: "Реестр электронных рецептов",
 	});
 
 	return reply.send({ success: true, prescriptions });
@@ -98,7 +98,7 @@ export async function handleGetPrescriptionById(
 		});
 	}
 
-	const loaded = await withTenantCtx(orgId, async (tx) => {
+	const loaded = await withTenantReadCtx(orgId, async (tx) => {
 		const [prescription] = await tx
 			.select()
 			.from(electronicPrescriptions)
@@ -108,14 +108,6 @@ export async function handleGetPrescriptionById(
 		if (!prescription) {
 			return null;
 		}
-
-		await auditMedicalAccessFromRequest(request, {
-			organizationId: orgId,
-			patientId: prescription.patientId,
-			action: "VIEW_PRESCRIPTION_DETAILS",
-			diagnosis: prescription.clinicalDiagnosisMkb10 ?? "Электронный рецепт",
-			metadata: { prescriptionId: prescription.id },
-		});
 
 		const items = await tx
 			.select()
@@ -130,6 +122,14 @@ export async function handleGetPrescriptionById(
 		return reply.code(404).send({ error: "PrescriptionNotFound", message: "Рецепт не найден." });
 	}
 	const { prescription, items } = loaded;
+
+	await auditMedicalAccessFromRequest(request, {
+		organizationId: orgId,
+		patientId: prescription.patientId,
+		action: "VIEW_PRESCRIPTION_DETAILS",
+		diagnosis: prescription.clinicalDiagnosisMkb10 ?? "Электронный рецепт",
+		metadata: { prescriptionId: prescription.id },
+	});
 
 	const validityDaysNum =
 		prescription.validityPeriod === "days_15"

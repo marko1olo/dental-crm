@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../../../../db/client.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../../db/rls.js";
 import { sterilizerEquipments } from "../../../../db/schema.js";
 
 export async function executeEquipmentLifecycleAction(
@@ -16,7 +16,7 @@ export async function executeEquipmentLifecycleAction(
 	const today = new Date().toISOString().slice(0, 10);
 
 	if (body.action === "put_in_maintenance") {
-		const [updated] = await withTenantCtx(organizationId, async (tx) => {
+		const [updated] = await withTenantWriteCtx(organizationId, async (tx) => {
 			return tx
 				.update(sterilizerEquipments)
 				.set({
@@ -38,7 +38,7 @@ export async function executeEquipmentLifecycleAction(
 
 	if (body.action === "return_to_service") {
 		const next6Months = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-		const [updated] = await withTenantCtx(organizationId, async (tx) => {
+		const [updated] = await withTenantWriteCtx(organizationId, async (tx) => {
 			return tx
 				.update(sterilizerEquipments)
 				.set({
@@ -60,7 +60,7 @@ export async function executeEquipmentLifecycleAction(
 	}
 
 	if (body.action === "decommission") {
-		const [updated] = await withTenantCtx(organizationId, async (tx) => {
+		const [updated] = await withTenantWriteCtx(organizationId, async (tx) => {
 			return tx
 				.update(sterilizerEquipments)
 				.set({
@@ -82,7 +82,7 @@ export async function executeEquipmentLifecycleAction(
 	}
 
 	if (body.action === "recommission") {
-		const [updated] = await withTenantCtx(organizationId, async (tx) => {
+		const [updated] = await withTenantWriteCtx(organizationId, async (tx) => {
 			return tx
 				.update(sterilizerEquipments)
 				.set({

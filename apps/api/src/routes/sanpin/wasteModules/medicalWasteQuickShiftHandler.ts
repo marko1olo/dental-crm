@@ -6,7 +6,7 @@
 
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { medicalWasteLogs } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -21,7 +21,7 @@ export async function handlePostMedicalWasteQuickShiftBundle(req: FastifyRequest
 
 	const responsibleStaffId = getRequestIdentity(req).userId ?? null;
 	const now = new Date();
-	const newLogs = await withTenantCtx(organizationId, async (tx) => {
+	const newLogs = await withTenantWriteCtx(organizationId, async (tx) => {
 		return tx
 			.insert(medicalWasteLogs)
 			.values([

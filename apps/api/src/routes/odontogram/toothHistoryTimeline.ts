@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { type TenantDb, withTenantCtx } from "../../db/rls.js";
+import { type TenantDb, withTenantReadCtx } from "../../db/rls.js";
 import {
 	imagingStudies,
 	toothStateHistory,
@@ -424,8 +424,8 @@ export async function fetchToothHistoryTimeline(
 							.join(", ");
 						endoDetail = ` (Каналы: ${canalSummaries})`;
 					}
-				} catch {
-					// non-JSON notes
+				} catch (err) {
+					void err;
 				}
 			}
 			events.push({
@@ -540,5 +540,5 @@ export async function fetchToothHistoryTimeline(
 		return events;
 	};
 
-	return tx ? run(tx) : withTenantCtx(orgId, run);
+	return tx ? run(tx) : withTenantReadCtx(orgId, run);
 }

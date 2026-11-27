@@ -1,7 +1,7 @@
 import { and, eq, ilike, or } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import { formatKopecksToRubles, rublesToKopecks, toExactKopecks } from "@dental/shared";
-import { withSavepoint, withTenantCtx, type TenantDb } from "../../db/rls.js";
+import { withSavepoint, withTenantWriteCtx, type TenantDb } from "../../db/rls.js";
 import { inventoryItems } from "../../db/schema.js";
 import { fefoStockService } from "../../services/inventory/fefoStockService.js";
 import type { OrthoMaterialDeductionResult } from "./types.js";
@@ -142,7 +142,7 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 
 		return params.tx
 			? await withSavepoint(params.tx, runWithTx)
-			: await withTenantCtx(organizationId, runWithTx);
+			: await withTenantWriteCtx(organizationId, runWithTx);
 	} catch (err) {
 		params.logger?.warn(
 			{ err, organizationId, patientId, itemNamePattern },

@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../../accessGuard.js";
-import { onTenantTxCommit, withTenantCtx } from "../../../../db/rls.js";
+import { onTenantTxCommit, withTenantReadCtx, withTenantWriteCtx } from "../../../../db/rls.js";
 import { sterilizationLogs, visitDiaries } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
@@ -27,7 +27,7 @@ export async function handleSterilizationLink(req: FastifyRequest, reply: Fastif
 	const doctorUserId = identity.userId ?? null;
 
 	if (!trimmedBarcode) {
-		const [existingDiary] = await withTenantCtx(organizationId, async (tx) =>
+		const [existingDiary] = await withTenantReadCtx(organizationId, async (tx) =>
 			tx
 				.select()
 				.from(visitDiaries)
@@ -56,7 +56,7 @@ export async function handleSterilizationLink(req: FastifyRequest, reply: Fastif
 		if (firstPart) barcodeCandidates.push(firstPart);
 	}
 
-	const linkOutcome = await withTenantCtx(organizationId, async (tx) => {
+	const linkOutcome = await withTenantWriteCtx(organizationId, async (tx) => {
 		const foundLogs = await tx
 			.select()
 			.from(sterilizationLogs)

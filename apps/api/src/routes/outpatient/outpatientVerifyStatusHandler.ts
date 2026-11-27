@@ -5,7 +5,7 @@ import {
 	requireResolvedOrganizationId,
 	unguardedBypassAllowed,
 } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import { outpatientVerifications, visits } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -67,7 +67,7 @@ export async function updateVerificationStatusHandler(request: FastifyRequest, r
 
 	const isFinished = bodyParsed.data.status === "approved" || bodyParsed.data.status === "rejected";
 
-	const updated = await withTenantCtx(orgId, async (tx) => {
+	const updated = await withTenantWriteCtx(orgId, async (tx) => {
 		const [existing] = await tx
 			.select()
 			.from(outpatientVerifications)

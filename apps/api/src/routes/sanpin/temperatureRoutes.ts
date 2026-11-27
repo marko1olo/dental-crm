@@ -5,6 +5,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { handlePostTemperatureShiftAutopilot } from "./temperatureModules/temperatureAutopilotHandler.js";
 import {
 	handleGetTemperatureEquipments,
@@ -15,31 +16,57 @@ import {
 	handlePostTemperatureLog,
 } from "./temperatureModules/temperatureLogHandlers.js";
 
-const sanpinMutationOptions = {
-	schema: {
-		description:
-			"SanPiN temperature & humidity mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-		headers: {
-			type: "object",
-			properties: {
-				"idempotency-key": { type: "string" },
-				"x-idempotency-key": { type: "string" },
-				"organizationid": { type: "string" },
-				"x-organization-id": { type: "string" },
-			},
+const sanpinMutationSchema = {
+	description:
+		"SanPiN temperature & humidity mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+	headers: {
+		type: "object",
+		properties: {
+			"idempotency-key": { type: "string" },
+			"x-idempotency-key": { type: "string" },
+			"organizationid": { type: "string" },
+			"x-organization-id": { type: "string" },
 		},
 	},
-};
+} as const;
 
 export function registerSanpinTemperatureRoutes(app: FastifyInstance) {
 	// 1. Оборудование контроля (холодильники, помещения, гигрометры)
-	app.get("/api/registers/temperature-humidity/equipments", handleGetTemperatureEquipments);
-	app.post("/api/registers/temperature-humidity/equipments", sanpinMutationOptions, handlePostTemperatureEquipment);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/registers/temperature-humidity/equipments",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetTemperatureEquipments(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/registers/temperature-humidity/equipments",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handlePostTemperatureEquipment(request, reply),
+	});
 
 	// 2. Журнал замеров
-	app.get("/api/registers/temperature-humidity/logs", handleGetTemperatureLogs);
-	app.post("/api/registers/temperature-humidity/logs", sanpinMutationOptions, handlePostTemperatureLog);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/registers/temperature-humidity/logs",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetTemperatureLogs(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/registers/temperature-humidity/logs",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handlePostTemperatureLog(request, reply),
+	});
 
-	// 3. 1-клик автопилот нормы смены
-	app.post("/api/registers/temperature-humidity/shift-autopilot", sanpinMutationOptions, handlePostTemperatureShiftAutopilot);
+	// 3. Пакетное заполнение нормы смены
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/registers/temperature-humidity/shift-autopilot",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handlePostTemperatureShiftAutopilot(request, reply),
+	});
 }

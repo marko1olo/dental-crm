@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { defineStreamRoute } from "../../core/routeFactories.js";
+import { definePublicRoute, defineStreamRoute } from "../../core/routeFactories.js";
 import { MAX_SCAN_FILE_SIZE_BYTES } from "../../services/labScanDirectUpload.js";
 import {
 	handleDirectStorageDownload,
@@ -37,31 +37,33 @@ export async function registerLabScansUploadRoutes(app: FastifyInstance) {
 	 * Генерация Presigned URL для прямой загрузки тяжелых 3D сканов (STL/PLY/OBJ) в S3 бакет.
 	 * Изоляция организации (organizationId) и заголовок Idempotency-Key (Мандат 8bo / RFC 9562).
 	 */
-	app.post(
-		"/api/lab/orders/:id/scans/upload-url",
-		{ config: { tenantTxSelfManaged: true } },
-		handleLabScanUploadUrl,
-	);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/lab/orders/:id/scans/upload-url",
+		permission: "public",
+		handler: async ({ request, reply }) => handleLabScanUploadUrl(request, reply),
+	});
 
 	/**
 	 * GET /api/lab/orders/:id/scans/download-url
 	 * Получение Presigned URL на скачивание 3D скана для сотрудников клиники с изоляцией тенанта.
 	 */
-	app.get(
-		"/api/lab/orders/:id/scans/download-url",
-		{ config: { tenantTxSelfManaged: true } },
-		handleLabScanDownloadUrl,
-	);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/lab/orders/:id/scans/download-url",
+		permission: "public",
+		handler: async ({ request, reply }) => handleLabScanDownloadUrl(request, reply),
+	});
 
 	/**
 	 * GET /api/portal/lab-order/:token/scans/download-url
 	 * Получение Presigned URL на скачивание 3D скана зубным техником по токену наряда без авторизации клиники.
 	 */
-	app.get(
-		"/api/portal/lab-order/:token/scans/download-url",
-		{ config: { tenantTxSelfManaged: true } },
-		handlePortalLabScanDownloadUrl,
-	);
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/portal/lab-order/:token/scans/download-url",
+		handler: async ({ request, reply }) => handlePortalLabScanDownloadUrl(request, reply),
+	});
 
 	/**
 	 * PUT /api/portal/direct-storage/upload

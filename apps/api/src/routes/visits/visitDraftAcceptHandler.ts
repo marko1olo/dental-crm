@@ -7,6 +7,7 @@ import {
 	ensureClinicalStaffAccess,
 	requireClinicalMutationContext,
 } from "../../security/tenantContext.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import {
 	acceptVisitDraftInDb,
 	VisitSignedResponseIncompleteError,
@@ -52,7 +53,7 @@ export async function handleAcceptVisitDraft(
 		if (process.env.DENTAL_MOCK_ACCEPT_VISIT_DRAFT_ERROR) {
 			throw new Error(process.env.DENTAL_MOCK_ACCEPT_VISIT_DRAFT_ERROR);
 		}
-		result = await acceptVisitDraftInDb(orgId, outcome.data);
+		result = await withTenantWriteCtx(orgId, () => acceptVisitDraftInDb(orgId, outcome.data));
 		if (result?.visit) {
 			await executeVisitCompletionSideEffects({
 				orgId,

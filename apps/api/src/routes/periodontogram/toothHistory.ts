@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { withTenantCtx, type TenantDb } from "../../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../../db/rls.js";
 import {
 	periodontogramSites,
 	periodontogramSnapshots,
@@ -66,7 +66,7 @@ export async function fetchToothPeriodontalEvents(
 
 		const { perioRecords, allSites } = tx
 			? await run(tx)
-			: await withTenantCtx(orgId, run);
+			: await withTenantReadCtx(orgId, run);
 		if (perioRecords.length === 0) return [];
 
 		const sitesBySnapshot = new Map<string, Array<{

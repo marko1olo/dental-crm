@@ -2,7 +2,8 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	implantIsqMeasurements,
 	organizations,
@@ -63,7 +64,7 @@ function resolveSafePublicOrigin(request: FastifyRequest, orgWebsite?: string | 
 }
 
 export function registerPassportRoute(app: FastifyInstance) {
-	const handlePassport = async (request: FastifyRequest<{ Params: { installationId: string } }>, reply: FastifyReply) => {
+	const handlePassport = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
@@ -89,7 +90,7 @@ export function registerPassportRoute(app: FastifyInstance) {
 		}
 
 		const { installationId } = parsedParams.data;
-		const passportDbResult = await withTenantCtx(orgId, async (tx) => {
+		const passportDbResult = await withTenantReadCtx(orgId, async (tx) => {
 			const [installation] = await tx
 				.select()
 				.from(patientImplantInstallations)
@@ -219,5 +220,11 @@ export function registerPassportRoute(app: FastifyInstance) {
 		return reply.send({ success: true, passport: passportData });
 	};
 
-	app.get("/api/clinical/implants/:installationId/passport", handlePassport);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/clinical/implants/:installationId/passport",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handlePassport(request, reply),
+	});
 }

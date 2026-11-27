@@ -9,14 +9,14 @@ import { createAutoclaveDailyTestSchema } from "@dental/shared";
 import { desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../../db/rls.js";
 import { autoclaveDailyTests, users } from "../../../../db/schema.js";
 
 export async function handleGetDailyTests(req: FastifyRequest, reply: FastifyReply) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "read daily tests");
 	if (!organizationId) return;
 
-	return withTenantCtx(organizationId, (tx) =>
+	return withTenantReadCtx(organizationId, (tx) =>
 		tx
 			.select({
 				id: autoclaveDailyTests.id,
@@ -56,7 +56,7 @@ export async function handleCreateDailyTest(req: FastifyRequest, reply: FastifyR
 	const data = parsed.data;
 	const testResult = data.colorChangeVerified ? "passed" : "failed";
 
-	const [log] = await withTenantCtx(organizationId, (tx) =>
+	const [log] = await withTenantWriteCtx(organizationId, (tx) =>
 		tx
 			.insert(autoclaveDailyTests)
 			.values({

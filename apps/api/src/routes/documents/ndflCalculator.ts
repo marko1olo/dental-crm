@@ -3,6 +3,8 @@ import { z } from "zod";
 import {
 	requireClinicalReadAccess,
 } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { NdflTaxService } from "../../services/documents/ndflTaxService.js";
 import { fnsTaxPayloadSchema } from "@dental/shared";
@@ -26,9 +28,9 @@ export async function register(app: FastifyInstance) {
 	// 1. GET /api/v1/documents/tax-deduction/preview/:patientId (Feature #5)
 	const handlePreview = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "document read")))
-			return;
+			return reply;
 		const organizationId = requireOrganizationId(request, reply);
-		if (!organizationId) return;
+		if (!organizationId) return reply;
 
 		const paramsParsed = ndflParamsSchema.safeParse(request.params);
 		if (!paramsParsed.success) {
@@ -59,10 +61,12 @@ export async function register(app: FastifyInstance) {
 		if (query.endDate !== undefined) options.endDate = query.endDate;
 
 		try {
-			const preview = await NdflTaxService.calculatePreview(
-				organizationId,
-				patientId,
-				options,
+			const preview = await withTenantReadCtx(organizationId, () =>
+				NdflTaxService.calculatePreview(
+					organizationId,
+					patientId,
+					options,
+				),
 			);
 			return reply.send(preview);
 		} catch (err: unknown) {
@@ -104,7 +108,12 @@ export async function register(app: FastifyInstance) {
 		}
 	};
 
-	app.get("/api/documents/tax-deduction/preview/:patientId", handlePreview);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/documents/tax-deduction/preview/:patientId",
+		permission: "public",
+		handler: async ({ request, reply }) => handlePreview(request, reply),
+	});
 
 function asPlainRecord(value: unknown): Record<string, unknown> | null {
 	return value !== null && typeof value === "object" && !Array.isArray(value)
@@ -124,9 +133,9 @@ function extractPersonFamilyText(personObj: Record<string, unknown> | null): str
 	// 2. POST /api/v1/documents/tax-deduction/xml (Feature #33)
 	const handleGenerateXml = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "document tax xml")))
-			return;
+			return reply;
 		const organizationId = requireOrganizationId(request, reply);
-		if (!organizationId) return;
+		if (!organizationId) return reply;
 
 		const rawBody = asPlainRecord(request.body);
 		const payerObj = asPlainRecord(rawBody?.payer);
@@ -190,5 +199,10 @@ function extractPersonFamilyText(personObj: Record<string, unknown> | null): str
 	};
 
 	// 2. POST /api/documents/tax-deduction/xml (Feature #33 - Каноническая генерация XML)
-	app.post("/api/documents/tax-deduction/xml", handleGenerateXml);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/documents/tax-deduction/xml",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGenerateXml(request, reply),
+	});
 }

@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { and, eq } from "drizzle-orm";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import { patients } from "../../db/schema.js";
 import { treatmentPlans } from "../../db/schema/clinical/treatmentPlansSchema.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
@@ -13,11 +14,13 @@ import { resolveOrthoMaterialCost, resolveOrthoServicePrice } from "./orthoPrice
 import { archwireChangeSchema, ligatureActivateSchema, patientParamsSchema, type OrthodonticProgressRecord, type OrthoMaterialDeductionResult } from "./types.js";
 
 export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orthodontics") {
-	app.post<{ Params: { patientId: string } }>(
-		`${prefix}/:patientId/archwire-change`,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: `${prefix}/:patientId/archwire-change`,
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
+			if (!orgId) return reply;
 
 			const identity = getRequestIdentity(request);
 			const staffRole = identity.role ?? request.user?.role ?? null;
@@ -72,7 +75,7 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 			const serviceCode = isPlate ? "A16.07.047" : body.arch === "both" ? "A16.07.048.001" : "A16.07.048.002";
 			const fallbackPriceRub = isPlate ? 2500 : body.arch === "both" ? 4000 : 3500;
 
-			const txResult = await withTenantCtx(orgId, async (tx) => {
+			const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 				const [patient] = await tx
 					.select({
 						id: patients.id,
@@ -280,13 +283,15 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 
 			return reply.send(txResult.payload);
 		},
-	);
+	});
 
-	app.post<{ Params: { patientId: string } }>(
-		`${prefix}/:patientId/ligatures-activate`,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: `${prefix}/:patientId/ligatures-activate`,
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
+			if (!orgId) return reply;
 
 			const identity = getRequestIdentity(request);
 			const staffRole = identity.role ?? request.user?.role ?? null;
@@ -325,7 +330,7 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 			const isPlate = body.applianceCategory === "plate";
 			const shouldDeductLigatures = !isPlate;
 
-			const txResult = await withTenantCtx(orgId, async (tx) => {
+			const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 				const [patient] = await tx
 					.select({
 						id: patients.id,
@@ -395,5 +400,5 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 
 			return reply.send(txResult.payload);
 		},
-	);
+	});
 }

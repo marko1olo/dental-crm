@@ -6,15 +6,20 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import { implantIsqMeasurements, patientImplantInstallations } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 
 export function registerIsqRoute(app: FastifyInstance) {
-	app.post("/api/clinical/implants/:installationId/isq", async (request, reply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/clinical/implants/:installationId/isq",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
+			if (!orgId) return reply;
 
 		const identity = getRequestIdentity(request);
 		const staffRole = identity.role ?? request.user?.role ?? null;
@@ -28,8 +33,12 @@ export function registerIsqRoute(app: FastifyInstance) {
 			});
 		}
 
-		const rawParams = (request.params && typeof request.params === "object" ? request.params : {}) as { installationId?: string };
-		const paramValidation = z.string().uuid().safeParse(rawParams.installationId);
+		const rawParams = request.params;
+		const rawInstallationId =
+			typeof rawParams === "object" && rawParams !== null && "installationId" in rawParams
+				? rawParams.installationId
+				: undefined;
+		const paramValidation = z.string().uuid().safeParse(rawInstallationId);
 		if (!paramValidation.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
@@ -49,7 +58,7 @@ export function registerIsqRoute(app: FastifyInstance) {
 		}
 		const input = parsed.data;
 
-		const txResult = await withTenantCtx(orgId, async (tx) => {
+		const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 			const [installation] = await tx
 				.select()
 				.from(patientImplantInstallations)
@@ -118,5 +127,6 @@ export function registerIsqRoute(app: FastifyInstance) {
 		}
 
 		return reply.code(201).send(txResult.responsePayload);
+		},
 	});
 }

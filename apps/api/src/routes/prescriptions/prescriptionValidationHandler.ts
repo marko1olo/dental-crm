@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
 import { verifyPrescriptionStatutoryValidity } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	electronicPrescriptionItems,
 	electronicPrescriptions,
@@ -28,31 +28,71 @@ interface VerifyPrescriptionParams {
  * Statutory rules engine validation per Order 1094n
  */
 export async function handleValidatePrescription(
-	request: FastifyRequest<{ Body: StatutoryValidationPayload }>,
+	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
 
-	const body = request.body;
-	if (!body || typeof body !== "object") {
+	const rawBody = request.body;
+	if (!rawBody || typeof rawBody !== "object") {
 		return reply.code(400).send({
 			error: "ValidationError",
 			message: "Тело запроса для валидации рецепта обязательно.",
 		});
 	}
 
-	let result = verifyPrescriptionStatutoryValidity(body);
+	const bodyObj: Record<string, unknown> =
+		typeof rawBody === "object" && rawBody !== null
+			? (rawBody as Record<string, unknown>)
+			: {};
+
+	const itemsList = Array.isArray(bodyObj.items) ? bodyObj.items : [];
+	const prescriptionPayload = {
+		formNumber: typeof bodyObj.formNumber === "string" ? bodyObj.formNumber : undefined,
+		formType: typeof bodyObj.formType === "string" ? bodyObj.formType : undefined,
+		prescriptionDate: typeof bodyObj.prescriptionDate === "string" ? bodyObj.prescriptionDate : new Date().toISOString().slice(0, 10),
+		validityDays: typeof bodyObj.validityDays === "string" || typeof bodyObj.validityDays === "number" ? bodyObj.validityDays : "60",
+		isChronicSpecialCare: typeof bodyObj.isChronicSpecialCare === "boolean" ? bodyObj.isChronicSpecialCare : undefined,
+		chronicPeriodicity: typeof bodyObj.chronicPeriodicity === "string" ? bodyObj.chronicPeriodicity : null,
+		items: itemsList.map((item) => {
+			const obj = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+			return {
+				latinName: typeof obj.latinName === "string" ? obj.latinName : undefined,
+				tradeName: typeof obj.tradeName === "string" ? obj.tradeName : undefined,
+				category: typeof obj.category === "string" ? obj.category : undefined,
+			};
+		}),
+		patientAddress: typeof bodyObj.patientAddress === "string" ? bodyObj.patientAddress : null,
+		preferentialDetails:
+			bodyObj.preferentialDetails && typeof bodyObj.preferentialDetails === "object"
+				? {
+						patientSnils:
+							typeof (bodyObj.preferentialDetails as Record<string, unknown>).patientSnils === "string"
+								? ((bodyObj.preferentialDetails as Record<string, unknown>).patientSnils as string)
+								: undefined,
+						patientOmsPolicy:
+							typeof (bodyObj.preferentialDetails as Record<string, unknown>).patientOmsPolicy === "string"
+								? ((bodyObj.preferentialDetails as Record<string, unknown>).patientOmsPolicy as string)
+								: undefined,
+					}
+				: null,
+	};
+
+	let result = verifyPrescriptionStatutoryValidity(prescriptionPayload);
 	const narcoticErrors: string[] = [];
-	if (Array.isArray(body.items)) {
-		for (const item of body.items) {
-			const itemObj = item && typeof item === "object" ? (item as { latinName?: string; tradeName?: string }) : null;
-			const name = itemObj?.latinName || itemObj?.tradeName || "";
-			if (name && FORBIDDEN_NARCOTIC_INN_PATTERNS.some((p) => p.test(name))) {
-				narcoticErrors.push(
-					`Препарат «${name}» относится к наркотическим средствам Списка II/III. В амбулаторной стоматологии применяются ненаркотические анальгетики (НПВП: Нимесил, Кетанов, Дексалгин).`,
-				);
-			}
+	for (const item of itemsList) {
+		const itemObj = item && typeof item === "object" ? (item as Record<string, unknown>) : null;
+		const name =
+			typeof itemObj?.latinName === "string"
+				? itemObj.latinName
+				: typeof itemObj?.tradeName === "string"
+					? itemObj.tradeName
+					: "";
+		if (name && FORBIDDEN_NARCOTIC_INN_PATTERNS.some((p) => p.test(name))) {
+			narcoticErrors.push(
+				`Препарат «${name}» относится к наркотическим средствам Списка II/III. В амбулаторной стоматологии применяются ненаркотические анальгетики (НПВП: Нимесил, Кетанов, Дексалгин).`,
+			);
 		}
 	}
 	if (narcoticErrors.length > 0) {
@@ -64,20 +104,23 @@ export async function handleValidatePrescription(
 	}
 
 	const proposedDrugs: string[] = [];
-	if (Array.isArray(body.items)) {
-		for (const item of body.items) {
-			const itemObj = item && typeof item === "object" ? (item as { latinName?: string; tradeName?: string }) : null;
-			const name = itemObj?.latinName || itemObj?.tradeName || "";
-			if (name) proposedDrugs.push(name);
-		}
+	for (const item of itemsList) {
+		const itemObj = item && typeof item === "object" ? (item as Record<string, unknown>) : null;
+		const name =
+			typeof itemObj?.latinName === "string"
+				? itemObj.latinName
+				: typeof itemObj?.tradeName === "string"
+					? itemObj.tradeName
+					: "";
+		if (name) proposedDrugs.push(name);
 	}
 
 	let patientAllergies: string[] = [];
-	const customAllergies = body.patientAllergies;
+	const customAllergies = bodyObj.patientAllergies;
 	if (Array.isArray(customAllergies)) {
-		patientAllergies = customAllergies.filter(Boolean);
+		patientAllergies = customAllergies.filter((a): a is string => typeof a === "string" && a.length > 0);
 	}
-	const maybePatientId = body.patientId;
+	const maybePatientId = bodyObj.patientId;
 	if (typeof maybePatientId === "string" && maybePatientId.trim().length > 0) {
 		const trimmedPatientId = maybePatientId.trim();
 		if (!UUID_PATTERN.test(trimmedPatientId)) {
@@ -86,7 +129,7 @@ export async function handleValidatePrescription(
 				message: "Некорректный идентификатор пациента (ожидается формат UUID).",
 			});
 		}
-		const { dbAllergies, patientRow } = await withTenantCtx(orgId, async (tx) => {
+		const { dbAllergies, patientRow } = await withTenantReadCtx(orgId, async (tx) => {
 			const dbAllergiesInner = await tx
 				.select()
 				.from(patientDrugAllergies)
@@ -134,13 +177,13 @@ export async function handleValidatePrescription(
  * Verify statutory validity and expiration status
  */
 export async function handleVerifyPrescription(
-	request: FastifyRequest<{ Params: VerifyPrescriptionParams }>,
+	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
 
-	const { id } = request.params;
+	const { id } = request.params as VerifyPrescriptionParams;
 	if (!UUID_PATTERN.test(id)) {
 		return reply.code(400).send({
 			error: "ValidationError",
@@ -148,7 +191,7 @@ export async function handleVerifyPrescription(
 		});
 	}
 
-	const loaded = await withTenantCtx(orgId, async (tx) => {
+	const loaded = await withTenantReadCtx(orgId, async (tx) => {
 		const [prescInner] = await tx
 			.select()
 			.from(electronicPrescriptions)

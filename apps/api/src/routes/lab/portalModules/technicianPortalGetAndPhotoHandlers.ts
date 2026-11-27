@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { generateUuidV7, isValidUuid } from "@dental/shared";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { getLabOrderByToken } from "../../../db/labQuery.js";
 import { labOrders } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -24,11 +24,17 @@ function formatPatientInitials(fullName?: string | null, fallbackId?: string): s
 	return `${lastName} ${initials}`.trim();
 }
 
+function readPortalToken(request: FastifyRequest): string {
+	if (typeof request.params !== "object" || request.params === null) return "";
+	const record = request.params as Record<string, unknown>;
+	return typeof record.token === "string" ? record.token : "";
+}
+
 export async function handleGetPortalOrder(
-	request: FastifyRequest<{ Params: { token: string } }>,
+	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
-	const token = request.params.token;
+	const token = readPortalToken(request);
 	if (!token) return reply.code(400).send({ error: "TokenRequired", message: "Токен наряда обязателен." });
 
 	try {
@@ -85,10 +91,10 @@ const photoBodySchema = z.object({
 }).strict();
 
 export async function handlePostPortalOrderPhoto(
-	request: FastifyRequest<{ Params: { token: string } }>,
+	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
-	const token = request.params.token;
+	const token = readPortalToken(request);
 
 	const rawIdempotencyKey =
 		(request.headers?.["idempotency-key"] as string | undefined) ??
@@ -142,7 +148,7 @@ export async function handlePostPortalOrderPhoto(
 			});
 		}
 
-		await withTenantCtx(order.organizationId, async (tx) => {
+		await withTenantWriteCtx(order.organizationId, async (tx) => {
 			await tx
 				.update(labOrders)
 				.set({ attachedImageUrl: photoUrl, updatedAt: new Date() })

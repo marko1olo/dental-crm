@@ -8,7 +8,7 @@ import crypto from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { saveShiftAutoclaveRecords } from "./shiftCloseAutoclaveSaver.js";
@@ -83,7 +83,7 @@ export async function handlePostSanpinShiftClose(req: FastifyRequest, reply: Fas
 	const body: Record<string, unknown> = { ...bodyData };
 
 	try {
-		const result = await withTenantCtx(organizationId, async (tx) => {
+		const result = await withTenantWriteCtx(organizationId, async (tx) => {
 			const insertedPsoCount = await saveShiftPsoRecords(tx, organizationId, body, operatorId, operatorName);
 			const insertedSterilCount = await saveShiftAutoclaveRecords(tx, organizationId, body, operatorId, dateStr);
 			const insertedWasteCount = await saveShiftWasteRecords(tx, organizationId, body, operatorId, dateStr, operatorName);

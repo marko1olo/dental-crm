@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { type TenantDb, withTenantCtx } from "../../db/rls.js";
+import { type TenantDb, withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { generatedDocuments, patientConsents, patients } from "../../db/schema.js";
 import type { SaveConsentBody } from "./types.js";
 
@@ -63,7 +63,7 @@ function mapConsentKindToDocumentKind(kind: string): DocumentKindEnum {
 }
 
 export async function fetchPatientConsentsList(orgId: string, patientId: string) {
-	return withTenantCtx(orgId, async (tx) => {
+	return withTenantReadCtx(orgId, async (tx) => {
 		return tx
 			.select({
 				id: patientConsents.id,
@@ -119,7 +119,7 @@ export async function recordPatientConsentEntry(
 	let effectiveDocId: string | null = body.documentId ?? null;
 
 	// ACID-транзакция с FORCE RLS (Мандаты 8bo, 8d/8zp): проверка пациента + generatedDocuments + patientConsents
-	const savedConsent = await withTenantCtx(orgId, async (tx) => {
+	const savedConsent = await withTenantWriteCtx(orgId, async (tx) => {
 		const patientRow = await tx
 			.select({ fullName: patients.fullName })
 			.from(patients)

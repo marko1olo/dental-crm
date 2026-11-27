@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withTenantReadCtx } from "../../../../db/rls.js";
 import { bactericidalEquipments } from "../../../../db/schema.js";
 import { calculateBactericidalLampResource } from "../bactericidalHoursCalculator.js";
 
@@ -16,7 +16,7 @@ export async function handleGetBactericidalEquipments(
 	);
 	if (!organizationId) return;
 
-	const list = await withTenantCtx(organizationId, (tx) =>
+	const list = await withTenantReadCtx(organizationId, (tx) =>
 		tx
 			.select()
 			.from(bactericidalEquipments)

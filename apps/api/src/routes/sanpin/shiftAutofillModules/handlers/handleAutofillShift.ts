@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { onTenantTxCommit, withTenantCtx } from "../../../../db/rls.js";
+import { onTenantTxCommit, withTenantWriteCtx } from "../../../../db/rls.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { executeSterilizationConsumablesDeduction } from "../../sterilizationModules/sterilizationStockDeduction.js";
@@ -27,7 +27,7 @@ export async function handleAutofillShift(req: FastifyRequest, reply: FastifyRep
 	const todayStr = body.shiftDate || body.date || now.toISOString().slice(0, 10);
 	const resolvedUserId = getRequestIdentity(req).userId ?? null;
 
-	const { insertedPso, insertedSteril } = await withTenantCtx(organizationId, async (tx) => {
+	const { insertedPso, insertedSteril } = await withTenantWriteCtx(organizationId, async (tx) => {
 		const result = await executeShiftAutofillTransaction(tx, {
 			organizationId,
 			body,

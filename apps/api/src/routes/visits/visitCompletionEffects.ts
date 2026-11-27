@@ -4,7 +4,7 @@ import {
 	onTenantTxCommit,
 	runDetachedInTenantCtx,
 	withSavepoint,
-	withTenantCtx,
+	withTenantWriteCtx,
 } from "../../db/rls.js";
 import { appointments } from "../../db/schema.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -37,7 +37,7 @@ export async function executeVisitCompletionSideEffects({
 	skipBomDeduction,
 }: VisitCompletionPayload): Promise<void> {
 	try {
-		await withTenantCtx(orgId, async (tx) => {
+		await withTenantWriteCtx(orgId, async (tx) => {
 			if (visit.appointmentId) {
 				await tx
 					.update(appointments)

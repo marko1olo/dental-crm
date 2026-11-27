@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { withTenantCtx, type TenantDb } from "../../db/rls.js";
+import { withTenantWriteCtx, type TenantDb } from "../../db/rls.js";
 import { labItems, labOrders } from "../../db/schema.js";
 import { rublesToKopecks } from "@dental/shared";
 import type { z } from "zod";
@@ -187,7 +187,7 @@ export async function insertLabItem(
 	labOrderId: string,
 	body: CreateLabItemInput,
 ) {
-	return withTenantCtx(orgId, async (tx) => {
+	return withTenantWriteCtx(orgId, async (tx) => {
 		return insertLabItemTx(tx, orgId, labOrderId, body);
 	});
 }
@@ -198,7 +198,7 @@ export async function updateLabItem(
 	itemId: string,
 	body: UpdateLabItemInput,
 ) {
-	return withTenantCtx(orgId, async (tx) => {
+	return withTenantWriteCtx(orgId, async (tx) => {
 		return updateLabItemTx(tx, orgId, labOrderId, itemId, body);
 	});
 }
@@ -208,7 +208,7 @@ export async function deleteLabItem(
 	labOrderId: string,
 	itemId: string,
 ) {
-	return withTenantCtx(orgId, async (tx) => {
+	return withTenantWriteCtx(orgId, async (tx) => {
 		return deleteLabItemTx(tx, orgId, labOrderId, itemId);
 	});
 }

@@ -1,5 +1,5 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { onTenantTxCommit, withTenantCtx, type TenantDb } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantWriteCtx, type TenantDb } from "../../db/rls.js";
 import { toothStateHistory, toothStates } from "../../db/schema.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import {
@@ -89,8 +89,8 @@ function parseIncomingNotesAndClinical(
 						? innerNotes
 						: null;
 			}
-		} catch {
-			// not json
+		} catch (err) {
+			void err;
 		}
 	}
 
@@ -296,5 +296,5 @@ export async function applyToothStateMutation(
 
 	return externalTx
 		? await runInTx(externalTx)
-		: await withTenantCtx(organizationId, runInTx);
+		: await withTenantWriteCtx(organizationId, runInTx);
 }

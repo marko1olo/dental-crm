@@ -7,7 +7,7 @@ import {
 	LAB_ORDER_TECHNICIAN_TRANSITIONS,
 	type LabOrderStatus,
 } from "../../../db/labQuery.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { labOrderEvents, labOrders } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { mapStageOrStatusToMilestone } from "../types.js";
@@ -48,10 +48,14 @@ const portalStatusBodySchema = z.object({
 }).strict();
 
 export async function handlePostPortalOrderStatus(
-	request: FastifyRequest<{ Params: { token: string } }>,
+	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
-	const token = request.params.token;
+	const rawToken =
+		typeof request.params === "object" && request.params !== null && "token" in request.params
+			? request.params.token
+			: undefined;
+	const token = typeof rawToken === "string" ? rawToken : "";
 
 	const rawIdempotencyKey =
 		(request.headers?.["idempotency-key"] as string | undefined) ??
@@ -109,7 +113,7 @@ export async function handlePostPortalOrderStatus(
 			});
 		}
 
-		const updated = await withTenantCtx(order.organizationId, async (tx) => {
+		const updated = await withTenantWriteCtx(order.organizationId, async (tx) => {
 			const now = new Date();
 			const auditFields: Partial<{ sentAt: Date; completedAt: Date; cancelledAt: Date }> = {};
 			if (targetStatus === "completed") auditFields.completedAt = now;

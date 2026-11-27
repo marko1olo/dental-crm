@@ -1,7 +1,7 @@
 import type { FastifyBaseLogger } from "fastify";
 import { and, eq, ilike, or } from "drizzle-orm";
 import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
-import { withTenantCtx, type TenantDb } from "../../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../../db/rls.js";
 import { inventoryItems, serviceCatalogItems } from "../../db/schema.js";
 
 export interface ResolvedOrthoServicePrice {
@@ -97,7 +97,7 @@ export async function resolveOrthoServicePrice(params: {
 				)
 				.limit(1);
 
-		const [found] = tx ? await runQuery(tx) : await withTenantCtx(organizationId, runQuery);
+		const [found] = tx ? await runQuery(tx) : await withTenantReadCtx(organizationId, runQuery);
 
 		if (found) {
 			const priceKopecks = resolveServicePriceKopecks(found, fallbackPriceRub);
@@ -191,7 +191,7 @@ export async function resolveOrthoMaterialCost(params: {
 				.orderBy(inventoryItems.id)
 				.limit(1);
 
-		const [found] = tx ? await runQuery(tx) : await withTenantCtx(organizationId, runQuery);
+		const [found] = tx ? await runQuery(tx) : await withTenantReadCtx(organizationId, runQuery);
 
 		if (found) {
 			const kopecks = resolveInventoryCostKopecks(found);

@@ -1,5 +1,5 @@
 import { and, eq, isNull, like, or } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { visitDiaries } from "../../../db/schema.js";
 import {
 	computeDiaryHash,
@@ -129,5 +129,5 @@ export async function executeReattachCeremony(params: {
 	if (params.tx) {
 		return runWithTx(params.tx);
 	}
-	return await withTenantCtx(orgId, runWithTx);
+	return await withTenantWriteCtx(orgId, runWithTx);
 }

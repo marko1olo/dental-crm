@@ -3,12 +3,13 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	getActivePriceFreezeToken,
 	issuePriceFreezeToken,
 	setPlanDiscountMode,
 } from "../../db/priceFreezeTokensQuery.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { treatmentPlans } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -65,14 +66,7 @@ function hasRegisteredRoute(
 	method: "GET" | "POST",
 	url: string,
 ): boolean {
-	const maybeHasRoute = (
-		app as unknown as {
-			hasRoute?: (opts: { method: string; url: string }) => boolean;
-		}
-	).hasRoute;
-	return typeof maybeHasRoute === "function"
-		? maybeHasRoute.call(app, { method, url })
-		: false;
+	return app.hasRoute({ method, url });
 }
 
 export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
@@ -82,15 +76,17 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 		"/api/patients/:patientId/treatment-plans/:planId/discount-mode";
 
 	if (!hasRegisteredRoute(app, "POST", freezeUrl)) {
-		app.post<{ Params: { patientId: string; planId: string } }>(
-			freezeUrl,
-			async (request, reply) => {
+		defineStreamRoute(app, {
+			method: "POST",
+			path: freezeUrl,
+			permission: "public",
+			handler: async ({ request, reply }) => {
 				const organizationId = await requireResolvedOrganizationId(
 					request,
 					reply,
 					"issue price freeze token",
 				);
-				if (!organizationId) return;
+				if (!organizationId) return reply;
 
 				const identity = getRequestIdentity(request);
 				const staffRole = resolveStaffRole(request);
@@ -104,7 +100,15 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 					});
 				}
 
-				const { patientId, planId } = request.params;
+				const rawParams = request.params;
+				const patientId =
+					typeof rawParams === "object" && rawParams !== null && "patientId" in rawParams && typeof rawParams.patientId === "string"
+						? rawParams.patientId
+						: "";
+				const planId =
+					typeof rawParams === "object" && rawParams !== null && "planId" in rawParams && typeof rawParams.planId === "string"
+						? rawParams.planId
+						: "";
 				if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(planId)) {
 					return reply.code(400).send({ error: "InvalidRequestParameters" });
 				}
@@ -120,7 +124,7 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 				const body = parsedBody.data;
 
 				try {
-					const txResult = await withTenantCtx(organizationId, async (tx) => {
+					const txResult = await withTenantWriteCtx(organizationId, async (tx) => {
 						if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
 							return { kind: "patient_not_found" as const };
 						}
@@ -135,6 +139,19 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 							...(identity.userId ? { actorUserId: identity.userId } : {}),
 							...(body.notes ? { notes: body.notes } : {}),
 						});
+						onTenantTxCommit(() => {
+							wsBroker.broadcastToOrganization(organizationId, {
+								type: "PRICE_FREEZE_TOKEN_ISSUED",
+								organizationId,
+								payload: {
+									patientId,
+									planId,
+									token: tokenResult.token,
+									policyKind: tokenResult.policyKind,
+									validUntil: tokenResult.validUntil,
+								},
+							});
+						});
 						return { kind: "ok" as const, result: tokenResult };
 					});
 
@@ -142,18 +159,6 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 						return reply.code(404).send({ error: "PatientNotFound" });
 					}
 					const { result } = txResult;
-
-					wsBroker.broadcastToOrganization(organizationId, {
-						type: "PRICE_FREEZE_TOKEN_ISSUED",
-						organizationId,
-						payload: {
-							patientId,
-							planId,
-							token: result.token,
-							policyKind: result.policyKind,
-							validUntil: result.validUntil,
-						},
-					});
 
 					return reply.code(201).send({ success: true, ...result });
 				} catch (err: unknown) {
@@ -170,19 +175,21 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 					throw err;
 				}
 			},
-		);
+		});
 	}
 
 	if (!hasRegisteredRoute(app, "GET", freezeUrl)) {
-		app.get<{ Params: { patientId: string; planId: string } }>(
-			freezeUrl,
-			async (request, reply) => {
+		defineStreamRoute(app, {
+			method: "GET",
+			path: freezeUrl,
+			permission: "public",
+			handler: async ({ request, reply }) => {
 				const organizationId = await requireResolvedOrganizationId(
 					request,
 					reply,
 					"get price freeze status",
 				);
-				if (!organizationId) return;
+				if (!organizationId) return reply;
 
 				const staffRole = resolveStaffRole(request);
 				const evalAccess = evaluateClinicalAccess(staffRole);
@@ -195,12 +202,20 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 					});
 				}
 
-				const { patientId, planId } = request.params;
+				const rawParams = request.params;
+				const patientId =
+					typeof rawParams === "object" && rawParams !== null && "patientId" in rawParams && typeof rawParams.patientId === "string"
+						? rawParams.patientId
+						: "";
+				const planId =
+					typeof rawParams === "object" && rawParams !== null && "planId" in rawParams && typeof rawParams.planId === "string"
+						? rawParams.planId
+						: "";
 				if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(planId)) {
 					return reply.code(400).send({ error: "InvalidRequestParameters" });
 				}
 
-				const freezeState = await withTenantCtx(
+				const freezeState = await withTenantReadCtx(
 					organizationId,
 					async (tx) => {
 						if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
@@ -247,19 +262,21 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 					token: tokenStatus,
 				});
 			},
-		);
+		});
 	}
 
 	if (!hasRegisteredRoute(app, "POST", discountUrl)) {
-		app.post<{ Params: { patientId: string; planId: string } }>(
-			discountUrl,
-			async (request, reply) => {
+		defineStreamRoute(app, {
+			method: "POST",
+			path: discountUrl,
+			permission: "public",
+			handler: async ({ request, reply }) => {
 				const organizationId = await requireResolvedOrganizationId(
 					request,
 					reply,
 					"set plan discount mode",
 				);
-				if (!organizationId) return;
+				if (!organizationId) return reply;
 
 				const identity = getRequestIdentity(request);
 				const staffRole = resolveStaffRole(request);
@@ -273,7 +290,15 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 					});
 				}
 
-				const { patientId, planId } = request.params;
+				const rawParams = request.params;
+				const patientId =
+					typeof rawParams === "object" && rawParams !== null && "patientId" in rawParams && typeof rawParams.patientId === "string"
+						? rawParams.patientId
+						: "";
+				const planId =
+					typeof rawParams === "object" && rawParams !== null && "planId" in rawParams && typeof rawParams.planId === "string"
+						? rawParams.planId
+						: "";
 				if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(planId)) {
 					return reply.code(400).send({ error: "InvalidRequestParameters" });
 				}
@@ -290,7 +315,7 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 				const body = parsedBody.data;
 
 				try {
-					const txOutcome = await withTenantCtx(organizationId, async (tx) => {
+					const txOutcome = await withTenantWriteCtx(organizationId, async (tx) => {
 						if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
 							return { kind: "patient_not_found" as const };
 						}
@@ -307,6 +332,20 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 								: {}),
 							...(identity.userId ? { actorUserId: identity.userId } : {}),
 						});
+						onTenantTxCommit(() => {
+							wsBroker.broadcastToOrganization(organizationId, {
+								type: "TREATMENT_PLAN_DISCOUNT_MODE_CHANGED",
+								organizationId,
+								payload: {
+									patientId,
+									planId,
+									discountMode: discountResult.discountMode,
+									planDiscountPercent: discountResult.planDiscountPercent,
+									totalDiscountRub: discountResult.totalDiscountRub,
+									totalPriceRub: discountResult.totalPriceRub,
+								},
+							});
+						});
 						return { kind: "ok" as const, result: discountResult };
 					});
 
@@ -314,19 +353,6 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 						return reply.code(404).send({ error: "PatientNotFound" });
 					}
 					const { result } = txOutcome;
-
-					wsBroker.broadcastToOrganization(organizationId, {
-						type: "TREATMENT_PLAN_DISCOUNT_MODE_CHANGED",
-						organizationId,
-						payload: {
-							patientId,
-							planId,
-							discountMode: result.discountMode,
-							planDiscountPercent: result.planDiscountPercent,
-							totalDiscountRub: result.totalDiscountRub,
-							totalPriceRub: result.totalPriceRub,
-						},
-					});
 
 					return reply.send(result);
 				} catch (err: unknown) {
@@ -343,6 +369,6 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 					throw err;
 				}
 			},
-		);
+		});
 	}
 }

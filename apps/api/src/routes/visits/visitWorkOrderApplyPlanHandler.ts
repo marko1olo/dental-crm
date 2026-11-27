@@ -4,6 +4,7 @@ import {
 } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
 	VisitWorkOrderError,
@@ -58,13 +59,15 @@ export async function handleApplyPlanItemsToVisit(
 
 	try {
 		const identity = getRequestIdentity(request);
-		const result = await VisitWorkOrderService.applyPlanItemsToVisit({
-			organizationId: context.organizationId,
-			visitId,
-			planId: parsed.data.planId,
-			itemIds: parsed.data.itemIds,
-			actorUserId: identity.userId ?? null,
-		});
+		const result = await withTenantWriteCtx(context.organizationId, () =>
+			VisitWorkOrderService.applyPlanItemsToVisit({
+				organizationId: context.organizationId,
+				visitId,
+				planId: parsed.data.planId,
+				itemIds: parsed.data.itemIds,
+				actorUserId: identity.userId ?? null,
+			}),
+		);
 
 		return result;
 	} catch (error) {

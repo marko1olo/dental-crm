@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { isValidUuid } from "@dental/shared";
 import { z } from "zod";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import { visits } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
@@ -72,7 +72,7 @@ export async function handleCompleteVisitWorkOrder(
 
 	try {
 		const identity = getRequestIdentity(request);
-		const { workOrderResult, completedVisit } = await withTenantCtx(
+		const { workOrderResult, completedVisit } = await withTenantWriteCtx(
 			context.organizationId,
 			async (tx) => {
 				const completedWorkOrder =

@@ -1,7 +1,7 @@
 import { and, eq, notInArray } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import { formatKopecksToRub, formatKopecksToRubles, kopecksToRubles, parseKopecks, toExactKopecks } from "@dental/shared";
-import { withSavepoint, withTenantCtx, type TenantDb } from "../../db/rls.js";
+import { withSavepoint, withTenantWriteCtx, type TenantDb } from "../../db/rls.js";
 import { invoiceItems, patientInvoices } from "../../db/schema.js";
 
 export interface LinkOrthoBillingParams {
@@ -134,7 +134,7 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 
 		return params.tx
 			? await withSavepoint(params.tx, runWithTx)
-			: await withTenantCtx(organizationId, runWithTx);
+			: await withTenantWriteCtx(organizationId, runWithTx);
 	} catch (err) {
 		if (params.logger) {
 			params.logger.warn(

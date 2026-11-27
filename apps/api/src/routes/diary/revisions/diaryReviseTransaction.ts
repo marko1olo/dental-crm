@@ -1,5 +1,5 @@
 import { and, count, eq } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { visitDiaries, visitDiaryRevisions } from "../../../db/schema.js";
 import {
 	computeDiaryHash,
@@ -17,7 +17,7 @@ export async function executeDiaryReviseTx(params: {
 }): Promise<ReviseTxResult> {
 	const { id, orgId, userId, role, body } = params;
 
-	return await withTenantCtx(orgId, async (tx) => {
+	return await withTenantWriteCtx(orgId, async (tx) => {
 		const [existing] = await tx
 			.select()
 			.from(visitDiaries)

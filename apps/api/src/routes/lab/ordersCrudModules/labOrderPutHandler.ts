@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { isValidUuid } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -12,7 +12,7 @@ import { updateLabOrderSchema } from "./labOrderValidationSchemas.js";
  * PUT /api/clinical/lab-orders/:id, /api/lab/orders/:id, /api/dental-lab/orders/:id
  * Обновление заказа ЗТЛ клиникой с проверкой допустимости переходов состояний и идемпотентностью.
  */
-export async function putLabOrderHandler(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+export async function putLabOrderHandler(request: FastifyRequest, reply: FastifyReply) {
 	const orgId = await requireResolvedStaffOrAdminOrganizationId(
 		request,
 		reply,
@@ -32,7 +32,11 @@ export async function putLabOrderHandler(request: FastifyRequest<{ Params: { id:
 		});
 	}
 
-	const id = request.params.id;
+	const rawId =
+		typeof request.params === "object" && request.params !== null && "id" in request.params
+			? request.params.id
+			: undefined;
+	const id = typeof rawId === "string" ? rawId : "";
 	const UUID_REGEX =
 		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 	if (!id || !UUID_REGEX.test(id)) {
@@ -65,7 +69,7 @@ export async function putLabOrderHandler(request: FastifyRequest<{ Params: { id:
 
 	const updateData = parsed.data;
 
-	const result = await withTenantCtx(orgId, async (tx) => {
+	const result = await withTenantWriteCtx(orgId, async (tx) => {
 		return updateLabOrderInDb(tx, orgId, id, updateData);
 	});
 

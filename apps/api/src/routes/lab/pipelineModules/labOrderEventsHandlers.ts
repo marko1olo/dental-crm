@@ -2,13 +2,19 @@ import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { generateUuidV7, isValidUuid } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
 import { labOrderEvents, labOrders } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { createLabOrderEventSchema } from "../types.js";
 
-export async function handleGetLabOrderEvents(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+function readLabOrderIdParam(request: FastifyRequest): string {
+	if (typeof request.params !== "object" || request.params === null) return "";
+	const record = request.params as Record<string, unknown>;
+	return typeof record.id === "string" ? record.id : "";
+}
+
+export async function handleGetLabOrderEvents(request: FastifyRequest, reply: FastifyReply) {
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
 
@@ -24,9 +30,9 @@ export async function handleGetLabOrderEvents(request: FastifyRequest<{ Params: 
 		});
 	}
 
-	const labOrderId = request.params.id;
+	const labOrderId = readLabOrderIdParam(request);
 
-	const events = await withTenantCtx(orgId, async (tx) => {
+	const events = await withTenantReadCtx(orgId, async (tx) => {
 		return tx
 			.select()
 			.from(labOrderEvents)
@@ -42,7 +48,7 @@ export async function handleGetLabOrderEvents(request: FastifyRequest<{ Params: 
 	return reply.send({ events });
 }
 
-export async function handleCreateLabOrderEvent(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+export async function handleCreateLabOrderEvent(request: FastifyRequest, reply: FastifyReply) {
 	const orgId = await requireResolvedOrganizationId(
 		request,
 		reply,
@@ -80,7 +86,7 @@ export async function handleCreateLabOrderEvent(request: FastifyRequest<{ Params
 		reply.header("Idempotency-Key", idempotencyKey);
 	}
 
-	const labOrderId = request.params.id;
+	const labOrderId = readLabOrderIdParam(request);
 	const parsed = createLabOrderEventSchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({
@@ -91,7 +97,7 @@ export async function handleCreateLabOrderEvent(request: FastifyRequest<{ Params
 	}
 	const body = parsed.data;
 
-	const result = await withTenantCtx(orgId, async (tx) => {
+	const result = await withTenantWriteCtx(orgId, async (tx) => {
 		const [order] = await tx
 			.select({ id: labOrders.id })
 			.from(labOrders)

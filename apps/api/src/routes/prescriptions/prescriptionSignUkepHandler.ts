@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, isNull } from "drizzle-orm";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import { electronicPrescriptions } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -19,7 +19,7 @@ interface SignUkepParams {
  * Apply Doctor Electronic Digital Signature (УКЭП)
  */
 export async function handleSignUkepPrescription(
-	request: FastifyRequest<{ Params: SignUkepParams }>,
+	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
 	const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "sign prescription ukep");
@@ -37,7 +37,7 @@ export async function handleSignUkepPrescription(
 		});
 	}
 
-	const { id } = request.params;
+	const { id } = request.params as SignUkepParams;
 	if (!UUID_PATTERN.test(id)) {
 		return reply.code(400).send({
 			error: "ValidationError",
@@ -63,7 +63,7 @@ export async function handleSignUkepPrescription(
 		});
 	}
 
-	const outcome = await withTenantCtx(orgId, async (tx) => {
+	const outcome = await withTenantWriteCtx(orgId, async (tx) => {
 		const [doc] = await tx
 			.select()
 			.from(electronicPrescriptions)

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	createLabOrderHandler,
 	deleteLabOrderHandler,
@@ -16,84 +17,119 @@ import {
  */
 export async function registerOrdersCrudRoutes(app: FastifyInstance) {
 	// GET: All lab orders with optional patient filtering
-	app.get("/api/clinical/lab-orders", getLabOrdersHandler);
-	app.get("/api/lab/orders", getLabOrdersHandler);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/clinical/lab-orders",
+		permission: "public",
+		handler: async ({ request, reply }) => getLabOrdersHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/lab/orders",
+		permission: "public",
+		handler: async ({ request, reply }) => getLabOrdersHandler(request, reply),
+	});
 
 	// POST: Create lab order (канонический эндпоинт + экспресс-алиас)
-	// Контекст: withTenantCtx (organizationId), Idempotency-Key (UUIDv7, RFC 9562)
-	app.post("/api/clinical/lab-orders", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Создание наряда ЗТЛ с изоляцией организации (organizationId) и заголовком Idempotency-Key",
-			},
+	// Контекст: withTenantWriteCtx (organizationId), Idempotency-Key (UUIDv7, RFC 9562)
+	const createSchema = {
+		headers: {
+			type: "object",
+			description: "Создание наряда ЗТЛ с изоляцией организации (organizationId) и заголовком Idempotency-Key",
 		},
-	}, createLabOrderHandler);
-	app.post("/api/lab/orders", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Создание наряда ЗТЛ с изоляцией организации (organizationId) и заголовком Idempotency-Key",
-			},
-		},
-	}, createLabOrderHandler);
-	app.post("/api/clinical/dental-lab/express-order", {
+	} as const;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/clinical/lab-orders",
+		permission: "public",
+		schema: createSchema,
+		handler: async ({ request, reply }) => createLabOrderHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/lab/orders",
+		permission: "public",
+		schema: createSchema,
+		handler: async ({ request, reply }) => createLabOrderHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/clinical/dental-lab/express-order",
+		permission: "public",
 		schema: {
 			headers: {
 				type: "object",
 				description: "Экспресс-создание наряда ЗТЛ с проверкой organizationId и Idempotency-Key",
 			},
 		},
-	}, createLabOrderHandler);
+		handler: async ({ request, reply }) => createLabOrderHandler(request, reply),
+	});
 
 	// GET & POST: Presets & Plan continuity
-	app.get("/api/clinical/dental-lab/presets", handleGetExpressPresets);
-	app.post("/api/clinical/dental-lab/check-plan-continuity", {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/clinical/dental-lab/presets",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetExpressPresets(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/clinical/dental-lab/check-plan-continuity",
+		permission: "public",
 		schema: {
 			headers: {
 				type: "object",
 				description: "Проверка непрерывности плана лечения с изоляцией организации (organizationId) и Idempotency-Key",
 			},
 		},
-	}, handleCheckPlanContinuity);
+		handler: async ({ request, reply }) => handleCheckPlanContinuity(request, reply),
+	});
 
 	// PUT: Update lab order & status transitions
-	// Контекст: withTenantCtx (organizationId), атомарная транзакция db.transaction (tx), Idempotency-Key
-	app.put("/api/clinical/lab-orders/:id", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Обновление наряда ЗТЛ с проверкой organizationId и Idempotency-Key",
-			},
+	// Контекст: withTenantWriteCtx (organizationId), атомарная транзакция db.transaction (tx), Idempotency-Key
+	const updateSchema = {
+		headers: {
+			type: "object",
+			description: "Обновление наряда ЗТЛ с проверкой organizationId и Idempotency-Key",
 		},
-	}, putLabOrderHandler);
-	app.put("/api/lab/orders/:id", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Обновление наряда ЗТЛ с проверкой organizationId и Idempotency-Key",
-			},
-		},
-	}, putLabOrderHandler);
+	} as const;
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/clinical/lab-orders/:id",
+		permission: "public",
+		schema: updateSchema,
+		handler: async ({ request, reply }) => putLabOrderHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/lab/orders/:id",
+		permission: "public",
+		schema: updateSchema,
+		handler: async ({ request, reply }) => putLabOrderHandler(request, reply),
+	});
 
 	// DELETE: Remove draft or cancelled order
-	// Контекст: withTenantCtx (organizationId), каскадная db.transaction (tx) очистка items/events, Idempotency-Key
-	app.delete("/api/clinical/lab-orders/:id", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Удаление черновика наряда ЗТЛ с каскадной очисткой в db.transaction, проверкой organizationId и Idempotency-Key",
-			},
+	// Контекст: withTenantWriteCtx (organizationId), каскадная db.transaction (tx) очистка items/events, Idempotency-Key
+	const deleteSchema = {
+		headers: {
+			type: "object",
+			description: "Удаление черновика наряда ЗТЛ с каскадной очисткой в db.transaction, проверкой organizationId и Idempotency-Key",
 		},
-	}, deleteLabOrderHandler);
-	app.delete("/api/lab/orders/:id", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Удаление черновика наряда ЗТЛ с каскадной очисткой в db.transaction, проверкой organizationId и Idempotency-Key",
-			},
-		},
-	}, deleteLabOrderHandler);
+	} as const;
+	defineStreamRoute(app, {
+		method: "DELETE",
+		path: "/api/clinical/lab-orders/:id",
+		permission: "public",
+		schema: deleteSchema,
+		handler: async ({ request, reply }) => deleteLabOrderHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "DELETE",
+		path: "/api/lab/orders/:id",
+		permission: "public",
+		schema: deleteSchema,
+		handler: async ({ request, reply }) => deleteLabOrderHandler(request, reply),
+	});
 }
 
 // Re-exports from decomposed modules

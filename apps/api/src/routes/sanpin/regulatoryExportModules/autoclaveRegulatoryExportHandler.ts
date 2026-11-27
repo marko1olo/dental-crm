@@ -7,7 +7,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import {
 	preSterilizationCleaningLogs,
 	sterilizationLogs,
@@ -26,7 +26,7 @@ export async function handleGetRegulatoryExport(req: FastifyRequest, reply: Fast
 	const tz = (await clinicTimeZone(organizationId)) || "UTC";
 	const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date());
 
-	const { autoclaveLogs, cleaningControlLogs } = await withTenantCtx(
+	const { autoclaveLogs, cleaningControlLogs } = await withTenantReadCtx(
 		organizationId,
 		async (tx) => {
 			const autoclave = await tx

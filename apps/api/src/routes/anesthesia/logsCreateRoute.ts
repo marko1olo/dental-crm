@@ -11,7 +11,8 @@ import {
 } from "@dental/shared";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withSavepoint, withTenantWriteCtx } from "../../db/rls.js";
 import { anesthesiaLogs, patients, serviceCatalogItems, treatmentItems, users, visits } from "../../db/schema.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -22,26 +23,31 @@ type QuickCarpuleDeductionResult = Awaited<ReturnType<typeof TreatmentConsumable
 type TreatmentItemRecord = typeof treatmentItems.$inferSelect;
 
 export function registerLogsCreateRoute(app: FastifyInstance): void {
-	app.post("/api/anesthesia/calculate-safety", async (request, reply) => {
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/anesthesia/calculate-safety",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return reply;
 
-		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? request.user?.role ?? null;
-		const evalAccess = evaluateClinicalAccess(staffRole);
-		if (!evalAccess.hasClinicalAccess) {
-			return reply.code(403).send({ error: "PermissionDenied", permission: "clinical.anesthesia.calculate", role: staffRole, message: `Отказ в доступе к калькулятору анестезии: ${evalAccess.reason}` });
-		}
-		const parsed = calculateSafetyBodySchema.safeParse(request.body);
-		if (!parsed.success) {
-			return reply.status(400).send({ message: "Некорректные параметры расчета безопасности анестетика", errors: parsed.error.format() });
-		}
-		const calculation = calculateAnestheticSafety(parsed.data);
-		return reply.status(200).send({ success: true, calculation });
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({ error: "PermissionDenied", permission: "clinical.anesthesia.calculate", role: staffRole, message: `Отказ в доступе к калькулятору анестезии: ${evalAccess.reason}` });
+			}
+			const parsed = calculateSafetyBodySchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.status(400).send({ message: "Некорректные параметры расчета безопасности анестетика", errors: parsed.error.format() });
+			}
+			const calculation = calculateAnestheticSafety(parsed.data);
+			return reply.status(200).send({ success: true, calculation });
+		},
 	});
-	const createLogHandler = async (request: FastifyRequest<{ Params?: { patientId?: string } }>, reply: FastifyReply) => {
+	const createLogHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+		if (!orgId) return reply;
 
 		const identity = getRequestIdentity(request);
 		const staffRole = identity.role ?? request.user?.role ?? null;
@@ -55,7 +61,11 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 			return reply.status(400).send({ message: "Некорректные параметры протокола анестезии", errors: parsed.error.format() });
 		}
 		const data = parsed.data;
-		const reqPatientId = request.params?.patientId || data.patientId;
+		const rawParams = request.params;
+		const reqPatientId =
+			typeof rawParams === "object" && rawParams !== null && "patientId" in rawParams && typeof rawParams.patientId === "string"
+				? rawParams.patientId
+				: data.patientId;
 		if (reqPatientId && !UUID_REGEX.test(reqPatientId)) {
 			return reply.status(400).send({
 				error: "ValidationError",
@@ -63,7 +73,7 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 			});
 		}
 
-		return withTenantCtx(orgId, async (tx) => {
+		return withTenantWriteCtx(orgId, async (tx) => {
 			const patientId = reqPatientId;
 			if (!patientId) {
 				return reply.status(400).send({
@@ -95,63 +105,68 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 			let inventoryDeduction: QuickCarpuleDeductionResult | null = null;
 			if (data.autoDeductInventory && data.carpulesAdministered > 0) {
 				try {
-					inventoryDeduction = await TreatmentConsumablesService.quickWriteoffCarpules(tx, { organizationId: orgId, carpulesCount: data.carpulesAdministered, drugName: data.drugBrandName, userId: data.doctorId || null, visitId: data.visitId || null, notes: `Списание карпул (${data.drugBrandName}) через протокол анестезии` });
+					inventoryDeduction = await withSavepoint(tx, (spTx) =>
+						TreatmentConsumablesService.quickWriteoffCarpules(spTx, { organizationId: orgId, carpulesCount: data.carpulesAdministered, drugName: data.drugBrandName, userId: data.doctorId || null, visitId: data.visitId || null, notes: `Списание карпул (${data.drugBrandName}) через протокол анестезии` }),
+					);
 				} catch (invErr: unknown) { request.log.warn({ err: invErr }, "Auto-deduction warning"); }
 			}
 
 			let treatmentItemResult: TreatmentItemRecord | null = null;
 			if (data.visitId && data.addToVisitEstimate) {
 				try {
-					const [anesthesiaService] = await tx
-						.select()
-						.from(serviceCatalogItems)
-						.where(
-							and(
-								eq(serviceCatalogItems.organizationId, orgId),
-								eq(serviceCatalogItems.isActive, true),
-								or(
-									eq(serviceCatalogItems.order804nCode, "A16.07.030"),
-									eq(serviceCatalogItems.code, "A16.07.030"),
-									ilike(serviceCatalogItems.title, "%анестези%"),
+					const visitId = data.visitId;
+					treatmentItemResult = await withSavepoint(tx, async (spTx) => {
+						const [anesthesiaService] = await spTx
+							.select()
+							.from(serviceCatalogItems)
+							.where(
+								and(
+									eq(serviceCatalogItems.organizationId, orgId),
+									eq(serviceCatalogItems.isActive, true),
+									or(
+										eq(serviceCatalogItems.order804nCode, "A16.07.030"),
+										eq(serviceCatalogItems.code, "A16.07.030"),
+										ilike(serviceCatalogItems.title, "%анестези%"),
+									),
 								),
-							),
-						)
-						.orderBy(
-							sql`CASE WHEN ${serviceCatalogItems.order804nCode} = 'A16.07.030' OR ${serviceCatalogItems.code} = 'A16.07.030' THEN 0 ELSE 1 END`,
-						)
-						.limit(1);
-					let unitPriceKop = 0;
-					if (anesthesiaService) {
-						if (typeof anesthesiaService.priceKopecks === "bigint" && anesthesiaService.priceKopecks > 0n) {
-							unitPriceKop = Number(anesthesiaService.priceKopecks);
-						} else if (typeof anesthesiaService.basePriceKopecks === "bigint" && anesthesiaService.basePriceKopecks > 0n) {
-							unitPriceKop = Number(anesthesiaService.basePriceKopecks);
-						} else {
-							unitPriceKop = rublesToKopecks(Number(anesthesiaService.priceRub || anesthesiaService.basePriceRub || 0));
+							)
+							.orderBy(
+								sql`CASE WHEN ${serviceCatalogItems.order804nCode} = 'A16.07.030' OR ${serviceCatalogItems.code} = 'A16.07.030' THEN 0 ELSE 1 END`,
+							)
+							.limit(1);
+						let unitPriceKop = 0;
+						if (anesthesiaService) {
+							if (typeof anesthesiaService.priceKopecks === "bigint" && anesthesiaService.priceKopecks > 0n) {
+								unitPriceKop = Number(anesthesiaService.priceKopecks);
+							} else if (typeof anesthesiaService.basePriceKopecks === "bigint" && anesthesiaService.basePriceKopecks > 0n) {
+								unitPriceKop = Number(anesthesiaService.basePriceKopecks);
+							} else {
+								unitPriceKop = rublesToKopecks(Number(anesthesiaService.priceRub || anesthesiaService.basePriceRub || 0));
+							}
 						}
-					}
-					const totalKop = multiplyKopecks(unitPriceKop, data.carpulesAdministered);
-					const unitPriceRub = kopecksToRub(unitPriceKop);
-					const totalRub = kopecksToRub(totalKop);
-					const techTitle = data.technique === "mandibular_block" || data.technique === "tuberal_block" ? "проводниковая" : "инфильтрационная";
-					const [tItem] = await tx.insert(treatmentItems).values({
-						organizationId: orgId,
-						patientId,
-						visitId: data.visitId,
-						serviceId: anesthesiaService?.id ?? null,
-						toothCode: data.toothNumbers.length > 0 ? data.toothNumbers.join(", ") : null,
-						title: `Анестезия ${techTitle} (${data.drugBrandName} 1.7 мл)`,
-						quantity: String(data.carpulesAdministered),
-						unitPriceRub,
-						priceRub: totalRub,
-						unitPriceKopecks: BigInt(unitPriceKop),
-						priceKopecks: BigInt(totalKop),
-						discountRub: 0,
-						discountKopecks: 0n,
-						status: "completed",
-						plannedDoctorUserId: data.doctorId || null,
-					}).returning();
-					treatmentItemResult = tItem ?? null;
+						const totalKop = multiplyKopecks(unitPriceKop, data.carpulesAdministered);
+						const unitPriceRub = kopecksToRub(unitPriceKop);
+						const totalRub = kopecksToRub(totalKop);
+						const techTitle = data.technique === "mandibular_block" || data.technique === "tuberal_block" ? "проводниковая" : "инфильтрационная";
+						const [tItem] = await spTx.insert(treatmentItems).values({
+							organizationId: orgId,
+							patientId,
+							visitId,
+							serviceId: anesthesiaService?.id ?? null,
+							toothCode: data.toothNumbers.length > 0 ? data.toothNumbers.join(", ") : null,
+							title: `Анестезия ${techTitle} (${data.drugBrandName} 1.7 мл)`,
+							quantity: String(data.carpulesAdministered),
+							unitPriceRub,
+							priceRub: totalRub,
+							unitPriceKopecks: BigInt(unitPriceKop),
+							priceKopecks: BigInt(totalKop),
+							discountRub: 0,
+							discountKopecks: 0n,
+							status: "completed",
+							plannedDoctorUserId: data.doctorId || null,
+						}).returning();
+						return tItem ?? null;
+					});
 				} catch (tErr: unknown) { request.log.warn({ err: tErr }, "Estimate addition warning"); }
 			}
 
@@ -165,20 +180,30 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 		});
 	};
 
-	const anesthesiaMutationOptions = {
-		schema: {
-			description: "Anesthesia log mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-			headers: {
-				type: "object",
-				properties: {
-					"idempotency-key": { type: "string" },
-					"x-idempotency-key": { type: "string" },
-					organizationid: { type: "string" },
-					"x-organization-id": { type: "string" },
-				},
+	const anesthesiaMutationSchema: Record<string, unknown> = {
+		description: "Anesthesia log mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				organizationid: { type: "string" },
+				"x-organization-id": { type: "string" },
 			},
 		},
-	} as const;
-	app.post("/api/anesthesia/patients/:patientId/logs", anesthesiaMutationOptions, createLogHandler);
-	app.post("/api/anesthesia/logs", anesthesiaMutationOptions, createLogHandler);
+	};
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/anesthesia/patients/:patientId/logs",
+		permission: "public",
+		schema: anesthesiaMutationSchema,
+		handler: async ({ request, reply }) => createLogHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/anesthesia/logs",
+		permission: "public",
+		schema: anesthesiaMutationSchema,
+		handler: async ({ request, reply }) => createLogHandler(request, reply),
+	});
 }

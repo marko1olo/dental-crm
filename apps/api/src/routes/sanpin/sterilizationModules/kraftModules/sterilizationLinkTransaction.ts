@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { type TenantDb, withTenantCtx } from "../../../../db/rls.js";
+import { type TenantDb, withTenantWriteCtx } from "../../../../db/rls.js";
 import { visitDiaries } from "../../../../db/schema.js";
 import {
 	applyEmergencySterilizationToDiaryTreatment,
@@ -127,5 +127,5 @@ export async function executeLinkDiaryTransaction(params: LinkDiaryTransactionPa
 	if (existingTx) {
 		return runInTx(existingTx);
 	}
-	return withTenantCtx(organizationId, runInTx);
+	return withTenantWriteCtx(organizationId, runInTx);
 }

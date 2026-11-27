@@ -1,8 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../../db/rls.js";
 import { sterilizerEquipments } from "../../../../db/schema.js";
 
 export async function handleGetSterilizerEquipments(
@@ -16,7 +15,7 @@ export async function handleGetSterilizerEquipments(
 	);
 	if (!organizationId) return;
 
-	let list = await withTenantCtx(organizationId, async (tx) => {
+	let list = await withTenantReadCtx(organizationId, async (tx) => {
 		return tx
 			.select()
 			.from(sterilizerEquipments)
@@ -30,7 +29,7 @@ export async function handleGetSterilizerEquipments(
 		const in365Days = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 		try {
-			const [seeded] = await withTenantCtx(organizationId, async (tx) => {
+			const [seeded] = await withTenantWriteCtx(organizationId, async (tx) => {
 				return tx
 					.insert(sterilizerEquipments)
 					.values({

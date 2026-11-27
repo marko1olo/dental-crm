@@ -8,17 +8,11 @@
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withTenantReadCtx } from "../../../../db/rls.js";
 import { sterilizationLogs, users } from "../../../../db/schema.js";
 
 export async function handleGetSterilizationLogs(
-	req: FastifyRequest<{
-		Querystring: {
-			period?: "day" | "week" | "month" | "all";
-			autoclaveId?: string;
-			search?: string;
-		};
-	}>,
+	req: FastifyRequest,
 	reply: FastifyReply,
 ) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -28,7 +22,24 @@ export async function handleGetSterilizationLogs(
 	);
 	if (!organizationId) return;
 
-	const { period, autoclaveId, search } = req.query || {};
+	const rawQuery =
+		typeof req.query === "object" && req.query !== null ? req.query : {};
+	const period =
+		"period" in rawQuery &&
+		(rawQuery.period === "day" ||
+			rawQuery.period === "week" ||
+			rawQuery.period === "month" ||
+			rawQuery.period === "all")
+			? rawQuery.period
+			: undefined;
+	const autoclaveId =
+		"autoclaveId" in rawQuery && typeof rawQuery.autoclaveId === "string"
+			? rawQuery.autoclaveId
+			: undefined;
+	const search =
+		"search" in rawQuery && typeof rawQuery.search === "string"
+			? rawQuery.search
+			: undefined;
 	const now = new Date();
 	let dateThreshold: Date | null = null;
 
@@ -50,7 +61,7 @@ export async function handleGetSterilizationLogs(
 		conditions.push(eq(sterilizationLogs.autoclaveId, autoclaveId));
 	}
 
-	const logs = await withTenantCtx(organizationId, (tx) =>
+	const logs = await withTenantReadCtx(organizationId, (tx) =>
 		tx
 			.select({
 				id: sterilizationLogs.id,

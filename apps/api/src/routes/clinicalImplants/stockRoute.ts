@@ -1,16 +1,21 @@
 import { and, eq, ilike, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { serializeInventoryItem } from "../../db/inventoryQuery.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { inventoryItems } from "../../db/schema.js";
 
 export function registerStockRoute(app: FastifyInstance) {
-	app.get("/api/clinical/implants/stock", async (request, reply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/clinical/implants/stock",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedOrganizationId(request, reply);
+			if (!orgId) return reply;
 
-		const items = await withTenantCtx(orgId, async (tx) =>
+			const items = await withTenantReadCtx(orgId, async (tx) =>
 			tx
 				.select()
 				.from(inventoryItems)
@@ -67,5 +72,6 @@ export function registerStockRoute(app: FastifyInstance) {
 			implants,
 			consumables: { grafts, membranes, sutures },
 		});
+		},
 	});
 }

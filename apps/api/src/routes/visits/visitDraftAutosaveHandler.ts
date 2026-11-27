@@ -10,7 +10,7 @@ import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../../security/tenantContext.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
 import {
 	getVisitDraftAutosaveFromDb,
@@ -60,7 +60,24 @@ export async function handleGetVisitDraft(
 	}
 
 	try {
-		const lookup = await getVisitDraftAutosaveFromDb(orgId, trimmedVisitId);
+		const readOutcome = await withTenantReadCtx(orgId, async (tx) => {
+			const lookup = await getVisitDraftAutosaveFromDb(orgId, trimmedVisitId);
+			if (lookup.outcome === "no_draft") {
+				const [visit] = await tx
+					.select()
+					.from(schema.visits)
+					.where(
+						and(
+							eq(schema.visits.id, trimmedVisitId),
+							eq(schema.visits.organizationId, orgId),
+						),
+					)
+					.limit(1);
+				return { lookup, visit: visit ?? null };
+			}
+			return { lookup, visit: null };
+		});
+		const { lookup, visit } = readOutcome;
 		if (lookup.outcome === "visit_absent") {
 			reply.code(404);
 			return {
@@ -70,19 +87,6 @@ export async function handleGetVisitDraft(
 			};
 		}
 		if (lookup.outcome === "no_draft") {
-			const [visit] = await withTenantCtx(orgId, (tx) =>
-				tx
-					.select()
-					.from(schema.visits)
-					.where(
-						and(
-							eq(schema.visits.id, trimmedVisitId),
-							eq(schema.visits.organizationId, orgId),
-						),
-					)
-					.limit(1),
-			);
-
 			if (!visit) {
 				reply.code(404);
 				return {
@@ -170,7 +174,9 @@ export async function handlePutVisitDraft(
 		if (process.env.DENTAL_MOCK_UPSERT_VISIT_DRAFT_AUTOSAVE_ERROR) {
 			throw new Error(process.env.DENTAL_MOCK_UPSERT_VISIT_DRAFT_AUTOSAVE_ERROR);
 		}
-		const serverDraft = await upsertVisitDraftAutosaveInDb(orgId, outcome.data);
+		const serverDraft = await withTenantWriteCtx(orgId, () =>
+			upsertVisitDraftAutosaveInDb(orgId, outcome.data),
+		);
 		return visitDraftAutosaveResponseSchema.parse({ serverDraft });
 	} catch (error) {
 		return sendVisitDraftMutationError(error, reply, "autosave");

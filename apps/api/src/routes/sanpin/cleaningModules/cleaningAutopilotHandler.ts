@@ -7,7 +7,7 @@
 import { and, gte, lte, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { generalCleaningLogs } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -40,7 +40,7 @@ export async function handlePostCleaningAutopilotMonth(req: FastifyRequest, repl
 	const monthStart = `${year}-${String(month + 1).padStart(2, "0")}-01`;
 	const monthEnd = `${year}-${String(month + 1).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
 
-	const created = await withTenantCtx(organizationId, async (tx) => {
+	const created = await withTenantWriteCtx(organizationId, async (tx) => {
 		const existing = await tx
 			.select({
 				scheduledDate: generalCleaningLogs.scheduledDate,

@@ -2,8 +2,8 @@ import { SEPA_SITE_CODES, type SepaSiteCode } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { type TenantDb, withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { type TenantDb, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	periodontogramSites,
 	periodontogramSnapshots,
@@ -23,7 +23,7 @@ export async function findDraftSnapshotOrSendError(
 	id: string,
 	orgId: string,
 	reply: FastifyReply,
-	txDb: TenantDb = db,
+	txDb: TenantDb,
 ) {
 	if (!UUID_REGEX.test(id)) {
 		reply.code(400).send({
@@ -68,99 +68,116 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 	 * 6. PATCH /api/periodontogram/snapshots/:id/sites
 	 * Пакетное или одиночное сохранение сайтов зондирования
 	 */
-	app.patch("/api/periodontogram/snapshots/:id/sites", async (req, reply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(
-			req,
-			reply,
-			"periodontogram sites patch",
-		);
-		if (!orgId) return;
-		const { id } = req.params as { id: string };
+	defineStreamRoute(app, {
+		method: "PATCH",
+		path: "/api/periodontogram/snapshots/:id/sites",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			const orgId = await requireResolvedStaffOrAdminOrganizationId(
+				req,
+				reply,
+				"periodontogram sites patch",
+			);
+			if (!orgId) return reply;
+			const rawParams = req.params;
+			const id =
+				typeof rawParams === "object" && rawParams !== null && "id" in rawParams && typeof rawParams.id === "string"
+					? rawParams.id
+					: "";
 
-		if (!UUID_REGEX.test(id)) {
-			return reply.code(400).send({
-				error: "InvalidSnapshotId",
-				message: "Некорректный идентификатор осмотра",
-			});
-		}
-
-		const idempotencyKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
-		if (idempotencyKey) {
-			if (!UUID_REGEX.test(idempotencyKey)) {
+			if (!UUID_REGEX.test(id)) {
 				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+					error: "InvalidSnapshotId",
+					message: "Некорректный идентификатор осмотра",
 				});
 			}
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
 
-		const parsed = patchSitesPayloadSchema.safeParse(req.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректные параметры сайтов зондирования",
-				details: parsed.error.format(),
+			const rawIdem = req.headers["idempotency-key"] || req.headers["x-idempotency-key"];
+			const idempotencyKey = typeof rawIdem === "string" ? rawIdem : undefined;
+			if (idempotencyKey) {
+				if (!UUID_REGEX.test(idempotencyKey)) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+					});
+				}
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
+			const parsed = patchSitesPayloadSchema.safeParse(req.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры сайтов зондирования",
+					details: parsed.error.format(),
+				});
+			}
+
+			const rawList = Array.isArray(parsed.data)
+				? parsed.data
+				: "sites" in parsed.data
+					? parsed.data.sites
+					: [parsed.data];
+
+			const txResult = await withTenantWriteCtx(orgId, async (tx) => {
+				const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply, tx);
+				if (!snapshot) return { kind: "snapshot_rejected" as const };
+				if (rawList.length === 0) return { kind: "empty" as const };
+
+				const teethRows = await tx
+					.select({
+						id: periodontogramTeeth.id,
+						toothNumber: periodontogramTeeth.toothNumber,
+					})
+					.from(periodontogramTeeth)
+					.where(eq(periodontogramTeeth.snapshotId, id));
+
+				const toothIdMap = new Map<number, string>(
+					teethRows.map((t) => [t.toothNumber, t.id]),
+				);
+
+				const savedSites = await batchUpsertSites(tx, id, rawList, toothIdMap);
+				return { kind: "saved" as const, savedSites };
 			});
-		}
 
-		const rawList = Array.isArray(parsed.data)
-			? parsed.data
-			: "sites" in parsed.data
-				? parsed.data.sites
-				: [parsed.data];
+			if (txResult.kind === "snapshot_rejected") return reply;
+			if (txResult.kind === "empty") return reply.send({ success: true, data: [] });
 
-		const txResult = await withTenantCtx(orgId, async (tx) => {
-			const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply, tx);
-			if (!snapshot) return { kind: "snapshot_rejected" as const };
-			if (rawList.length === 0) return { kind: "empty" as const };
-
-			const teethRows = await tx
-				.select({
-					id: periodontogramTeeth.id,
-					toothNumber: periodontogramTeeth.toothNumber,
-				})
-				.from(periodontogramTeeth)
-				.where(eq(periodontogramTeeth.snapshotId, id));
-
-			const toothIdMap = new Map<number, string>(
-				teethRows.map((t) => [t.toothNumber, t.id]),
-			);
-
-			const savedSites = await batchUpsertSites(tx, id, rawList, toothIdMap);
-			return { kind: "saved" as const, savedSites };
-		});
-
-		if (txResult.kind === "snapshot_rejected") return;
-		if (txResult.kind === "empty") return reply.send({ success: true, data: [] });
-
-		return reply.send({ success: true, data: txResult.savedSites });
+			return reply.send({ success: true, data: txResult.savedSites });
+		},
 	});
 
 	/**
 	 * 6b. PATCH /api/periodontogram/snapshots/:id/teeth/:toothNumber/sites/:siteCode
 	 * Одиночное сохранение сайта зондирования по REST-пути
 	 */
-	app.patch(
-		"/api/periodontogram/snapshots/:id/teeth/:toothNumber/sites/:siteCode",
-		async (req, reply) => {
+	defineStreamRoute(app, {
+		method: "PATCH",
+		path: "/api/periodontogram/snapshots/:id/teeth/:toothNumber/sites/:siteCode",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
 			const orgId = await requireResolvedStaffOrAdminOrganizationId(
 				req,
 				reply,
 				"periodontogram single site patch",
 			);
-			if (!orgId) return;
-			const {
-				id,
-				toothNumber: rawTn,
-				siteCode,
-			} = req.params as {
-				id: string;
-				toothNumber: string;
-				siteCode: string;
-			};
+			if (!orgId) return reply;
+			const rawParams = req.params;
+			const id =
+				typeof rawParams === "object" && rawParams !== null && "id" in rawParams && typeof rawParams.id === "string"
+					? rawParams.id
+					: "";
+			const rawTn =
+				typeof rawParams === "object" && rawParams !== null && "toothNumber" in rawParams && typeof rawParams.toothNumber === "string"
+					? rawParams.toothNumber
+					: "";
+			const siteCode =
+				typeof rawParams === "object" && rawParams !== null && "siteCode" in rawParams && typeof rawParams.siteCode === "string"
+					? rawParams.siteCode
+					: "";
 
-			const idempotencyKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
+			const rawIdem = req.headers["idempotency-key"] || req.headers["x-idempotency-key"];
+			const idempotencyKey = typeof rawIdem === "string" ? rawIdem : undefined;
 			if (idempotencyKey) {
 				if (!UUID_REGEX.test(idempotencyKey)) {
 					return reply.code(400).send({
@@ -197,7 +214,7 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const txResult = await withTenantCtx(orgId, async (tx) => {
+			const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 				const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply, tx);
 				if (!snapshot) return { kind: "snapshot_rejected" as const };
 
@@ -223,9 +240,9 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 				return { kind: "saved" as const, saved };
 			});
 
-			if (txResult.kind === "snapshot_rejected") return;
+			if (txResult.kind === "snapshot_rejected") return reply;
 
 			return reply.send({ success: true, data: txResult.saved });
 		},
-	);
+	});
 }

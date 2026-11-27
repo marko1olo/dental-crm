@@ -9,7 +9,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { recordAuditEvent } from "../../../audit.js";
-import { onTenantTxCommit, withTenantCtx } from "../../../db/rls.js";
+import { onTenantTxCommit, withTenantWriteCtx } from "../../../db/rls.js";
 import { preSterilizationCleaningLogs } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -75,7 +75,7 @@ export async function handlePostPsoQuickNorm(req: FastifyRequest, reply: Fastify
 	const bodyOperatorId = body.operatorId ?? null;
 	const actorUserId = getRequestIdentity(req).userId ?? null;
 
-	const [log] = await withTenantCtx(organizationId, async (tx) => {
+	const [log] = await withTenantWriteCtx(organizationId, async (tx) => {
 		const [created] = await tx
 			.insert(preSterilizationCleaningLogs)
 			.values({

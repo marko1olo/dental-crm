@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../../db/rls.js";
 import {
 	bactericidalEquipments,
 	bactericidalIrradiatorLogs,
@@ -25,7 +25,7 @@ export async function handleGetBactericidalLogs(
 	);
 	if (!organizationId) return;
 
-	const logs = await withTenantCtx(organizationId, async (tx) => {
+	const logs = await withTenantReadCtx(organizationId, async (tx) => {
 		return tx
 			.select({
 				id: bactericidalIrradiatorLogs.id,
@@ -82,7 +82,7 @@ export async function handleCreateBactericidalLog(
 	}
 	const data = parsed.data;
 
-	const [equipment] = await withTenantCtx(organizationId, async (tx) => {
+	const [equipment] = await withTenantReadCtx(organizationId, async (tx) => {
 		return tx
 			.select()
 			.from(bactericidalEquipments)
@@ -110,7 +110,7 @@ export async function handleCreateBactericidalLog(
 		`${data.date}T${data.sessionEndTime.length === 5 ? data.sessionEndTime + ":00" : data.sessionEndTime}`,
 	);
 
-	const [log] = await withTenantCtx(organizationId, async (tx) => {
+	const [log] = await withTenantWriteCtx(organizationId, async (tx) => {
 		await tx
 			.update(bactericidalEquipments)
 			.set({ totalOperatingHours: String(newTotalHours), lampStatus: lampLife.status, updatedAt: new Date() })

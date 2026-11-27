@@ -1,7 +1,8 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { toothStateHistory } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -29,15 +30,17 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 	/**
 	 * Получение хронологии изменений конкретного зуба (аудит медицинской карты приёма)
 	 */
-	app.get<{ Params: ToothHistoryParams }>(
-		"/api/patients/:patientId/tooth-states/:toothNumber/history",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/tooth-states/:toothNumber/history",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 				request,
 				reply,
 				"tooth history read",
 			);
-			if (!organizationId) return;
+			if (!organizationId) return reply;
 
 			const identity = getRequestIdentity(request);
 			const staffRole = identity.role ?? request.user?.role ?? null;
@@ -51,17 +54,25 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const { patientId, toothNumber: toothParam } = request.params;
+			const rawParams = request.params;
+			const patientId =
+				typeof rawParams === "object" && rawParams !== null && "patientId" in rawParams && typeof rawParams.patientId === "string"
+					? rawParams.patientId
+					: "";
+			const toothParam =
+				typeof rawParams === "object" && rawParams !== null && "toothNumber" in rawParams && typeof rawParams.toothNumber === "string"
+					? rawParams.toothNumber
+					: "";
 			const toothNumber = parseInt(toothParam, 10);
 			if (!UUID_SHAPE.test(patientId) || Number.isNaN(toothNumber)) {
 				return reply.code(400).send({ error: "InvalidParameters" });
 			}
-			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-				return reply.code(404).send({ error: "PatientNotFound" });
-			}
 
-			const rows = await withTenantCtx(organizationId, async (tx) =>
-				tx
+			const rows = await withTenantReadCtx(organizationId, async (tx) => {
+				if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+					return null;
+				}
+				return tx
 					.select({
 						id: toothStateHistory.id,
 						visitId: toothStateHistory.visitId,
@@ -82,8 +93,11 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 							eq(toothStateHistory.toothNumber, toothNumber),
 						),
 					)
-					.orderBy(desc(toothStateHistory.changedAt)),
-			);
+					.orderBy(desc(toothStateHistory.changedAt));
+			});
+			if (!rows) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
 
 			return reply.send({
 				success: true,
@@ -94,20 +108,22 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 				})),
 			});
 		},
-	);
+	});
 
 	/**
 	 * Получение полного таймлайна эволюции зубной формулы пациента
 	 */
-	app.get<{ Params: PatientHistoryParams }>(
-		"/api/patients/:patientId/tooth-states/history",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/tooth-states/history",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 				request,
 				reply,
 				"patient odontogram history read",
 			);
-			if (!organizationId) return;
+			if (!organizationId) return reply;
 
 			const identity = getRequestIdentity(request);
 			const staffRole = identity.role ?? request.user?.role ?? null;
@@ -121,16 +137,20 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const { patientId } = request.params;
+			const rawParams = request.params;
+			const patientId =
+				typeof rawParams === "object" && rawParams !== null && "patientId" in rawParams && typeof rawParams.patientId === "string"
+					? rawParams.patientId
+					: "";
 			if (!UUID_SHAPE.test(patientId)) {
 				return reply.code(400).send({ error: "InvalidPatientId" });
 			}
-			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-				return reply.code(404).send({ error: "PatientNotFound" });
-			}
 
-			const rows = await withTenantCtx(organizationId, async (tx) =>
-				tx
+			const rows = await withTenantReadCtx(organizationId, async (tx) => {
+				if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+					return null;
+				}
+				return tx
 					.select({
 						id: toothStateHistory.id,
 						visitId: toothStateHistory.visitId,
@@ -151,8 +171,11 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 						),
 					)
 					.orderBy(desc(toothStateHistory.changedAt))
-					.limit(500),
-			);
+					.limit(500);
+			});
+			if (!rows) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
 
 			return reply.send({
 				success: true,
@@ -163,20 +186,22 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 				})),
 			});
 		},
-	);
+	});
 
 	/**
 	 * Получение полной хронологии зуба (дневники, снимки, планы, периодонтограмма, статусы)
 	 */
-	app.get<{ Params: { patientId: string; toothId: string } }>(
-		"/api/odontogram/tooth-history/:patientId/:toothId",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/odontogram/tooth-history/:patientId/:toothId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 				request,
 				reply,
 				"read tooth history",
 			);
-			if (!organizationId) return;
+			if (!organizationId) return reply;
 
 			const identity = getRequestIdentity(request);
 			const staffRole = identity.role ?? request.user?.role ?? null;
@@ -190,24 +215,38 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const { patientId, toothId } = request.params;
+			const rawParams = request.params;
+			const patientId =
+				typeof rawParams === "object" && rawParams !== null && "patientId" in rawParams && typeof rawParams.patientId === "string"
+					? rawParams.patientId
+					: "";
+			const toothId =
+				typeof rawParams === "object" && rawParams !== null && "toothId" in rawParams && typeof rawParams.toothId === "string"
+					? rawParams.toothId
+					: "";
 			const toothNum = parseInt(toothId, 10);
 			if (!UUID_SHAPE.test(patientId) || Number.isNaN(toothNum)) {
 				return reply.code(400).send({ error: "InvalidParameters" });
 			}
-			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+
+			const events = await withTenantReadCtx(organizationId, async (tx) => {
+				if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+					return null;
+				}
+				return fetchToothHistoryTimeline(
+					organizationId,
+					patientId,
+					toothNum,
+					request.log,
+					tx,
+				);
+			});
+			if (!events) {
 				return reply.code(404).send({ error: "PatientNotFound" });
 			}
-
-			const events = await fetchToothHistoryTimeline(
-				organizationId,
-				patientId,
-				toothNum,
-				request.log,
-			);
 			return reply.send({ success: true, events });
 		},
-	);
+	});
 }
 
 export { registerHistoryRoutes as registerToothHistoryRoutes };

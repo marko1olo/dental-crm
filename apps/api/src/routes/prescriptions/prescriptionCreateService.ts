@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { db } from "../../db/client.js";
-import { type TenantDb, withTenantCtx } from "../../db/rls.js";
+import { type TenantDb, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	electronicPrescriptionItems,
 	electronicPrescriptions,
@@ -150,5 +150,5 @@ export async function insertPrescriptionWithItems(
 	if (existingTx) {
 		return runInsert(existingTx);
 	}
-	return await withTenantCtx(orgId, runInsert);
+	return await withTenantWriteCtx(orgId, runInsert);
 }

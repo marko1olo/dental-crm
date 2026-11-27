@@ -7,7 +7,7 @@
 import { eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
+import { withTenantWriteCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	temperatureHumidityEquipments,
 	temperatureHumidityLogs,
@@ -70,7 +70,7 @@ export async function handlePostTemperatureShiftAutopilot(req: FastifyRequest, r
 	const measurementPeriod: "morning" | "evening" = body.period === "evening" ? "evening" : "morning";
 	const operatorId = getRequestIdentity(req).userId ?? null;
 
-	const createdLogs = await withTenantCtx(organizationId, async (tx) => {
+	const createdLogs = await withTenantWriteCtx(organizationId, async (tx) => {
 		const equips = await ensureDefaultEquipments(tx, organizationId);
 		if (equips.length === 0) return [];
 

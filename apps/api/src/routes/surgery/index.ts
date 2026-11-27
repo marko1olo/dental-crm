@@ -22,7 +22,8 @@ import {
 import { and, desc, eq, notInArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { inventoryQuery } from "../../db/inventoryQuery.js";
 import {
 	patientInvoices,
@@ -57,27 +58,32 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 	 * Возвращает шаблоны хирургических протоколов с физиологической нормой по умолчанию
 	 * (Код услуги прейскуранта, Медицинская карта приёма, Мандаты 8e, 8i).
 	 */
-	app.get("/api/surgery/protocols/templates", async (request, reply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/surgery/protocols/templates",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
+			if (!orgId) return reply;
 
-		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? request.user?.role ?? null;
-		const evalAccess = evaluateClinicalAccess(staffRole);
-		if (!evalAccess.hasClinicalAccess) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "clinical.surgery.read",
-				role: staffRole,
-				message: `Отказ в доступе к шаблонам хирургических протоколов: ${evalAccess.reason}`,
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.surgery.read",
+					role: staffRole,
+					message: `Отказ в доступе к шаблонам хирургических протоколов: ${evalAccess.reason}`,
+				});
+			}
+
+			return reply.send({
+				success: true,
+				count: CANONICAL_SURGICAL_OPERATION_NORMS.length,
+				templates: CANONICAL_SURGICAL_OPERATION_NORMS,
 			});
-		}
-
-		return reply.send({
-			success: true,
-			count: CANONICAL_SURGICAL_OPERATION_NORMS.length,
-			templates: CANONICAL_SURGICAL_OPERATION_NORMS,
-		});
+		},
 	});
 
 	/**
@@ -85,9 +91,13 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 	 * Регистрация протокола амбулаторной операции в медицинской карте приёма и дневнике приёма (Мандаты 8e, 8i).
 	 * Автоматически вносит дневник операции без бюрократических барьеров.
 	 */
-	app.post("/api/surgery/protocols", async (request, reply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/surgery/protocols",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
+			if (!orgId) return reply;
 
 		const identity = getRequestIdentity(request);
 		const staffRole = identity.role ?? request.user?.role ?? null;
@@ -148,7 +158,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 			}
 		}
 
-		const result = await withTenantCtx(orgId, async (tx) => {
+		const result = await withTenantWriteCtx(orgId, async (tx) => {
 			const [patient] = await tx
 				.select({ id: patients.id, fullName: patients.fullName })
 				.from(patients)
@@ -542,6 +552,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 		});
 
 		return reply.code(201).send(result.responsePayload);
+		},
 	});
 
 	/**
@@ -550,76 +561,79 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 	 * Пустые карпулы анестетиков — отходы Класса Б (СанПиН 3.3686-21) без комиссий.
 	 * Мягкий овердрафт склада: задержка накладной никогда не блокирует операцию врача!
 	 */
-	app.post("/api/surgery/materials/quick-deduct", async (request, reply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/surgery/materials/quick-deduct",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
+			if (!orgId) return reply;
 
-		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? request.user?.role ?? null;
-		const evalAccess = evaluateClinicalAccess(staffRole);
-		if (!evalAccess.hasClinicalAccess) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "clinical.surgery.write",
-				role: staffRole,
-				message: `Отказ в списании хирургических материалов: ${evalAccess.reason}`,
-			});
-		}
-
-		const parsed = surgicalQuickDeductSchema.safeParse(request.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "SurgicalDeductValidationError",
-				message: "Некорректные параметры списания расходных материалов.",
-				details: parsed.error.format(),
-			});
-		}
-		const input = parsed.data;
-
-		const responsePayload = await withTenantCtx(orgId, async (tx) => {
-			let res: UnifiedStockDeductionResult;
-			if (input.bundleType === "anesthesia_carpule") {
-				// Списание карпул анестетиков медсестрой (Класс Б, СанПиН 3.3686-21, без комиссий)
-				res = await TreatmentConsumablesService.quickWriteoffCarpules(tx, {
-					organizationId: orgId,
-					carpulesCount: input.carpulesCount,
-					drugName: input.drugBrandName,
-					userId: identity.userId,
-					visitId: input.visitId,
-					notes: input.notes ?? `Списание ${input.carpulesCount} карпул(ы) ${input.drugBrandName} (отходы Класса Б, СанПиН 3.3686-21, протокол по умолчанию)`,
-				});
-			} else {
-				// Маппинг хирургических бандлов на TreatmentConsumablesService
-				let visitType: "therapy" | "surgery" | "implant" | "sinus_gbr" = "surgery";
-				if (input.bundleType === "implant") {
-					visitType = "implant";
-				} else if (input.bundleType === "sinus_gbr") {
-					visitType = "sinus_gbr";
-				} else {
-					visitType = "surgery";
-				}
-
-				res = await TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
-					organizationId: orgId,
-					visitType,
-					userId: identity.userId,
-					visitId: input.visitId,
-					notes: input.notes ?? `Списание набора «${visitType}»`,
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.surgery.write",
+					role: staffRole,
+					message: `Отказ в списании хирургических материалов: ${evalAccess.reason}`,
 				});
 			}
 
-			return {
-				bundleType: input.bundleType,
-				success: res.success,
-				isOverdraft: res.isOverdraft,
-				deductedItemsCount: res.deductedItems.length,
-				messageRu: res.message,
-				deductedItems: res.deductedItems,
-				warnings: res.warnings,
-			};
-		});
+			const parsed = surgicalQuickDeductSchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "SurgicalDeductValidationError",
+					message: "Некорректные параметры списания расходных материалов.",
+					details: parsed.error.format(),
+				});
+			}
+			const input = parsed.data;
 
-		return reply.send(responsePayload);
+			const responsePayload = await withTenantWriteCtx(orgId, async (tx) => {
+				let res: UnifiedStockDeductionResult;
+				if (input.bundleType === "anesthesia_carpule") {
+					res = await TreatmentConsumablesService.quickWriteoffCarpules(tx, {
+						organizationId: orgId,
+						carpulesCount: input.carpulesCount,
+						drugName: input.drugBrandName,
+						userId: identity.userId,
+						visitId: input.visitId,
+						notes: input.notes ?? `Списание ${input.carpulesCount} карпул(ы) ${input.drugBrandName} (отходы Класса Б, СанПиН 3.3686-21, протокол по умолчанию)`,
+					});
+				} else {
+					let visitType: "therapy" | "surgery" | "implant" | "sinus_gbr" = "surgery";
+					if (input.bundleType === "implant") {
+						visitType = "implant";
+					} else if (input.bundleType === "sinus_gbr") {
+						visitType = "sinus_gbr";
+					} else {
+						visitType = "surgery";
+					}
+
+					res = await TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+						organizationId: orgId,
+						visitType,
+						userId: identity.userId,
+						visitId: input.visitId,
+						notes: input.notes ?? `Списание набора «${visitType}»`,
+					});
+				}
+
+				return {
+					bundleType: input.bundleType,
+					success: res.success,
+					isOverdraft: res.isOverdraft,
+					deductedItemsCount: res.deductedItems.length,
+					messageRu: res.message,
+					deductedItems: res.deductedItems,
+					warnings: res.warnings,
+				};
+			});
+
+			return reply.send(responsePayload);
+		},
 	});
 
 	/**
@@ -627,39 +641,44 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 	 * Проверка статуса мягкого овердрафта хирургических материалов.
 	 * canProceed ВСЕГДА true — врач оперирует без искусственных блокировок.
 	 */
-	app.get("/api/surgery/materials/overdraft-status", async (request, reply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/surgery/materials/overdraft-status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
+			if (!orgId) return reply;
 
-		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? request.user?.role ?? null;
-		const evalAccess = evaluateClinicalAccess(staffRole);
-		if (!evalAccess.hasClinicalAccess) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "clinical.surgery.read",
-				role: staffRole,
-				message: `Отказ в проверке складского статуса операции: ${evalAccess.reason}`,
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.surgery.read",
+					role: staffRole,
+					message: `Отказ в проверке складского статуса операции: ${evalAccess.reason}`,
+				});
+			}
+
+			const items = await withTenantReadCtx(orgId, (tx) => inventoryQuery.getInventoryItems(orgId, tx));
+
+			const overdraftItems = items
+				.filter((i) => Number(i.currentQty ?? i.stockQuantity ?? 0) <= 0)
+				.map((i) => i.name);
+
+			const status = evaluateWarehouseOverdraft(
+				CANONICAL_SURGICAL_OPERATION_NORMS[0]?.requiredMaterials ?? [],
+				overdraftItems.length > 0,
+			);
+
+			return reply.send({
+				success: true,
+				overdraftStatus: status,
+				overdraftItemsCount: overdraftItems.length,
+				overdraftItemNames: overdraftItems.slice(0, 10),
+				canProceed: true,
 			});
-		}
-
-		const items = await withTenantCtx(orgId, async () => inventoryQuery.getInventoryItems(orgId));
-
-		const overdraftItems = items
-			.filter((i) => Number(i.currentQty ?? i.stockQuantity ?? 0) <= 0)
-			.map((i) => i.name);
-
-		const status = evaluateWarehouseOverdraft(
-			CANONICAL_SURGICAL_OPERATION_NORMS[0]?.requiredMaterials ?? [],
-			overdraftItems.length > 0,
-		);
-
-		return reply.send({
-			success: true,
-			overdraftStatus: status,
-			overdraftItemsCount: overdraftItems.length,
-			overdraftItemNames: overdraftItems.slice(0, 10),
-			canProceed: true,
-		});
+		},
 	});
 }

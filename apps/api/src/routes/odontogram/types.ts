@@ -197,6 +197,8 @@ export const individualToothUpdateSchema = z.object({
 }).strict();
 
 export const batchToothStateSchema = z.object({
+	patientId: z.string().uuid().optional(),
+	toothNumber: odontogramTargetNumberSchema.optional(),
 	toothNumbers: z.array(odontogramTargetNumberSchema).min(1).max(64).optional(),
 	state: clinicalToothStateSchema.optional().default("Healthy"),
 	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
@@ -219,8 +221,11 @@ export const batchToothStateSchema = z.object({
 	version: z.number().int().nonnegative().optional().nullable(),
 	reason: z.string().max(1000).optional().nullable(),
 }).strict().refine(
-	(data) => (data.toothNumbers && data.toothNumbers.length > 0) || (data.updates && data.updates.length > 0),
-	{ message: "Необходимо указать toothNumbers или updates" },
+	(data) =>
+		(data.toothNumbers && data.toothNumbers.length > 0) ||
+		(data.updates && data.updates.length > 0) ||
+		data.toothNumber !== undefined,
+	{ message: "Необходимо указать toothNumbers, toothNumber или updates" },
 );
 
 export const odontogramStatusMutationSchema = z
@@ -263,12 +268,16 @@ export function parseClinicalDataFromNotes(
 	const trimmed = notes.trim();
 	if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return null;
 	try {
-		const parsed = JSON.parse(trimmed);
+		const parsed: unknown = JSON.parse(trimmed);
 		if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+			const validated = endoToothClinicalDataSchema.safeParse(parsed);
+			if (validated.success) {
+				return validated.data;
+			}
 			return parsed as EndoToothClinicalData;
 		}
-	} catch {
-		// Non-JSON notes
+	} catch (err) {
+		void err;
 	}
 	return null;
 }

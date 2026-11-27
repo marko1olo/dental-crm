@@ -15,7 +15,7 @@ const markInstalledBodySchema = z.object({
 }).strict();
 
 export async function labOrderMarkInstalledHandler(
-	request: FastifyRequest<{ Params: { id: string } }>,
+	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
 	const rawIdempotencyKey =

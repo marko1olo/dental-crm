@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { onTenantTxCommit, withTenantCtx } from "../../../../db/rls.js";
+import { onTenantTxCommit, withTenantWriteCtx } from "../../../../db/rls.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { autofillMonthSchema } from "../shiftAutofillSchemas.js";
@@ -25,7 +25,7 @@ export async function handleAutofillMonth(req: FastifyRequest, reply: FastifyRep
 
 	const operatorId = getRequestIdentity(req).userId ?? null;
 
-	const result = await withTenantCtx(organizationId, async (tx) => {
+	const result = await withTenantWriteCtx(organizationId, async (tx) => {
 		const monthResult = await executeMonthAutofillTransaction(tx, {
 			organizationId,
 			body,

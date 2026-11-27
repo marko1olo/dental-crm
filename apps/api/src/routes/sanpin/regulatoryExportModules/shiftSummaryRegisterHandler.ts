@@ -8,7 +8,7 @@ import { and, eq, gte, lte, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { type TenantDb, withTenantCtx } from "../../../db/rls.js";
+import { type TenantDb, withTenantReadCtx } from "../../../db/rls.js";
 import {
 	bactericidalIrradiatorLogs,
 	medicalWasteLogs,
@@ -120,7 +120,7 @@ export async function handleGetSanpinRegister(req: FastifyRequest, reply: Fastif
 		psoRecords,
 		wasteRecords,
 		microclimateRecords,
-	} = await withTenantCtx(organizationId, async (tx) => {
+	} = await withTenantReadCtx(organizationId, async (tx) => {
 		const stats = await fetchSanpinDayStats(tx, organizationId, startOfDay, endOfDay, todayStr);
 		const [sterilRows, psoRows, wasteRows, microRows] = await Promise.all([
 			tx.select().from(sterilizationLogs).where(and(eq(sterilizationLogs.organizationId, organizationId), gte(sterilizationLogs.timestamp, startOfDay), lte(sterilizationLogs.timestamp, endOfDay))),

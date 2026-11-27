@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { FastifyBaseLogger } from "fastify";
 import { generateUuidV7 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { withSavepoint, withTenantCtx } from "../../../db/rls.js";
+import { withSavepoint, withTenantWriteCtx } from "../../../db/rls.js";
 import {
 	labItems,
 	labOrderEvents,
@@ -29,7 +29,7 @@ export async function executeLabOrderMarkInstalled(
 	orderId: string,
 	input: LabOrderMarkInstalledInput,
 ): Promise<LabOrderMarkInstalledResult> {
-	return withTenantCtx(orgId, async (tx) => {
+	return withTenantWriteCtx(orgId, async (tx) => {
 		const [order] = await tx
 			.select()
 			.from(labOrders)

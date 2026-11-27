@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { PRIMARY_TEETH_SET } from "@dental/shared";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 
 export const PRIMARY_TEETH = PRIMARY_TEETH_SET;
 export { PRIMARY_TEETH_SET };
@@ -194,11 +195,15 @@ export const CANONICAL_PEDIATRIC_PRESETS: readonly PediatricPresetDto[] = [
 ];
 
 export function registerPediatricPresetRoutes(app: FastifyInstance): void {
-	app.get("/api/pediatric/presets", async (_request, reply) => {
-		return reply.send({
-			success: true,
-			count: CANONICAL_PEDIATRIC_PRESETS.length,
-			presets: CANONICAL_PEDIATRIC_PRESETS,
-		});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/pediatric/presets",
+		permission: "public",
+		handler: async ({ reply }) =>
+			reply.send({
+				success: true,
+				count: CANONICAL_PEDIATRIC_PRESETS.length,
+				presets: CANONICAL_PEDIATRIC_PRESETS,
+			}),
 	});
 }

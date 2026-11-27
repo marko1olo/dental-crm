@@ -20,7 +20,7 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { db } from "./client.js";
+import { withSuperuserBypass } from "./rls.js";
 import { labOrders, patients } from "./schema.js";
 
 /** Все допустимые статусы заказа ЗТЛ — строгий тип, синхронен с CHECK в 0231. */
@@ -92,32 +92,34 @@ export const LAB_ORDER_TECHNICIAN_TRANSITIONS: Readonly<
  * для внутреннего использования (WS-броадкаст в маршруте).
  */
 export async function getLabOrderByToken(token: string) {
-	const result = await db
-		.select({
-			id: labOrders.id,
-			organizationId: labOrders.organizationId,
-			patientId: labOrders.patientId,
-			orderNumber: labOrders.orderNumber,
-			patientFullName: patients.fullName,
-			toothFdi: labOrders.toothFdi,
-			material: labOrders.material,
-			colorVita: labOrders.colorVita,
-			status: labOrders.status,
-			clinicalNotes: labOrders.clinicalNotes,
-			attachedImageUrl: labOrders.attachedImageUrl,
-			dueDate: labOrders.dueDate,
-			createdAt: labOrders.createdAt,
-		})
-		.from(labOrders)
-		.innerJoin(
-			patients,
-			and(
-				eq(patients.id, labOrders.patientId),
-				eq(patients.organizationId, labOrders.organizationId),
-			),
-		)
-		.where(eq(labOrders.secureToken, token))
-		.limit(1);
+	return withSuperuserBypass(async (tx) => {
+		const result = await tx
+			.select({
+				id: labOrders.id,
+				organizationId: labOrders.organizationId,
+				patientId: labOrders.patientId,
+				orderNumber: labOrders.orderNumber,
+				patientFullName: patients.fullName,
+				toothFdi: labOrders.toothFdi,
+				material: labOrders.material,
+				colorVita: labOrders.colorVita,
+				status: labOrders.status,
+				clinicalNotes: labOrders.clinicalNotes,
+				attachedImageUrl: labOrders.attachedImageUrl,
+				dueDate: labOrders.dueDate,
+				createdAt: labOrders.createdAt,
+			})
+			.from(labOrders)
+			.innerJoin(
+				patients,
+				and(
+					eq(patients.id, labOrders.patientId),
+					eq(patients.organizationId, labOrders.organizationId),
+				),
+			)
+			.where(eq(labOrders.secureToken, token))
+			.limit(1);
 
-	return result[0] ?? null;
+		return result[0] ?? null;
+	});
 }

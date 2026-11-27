@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import { treatmentPlans } from "../../../db/schema.js";
 import {
 	CANONICAL_DENTAL_LAB_PRESETS,
@@ -43,7 +43,7 @@ export async function handleCheckPlanContinuity(request: FastifyRequest, reply: 
 	let planFound = false;
 
 	if (treatmentPlanId) {
-		const plan = await withTenantCtx(orgId, async (tx) => {
+		const plan = await withTenantReadCtx(orgId, async (tx) => {
 			const [found] = await tx
 				.select({
 					id: treatmentPlans.id,

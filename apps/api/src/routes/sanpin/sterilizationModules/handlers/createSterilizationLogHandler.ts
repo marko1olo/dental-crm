@@ -7,7 +7,7 @@
 
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../../db/rls.js";
 import { sterilizationLogs } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
@@ -81,7 +81,7 @@ export async function handleCreateSterilizationLog(
 		Number(rawBody.packagesCount ?? rawBody.batchSize ?? 1),
 	);
 
-	const log = await withTenantCtx(organizationId, async (tx) => {
+	const log = await withTenantWriteCtx(organizationId, async (tx) => {
 		const [createdLog] = await tx
 			.insert(sterilizationLogs)
 			.values({

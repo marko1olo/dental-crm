@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { isValidUuid } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -11,7 +11,7 @@ import {
 	resolveTargetLabStatus,
 } from "./labOrderPatchSchema.js";
 
-export async function patchLabOrderHandler(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+export async function patchLabOrderHandler(request: FastifyRequest, reply: FastifyReply) {
 	const orgId = await requireResolvedStaffOrAdminOrganizationId(
 		request,
 		reply,
@@ -31,7 +31,11 @@ export async function patchLabOrderHandler(request: FastifyRequest<{ Params: { i
 		});
 	}
 
-	const id = request.params.id;
+	const rawId =
+		typeof request.params === "object" && request.params !== null && "id" in request.params
+			? request.params.id
+			: undefined;
+	const id = typeof rawId === "string" ? rawId : "";
 	const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 	if (!id || !UUID_REGEX.test(id)) {
 		return reply.code(400).send({
@@ -65,7 +69,7 @@ export async function patchLabOrderHandler(request: FastifyRequest<{ Params: { i
 	const targetStatus = resolveTargetLabStatus(body);
 
 	try {
-		const result = await withTenantCtx(orgId, async (tx) => {
+		const result = await withTenantWriteCtx(orgId, async (tx) => {
 			return executeLabOrderPatchTx(tx, orgId, id, body, targetStatus);
 		});
 

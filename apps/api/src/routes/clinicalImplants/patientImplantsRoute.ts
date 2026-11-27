@@ -2,7 +2,8 @@ import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { patientImplantInstallations } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
@@ -63,9 +64,13 @@ function mapInstallationRow(
 }
 
 export function registerPatientImplantsRoute(app: FastifyInstance) {
-	app.get<{ Params: { patientId: string } }>("/api/clinical/implants/patient/:patientId", async (request, reply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/clinical/implants/patient/:patientId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedOrganizationId(request, reply);
+			if (!orgId) return reply;
 
 		const identity = getRequestIdentity(request);
 		const staffRole = identity.role ?? request.user?.role ?? null;
@@ -88,7 +93,7 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 		}
 		const { patientId } = parsedParams.data;
 
-		const rawInstallations = await withTenantCtx(orgId, async (tx) =>
+		const rawInstallations = await withTenantReadCtx(orgId, async (tx) =>
 			tx
 				.select()
 				.from(patientImplantInstallations)
@@ -108,10 +113,11 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 		});
 
 		return reply.send({ success: true, installations });
+		},
 	});
 
 	const handleSurgeryImplantsQuery = async (
-		request: FastifyRequest<{ Querystring: SurgeryImplantsQuery; Params?: { patientId?: string } }>,
+		request: FastifyRequest,
 		reply: FastifyReply,
 		explicitPatientId?: string,
 	) => {
@@ -140,7 +146,12 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 		}
 		const query = parsedQuery.data;
 		const conditions = [eq(patientImplantInstallations.organizationId, orgId)];
-		const effectivePatientId = explicitPatientId || request.params?.patientId || query.patientId;
+		const rawParams = request.params;
+		const paramPatientId =
+			typeof rawParams === "object" && rawParams !== null && "patientId" in rawParams && typeof rawParams.patientId === "string"
+				? rawParams.patientId
+				: undefined;
+		const effectivePatientId = explicitPatientId || paramPatientId || query.patientId;
 
 		if (effectivePatientId) {
 			if (!z.string().uuid().safeParse(effectivePatientId).success) {
@@ -169,7 +180,7 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 
 		const limit = query.limit ?? 50;
 
-		const rawInstallations = await withTenantCtx(orgId, async (tx) =>
+		const rawInstallations = await withTenantReadCtx(orgId, async (tx) =>
 			tx
 				.select()
 				.from(patientImplantInstallations)
@@ -199,5 +210,11 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 		});
 	};
 
-	app.get<{ Querystring: SurgeryImplantsQuery }>("/api/clinical/implants", (req, rep) => handleSurgeryImplantsQuery(req, rep));
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/clinical/implants",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleSurgeryImplantsQuery(request, reply),
+	});
 }

@@ -14,10 +14,7 @@ import {
 } from "../../services/labScanDirectUpload.js";
 
 export async function handleLabScanUploadUrl(
-	request: FastifyRequest<{
-		Params: { id: string };
-		Body: { fileName?: string; fileSizeBytes?: number; expiresInSeconds?: number };
-	}>,
+	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
 	const orgId = await requireResolvedStaffOrAdminOrganizationId(
@@ -55,8 +52,19 @@ export async function handleLabScanUploadUrl(
 	}
 	reply.header("Idempotency-Key", idempotencyKey);
 
-	const id = request.params.id;
-	const body = request.body;
+	const rawId =
+		typeof request.params === "object" && request.params !== null && "id" in request.params
+			? request.params.id
+			: undefined;
+	const id = typeof rawId === "string" ? rawId : "";
+	const body =
+		typeof request.body === "object" && request.body !== null
+			? (request.body as {
+					fileName?: string;
+					fileSizeBytes?: number;
+					expiresInSeconds?: number;
+				})
+			: undefined;
 	if (!body || !body.fileName) {
 		return reply.code(400).send({
 			error: "BadRequest",

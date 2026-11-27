@@ -6,7 +6,8 @@ import {
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { visitDiaries, visits } from "../../db/schema.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
@@ -37,7 +38,7 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const latestPerio = await withTenantCtx(context.organizationId, async (tx) => {
+		const latestPerio = await withTenantReadCtx(context.organizationId, async (tx) => {
 			const [visit] = await tx
 				.select({
 					id: visits.id,
@@ -147,7 +148,7 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 		const identity = getRequestIdentity(request);
 		const doctorUserId = identity.userId ?? null;
 
-		const txResult = await withTenantCtx(context.organizationId, async (tx) => {
+		const txResult = await withTenantWriteCtx(context.organizationId, async (tx) => {
 			const [visit] = await tx
 				.select({
 					id: visits.id,
@@ -230,12 +231,42 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 	};
 
 	// Регистрация обоих путей: /api/visits/:visitId/perio и /api/clinical/visits/:visitId/perio
-	app.get("/api/visits/:visitId/perio", getHandler);
-	app.get("/api/clinical/visits/:visitId/perio", getHandler);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/visits/:visitId/perio",
+		permission: "public",
+		handler: async ({ request, reply }) => getHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/clinical/visits/:visitId/perio",
+		permission: "public",
+		handler: async ({ request, reply }) => getHandler(request, reply),
+	});
 
-	app.post("/api/visits/:visitId/perio", postHandler);
-	app.post("/api/clinical/visits/:visitId/perio", postHandler);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/visits/:visitId/perio",
+		permission: "public",
+		handler: async ({ request, reply }) => postHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/clinical/visits/:visitId/perio",
+		permission: "public",
+		handler: async ({ request, reply }) => postHandler(request, reply),
+	});
 
-	app.put("/api/visits/:visitId/perio", postHandler);
-	app.put("/api/clinical/visits/:visitId/perio", postHandler);
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/visits/:visitId/perio",
+		permission: "public",
+		handler: async ({ request, reply }) => postHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/clinical/visits/:visitId/perio",
+		permission: "public",
+		handler: async ({ request, reply }) => postHandler(request, reply),
+	});
 }

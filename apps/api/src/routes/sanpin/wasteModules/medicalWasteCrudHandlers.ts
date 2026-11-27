@@ -8,7 +8,7 @@ import { createMedicalWasteLogDtoSchema } from "@dental/shared";
 import { desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
 import { medicalWasteLogs, users } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 
@@ -16,7 +16,7 @@ export async function handleGetMedicalWaste(req: FastifyRequest, reply: FastifyR
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "waste read");
 	if (!organizationId) return;
 
-	const logs = await withTenantCtx(organizationId, (tx) =>
+	const logs = await withTenantReadCtx(organizationId, (tx) =>
 		tx
 			.select({
 				id: medicalWasteLogs.id,
@@ -65,7 +65,7 @@ export async function handlePostMedicalWaste(req: FastifyRequest, reply: Fastify
 	}
 	const data = parsed.data;
 
-	const [log] = await withTenantCtx(organizationId, (tx) =>
+	const [log] = await withTenantWriteCtx(organizationId, (tx) =>
 		tx
 			.insert(medicalWasteLogs)
 			.values({

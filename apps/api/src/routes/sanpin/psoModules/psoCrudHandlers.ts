@@ -13,7 +13,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { recordAuditEvent } from "../../../audit.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
 import { preSterilizationCleaningLogs, users } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -27,7 +27,7 @@ export async function handleGetPso(req: FastifyRequest, reply: FastifyReply) {
 	);
 	if (!organizationId) return;
 
-	const logs = await withTenantCtx(organizationId, async (tx) => {
+	const logs = await withTenantReadCtx(organizationId, async (tx) => {
 		return tx
 			.select({
 				id: preSterilizationCleaningLogs.id,
@@ -98,7 +98,7 @@ export async function handlePostPso(req: FastifyRequest, reply: FastifyReply) {
 		data.isSudanNegative ?? true,
 	);
 
-	const [log] = await withTenantCtx(organizationId, async (tx) => {
+	const [log] = await withTenantWriteCtx(organizationId, async (tx) => {
 		const [created] = await tx
 			.insert(preSterilizationCleaningLogs)
 			.values({
@@ -167,7 +167,7 @@ export async function handleDeletePso(req: FastifyRequest, reply: FastifyReply) 
 		});
 	}
 	const id = idParsed.data;
-	const [deleted] = await withTenantCtx(organizationId, async (tx) => {
+	const [deleted] = await withTenantWriteCtx(organizationId, async (tx) => {
 		const [res] = await tx
 			.delete(preSterilizationCleaningLogs)
 			.where(

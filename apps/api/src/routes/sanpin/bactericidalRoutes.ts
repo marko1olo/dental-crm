@@ -6,6 +6,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	handleCreateBactericidalEquipment,
 	handleCreateBactericidalLog,
@@ -20,41 +21,91 @@ import {
 	handleOpenMorningShift,
 } from "./bactericidalModules/bactericidalShiftHandlers.js";
 
-const bactericidalMutationOptions = {
-	schema: {
-		description:
-			"SanPiN bactericidal mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-		headers: {
-			type: "object",
-			properties: {
-				"idempotency-key": { type: "string" },
-				"x-idempotency-key": { type: "string" },
-				"organizationid": { type: "string" },
-				"x-organization-id": { type: "string" },
-			},
+const bactericidalMutationSchema = {
+	description:
+		"SanPiN bactericidal mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+	headers: {
+		type: "object",
+		properties: {
+			"idempotency-key": { type: "string" },
+			"x-idempotency-key": { type: "string" },
+			"organizationid": { type: "string" },
+			"x-organization-id": { type: "string" },
 		},
 	},
-};
+} as const;
 
 export function registerSanpinBactericidalRoutes(app: FastifyInstance): void {
 	// ─────────────────────────────────────────────────────────────────────────
-	// ЖУРНАЛ РЕЦИРКУЛЯТОРОВ И ОБЛУЧАТЕЛЕЙ (Р 3.5.1904-04 / СанПиН 3.3686-21)
+	// ЖУРНАЛ РЕЦИРКУЛЯТОЛЯТОРОВ И ОБЛУЧАТЕЛЕЙ (Р 3.5.1904-04 / СанПиН 3.3686-21)
 	// ─────────────────────────────────────────────────────────────────────────
 
 	// Парк оборудования (облучатели и рециркуляторы)
-	app.get("/api/registers/bactericidal/equipments", handleGetBactericidalEquipments);
-	app.post("/api/registers/bactericidal/equipments", bactericidalMutationOptions, handleCreateBactericidalEquipment);
-	app.put("/api/registers/bactericidal/equipments/:id", bactericidalMutationOptions, handleUpdateBactericidalEquipment);
-	app.delete("/api/registers/bactericidal/equipments/:id", bactericidalMutationOptions, handleDeleteBactericidalEquipment);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/registers/bactericidal/equipments",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetBactericidalEquipments(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/registers/bactericidal/equipments",
+		permission: "public",
+		schema: bactericidalMutationSchema,
+		handler: async ({ request, reply }) => handleCreateBactericidalEquipment(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/registers/bactericidal/equipments/:id",
+		permission: "public",
+		schema: bactericidalMutationSchema,
+		handler: async ({ request, reply }) => handleUpdateBactericidalEquipment(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "DELETE",
+		path: "/api/registers/bactericidal/equipments/:id",
+		permission: "public",
+		schema: bactericidalMutationSchema,
+		handler: async ({ request, reply }) => handleDeleteBactericidalEquipment(request, reply),
+	});
 
 	// Журнал учёта работы бактерицидных установок
-	app.get("/api/registers/bactericidal/logs", handleGetBactericidalLogs);
-	app.post("/api/registers/bactericidal/logs", bactericidalMutationOptions, handleCreateBactericidalLog);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/registers/bactericidal/logs",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetBactericidalLogs(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/registers/bactericidal/logs",
+		permission: "public",
+		schema: bactericidalMutationSchema,
+		handler: async ({ request, reply }) => handleCreateBactericidalLog(request, reply),
+	});
 
 	// Пакетные действия смены и автопилот наработки часов
-	app.post("/api/registers/bactericidal/shift-autopilot", bactericidalMutationOptions, handleBactericidalShiftAutopilot);
-	app.post("/api/registers/bactericidal/open-morning-shift", bactericidalMutationOptions, handleOpenMorningShift);
-	app.post("/api/registers/bactericidal/close-evening-shift", bactericidalMutationOptions, handleCloseEveningShift);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/registers/bactericidal/shift-autopilot",
+		permission: "public",
+		schema: bactericidalMutationSchema,
+		handler: async ({ request, reply }) => handleBactericidalShiftAutopilot(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/registers/bactericidal/open-morning-shift",
+		permission: "public",
+		schema: bactericidalMutationSchema,
+		handler: async ({ request, reply }) => handleOpenMorningShift(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/registers/bactericidal/close-evening-shift",
+		permission: "public",
+		schema: bactericidalMutationSchema,
+		handler: async ({ request, reply }) => handleCloseEveningShift(request, reply),
+	});
 }
 
 export * from "./bactericidalModules/bactericidalSchemas.js";

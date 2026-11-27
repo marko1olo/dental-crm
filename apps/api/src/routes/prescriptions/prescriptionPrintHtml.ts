@@ -7,7 +7,7 @@ import { renderPrescriptionUniversalHtml } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	clinics,
 	electronicPrescriptionItems,
@@ -65,7 +65,7 @@ export async function handlePrescriptionPrintHtml(
 		});
 	}
 
-	const loaded = await withTenantCtx(orgId, async (tx) => {
+	const loaded = await withTenantReadCtx(orgId, async (tx) => {
 		const [presc] = await tx
 			.select()
 			.from(electronicPrescriptions)
@@ -80,14 +80,6 @@ export async function handlePrescriptionPrintHtml(
 		if (!presc) {
 			return null;
 		}
-
-		await auditMedicalAccessFromRequest(request, {
-			organizationId: orgId,
-			patientId: presc.patientId,
-			action: "PRINT_PRESCRIPTION",
-			diagnosis: presc.clinicalDiagnosisMkb10 ?? "Печать рецептурного бланка",
-			metadata: { prescriptionId: presc.id },
-		});
 
 		const [[org], [clinic], [patient], items] = await Promise.all([
 			tx.select().from(organizations).where(eq(organizations.id, orgId)).limit(1),
@@ -119,6 +111,14 @@ export async function handlePrescriptionPrintHtml(
 		});
 	}
 	const { presc, org, clinic, patient, items } = loaded;
+
+	await auditMedicalAccessFromRequest(request, {
+		organizationId: orgId,
+		patientId: presc.patientId,
+		action: "PRINT_PRESCRIPTION",
+		diagnosis: presc.clinicalDiagnosisMkb10 ?? "Печать рецептурного бланка",
+		metadata: { prescriptionId: presc.id },
+	});
 
 	const rawAdminProfile = patient?.administrativeProfile;
 	const patientProfile: PatientAddressProfile | null =

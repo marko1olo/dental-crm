@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess, resolveOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import { users, visitDiaries, visitDiaryRevisions } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../../security/medicalAuditTrail.js";
@@ -44,7 +44,7 @@ export async function handleDiaryRevisionsGet(req: FastifyRequest, reply: Fastif
 		}
 	}
 
-	const [diary] = await withTenantCtx(orgId, (tx) =>
+	const [diary] = await withTenantReadCtx(orgId, (tx) =>
 		tx
 			.select({
 				id: visitDiaries.id,
@@ -69,7 +69,7 @@ export async function handleDiaryRevisionsGet(req: FastifyRequest, reply: Fastif
 		diagnosis: diary.diagnosisIcd10 ?? "Ревизии дневника приёма",
 	});
 
-	const { revisions, reviserRows } = await withTenantCtx(orgId, async (tx) => {
+	const { revisions, reviserRows } = await withTenantReadCtx(orgId, async (tx) => {
 		const revRows = await tx
 			.select()
 			.from(visitDiaryRevisions)

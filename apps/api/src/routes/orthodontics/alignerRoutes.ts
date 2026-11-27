@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { and, eq } from "drizzle-orm";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { patients } from "../../db/schema.js";
 import { treatmentPlans } from "../../db/schema/clinical/treatmentPlansSchema.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
@@ -12,11 +13,13 @@ import { resolveOrthoServicePrice } from "./orthoPricelistResolver.js";
 import { issueAlignerSetSchema, patientParamsSchema, type OrthodonticProgressRecord } from "./types.js";
 
 export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/orthodontics") {
-	app.get<{ Params: { patientId: string } }>(
-		`${prefix}/:patientId/progress`,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: `${prefix}/:patientId/progress`,
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
+			if (!orgId) return reply;
 
 			const identity = getRequestIdentity(request);
 			const staffRole = identity.role ?? request.user?.role ?? null;
@@ -39,7 +42,7 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 			}
 			const { patientId } = parsedParams.data;
 
-			const patient = await withTenantCtx(orgId, async (tx) => {
+			const patient = await withTenantReadCtx(orgId, async (tx) => {
 				const [row] = await tx
 					.select({
 						id: patients.id,
@@ -74,13 +77,15 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 				...orthoProgress,
 			});
 		},
-	);
+	});
 
-	app.post<{ Params: { patientId: string } }>(
-		`${prefix}/:patientId/aligners/issue-set`,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: `${prefix}/:patientId/aligners/issue-set`,
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
+			if (!orgId) return reply;
 
 			const identity = getRequestIdentity(request);
 			const staffRole = identity.role ?? request.user?.role ?? null;
@@ -113,7 +118,7 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 			}
 			const body = parsedBody.data;
 
-			const txResult = await withTenantCtx(orgId, async (tx) => {
+			const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 				const [patient] = await tx
 					.select({
 						id: patients.id,
@@ -230,5 +235,5 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 
 			return reply.send(txResult.payload);
 		},
-	);
+	});
 }

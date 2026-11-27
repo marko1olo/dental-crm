@@ -4,9 +4,10 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
-import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { onTenantTxCommit, withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { toothStates } from "../../db/schema.js";
-import { getRequestIdentity, type RequestIdentity } from "../../security/identity.js";
+import { getRequestIdentity, verifyActiveStaffSession, type RequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -53,16 +54,29 @@ export function registerStatusRoutes(app: FastifyInstance) {
 		if (!UUID_SHAPE.test(patientId)) {
 			return reply.code(400).send({ error: "InvalidPatientId" });
 		}
-		if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-			return reply.code(404).send({ error: "PatientNotFound" });
-		}
 
 		// 152-ФЗ / 323-ФЗ ст. 13: Доступ к зубной формуле и диагнозам разрешен ТОЛЬКО клиническому персоналу
 		const identity = getRequestIdentity(request) as ExtendedRequestIdentity;
+		if (identity.userId) {
+			const sessionOk = await verifyActiveStaffSession(
+				request,
+				reply,
+				organizationId,
+				identity.userId,
+				identity.sessionId,
+			);
+			if (!sessionOk) return reply;
+		}
 		const reqUser = extractRequestUser(request);
 		const staffRole = identity.role ?? reqUser?.role ?? null;
 
 		if (!staffRole) {
+			const exists = await withTenantReadCtx(organizationId, (tx) =>
+				ensurePatientInOrganization(patientId, organizationId, tx),
+			);
+			if (!exists) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
 			await auditMedicalAccessFromRequest(request, {
 				organizationId,
 				patientId,
@@ -86,6 +100,12 @@ export function registerStatusRoutes(app: FastifyInstance) {
 		});
 
 		if (!evalAccess.hasClinicalAccess) {
+			const exists = await withTenantReadCtx(organizationId, (tx) =>
+				ensurePatientInOrganization(patientId, organizationId, tx),
+			);
+			if (!exists) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
 			await auditMedicalAccessFromRequest(request, {
 				organizationId,
 				patientId,
@@ -100,8 +120,11 @@ export function registerStatusRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const rawStates = await withTenantCtx(organizationId, async (tx) =>
-			tx
+		const rawStates = await withTenantReadCtx(organizationId, async (tx) => {
+			if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+				return null;
+			}
+			return tx
 				.select({
 					toothNumber: toothStates.toothNumber,
 					state: toothStates.state,
@@ -117,8 +140,11 @@ export function registerStatusRoutes(app: FastifyInstance) {
 						eq(toothStates.organizationId, organizationId),
 						eq(toothStates.patientId, patientId),
 					),
-				),
-		);
+				);
+		});
+		if (!rawStates) {
+			return reply.code(404).send({ error: "PatientNotFound" });
+		}
 
 		await auditMedicalAccessFromRequest(request, {
 			organizationId,
@@ -131,9 +157,24 @@ export function registerStatusRoutes(app: FastifyInstance) {
 		return reply.send({ success: true, states });
 	};
 
-	app.get("/api/patients/:patientId/tooth-states", getToothStatesHandler);
-	app.get("/api/patients/:patientId/odontogram", getToothStatesHandler);
-	app.get("/api/odontogram/patient/:patientId", getToothStatesHandler);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/tooth-states",
+		permission: "public",
+		handler: async ({ request, reply }) => getToothStatesHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/odontogram",
+		permission: "public",
+		handler: async ({ request, reply }) => getToothStatesHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/odontogram/patient/:patientId",
+		permission: "public",
+		handler: async ({ request, reply }) => getToothStatesHandler(request, reply),
+	});
 
 	const postToothStateMutationHandler = async (
 		request: FastifyRequest,
@@ -178,25 +219,31 @@ export function registerStatusRoutes(app: FastifyInstance) {
 			});
 		}
 
-		if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-			return reply.code(404).send({ error: "PatientNotFound" });
-		}
-
 		const toothNumbers =
 			parsed.data.toothNumbers ??
 			(parsed.data.toothNumber !== undefined ? [parsed.data.toothNumber] : []);
 		const actorUserId = getRequestIdentity(request).userId;
 
-		const inserted = await applyToothStateMutation(
-			organizationId,
-			patientId,
-			actorUserId,
-			{
-				...parsed.data,
-				toothNumbers,
-				surfaces: parsed.data.surfaces as string[] | undefined,
-			},
-		);
+		const inserted = await withTenantWriteCtx(organizationId, async (tx) => {
+			if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+				return null;
+			}
+			return applyToothStateMutation(
+				organizationId,
+				patientId,
+				actorUserId,
+				{
+					...parsed.data,
+					toothNumbers,
+					surfaces: parsed.data.surfaces as string[] | undefined,
+				},
+				false,
+				tx,
+			);
+		});
+		if (!inserted) {
+			return reply.code(404).send({ error: "PatientNotFound" });
+		}
 
 		if (idempotencyKey) {
 			reply.header("Idempotency-Key", idempotencyKey);
@@ -209,219 +256,260 @@ export function registerStatusRoutes(app: FastifyInstance) {
 		});
 	};
 
-	app.post("/api/odontogram/status", async (request, reply) => {
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
-			});
-		}
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"odontogram status mutation",
-		);
-		if (!organizationId) return;
-		return postToothStateMutationHandler(
-			request,
-			reply,
-			organizationId,
-			idempotencyKey,
-		);
-	});
-
-	app.post("/api/odontogram/tooth-state", async (request, reply) => {
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
-			});
-		}
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"odontogram tooth-state mutation",
-		);
-		if (!organizationId) return;
-		return postToothStateMutationHandler(
-			request,
-			reply,
-			organizationId,
-			idempotencyKey,
-		);
-	});
-
-	app.post("/api/patients/:patientId/odontogram/status", async (request, reply) => {
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
-			});
-		}
-
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"patient odontogram status mutation",
-		);
-		if (!organizationId) return;
-
-		const { patientId } = request.params as { patientId: string };
-		if (!UUID_SHAPE.test(patientId)) {
-			return reply.code(400).send({ error: "InvalidPatientId" });
-		}
-		if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-			return reply.code(404).send({ error: "PatientNotFound" });
-		}
-
-		const bodyObj =
-			typeof request.body === "object" && request.body
-				? (request.body as Record<string, unknown>)
-				: {};
-		const parsed = odontogramStatusMutationSchema.safeParse({
-			...bodyObj,
-			patientId,
-		});
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ToothStateValidationError",
-				message: "Ошибка валидации зубной формулы.",
-				details: parsed.error.format(),
-			});
-		}
-
-		const toothNumbers =
-			parsed.data.toothNumbers ??
-			(parsed.data.toothNumber !== undefined ? [parsed.data.toothNumber] : []);
-		const actorUserId = getRequestIdentity(request).userId;
-
-		const inserted = await applyToothStateMutation(
-			organizationId,
-			patientId,
-			actorUserId,
-			{
-				...parsed.data,
-				toothNumbers,
-				surfaces: parsed.data.surfaces as string[] | undefined,
-			},
-		);
-
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-
-		return reply.send({
-			success: true,
-			states: inserted,
-			status: inserted[0]?.state ?? parsed.data.state,
-		});
-	});
-
-	app.post("/api/patients/:patientId/tooth-states/batch", async (request, reply) => {
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
-			});
-		}
-
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"tooth states update",
-		);
-		if (!organizationId) return;
-		const { patientId } = request.params as { patientId: string };
-		if (!UUID_SHAPE.test(patientId)) {
-			return reply.code(400).send({ error: "InvalidPatientId" });
-		}
-		if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-			return reply.code(404).send({ error: "PatientNotFound" });
-		}
-
-		const parsed = batchToothStateSchema.safeParse(request.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ToothStateValidationError",
-				message:
-					"Ошибка валидации зубной формулы. Проверьте номера зубов и статус.",
-				details: parsed.error.format(),
-			});
-		}
-
-		const actorUserId = getRequestIdentity(request).userId;
-
-		const updates = parsed.data.updates;
-		if (updates && updates.length > 0) {
-			const sortedUpdates = [...updates].sort(
-				(a, b) => a.toothNumber - b.toothNumber,
-			);
-			const allInserted = await withTenantCtx(organizationId, async (tx) => {
-				const collected: FormattedToothStateRow[] = [];
-				for (const u of sortedUpdates) {
-					const res = await applyToothStateMutation(
-						organizationId,
-						patientId,
-						actorUserId,
-						{
-							toothNumbers: [u.toothNumber],
-							state: u.state ?? "Healthy",
-							surfaces: u.surfaces,
-							resorptionStage: u.resorptionStage,
-							mobility: u.mobility ?? u.mobilityDegree,
-							mobilityDegree: u.mobilityDegree ?? u.mobility,
-							isPrimaryPediatric:
-								u.isPrimaryPediatric ??
-								(u.toothNumber >= 51 && u.toothNumber <= 85),
-							notes: u.notes,
-							visitId: parsed.data.visitId,
-							updatedAt: parsed.data.updatedAt,
-							reason:
-								parsed.data.reason ||
-								"Резорбция корней / подвижность молочного зуба",
-						},
-						true,
-						tx,
-					);
-					collected.push(...res);
-				}
-				onTenantTxCommit(() => {
-					wsBroker.broadcastToOrganization(organizationId, {
-						type: "UPDATE_ODONTOGRAM",
-						payload: { patientId, states: collected },
-					});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/odontogram/status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
 				});
-				return collected;
+			}
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"odontogram status mutation",
+			);
+			if (!organizationId) return reply;
+			return postToothStateMutationHandler(
+				request,
+				reply,
+				organizationId,
+				idempotencyKey,
+			);
+		},
+	});
+
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/odontogram/tooth-state",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+				});
+			}
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"odontogram tooth-state mutation",
+			);
+			if (!organizationId) return reply;
+			return postToothStateMutationHandler(
+				request,
+				reply,
+				organizationId,
+				idempotencyKey,
+			);
+		},
+	});
+
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/:patientId/odontogram/status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+				});
+			}
+
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"patient odontogram status mutation",
+			);
+			if (!organizationId) return reply;
+
+			const { patientId } = request.params as { patientId: string };
+			if (!UUID_SHAPE.test(patientId)) {
+				return reply.code(400).send({ error: "InvalidPatientId" });
+			}
+
+			const bodyObj =
+				typeof request.body === "object" && request.body
+					? (request.body as Record<string, unknown>)
+					: {};
+			const parsed = odontogramStatusMutationSchema.safeParse({
+				...bodyObj,
+				patientId,
 			});
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ToothStateValidationError",
+					message: "Ошибка валидации зубной формулы.",
+					details: parsed.error.format(),
+				});
+			}
+
+			const toothNumbers =
+				parsed.data.toothNumbers ??
+				(parsed.data.toothNumber !== undefined ? [parsed.data.toothNumber] : []);
+			const actorUserId = getRequestIdentity(request).userId;
+
+			const inserted = await withTenantWriteCtx(organizationId, async (tx) => {
+				if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+					return null;
+				}
+				return applyToothStateMutation(
+					organizationId,
+					patientId,
+					actorUserId,
+					{
+						...parsed.data,
+						toothNumbers,
+						surfaces: parsed.data.surfaces as string[] | undefined,
+					},
+					false,
+					tx,
+				);
+			});
+			if (!inserted) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
+
 			if (idempotencyKey) {
 				reply.header("Idempotency-Key", idempotencyKey);
 			}
-			return reply.send({ success: true, states: allInserted });
-		}
 
-		const toothNumbers =
-			parsed.data.toothNumbers && parsed.data.toothNumbers.length > 0
-				? parsed.data.toothNumbers
-				: [];
+			return reply.send({
+				success: true,
+				states: inserted,
+				status: inserted[0]?.state ?? parsed.data.state,
+			});
+		},
+	});
 
-		const inserted = await applyToothStateMutation(
-			organizationId,
-			patientId,
-			actorUserId,
-			{
-				...parsed.data,
-				toothNumbers,
-				surfaces: parsed.data.surfaces as string[] | undefined,
-			},
-		);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/:patientId/tooth-states/batch",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+				});
+			}
 
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-		return reply.send({ success: true, states: inserted });
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"tooth states update",
+			);
+			if (!organizationId) return reply;
+			const { patientId } = request.params as { patientId: string };
+			if (!UUID_SHAPE.test(patientId)) {
+				return reply.code(400).send({ error: "InvalidPatientId" });
+			}
+
+			const parsed = batchToothStateSchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ToothStateValidationError",
+					message:
+						"Ошибка валидации зубной формулы. Проверьте номера зубов и статус.",
+					details: parsed.error.format(),
+				});
+			}
+
+			const actorUserId = getRequestIdentity(request).userId;
+			const updates = parsed.data.updates;
+			if (updates && updates.length > 0) {
+				const sortedUpdates = [...updates].sort(
+					(a, b) => a.toothNumber - b.toothNumber,
+				);
+				const allInserted = await withTenantWriteCtx(organizationId, async (tx) => {
+					if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+						return null;
+					}
+					const collected: FormattedToothStateRow[] = [];
+					for (const u of sortedUpdates) {
+						const res = await applyToothStateMutation(
+							organizationId,
+							patientId,
+							actorUserId,
+							{
+								toothNumbers: [u.toothNumber],
+								state: u.state ?? "Healthy",
+								surfaces: u.surfaces,
+								resorptionStage: u.resorptionStage,
+								mobility: u.mobility ?? u.mobilityDegree,
+								mobilityDegree: u.mobilityDegree ?? u.mobility,
+								isPrimaryPediatric:
+									u.isPrimaryPediatric ??
+									(u.toothNumber >= 51 && u.toothNumber <= 85),
+								notes: u.notes,
+								visitId: parsed.data.visitId,
+								updatedAt: parsed.data.updatedAt,
+								reason:
+									parsed.data.reason ||
+									"Резорбция корней / подвижность молочного зуба",
+							},
+							true,
+							tx,
+						);
+						collected.push(...res);
+					}
+					onTenantTxCommit(() => {
+						wsBroker.broadcastToOrganization(organizationId, {
+							type: "UPDATE_ODONTOGRAM",
+							payload: { patientId, states: collected },
+						});
+					});
+					return collected;
+				});
+				if (!allInserted) {
+					return reply.code(404).send({ error: "PatientNotFound" });
+				}
+				if (idempotencyKey) {
+					reply.header("Idempotency-Key", idempotencyKey);
+				}
+				return reply.send({ success: true, states: allInserted });
+			}
+
+			const toothNumbers =
+				parsed.data.toothNumbers && parsed.data.toothNumbers.length > 0
+					? parsed.data.toothNumbers
+					: parsed.data.toothNumber !== undefined
+						? [parsed.data.toothNumber]
+						: [];
+
+			const inserted = await withTenantWriteCtx(organizationId, async (tx) => {
+				if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+					return null;
+				}
+				return applyToothStateMutation(
+					organizationId,
+					patientId,
+					actorUserId,
+					{
+						...parsed.data,
+						toothNumbers,
+						surfaces: parsed.data.surfaces as string[] | undefined,
+					},
+					false,
+					tx,
+				);
+			});
+			if (!inserted) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
+
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+			return reply.send({ success: true, states: inserted });
+		},
 	});
 }

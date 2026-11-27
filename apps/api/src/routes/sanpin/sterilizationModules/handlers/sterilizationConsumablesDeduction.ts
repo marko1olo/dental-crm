@@ -7,7 +7,7 @@
 
 import { and, eq, ilike, or } from "drizzle-orm";
 import { db } from "../../../../db/client.js";
-import { withSavepoint, withTenantCtx, type TenantDb } from "../../../../db/rls.js";
+import { withSavepoint, withTenantWriteCtx, type TenantDb } from "../../../../db/rls.js";
 import { inventoryItems, inventoryTransactions, stockBatches } from "../../../../db/schema.js";
 import { type SterilizationDeductionParams, type SterilizationDeductionResult, resolveConsumablesToDeduct } from "./sterilizationConsumablesTypes.js";
 
@@ -109,7 +109,7 @@ export async function executeSterilizationConsumablesDeduction(
 				await runDeduction(nestedTx);
 			});
 		} else {
-			await withTenantCtx(orgId, runDeduction);
+			await withTenantWriteCtx(orgId, runDeduction);
 		}
 
 		return { success: true, deductedItems: deductedSummary };

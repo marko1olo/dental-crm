@@ -5,7 +5,8 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { labItems, labOrders } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -16,12 +17,18 @@ import {
 	updateLabItemTx,
 } from "./orderItemsCrud.js";
 
+function readRouteParam(request: FastifyRequest, key: string): string {
+	if (typeof request.params !== "object" || request.params === null) return "";
+	const record = request.params as Record<string, unknown>;
+	return typeof record[key] === "string" ? record[key] : "";
+}
+
 export async function registerOrderItemsRoutes(app: FastifyInstance) {
 	// ─── Multi-Unit Restoration Items CRUD ───────────────────────────────────
 
-	const getOrderItemsHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+	const getOrderItemsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
+		if (!orgId) return reply;
 
 		// 152-ФЗ / 323-ФЗ: Единицы протезирования ЗТЛ содержат формулу зубов и параметры препарирования (врачебная тайна)
 		const identity = getRequestIdentity(request);
@@ -36,9 +43,9 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const labOrderId = request.params.id;
+		const labOrderId = readRouteParam(request, "id");
 
-		const items = await withTenantCtx(orgId, async (tx) => {
+		const items = await withTenantReadCtx(orgId, async (tx) => {
 			return tx
 				.select()
 				.from(labItems)
@@ -49,12 +56,22 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 		return reply.send({ items });
 	};
 
-	app.get<{ Params: { id: string } }>("/api/clinical/lab-orders/:id/items", getOrderItemsHandler);
-	app.get<{ Params: { id: string } }>("/api/lab/orders/:id/items", getOrderItemsHandler);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/clinical/lab-orders/:id/items",
+		permission: "public",
+		handler: async ({ request, reply }) => getOrderItemsHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/lab/orders/:id/items",
+		permission: "public",
+		handler: async ({ request, reply }) => getOrderItemsHandler(request, reply),
+	});
 
 	// ─── POST /items: Добавление позиции с неделимой транзакцией и пересчетом родителя (SEV-1 / Мандат 8bo) ───
 
-	const postOrderItemHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+	const postOrderItemHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -103,10 +120,10 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const labOrderId = request.params.id;
+		const labOrderId = readRouteParam(request, "id");
 		const body = parsed.data;
 
-		const result = await withTenantCtx(orgId, async (tx) => {
+		const result = await withTenantWriteCtx(orgId, async (tx) => {
 			const [order] = await tx
 				.select({ id: labOrders.id })
 				.from(labOrders)
@@ -137,27 +154,31 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 		return reply.status(201).send({ success: true, item: result.item });
 	};
 
-	app.post<{ Params: { id: string } }>("/api/clinical/lab-orders/:id/items", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Добавление единицы протезирования с проверкой organizationId и Idempotency-Key",
-			},
+	const postItemSchema = {
+		headers: {
+			type: "object",
+			description: "Добавление единицы протезирования с проверкой organizationId и Idempotency-Key",
 		},
-	}, postOrderItemHandler);
-	app.post<{ Params: { id: string } }>("/api/lab/orders/:id/items", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Добавление единицы протезирования с проверкой organizationId и Idempotency-Key",
-			},
-		},
-	}, postOrderItemHandler);
+	} as const;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/clinical/lab-orders/:id/items",
+		permission: "public",
+		schema: postItemSchema,
+		handler: async ({ request, reply }) => postOrderItemHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/lab/orders/:id/items",
+		permission: "public",
+		schema: postItemSchema,
+		handler: async ({ request, reply }) => postOrderItemHandler(request, reply),
+	});
 
 	// ─── PUT /items/:itemId: Обновление позиции с неделимой транзакцией и пересчетом родителя (SEV-3 / Мандат 8bo) ───
 
 	const putOrderItemHandler = async (
-		request: FastifyRequest<{ Params: { id: string; itemId: string } }>,
+		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
@@ -207,10 +228,11 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const { id: labOrderId, itemId } = request.params;
+		const labOrderId = readRouteParam(request, "id");
+		const itemId = readRouteParam(request, "itemId");
 		const body = parsed.data;
 
-		const result = await withTenantCtx(orgId, async (tx) => {
+		const result = await withTenantWriteCtx(orgId, async (tx) => {
 			const [order] = await tx
 				.select({ id: labOrders.id })
 				.from(labOrders)
@@ -246,35 +268,31 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 		return reply.send({ success: true, item: result.item });
 	};
 
-	app.put<{ Params: { id: string; itemId: string } }>(
-		"/api/clinical/lab-orders/:id/items/:itemId",
-		{
-			schema: {
-				headers: {
-					type: "object",
-					description: "Обновление единицы протезирования с проверкой organizationId и Idempotency-Key",
-				},
-			},
+	const putItemSchema = {
+		headers: {
+			type: "object",
+			description: "Обновление единицы протезирования с проверкой organizationId и Idempotency-Key",
 		},
-		putOrderItemHandler,
-	);
-	app.put<{ Params: { id: string; itemId: string } }>(
-		"/api/lab/orders/:id/items/:itemId",
-		{
-			schema: {
-				headers: {
-					type: "object",
-					description: "Обновление единицы протезирования с проверкой organizationId и Idempotency-Key",
-				},
-			},
-		},
-		putOrderItemHandler,
-	);
+	} as const;
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/clinical/lab-orders/:id/items/:itemId",
+		permission: "public",
+		schema: putItemSchema,
+		handler: async ({ request, reply }) => putOrderItemHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/lab/orders/:id/items/:itemId",
+		permission: "public",
+		schema: putItemSchema,
+		handler: async ({ request, reply }) => putOrderItemHandler(request, reply),
+	});
 
 	// ─── DELETE /items/:itemId: Удаление позиции с неделимой транзакцией и пересчетом родителя (SEV-3 / Мандат 8bo) ───
 
 	const deleteOrderItemHandler = async (
-		request: FastifyRequest<{ Params: { id: string; itemId: string } }>,
+		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
@@ -312,9 +330,10 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 		}
 		reply.header("Idempotency-Key", idempotencyKey);
 
-		const { id: labOrderId, itemId } = request.params;
+		const labOrderId = readRouteParam(request, "id");
+		const itemId = readRouteParam(request, "itemId");
 
-		const result = await withTenantCtx(orgId, async (tx) => {
+		const result = await withTenantWriteCtx(orgId, async (tx) => {
 			const [order] = await tx
 				.select({ id: labOrders.id })
 				.from(labOrders)
@@ -350,28 +369,24 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 		return reply.send({ success: true, deletedId: itemId });
 	};
 
-	app.delete<{ Params: { id: string; itemId: string } }>(
-		"/api/clinical/lab-orders/:id/items/:itemId",
-		{
-			schema: {
-				headers: {
-					type: "object",
-					description: "Удаление единицы протезирования с проверкой organizationId и Idempotency-Key",
-				},
-			},
+	const deleteItemSchema = {
+		headers: {
+			type: "object",
+			description: "Удаление единицы протезирования с проверкой organizationId и Idempotency-Key",
 		},
-		deleteOrderItemHandler,
-	);
-	app.delete<{ Params: { id: string; itemId: string } }>(
-		"/api/lab/orders/:id/items/:itemId",
-		{
-			schema: {
-				headers: {
-					type: "object",
-					description: "Удаление единицы протезирования с проверкой organizationId и Idempotency-Key",
-				},
-			},
-		},
-		deleteOrderItemHandler,
-	);
+	} as const;
+	defineStreamRoute(app, {
+		method: "DELETE",
+		path: "/api/clinical/lab-orders/:id/items/:itemId",
+		permission: "public",
+		schema: deleteItemSchema,
+		handler: async ({ request, reply }) => deleteOrderItemHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "DELETE",
+		path: "/api/lab/orders/:id/items/:itemId",
+		permission: "public",
+		schema: deleteItemSchema,
+		handler: async ({ request, reply }) => deleteOrderItemHandler(request, reply),
+	});
 }

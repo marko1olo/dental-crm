@@ -8,6 +8,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	handleCreateDailyTest,
 	handleCreatePsoTest,
@@ -32,21 +33,19 @@ import {
 	handleUpdateSterilizerEquipment,
 } from "./sterilizationModules/sterilizerEquipmentHandlers.js";
 
-const sanpinMutationOptions = {
-	schema: {
-		description:
-			"SanPiN sterilization mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-		headers: {
-			type: "object",
-			properties: {
-				"idempotency-key": { type: "string" },
-				"x-idempotency-key": { type: "string" },
-				"organizationid": { type: "string" },
-				"x-organization-id": { type: "string" },
-			},
+const sanpinMutationSchema = {
+	description:
+		"SanPiN sterilization mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+	headers: {
+		type: "object",
+		properties: {
+			"idempotency-key": { type: "string" },
+			"x-idempotency-key": { type: "string" },
+			"organizationid": { type: "string" },
+			"x-organization-id": { type: "string" },
 		},
 	},
-};
+} as const;
 
 const registeredSterilizationApps = new WeakSet<FastifyInstance>();
 
@@ -57,54 +56,219 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	registeredSterilizationApps.add(app);
 
 	// Журнал работы стерилизаторов: канонические циклы с изоляцией organizationId и Idempotency-Key
-	app.get("/api/sanpin/sterilization", handleGetSterilizationLogs);
-	app.post("/api/sanpin/sterilization", sanpinMutationOptions, handleCreateSterilizationLog);
-	app.get("/api/sanpin/autoclave/cycles", handleGetSterilizationLogs);
-	app.post("/api/sanpin/autoclave/cycles", sanpinMutationOptions, handleCreateSterilizationLog);
-	app.get("/api/sterilization/cycles", handleGetSterilizationLogs);
-	app.post("/api/sterilization/cycles", sanpinMutationOptions, handleCreateSterilizationLog);
-	app.get("/api/sanpin/sterilization/cycles", handleGetSterilizationLogs);
-	app.post("/api/sanpin/sterilization/cycles", sanpinMutationOptions, handleCreateSterilizationLog);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/sanpin/sterilization",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetSterilizationLogs(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleCreateSterilizationLog(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/sanpin/autoclave/cycles",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetSterilizationLogs(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/autoclave/cycles",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleCreateSterilizationLog(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/sterilization/cycles",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetSterilizationLogs(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sterilization/cycles",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleCreateSterilizationLog(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/sanpin/sterilization/cycles",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetSterilizationLogs(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization/cycles",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleCreateSterilizationLog(request, reply),
+	});
 
-	// 1-клик запуск партии автоклава (134°C / 2.15 бар или 121°C / 1.15 бар) — канонический роут и алиасы
-	app.post("/api/sanpin/sterilization/quick-norm", sanpinMutationOptions, handleQuickNormCycle);
-	app.post("/api/sanpin/sterilization/quick-norm-cycle", sanpinMutationOptions, handleQuickNormCycle);
-	app.post("/api/sanpin/sterilization-cycles/quick-norm", sanpinMutationOptions, handleQuickNormCycle);
-	app.post("/api/sanpin/sterilization-cycles/quick-norm-cycle", sanpinMutationOptions, handleQuickNormCycle);
-	app.post("/api/sanpin/sterilization-cycles/shift-batch", sanpinMutationOptions, handleSterilizationShiftBatch);
-	app.post("/api/sanpin/sterilization-cycles/batch", sanpinMutationOptions, handleSterilizationShiftBatch);
-	app.post("/api/sanpin/sterilization/shift-batch", sanpinMutationOptions, handleSterilizationShiftBatch);
+	// Запуск партии автоклава (134°C / 2.15 бар или 121°C / 1.15 бар) — канонический роут и алиасы
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization/quick-norm",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleQuickNormCycle(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization/quick-norm-cycle",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleQuickNormCycle(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization-cycles/quick-norm",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleQuickNormCycle(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization-cycles/quick-norm-cycle",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleQuickNormCycle(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization-cycles/shift-batch",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleSterilizationShiftBatch(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization-cycles/batch",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleSterilizationShiftBatch(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization/shift-batch",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleSterilizationShiftBatch(request, reply),
+	});
 
 	// Контроль качества предстерилизационной очистки (азопирам, фенолфталеин)
-	app.get("/api/sanpin/sterilization/pso-tests", handleGetPsoTests);
-	app.post("/api/sanpin/sterilization/pso-tests", sanpinMutationOptions, handleCreatePsoTest);
-	app.post("/api/sanpin/sterilization/pso/quick-norm", sanpinMutationOptions, handlePsoQuickNorm);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/sanpin/sterilization/pso-tests",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetPsoTests(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization/pso-tests",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleCreatePsoTest(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization/pso/quick-norm",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handlePsoQuickNorm(request, reply),
+	});
 
 	// Ежедневный контроль автоклавов (Bowie-Dick, Вакуум-тест)
-	app.get("/api/sanpin/sterilization/daily-tests", handleGetDailyTests);
-	app.post("/api/sanpin/sterilization/daily-tests", sanpinMutationOptions, handleCreateDailyTest);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/sanpin/sterilization/daily-tests",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetDailyTests(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization/daily-tests",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleCreateDailyTest(request, reply),
+	});
 
 	// Парк стерилизаторов и автоклавов (оборудование ЦСО)
-	app.get("/api/sanpin/sterilization/equipments", handleGetSterilizerEquipments);
-	app.post("/api/sanpin/sterilization/equipments", sanpinMutationOptions, handleCreateSterilizerEquipment);
-	app.put<{ Params: { id: string } }>(
-		"/api/sanpin/sterilization/equipments/:id",
-		sanpinMutationOptions,
-		handleUpdateSterilizerEquipment,
-	);
-	app.delete<{ Params: { id: string } }>(
-		"/api/sanpin/sterilization/equipments/:id",
-		sanpinMutationOptions,
-		handleDeleteSterilizerEquipment,
-	);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/sanpin/sterilization/equipments",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetSterilizerEquipments(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization/equipments",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleCreateSterilizerEquipment(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/sanpin/sterilization/equipments/:id",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleUpdateSterilizerEquipment(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "DELETE",
+		path: "/api/sanpin/sterilization/equipments/:id",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleDeleteSterilizerEquipment(request, reply),
+	});
 
 	// Сканирование, привязка крафт-пакетов и маркировка штрихкодами
-	app.post("/api/sanpin/sterilization/scan", sanpinMutationOptions, handleScanSterilization);
-	app.post("/api/sanpin/sterilization/link", sanpinMutationOptions, handleSterilizationLink);
-	app.post("/api/sanpin/sterilization/generate-barcode", sanpinMutationOptions, handleGenerateBarcode);
-	app.post("/api/sanpin/sterilization/unseal", sanpinMutationOptions, handleUnsealKraftPackage);
-	app.post("/api/sterilization/scan", sanpinMutationOptions, handleScanSterilization);
-	app.post("/api/sterilization/link", sanpinMutationOptions, handleSterilizationLink);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization/scan",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleScanSterilization(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization/link",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleSterilizationLink(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization/generate-barcode",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleGenerateBarcode(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sanpin/sterilization/unseal",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleUnsealKraftPackage(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sterilization/scan",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleScanSterilization(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sterilization/link",
+		permission: "public",
+		schema: sanpinMutationSchema,
+		handler: async ({ request, reply }) => handleSterilizationLink(request, reply),
+	});
 }
 
 export const registerSterilizationRoutes = registerSanpinSterilizationRoutes;

@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationAccess, resolveOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { visitDiaries } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import {
@@ -53,7 +53,7 @@ export async function handleDiaryLockPost(req: FastifyRequest, reply: FastifyRep
 	}
 
 	try {
-		const outcome = await withTenantCtx(orgId, async (tx) => {
+		const outcome = await withTenantWriteCtx(orgId, async (tx) => {
 			const [existing] = await tx
 				.select()
 				.from(visitDiaries)

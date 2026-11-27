@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withSavepoint, withTenantCtx } from "../../../../db/rls.js";
+import { withSavepoint, withTenantWriteCtx } from "../../../../db/rls.js";
 import { sterilizationLogs } from "../../../../db/schema.js";
 import { executeSterilizationConsumablesDeduction } from "../handlers/sterilizationConsumablesDeduction.js";
 import { buildUnsealKraftPackageResponse } from "../sterilizationHelpers.js";
@@ -30,7 +30,7 @@ export async function handleUnsealKraftPackage(req: FastifyRequest, reply: Fasti
 		(data.barcode || "").trim() ||
 		(data.visitId ? `TRAY-VISIT-${data.visitId}` : `BATCH-SHIFT-${now.toISOString().slice(0, 10).replace(/-/g, "")}`);
 
-	await withTenantCtx(organizationId, async (tx) => {
+	await withTenantWriteCtx(organizationId, async (tx) => {
 		if (data.barcode && data.barcode.trim()) {
 			const [existingLog] = await tx
 				.select()

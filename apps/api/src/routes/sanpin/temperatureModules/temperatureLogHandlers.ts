@@ -8,7 +8,7 @@ import { SanPiNRegulatoryEngine, createTemperatureHumidityLogDtoSchema, type Tem
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
 import { temperatureHumidityEquipments, temperatureHumidityLogs, users } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 
@@ -16,7 +16,7 @@ export async function handleGetTemperatureLogs(req: FastifyRequest, reply: Fasti
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "temperature logs read");
 	if (!organizationId) return;
 
-	const logs = await withTenantCtx(organizationId, async (tx) => {
+	const logs = await withTenantReadCtx(organizationId, async (tx) => {
 		return tx
 			.select({
 				id: temperatureHumidityLogs.id,
@@ -68,7 +68,7 @@ export async function handlePostTemperatureLog(req: FastifyRequest, reply: Fasti
 	}
 	const data = parsed.data;
 
-	const [equipment] = await withTenantCtx(organizationId, async (tx) => {
+	const [equipment] = await withTenantReadCtx(organizationId, async (tx) => {
 		return tx.select().from(temperatureHumidityEquipments).where(
 			and(eq(temperatureHumidityEquipments.id, data.equipmentId), eq(temperatureHumidityEquipments.organizationId, organizationId)),
 		).limit(1);
@@ -88,7 +88,7 @@ export async function handlePostTemperatureLog(req: FastifyRequest, reply: Fasti
 		actualHumidity: data.relativeHumidityPercent ?? null,
 	});
 
-	const [log] = await withTenantCtx(organizationId, async (tx) => {
+	const [log] = await withTenantWriteCtx(organizationId, async (tx) => {
 		return tx.insert(temperatureHumidityLogs).values({
 			organizationId,
 			equipmentId: data.equipmentId,

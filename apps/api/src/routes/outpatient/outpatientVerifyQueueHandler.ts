@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { outpatientVerifications, patients, users, visits } from "../../db/schema.js";
 import { getVerifyQueueQuerySchema } from "./outpatientTypes.js";
 
@@ -23,7 +23,7 @@ export async function getVerifyQueueHandler(request: FastifyRequest, reply: Fast
 	if (parsed.data.doctorId) conditions.push(eq(outpatientVerifications.doctorId, parsed.data.doctorId));
 	if (parsed.data.patientId) conditions.push(eq(outpatientVerifications.patientId, parsed.data.patientId));
 
-	const queue = await withTenantCtx(orgId, async (tx) =>
+	const queue = await withTenantReadCtx(orgId, async (tx) =>
 		tx
 			.select({
 				id: outpatientVerifications.id,

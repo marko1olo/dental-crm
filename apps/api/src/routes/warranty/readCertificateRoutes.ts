@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, desc, eq, or, sql } from "drizzle-orm";
-import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
+import { definePublicRoute, defineStreamRoute } from "../../core/routeFactories.js";
+import { withSuperuserBypass, withTenantReadCtx } from "../../db/rls.js";
 import {
 	clinics,
 	labItems,
@@ -229,7 +230,7 @@ async function fetchPublicClinicInfo(organizationId: string) {
 
 export function registerReadCertificateRoutes(app: FastifyInstance) {
 	const handleGetPatientCertificates = async (
-		request: FastifyRequest<{ Params: { patientId: string } }>,
+		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
 		const context = await requireClinicalReadContext(
@@ -237,9 +238,14 @@ export function registerReadCertificateRoutes(app: FastifyInstance) {
 			reply,
 			"warranty certificates read",
 		);
-		if (!context) return;
+		if (!context) return reply;
 
-		const patientId = (request.params as { patientId?: string }).patientId?.trim();
+		const rawParams = request.params;
+		const rawPatientId =
+			typeof rawParams === "object" && rawParams !== null && "patientId" in rawParams && typeof rawParams.patientId === "string"
+				? rawParams.patientId
+				: "";
+		const patientId = rawPatientId.trim();
 		if (!patientId || !isValidUuid(patientId)) {
 			return reply.code(400).send({
 				error: "ValidationError",
@@ -247,7 +253,7 @@ export function registerReadCertificateRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const list = await withTenantCtx(context.organizationId, async (tx) =>
+		const list = await withTenantReadCtx(context.organizationId, async (tx) =>
 			tx
 				.select()
 				.from(warrantyCertificates)
@@ -266,20 +272,29 @@ export function registerReadCertificateRoutes(app: FastifyInstance) {
 		});
 	};
 
-	app.get<{ Params: { patientId: string } }>(
-		"/api/warranty/certificates/:patientId",
-		handleGetPatientCertificates,
-	);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/warranty/certificates/:patientId",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetPatientCertificates(request, reply),
+	});
 
-	app.get<{ Params: { patientId: string } }>(
-		"/api/warranty/patient/:patientId",
-		handleGetPatientCertificates,
-	);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/warranty/patient/:patientId",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetPatientCertificates(request, reply),
+	});
 
-	app.get<{ Querystring: { certNumber?: string; cert?: string } }>(
-		"/api/public/warranty/check",
-		async (request, reply) => {
-			const certNum = (request.query?.certNumber || request.query?.cert || "")?.trim();
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/public/warranty/check",
+		handler: async ({ request, reply }) => {
+			const rawQuery = request.query;
+			const queryObj = typeof rawQuery === "object" && rawQuery !== null ? rawQuery : {};
+			const rawCertNumber = "certNumber" in queryObj && typeof queryObj.certNumber === "string" ? queryObj.certNumber : undefined;
+			const rawCert = "cert" in queryObj && typeof queryObj.cert === "string" ? queryObj.cert : undefined;
+			const certNum = (rawCertNumber || rawCert || "").trim();
 			if (!certNum) {
 				return reply.code(400).send({
 					error: "MissingCertificateNumber",
@@ -320,12 +335,18 @@ export function registerReadCertificateRoutes(app: FastifyInstance) {
 				},
 			});
 		},
-	);
+	});
 
-	app.get<{ Params: { certificateNumber: string } }>(
-		"/api/public/warranty/:certificateNumber",
-		async (request, reply) => {
-			const certNum = request.params.certificateNumber?.trim();
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/public/warranty/:certificateNumber",
+		handler: async ({ request, reply }) => {
+			const rawParams = request.params;
+			const rawCertNumber =
+				typeof rawParams === "object" && rawParams !== null && "certificateNumber" in rawParams && typeof rawParams.certificateNumber === "string"
+					? rawParams.certificateNumber
+					: undefined;
+			const certNum = rawCertNumber?.trim();
 			if (!certNum) {
 				return reply.code(400).send({
 					error: "MissingCertificateNumber",
@@ -366,5 +387,5 @@ export function registerReadCertificateRoutes(app: FastifyInstance) {
 				},
 			});
 		},
-	);
+	});
 }

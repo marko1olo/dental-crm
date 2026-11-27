@@ -11,7 +11,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { labOrderEvents, labOrders } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
@@ -23,7 +23,7 @@ const pipelineStageBodySchema = z.object({
 	scheduledDate: z.string().optional().nullable(),
 }).strict();
 
-export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+export async function handleUpdatePipelineStage(request: FastifyRequest, reply: FastifyReply) {
 	const orgId = await requireResolvedOrganizationId(
 		request,
 		reply,
@@ -61,7 +61,11 @@ export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params
 		reply.header("Idempotency-Key", idempotencyKey);
 	}
 
-	const id = request.params.id;
+	const rawId =
+		typeof request.params === "object" && request.params !== null && "id" in request.params
+			? request.params.id
+			: undefined;
+	const id = typeof rawId === "string" ? rawId : "";
 	const parsed = pipelineStageBodySchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({
@@ -76,7 +80,7 @@ export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params
 		(CANONICAL_5STAGE_LAB_PIPELINE as Record<string, { shortTitleRu: string; titleRu: string; id: string; step: number; descriptionRu: string; badgeClass: string; iconName: string }>)[stage] ||
 		{ id: stage, step: 1, titleRu: stage, shortTitleRu: stage, descriptionRu: "", badgeClass: "", iconName: "layers" };
 
-	const result = await withTenantCtx(orgId, async (tx) => {
+	const result = await withTenantWriteCtx(orgId, async (tx) => {
 		const [existing] = await tx
 			.select()
 			.from(labOrders)

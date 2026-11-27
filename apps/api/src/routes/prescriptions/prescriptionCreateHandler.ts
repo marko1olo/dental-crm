@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import { patients } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
@@ -51,7 +51,7 @@ export async function handleCreatePrescription(request: FastifyRequest, reply: F
 		[item.tradeName, item.innLatin].filter((n): n is string => typeof n === "string" && n.trim().length > 0),
 	);
 
-	const outcome = await withTenantCtx(orgId, async (tx) => {
+	const outcome = await withTenantWriteCtx(orgId, async (tx) => {
 		const [patient] = await tx
 			.select()
 			.from(patients)
@@ -98,20 +98,22 @@ export async function handleCreatePrescription(request: FastifyRequest, reply: F
 			tx,
 		);
 
-		await auditMedicalAccessFromRequest(request, {
-			organizationId: orgId,
-			patientId: created.patientId,
-			action: "CREATE_PRESCRIPTION",
-			diagnosis: created.clinicalDiagnosisMkb10 ?? "Назначение лекарственных препаратов",
-			metadata: {
-				prescriptionId: created.id,
-				prescriptionNumber: created.prescriptionNumber,
-				formType: created.formType,
-			},
-		});
-
 		return { kind: "created" as const, created };
 	});
+
+	if (outcome.kind === "created") {
+		await auditMedicalAccessFromRequest(request, {
+			organizationId: orgId,
+			patientId: outcome.created.patientId,
+			action: "CREATE_PRESCRIPTION",
+			diagnosis: outcome.created.clinicalDiagnosisMkb10 ?? "Назначение лекарственных препаратов",
+			metadata: {
+				prescriptionId: outcome.created.id,
+				prescriptionNumber: outcome.created.prescriptionNumber,
+				formType: outcome.created.formType,
+			},
+		});
+	}
 
 	if (outcome.kind === "patient_not_found") {
 		return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден." });

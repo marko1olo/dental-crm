@@ -2,7 +2,8 @@ import { voidDocumentSchema } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireClinicalMutationAccess } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	getDocumentById,
 	voidGeneratedDocumentInDb,
@@ -32,163 +33,146 @@ const documentIdParamsSchema = z
 	.strict();
 
 export async function register(app: FastifyInstance) {
-	app.post("/api/documents/:id/void", async (request, reply) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "document void")))
-			return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/documents/:id/void",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await requireClinicalMutationAccess(request, reply, "document void")))
+				return reply;
 
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
-			});
-		}
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
 
-		// БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
-		// Все проверки принадлежности сравнивали подделку саму с собой и сходились,
-		// а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
-		// Организация теперь берётся только из проверенного токена (401 иначе).
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const parsedParams = documentIdParamsSchema.safeParse(request.params);
-		if (!parsedParams.success) {
-			return reply
-				.code(400)
-				.send(
-					apiError("Некорректный идентификатор документа (ожидается UUID)"),
-				);
-		}
-		const { id } = parsedParams.data;
-		const existing = await getDocumentById(orgId, id);
-		if (!existing) {
-			return reply.code(404).send(apiError("Документ не найден"));
-		}
-
-		// 152-ФЗ / 323-ФЗ: Аннулирование медицинских документов разрешено только клиническому персоналу
-		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? request.user?.role ?? null;
-		const evalAccess = evaluateClinicalAccess(staffRole);
-		if (clinicalDocKinds.has(existing.kind) && !evalAccess.hasClinicalAccess) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "clinical.document.void",
-				role: staffRole,
-				message:
-					"Аннулирование медицинских документов ограничено 323-ФЗ и 152-ФЗ: требуются права клинического персонала (врач / главный врач).",
-			});
-		}
-
-		const parsedVoidInput = voidDocumentSchema.safeParse(request.body);
-		if (!parsedVoidInput.success) {
-			return reply.code(400).send({
-				error: "DocumentVoidValidationFailed",
-				message: repairMojibakeText(documentVoidValidationMessage),
-			});
-		}
-
-		const voidAttestationInput = repairMojibakeDeep(
-			parsedVoidInput.data.voidAttestation,
-		);
-		const correctionDocumentId =
-			voidAttestationInput.correctionDocumentId ?? null;
-		if (correctionDocumentId === id) {
-			return reply
-				.code(409)
-				.send(
-					apiError("Документ не может ссылаться на себя как на исправление."),
-				);
-		}
-		// БЫЛО: аннулировать можно было документ в ЛЮБОМ статусе, включая уже
-		// аннулированный. Повторное аннулирование перезаписывало причину в
-		// voidAttestation — исходное основание, на которое ссылается «Паспорт
-		// документа», терялось безвозвратно.
-		if (existing.status === "voided") {
-			return reply.code(409).send(apiError("Документ уже аннулирован."));
-		}
-		if (existing.status !== "issued") {
-			return reply
-				.code(409)
-				.send(
-					apiError(
-						"Аннулировать можно только выданный документ. Черновик достаточно удалить или изменить.",
-					),
-				);
-		}
-
-		if (correctionDocumentId) {
-			const correctionDocument = await getDocumentById(
-				orgId,
-				correctionDocumentId,
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return reply;
+			const parsedParams = documentIdParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				return reply
+					.code(400)
+					.send(
+						apiError("Некорректный идентификатор документа (ожидается UUID)"),
+					);
+			}
+			const { id } = parsedParams.data;
+			const existing = await withTenantReadCtx(orgId, () =>
+				getDocumentById(orgId, id),
 			);
-			// БЫЛО: проверялось лишь `status === "voided"`, поэтому исправляющим
-			// документом принимался ЧЕРНОВИК. Аннулирование ссылалось на документ,
-			// который юридически ещё не существует. Во всех остальных звеньях цепочки
-			// (documents.ts) требуется именно статус "issued".
-			if (
-				!correctionDocument ||
-				correctionDocument.organizationId !== existing.organizationId ||
-				correctionDocument.patientId !== existing.patientId ||
-				correctionDocument.status !== "issued"
-			) {
+			if (!existing) {
+				return reply.code(404).send(apiError("Документ не найден"));
+			}
+
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (clinicalDocKinds.has(existing.kind) && !evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.document.void",
+					role: staffRole,
+					message:
+						"Аннулирование медицинских документов ограничено 323-ФЗ и 152-ФЗ: требуются права клинического персонала (врач / главный врач).",
+				});
+			}
+
+			const parsedVoidInput = voidDocumentSchema.safeParse(request.body);
+			if (!parsedVoidInput.success) {
+				return reply.code(400).send({
+					error: "DocumentVoidValidationFailed",
+					message: repairMojibakeText(documentVoidValidationMessage),
+				});
+			}
+
+			const voidAttestationInput = repairMojibakeDeep(
+				parsedVoidInput.data.voidAttestation,
+			);
+			const correctionDocumentId =
+				voidAttestationInput.correctionDocumentId ?? null;
+			if (correctionDocumentId === id) {
+				return reply
+					.code(409)
+					.send(
+						apiError("Документ не может ссылаться на себя как на исправление."),
+					);
+			}
+			if (existing.status === "voided") {
+				return reply.code(409).send(apiError("Документ уже аннулирован."));
+			}
+			if (existing.status !== "issued") {
 				return reply
 					.code(409)
 					.send(
 						apiError(
-							"Исправляющий документ должен быть ВЫДАН, относиться к тому же пациенту и той же клинике.",
+							"Аннулировать можно только выданный документ. Черновик достаточно удалить или изменить.",
 						),
 					);
 			}
-		}
 
-		const voidedAt = new Date().toISOString();
-		// БЫЛО: слой БД писал в voided_by_user_id литерал "doctor" — та же
-		// uuid-колонка с внешним ключом на users.id, что и у выдачи, и тот же
-		// отказ Postgres 22P02. Аннулирование — юридическое действие, поэтому
-		// сотрудник берётся из подписанного staff-токена, а при его отсутствии
-		// остаётся null вместо выдуманного подписанта.
-		// Неделимая ACID транзакция (Мандат 8bo): атомарное аннулирование документа
-		// и возвращение покрытых возвратом платежей обратно в кассу.
-		const document = await withTenantCtx(orgId, async (tx) => {
-			const voidedDoc = await voidGeneratedDocumentInDb(orgId, id, {
-				voidedByUserId: getRequestIdentity(request).userId,
-				voidedAt,
-				voidAttestation: {
-					...voidAttestationInput,
+			if (correctionDocumentId) {
+				const correctionDocument = await withTenantReadCtx(orgId, () =>
+					getDocumentById(orgId, correctionDocumentId),
+				);
+				if (
+					!correctionDocument ||
+					correctionDocument.organizationId !== existing.organizationId ||
+					correctionDocument.patientId !== existing.patientId ||
+					correctionDocument.status !== "issued"
+				) {
+					return reply
+						.code(409)
+						.send(
+							apiError(
+								"Исправляющий документ должен быть ВЫДАН, относиться к тому же пациенту и той же клинике.",
+							),
+						);
+				}
+			}
+
+			const voidedAt = new Date().toISOString();
+			const document = await withTenantWriteCtx(orgId, async (tx) => {
+				const voidedDoc = await voidGeneratedDocumentInDb(orgId, id, {
+					voidedByUserId: getRequestIdentity(request).userId,
 					voidedAt,
-				},
-				tx,
-			});
-			if (!voidedDoc) {
-				return null;
-			}
-
-			// ОБРАТНЫЙ ХОД ТОГО ЖЕ ШВА. Учёт возвратов ведётся только по ВЫДАННЫМ
-			// заявлениям (documents/guards.ts: alreadyRefundedKopecksForPayment), поэтому
-			// аннулирование заявления обнуляет учтённый возврат по чеку.
-			if (voidedDoc.kind === "payment_refund_correction_request") {
-				const settlement = await settleRefundedPaymentsForPatient(
-					orgId,
-					voidedDoc.patientId,
+					voidAttestation: {
+						...voidAttestationInput,
+						voidedAt,
+					},
 					tx,
-				);
-				request.log.info(
-					{ documentId: voidedDoc.id, restoredPaymentIds: settlement.restored },
-					"аннулирование заявления на возврат сведено с кассой",
-				);
+				});
+				if (!voidedDoc) {
+					return null;
+				}
+
+				if (voidedDoc.kind === "payment_refund_correction_request") {
+					const settlement = await settleRefundedPaymentsForPatient(
+						orgId,
+						voidedDoc.patientId,
+						tx,
+					);
+					request.log.info(
+						{ documentId: voidedDoc.id, restoredPaymentIds: settlement.restored },
+						"аннулирование заявления на возврат сведено с кассой",
+					);
+				}
+
+				return voidedDoc;
+			});
+
+			if (!document) {
+				return reply
+					.code(409)
+					.send(apiError("Статус документа нельзя изменить."));
 			}
 
-			return voidedDoc;
-		});
-
-		if (!document) {
-			return reply
-				.code(409)
-				.send(apiError("Статус документа нельзя изменить."));
-		}
-
-		return reply.send(toPublicGeneratedDocument(document));
+			return reply.send(toPublicGeneratedDocument(document));
+		},
 	});
 }

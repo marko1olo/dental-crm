@@ -6,7 +6,7 @@ import {
 	ensureClinicalStaffAccess,
 	requireClinicalMutationContext,
 } from "../../security/tenantContext.js";
-import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { appointments, visits } from "../../db/schema.js";
 import { acceptVisitDraftInDb } from "../../db/visitsQuery.js";
 import { getRequestIdentity } from "../../security/identity.js";
@@ -72,7 +72,7 @@ export async function handleCompleteVisit(
 	}
 
 	try {
-		const lookup = await withTenantCtx(orgId, async (tx) => {
+		const lookup = await withTenantWriteCtx(orgId, async (tx) => {
 			const [existingVisit] = await tx
 				.select()
 				.from(visits)
@@ -150,7 +150,9 @@ export async function handleCompleteVisit(
 			clientSavedAt: new Date().toISOString(),
 		};
 
-		const result = await acceptVisitDraftInDb(orgId, acceptInput);
+		const result = await withTenantWriteCtx(orgId, () =>
+			acceptVisitDraftInDb(orgId, acceptInput),
+		);
 
 		let doctorEarningsDeltaKopecks: number | undefined;
 		let doctorTodayTotalKopecks: number | undefined;
@@ -166,7 +168,7 @@ export async function handleCompleteVisit(
 
 			let doctorUserIdForSummary = identity.userId ?? null;
 			if (!doctorUserIdForSummary && result.visit.appointmentId) {
-				const apptRow = await withTenantCtx(orgId, async (tx) =>
+				const apptRow = await withTenantReadCtx(orgId, async (tx) =>
 					tx
 						.select({ doctorUserId: appointments.doctorUserId })
 						.from(appointments)
@@ -184,7 +186,7 @@ export async function handleCompleteVisit(
 			if (doctorUserIdForSummary) {
 				try {
 					const todayIso = new Date().toISOString().slice(0, 10);
-					const computed = await withTenantCtx(orgId, async (tx) =>
+					const computed = await withTenantReadCtx(orgId, async (tx) =>
 						computeDoctorTodayEarningsInTx({
 							tx,
 							organizationId: orgId,

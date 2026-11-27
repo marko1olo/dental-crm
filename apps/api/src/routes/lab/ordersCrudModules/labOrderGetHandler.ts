@@ -1,8 +1,8 @@
 import { DEMO_SHOWCASE_ORG_ID, isDemoOrganizationId } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
-import { getRequestIdentity } from "../../../security/identity.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
+import { getRequestIdentity, verifyActiveStaffSession } from "../../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import {
@@ -24,6 +24,16 @@ export async function getLabOrdersHandler(request: FastifyRequest, reply: Fastif
 	if (!orgId) return;
 
 	const identity = getRequestIdentity(request);
+	if (identity.userId) {
+		const sessionOk = await verifyActiveStaffSession(
+			request,
+			reply,
+			orgId,
+			identity.userId,
+			identity.sessionId,
+		);
+		if (!sessionOk) return reply;
+	}
 	const staffRole = identity.role ?? request.user?.role ?? null;
 	const evalAccess = evaluateClinicalAccess(staffRole);
 	if (!evalAccess.hasClinicalAccess) {
@@ -52,18 +62,18 @@ export async function getLabOrdersHandler(request: FastifyRequest, reply: Fastif
 	const patientId = parsedQuery.data.patientId ?? undefined;
 
 	try {
-		const orders = await withTenantCtx(orgId, async (tx) => {
-			const current = await selectLabOrdersQuery(tx, orgId, patientId);
-			if (
-				current.length === 0 &&
-				!patientId &&
-				(orgId === DEMO_SHOWCASE_ORG_ID || isDemoOrganizationId(orgId))
-			) {
-				await seedDemoLabOrdersIfEmpty(tx, orgId);
-				return selectLabOrdersQuery(tx, orgId, patientId);
-			}
-			return current;
-		});
+		const initialOrders = await withTenantReadCtx(orgId, async (tx) =>
+			selectLabOrdersQuery(tx, orgId, patientId),
+		);
+		const orders =
+			initialOrders.length === 0 &&
+			!patientId &&
+			(orgId === DEMO_SHOWCASE_ORG_ID || isDemoOrganizationId(orgId))
+				? await withTenantWriteCtx(orgId, async (tx) => {
+						await seedDemoLabOrdersIfEmpty(tx, orgId);
+						return selectLabOrdersQuery(tx, orgId, patientId);
+					})
+				: initialOrders;
 
 		return reply.code(200).send({ success: true, data: orders });
 	} catch (err: unknown) {

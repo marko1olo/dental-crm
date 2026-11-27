@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { isValidUuid } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -63,7 +63,7 @@ export async function createLabOrderHandler(request: FastifyRequest, reply: Fast
 	const data = parsed.data;
 	const currentUserId = identity.userId ?? request.user?.id ?? null;
 
-	const result = await withTenantCtx(orgId, async (tx) => {
+	const result = await withTenantWriteCtx(orgId, async (tx) => {
 		return insertLabOrderInDb(tx, orgId, data, currentUserId);
 	});
 
