@@ -61,8 +61,8 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 				}
 				const orgId = requireOrganizationId(request, reply);
 				if (!orgId) return reply;
-				const evaluation = await withTenantReadCtx(orgId, () =>
-					evaluateClinicalRulesInDb(orgId, input),
+				const evaluation = await withTenantReadCtx(orgId, (tx) =>
+					evaluateClinicalRulesInDb(orgId, input, tx),
 				);
 				const blockingRule = evaluation.evaluations.find(
 					(e) => !e.resolved && e.severity === "blocker",
@@ -162,8 +162,8 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 						message: clinicalRuleMutationValidationMessage,
 					});
 				}
-				const created = await withTenantWriteCtx(orgId, () =>
-					createClinicalRuleInDb(orgId, input),
+				const created = await withTenantWriteCtx(orgId, (tx) =>
+					createClinicalRuleInDb(orgId, input, tx),
 				);
 				return reply.send(clinicalRuleSchema.parse(created));
 			} catch (error: unknown) {
@@ -205,7 +205,14 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 					});
 				}
 
-				const { ruleId } = request.params as { ruleId: string };
+				const rawParams = request.params;
+				const ruleId =
+					rawParams &&
+					typeof rawParams === "object" &&
+					"ruleId" in rawParams &&
+					typeof rawParams.ruleId === "string"
+						? rawParams.ruleId
+						: "";
 				if (!ruleId || !UUID_PATTERN.test(ruleId)) {
 					return reply.code(400).send({
 						error: "ClinicalRuleValidationError",
@@ -224,8 +231,8 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 						message: clinicalRuleMutationValidationMessage,
 					});
 				}
-				const updated = await withTenantWriteCtx(orgId, () =>
-					updateClinicalRuleInDb(orgId, input),
+				const updated = await withTenantWriteCtx(orgId, (tx) =>
+					updateClinicalRuleInDb(orgId, input, tx),
 				);
 				return reply.send(clinicalRuleSchema.parse(updated));
 			} catch (error: unknown) {
@@ -252,7 +259,14 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 					))
 				)
 					return reply;
-				const { ruleId } = request.params as { ruleId: string };
+				const rawParams = request.params;
+				const ruleId =
+					rawParams &&
+					typeof rawParams === "object" &&
+					"ruleId" in rawParams &&
+					typeof rawParams.ruleId === "string"
+						? rawParams.ruleId
+						: "";
 				if (!ruleId || !UUID_PATTERN.test(ruleId)) {
 					return reply.code(400).send({
 						error: "ClinicalRuleValidationError",
@@ -274,8 +288,8 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 					});
 				}
 
-				const deleted = await withTenantWriteCtx(orgId, () =>
-					deleteClinicalRuleInDb(orgId, ruleId),
+				const deleted = await withTenantWriteCtx(orgId, (tx) =>
+					deleteClinicalRuleInDb(orgId, ruleId, tx),
 				);
 				if (!deleted) {
 					return reply.code(404).send({

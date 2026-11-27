@@ -31,7 +31,11 @@ import { resolveEncryptionKey } from "../services/backup/backupCryptoUtils.js";
 import { restoreVerifiedDumpToPostgres } from "../scripts/restoreDisasterRecovery.js";
 import { createZipArchiveAsync } from "../routes/mobileOta.js";
 import { authTokenSecret } from "../security/authSecret.js";
-import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../security/identity.js";
+import {
+	CLINIC_TOKEN_HEADER,
+	STAFF_TOKEN_HEADER,
+	invalidateStaffSessionCache,
+} from "../security/identity.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import { fixtureUuid, purgeFixtureOrganizations } from "./support/fixtureOrganizations.js";
 import { createTenantTestApp } from "./support/tenantTestApp.js";
@@ -39,7 +43,12 @@ import { createTenantTestApp } from "./support/tenantTestApp.js";
 const TEST_ENCRYPTION_KEY = "backup-parity-test-key-32-bytes!!";
 const TEST_PARITY_ORG_ID = fixtureUuid("backupSchemaParity", 1);
 
-function authHeaders(orgId: string, userId: string, role = "owner"): Record<string, string> {
+function authHeaders(
+	orgId: string,
+	userId: string,
+	role = "owner",
+	sessionId = crypto.randomUUID(),
+): Record<string, string> {
 	const secret = authTokenSecret();
 	return {
 		[CLINIC_TOKEN_HEADER]: signToken({ organizationId: orgId }, secret, 3600),
@@ -48,7 +57,7 @@ function authHeaders(orgId: string, userId: string, role = "owner"): Record<stri
 				organizationId: orgId,
 				userId,
 				role,
-				sessionId: crypto.randomUUID(),
+				sessionId,
 			},
 			secret,
 			3600,
@@ -196,6 +205,7 @@ describe("Backup Schema Parity (195+ tables), DENTETB2 Streaming & Streaming Par
 		const orgPasswordHash = "$argon2id$v=19$m=65536,t=3,p=1$orgsalthash1234567890";
 		const userPasswordHash = "$argon2id$v=19$m=65536,t=3,p=1$usersalthash1234567890";
 		const userPinCodeHash = "pbkdf2:10000:pinhashvalue000111222";
+		const initialSessionId = crypto.randomUUID();
 
 		// Засеваем реальные связанные строки во все критические категории таблиц
 		const setupClient = await pool.connect();
@@ -224,9 +234,9 @@ describe("Backup Schema Parity (195+ tables), DENTETB2 Streaming & Streaming Par
 			);
 
 			await setupClient.query(
-				`INSERT INTO users (id, organization_id, full_name, role, password_hash, pin_code_hash, specialties)
-				 VALUES ($1, $2, 'Барабаш Сергей Викторович', 'owner', $3, $4, '["therapy","surgery"]'::jsonb)`,
-				[userId, orgId, userPasswordHash, userPinCodeHash],
+				`INSERT INTO users (id, organization_id, full_name, role, password_hash, pin_code_hash, current_session_id, specialties)
+				 VALUES ($1, $2, 'Барабаш Сергей Викторович', 'owner', $3, $4, $5, '["therapy","surgery"]'::jsonb)`,
+				[userId, orgId, userPasswordHash, userPinCodeHash, initialSessionId],
 			);
 
 			await setupClient.query(
@@ -494,12 +504,17 @@ describe("Backup Schema Parity (195+ tables), DENTETB2 Streaming & Streaming Par
 			assert.strictEqual(orgCheck.rows[0]?.login_id, orgLoginId);
 			assert.strictEqual(orgCheck.rows[0]?.password_hash, orgPasswordHash);
 
-			const userCheck = await restoreClient.query<{ password_hash: string; pin_code_hash: string }>(
-				"SELECT password_hash, pin_code_hash FROM users WHERE id = $1",
+			const userCheck = await restoreClient.query<{
+				password_hash: string;
+				pin_code_hash: string;
+				current_session_id: string | null;
+			}>(
+				"SELECT password_hash, pin_code_hash, current_session_id FROM users WHERE id = $1",
 				[userId],
 			);
 			assert.strictEqual(userCheck.rows[0]?.password_hash, userPasswordHash);
 			assert.strictEqual(userCheck.rows[0]?.pin_code_hash, userPinCodeHash);
+			assert.strictEqual(userCheck.rows[0]?.current_session_id, initialSessionId);
 
 			const mergedCheck = await restoreClient.query<{ merged_into_patient_id: string }>(
 				"SELECT merged_into_patient_id FROM patients WHERE id = $1",
@@ -569,13 +584,32 @@ describe("Backup Schema Parity (195+ tables), DENTETB2 Streaming & Streaming Par
 				"SELECT set_config('app.current_tenant', $1, true), set_config('app.superuser_bypass', 'off', true)",
 				[orgId],
 			);
-			const sanitizedUser = await restoreClient.query<{ password_hash: string | null; pin_code_hash: string | null }>(
-				"SELECT password_hash, pin_code_hash FROM users WHERE id = $1",
+			const sanitizedUser = await restoreClient.query<{
+				password_hash: string | null;
+				pin_code_hash: string | null;
+				current_session_id: string | null;
+			}>(
+				"SELECT password_hash, pin_code_hash, current_session_id FROM users WHERE id = $1",
 				[userId],
 			);
 			assert.strictEqual(sanitizedUser.rows[0]?.password_hash, null);
 			assert.strictEqual(sanitizedUser.rows[0]?.pin_code_hash, null);
+			assert.strictEqual(sanitizedUser.rows[0]?.current_session_id, null);
 			await restoreClient.query("COMMIT");
+
+			// После санитизированного restore сессия пользователя сброшена — выдаём новую активную сессию для HTTP-проверки
+			const activeSessionId = crypto.randomUUID();
+			await restoreClient.query("BEGIN");
+			await restoreClient.query(
+				"SELECT set_config('app.current_tenant', $1, true), set_config('app.superuser_bypass', 'off', true)",
+				[orgId],
+			);
+			await restoreClient.query(
+				"UPDATE users SET current_session_id = $1 WHERE id = $2 AND organization_id = $3",
+				[activeSessionId, userId, orgId],
+			);
+			await restoreClient.query("COMMIT");
+			invalidateStaffSessionCache(userId, orgId);
 
 			// 6. Проверяем HTTP routes /api/settings/backup/{create,list,restore} и Path Jail
 			const prevBackupDir = process.env.DENTE_BACKUP_DIR;
@@ -583,10 +617,11 @@ describe("Backup Schema Parity (195+ tables), DENTETB2 Streaming & Streaming Par
 			const app = createTenantTestApp();
 			await registerSettingsRoutes(app);
 			try {
+				const httpHeaders = authHeaders(orgId, userId, "owner", activeSessionId);
 				const createRes = await app.inject({
 					method: "POST",
 					url: "/api/settings/backup/create",
-					headers: authHeaders(orgId, userId),
+					headers: httpHeaders,
 					payload: {},
 				});
 				assert.strictEqual(createRes.statusCode, 200, createRes.payload);
@@ -601,7 +636,7 @@ describe("Backup Schema Parity (195+ tables), DENTETB2 Streaming & Streaming Par
 				const listRes = await app.inject({
 					method: "GET",
 					url: "/api/settings/backup/list",
-					headers: authHeaders(orgId, userId),
+					headers: httpHeaders,
 				});
 				assert.strictEqual(listRes.statusCode, 200, listRes.payload);
 				const listJson = JSON.parse(listRes.payload) as {
@@ -616,7 +651,7 @@ describe("Backup Schema Parity (195+ tables), DENTETB2 Streaming & Streaming Par
 				const traversalRes = await app.inject({
 					method: "POST",
 					url: "/api/settings/backup/restore",
-					headers: authHeaders(orgId, userId),
+					headers: httpHeaders,
 					payload: { filename: "../secret.dentalbackup" },
 				});
 				assert.strictEqual(traversalRes.statusCode, 400);
@@ -624,7 +659,7 @@ describe("Backup Schema Parity (195+ tables), DENTETB2 Streaming & Streaming Par
 				const restoreHttpRes = await app.inject({
 					method: "POST",
 					url: "/api/settings/backup/restore",
-					headers: authHeaders(orgId, userId),
+					headers: httpHeaders,
 					payload: { filename: createdJson.filename },
 				});
 				assert.strictEqual(restoreHttpRes.statusCode, 200, restoreHttpRes.payload);

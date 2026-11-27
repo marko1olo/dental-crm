@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import { and, eq } from "drizzle-orm";
 import Fastify from "fastify";
-import { db } from "../../db/client.js";
+import { db, dbRaw } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 import { registerClinicalRoutes } from "../../routes/clinical.js";
 
@@ -125,12 +125,24 @@ describe("GET /api/clinical/rules", () => {
 			seedRule(RULE_IN_ORG_B, ORG_B, "Правило Клиники Б"),
 		];
 
-		mock.method(db, "select", () => ({
+		const selectMock = () => ({
 			from: () => ({
 				where: async (condition: unknown) =>
 					rows.filter((row) => matchesFilter(row, boundFilter(condition))),
 			}),
-		}));
+		});
+
+		mock.method(db, "select", selectMock);
+
+		mock.method(
+			dbRaw,
+			"transaction",
+			async (cb: (tx: unknown) => Promise<unknown>) =>
+				cb({
+					select: selectMock,
+					execute: async () => ({ rows: [] }),
+				}),
+		);
 
 		app = Fastify();
 		await registerClinicalRoutes(app);

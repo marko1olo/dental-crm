@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import { and, eq } from "drizzle-orm";
 import Fastify from "fastify";
-import { db } from "../../db/client.js";
+import { db, dbRaw } from "../../db/client.js";
 import { getClinicalRules } from "../../db/clinicalQuery.js";
 import * as schema from "../../db/schema.js";
 import { registerClinicalRoutes } from "../../routes/clinical.js";
@@ -135,7 +135,7 @@ describe("DELETE /api/clinical/rules/:ruleId", () => {
 		rows = [seedRule(RULE_IN_ORG_A, ORG_A)];
 		deleteFilters = [];
 
-		mock.method(db, "delete", () => ({
+		const deleteMock = () => ({
 			where: (condition: unknown) => ({
 				returning: async () => {
 					const filter = boundFilter(condition);
@@ -145,14 +145,28 @@ describe("DELETE /api/clinical/rules/:ruleId", () => {
 					return doomed.map((row) => ({ id: row.id }));
 				},
 			}),
-		}));
+		});
 
-		mock.method(db, "select", () => ({
+		const selectMock = () => ({
 			from: () => ({
 				where: async (condition: unknown) =>
 					rows.filter((row) => matchesFilter(row, boundFilter(condition))),
 			}),
-		}));
+		});
+
+		mock.method(db, "delete", deleteMock);
+		mock.method(db, "select", selectMock);
+
+		mock.method(
+			dbRaw,
+			"transaction",
+			async (cb: (tx: unknown) => Promise<unknown>) =>
+				cb({
+					select: selectMock,
+					delete: deleteMock,
+					execute: async () => ({ rows: [] }),
+				}),
+		);
 
 		app = Fastify();
 		await registerClinicalRoutes(app);
