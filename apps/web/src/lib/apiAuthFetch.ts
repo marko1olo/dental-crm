@@ -29,6 +29,7 @@
  */
 
 import { generateUuidV7 } from "@dental/shared";
+import type {} from "../native/mobile/types";
 import {
 	createResponseFromCachedEntry,
 	getCachedApiResponse,
@@ -231,6 +232,15 @@ function resolveConfiguredLanBaseOrigin(): string | null {
 	return null;
 }
 
+function isNativeWebViewOrigin(): boolean {
+	if (typeof window === "undefined") return false;
+	const protocol = window.location?.protocol;
+	if (protocol === "file:" || protocol === "capacitor:") {
+		return true;
+	}
+	return window.Capacitor?.isNativePlatform?.() === true;
+}
+
 function rewriteRelativeApiInput(
 	input: RequestInfo | URL,
 	rawUrl: string,
@@ -242,10 +252,9 @@ function rewriteRelativeApiInput(
 			nextInput: input instanceof Request ? new Request(input, { headers }) : input,
 		};
 	}
-	const isFileProtocol = typeof window !== "undefined" && window.location?.protocol === "file:";
 	const activeBase = safeLocalStorageGetItem(STORAGE_KEY_ACTIVE_BASE_URL)?.trim();
 	const useConfiguredOrigin =
-		isFileProtocol ||
+		isNativeWebViewOrigin() ||
 		(Boolean(activeBase) && activeBase !== "/api" && /^https?:\/\//i.test(activeBase || ""));
 
 	if (!useConfiguredOrigin) {
@@ -277,22 +286,26 @@ function rewriteRelativeApiInput(
 export function shouldAttachApiAuth(rawUrl: string): boolean {
 	let pathname: string;
 	try {
+		const configuredLanOrigin = resolveConfiguredLanBaseOrigin();
 		const baseOrigin =
 			typeof window !== "undefined" &&
 			window.location &&
 			window.location.origin &&
 			window.location.origin !== "null"
 				? window.location.origin
-				: resolveConfiguredLanBaseOrigin() || "http://localhost";
+				: configuredLanOrigin || "http://localhost";
 		const parsed = new URL(rawUrl, baseOrigin);
-		const configuredLanOrigin = resolveConfiguredLanBaseOrigin();
 		const sameWindowOrigin =
-			typeof window !== "undefined" && window.location && parsed.origin === window.location.origin;
-		const allowedLanOrigin =
-			isLocalOrLanHostname(parsed.hostname) &&
-			(parsed.origin === configuredLanOrigin || rawUrl.startsWith("/api/"));
+			typeof window !== "undefined" &&
+			window.location &&
+			parsed.origin === window.location.origin &&
+			window.location.origin !== "null";
+		const matchesConfiguredLan =
+			Boolean(configuredLanOrigin) && parsed.origin === configuredLanOrigin;
+		const allowedLocalRelative =
+			isLocalOrLanHostname(parsed.hostname) && rawUrl.startsWith("/api/");
 
-		if (!sameWindowOrigin && !allowedLanOrigin) {
+		if (!sameWindowOrigin && !matchesConfiguredLan && !allowedLocalRelative) {
 			return false;
 		}
 		pathname = parsed.pathname;
@@ -409,6 +422,10 @@ export function installApiAuthFetch(): void {
 		}
 		if (staffToken && !headers.has(STAFF_TOKEN_HEADER)) {
 			headers.set(STAFF_TOKEN_HEADER, staffToken);
+		}
+		const bearerToken = staffToken || clinicToken;
+		if (bearerToken && !headers.has("authorization")) {
+			headers.set("Authorization", `Bearer ${bearerToken}`);
 		}
 
 		// Поддержка идемпотентности (строго валидный UUIDv7 в Idempotency-Key / X-Idempotency-Key)

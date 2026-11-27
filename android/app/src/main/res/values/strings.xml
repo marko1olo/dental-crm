@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DENTE Dental CRM</string>
+    <string name="title_activity_main">DENTE Dental CRM</string>
+    <string name="package_name">ru.dente.crm</string>
+    <string name="custom_url_scheme">dente</string>
+</resources>

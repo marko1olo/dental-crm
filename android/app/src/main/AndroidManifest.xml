@@ -15,10 +15,11 @@
     <!-- Permissions for Touch-first Haptic Feedback -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
-    <!-- Network permissions for LAN Subnet & Cloud Synchronization -->
+    <!-- Network permissions for LAN Subnet, mDNS Multicast & Cloud Synchronization -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
 
     <!-- Bluetooth permissions for Mobile Thermal ESC/POS Receipt Printers -->
     <uses-permission android:name="android.permission.BLUETOOTH" />

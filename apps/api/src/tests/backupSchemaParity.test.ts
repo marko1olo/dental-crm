@@ -437,7 +437,7 @@ describe("Backup Schema Parity (195+ tables), DENTETB2 Streaming & Streaming Par
 				/Tenant mismatch/i,
 			);
 
-			// 4. Уничтожаем ВСЕ данные клиники (симуляция сгоревшего диска / чистой БД) и восстанавливаем!
+			// 4. Уничтожаем ВСЕ переписываемые данные клиники (сохраняя append-only WORM-аудит ФСТЭК-21 по логике restorer'а)
 			const dag = buildSchemaBackupDag();
 			await restoreClient.query("BEGIN");
 			await restoreClient.query(
@@ -445,11 +445,19 @@ describe("Backup Schema Parity (195+ tables), DENTETB2 Streaming & Streaming Par
 				[orgId],
 			);
 			for (const meta of dag.orderedTables) {
+				if (meta.isAppendOnly) continue;
 				const clearSql = meta.buildClearDeferredSql();
 				if (clearSql) await restoreClient.query(clearSql, [orgId]);
 			}
 			for (const meta of [...dag.orderedTables].reverse()) {
-				if (meta.sqlName === "organizations") continue;
+				if (meta.sqlName === "organizations" || meta.isAppendOnly) continue;
+				if (meta.sqlName === "users") {
+					await restoreClient.query(
+						`DELETE FROM "public"."users" AS u WHERE u."organization_id" = $1 AND NOT EXISTS (SELECT 1 FROM "public"."audit_events" AS ae WHERE ae."actor_user_id" = u."id")`,
+						[orgId],
+					);
+					continue;
+				}
 				if (meta.kind === "TENANT_OWNED_DIRECT") {
 					await restoreClient.query(`DELETE FROM "public"."${meta.sqlName}" WHERE "organization_id" = $1`, [orgId]);
 				} else {

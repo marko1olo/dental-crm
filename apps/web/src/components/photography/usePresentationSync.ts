@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react';
+import { clientLogger } from '../../services/logging/clientLogger';
 import {
 	DENTE_PRESENTATION_SYNC_CHANNEL,
 	PresentationSyncMessage,
@@ -32,8 +33,8 @@ export function usePresentationSync({
 				type: 'UPDATE_STATE',
 				payload,
 			} satisfies PresentationSyncMessage);
-		} catch {
-			// ignore channel errors
+		} catch (err) {
+			clientLogger.warn('Presentation BroadcastChannel sync broadcast failed', err);
 		}
 	}, []);
 

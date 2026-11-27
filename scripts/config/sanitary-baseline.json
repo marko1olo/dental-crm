@@ -11,10 +11,10 @@
     "non-null-assertion": 1450,
     "ts-suppression": 0,
     "linter-suppression": 0,
-    "empty-catch": 520,
+    "empty-catch": 519,
     "documented-swallow": 0,
     "silent-catch": 471,
-    "swallowed-promise": 410,
+    "swallowed-promise": 409,
     "console-noise": 0,
     "prod-imports-test-code": 0,
     "test-env-sniff": 44,
@@ -34,6 +34,6 @@
   "floors": {
     "prodFiles": 11432,
     "testFiles": 2543,
-    "tests": 20367
+    "tests": 20368
   }
 }
