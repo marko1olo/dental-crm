@@ -14,13 +14,10 @@ import {
 	doctorShiftRosters,
 	organizations,
 	patients,
-	scheduleTimeReservations,
-	serviceCatalogItems,
 	users,
 } from "../../db/schema.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { isReservationMatchingChair } from "../../db/appointmentsQueryModules/scheduleReservationLockHelpers.js";
-import { registerAppointmentsRoutes } from "../../routes/appointments.js";
 import { registerDiagnocatIntegrationRoutes } from "../../routes/integrations/diagnocat.js";
 import { registerFlexbeRoutes } from "../../routes/integrations/flexbe.js";
 import { registerMaxRoutes } from "../../routes/max.js";
@@ -102,7 +99,6 @@ describe("Wave 7 Schedule, Bots, Telephony & Timezones Regression Suite", () => 
 
 		app = await createIdempotentTenantTestApp();
 		await registerScheduleRoutes(app);
-		await registerAppointmentsRoutes(app);
 		await registerPublicBookingRoutes(app);
 		await registerDiagnocatIntegrationRoutes(app);
 		await registerFlexbeRoutes(app);
@@ -119,75 +115,77 @@ describe("Wave 7 Schedule, Bots, Telephony & Timezones Regression Suite", () => 
 			authTokenSecret(),
 		);
 
-		await db.insert(organizations).values([
-			{
-				id: ORG_ID,
-				name: "Клиника Волна 7",
-				inn: "7707777701",
-				clinicSchedule: {
-					monday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
-					tuesday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
-					wednesday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
-					thursday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
-					friday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
-					saturday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
-					sunday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
-					requireSmsVerification: false,
+		await withSuperuserBypass(async (tx) => {
+			await tx.insert(organizations).values([
+				{
+					id: ORG_ID,
+					name: "Клиника Волна 7",
+					inn: "7707777701",
+					clinicSchedule: {
+						monday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
+						tuesday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
+						wednesday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
+						thursday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
+						friday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
+						saturday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
+						sunday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
+						requireSmsVerification: false,
+					},
 				},
-			},
-			{ id: OTHER_ORG_ID, name: "Клиника Чужая 7", inn: "7707777702" },
-			{
-				id: TELEPHONY_ORG_ID,
-				name: "Клиника Телефония Секрет",
-				inn: "7707777703",
-				workspaceFeatureFlags: {
-					telephonyWebhookSecret: "per-org-secret-value-xyz",
+				{ id: OTHER_ORG_ID, name: "Клиника Чужая 7", inn: "7707777702" },
+				{
+					id: TELEPHONY_ORG_ID,
+					name: "Клиника Телефония Секрет",
+					inn: "7707777703",
+					workspaceFeatureFlags: {
+						telephonyWebhookSecret: "per-org-secret-value-xyz",
+					},
 				},
-			},
-		]);
+			]);
 
-		await db.insert(clinics).values({
-			id: CLINIC_ID,
-			organizationId: ORG_ID,
-			name: "Филиал Владивосток",
-			timezone: clinicTz,
+			await tx.insert(clinics).values({
+				id: CLINIC_ID,
+				organizationId: ORG_ID,
+				name: "Филиал Владивосток",
+				timezone: clinicTz,
+			});
+
+			await tx.insert(chairs).values([
+				{ id: CHAIR_1_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло 1", isActive: true },
+				{ id: CHAIR_2_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло 2", isActive: true },
+			]);
+
+			await tx.insert(users).values([
+				{
+					id: DOCTOR_ID,
+					organizationId: ORG_ID,
+					fullName: "Д-р Тихоокеанский А.В.",
+					role: "doctor",
+					isActive: true,
+					workingHours: [
+						{ weekday: 1, enabled: true, start: "08:00", end: "23:59" },
+						{ weekday: 2, enabled: true, start: "08:00", end: "23:59" },
+						{ weekday: 3, enabled: true, start: "08:00", end: "23:59" },
+						{ weekday: 4, enabled: true, start: "08:00", end: "23:59" },
+						{ weekday: 5, enabled: true, start: "08:00", end: "23:59" },
+						{ weekday: 6, enabled: true, start: "08:00", end: "23:59" },
+						{ weekday: 7, enabled: true, start: "08:00", end: "23:59" },
+					],
+				},
+				{
+					id: RECEPTION_ID,
+					organizationId: ORG_ID,
+					fullName: "Регистратор Волна 7",
+					role: "receptionist",
+					isActive: true,
+				},
+			]);
+
+			await tx.insert(patients).values([
+				{ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Иванов Алексей", phone: "+79001112233" },
+				{ id: OTHER_PATIENT_ID, organizationId: ORG_ID, fullName: "Сидоров Виктор", phone: "+79009998877" },
+			]);
 		});
-
-		await db.insert(chairs).values([
-			{ id: CHAIR_1_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло 1", isActive: true },
-			{ id: CHAIR_2_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло 2", isActive: true },
-		]);
-
-		await db.insert(users).values([
-			{
-				id: DOCTOR_ID,
-				organizationId: ORG_ID,
-				fullName: "Д-р Тихоокеанский А.В.",
-				role: "doctor",
-				isActive: true,
-				workingHours: [
-					{ weekday: 1, enabled: true, start: "08:00", end: "23:59" },
-					{ weekday: 2, enabled: true, start: "08:00", end: "23:59" },
-					{ weekday: 3, enabled: true, start: "08:00", end: "23:59" },
-					{ weekday: 4, enabled: true, start: "08:00", end: "23:59" },
-					{ weekday: 5, enabled: true, start: "08:00", end: "23:59" },
-					{ weekday: 6, enabled: true, start: "08:00", end: "23:59" },
-					{ weekday: 7, enabled: true, start: "08:00", end: "23:59" },
-				],
-			},
-			{
-				id: RECEPTION_ID,
-				organizationId: ORG_ID,
-				fullName: "Регистратор Волна 7",
-				role: "receptionist",
-				isActive: true,
-			},
-		]);
-
-		await db.insert(patients).values([
-			{ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Иванов Алексей", phone: "+79001112233" },
-			{ id: OTHER_PATIENT_ID, organizationId: ORG_ID, fullName: "Сидоров Виктор", phone: "+79009998877" },
-		]);
 
 		const tomorrow10Utc = wallClockToUtcInTimeZone(tomorrowIso, 10, 0, clinicTz)!;
 		const tomorrow1030Utc = new Date(tomorrow10Utc.getTime() + 30 * 60_000);
