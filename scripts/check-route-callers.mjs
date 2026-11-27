@@ -895,8 +895,6 @@ const KNOWN_DEAD_ROUTES = new Set([
 	"POST /api/pharmacology/prescriptions",
 	"POST /api/referrals/attribute",
 	"POST /api/referrals/reward-first-visit",
-	"POST /api/settings/reset-demo",
-	"POST /api/settings/reset-zero",
 	"POST /api/sterilization/daily-tests",
 	"POST /api/sterilization/generate-barcode",
 	"POST /api/sterilization/pso-tests",

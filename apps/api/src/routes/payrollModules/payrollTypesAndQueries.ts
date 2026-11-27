@@ -421,11 +421,11 @@ export async function fetchClosedPayrollStatements(
 			dateClosedIso: formatDateIsoInTimeZone(s.createdAt, clinicTimeZone),
 			doctorName: isAll ? (s.doctorId || doctorName) : doctorName,
 			rkoReceiptNumber: isAll ? "" : (s.rkoNumber || `РКО-${s.id.slice(0, 8).toUpperCase()}`),
-			grossKopecks: Number(s.grossRevenueKopecks != null ? s.grossRevenueKopecks : rublesToKopecks(Number(s.grossRevenueRub || 0))),
-			labCostKopecks: Number(s.labCostKopecks != null ? s.labCostKopecks : rublesToKopecks(Number(s.labCostRub || 0))),
-			materialCostKopecks: Number(s.materialsCostKopecks != null ? s.materialsCostKopecks : rublesToKopecks(Number(s.materialsCostRub || 0))),
-			netBaseKopecks: Number(s.netBaseRevenueKopecks != null ? s.netBaseRevenueKopecks : rublesToKopecks(Number(s.netBaseRevenueRub || 0))),
-			payoutKopecks: Number(s.netPayoutKopecks != null ? s.netPayoutKopecks : rublesToKopecks(Number(s.netPayoutRub || 0))),
+			grossKopecks: Number(s.grossRevenueKopecks ?? 0),
+			labCostKopecks: Number(s.labCostKopecks ?? 0),
+			materialCostKopecks: Number(s.materialsCostKopecks ?? 0),
+			netBaseKopecks: Number(s.netBaseRevenueKopecks ?? 0),
+			payoutKopecks: Number(s.netPayoutKopecks ?? 0),
 			isPaidRko: Boolean(s.paidAt),
 		}));
 

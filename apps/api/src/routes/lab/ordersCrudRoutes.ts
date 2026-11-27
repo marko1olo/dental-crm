@@ -7,7 +7,6 @@ import {
 	putLabOrderHandler,
 } from "./ordersCrudModules/labOrderHandlers.js";
 import {
-	handleCheckPlanContinuity,
 	handleGetExpressPresets,
 } from "./ordersCrudModules/labPresetsHandlers.js";
 
@@ -52,37 +51,13 @@ export async function registerOrdersCrudRoutes(app: FastifyInstance) {
 		schema: createSchema,
 		handler: async ({ request, reply }) => createLabOrderHandler(request, reply),
 	});
-	defineStreamRoute(app, {
-		method: "POST",
-		path: "/api/clinical/dental-lab/express-order",
-		permission: "public",
-		schema: {
-			headers: {
-				type: "object",
-				description: "Экспресс-создание наряда ЗТЛ с проверкой organizationId и Idempotency-Key",
-			},
-		},
-		handler: async ({ request, reply }) => createLabOrderHandler(request, reply),
-	});
 
-	// GET & POST: Presets & Plan continuity
+	// GET: Express Presets
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/clinical/dental-lab/presets",
 		permission: "public",
 		handler: async ({ request, reply }) => handleGetExpressPresets(request, reply),
-	});
-	defineStreamRoute(app, {
-		method: "POST",
-		path: "/api/clinical/dental-lab/check-plan-continuity",
-		permission: "public",
-		schema: {
-			headers: {
-				type: "object",
-				description: "Проверка непрерывности плана лечения с изоляцией организации (organizationId) и Idempotency-Key",
-			},
-		},
-		handler: async ({ request, reply }) => handleCheckPlanContinuity(request, reply),
 	});
 
 	// PUT: Update lab order & status transitions

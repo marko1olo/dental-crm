@@ -153,22 +153,10 @@ export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 	};
 	const readRouteOptions = { config: { tenantTxSelfManaged: true } };
 
-	app.post("/api/cash/x-report", reportRouteOptions, async (request, reply) => {
-		return handleXReport(request, reply);
-	});
-	app.get("/api/cash/x-report", readRouteOptions, handleXReport);
 	app.post("/api/fiscal/x-report", reportRouteOptions, async (request, reply) => {
 		return handleXReport(request, reply);
 	});
 	app.get("/api/fiscal/x-report", readRouteOptions, handleXReport);
-	app.post("/api/fiscal/reports/x-report", reportRouteOptions, async (request, reply) => {
-		return handleXReport(request, reply);
-	});
-	app.get("/api/fiscal/reports/x-report", readRouteOptions, handleXReport);
-	app.post("/api/finance/reports/x-report", reportRouteOptions, async (request, reply) => {
-		return handleXReport(request, reply);
-	});
-	app.get("/api/finance/reports/x-report", readRouteOptions, handleXReport);
 
 	/**
 	 * 2. GET & POST /api/cash/shift-reconciliation

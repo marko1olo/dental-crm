@@ -309,10 +309,6 @@
       "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/cashbox/cashboxShiftModules/shiftReconciliationRoutes.ts)"
     },
     {
-      "pattern": "POST /api/cash/transactions/:id/retry-fiscalize",
-      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/cashbox/cashboxPaymentRoutes.ts)"
-    },
-    {
       "pattern": "POST /api/cashbox/payments",
       "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/cashbox/cashboxPaymentRoutes.ts)"
     },
@@ -381,10 +377,6 @@
       "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fileModules/visitAttachmentsHandlers.ts)"
     },
     {
-      "pattern": "POST /api/finance/correction",
-      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fiscal/receiptRoutes/index.ts)"
-    },
-    {
       "pattern": "POST /api/finance/receipts",
       "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fiscal/receiptRoutes/index.ts)"
     },
@@ -419,10 +411,6 @@
     {
       "pattern": "POST /api/imaging/daemon/stop",
       "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/imaging/dicomRoutes.ts)"
-    },
-    {
-      "pattern": "POST /api/imaging/decode-heic",
-      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fileModules/fileUploadHandlers.ts)"
     },
     {
       "pattern": "POST /api/imaging/dicom/viewer-launch-manifest",
@@ -621,14 +609,6 @@
       "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/settings/serviceCatalogRoutes.ts)"
     },
     {
-      "pattern": "POST /api/settings/reset-demo",
-      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/settings/clinicProfileRoutes.ts)"
-    },
-    {
-      "pattern": "POST /api/settings/reset-zero",
-      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/settings/clinicProfileRoutes.ts)"
-    },
-    {
       "pattern": "POST /api/staff/:staffId/terminate-session",
       "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/staff/staffMutationRoutes.ts)"
     },
@@ -673,10 +653,6 @@
       "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
     },
     {
-      "pattern": "POST /api/v1/message-templates/seed",
-      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/messageTemplates.ts)"
-    },
-    {
       "pattern": "POST /api/v1/treatment-plan",
       "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
     },
@@ -701,10 +677,6 @@
       "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
     },
     {
-      "pattern": "POST /api/visits/fast",
-      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/visits/visitQuickRoutes.ts)"
-    },
-    {
       "pattern": "POST /api/visits/quick",
       "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/visits/visitQuickRoutes.ts)"
     },
@@ -718,10 +690,6 @@
     },
     {
       "pattern": "POST /api/whatsapp/qr/session/disconnect",
-      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/whatsappModules/connectionHubRoutes.ts)"
-    },
-    {
-      "pattern": "POST /api/whatsapp/qr/session/simulate-auth",
       "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/whatsappModules/connectionHubRoutes.ts)"
     },
     {

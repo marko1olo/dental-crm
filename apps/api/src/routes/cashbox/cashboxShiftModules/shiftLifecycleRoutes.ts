@@ -218,12 +218,6 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 	app.post("/api/fiscal/shift/open", shiftMutationRouteOptions, async (request, reply) => {
 		return handleOpenCashShift(request, reply);
 	});
-	app.post("/api/finance/shift/open", shiftMutationRouteOptions, async (request, reply) => {
-		return handleOpenCashShift(request, reply);
-	});
-	app.post("/api/cash/shift/open", shiftMutationRouteOptions, async (request, reply) => {
-		return handleOpenCashShift(request, reply);
-	});
 
 	app.post("/api/cash/cash-box-all-closing", shiftMutationRouteOptions, async (request, reply) => {
 		return handleCloseCashShift(request, reply);
@@ -234,16 +228,7 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 	app.post("/api/fiscal/shift/close", shiftMutationRouteOptions, async (request, reply) => {
 		return handleCloseCashShift(request, reply);
 	});
-	app.post("/api/finance/shift/close", shiftMutationRouteOptions, async (request, reply) => {
-		return handleCloseCashShift(request, reply);
-	});
 	app.post("/api/cashbox/shifts/close", shiftMutationRouteOptions, async (request, reply) => {
-		return handleCloseCashShift(request, reply);
-	});
-	app.post("/api/fiscal/z-report", shiftMutationRouteOptions, async (request, reply) => {
-		return handleCloseCashShift(request, reply);
-	});
-	app.post("/api/cash/shift/close", shiftMutationRouteOptions, async (request, reply) => {
 		return handleCloseCashShift(request, reply);
 	});
 

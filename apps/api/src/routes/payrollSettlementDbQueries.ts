@@ -178,17 +178,6 @@ export async function closeSettlementPeriodInDb(
 		const totalAccruedKop = params.totalAccruedKopecks ?? (pieceworkKop + fixedSalaryKop + serviceSalaryKop + bonusesKop - penaltiesKop);
 		const ndflKop = params.ndfl13Kopecks ?? rublesToKopecks(params.ndfl13Rub ?? 0);
 		const payoutKop = params.netPayoutKopecks ?? (totalAccruedKop - ndflKop - penaltiesKop);
-
-		const grossRub = params.grossRevenueRub ?? kopecksToRubles(grossKop);
-		const labRub = params.labCostRub ?? kopecksToRubles(labKop);
-		const matRub = params.materialsCostRub ?? kopecksToRubles(matKop);
-		const netBaseRub = params.netBaseRevenueRub ?? kopecksToRubles(netBaseKop);
-		const pieceworkRub = params.calculatedPieceworkRub ?? kopecksToRubles(pieceworkKop);
-		const fixedSalaryRub = params.fixedSalaryRub ?? kopecksToRubles(fixedSalaryKop);
-		const bonusesRub = params.bonusesTotalRub ?? kopecksToRubles(bonusesKop);
-		const penaltiesRub = params.penaltiesTotalRub ?? kopecksToRubles(penaltiesKop);
-		const totalAccruedRub = params.totalAccruedRub ?? kopecksToRubles(totalAccruedKop);
-		const ndflRub = params.ndfl13Rub ?? kopecksToRubles(ndflKop);
 		const payoutRub = params.netPayoutRub ?? kopecksToRubles(payoutKop);
 
 		if (existingRows.length > 0 && existingRows[0]) {
@@ -197,30 +186,18 @@ export async function closeSettlementPeriodInDb(
 			const updated = await tx
 				.update(doctorPayrollStatements)
 				.set({
-					grossRevenueRub: grossRub,
 					grossRevenueKopecks: grossKop,
-					labCostRub: labRub,
 					labCostKopecks: labKop,
-					materialsCostRub: matRub,
 					materialsCostKopecks: matKop,
-					netBaseRevenueRub: netBaseRub,
 					netBaseRevenueKopecks: netBaseKop,
 					categoryPercent: params.categoryPercent,
-					calculatedPieceworkRub: pieceworkRub,
 					calculatedPieceworkKopecks: pieceworkKop,
-					fixedSalaryRub: fixedSalaryRub,
 					fixedSalaryKopecks: fixedSalaryKop,
-					serviceSalaryPriceRub: kopecksToRubles(serviceSalaryKop),
 					serviceSalaryPriceKopecks: serviceSalaryKop,
-					bonusesTotalRub: bonusesRub,
 					bonusesTotalKopecks: bonusesKop,
-					penaltiesTotalRub: penaltiesRub,
 					penaltiesTotalKopecks: penaltiesKop,
-					totalAccruedRub: totalAccruedRub,
 					totalAccruedKopecks: totalAccruedKop,
-					ndfl13Rub: ndflRub,
 					ndfl13Kopecks: ndflKop,
-					netPayoutRub: payoutRub,
 					netPayoutKopecks: payoutKop,
 					isFinalized: true,
 					rkoNumber: rkoNumber,
@@ -248,30 +225,18 @@ export async function closeSettlementPeriodInDb(
 					organizationId,
 					doctorId,
 					period: periodKey,
-					grossRevenueRub: grossRub,
 					grossRevenueKopecks: grossKop,
-					labCostRub: labRub,
 					labCostKopecks: labKop,
-					materialsCostRub: matRub,
 					materialsCostKopecks: matKop,
-					netBaseRevenueRub: netBaseRub,
 					netBaseRevenueKopecks: netBaseKop,
 					categoryPercent: params.categoryPercent,
-					calculatedPieceworkRub: pieceworkRub,
 					calculatedPieceworkKopecks: pieceworkKop,
-					fixedSalaryRub: fixedSalaryRub,
 					fixedSalaryKopecks: fixedSalaryKop,
-					serviceSalaryPriceRub: kopecksToRubles(serviceSalaryKop),
 					serviceSalaryPriceKopecks: serviceSalaryKop,
-					bonusesTotalRub: bonusesRub,
 					bonusesTotalKopecks: bonusesKop,
-					penaltiesTotalRub: penaltiesRub,
 					penaltiesTotalKopecks: penaltiesKop,
-					totalAccruedRub: totalAccruedRub,
 					totalAccruedKopecks: totalAccruedKop,
-					ndfl13Rub: ndflRub,
 					ndfl13Kopecks: ndflKop,
-					netPayoutRub: payoutRub,
 					netPayoutKopecks: payoutKop,
 					isFinalized: true,
 					rkoNumber: rkoNumber,

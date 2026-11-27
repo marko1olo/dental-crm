@@ -94,11 +94,7 @@ export async function refundPersonalAdvanceOp(
 		.for("update");
 
 	const lockedPersonalAdvanceKop = advanceRows.reduce((acc, row) => {
-		const kop =
-			row.depositAmountKopecks != null &&
-			(row.depositAmountKopecks > 0n || Number(row.depositAmountRub || 0) === 0)
-				? Number(row.depositAmountKopecks)
-				: parseKopecks(row.depositAmountRub);
+		const kop = Number(row.depositAmountKopecks ?? 0n);
 		return acc + Math.max(0, kop);
 	}, 0);
 
@@ -268,18 +264,13 @@ export async function refundPersonalAdvanceOp(
 	let refundAcc = amountKopecks;
 	for (const row of advanceRows) {
 		if (refundAcc <= 0) break;
-		const rowKop =
-			row.depositAmountKopecks != null &&
-			(row.depositAmountKopecks > 0n || Number(row.depositAmountRub || 0) === 0)
-				? Number(row.depositAmountKopecks)
-				: parseKopecks(row.depositAmountRub);
+		const rowKop = Number(row.depositAmountKopecks ?? 0n);
 		if (rowKop <= refundAcc) {
 			await tx
 				.update(advanceDepositTaggings)
 				.set({
 					allocationStatus: "spent",
 					depositAmountKopecks: 0n,
-					depositAmountRub: "0.00",
 				})
 				.where(
 					and(
@@ -293,7 +284,6 @@ export async function refundPersonalAdvanceOp(
 			await tx
 				.update(advanceDepositTaggings)
 				.set({
-					depositAmountRub: kopecksToNumericString(remainingRowKop),
 					depositAmountKopecks: BigInt(remainingRowKop),
 				})
 				.where(

@@ -187,12 +187,6 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 		permission: "public",
 		handler: handleGetExpenseReasons,
 	});
-	defineStreamRoute(app, {
-		method: "GET",
-		path: "/api/cash/expense-reason",
-		permission: "public",
-		handler: handleGetExpenseReasons,
-	});
 
 	// 3. Регистрация модульных маршрутов ЗТЛ: оплата наряда и фиксация installed (Feature #36)
 	await registerCashLabPaymentRoutes(app);
@@ -307,12 +301,6 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/cashbox/transactions/:id/retry-fiscalize",
-		permission: "public",
-		handler: handleRetryFiscalize,
-	});
-	defineStreamRoute(app, {
-		method: "POST",
-		path: "/api/cash/transactions/:id/retry-fiscalize",
 		permission: "public",
 		handler: handleRetryFiscalize,
 	});

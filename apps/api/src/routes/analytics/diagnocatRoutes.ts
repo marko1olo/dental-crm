@@ -147,12 +147,6 @@ export async function registerDiagnocatAnalyticsRoutes(app: FastifyInstance) {
 		permission: "public",
 		handler,
 	});
-	defineStreamRoute(app, {
-		method: "GET",
-		path: "/api/analytics/diagnocat",
-		permission: "public",
-		handler,
-	});
 }
 
 export const registerDiagnocatRoutes = registerDiagnocatAnalyticsRoutes;

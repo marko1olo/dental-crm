@@ -5,7 +5,7 @@
 
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, or, sql } from "drizzle-orm";
-import { calculateDoctorPeriodPayroll, isValidUuid, rublesToKopecks } from "@dental/shared";
+import { calculateDoctorPeriodPayroll, isValidUuid, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
 import { doctorCommissions, users } from "../../db/schema.js";
 import { requirePayoutAccess } from "../billingRoutes/payoutAccessService.js";
@@ -86,7 +86,10 @@ export async function closeSettlementHandler(
 		: `${body.periodStart.slice(0, 10)}..${body.periodEnd.slice(0, 10)}`;
 
 	if (body.doctorId === "all") {
-		const batchStatements: NonNullable<Awaited<ReturnType<typeof closeSettlementPeriodInDb>>["statement"]>[] = [];
+		const batchStatements: (NonNullable<Awaited<ReturnType<typeof closeSettlementPeriodInDb>>["statement"]> & {
+			grossRevenueRub: number;
+			netPayoutRub: number;
+		})[] = [];
 		let totalClosedAppts = 0;
 
 		await withTenantCtx(orgId, async (tx) => {
@@ -151,7 +154,13 @@ export async function closeSettlementHandler(
 					markPaid: signedPayoutKopecks > 0 ? effectiveMarkPaid : false,
 				}, tx);
 
-				if (res.statement) batchStatements.push(res.statement);
+				if (res.statement) {
+					batchStatements.push({
+						...res.statement,
+						grossRevenueRub: kopecksToRubles(res.statement.grossRevenueKopecks ?? 0),
+						netPayoutRub: kopecksToRubles(res.statement.netPayoutKopecks ?? 0),
+					});
+				}
 				totalClosedAppts += res.closedAppointmentsCount;
 			}
 		});
@@ -335,7 +344,13 @@ export async function closeSettlementHandler(
 		return {
 			ok: true,
 			statementId: result.statementId,
-			statement: result.statement,
+			statement: result.statement
+				? {
+						...result.statement,
+						grossRevenueRub: kopecksToRubles(result.statement.grossRevenueKopecks ?? 0),
+						netPayoutRub: kopecksToRubles(result.statement.netPayoutKopecks ?? 0),
+					}
+				: null,
 			closedAppointmentsCount: result.closedAppointmentsCount,
 			message: isOwnDoctor
 				? "Акт сверки смены успешно подтвержден врачом"

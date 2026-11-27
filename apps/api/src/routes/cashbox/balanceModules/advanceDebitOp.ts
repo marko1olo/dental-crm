@@ -154,11 +154,7 @@ export async function debitAdvanceOp(tx: TenantDb, params: DebitAdvanceParams) {
 			.for("update");
 
 		const lockedPersonalKop = advanceRows.reduce((acc, row) => {
-			const kop =
-				row.depositAmountKopecks != null &&
-				(row.depositAmountKopecks > 0n || Number(row.depositAmountRub || 0) === 0)
-					? Number(row.depositAmountKopecks)
-					: parseKopecks(row.depositAmountRub);
+			const kop = Number(row.depositAmountKopecks ?? 0n);
 			return acc + Math.max(0, kop);
 		}, 0);
 
@@ -169,18 +165,13 @@ export async function debitAdvanceOp(tx: TenantDb, params: DebitAdvanceParams) {
 		let debitAcc = canDebitPersonal;
 		for (const row of advanceRows) {
 			if (debitAcc <= 0) break;
-			const rowKop =
-				row.depositAmountKopecks != null &&
-				(row.depositAmountKopecks > 0n || Number(row.depositAmountRub || 0) === 0)
-					? Number(row.depositAmountKopecks)
-					: parseKopecks(row.depositAmountRub);
+			const rowKop = Number(row.depositAmountKopecks ?? 0n);
 			if (rowKop <= debitAcc) {
 				await tx
 					.update(advanceDepositTaggings)
 					.set({
 						allocationStatus: "spent",
 						depositAmountKopecks: 0n,
-						depositAmountRub: "0.00",
 					})
 					.where(
 						and(
@@ -194,7 +185,6 @@ export async function debitAdvanceOp(tx: TenantDb, params: DebitAdvanceParams) {
 				await tx
 					.update(advanceDepositTaggings)
 					.set({
-						depositAmountRub: kopecksToNumericString(remainingRowKop),
 						depositAmountKopecks: BigInt(remainingRowKop),
 					})
 					.where(

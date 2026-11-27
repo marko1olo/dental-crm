@@ -6,7 +6,6 @@ import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { withTenantReadCtx } from "../../db/rls.js";
 import { attachments, patients } from "../../db/schema.js";
 import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
-import { decodeServerHeicImage } from "../../services/imaging/serverHeicDecoder.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -144,106 +143,10 @@ export const downloadAttachmentHandler = async (
 	}
 };
 
-/*
- * Серверное декодирование Apple HEIC / HEIF в WebP с калибровкой Display P3 -> sRGB.
- */
-export const decodeHeicHandler = async (
-	request: FastifyRequest,
-	reply: FastifyReply,
-) => {
-	try {
-		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
-
-		if (typeof request.file !== "function") {
-			return reply.code(400).send({
-				error: "MissingFilePayload",
-				message: "Файл HEIC не получен для декодирования.",
-			});
-		}
-		const data = await request.file();
-
-		if (!data) {
-			return reply.code(400).send({
-				error: "MissingFilePayload",
-				message: "Файл HEIC не получен для декодирования.",
-			});
-		}
-
-		const MAX_HEIC_UPLOAD_BYTES = 32 * 1024 * 1024;
-		const chunks: Buffer[] = [];
-		let totalBytes = 0;
-		for await (const chunk of data.file) {
-			const buf = typeof chunk === "string" ? Buffer.from(chunk) : chunk;
-			totalBytes += buf.length;
-			if (totalBytes > MAX_HEIC_UPLOAD_BYTES) {
-				return reply.code(413).send({
-					error: "PayloadTooLarge",
-					message: "Файл HEIC превышает допустимый лимит 32 МБ.",
-				});
-			}
-			chunks.push(buf);
-		}
-		const inputBuffer = Buffer.concat(chunks);
-
-		const result = await decodeServerHeicImage(inputBuffer, {
-			targetFormat: "webp",
-			quality: 92,
-			maxDimension: 2048,
-			generateThumbnail: true,
-			thumbnailSize: 200,
-		});
-
-		const dataUrl = `data:image/webp;base64,${result.buffer.toString("base64")}`;
-		const thumbnailDataUrl = result.thumbnailBuffer
-			? `data:image/webp;base64,${result.thumbnailBuffer.toString("base64")}`
-			: dataUrl;
-
-		return reply.code(200).send({
-			success: true,
-			width: result.width,
-			height: result.height,
-			format: result.format,
-			colorSpace: result.colorSpace,
-			exif: result.exif,
-			dataUrl,
-			thumbnailWebpDataUrl: thumbnailDataUrl,
-			sizeBytes: result.sizeBytes,
-			originalSizeBytes: result.originalSizeBytes,
-			durationMs: result.durationMs,
-		});
-	} catch (error: unknown) {
-		request.log.error(error);
-		return reply.status(500).send({
-			error: "HeicDecodingFailed",
-			message: "Не удалось декодировать HEIC-снимок на сервере.",
-		});
-	}
-};
-
 export function registerFileUploadRoutes(app: FastifyInstance) {
 	app.get(
 		"/api/attachments/:attachmentId/download",
 		{ config: { tenantTxSelfManaged: true } },
 		downloadAttachmentHandler,
-	);
-	app.post(
-		"/api/imaging/decode-heic",
-		{
-			config: { tenantTxSelfManaged: true },
-			schema: {
-				description: "HEIC decode with mandatory RFC 9562 Idempotency-Key",
-				headers: {
-					type: "object",
-					properties: {
-						"idempotency-key": { type: "string" },
-						"x-idempotency-key": { type: "string" },
-						organizationid: { type: "string" },
-						"x-organization-id": { type: "string" },
-					},
-				},
-			},
-		},
-		decodeHeicHandler,
 	);
 }

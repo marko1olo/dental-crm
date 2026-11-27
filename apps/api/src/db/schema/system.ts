@@ -448,26 +448,11 @@ export const migrationReconciliations = pgTable(
 		 * разница меньше рубля исчезала на каждой строке, и вывод «сошлось» мог
 		 * скрывать потерянные копейки — хуже, чем честное расхождение.
 		 */
-		sourceMoneyTotalRub: numeric("source_money_total_rub", {
-			precision: 12,
-			scale: 2,
-			mode: "number",
-		}),
 		sourceMoneyTotalKopecks: bigint("source_money_total_kopecks", {
 			mode: "bigint",
 		}),
-		loadedMoneyTotalRub: numeric("loaded_money_total_rub", {
-			precision: 12,
-			scale: 2,
-			mode: "number",
-		}),
 		loadedMoneyTotalKopecks: bigint("loaded_money_total_kopecks", {
 			mode: "bigint",
-		}),
-		quarantinedMoneyTotalRub: numeric("quarantined_money_total_rub", {
-			precision: 12,
-			scale: 2,
-			mode: "number",
 		}),
 		quarantinedMoneyTotalKopecks: bigint("quarantined_money_total_kopecks", {
 			mode: "bigint",

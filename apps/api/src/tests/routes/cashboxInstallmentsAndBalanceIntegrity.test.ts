@@ -431,7 +431,7 @@ describe("Cashbox Installments & Patient Balance Segregation Integrity", () => {
 			assert.equal(Number(advancePayment.amountRub), 15000);
 
 			assert.ok(depositTag, "Строка аванса должна быть в advanceDepositTaggings");
-			assert.equal(Number(depositTag.depositAmountRub), 15000);
+			assert.equal(depositTag.depositAmountKopecks, 1500000n);
 			assert.equal(depositTag.allocationStatus, "unallocated");
 
 			// Проверяем обновленный баланс пациента
@@ -479,7 +479,7 @@ describe("Cashbox Installments & Patient Balance Segregation Integrity", () => {
 				return tag;
 			});
 			assert.ok(depositTagAfterDebit);
-			assert.equal(Number(depositTagAfterDebit.depositAmountRub), 10000);
+			assert.equal(depositTagAfterDebit.depositAmountKopecks, 1000000n);
 
 			// Проверяем баланс через API
 			const getBalanceAfterDebit = await app.inject({
@@ -685,7 +685,6 @@ describe("Cashbox Installments & Patient Balance Segregation Integrity", () => {
 					organizationId: orgId,
 					patientId,
 					patientName: "Авансовый Пациент",
-					depositAmountRub: "10000.00",
 					depositAmountKopecks: 1000000n,
 					taggedTargetType: "deposit",
 					taggedTargetName: "Личный аванс",

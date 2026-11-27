@@ -127,14 +127,10 @@ export async function fetchAndBuildPayrollDocument(
 			statementId: doctorPayrollStatements.id,
 			doctorId: doctorPayrollStatements.doctorId,
 			grossRevenueKopecks: doctorPayrollStatements.grossRevenueKopecks,
-			grossRevenueRub: doctorPayrollStatements.grossRevenueRub,
 			categoryPercent: doctorPayrollStatements.categoryPercent,
 			totalAccruedKopecks: doctorPayrollStatements.totalAccruedKopecks,
-			totalAccruedRub: doctorPayrollStatements.totalAccruedRub,
 			ndfl13Kopecks: doctorPayrollStatements.ndfl13Kopecks,
-			ndfl13Rub: doctorPayrollStatements.ndfl13Rub,
 			netPayoutKopecks: doctorPayrollStatements.netPayoutKopecks,
-			netPayoutRub: doctorPayrollStatements.netPayoutRub,
 			doctorFullName: users.fullName,
 			doctorRole: users.role,
 			doctorSpecialties: users.specialties,
@@ -153,18 +149,9 @@ export async function fetchAndBuildPayrollDocument(
 	}
 
 	const payrollEmployees: OneCPayrollEmployeeItem[] = rows.map((row, idx) => {
-		const grossEarnedKop =
-			row.totalAccruedKopecks !== 0
-				? row.totalAccruedKopecks
-				: rublesToKopecks(Number(row.totalAccruedRub) || 0);
-		const grossRevKop =
-			row.grossRevenueKopecks !== 0
-				? row.grossRevenueKopecks
-				: rublesToKopecks(Number(row.grossRevenueRub) || 0);
-		const ndflKop =
-			row.ndfl13Kopecks !== 0
-				? row.ndfl13Kopecks
-				: rublesToKopecks(Number(row.ndfl13Rub) || 0);
+		const grossEarnedKop = Number(row.totalAccruedKopecks ?? 0);
+		const grossRevKop = Number(row.grossRevenueKopecks ?? 0);
+		const ndflKop = Number(row.ndfl13Kopecks ?? 0);
 		const netPayoutKop =
 			row.netPayoutKopecks !== 0
 				? row.netPayoutKopecks

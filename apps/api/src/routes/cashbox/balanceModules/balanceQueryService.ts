@@ -52,12 +52,7 @@ export async function getDetailedPatientBalance(
 		);
 
 	const personalAdvanceKopecks = sumKopecks(
-		advanceRows.map((row) =>
-			row.depositAmountKopecks != null &&
-			(row.depositAmountKopecks > 0n || Number(row.depositAmountRub || 0) === 0)
-				? Number(row.depositAmountKopecks)
-				: parseKopecks(row.depositAmountRub),
-		),
+		advanceRows.map((row) => Number(row.depositAmountKopecks ?? 0n)),
 	);
 
 	// 2. Расчет доступного семейного баланса (с приоритетом balanceKopecks и учетом spendLimitKopecks)

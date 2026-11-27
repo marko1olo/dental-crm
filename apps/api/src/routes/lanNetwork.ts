@@ -345,11 +345,6 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		path: "/api/network/lan-info",
 		handler: handleLanInfo,
 	});
-	definePublicRoute(app, {
-		method: "GET",
-		path: "/api/lan/status",
-		handler: handleLanInfo,
-	});
 
 	/**
 	 * POST /api/network/pair/generate & /api/lan/token
@@ -423,12 +418,6 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/network/pair/generate",
-		permission: "public",
-		handler: handlePairGenerate,
-	});
-	defineStreamRoute(app, {
-		method: "POST",
-		path: "/api/lan/token",
 		permission: "public",
 		handler: handlePairGenerate,
 	});

@@ -119,15 +119,15 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 					sourceTotalRub:
 						reconciliation.sourceMoneyTotalKopecks != null
 							? kopecksToRubles(reconciliation.sourceMoneyTotalKopecks)
-							: reconciliation.sourceMoneyTotalRub,
+							: null,
 					loadedTotalRub:
 						reconciliation.loadedMoneyTotalKopecks != null
 							? kopecksToRubles(reconciliation.loadedMoneyTotalKopecks)
-							: reconciliation.loadedMoneyTotalRub,
+							: null,
 					quarantinedTotalRub:
 						reconciliation.quarantinedMoneyTotalKopecks != null
 							? kopecksToRubles(reconciliation.quarantinedMoneyTotalKopecks)
-							: reconciliation.quarantinedMoneyTotalRub,
+							: null,
 				},
 				run: runStatusPayload(run),
 				quarantinePreview,
@@ -196,15 +196,15 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 				sourceMoneyTotalRub:
 					reconciliation.sourceMoneyTotalKopecks != null
 						? kopecksToRubles(reconciliation.sourceMoneyTotalKopecks)
-						: reconciliation.sourceMoneyTotalRub,
+						: null,
 				loadedMoneyTotalRub:
 					reconciliation.loadedMoneyTotalKopecks != null
 						? kopecksToRubles(reconciliation.loadedMoneyTotalKopecks)
-						: reconciliation.loadedMoneyTotalRub,
+						: null,
 				quarantinedMoneyTotalRub:
 					reconciliation.quarantinedMoneyTotalKopecks != null
 						? kopecksToRubles(reconciliation.quarantinedMoneyTotalKopecks)
-						: reconciliation.quarantinedMoneyTotalRub,
+						: null,
 			});
 
 			reply.header("Content-Type", "text/csv; charset=utf-8");

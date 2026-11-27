@@ -110,7 +110,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 
 		assert.equal(taggings.length, 1, "One advance deposit record must be created");
 		assert(taggings[0]);
-		assert.equal(Number(taggings[0].depositAmountRub), 400.0, "Exact overpayment 400 ₽ credited to deposit");
+		assert.equal(taggings[0].depositAmountKopecks, 40000n, "Exact overpayment 400 ₽ credited to deposit");
 		assert.equal(taggings[0].taggedTargetType, "patient_deposit");
 	});
 

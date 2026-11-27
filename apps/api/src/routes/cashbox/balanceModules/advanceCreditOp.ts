@@ -130,7 +130,6 @@ export async function creditPersonalAdvanceOp(
 			organizationId,
 			patientId,
 			patientName: patient.fullName || "Пациент клиники",
-			depositAmountRub: kopecksToNumericString(amountKopecks),
 			depositAmountKopecks: BigInt(amountKopecks),
 			taggedTargetType: "deposit",
 			taggedTargetName: "Аванс на лечение",

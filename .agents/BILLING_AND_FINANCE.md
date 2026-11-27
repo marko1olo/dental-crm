@@ -662,3 +662,15 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 
 
 
+
+---
+
+## 🧹 17. ROT-015 (Wave 9) и `§3.3 DEAD_INTERNAL`: вывод `*Rub` колонок БД и зачистка мёртвых роутов
+
+- **ROT-015 1B (DDL миграция `apps/api/drizzle/0308_rot015_echelon1_drop_rub.sql`)**: физически удалены 17 legacy `*Rub` колонок, полностью дублировавших `*Kopecks BIGINT`:
+  - `uis_sms_chat_quotas.cost_rub` (1 колонка -> `cost_kopecks` в `uisSmsChatQuotasQuery.ts`);
+  - `migration_reconciliations.{source,loaded,quarantined}_money_total_rub` (3 колонки -> `*Kopecks` в `reconcile.ts`, `migrationStatusRoutes.ts`, `migrationProgressHandlers.ts`);
+  - `doctor_payroll_statements` (все 12 `*Rub` колонок: `gross_revenue_rub`, `lab_cost_rub`, `materials_cost_rub`, `net_base_revenue_rub`, `calculated_piecework_rub`, `fixed_salary_rub`, `service_salary_price_rub`, `bonuses_total_rub`, `penalties_total_rub`, `total_accrued_rub`, `ndfl_13_rub`, `net_payout_rub` + снос сиротского PG view `staff_payroll_settlements`, расчёты и запросы переведены на `*Kopecks`);
+  - `advance_deposit_taggings.deposit_amount_rub` (1 колонка -> `deposit_amount_kopecks` в `advanceCreditOp.ts`, `advanceDebitOp.ts`, `advanceRefundOp.ts`, `balanceQueryService.ts`, `depositAndFamilyStage.ts`, `settlementAndBomStage.ts`, `refundExecutionEngine.ts`).
+  - Отложенный блокер Эшелона 1: `cash_operations.{balance_before_rub, balance_after_rub}` сохранены в схеме до синхронного обновления raw SQL в стоп-зонном тесте `apps/api/src/tests/backupSchemaParity.test.ts:309`.
+- **`§3.3 DEAD_INTERNAL` (2FP консолидация роутов)**: удалены 36 мёртвых/дублирующих `/api` маршрутов (`1273 -> 1237`), включая заглушки `403`/`410` (`POST /api/whatsapp/qr/session/simulate-auth`, `POST /api/settings/reset-demo`, `POST /api/settings/reset-zero`), невызываемые одиночные роуты (`POST /api/billing/refunds/partial`, `POST /api/clinical/dental-lab/express-order`, `POST /api/clinical/dental-lab/check-plan-continuity`, `POST /api/finance/family/refund`, `POST /api/imaging/decode-heic`, `POST /api/services/batch-update`, `POST /api/visits/fast`, `POST /api/visits/:visitId/work-order/complete`, `POST /api/v1/message-templates/seed`, `GET /api/analytics/chairs-utilization`, `GET /api/analytics/diagnocat`, `GET /api/lan/status`, `POST /api/lan/token`) и неиспользуемые алиасы кассовых смен, X-отчётов, коррекции, retry-fiscalize, справочника статей расхода и черновика приёма (`/api/v1/visits/:visitId/diary`, `/api/visits/:visitId/emk`), с синхронизацией `scripts/config/single-doors-allowlist.json`, `scripts/check-route-callers.mjs` и `scripts/smoke-clinical-mutation-guard.mjs`.

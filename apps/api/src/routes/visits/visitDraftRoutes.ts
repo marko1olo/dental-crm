@@ -30,18 +30,6 @@ export function registerVisitDraftRoutes(app: FastifyInstance) {
 		permission: "public",
 		handler: async ({ request, reply }) => handleGetVisitDraft(request, reply),
 	});
-	defineStreamRoute(app, {
-		method: "GET",
-		path: "/api/v1/visits/:visitId/diary",
-		permission: "public",
-		handler: async ({ request, reply }) => handleGetVisitDraft(request, reply),
-	});
-	defineStreamRoute(app, {
-		method: "GET",
-		path: "/api/visits/:visitId/emk",
-		permission: "public",
-		handler: async ({ request, reply }) => handleGetVisitDraft(request, reply),
-	});
 
 	defineStreamRoute(app, {
 		method: "PUT",
@@ -53,34 +41,6 @@ export function registerVisitDraftRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/visits/:visitId/draft/autosave",
-		permission: "public",
-		schema: visitMutationRouteSchema,
-		handler: async ({ request, reply }) => handlePutVisitDraft(request, reply),
-	});
-	defineStreamRoute(app, {
-		method: "PUT",
-		path: "/api/v1/visits/:visitId/diary",
-		permission: "public",
-		schema: visitMutationRouteSchema,
-		handler: async ({ request, reply }) => handlePutVisitDraft(request, reply),
-	});
-	defineStreamRoute(app, {
-		method: "POST",
-		path: "/api/v1/visits/:visitId/diary",
-		permission: "public",
-		schema: visitMutationRouteSchema,
-		handler: async ({ request, reply }) => handlePutVisitDraft(request, reply),
-	});
-	defineStreamRoute(app, {
-		method: "PUT",
-		path: "/api/visits/:visitId/emk",
-		permission: "public",
-		schema: visitMutationRouteSchema,
-		handler: async ({ request, reply }) => handlePutVisitDraft(request, reply),
-	});
-	defineStreamRoute(app, {
-		method: "POST",
-		path: "/api/visits/:visitId/emk",
 		permission: "public",
 		schema: visitMutationRouteSchema,
 		handler: async ({ request, reply }) => handlePutVisitDraft(request, reply),

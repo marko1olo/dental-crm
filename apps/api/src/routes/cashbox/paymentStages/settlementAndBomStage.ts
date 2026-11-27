@@ -160,13 +160,10 @@ export async function processSettlementAndBomStage(
 				const normMethod = normalizePaymentMethod(body.method);
 				// Устранение хардкодного лимита 500 000 коп. (Мандат 8e): сдача в полном объеме зачисляется на депозит пациента
 				if (normMethod === "cash" && overpaymentKopecks > 0) {
-					const overpaymentRub = kopecksToNumericString(overpaymentKopecks);
-
 					await tx.insert(advanceDepositTaggings).values({
 						organizationId: orgId,
 						patientId: resolvedPatientId,
 						patientName: patientName || "Пациент",
-						depositAmountRub: overpaymentRub,
 						depositAmountKopecks: BigInt(overpaymentKopecks),
 						taggedTargetType: "patient_deposit",
 						taggedTargetName: `Авансовый депозит по приему ${effectiveVisitId}`,

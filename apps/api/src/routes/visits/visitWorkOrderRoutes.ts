@@ -42,11 +42,4 @@ export function registerVisitWorkOrderRoutes(app: FastifyInstance) {
 		schema: workOrderRouteSchema,
 		handler: async ({ request, reply }) => handleCompleteVisitWorkOrder(request, reply),
 	});
-	defineStreamRoute(app, {
-		method: "POST",
-		path: "/api/visits/:visitId/work-order/complete",
-		permission: "public",
-		schema: workOrderRouteSchema,
-		handler: async ({ request, reply }) => handleCompleteVisitWorkOrder(request, reply),
-	});
 }

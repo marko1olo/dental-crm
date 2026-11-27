@@ -245,37 +245,4 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 	app.put("/api/settings/clinic", clinicProfileMutationOptions, handleUpdateClinicProfile);
 	app.patch("/api/settings/clinic", clinicProfileMutationOptions, handleUpdateClinicProfile);
 	app.post("/api/settings/clinic", clinicProfileMutationOptions, handleUpdateClinicProfile);
-
-	defineStreamRoute(app, {
-		method: "POST",
-		path: "/api/settings/reset-demo",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const orgId = await requireSettingsMutationAccess(request, reply);
-			if (!orgId) return;
-			reply.code(410);
-			return {
-				success: false,
-				error: "EndpointDeprecated",
-				message:
-					"Демонстрационный сброс через этот маршрут отключён.",
-			};
-		},
-	});
-
-	defineStreamRoute(app, {
-		method: "POST",
-		path: "/api/settings/reset-zero",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const orgId = await requireSettingsMutationAccess(request, reply);
-			if (!orgId) return;
-			reply.code(410);
-			return {
-				success: false,
-				error: "EndpointDeprecated",
-				message: "Очистка базы через этот маршрут отключена.",
-			};
-		},
-	});
 }

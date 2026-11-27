@@ -369,9 +369,13 @@ that ships without them is a tenant leak, and 0160 is the receipt for what that 
     has set `app.current_tenant`, and `USING` still honours `app.superuser_bypass`. Write the
     `organizationId` filter anyway.
 3.  Money: amounts are exact to the kopeck (`.agents/AGENTS.md` §8b). Check the column type before
-    writing money code — the repo has been migrating integer-rouble columns toward kopeck precision
-    (`apps/api/drizzle/0131_payments_amount_kopecks.sql`), so different tables may not agree yet.
-    Confirm the live column type instead of assuming either representation.
+    writing money code — the repo has been migrating integer-rouble/numeric `*Rub` columns toward
+    kopeck precision (`apps/api/drizzle/0131_payments_amount_kopecks.sql` ... `0308_rot015_echelon1_drop_rub.sql`).
+    In Wave 9 (`0308_rot015_echelon1_drop_rub.sql`), 17 redundant `*Rub` columns across `uis_sms_chat_quotas`,
+    `migration_reconciliations`, `doctor_payroll_statements` (+ orphan view `staff_payroll_settlements`), and
+    `advance_deposit_taggings` were dropped; `cash_operations.{balance_before_rub, balance_after_rub}` remain
+    temporarily due to raw SQL in `apps/api/src/tests/backupSchemaParity.test.ts:309`. Confirm the live
+    column type (`*Kopecks` `BIGINT`) instead of assuming legacy `*Rub`.
 4.  Read-only tables are a known defect class, not a feature. A number of `db/*Query.ts` modules are
     one-function SELECTs against tables that nothing ever writes to, so they return empty forever
     and the widgets above them render empty forever. Before building on such a module, grep for

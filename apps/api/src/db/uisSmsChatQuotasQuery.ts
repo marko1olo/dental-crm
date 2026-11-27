@@ -1,4 +1,4 @@
-import { kopecksToNumericString, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import type { TenantDb } from "./rls.js";
@@ -19,12 +19,7 @@ export async function getDailySmsQuota(organizationId: string, tx: TenantDb = db
 		.limit(1);
 
 	if (quota) {
-		const costKopecks =
-			quota.costKopecks != null
-				? quota.costKopecks
-				: quota.costRub != null
-					? rublesToKopecks(Number(quota.costRub))
-					: 0;
+		const costKopecks = quota.costKopecks ?? 0;
 		return {
 			smsSentCount: quota.smsSentCount,
 			smsQuotaLimit: quota.smsQuotaLimit,
@@ -58,7 +53,6 @@ export async function ensureAndLockDailySmsQuota(organizationId: string, tx: Ten
 			smsSentCount: 0,
 			smsQuotaLimit: 300,
 			costKopecks: 0,
-			costRub: "0.00",
 		})
 		.onConflictDoNothing({
 			target: [uisSmsChatQuotas.organizationId, uisSmsChatQuotas.monthYear],
@@ -103,7 +97,7 @@ export async function incrementDailySmsQuota(
 			? Math.round(smsCostKopecks)
 			: 0;
 
-	const [upserted] = await tx
+	await tx
 		.insert(uisSmsChatQuotas)
 		.values({
 			organizationId,
@@ -111,7 +105,6 @@ export async function incrementDailySmsQuota(
 			smsSentCount: 1,
 			smsQuotaLimit: 300,
 			costKopecks: safeCostKopecks,
-			costRub: kopecksToNumericString(safeCostKopecks),
 		})
 		.onConflictDoUpdate({
 			target: [uisSmsChatQuotas.organizationId, uisSmsChatQuotas.monthYear],
@@ -123,23 +116,5 @@ export async function incrementDailySmsQuota(
 						}
 					: {}),
 			},
-		})
-		.returning({
-			id: uisSmsChatQuotas.id,
-			costKopecks: uisSmsChatQuotas.costKopecks,
 		});
-
-	if (safeCostKopecks > 0 && upserted) {
-		await tx
-			.update(uisSmsChatQuotas)
-			.set({
-				costRub: kopecksToNumericString(upserted.costKopecks ?? safeCostKopecks),
-			})
-			.where(
-				and(
-					eq(uisSmsChatQuotas.id, upserted.id),
-					eq(uisSmsChatQuotas.organizationId, organizationId),
-				),
-			);
-	}
 }

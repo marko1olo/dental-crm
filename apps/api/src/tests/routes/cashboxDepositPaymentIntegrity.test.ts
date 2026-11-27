@@ -160,7 +160,7 @@ describe("FIN-05: Cashbox Deposit Integrity & Unauthorized Spend Blocking", () =
 				await tx.insert(advanceDepositTaggings).values({
 					organizationId: orgId,
 					patientName: "Смирнова Елена Сергеевна",
-					depositAmountRub: "15000.00",
+					depositAmountKopecks: 1500000n,
 					taggedTargetType: "patient_deposit",
 					taggedTargetName: "Аванс за ортодонтию",
 					allocationStatus: "unallocated",
@@ -182,7 +182,7 @@ describe("FIN-05: Cashbox Deposit Integrity & Unauthorized Spend Blocking", () =
 				.select()
 				.from(advanceDepositTaggings)
 				.where(eq(advanceDepositTaggings.patientName, "Смирнова Елена Сергеевна"));
-			assert.equal(Number(adv?.depositAmountRub), 5000, "Remaining advance must be 5 000 ₽");
+			assert.equal(adv?.depositAmountKopecks, 500000n, "Remaining advance must be 5 000 ₽");
 		} finally {
 			await purgeFixtureOrganizations([orgId]);
 		}
@@ -210,7 +210,7 @@ describe("FIN-05: Cashbox Deposit Integrity & Unauthorized Spend Blocking", () =
 				await tx.insert(advanceDepositTaggings).values({
 					organizationId: orgId,
 					patientName: "Петров Сергей Николаевич",
-					depositAmountRub: "5000.00",
+					depositAmountKopecks: 500000n,
 					taggedTargetType: "patient_deposit",
 					taggedTargetName: "Аванс 5 000 ₽",
 					allocationStatus: "unallocated",

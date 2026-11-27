@@ -145,11 +145,4 @@ export function registerVisitQuickRoutes(app: FastifyInstance) {
 		schema: quickVisitRouteSchema,
 		handler: async ({ request, reply }) => quickVisitHandler(request, reply),
 	});
-	defineStreamRoute(app, {
-		method: "POST",
-		path: "/api/visits/fast",
-		permission: "public",
-		schema: quickVisitRouteSchema,
-		handler: async ({ request, reply }) => quickVisitHandler(request, reply),
-	});
 }

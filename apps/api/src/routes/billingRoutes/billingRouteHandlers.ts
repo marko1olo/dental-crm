@@ -13,7 +13,6 @@ import { handleCreatePayment } from "./handlers/paymentCreateHandler.js";
 
 export {
 	handleCreatePayment,
-	handleCashRefund as handlePartialRefund,
 	handleFiscalQueueList as handleGetFiscalQueuePending,
 	handleFiscalQueueRetry as handleRetryFiscalQueueItem,
 	handleFiscalQueueRetryAll as handleRetryAllFiscalQueue,
@@ -92,13 +91,6 @@ export async function registerBillingRoutes(app: FastifyInstance): Promise<void>
 		});
 	}
 
-	defineStreamRoute(app, {
-		method: "POST",
-		path: "/api/billing/refunds/partial",
-		permission: "public",
-		schema: billingPaymentMutationSchema,
-		handler: async ({ request, reply }) => handleCashRefund(request, reply),
-	});
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/billing/fiscal-queue/pending",

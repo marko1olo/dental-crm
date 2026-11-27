@@ -370,12 +370,6 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 
 	defineStreamRoute(app, {
 		method: "GET",
-		path: "/api/analytics/chairs-utilization",
-		permission: "public",
-		handler: getUtilization,
-	});
-	defineStreamRoute(app, {
-		method: "GET",
 		path: "/api/analytics/utilization",
 		permission: "public",
 		handler: getUtilization,

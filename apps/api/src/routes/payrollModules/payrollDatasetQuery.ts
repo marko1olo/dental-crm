@@ -376,7 +376,6 @@ export async function fetchDoctorPayrollDataset(params: {
 			.select({
 				period: doctorPayrollStatements.period,
 				netPayoutKopecks: doctorPayrollStatements.netPayoutKopecks,
-				netPayoutRub: doctorPayrollStatements.netPayoutRub,
 				createdAt: doctorPayrollStatements.createdAt,
 			})
 			.from(doctorPayrollStatements)
@@ -401,9 +400,7 @@ export async function fetchDoctorPayrollDataset(params: {
 				}
 				if (!foundLatestPrior && cs.period < currentMonthKey) {
 					foundLatestPrior = true;
-					const priorPayoutKop = cs.netPayoutKopecks != null
-						? Number(cs.netPayoutKopecks)
-						: rublesToKopecks(Number(cs.netPayoutRub || 0));
+					const priorPayoutKop = Number(cs.netPayoutKopecks ?? 0);
 					if (priorPayoutKop < 0) {
 						priorDebtCarryOverKop = Math.abs(priorPayoutKop);
 					}

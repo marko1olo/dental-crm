@@ -419,24 +419,6 @@ export async function registerConnectionHubRoutes(
 	});
 
 	/**
-	 * POST /api/whatsapp/qr/session/simulate-auth
-	 * Эндпоинт симуляции ликвидирован (DEF-MSG-01 / Мандаты 8z, 8ap).
-	 */
-	defineStreamRoute(app, {
-		method: "POST",
-		path: "/api/whatsapp/qr/session/simulate-auth",
-		permission: "public",
-		handler: async ({ reply }) => {
-			reply.code(403);
-			return {
-				error: "SimulationForbidden",
-				message:
-					"Симуляция авторизации WhatsApp Web ликвидирована (Мандат 8ap). Для работы используйте официальный WhatsApp Business Cloud API.",
-			};
-		},
-	});
-
-	/**
 	 * =========================================================================
 	 * WhatsApp Business Cloud API (WABA): Официальная интеграция Meta
 	 * =========================================================================

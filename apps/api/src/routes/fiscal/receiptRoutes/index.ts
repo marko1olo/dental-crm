@@ -138,10 +138,6 @@ export async function registerFiscalReceiptRoutes(
 		// 54-FZ correction: Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
 		return handleFiscalPrescriptionCorrection(request, reply);
 	});
-	app.post("/api/finance/correction", fiscalMutationOptions, async (request, reply) => {
-		// 54-FZ correction: Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
-		return handleFiscalCorrection(request, reply);
-	});
 
 	// Offline buffer queue management & retries
 	app.get("/api/fiscal/queue", fiscalReadOptions, handleFiscalQueueList);

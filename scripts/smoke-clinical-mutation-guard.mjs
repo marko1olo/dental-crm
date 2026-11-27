@@ -258,22 +258,7 @@ const unauthenticatedByDesign = [
 // Маршруты, которые ДОЛЖНЫ быть закрыты, но не закрыты. Не молчаливое
 // исключение: каждая запись печатается как долг и её ожидаемый ответ
 // зафиксирован, поэтому исправление сразу потребует убрать запись.
-const unguardedDebt = [
-	{
-		methods: ["POST"],
-		routePath: "/api/settings/reset-demo",
-		expectedStatusCodes: [200],
-		reason:
-			"settings.ts:637 — заглушка без охранника: отвечает {success:true} любому анониму и ничего не делает. Маршрут подлежит удалению, а не защите.",
-	},
-	{
-		methods: ["POST"],
-		routePath: "/api/settings/reset-zero",
-		expectedStatusCodes: [200],
-		reason:
-			"settings.ts:641 — та же заглушка для очистки базы: {success:true} любому анониму, никаких действий.",
-	},
-];
+const unguardedDebt = [];
 
 // Маршруты, которые физически нельзя проверить через app.inject. Они НЕ
 // опрашиваются вовсе, но обязаны существовать в таблице и печатаются в отчёте:

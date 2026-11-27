@@ -349,25 +349,13 @@ export const doctorPayrollStatements = pgTable(
 			.notNull()
 			.references(() => users.id),
 		period: text("period").notNull(), // "YYYY-MM"
-		grossRevenueRub: numeric("gross_revenue_rub", { precision: 14, scale: 2, mode: "number" })
-			.notNull()
-			.default(0),
 		grossRevenueKopecks: bigint("gross_revenue_kopecks", { mode: "number" })
-			.notNull()
-			.default(0),
-		labCostRub: numeric("lab_cost_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
 		labCostKopecks: bigint("lab_cost_kopecks", { mode: "number" })
 			.notNull()
 			.default(0),
-		materialsCostRub: numeric("materials_cost_rub", { precision: 14, scale: 2, mode: "number" })
-			.notNull()
-			.default(0),
 		materialsCostKopecks: bigint("materials_cost_kopecks", { mode: "number" })
-			.notNull()
-			.default(0),
-		netBaseRevenueRub: numeric("net_base_revenue_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
 		netBaseRevenueKopecks: bigint("net_base_revenue_kopecks", { mode: "number" })
@@ -376,49 +364,25 @@ export const doctorPayrollStatements = pgTable(
 		categoryPercent: numeric("category_percent", { precision: 5, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
-		calculatedPieceworkRub: numeric("calculated_piecework_rub", { precision: 14, scale: 2, mode: "number" })
-			.notNull()
-			.default(0),
 		calculatedPieceworkKopecks: bigint("calculated_piecework_kopecks", { mode: "number" })
-			.notNull()
-			.default(0),
-		fixedSalaryRub: numeric("fixed_salary_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
 		fixedSalaryKopecks: bigint("fixed_salary_kopecks", { mode: "number" })
 			.notNull()
 			.default(0),
-		serviceSalaryPriceRub: numeric("service_salary_price_rub", { precision: 14, scale: 2, mode: "number" })
-			.notNull()
-			.default(0),
 		serviceSalaryPriceKopecks: bigint("service_salary_price_kopecks", { mode: "number" })
-			.notNull()
-			.default(0),
-		bonusesTotalRub: numeric("bonuses_total_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
 		bonusesTotalKopecks: bigint("bonuses_total_kopecks", { mode: "number" })
 			.notNull()
 			.default(0),
-		penaltiesTotalRub: numeric("penalties_total_rub", { precision: 14, scale: 2, mode: "number" })
-			.notNull()
-			.default(0),
 		penaltiesTotalKopecks: bigint("penalties_total_kopecks", { mode: "number" })
-			.notNull()
-			.default(0),
-		totalAccruedRub: numeric("total_accrued_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
 		totalAccruedKopecks: bigint("total_accrued_kopecks", { mode: "number" })
 			.notNull()
 			.default(0),
-		ndfl13Rub: numeric("ndfl_13_rub", { precision: 14, scale: 2, mode: "number" })
-			.notNull()
-			.default(0),
 		ndfl13Kopecks: bigint("ndfl_13_kopecks", { mode: "number" })
-			.notNull()
-			.default(0),
-		netPayoutRub: numeric("net_payout_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
 		netPayoutKopecks: bigint("net_payout_kopecks", { mode: "number" })

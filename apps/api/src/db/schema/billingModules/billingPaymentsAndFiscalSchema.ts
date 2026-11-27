@@ -183,10 +183,6 @@ export const advanceDepositTaggings = pgTable(
 			onDelete: "cascade",
 		}),
 		patientName: text("patient_name").notNull(),
-		depositAmountRub: numeric("deposit_amount_rub", {
-			precision: 12,
-			scale: 2,
-		}).notNull(),
 		depositAmountKopecks: bigint("deposit_amount_kopecks", { mode: "bigint" })
 			.notNull()
 			.default(sql`0`),

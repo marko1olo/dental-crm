@@ -102,6 +102,5 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 
 	defineStreamRoute(app, { method: "GET", path: "/api/pricelist/export", permission: "public", handler: ({ request, reply }) => handleExportPricelist(request, reply) });
 	app.post("/api/pricelist/batch-reprice", pricelistCreateOptions, handleBatchReprice);
-	app.post("/api/services/batch-update", pricelistCreateOptions, handleBatchReprice);
 	app.post("/api/services/batch-reprice", pricelistCreateOptions, handleBatchReprice);
 }
