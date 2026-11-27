@@ -28,6 +28,7 @@ export async function workspaceProfileRoutes(
 	fastify.get(
 		"/api/workspace/profile",
 		{
+			config: { tenantTxSelfManaged: true },
 			schema: {
 				response: defaultResponseSchema,
 			},
@@ -39,6 +40,7 @@ export async function workspaceProfileRoutes(
 	fastify.get(
 		"/api/workspace/chairs",
 		{
+			config: { tenantTxSelfManaged: true },
 			schema: {
 				response: defaultResponseSchema,
 			},
@@ -50,6 +52,7 @@ export async function workspaceProfileRoutes(
 	fastify.post(
 		"/api/workspace/profile",
 		{
+			config: { tenantTxSelfManaged: true },
 			schema: {
 				response: defaultResponseSchema,
 			},
@@ -61,6 +64,7 @@ export async function workspaceProfileRoutes(
 	fastify.patch(
 		"/api/workspace/profile",
 		{
+			config: { tenantTxSelfManaged: true },
 			schema: {
 				response: defaultResponseSchema,
 			},
@@ -72,6 +76,7 @@ export async function workspaceProfileRoutes(
 	fastify.post(
 		"/api/workspace/preset/:name",
 		{
+			config: { tenantTxSelfManaged: true },
 			schema: {
 				response: defaultResponseSchema,
 			},

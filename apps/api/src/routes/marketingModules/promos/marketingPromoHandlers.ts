@@ -5,7 +5,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { organizations } from "../../../db/schema.js";
 import {
 	requireClinicalMutationAccess,
@@ -33,11 +33,13 @@ const promoStatusUpdateSchema = z
 	.strict();
 
 export async function registerMarketingPromosRoutes(app: FastifyInstance) {
+	const selfManagedRouteOpts = { config: { tenantTxSelfManaged: true } } as const;
+
 	/**
 	 * GET /api/marketing/promos
 	 * Возвращает список акций и кампаний клиники из PostgreSQL 18.
 	 */
-	app.get("/api/marketing/promos", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.get("/api/marketing/promos", selfManagedRouteOpts, async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireMarketingReadAccess(request, reply, "marketing promos");
 		if (!orgId) return;
 
@@ -61,7 +63,7 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 	 * POST /api/marketing/promos
 	 * Создает новую акцию клиники и сохраняет её в PostgreSQL 18.
 	 */
-	app.post("/api/marketing/promos", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post("/api/marketing/promos", selfManagedRouteOpts, async (request: FastifyRequest, reply: FastifyReply) => {
 		const mutAllowed = await requireClinicalMutationAccess(request, reply, "create marketing promo");
 		if (!mutAllowed) return;
 
@@ -86,7 +88,7 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			const { nextPromos } = await withTenantCtx(orgId, async (tx) => {
+			const { nextPromos } = await withTenantWriteCtx(orgId, async (tx) => {
 				const [org] = await tx
 					.select()
 					.from(organizations)
@@ -128,7 +130,7 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 	 * PATCH /api/marketing/promos/:id/status
 	 * Переключает статус акции (active / archived / paused) в PostgreSQL 18.
 	 */
-	app.patch("/api/marketing/promos/:id/status", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.patch("/api/marketing/promos/:id/status", selfManagedRouteOpts, async (request: FastifyRequest, reply: FastifyReply) => {
 		const mutAllowed = await requireClinicalMutationAccess(request, reply, "toggle marketing promo status");
 		if (!mutAllowed) return;
 
@@ -164,7 +166,7 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		const body = parsedStatus.data;
 
 		try {
-			const result = await withTenantCtx(orgId, async (tx) => {
+			const result = await withTenantWriteCtx(orgId, async (tx) => {
 				const [org] = await tx
 					.select()
 					.from(organizations)

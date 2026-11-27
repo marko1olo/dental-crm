@@ -4,8 +4,9 @@ import {
 	updateChairWorkingHoursSchema,
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
 	createChairInDb,
@@ -38,14 +39,23 @@ import {
 } from "./types.js";
 
 export function registerChairsRoutes(app: FastifyInstance): void {
-	app.get("/api/settings/chairs", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
-		if (!orgId) return;
-		const settings = await withTenantCtx(orgId, async () => getClinicSettingsFromDb(orgId));
-		return settings.chairs.map((c) => chairSchema.parse(c));
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/settings/chairs",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsAccess(request, reply);
+			if (!orgId) return;
+			const settings = await withTenantReadCtx(orgId, async () => getClinicSettingsFromDb(orgId));
+			return settings.chairs.map((c) => chairSchema.parse(c));
+		},
 	});
 
-	app.post("/api/settings/chairs", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/settings/chairs",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 
@@ -69,7 +79,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 				message: chairCreateValidationMessage,
 			};
 		}
-		const created = await withTenantCtx(orgId, async (tx) => {
+		const created = await withTenantWriteCtx(orgId, async (tx) => {
 			await createChairInDb(orgId, input);
 			const settings = await getClinicSettingsFromDb(orgId);
 			const chair = settings.chairs.find((c) => c.name === input.name);
@@ -96,11 +106,14 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 		});
 		reply.code(201);
 		return chairSchema.parse(created);
+		},
 	});
 
-	app.put(
-		"/api/settings/chairs/:chairId/working-hours",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/settings/chairs/:chairId/working-hours",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = await requireSettingsMutationAccess(request, reply);
 			if (!orgId) return;
 
@@ -137,7 +150,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 				};
 			}
 			try {
-				const updated = await withTenantCtx(orgId, async (tx) => {
+				const updated = await withTenantWriteCtx(orgId, async (tx) => {
 					await updateChairWorkingHoursInDb(orgId, chairId, input);
 					const settings = await getClinicSettingsFromDb(orgId);
 					const found = settings.chairs.find((c) => c.id === chairId);
@@ -166,7 +179,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 				return chairWorkingHoursRejection(reply, error);
 			}
 		},
-	);
+	});
 
 	/**
 	 * Правка кресла. Принимаются только название и признак активности: больше
@@ -174,7 +187,11 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 	 * специализация и оснащение читаются из базы как пустые значения. Принять их
 	 * значило бы ответить 200 и молча потерять ввод оператора.
 	 */
-	app.put("/api/settings/chairs/:chairId", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/settings/chairs/:chairId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 
@@ -215,7 +232,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 			};
 		}
 		try {
-			const updated = await withTenantCtx(orgId, async (tx) => {
+			const updated = await withTenantWriteCtx(orgId, async (tx) => {
 				await updateChairProfileInDb(orgId, chairId, input);
 				const settings = await getClinicSettingsFromDb(orgId);
 				const found = settings.chairs.find((c) => c.id === chairId);
@@ -249,6 +266,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 				"ChairProfile",
 			);
 		}
+		},
 	});
 
 	/**
@@ -258,7 +276,11 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 	 * (appointments.chair_id), поэтому строка сохраняется, а chairs.is_active
 	 * становится false. Уже назначенные приемы не теряют привязку к кабинету.
 	 */
-	app.delete("/api/settings/chairs/:chairId", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "DELETE",
+		path: "/api/settings/chairs/:chairId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 
@@ -284,7 +306,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 		}
 		const chairId = params.chairId;
 		try {
-			const updated = await withTenantCtx(orgId, async (tx) => {
+			const updated = await withTenantWriteCtx(orgId, async (tx) => {
 				await deactivateChairInDb(orgId, chairId);
 				const settings = await getClinicSettingsFromDb(orgId);
 				const found = settings.chairs.find((c) => c.id === chairId);
@@ -318,5 +340,6 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 				"ChairDeactivate",
 			);
 		}
+		},
 	});
 }

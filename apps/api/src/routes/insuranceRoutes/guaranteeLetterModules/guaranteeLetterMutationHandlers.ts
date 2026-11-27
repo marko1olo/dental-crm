@@ -7,7 +7,7 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { dmsGuaranteeLetters, insuranceContracts, patients } from "../../../db/schema.js";
 import {
 	formatGuaranteeLetterResponse,
@@ -80,7 +80,7 @@ export async function handleCreateGuaranteeLetter(
 
 	const validLetterId = isValidUuid(data.id) ? data.id : undefined;
 
-	const created = await withTenantCtx(orgId, async (tx) => {
+	const created = await withTenantWriteCtx(orgId, async (tx) => {
 		// Mandate 8z/8bd: BOLA/IDOR protection - verify patient belongs to current clinic organization
 		const [patientRecord] = await tx
 			.select({ id: patients.id })
@@ -214,7 +214,7 @@ export async function handleUpdateGuaranteeLetter(
 
 	const d = parsed.data;
 
-	const txResult = await withTenantCtx(orgId, async (tx) => {
+	const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 		const [existing] = await tx
 			.select()
 			.from(dmsGuaranteeLetters)
@@ -395,7 +395,7 @@ export async function handleDeleteGuaranteeLetter(
 		});
 	}
 
-	const deleteResult = await withTenantCtx(orgId, async (tx) => {
+	const deleteResult = await withTenantWriteCtx(orgId, async (tx) => {
 		const [existing] = await tx
 			.select({ id: dmsGuaranteeLetters.id })
 			.from(dmsGuaranteeLetters)
@@ -437,13 +437,16 @@ export async function handleDeleteGuaranteeLetter(
 }
 
 export function registerGuaranteeLetterMutationRoutes(app: FastifyInstance) {
-	app.post("/api/insurance/guarantee-letters", handleCreateGuaranteeLetter);
+	const selfManagedRouteOpts = { config: { tenantTxSelfManaged: true } } as const;
+	app.post("/api/insurance/guarantee-letters", selfManagedRouteOpts, handleCreateGuaranteeLetter);
 	app.put<{ Params: { letterId: string } }>(
 		"/api/insurance/guarantee-letters/:letterId",
+		selfManagedRouteOpts,
 		handleUpdateGuaranteeLetter,
 	);
 	app.delete<{ Params: { letterId: string } }>(
 		"/api/insurance/guarantee-letters/:letterId",
+		selfManagedRouteOpts,
 		handleDeleteGuaranteeLetter,
 	);
 }

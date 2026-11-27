@@ -5,8 +5,9 @@ import {
 	updateStaffWorkingHoursSchema,
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
+import { defineStreamRoute } from "../../../core/routeFactories.js";
 import { recordAuditEventInDb } from "../../../db/auditQuery.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import {
 	createStaffMemberInDb,
 	deactivateStaffMemberInDb,
@@ -44,6 +45,7 @@ import {
 } from "../types.js";
 
 const staffSettingsMutationOptions = {
+	config: { tenantTxSelfManaged: true },
 	schema: {
 		description:
 			"Staff settings mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
@@ -60,7 +62,11 @@ const staffSettingsMutationOptions = {
 } as const;
 
 export function registerStaffMemberRoutes(app: FastifyInstance): void {
-	app.post("/api/settings/staff", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/settings/staff",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 
@@ -84,7 +90,7 @@ export function registerStaffMemberRoutes(app: FastifyInstance): void {
 				message: staffCreateValidationMessage,
 			};
 		}
-		const created = await withTenantCtx(orgId, async (tx) => {
+		const created = await withTenantWriteCtx(orgId, async (tx) => {
 			const member = await createStaffMemberInDb(orgId, input, tx);
 			try {
 				await recordAuditEventInDb(
@@ -107,9 +113,14 @@ export function registerStaffMemberRoutes(app: FastifyInstance): void {
 		});
 		reply.code(201);
 		return staffMemberSchema.parse(created);
+		},
 	});
 
-	app.post("/api/settings/staff/:staffId/credentials", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/settings/staff/:staffId/credentials",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 
@@ -167,7 +178,7 @@ export function registerStaffMemberRoutes(app: FastifyInstance): void {
 		if (pinCode) updates.pinCodeHash = await hashCredential(pinCode);
 
 		try {
-			await withTenantCtx(orgId, async (tx) => {
+			await withTenantWriteCtx(orgId, async (tx) => {
 				await updateStaffCredentialsInDb(orgId, staffId, updates, tx);
 				try {
 					await recordAuditEventInDb(
@@ -207,9 +218,14 @@ export function registerStaffMemberRoutes(app: FastifyInstance): void {
 				message: "Не удалось обновить доступы.",
 			};
 		}
+		},
 	});
 
-	app.put("/api/settings/staff/:staffId/working-hours", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/settings/staff/:staffId/working-hours",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 
@@ -243,7 +259,7 @@ export function registerStaffMemberRoutes(app: FastifyInstance): void {
 			};
 		}
 		try {
-			const updated = await withTenantCtx(orgId, async (tx) => {
+			const updated = await withTenantWriteCtx(orgId, async (tx) => {
 				await updateStaffWorkingHoursInDb(orgId, staffId, input, tx);
 				try {
 					await recordAuditEventInDb(
@@ -271,9 +287,14 @@ export function registerStaffMemberRoutes(app: FastifyInstance): void {
 		} catch (error) {
 			return staffWorkingHoursRejection(reply, error);
 		}
+		},
 	});
 
-	app.put("/api/settings/staff/:staffId", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/settings/staff/:staffId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 
@@ -314,7 +335,7 @@ export function registerStaffMemberRoutes(app: FastifyInstance): void {
 			};
 		}
 		try {
-			const updated = await withTenantCtx(orgId, async (tx) => {
+			const updated = await withTenantWriteCtx(orgId, async (tx) => {
 				await updateStaffMemberProfileInDb(orgId, staffId, input, tx);
 				try {
 					await recordAuditEventInDb(
@@ -348,6 +369,7 @@ export function registerStaffMemberRoutes(app: FastifyInstance): void {
 				"StaffProfile",
 			);
 		}
+		},
 	});
 
 	app.delete("/api/settings/staff/:staffId", staffSettingsMutationOptions, async (request, reply) => {
@@ -363,7 +385,7 @@ export function registerStaffMemberRoutes(app: FastifyInstance): void {
 		}
 		const staffId = params.staffId;
 		try {
-			const updated = await withTenantCtx(orgId, async (tx) => {
+			const updated = await withTenantWriteCtx(orgId, async (tx) => {
 				await deactivateStaffMemberInDb(orgId, staffId, tx);
 				try {
 					await recordAuditEventInDb(

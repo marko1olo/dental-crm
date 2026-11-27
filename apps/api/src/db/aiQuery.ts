@@ -6,7 +6,7 @@ import type {
 import { desc, eq } from "drizzle-orm";
 import { createApiLogger, safeLogError } from "../observability/logger.js";
 import { recordAuditEventInDb } from "./auditQuery.js";
-import { withSavepoint, withTenantCtx } from "./rls.js";
+import { withSavepoint, withTenantReadCtx, withTenantWriteCtx } from "./rls.js";
 import { aiJobs } from "./schema.js";
 
 const logger = createApiLogger("aiQuery");
@@ -71,7 +71,7 @@ function buildRecognitionOutput(input: CreateAiRecognitionJobInput) {
 export async function listAiRecognitionJobsFromDb(
 	organizationId: string,
 ): Promise<AiRecognitionJob[]> {
-	const jobs = await withTenantCtx(organizationId, async (tx) =>
+	const jobs = await withTenantReadCtx(organizationId, async (tx) =>
 		tx
 			.select()
 			.from(aiJobs)
@@ -104,7 +104,7 @@ export async function createAiRecognitionJobInDb(
 	input: CreateAiRecognitionJobInput,
 ): Promise<AiRecognitionJob> {
 	const output = buildRecognitionOutput(input);
-	return withTenantCtx(organizationId, async (tx) => {
+	return withTenantWriteCtx(organizationId, async (tx) => {
 		const [job] = await tx
 			.insert(aiJobs)
 			.values({

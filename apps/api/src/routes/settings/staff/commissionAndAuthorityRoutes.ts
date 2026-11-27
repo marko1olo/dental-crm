@@ -6,8 +6,9 @@ import {
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { defineStreamRoute } from "../../../core/routeFactories.js";
 import { recordAuditEventInDb } from "../../../db/auditQuery.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import {
 	listDoctorCommissionRatesInDb,
@@ -54,14 +55,23 @@ const roleMatrixBodySchema = z
 	.strict();
 
 export function registerStaffCommissionAndAuthorityRoutes(app: FastifyInstance): void {
-	app.get("/api/settings/staff/commissions", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
-		if (!orgId) return;
-		const commissions = await listDoctorCommissionRatesInDb(orgId);
-		return { commissions };
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/settings/staff/commissions",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsAccess(request, reply);
+			if (!orgId) return;
+			const commissions = await withTenantReadCtx(orgId, () => listDoctorCommissionRatesInDb(orgId));
+			return { commissions };
+		},
 	});
 
-	app.put("/api/settings/staff/:staffId/commission", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/settings/staff/:staffId/commission",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 
@@ -95,7 +105,7 @@ export function registerStaffCommissionAndAuthorityRoutes(app: FastifyInstance):
 			};
 		}
 		try {
-			const saved = await withTenantCtx(orgId, async (tx) => {
+			const saved = await withTenantWriteCtx(orgId, async (tx) => {
 				const rate = await setDoctorCommissionRateInDb(
 					orgId,
 					staffId,
@@ -145,9 +155,14 @@ export function registerStaffCommissionAndAuthorityRoutes(app: FastifyInstance):
 				"DoctorCommission",
 			);
 		}
+		},
 	});
 
-	app.put("/api/settings/staff/:staffId/authority", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/settings/staff/:staffId/authority",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = await requireSettingsAccess(request, reply);
 		if (!orgId) return;
 
@@ -171,7 +186,7 @@ export function registerStaffCommissionAndAuthorityRoutes(app: FastifyInstance):
 			};
 		}
 
-		const granter = await withTenantCtx(orgId, (tx) =>
+		const granter = await withTenantReadCtx(orgId, (tx) =>
 			requirePermission(tx, request, reply, "settings.write"),
 		);
 		if (!granter) return;
@@ -217,26 +232,36 @@ export function registerStaffCommissionAndAuthorityRoutes(app: FastifyInstance):
 		} catch (error) {
 			return staffAuthorityMutationRejection(reply, error);
 		}
+		},
 	});
 
-	app.get("/api/settings/role-matrix", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
-		if (!orgId) return;
-		const [org] = await withTenantCtx(orgId, async (tx) =>
-			tx
-				.select()
-				.from(schema.organizations)
-				.where(eq(schema.organizations.id, orgId))
-				.limit(1),
-		);
-		const flags = (org?.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
-		const roleMatrix =
-			(flags.roleMatrixOverrides as Record<string, Record<string, string | boolean>> | null) ??
-			{};
-		return { ok: true, matrix: roleMatrix };
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/settings/role-matrix",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsAccess(request, reply);
+			if (!orgId) return;
+			const [org] = await withTenantReadCtx(orgId, async (tx) =>
+				tx
+					.select()
+					.from(schema.organizations)
+					.where(eq(schema.organizations.id, orgId))
+					.limit(1),
+			);
+			const flags = (org?.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
+			const roleMatrix =
+				(flags.roleMatrixOverrides as Record<string, Record<string, string | boolean>> | null) ??
+				{};
+			return { ok: true, matrix: roleMatrix };
+		},
 	});
 
-	app.put("/api/settings/role-matrix", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/settings/role-matrix",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 
@@ -265,7 +290,7 @@ export function registerStaffCommissionAndAuthorityRoutes(app: FastifyInstance):
 
 		const updatedOverrides = parsedMatrix.data.matrix;
 
-		const updated = await withTenantCtx(orgId, async (tx) => {
+		const updated = await withTenantWriteCtx(orgId, async (tx) => {
 			const [org] = await tx
 				.select()
 				.from(schema.organizations)
@@ -298,5 +323,6 @@ export function registerStaffCommissionAndAuthorityRoutes(app: FastifyInstance):
 		invalidateRoleMatrixCache(orgId);
 
 		return { ok: true, matrix: updatedOverrides };
+		},
 	});
 }

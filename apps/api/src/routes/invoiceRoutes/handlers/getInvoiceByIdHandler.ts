@@ -7,7 +7,7 @@ import {
 import { and, eq, or } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadContext } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import { invoiceItems, patientInvoices, payments } from "../../../db/schema/billing.js";
 import { lookupSberTransactionInvoice } from "./sberInvoiceLookupHelper.js";
 
@@ -38,7 +38,7 @@ export async function handleGetInvoiceById(
 			id,
 		);
 
-	const payload = await withTenantCtx(orgId, async (tx) => {
+	const payload = await withTenantReadCtx(orgId, async (tx) => {
 		let invoiceRow: typeof patientInvoices.$inferSelect | undefined;
 
 		if (isUuid) {

@@ -5,6 +5,7 @@
 
 import type { FastifyInstance } from "fastify";
 import { isValidUuid } from "@dental/shared";
+import { defineStreamRoute } from "../core/routeFactories.js";
 import { requirePayoutAccess } from "./billingRoutes/payoutAccessService.js";
 import { handleGetDoctorMyEarnings } from "./doctorMyEarningsHandler.js";
 import { handleGetDoctorTodaySummary } from "./doctorPortal/todaySummaryHandler.js";
@@ -24,14 +25,14 @@ import {
 export { payrollCalculationsQuerySchema, type PayrollCalculationsQuery };
 
 export async function registerPayrollRoutes(app: FastifyInstance): Promise<void> {
-	app.get("/api/v1/doctors", handleGetDoctorsList);
+	defineStreamRoute(app, { method: "GET", path: "/api/v1/doctors", permission: "public", handler: ({ request, reply }) => handleGetDoctorsList(request, reply) });
 
-	app.get("/api/v1/payroll/calculations", getPayrollCalculationsHandler);
-	app.get("/api/payroll/calculations", getPayrollCalculationsHandler);
+	defineStreamRoute(app, { method: "GET", path: "/api/v1/payroll/calculations", permission: "public", handler: ({ request, reply }) => getPayrollCalculationsHandler(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/payroll/calculations", permission: "public", handler: ({ request, reply }) => getPayrollCalculationsHandler(request, reply) });
 
-	app.post("/api/v1/payroll/close-settlement", closeSettlementHandler);
-	app.post("/api/payroll/close-settlement", closeSettlementHandler);
-	app.post("/api/doctor/close-settlement-period", closeSettlementHandler);
+	defineStreamRoute(app, { method: "POST", path: "/api/v1/payroll/close-settlement", permission: "public", handler: ({ request, reply }) => closeSettlementHandler(request, reply) });
+	defineStreamRoute(app, { method: "POST", path: "/api/payroll/close-settlement", permission: "public", handler: ({ request, reply }) => closeSettlementHandler(request, reply) });
+	defineStreamRoute(app, { method: "POST", path: "/api/doctor/close-settlement-period", permission: "public", handler: ({ request, reply }) => closeSettlementHandler(request, reply) });
 
 	const reopenPaths = [
 		"/api/v1/payroll/reopen-settlement",
@@ -40,33 +41,38 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	];
 	for (const routePath of reopenPaths) {
 		// door-validation: none — валидация тела запроса делегирована в канонический reopenSettlementHandler (reopenSettlementSchema.safeParse)
-		app.post(routePath, async (request, reply) => {
-			const rawKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"];
-			const idempotencyKey = typeof rawKey === "string" ? rawKey.trim() : null;
-			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
-				});
-			}
-			const payoutAccess = await requirePayoutAccess(request, reply);
-			if (!payoutAccess) return;
-			const organizationId = payoutAccess.organizationId;
-			if (!organizationId) {
-				return reply.code(403).send({ error: "TenantContextRequired", message: "Требуется контекст организации" });
-			}
-			return reopenSettlementHandler(request, reply, payoutAccess, idempotencyKey);
+		defineStreamRoute(app, {
+			method: "POST",
+			path: routePath,
+			permission: "public",
+			handler: async ({ request, reply }) => {
+				const rawKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"];
+				const idempotencyKey = typeof rawKey === "string" ? rawKey.trim() : null;
+				if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+					});
+				}
+				const payoutAccess = await requirePayoutAccess(request, reply);
+				if (!payoutAccess) return;
+				const organizationId = payoutAccess.organizationId;
+				if (!organizationId) {
+					return reply.code(403).send({ error: "TenantContextRequired", message: "Требуется контекст организации" });
+				}
+				return reopenSettlementHandler(request, reply, payoutAccess, idempotencyKey);
+			},
 		});
 	}
 
 	// Мобильный кошелек начислений врача (SSOT)
-	app.get("/api/doctor/my-earnings", handleGetDoctorMyEarnings);
-	app.get("/api/v1/doctor/my-earnings", handleGetDoctorMyEarnings);
-	app.get("/api/my-earnings", handleGetDoctorMyEarnings);
+	defineStreamRoute(app, { method: "GET", path: "/api/doctor/my-earnings", permission: "public", handler: ({ request, reply }) => handleGetDoctorMyEarnings(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/v1/doctor/my-earnings", permission: "public", handler: ({ request, reply }) => handleGetDoctorMyEarnings(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/my-earnings", permission: "public", handler: ({ request, reply }) => handleGetDoctorMyEarnings(request, reply) });
 
 	// Живой счётчик заработка врача за смену (Doctor Today Earnings Hook)
-	app.get("/api/doctor-portal/today-summary", handleGetDoctorTodaySummary);
-	app.get("/api/v1/doctor-portal/today-summary", handleGetDoctorTodaySummary);
+	defineStreamRoute(app, { method: "GET", path: "/api/doctor-portal/today-summary", permission: "public", handler: ({ request, reply }) => handleGetDoctorTodaySummary(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/v1/doctor-portal/today-summary", permission: "public", handler: ({ request, reply }) => handleGetDoctorTodaySummary(request, reply) });
 }
 
 export default registerPayrollRoutes;

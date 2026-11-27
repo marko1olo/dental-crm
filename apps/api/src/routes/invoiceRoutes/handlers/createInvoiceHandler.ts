@@ -8,7 +8,7 @@ import {
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { invoiceItems, patientInvoices } from "../../../db/schema/billing.js";
 import { treatmentItems } from "../../../db/schema/clinical.js";
 import { patients } from "../../../db/schema/patients.js";
@@ -152,7 +152,7 @@ export async function handleCreateInvoice(
 	const now = new Date();
 
 	// Устранение TOCTOU-гонки: единая транзакция с advisory lock по visitId
-	const result = await withTenantCtx(orgId, async (tx) => {
+	const result = await withTenantWriteCtx(orgId, async (tx) => {
 		if (effectiveVisitId) {
 			await tx.execute(
 				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':invoice_visit:' || ${effectiveVisitId}))`,

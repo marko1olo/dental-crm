@@ -1,8 +1,9 @@
 import { and, asc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalReadContext } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { appointmentActionCodes } from "../../db/communicationsSchema.js";
-import { withSavepoint, withTenantCtx } from "../../db/rls.js";
+import { withSavepoint, withTenantReadCtx } from "../../db/rls.js";
 import {
 	appointments,
 	clinics,
@@ -22,25 +23,29 @@ import {
 } from "./timezoneAndTypes.js";
 
 export function registerDayConfirmationQueryRoute(app: FastifyInstance): void {
-	app.get("/api/schedule/day-confirmations", async (request, reply) => {
-		const context = await requireClinicalReadContext(
-			request,
-			reply,
-			"day confirmations",
-		);
-		if (!context) return;
-		if (!enforcePermissionWhenStaffKnown(request, reply, "schedule.read"))
-			return;
-
-		const parsed = dayConfirmationsQuerySchema.safeParse(request.query ?? {});
-		if (!parsed.success) {
-			return badDayConfirmationRequest(
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/schedule/day-confirmations",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalReadContext(
+				request,
 				reply,
-				"Дата должна быть в виде ГГГГ-ММ-ДД.",
+				"day confirmations",
 			);
-		}
+			if (!context) return;
+			if (!enforcePermissionWhenStaffKnown(request, reply, "schedule.read"))
+				return;
 
-		const outcome = await withTenantCtx(context.organizationId, async (tx) => {
+			const parsed = dayConfirmationsQuerySchema.safeParse(request.query ?? {});
+			if (!parsed.success) {
+				return badDayConfirmationRequest(
+					reply,
+					"Дата должна быть в виде ГГГГ-ММ-ДД.",
+				);
+			}
+
+			const outcome = await withTenantReadCtx(context.organizationId, async (tx) => {
 			const [clinic] = await tx
 				.select({ timezone: clinics.timezone })
 				.from(clinics)
@@ -320,5 +325,6 @@ export function registerDayConfirmationQueryRoute(app: FastifyInstance): void {
 			);
 		}
 		return outcome.payload;
-	});
+	},
+});
 }

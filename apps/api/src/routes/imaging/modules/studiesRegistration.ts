@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { defineStreamRoute } from "../../../core/routeFactories.js";
 import {
 	autoBindHandler,
 	bindPatientHandler,
@@ -16,18 +17,19 @@ import { getViewerSessionHandler, putViewerSessionHandler } from "./studiesViewe
 
 export async function registerStudiesRoutes(app: FastifyInstance) {
 	// List & Search
-	app.get("/api/imaging/studies", getStudiesHandler);
-	app.get("/api/radiology/studies", getStudiesHandler);
-	app.get("/api/radiology/slices", getStudiesHandler);
-	app.get("/api/patients/:patientId/studies", getStudiesHandler);
-	app.get("/api/patients/:patientId/imaging/studies", getStudiesHandler);
-	app.get("/api/patients/:patientId/radiology/studies", getStudiesHandler);
+	defineStreamRoute(app, { method: "GET", path: "/api/imaging/studies", permission: "public", handler: ({ request, reply }) => getStudiesHandler(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/radiology/studies", permission: "public", handler: ({ request, reply }) => getStudiesHandler(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/radiology/slices", permission: "public", handler: ({ request, reply }) => getStudiesHandler(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/patients/:patientId/studies", permission: "public", handler: ({ request, reply }) => getStudiesHandler(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/patients/:patientId/imaging/studies", permission: "public", handler: ({ request, reply }) => getStudiesHandler(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/patients/:patientId/radiology/studies", permission: "public", handler: ({ request, reply }) => getStudiesHandler(request, reply) });
 
 	// Get Study By Id
-	app.get("/api/imaging/studies/:id", getStudyByIdHandler);
-	app.get("/api/radiology/studies/:id", getStudyByIdHandler);
+	defineStreamRoute(app, { method: "GET", path: "/api/imaging/studies/:id", permission: "public", handler: ({ request, reply }) => getStudyByIdHandler(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/radiology/studies/:id", permission: "public", handler: ({ request, reply }) => getStudyByIdHandler(request, reply) });
 
-	const studiesMutationSchema = {
+	const studiesMutationRouteOptions = {
+		config: { tenantTxSelfManaged: true },
 		schema: {
 			headers: {
 				type: "object",
@@ -37,302 +39,106 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 	};
 
 	// Viewer Session
-	app.get("/api/imaging/studies/:id/viewer-session", getViewerSessionHandler);
-	app.get("/api/radiology/studies/:id/viewer-session", getViewerSessionHandler);
-	app.put("/api/imaging/studies/:id/viewer-session", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	defineStreamRoute(app, { method: "GET", path: "/api/imaging/studies/:id/viewer-session", permission: "public", handler: ({ request, reply }) => getViewerSessionHandler(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/radiology/studies/:id/viewer-session", permission: "public", handler: ({ request, reply }) => getViewerSessionHandler(request, reply) });
+	app.put("/api/imaging/studies/:id/viewer-session", studiesMutationRouteOptions, async (request, reply) => {
 		return putViewerSessionHandler(request, reply);
 	});
-	app.put("/api/radiology/studies/:id/viewer-session", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.put("/api/radiology/studies/:id/viewer-session", studiesMutationRouteOptions, async (request, reply) => {
 		return putViewerSessionHandler(request, reply);
 	});
 
 	// Measurements
-	app.get("/api/imaging/studies/:id/measurements", getMeasurementsHandler);
-	app.get("/api/radiology/studies/:id/measurements", getMeasurementsHandler);
-	app.put("/api/imaging/studies/:id/measurements", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	defineStreamRoute(app, { method: "GET", path: "/api/imaging/studies/:id/measurements", permission: "public", handler: ({ request, reply }) => getMeasurementsHandler(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/radiology/studies/:id/measurements", permission: "public", handler: ({ request, reply }) => getMeasurementsHandler(request, reply) });
+	app.put("/api/imaging/studies/:id/measurements", studiesMutationRouteOptions, async (request, reply) => {
 		return saveMeasurementsHandler(request, reply);
 	});
-	app.put("/api/radiology/studies/:id/measurements", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.put("/api/radiology/studies/:id/measurements", studiesMutationRouteOptions, async (request, reply) => {
 		return saveMeasurementsHandler(request, reply);
 	});
-	app.post("/api/imaging/studies/:id/measurements", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/imaging/studies/:id/measurements", studiesMutationRouteOptions, async (request, reply) => {
 		return saveMeasurementsHandler(request, reply);
 	});
-	app.post("/api/radiology/studies/:id/measurements", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/radiology/studies/:id/measurements", studiesMutationRouteOptions, async (request, reply) => {
 		return saveMeasurementsHandler(request, reply);
 	});
 
 	// CRUD
-	app.post("/api/imaging/studies", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/imaging/studies", studiesMutationRouteOptions, async (request, reply) => {
 		return createStudyHandler(request, reply);
 	});
-	app.post("/api/radiology/studies", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/radiology/studies", studiesMutationRouteOptions, async (request, reply) => {
 		return createStudyHandler(request, reply);
 	});
-	app.post("/api/patients/:patientId/studies", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/patients/:patientId/studies", studiesMutationRouteOptions, async (request, reply) => {
 		return createStudyHandler(request, reply);
 	});
-	app.post("/api/patients/:patientId/radiology/studies", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/patients/:patientId/radiology/studies", studiesMutationRouteOptions, async (request, reply) => {
 		return createStudyHandler(request, reply);
 	});
-	app.patch("/api/imaging/studies/:id", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.patch("/api/imaging/studies/:id", studiesMutationRouteOptions, async (request, reply) => {
 		return updateStudyHandler(request, reply);
 	});
-	app.patch("/api/radiology/studies/:id", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.patch("/api/radiology/studies/:id", studiesMutationRouteOptions, async (request, reply) => {
 		return updateStudyHandler(request, reply);
 	});
-	app.delete("/api/imaging/studies/:id", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.delete("/api/imaging/studies/:id", studiesMutationRouteOptions, async (request, reply) => {
 		return deleteStudyHandler(request, reply);
 	});
-	app.delete("/api/radiology/studies/:id", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.delete("/api/radiology/studies/:id", studiesMutationRouteOptions, async (request, reply) => {
 		return deleteStudyHandler(request, reply);
 	});
 
 	// Files
-	app.get("/api/imaging/studies/:id/preview.svg", previewSvgHandler);
+	defineStreamRoute(app, { method: "GET", path: "/api/imaging/studies/:id/preview.svg", permission: "public", handler: ({ request, reply }) => previewSvgHandler(request, reply) });
 	app.get("/api/imaging/studies/:id/file", { config: { tenantTxSelfManaged: true } }, fileStreamHandler);
 
 	// Binding & Management
-	app.post("/api/imaging/studies/:id/bind-patient", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/imaging/studies/:id/bind-patient", studiesMutationRouteOptions, async (request, reply) => {
 		return bindPatientHandler(request, reply);
 	});
-	app.post("/api/radiology/studies/:id/bind-patient", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/radiology/studies/:id/bind-patient", studiesMutationRouteOptions, async (request, reply) => {
 		return bindPatientHandler(request, reply);
 	});
-	app.post("/api/imaging/studies/:id/bind-tooth", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/imaging/studies/:id/bind-tooth", studiesMutationRouteOptions, async (request, reply) => {
 		return bindToothHandler(request, reply);
 	});
-	app.patch("/api/imaging/studies/:id/bind-tooth", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.patch("/api/imaging/studies/:id/bind-tooth", studiesMutationRouteOptions, async (request, reply) => {
 		return bindToothHandler(request, reply);
 	});
-	app.post("/api/radiology/studies/:id/bind-tooth", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/radiology/studies/:id/bind-tooth", studiesMutationRouteOptions, async (request, reply) => {
 		return bindToothHandler(request, reply);
 	});
-	app.patch("/api/radiology/studies/:id/bind-tooth", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.patch("/api/radiology/studies/:id/bind-tooth", studiesMutationRouteOptions, async (request, reply) => {
 		return bindToothHandler(request, reply);
 	});
-	app.post("/api/imaging/studies/:id/bind-visit", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/imaging/studies/:id/bind-visit", studiesMutationRouteOptions, async (request, reply) => {
 		return bindVisitHandler(request, reply);
 	});
-	app.patch("/api/imaging/studies/:id/bind-visit", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.patch("/api/imaging/studies/:id/bind-visit", studiesMutationRouteOptions, async (request, reply) => {
 		return bindVisitHandler(request, reply);
 	});
-	app.post("/api/radiology/studies/:id/bind-visit", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/radiology/studies/:id/bind-visit", studiesMutationRouteOptions, async (request, reply) => {
 		return bindVisitHandler(request, reply);
 	});
-	app.patch("/api/radiology/studies/:id/bind-visit", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.patch("/api/radiology/studies/:id/bind-visit", studiesMutationRouteOptions, async (request, reply) => {
 		return bindVisitHandler(request, reply);
 	});
-	app.post("/api/imaging/studies/:id/unbind-patient", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/imaging/studies/:id/unbind-patient", studiesMutationRouteOptions, async (request, reply) => {
 		return unbindPatientHandler(request, reply);
 	});
-	app.post("/api/radiology/studies/:id/unbind-patient", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/radiology/studies/:id/unbind-patient", studiesMutationRouteOptions, async (request, reply) => {
 		return unbindPatientHandler(request, reply);
 	});
-	app.post("/api/imaging/studies/auto-bind-scan", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/imaging/studies/auto-bind-scan", studiesMutationRouteOptions, async (request, reply) => {
 		return autoBindHandler(request, reply);
 	});
-	app.post("/api/radiology/studies/auto-bind-scan", {
-		schema: {
-			headers: {
-				type: "object",
-				description: "Исследования: проверка organizationId и заголовок Idempotency-Key",
-			},
-		},
-	}, async (request, reply) => {
+	app.post("/api/radiology/studies/auto-bind-scan", studiesMutationRouteOptions, async (request, reply) => {
 		return autoBindHandler(request, reply);
 	});
 
 	// CBCT Tuner
-	app.get("/api/cbct-tuner/patients", cbctTunerPatientsHandler);
-	app.get("/api/cbct-tuner/volume-binary", cbctTunerVolumeHandler);
+	defineStreamRoute(app, { method: "GET", path: "/api/cbct-tuner/patients", permission: "public", handler: ({ request, reply }) => cbctTunerPatientsHandler(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/cbct-tuner/volume-binary", permission: "public", handler: ({ request, reply }) => cbctTunerVolumeHandler(request, reply) });
 }

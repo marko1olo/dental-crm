@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	generatedDocuments,
 	patientInvoices,
@@ -72,7 +72,7 @@ export async function registerSberbankPayRoute(app: FastifyInstance): Promise<vo
 			}
 
 			// Validate patient and linked clinical/billing entities BEFORE contacting external acquiring gateway
-			const preflightError = await withTenantCtx(organizationId, async (tx) => {
+			const preflightError = await withTenantReadCtx(organizationId, async (tx) => {
 				const [patient] = await tx
 					.select({ id: patients.id })
 					.from(patients)
@@ -191,7 +191,7 @@ export async function registerSberbankPayRoute(app: FastifyInstance): Promise<vo
 				}
 
 				const sberbankOrderId = res.orderId;
-				await withTenantCtx(organizationId, async (tx) => {
+				await withTenantWriteCtx(organizationId, async (tx) => {
 					await tx.insert(sberbankTransactions).values({
 						organizationId,
 						patientId,

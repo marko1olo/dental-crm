@@ -2,7 +2,8 @@ import { kopecksToRubles } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalReadContext } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { migrationReconciliations } from "../../db/schema.js";
 import { listQuarantine } from "../../migration/engine.js";
 import { reconciliationReportCsv } from "../../migration/reconcile.js";
@@ -16,19 +17,22 @@ import { fail, failIfInvalidRunId, runStatusPayload } from "./types.js";
  */
 export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 	/** Состояние прогона для опроса клиентом. */
-	app.get<{ Params: { runId: string } }>(
-		"/api/migration/:runId",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/migration/:runId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const params = request.params as { runId: string };
 			const context = await requireClinicalReadContext(
 				request,
 				reply,
 				"migration run status",
 			);
 			if (!context) return reply;
-			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			const invalidId = failIfInvalidRunId(reply, params.runId);
 			if (invalidId) return invalidId;
 
-			const run = await findRun(request.params.runId, context.organizationId);
+			const run = await findRun(params.runId, context.organizationId);
 			if (!run) {
 				return fail(
 					reply,
@@ -44,22 +48,25 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 			reply.code(200);
 			return { run: runStatusPayload(run), staging, mapping: run.mappingJson };
 		},
-	);
+	});
 
 	/** Акт сверки: то, что передаётся клинике как доказательство переноса. */
-	app.get<{ Params: { runId: string } }>(
-		"/api/migration/:runId/reconciliation",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/migration/:runId/reconciliation",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const params = request.params as { runId: string };
 			const context = await requireClinicalReadContext(
 				request,
 				reply,
 				"migration reconciliation",
 			);
 			if (!context) return reply;
-			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			const invalidId = failIfInvalidRunId(reply, params.runId);
 			if (invalidId) return invalidId;
 
-			const run = await findRun(request.params.runId, context.organizationId);
+			const run = await findRun(params.runId, context.organizationId);
 			if (!run) {
 				return fail(
 					reply,
@@ -69,17 +76,21 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 				);
 			}
 
-			const [reconciliation] = await db
-				.select()
-				.from(migrationReconciliations)
-				.where(
-					and(
-						eq(migrationReconciliations.runId, run.id),
-						eq(migrationReconciliations.organizationId, context.organizationId),
-					),
-				)
-				.orderBy(desc(migrationReconciliations.generatedAt))
-				.limit(1);
+			const [reconciliation] = await withTenantReadCtx(
+				context.organizationId,
+				async (tx) =>
+					tx
+						.select()
+						.from(migrationReconciliations)
+						.where(
+							and(
+								eq(migrationReconciliations.runId, run.id),
+								eq(migrationReconciliations.organizationId, context.organizationId),
+							),
+						)
+						.orderBy(desc(migrationReconciliations.generatedAt))
+						.limit(1),
+			);
 
 			if (!reconciliation) {
 				return fail(
@@ -122,22 +133,25 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 				quarantinePreview,
 			};
 		},
-	);
+	});
 
 	/** Акт сверки в CSV с BOM: без него русский Excel показывает вопросительные знаки. */
-	app.get<{ Params: { runId: string } }>(
-		"/api/migration/:runId/reconciliation.csv",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/migration/:runId/reconciliation.csv",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const params = request.params as { runId: string };
 			const context = await requireClinicalReadContext(
 				request,
 				reply,
 				"migration reconciliation csv",
 			);
 			if (!context) return reply;
-			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			const invalidId = failIfInvalidRunId(reply, params.runId);
 			if (invalidId) return invalidId;
 
-			const run = await findRun(request.params.runId, context.organizationId);
+			const run = await findRun(params.runId, context.organizationId);
 			if (!run) {
 				return fail(
 					reply,
@@ -147,17 +161,21 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 				);
 			}
 
-			const [reconciliation] = await db
-				.select()
-				.from(migrationReconciliations)
-				.where(
-					and(
-						eq(migrationReconciliations.runId, run.id),
-						eq(migrationReconciliations.organizationId, context.organizationId),
-					),
-				)
-				.orderBy(desc(migrationReconciliations.generatedAt))
-				.limit(1);
+			const [reconciliation] = await withTenantReadCtx(
+				context.organizationId,
+				async (tx) =>
+					tx
+						.select()
+						.from(migrationReconciliations)
+						.where(
+							and(
+								eq(migrationReconciliations.runId, run.id),
+								eq(migrationReconciliations.organizationId, context.organizationId),
+							),
+						)
+						.orderBy(desc(migrationReconciliations.generatedAt))
+						.limit(1),
+			);
 
 			if (!reconciliation) {
 				return fail(
@@ -203,17 +221,22 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 			 */
 			return reply.send(`\uFEFF${csv}`);
 		},
-	);
+	});
 
 	/** Состояние фонового исполнителя — для диагностики и системной страницы. */
-	app.get("/api/migration/worker/status", async (request, reply) => {
-		const context = await requireClinicalReadContext(
-			request,
-			reply,
-			"migration worker status",
-		);
-		if (!context) return reply;
-		reply.code(200);
-		return { worker: migrationWorkerStatus() };
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/migration/worker/status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalReadContext(
+				request,
+				reply,
+				"migration worker status",
+			);
+			if (!context) return reply;
+			reply.code(200);
+			return { worker: migrationWorkerStatus() };
+		},
 	});
 }

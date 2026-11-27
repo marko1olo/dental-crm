@@ -5,7 +5,8 @@
 
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { withTenantCtx } from "../../../db/rls.js";
+import type { TenantDb } from "../../../db/client.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import { type N3HealthVipnetConfig, n3HealthVipnetConfigSchema } from "@dental/shared";
 
@@ -24,15 +25,18 @@ export const n3ConfigUpdateBodySchema = z.object({
 
 export async function resolveN3HealthConfig(
 	orgId: string,
+	targetDb?: TenantDb,
 ): Promise<{ config: N3HealthVipnetConfig | null; source: "database" | "environment" | "none" }> {
 	try {
-		const orgRows = await withTenantCtx(orgId, async (tx) =>
+		const queryFlags = async (tx: TenantDb) =>
 			tx
 				.select({ flags: schema.organizations.workspaceFeatureFlags })
 				.from(schema.organizations)
 				.where(eq(schema.organizations.id, orgId))
-				.limit(1),
-		);
+				.limit(1);
+		const orgRows = targetDb
+			? await queryFlags(targetDb)
+			: await withTenantReadCtx(orgId, queryFlags);
 
 		const rawFlags = orgRows[0]?.flags;
 		if (rawFlags && typeof rawFlags === "object" && "n3HealthVipnetConfig" in rawFlags) {

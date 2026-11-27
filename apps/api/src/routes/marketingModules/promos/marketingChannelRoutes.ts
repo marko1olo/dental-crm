@@ -5,7 +5,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { organizations } from "../../../db/schema.js";
 import {
 	requireClinicalMutationAccess,
@@ -50,11 +50,13 @@ const romiChannelsBodySchema = z.union([
 ]);
 
 export function registerMarketingChannelRoutes(app: FastifyInstance): void {
+	const selfManagedRouteOpts = { config: { tenantTxSelfManaged: true } } as const;
+
 	/**
 	 * GET /api/marketing/romi-channels
 	 * Возвращает список рекламных каналов клиники с фактическими расходами из PostgreSQL 18.
 	 */
-	app.get("/api/marketing/romi-channels", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.get("/api/marketing/romi-channels", selfManagedRouteOpts, async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireMarketingReadAccess(request, reply, "marketing romi channels");
 		if (!orgId) return;
 
@@ -78,7 +80,7 @@ export function registerMarketingChannelRoutes(app: FastifyInstance): void {
 	 * GET /api/marketing/campaigns
 	 * Алиас эндпоинта рекламных кампаний клиники с фактическими расходами и выручкой в копейках из PostgreSQL 18.
 	 */
-	app.get("/api/marketing/campaigns", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.get("/api/marketing/campaigns", selfManagedRouteOpts, async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireMarketingReadAccess(request, reply, "marketing campaigns");
 		if (!orgId) return;
 
@@ -103,7 +105,7 @@ export function registerMarketingChannelRoutes(app: FastifyInstance): void {
 	 * POST /api/marketing/campaigns
 	 * Сохраняет рекламные кампании/каналы клиники в PostgreSQL 18 с целочисленными копейками (BIGINT).
 	 */
-	app.post("/api/marketing/campaigns", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post("/api/marketing/campaigns", selfManagedRouteOpts, async (request: FastifyRequest, reply: FastifyReply) => {
 		const mutAllowed = await requireClinicalMutationAccess(request, reply, "save marketing campaigns");
 		if (!mutAllowed) return;
 
@@ -136,7 +138,7 @@ export function registerMarketingChannelRoutes(app: FastifyInstance): void {
 		const parsed = { data: rawList };
 
 		try {
-			const finalCampaigns = await withTenantCtx(orgId, async (tx) => {
+			const finalCampaigns = await withTenantWriteCtx(orgId, async (tx) => {
 				const [org] = await tx
 					.select()
 					.from(organizations)
@@ -190,7 +192,7 @@ export function registerMarketingChannelRoutes(app: FastifyInstance): void {
 	 * POST /api/marketing/romi-channels
 	 * Сохраняет рекламные каналы и затраты клиники в PostgreSQL 18 с изоляцией по организации.
 	 */
-	app.post("/api/marketing/romi-channels", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post("/api/marketing/romi-channels", selfManagedRouteOpts, async (request: FastifyRequest, reply: FastifyReply) => {
 		const mutAllowed = await requireClinicalMutationAccess(request, reply, "save marketing romi channels");
 		if (!mutAllowed) return;
 
@@ -220,7 +222,7 @@ export function registerMarketingChannelRoutes(app: FastifyInstance): void {
 		const parsed = { data: channelsList };
 
 		try {
-			await withTenantCtx(orgId, async (tx) => {
+			await withTenantWriteCtx(orgId, async (tx) => {
 				const [org] = await tx
 					.select()
 					.from(organizations)
@@ -256,7 +258,7 @@ export function registerMarketingChannelRoutes(app: FastifyInstance): void {
 	 * POST /api/marketing/romi-channels/reset
 	 * Сбрасывает рекламные каналы клиники к эталонным каноническим каналам DENTE в PostgreSQL 18.
 	 */
-	app.post("/api/marketing/romi-channels/reset", { schema: { description: "Marketing ROMI channels reset with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" }, organizationid: { type: "string" }, "x-organization-id": { type: "string" } } } } }, async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post("/api/marketing/romi-channels/reset", { config: { tenantTxSelfManaged: true }, schema: { description: "Marketing ROMI channels reset with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" }, organizationid: { type: "string" }, "x-organization-id": { type: "string" } } } } }, async (request: FastifyRequest, reply: FastifyReply) => {
 		const mutAllowed = await requireClinicalMutationAccess(request, reply, "reset marketing romi channels");
 		if (!mutAllowed) return;
 
@@ -276,7 +278,7 @@ export function registerMarketingChannelRoutes(app: FastifyInstance): void {
 
 		try {
 			const resetChannels = buildDenteDefaultAdvertisingChannels();
-			await withTenantCtx(orgId, async (tx) => {
+			await withTenantWriteCtx(orgId, async (tx) => {
 				const [org] = await tx
 					.select()
 					.from(organizations)

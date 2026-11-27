@@ -237,8 +237,9 @@ export function registerAppointmentStatusRoutes(
 		reply: FastifyReply,
 	) => Promise<unknown>,
 ) {
-	app.patch("/api/appointments/:appointmentId/status", statusHandler);
-	app.put("/api/appointments/:appointmentId/status", statusHandler);
-	app.put("/api/schedule/appointments/:appointmentId/status", statusHandler);
-	app.patch("/api/schedule/appointments/:appointmentId/status", statusHandler);
+	const routeOpts = { config: { tenantTxSelfManaged: true } } as const;
+	app.patch("/api/appointments/:appointmentId/status", routeOpts, statusHandler);
+	app.put("/api/appointments/:appointmentId/status", routeOpts, statusHandler);
+	app.put("/api/schedule/appointments/:appointmentId/status", routeOpts, statusHandler);
+	app.patch("/api/schedule/appointments/:appointmentId/status", routeOpts, statusHandler);
 }

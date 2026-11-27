@@ -6,9 +6,10 @@
  */
 
 import { and, asc, eq, sql } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
 import {
 	requireSettingsAccess,
@@ -41,11 +42,15 @@ export const branchIdParamSchema = z
 
 export function registerBranchesRoutes(app: FastifyInstance): void {
 	// GET /api/branches — Получение всех филиалов организации с подсчетом кресел
-	app.get("/api/branches", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireSettingsAccess(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/branches",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsAccess(request, reply);
+			if (!orgId) return;
 
-		const { branchRows, chairsCountRows } = await withTenantCtx(orgId, async (tx) => {
+			const { branchRows, chairsCountRows } = await withTenantReadCtx(orgId, async (tx) => {
 			const rows = await tx
 				.select({
 					id: schema.clinics.id,
@@ -96,23 +101,28 @@ export function registerBranchesRoutes(app: FastifyInstance): void {
 			data: branches,
 			total: branches.length,
 		};
+		},
 	});
 
 	// GET /api/branches/:id — Получение данных конкретного филиала
-	app.get("/api/branches/:id", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireSettingsAccess(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/branches/:id",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsAccess(request, reply);
+			if (!orgId) return;
 
-		const parsedParams = branchIdParamSchema.safeParse(request.params);
-		if (!parsedParams.success) {
-			reply.code(400);
-			return {
-				error: "ValidationError",
-				message: "Некорректный ID филиала.",
-			};
-		}
+			const parsedParams = branchIdParamSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				reply.code(400);
+				return {
+					error: "ValidationError",
+					message: "Некорректный ID филиала.",
+				};
+			}
 
-		const { branch, chairs } = await withTenantCtx(orgId, async (tx) => {
+			const { branch, chairs } = await withTenantReadCtx(orgId, async (tx) => {
 			const [foundBranch] = await tx
 				.select()
 				.from(schema.clinics)
@@ -158,106 +168,117 @@ export function registerBranchesRoutes(app: FastifyInstance): void {
 				chairCount: chairs.filter((c) => c.isActive).length,
 			},
 		};
+		},
 	});
 
 	// POST /api/branches — Создание нового филиала клиники
-	app.post("/api/branches", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireSettingsMutationAccess(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/branches",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsMutationAccess(request, reply);
+			if (!orgId) return;
 
-		const parsed = createBranchSchema.safeParse(request.body);
-		if (!parsed.success) {
-			reply.code(400);
+			const parsed = createBranchSchema.safeParse(request.body);
+			if (!parsed.success) {
+				reply.code(400);
+				return {
+					error: "ValidationError",
+					message: parsed.error.issues[0]?.message || "Некорректные параметры филиала.",
+				};
+			}
+
+			const { name, address, phone, timezone } = parsed.data;
+
+			const [created] = await withTenantWriteCtx(orgId, async (tx) =>
+				tx
+					.insert(schema.clinics)
+					.values({
+						organizationId: orgId,
+						name,
+						address: address ?? null,
+						phone: phone ?? null,
+						timezone: timezone || "Europe/Samara",
+					})
+					.returning(),
+			);
+
+			reply.code(201);
 			return {
-				error: "ValidationError",
-				message: parsed.error.issues[0]?.message || "Некорректные параметры филиала.",
+				success: true,
+				data: created,
 			};
-		}
-
-		const { name, address, phone, timezone } = parsed.data;
-
-		const [created] = await withTenantCtx(orgId, async (tx) =>
-			tx
-				.insert(schema.clinics)
-				.values({
-					organizationId: orgId,
-					name,
-					address: address ?? null,
-					phone: phone ?? null,
-					timezone: timezone || "Europe/Samara",
-				})
-				.returning(),
-		);
-
-		reply.code(201);
-		return {
-			success: true,
-			data: created,
-		};
+		},
 	});
 
 	// PATCH /api/branches/:id — Обновление филиала клиники
-	app.patch("/api/branches/:id", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireSettingsMutationAccess(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "PATCH",
+		path: "/api/branches/:id",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsMutationAccess(request, reply);
+			if (!orgId) return;
 
-		const parsedParams = branchIdParamSchema.safeParse(request.params);
-		if (!parsedParams.success) {
-			reply.code(400);
+			const parsedParams = branchIdParamSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				reply.code(400);
+				return {
+					error: "ValidationError",
+					message: "Некорректный ID филиала.",
+				};
+			}
+
+			const parsedBody = updateBranchSchema.safeParse(request.body);
+			if (!parsedBody.success) {
+				reply.code(400);
+				return {
+					error: "ValidationError",
+					message: parsedBody.error.issues[0]?.message || "Некорректные параметры обновления.",
+				};
+			}
+
+			const updateData: Partial<typeof schema.clinics.$inferInsert> = {};
+			if (parsedBody.data.name !== undefined) updateData.name = parsedBody.data.name;
+			if (parsedBody.data.address !== undefined) updateData.address = parsedBody.data.address;
+			if (parsedBody.data.phone !== undefined) updateData.phone = parsedBody.data.phone;
+			if (parsedBody.data.timezone !== undefined) updateData.timezone = parsedBody.data.timezone;
+
+			if (Object.keys(updateData).length === 0) {
+				reply.code(400);
+				return {
+					error: "ValidationError",
+					message: "Нет данных для обновления.",
+				};
+			}
+
+			const [updated] = await withTenantWriteCtx(orgId, async (tx) =>
+				tx
+					.update(schema.clinics)
+					.set(updateData)
+					.where(
+						and(
+							eq(schema.clinics.id, parsedParams.data.id),
+							eq(schema.clinics.organizationId, orgId),
+						),
+					)
+					.returning(),
+			);
+
+			if (!updated) {
+				reply.code(404);
+				return {
+					error: "NotFound",
+					message: "Филиал не найден.",
+				};
+			}
+
+			reply.code(200);
 			return {
-				error: "ValidationError",
-				message: "Некорректный ID филиала.",
+				success: true,
+				data: updated,
 			};
-		}
-
-		const parsedBody = updateBranchSchema.safeParse(request.body);
-		if (!parsedBody.success) {
-			reply.code(400);
-			return {
-				error: "ValidationError",
-				message: parsedBody.error.issues[0]?.message || "Некорректные параметры обновления.",
-			};
-		}
-
-		const updateData: Partial<typeof schema.clinics.$inferInsert> = {};
-		if (parsedBody.data.name !== undefined) updateData.name = parsedBody.data.name;
-		if (parsedBody.data.address !== undefined) updateData.address = parsedBody.data.address;
-		if (parsedBody.data.phone !== undefined) updateData.phone = parsedBody.data.phone;
-		if (parsedBody.data.timezone !== undefined) updateData.timezone = parsedBody.data.timezone;
-
-		if (Object.keys(updateData).length === 0) {
-			reply.code(400);
-			return {
-				error: "ValidationError",
-				message: "Нет данных для обновления.",
-			};
-		}
-
-		const [updated] = await withTenantCtx(orgId, async (tx) =>
-			tx
-				.update(schema.clinics)
-				.set(updateData)
-				.where(
-					and(
-						eq(schema.clinics.id, parsedParams.data.id),
-						eq(schema.clinics.organizationId, orgId),
-					),
-				)
-				.returning(),
-		);
-
-		if (!updated) {
-			reply.code(404);
-			return {
-				error: "NotFound",
-				message: "Филиал не найден.",
-			};
-		}
-
-		reply.code(200);
-		return {
-			success: true,
-			data: updated,
-		};
+		},
 	});
 }

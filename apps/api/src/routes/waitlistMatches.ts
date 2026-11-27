@@ -14,7 +14,8 @@ import { and, eq, gt, inArray, lte } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadContext } from "../accessGuard.js";
-import { withTenantCtx } from "../db/rls.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
+import { withTenantReadCtx } from "../db/rls.js";
 import { appointments, clinics, users } from "../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import { replyBadRequest } from "./routeErrors.js";
@@ -48,116 +49,121 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 	 * Неявка (no_show) считается тем же освободившимся окном: время потеряно
 	 * одинаково, независимо от того, предупредил пациент или нет.
 	 */
-	app.get("/api/schedule/freed-slots", async (request, reply) => {
-		try {
-			const context = await requireClinicalReadContext(
-				request,
-				reply,
-				"freed slots",
-			);
-			if (!context) return;
-			if (!enforcePermissionWhenStaffKnown(request, reply, "schedule.read"))
-				return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/schedule/freed-slots",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			try {
+				const context = await requireClinicalReadContext(
+					request,
+					reply,
+					"freed slots",
+				);
+				if (!context) return;
+				if (!enforcePermissionWhenStaffKnown(request, reply, "schedule.read"))
+					return;
 
-			const now = new Date();
-			const horizonDays = 30;
-			const horizon = new Date(
-				now.getTime() + horizonDays * 24 * 60 * 60 * 1000,
-			);
+				const now = new Date();
+				const horizonDays = 30;
+				const horizon = new Date(
+					now.getTime() + horizonDays * 24 * 60 * 60 * 1000,
+				);
 
-			const { timeZone, rows } = await withTenantCtx(
-				context.organizationId,
-				async (tx) => {
-					const [clinic] = await tx
-						.select({ timezone: clinics.timezone })
-						.from(clinics)
-						.where(eq(clinics.organizationId, context.organizationId))
-						.limit(1);
-					const resolvedTimeZone = clinic?.timezone ?? "Europe/Samara";
+				const { timeZone, rows } = await withTenantReadCtx(
+					context.organizationId,
+					async (tx) => {
+						const [clinic] = await tx
+							.select({ timezone: clinics.timezone })
+							.from(clinics)
+							.where(eq(clinics.organizationId, context.organizationId))
+							.limit(1);
+						const resolvedTimeZone = clinic?.timezone ?? "Europe/Samara";
 
-					const matchedRows = await tx
-						.select({
-							appointmentId: appointments.id,
-							startsAt: appointments.startsAt,
-							endsAt: appointments.endsAt,
-							status: appointments.status,
-							doctorUserId: appointments.doctorUserId,
-							doctorName: users.fullName,
-						})
-						.from(appointments)
-						.leftJoin(users, eq(users.id, appointments.doctorUserId))
-						.where(
-							and(
-								eq(appointments.organizationId, context.organizationId),
-								inArray(appointments.status, ["cancelled", "no_show"]),
-								// Только будущее: прошедшее окно предлагать некому.
-								gt(appointments.startsAt, now),
-								lte(appointments.startsAt, horizon),
-							),
-						)
-						.orderBy(appointments.startsAt);
+						const matchedRows = await tx
+							.select({
+								appointmentId: appointments.id,
+								startsAt: appointments.startsAt,
+								endsAt: appointments.endsAt,
+								status: appointments.status,
+								doctorUserId: appointments.doctorUserId,
+								doctorName: users.fullName,
+							})
+							.from(appointments)
+							.leftJoin(users, eq(users.id, appointments.doctorUserId))
+							.where(
+								and(
+									eq(appointments.organizationId, context.organizationId),
+									inArray(appointments.status, ["cancelled", "no_show"]),
+									// Только будущее: прошедшее окно предлагать некому.
+									gt(appointments.startsAt, now),
+									lte(appointments.startsAt, horizon),
+								),
+							)
+							.orderBy(appointments.startsAt);
 
-					return { timeZone: resolvedTimeZone, rows: matchedRows };
-				},
-			);
+						return { timeZone: resolvedTimeZone, rows: matchedRows };
+					},
+				);
 
-			/*
-			 * Кандидаты считаются сразу для каждого окна. Иначе экран показывал бы
-			 * «есть 6 свободных окон» и заставлял открывать каждое, чтобы выяснить,
-			 * что предлагать их некому.
-			 */
-			/** Тип объявлен явно: пустой массив без него выводится как never[]. */
-			const slots: {
-				appointmentId: string;
-				startsAt: Date;
-				endsAt: Date;
-				status: string;
-				doctorName: string | null;
-				freedBecause: string;
-				topMatches: WaitlistMatch[];
-				candidatesTotal: number;
-			}[] = [];
-			for (const row of rows) {
-				const report = await findWaitlistMatches(
-					{
-						organizationId: context.organizationId,
+				/*
+				 * Кандидаты считаются сразу для каждого окна. Иначе экран показывал бы
+				 * «есть 6 свободных окон» и заставлял открывать каждое, чтобы выяснить,
+				 * что предлагать их некому.
+				 */
+				/** Тип объявлен явно: пустой массив без него выводится как never[]. */
+				const slots: {
+					appointmentId: string;
+					startsAt: Date;
+					endsAt: Date;
+					status: string;
+					doctorName: string | null;
+					freedBecause: string;
+					topMatches: WaitlistMatch[];
+					candidatesTotal: number;
+				}[] = [];
+				for (const row of rows) {
+					const report = await findWaitlistMatches(
+						{
+							organizationId: context.organizationId,
+							startsAt: row.startsAt,
+							endsAt: row.endsAt,
+							doctorUserId: row.doctorUserId,
+							doctorName: row.doctorName ?? null,
+							timezone: timeZone,
+						},
+						3,
+					);
+					slots.push({
+						appointmentId: row.appointmentId,
 						startsAt: row.startsAt,
 						endsAt: row.endsAt,
-						doctorUserId: row.doctorUserId,
+						status: row.status,
 						doctorName: row.doctorName ?? null,
-						timezone: timeZone,
-					},
-					3,
-				);
-				slots.push({
-					appointmentId: row.appointmentId,
-					startsAt: row.startsAt,
-					endsAt: row.endsAt,
-					status: row.status,
-					doctorName: row.doctorName ?? null,
-					// Причина освобождения человеческими словами.
-					freedBecause:
-						row.status === "no_show" ? "пациент не пришёл" : "приём отменён",
-					topMatches: report.matches,
-					candidatesTotal: report.examinedEntries,
+						// Причина освобождения человеческими словами.
+						freedBecause:
+							row.status === "no_show" ? "пациент не пришёл" : "приём отменён",
+						topMatches: report.matches,
+						candidatesTotal: report.examinedEntries,
+					});
+				}
+
+				return {
+					slots,
+					horizonDays,
+					note:
+						"Показаны будущие приёмы, которые отменили или на которые не пришли: время потеряно одинаково. " +
+						"Система никого не записывает сама — она подсказывает, кому позвонить.",
+				};
+			} catch (error: unknown) {
+				const msg = error instanceof Error ? error.message : String(error);
+				request.log.error({ error: msg }, "Ошибка при получении списка освободившихся окон расписания");
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Ошибка при получении списка освободившихся окон расписания.",
 				});
 			}
-
-			return {
-				slots,
-				horizonDays,
-				note:
-					"Показаны будущие приёмы, которые отменили или на которые не пришли: время потеряно одинаково. " +
-					"Система никого не записывает сама — она подсказывает, кому позвонить.",
-			};
-		} catch (error: unknown) {
-			const msg = error instanceof Error ? error.message : String(error);
-			request.log.error({ error: msg }, "Ошибка при получении списка освободившихся окон расписания");
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Ошибка при получении списка освободившихся окон расписания.",
-			});
-		}
+		},
 	});
 
 	/**
@@ -165,9 +171,11 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 	 * запроса: время и врач должны быть настоящими, иначе подбор сделан под
 	 * выдуманное окно.
 	 */
-	app.get(
-		"/api/appointments/:appointmentId/waitlist-matches",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/appointments/:appointmentId/waitlist-matches",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			try {
 				const context = await requireClinicalReadContext(
 					request,
@@ -184,7 +192,7 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 				}
 				const { appointmentId } = parsedParams.data;
 
-				const { appointment, timeZone } = await withTenantCtx(
+				const { appointment, timeZone } = await withTenantReadCtx(
 					context.organizationId,
 					async (tx) => {
 						const [apptRow] = await tx
@@ -267,5 +275,5 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 				});
 			}
 		},
-	);
+	});
 }

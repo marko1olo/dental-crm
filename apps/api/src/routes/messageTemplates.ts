@@ -41,7 +41,9 @@ const templateIdParamsSchema = z
 	.strict();
 
 export async function registerMessageTemplateRoutes(app: FastifyInstance) {
-	app.get("/api/v1/message-templates", async (request, reply) => {
+	const selfManagedRouteOpts = { config: { tenantTxSelfManaged: true } } as const;
+
+	app.get("/api/v1/message-templates", selfManagedRouteOpts, async (request, reply) => {
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -69,7 +71,7 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		});
 	});
 
-	app.get("/api/settings/message-templates", async (request, reply) => {
+	app.get("/api/settings/message-templates", selfManagedRouteOpts, async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
@@ -85,7 +87,7 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		return reply.send(templates);
 	});
 
-	app.get("/api/v1/message-templates/:id", async (request, reply) => {
+	app.get("/api/v1/message-templates/:id", selfManagedRouteOpts, async (request, reply) => {
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -170,8 +172,8 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		}
 	};
 
-	app.post("/api/v1/message-templates", handleCreateTemplate);
-	app.post("/api/settings/message-templates", handleCreateTemplate);
+	app.post("/api/v1/message-templates", selfManagedRouteOpts, handleCreateTemplate);
+	app.post("/api/settings/message-templates", selfManagedRouteOpts, handleCreateTemplate);
 
 	const handleUpdateTemplate = async (
 		request: FastifyRequest,
@@ -243,8 +245,8 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		}
 	};
 
-	app.put("/api/v1/message-templates/:id", handleUpdateTemplate);
-	app.put("/api/settings/message-templates/:id", handleUpdateTemplate);
+	app.put("/api/v1/message-templates/:id", selfManagedRouteOpts, handleUpdateTemplate);
+	app.put("/api/settings/message-templates/:id", selfManagedRouteOpts, handleUpdateTemplate);
 
 	const handleDeleteTemplate = async (
 		request: FastifyRequest,
@@ -292,10 +294,10 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		}
 	};
 
-	app.delete("/api/v1/message-templates/:id", handleDeleteTemplate);
-	app.delete("/api/settings/message-templates/:id", handleDeleteTemplate);
+	app.delete("/api/v1/message-templates/:id", selfManagedRouteOpts, handleDeleteTemplate);
+	app.delete("/api/settings/message-templates/:id", selfManagedRouteOpts, handleDeleteTemplate);
 
-	app.post("/api/v1/message-templates/render", async (request, reply) => {
+	app.post("/api/v1/message-templates/render", selfManagedRouteOpts, async (request, reply) => {
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -322,7 +324,7 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		return reply.send({ success: true, data: result });
 	});
 
-	app.post("/api/v1/message-templates/seed", async (request, reply) => {
+	app.post("/api/v1/message-templates/seed", selfManagedRouteOpts, async (request, reply) => {
 		const context = await requireClinicalMutationContext(
 			request,
 			reply,

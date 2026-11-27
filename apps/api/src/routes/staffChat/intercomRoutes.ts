@@ -5,7 +5,7 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	getStaffChannelBySlug,
 	insertStaffMessage,
@@ -17,11 +17,13 @@ import { wsBroker } from "../../services/websocketBroker.js";
 import { sendMappedStaffChatError } from "./schemasAndErrors.js";
 
 export function registerStaffChatIntercomRoutes(app: FastifyInstance): void {
+	const selfManagedRouteOpts = { config: { tenantTxSelfManaged: true } } as const;
+
 	/**
 	 * POST /api/staff-chat/intercom-ping
 	 * Быстрый вызов с кресла врача (Интерком).
 	 */
-	app.post("/api/staff-chat/intercom-ping", async (request, reply) => {
+	app.post("/api/staff-chat/intercom-ping", selfManagedRouteOpts, async (request, reply) => {
 		try {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
@@ -88,7 +90,7 @@ export function registerStaffChatIntercomRoutes(app: FastifyInstance): void {
 					}
 				: null;
 
-			const createdMessage = await withTenantCtx(organizationId, async (tx) => {
+			const createdMessage = await withTenantWriteCtx(organizationId, async (tx) => {
 				const channel = await getStaffChannelBySlug(organizationId, targetSlug, tx);
 				if (!channel) return null;
 
@@ -179,7 +181,7 @@ export function registerStaffChatIntercomRoutes(app: FastifyInstance): void {
 	 * POST /api/staff-chat/intercom-ack
 	 * Двустороннее подтверждение вызова интеркома.
 	 */
-	app.post("/api/staff-chat/intercom-ack", async (request, reply) => {
+	app.post("/api/staff-chat/intercom-ack", selfManagedRouteOpts, async (request, reply) => {
 		try {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
@@ -208,7 +210,7 @@ export function registerStaffChatIntercomRoutes(app: FastifyInstance): void {
 			const staffName = identity.fullName || "Сотрудник";
 			const staffRole = identity.role || "staff";
 
-			const updatedMessage = await withTenantCtx(organizationId, async (tx) => {
+			const updatedMessage = await withTenantWriteCtx(organizationId, async (tx) => {
 				const ackParams: Parameters<typeof recordIntercomAck>[0] = {
 					organizationId,
 					messageId: parsed.data.messageId,

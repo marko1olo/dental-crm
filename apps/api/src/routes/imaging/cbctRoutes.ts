@@ -39,8 +39,9 @@ import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
 } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { parseDicomSeriesManifest } from "./dicomSeries.js";
 import { buildDicomViewerToolStateBundle } from "./viewerToolState.js";
 import { buildDicomRenderCachePlan } from "./renderCachePlan.js";
@@ -52,106 +53,123 @@ import {
 } from "../../db/imagingQuery.js";
 
 export async function registerCbctRoutes(app: FastifyInstance) {
-	app.post("/api/imaging/dicom/series-preview", async (request, reply) => {
-		if (
-			!(await requireClinicalReadAccess(request, reply, "dicom series preview"))
-		)
-			return;
-		const orgId = getImagingOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/dicom/series-preview",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (
+				!(await requireClinicalReadAccess(request, reply, "dicom series preview"))
+			)
+				return;
+			const orgId = getImagingOrganizationId(request, reply);
+			if (!orgId) return;
 
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "InvalidIdempotencyKey",
-				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
-			});
-		}
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
 
-		const parsed = parseImagingPayload(
-			dicomSeriesPreviewRequestSchema,
-			request.body,
-			"Предпросмотр DICOM-серии не построен: передайте непустой список метаданных серии.",
-		);
-		if (!parsed.ok) return reply.code(400).send(parsed.response);
-		const input = parsed.data;
-		return parseDicomSeriesManifest(orgId, input);
+			const parsed = parseImagingPayload(
+				dicomSeriesPreviewRequestSchema,
+				request.body,
+				"Предпросмотр DICOM-серии не построен: передайте непустой список метаданных серии.",
+			);
+			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const input = parsed.data;
+			return parseDicomSeriesManifest(orgId, input);
+		},
 	});
 
 
-	app.post("/api/imaging/dicom/viewer-tool-state", async (request, reply) => {
-		if (
-			!(await requireClinicalReadAccess(
-				request,
-				reply,
-				"dicom viewer tool state",
-			))
-		)
-			return;
-		const orgId = getImagingOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/dicom/viewer-tool-state",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"dicom viewer tool state",
+				))
+			)
+				return;
+			const orgId = getImagingOrganizationId(request, reply);
+			if (!orgId) return;
 
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "InvalidIdempotencyKey",
-				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
-			});
-		}
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
 
-		const parsed = parseImagingPayload(
-			dicomViewerToolStateBundleRequestSchema,
-			request.body,
-			"Пакет инструментов просмотра не построен: передайте выбранную серию, состояние и разметку.",
-		);
-		if (!parsed.ok) return reply.code(400).send(parsed.response);
-		const input = parsed.data;
-		return buildDicomViewerToolStateBundle(input);
+			const parsed = parseImagingPayload(
+				dicomViewerToolStateBundleRequestSchema,
+				request.body,
+				"Пакет инструментов просмотра не построен: передайте выбранную серию, состояние и разметку.",
+			);
+			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const input = parsed.data;
+			return buildDicomViewerToolStateBundle(input);
+		},
 	});
 
 
-	app.post("/api/imaging/dicom/render-cache-plan", async (request, reply) => {
-		if (
-			!(await requireClinicalReadAccess(
-				request,
-				reply,
-				"dicom render cache plan",
-			))
-		)
-			return;
-		const orgId = getImagingOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/dicom/render-cache-plan",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"dicom render cache plan",
+				))
+			)
+				return;
+			const orgId = getImagingOrganizationId(request, reply);
+			if (!orgId) return;
 
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "InvalidIdempotencyKey",
-				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
-			});
-		}
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
 
-		const parsed = parseImagingPayload(
-			dicomRenderCachePlanRequestSchema,
-			request.body,
-			"План кэша просмотра не построен: передайте серию и план мощности устройства.",
-		);
-		if (!parsed.ok) return reply.code(400).send(parsed.response);
-		const input = parsed.data;
-		return buildDicomRenderCachePlan(input);
+			const parsed = parseImagingPayload(
+				dicomRenderCachePlanRequestSchema,
+				request.body,
+				"План кэша просмотра не построен: передайте серию и план мощности устройства.",
+			);
+			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const input = parsed.data;
+			return buildDicomRenderCachePlan(input);
+		},
 	});
 
-	app.post(
-		"/api/imaging/dicom/workstation-readiness",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/dicom/workstation-readiness",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			if (
 				!(await requireClinicalReadAccess(
 					request,
@@ -183,11 +201,13 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 			const input = parsed.data;
 			return buildDicomWorkstationReadiness(input);
 		},
-	);
+	});
 
-	app.post(
-		"/api/imaging/dicom/viewer-workbench-manifest",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/dicom/viewer-workbench-manifest",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			if (
 				!(await requireClinicalReadAccess(
 					request,
@@ -219,84 +239,100 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 			const input = parsed.data;
 			return buildDicomViewerWorkbenchManifest(input);
 		},
-	);
+	});
 
 
-	app.post("/api/imaging/dicom/workbench-bundles", async (request, reply) => {
-		if (
-			!(await requireClinicalMutationAccess(
-				request,
-				reply,
-				"dicom workbench bundle save",
-			))
-		)
-			return reply;
-		const orgId = getImagingOrganizationId(request, reply);
-		if (!orgId) return reply;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/dicom/workbench-bundles",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (
+				!(await requireClinicalMutationAccess(
+					request,
+					reply,
+					"dicom workbench bundle save",
+				))
+			)
+				return reply;
+			const orgId = getImagingOrganizationId(request, reply);
+			if (!orgId) return reply;
 
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "InvalidIdempotencyKey",
-				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
+			const parsed = parseImagingPayload(
+				saveDicomWorkbenchBundleRequestSchema,
+				request.body,
+				"Набор просмотра не сохранен: передайте сформированный рабочий пакет просмотра.",
+			);
+			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const input = parsed.data;
+			const bundle = await withTenantWriteCtx(orgId, () =>
+				saveDicomWorkbenchBundle(orgId, input),
+			);
+			return reply.code(201).send(
+				dicomWorkbenchBundleResponseSchema.parse({
+					bundle,
+					warnings: bundle.warnings,
+				}),
+			);
+		},
+	});
+
+
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/imaging/dicom/workbench-bundles",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"dicom workbench bundles",
+				))
+			)
+				return reply;
+			const query = request.query as { limit?: string | number | undefined };
+			const requestedLimit = Number(query.limit ?? 8);
+			// БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+			// а не клиника, приславшая запрос. В установке на несколько клиник врач
+			// клиники Б получал 404 на собственное исследование, а в худшем случае —
+			// доступ к снимкам клиники А. Организация берётся из проверенного токена.
+			const orgId = getImagingOrganizationId(request, reply);
+			if (!orgId) return reply;
+			const bundles = await withTenantReadCtx(orgId, () =>
+				listDicomWorkbenchBundles(
+					orgId,
+					Number.isFinite(requestedLimit) ? requestedLimit : 8,
+				),
+			);
+			return dicomWorkbenchBundleListResponseSchema.parse({
+				bundles,
+				total: bundles.length,
+				generatedAt: new Date().toISOString(),
+				warnings: [],
+				nextAction: bundles.length
+					? "Восстановите последний набор КЛКТ/КТ-срезов, затем перед диагностикой заново подключите локальные снимки или архив снимков."
+					: "Создайте набор КЛКТ/КТ-срезов из папки снимков или серии архива снимков.",
 			});
-		}
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-
-		const parsed = parseImagingPayload(
-			saveDicomWorkbenchBundleRequestSchema,
-			request.body,
-			"Набор просмотра не сохранен: передайте сформированный рабочий пакет просмотра.",
-		);
-		if (!parsed.ok) return reply.code(400).send(parsed.response);
-		const input = parsed.data;
-		const bundle = await saveDicomWorkbenchBundle(orgId, input);
-		return reply.code(201).send(
-			dicomWorkbenchBundleResponseSchema.parse({
-				bundle,
-				warnings: bundle.warnings,
-			}),
-		);
+		},
 	});
 
-
-	app.get("/api/imaging/dicom/workbench-bundles", async (request, reply) => {
-		if (
-			!(await requireClinicalReadAccess(
-				request,
-				reply,
-				"dicom workbench bundles",
-			))
-		)
-			return reply;
-		const query = request.query as { limit?: string | number | undefined };
-		const requestedLimit = Number(query.limit ?? 8);
-		// БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
-		// а не клиника, приславшая запрос. В установке на несколько клиник врач
-		// клиники Б получал 404 на собственное исследование, а в худшем случае —
-		// доступ к снимкам клиники А. Организация берётся из проверенного токена.
-		const orgId = getImagingOrganizationId(request, reply);
-		if (!orgId) return reply;
-		const bundles = await listDicomWorkbenchBundles(
-			orgId,
-			Number.isFinite(requestedLimit) ? requestedLimit : 8,
-		);
-		return dicomWorkbenchBundleListResponseSchema.parse({
-			bundles,
-			total: bundles.length,
-			generatedAt: new Date().toISOString(),
-			warnings: [],
-			nextAction: bundles.length
-				? "Восстановите последний набор КЛКТ/КТ-срезов, затем перед диагностикой заново подключите локальные снимки или архив снимков."
-				: "Создайте набор КЛКТ/КТ-срезов из папки снимков или серии архива снимков.",
-		});
-	});
-
-	app.post(
-		"/api/imaging/dicom/local-folder-discovery",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/dicom/local-folder-discovery",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			if (
 				!(await requireClinicalReadAccess(
 					request,
@@ -330,11 +366,13 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 				discoverLocalDicomFolders(input, options, discoveryOrgId),
 			);
 		},
-	);
+	});
 
-	app.post(
-		"/api/imaging/local-organizer/scan-preview",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/local-organizer/scan-preview",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			if (
 				!(await requireClinicalReadAccess(
 					request,
@@ -368,11 +406,13 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 				organizeLocalImagingSources(input, options, previewOrgId),
 			);
 		},
-	);
+	});
 
-	app.post(
-		"/api/imaging/dicom/folder-series-preview",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/dicom/folder-series-preview",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			if (
 				!(await requireClinicalReadAccess(
 					request,
@@ -406,78 +446,88 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 				buildDicomFolderSeriesPreview(input, options, previewOrgId),
 			);
 		},
-	);
-
-
-	app.post("/api/imaging/dicom/first-frame-preview", async (request, reply) => {
-		if (
-			!(await requireClinicalReadAccess(
-				request,
-				reply,
-				"dicom first frame preview",
-			))
-		)
-			return;
-		const firstFrameOrgId = getImagingOrganizationId(request, reply);
-		if (!firstFrameOrgId) return;
-
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "InvalidIdempotencyKey",
-				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
-			});
-		}
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-
-		const parsed = parseImagingPayload(
-			dicomFirstFramePreviewRequestSchema,
-			request.body,
-			"Первый кадр DICOM не построен: выберите папку снимков и безопасные лимиты чтения.",
-		);
-		if (!parsed.ok) return reply.code(400).send(parsed.response);
-		const input = parsed.data;
-		return runAbortableImagingScan(request, reply, (options) =>
-			buildDicomFirstFramePreview(input, options, firstFrameOrgId),
-		);
 	});
 
 
-	app.post("/api/imaging/dicom/folder-workup-plan", async (request, reply) => {
-		if (
-			!(await requireClinicalReadAccess(
-				request,
-				reply,
-				"dicom folder workup plan",
-			))
-		)
-			return;
-		const workupOrgId = getImagingOrganizationId(request, reply);
-		if (!workupOrgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/dicom/first-frame-preview",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"dicom first frame preview",
+				))
+			)
+				return;
+			const firstFrameOrgId = getImagingOrganizationId(request, reply);
+			if (!firstFrameOrgId) return;
 
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "InvalidIdempotencyKey",
-				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
-			});
-		}
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
 
-		const parsed = parseImagingPayload(
-			dicomFolderWorkupPlanRequestSchema,
-			request.body,
-			"План работы с папкой DICOM не построен: выберите папку снимков и передайте сведения об устройстве.",
-		);
-		if (!parsed.ok) return reply.code(400).send(parsed.response);
-		const input = parsed.data;
-		return runAbortableImagingScan(request, reply, (options) =>
-			buildDicomFolderWorkupPlan(input, options, workupOrgId),
-		);
+			const parsed = parseImagingPayload(
+				dicomFirstFramePreviewRequestSchema,
+				request.body,
+				"Первый кадр DICOM не построен: выберите папку снимков и безопасные лимиты чтения.",
+			);
+			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const input = parsed.data;
+			return runAbortableImagingScan(request, reply, (options) =>
+				buildDicomFirstFramePreview(input, options, firstFrameOrgId),
+			);
+		},
+	});
+
+
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/dicom/folder-workup-plan",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"dicom folder workup plan",
+				))
+			)
+				return;
+			const workupOrgId = getImagingOrganizationId(request, reply);
+			if (!workupOrgId) return;
+
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
+			const parsed = parseImagingPayload(
+				dicomFolderWorkupPlanRequestSchema,
+				request.body,
+				"План работы с папкой DICOM не построен: выберите папку снимков и передайте сведения об устройстве.",
+			);
+			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const input = parsed.data;
+			return runAbortableImagingScan(request, reply, (options) =>
+				buildDicomFolderWorkupPlan(input, options, workupOrgId),
+			);
+		},
 	});
 
 }

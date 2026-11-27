@@ -20,8 +20,9 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { createImagingStudyInDb } from "../../db/imagingQuery.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { patients, xrayScans } from "../../db/schema.js";
 import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { requireOrganizationId } from "../../security/identity.js";
@@ -164,7 +165,11 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 	 * POST /api/imaging/chunks/init
 	 * Initializes resumable chunked upload session after validating auth, tenant isolation, and patient ownership.
 	 */
-	app.post("/api/imaging/chunks/init", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/chunks/init",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "init chunked imaging upload"))) {
 			return;
 		}
@@ -192,7 +197,7 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 		}
 
 		const data = parsed.data;
-		const [patient] = await withTenantCtx(organizationId, async (tx) =>
+		const [patient] = await withTenantReadCtx(organizationId, async (tx) =>
 			tx
 				.select({ id: patients.id })
 				.from(patients)
@@ -236,13 +241,18 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 			totalChunks: session.totalChunks,
 			uploadedChunks: session.uploadedChunks,
 		});
+		},
 	});
 
 	/**
 	 * GET /api/imaging/chunks/:uploadId
 	 * Returns uploaded chunk indices so client can resume interrupted transfers.
 	 */
-	app.get("/api/imaging/chunks/:uploadId", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/imaging/chunks/:uploadId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalReadAccess(request, reply, "get chunked upload status"))) {
 			return;
 		}
@@ -271,6 +281,7 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 			}
 			throw err;
 		}
+		},
 	});
 
 	/**
@@ -287,7 +298,10 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 		 */
 		chunkScope.put(
 			"/api/imaging/chunks/:uploadId/part",
-			{ bodyLimit: MAX_CHUNK_BYTES + 1024 * 64 },
+			{
+				bodyLimit: MAX_CHUNK_BYTES + 1024 * 64,
+				config: { tenantTxSelfManaged: true },
+			},
 			async (request: FastifyRequest, reply: FastifyReply) => {
 				if (!(await requireClinicalMutationAccess(request, reply, "upload imaging chunk part"))) {
 					return;
@@ -419,7 +433,11 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 	 * Streams assembled parts into tenant PACS storage, verifies final SHA-256 & magic bytes,
 	 * and creates DB records inside withTenantCtx.
 	 */
-	app.post("/api/imaging/chunks/:uploadId/complete", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/chunks/:uploadId/complete",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "complete chunked imaging upload"))) {
 			return;
 		}
@@ -521,7 +539,7 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 				}
 			}
 
-			const study = await withTenantCtx(organizationId, async (tx) => {
+			const study = await withTenantWriteCtx(organizationId, async (tx) => {
 				const createdStudy = await createImagingStudyInDb(
 					organizationId,
 					{
@@ -610,5 +628,6 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 			}
 			throw err;
 		}
+		},
 	});
 }

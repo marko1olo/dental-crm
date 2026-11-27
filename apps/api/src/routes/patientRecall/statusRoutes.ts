@@ -1,7 +1,8 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { onTenantTxCommit, withTenantWriteCtx } from "../../db/rls.js";
 import { auditEvents, communicationEvents, patientRecalls } from "../../db/schema.js";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
 import { roleHasPermission } from "../../security/permissions.js";
@@ -53,7 +54,7 @@ export function registerStatusRoutes(app: FastifyInstance) {
 		const updatedAt = new Date();
 		const updatedAtIso = updatedAt.toISOString();
 
-		const belongs = await withTenantCtx(context.organizationId, async (tx) => {
+		const belongs = await withTenantWriteCtx(context.organizationId, async (tx) => {
 			if (
 				!(await recallCandidateBelongsTo(
 					context.organizationId,
@@ -167,8 +168,28 @@ export function registerStatusRoutes(app: FastifyInstance) {
 		});
 	};
 
-	app.patch("/api/patients/recall-candidates/:patientId/status", handleStatusUpdate);
-	app.post("/api/patients/recall-candidates/:patientId/status", handleStatusUpdate);
-	app.patch("/api/recalls/:patientId/status", handleStatusUpdate);
-	app.post("/api/recalls/:patientId/status", handleStatusUpdate);
+	defineStreamRoute(app, {
+		method: "PATCH",
+		path: "/api/patients/recall-candidates/:patientId/status",
+		permission: "public",
+		handler: async ({ request, reply }) => handleStatusUpdate(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/recall-candidates/:patientId/status",
+		permission: "public",
+		handler: async ({ request, reply }) => handleStatusUpdate(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "PATCH",
+		path: "/api/recalls/:patientId/status",
+		permission: "public",
+		handler: async ({ request, reply }) => handleStatusUpdate(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/recalls/:patientId/status",
+		permission: "public",
+		handler: async ({ request, reply }) => handleStatusUpdate(request, reply),
+	});
 }

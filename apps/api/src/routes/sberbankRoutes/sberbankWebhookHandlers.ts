@@ -2,7 +2,8 @@ import { kopecksToNumericString, kopecksToRubles } from "@dental/shared";
 import { and, eq, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
-import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
+import { defineWebhookRoute } from "../../core/routeFactories.js";
+import { withSuperuserBypass, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	fiscalReceiptQueue,
 	generatedDocuments,
@@ -28,7 +29,10 @@ import {
  *   idempotent processing, double-charge protection, and atomic payment registration.
  */
 export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promise<void> {
-	app.post("/api/sberbank/webhook", async (request, reply) => {
+	defineWebhookRoute(app, {
+		method: "POST",
+		path: "/api/sberbank/webhook",
+		handler: async ({ request, reply }) => {
 		const secret =
 			process.env.SBERBANK_WEBHOOK_SECRET ||
 			process.env.DENTE_WEBHOOK_SECRET ||
@@ -120,7 +124,7 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 			});
 		}
 
-		return await withTenantCtx(targetTx.organizationId, async (tx) => {
+		return await withTenantWriteCtx(targetTx.organizationId, async (tx) => {
 			const lockedLookup = await findUniqueSberbankTxInTenant(
 				tx,
 				targetTx.organizationId,
@@ -552,5 +556,6 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 				status: "failed",
 			});
 		});
+		},
 	});
 }

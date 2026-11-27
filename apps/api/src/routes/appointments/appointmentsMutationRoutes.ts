@@ -11,7 +11,7 @@ import {
 	onTenantTxCommit,
 	runDetachedInTenantCtx,
 	withSavepoint,
-	withTenantCtx,
+	withTenantWriteCtx,
 	type TenantDb,
 } from "../../db/rls.js";
 import { labOrders } from "../../db/schema/clinical/clinicalRulesModules/clinicalProtocolsTables.js";
@@ -158,7 +158,7 @@ export const createAppointmentHandler = async (
 	if (!context) return reply;
 	const orgId = context.organizationId;
 
-	const txOutcome = await withTenantCtx(orgId, async (tx) => {
+	const txOutcome = await withTenantWriteCtx(orgId, async (tx) => {
 		const zone = (await clinicTimeZone(orgId, tx)) || DEFAULT_SCHEDULE_TIMEZONE;
 		const rawBody = await prepareCreateAppointmentRawBody(
 			orgId,
@@ -329,7 +329,7 @@ export const updateAppointmentHandler = async (
 	if (!context) return reply;
 	const orgId = context.organizationId;
 
-	const txOutcome = await withTenantCtx(orgId, async (tx) => {
+	const txOutcome = await withTenantWriteCtx(orgId, async (tx) => {
 		const zone = (await clinicTimeZone(orgId, tx)) || DEFAULT_SCHEDULE_TIMEZONE;
 		const rawBody =
 			(await prepareUpdateAppointmentRawBody(orgId, request.body, tx, zone)) ??
@@ -549,7 +549,7 @@ export const createNextStageAppointmentHandler = async (
 	if (!context) return reply;
 	const orgId = context.organizationId;
 
-	const txOutcome = await withTenantCtx(orgId, async (tx) => {
+	const txOutcome = await withTenantWriteCtx(orgId, async (tx) => {
 		const params = request.params;
 		const appointmentId = params?.appointmentId || params?.id;
 		if (!appointmentId || !APPOINTMENT_ID_UUID_PATTERN.test(appointmentId)) {
@@ -679,6 +679,9 @@ export const createNextStageAppointmentHandler = async (
 };
 
 const appointmentMutationOptions = {
+	config: {
+		tenantTxSelfManaged: true,
+	},
 	schema: {
 		description: "Appointment mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
 		headers: {
@@ -694,21 +697,24 @@ const appointmentMutationOptions = {
 } as const;
 
 export async function registerAppointmentsRoutes(app: FastifyInstance) {
-	app.get("/api/appointments", handleGetAppointments);
-	app.get("/api/appointments/next-free-slots", handleGetNextFreeSlots);
-	app.get("/api/schedule", handleGetAppointments);
-	app.get("/api/appointments/:appointmentId", handleGetAppointmentById);
-	app.post("/api/appointments", createAppointmentHandler);
+	const selfManagedRouteOpts = { config: { tenantTxSelfManaged: true } } as const;
+	app.get("/api/appointments", selfManagedRouteOpts, handleGetAppointments);
+	app.get("/api/appointments/next-free-slots", selfManagedRouteOpts, handleGetNextFreeSlots);
+	app.get("/api/schedule", selfManagedRouteOpts, handleGetAppointments);
+	app.get("/api/appointments/:appointmentId", selfManagedRouteOpts, handleGetAppointmentById);
+	app.post("/api/appointments", selfManagedRouteOpts, createAppointmentHandler);
 	app.post(
 		"/api/appointments/:appointmentId/next-stage",
+		selfManagedRouteOpts,
 		createNextStageAppointmentHandler,
 	);
 	app.post(
 		"/api/schedule/appointments/:appointmentId/next-stage",
+		selfManagedRouteOpts,
 		createNextStageAppointmentHandler,
 	);
-	app.patch("/api/appointments/:appointmentId", updateAppointmentHandler);
-	app.put("/api/appointments/:appointmentId", updateAppointmentHandler);
+	app.patch("/api/appointments/:appointmentId", selfManagedRouteOpts, updateAppointmentHandler);
+	app.put("/api/appointments/:appointmentId", selfManagedRouteOpts, updateAppointmentHandler);
 	registerAppointmentStatusRoutes(app, updateAppointmentHandler);
 	app.put(
 		"/api/schedule/appointments/:appointmentId",

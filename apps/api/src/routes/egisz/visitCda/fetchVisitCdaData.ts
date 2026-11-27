@@ -4,7 +4,7 @@
  */
 
 import { and, eq, inArray } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { db, type TenantDb } from "../../../db/client.js";
 import * as schema from "../../../db/schema.js";
 import {
 	formatDoctorSpecialtyLabelForCda,
@@ -40,8 +40,8 @@ export type VisitCdaClinicRow = {
 	phone?: string | null | undefined;
 };
 
-export async function fetchVisitRow(visitId: string, orgId: string): Promise<VisitCdaRow | null> {
-	const [row] = await db
+export async function fetchVisitRow(visitId: string, orgId: string, targetDb: TenantDb = db): Promise<VisitCdaRow | null> {
+	const [row] = await targetDb
 		.select({ visit: schema.visits, patient: schema.patients, organization: schema.organizations })
 		.from(schema.visits)
 		.innerJoin(schema.patients, eq(schema.visits.patientId, schema.patients.id))
@@ -51,8 +51,8 @@ export async function fetchVisitRow(visitId: string, orgId: string): Promise<Vis
 	return row || null;
 }
 
-export async function fetchDiaryRow(visitId: string, orgId: string): Promise<VisitCdaDiaryRow | null> {
-	const [diaryRow] = await db
+export async function fetchDiaryRow(visitId: string, orgId: string, targetDb: TenantDb = db): Promise<VisitCdaDiaryRow | null> {
+	const [diaryRow] = await targetDb
 		.select({
 			anamnesis: schema.visitDiaries.anamnesis, statusLocalis: schema.visitDiaries.statusLocalis,
 			diagnosisIcd10: schema.visitDiaries.diagnosisIcd10, diagnosisTooth: schema.visitDiaries.diagnosisTooth,
@@ -72,6 +72,7 @@ export async function resolveDoctorFromAppointmentOrDiary(
 	appointmentId: string | null | undefined,
 	diaryRow: VisitCdaDiaryRow | null | undefined,
 	orgId: string,
+	targetDb: TenantDb = db,
 ) {
 	let doctorName: { first: string; last: string; middle?: string } = { first: "", last: "Не указан" };
 	let doctorPosition: string | undefined;
@@ -80,7 +81,7 @@ export async function resolveDoctorFromAppointmentOrDiary(
 	let encounterDate: Date | null = null;
 
 	if (appointmentId) {
-		const [appointment] = await db
+		const [appointment] = await targetDb
 			.select({ doctorUserId: schema.appointments.doctorUserId, startsAt: schema.appointments.startsAt })
 			.from(schema.appointments)
 			.where(and(eq(schema.appointments.id, appointmentId), eq(schema.appointments.organizationId, orgId)))
@@ -91,7 +92,7 @@ export async function resolveDoctorFromAppointmentOrDiary(
 			if (!Number.isNaN(parsed.getTime())) encounterDate = parsed;
 		}
 		if (appointment?.doctorUserId) {
-			const [doctor] = await db
+			const [doctor] = await targetDb
 				.select({ fullName: schema.users.fullName, specialties: schema.users.specialties, phone: schema.users.phone, email: schema.users.email })
 				.from(schema.users)
 				.where(and(eq(schema.users.id, appointment.doctorUserId), eq(schema.users.organizationId, orgId)))
@@ -108,7 +109,7 @@ export async function resolveDoctorFromAppointmentOrDiary(
 	}
 
 	if (diaryRow?.doctorId) {
-		const [diaryDoc] = await db
+		const [diaryDoc] = await targetDb
 			.select({ fullName: schema.users.fullName, specialties: schema.users.specialties, phone: schema.users.phone, email: schema.users.email })
 			.from(schema.users)
 			.where(and(eq(schema.users.id, diaryRow.doctorId), eq(schema.users.organizationId, orgId)))
@@ -124,7 +125,7 @@ export async function resolveDoctorFromAppointmentOrDiary(
 	if ((!doctorName.last || doctorName.last === "Не указан") && diaryRow) {
 		const fallbacks = [diaryRow.lockedByUserId, diaryRow.authorId].filter((id): id is string => typeof id === "string" && id.trim().length > 0);
 		if (fallbacks.length > 0) {
-			const fUsers = await db.select({ id: schema.users.id, fullName: schema.users.fullName, specialties: schema.users.specialties, phone: schema.users.phone, email: schema.users.email }).from(schema.users).where(and(inArray(schema.users.id, fallbacks), eq(schema.users.organizationId, orgId)));
+			const fUsers = await targetDb.select({ id: schema.users.id, fullName: schema.users.fullName, specialties: schema.users.specialties, phone: schema.users.phone, email: schema.users.email }).from(schema.users).where(and(inArray(schema.users.id, fallbacks), eq(schema.users.organizationId, orgId)));
 			for (const uid of fallbacks) {
 				const u = fUsers.find((x) => x.id === uid);
 				if (u?.fullName?.trim()) {

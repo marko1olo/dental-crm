@@ -10,6 +10,7 @@ import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../accessGuard.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
 import { mdlpDisposalService, mdlpQueueService } from "../services/mdlp/index.js";
 
 // ─── Input Validation Schemas ───────────────────────────────────────────────
@@ -477,18 +478,78 @@ export async function registerMdlpRoutes(
 	};
 
 	// Register canonical /api/mdlp/* routes
-	app.get("/api/mdlp/status", handleStatus);
-	app.post("/api/mdlp/scan", handleScan);
-	app.post("/api/mdlp/dispose", handleDispose);
-	app.post("/api/mdlp/dispose-batch", handleDisposeBatch);
-	app.post("/api/mdlp/batch-disposal", handleDisposeBatch);
-	app.get("/api/mdlp/queue", handleGetQueue);
-	app.post("/api/mdlp/queue/add", handleQueueAdd);
-	app.post("/api/mdlp/queue/remove", handleQueueRemove);
-	app.post("/api/mdlp/queue/clear", handleQueueClear);
-	app.get("/api/mdlp/catalog/anesthetics", handleGetAnestheticsCatalog);
-	app.post("/api/mdlp/disposal-act", handleGenerateAct);
-	app.get("/api/mdlp/items", handleItems);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/mdlp/status",
+		permission: "public",
+		handler: async ({ request, reply }) => handleStatus(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/mdlp/scan",
+		permission: "public",
+		handler: async ({ request, reply }) => handleScan(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/mdlp/dispose",
+		permission: "public",
+		handler: async ({ request, reply }) => handleDispose(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/mdlp/dispose-batch",
+		permission: "public",
+		handler: async ({ request, reply }) => handleDisposeBatch(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/mdlp/batch-disposal",
+		permission: "public",
+		handler: async ({ request, reply }) => handleDisposeBatch(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/mdlp/queue",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetQueue(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/mdlp/queue/add",
+		permission: "public",
+		handler: async ({ request, reply }) => handleQueueAdd(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/mdlp/queue/remove",
+		permission: "public",
+		handler: async ({ request, reply }) => handleQueueRemove(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/mdlp/queue/clear",
+		permission: "public",
+		handler: async ({ request, reply }) => handleQueueClear(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/mdlp/catalog/anesthetics",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetAnestheticsCatalog(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/mdlp/disposal-act",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGenerateAct(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/mdlp/items",
+		permission: "public",
+		handler: async ({ request, reply }) => handleItems(request, reply),
+	});
 }
 
 export const mdlpRoutes: FastifyPluginAsync = registerMdlpRoutes;

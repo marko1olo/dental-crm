@@ -8,7 +8,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	communicationTemplates,
 	denteWhatsappBotConfigs,
@@ -55,6 +55,7 @@ export const DEFAULT_APPROVED_TEMPLATES: WhatsAppTemplateDefinition[] = [
 ];
 
 export const templateSyncIdempotencyOptionsWithOrgIdContext = {
+	config: { tenantTxSelfManaged: true },
 	schema: {
 		description:
 			"WhatsApp templates catalog synchronization with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
@@ -85,7 +86,7 @@ export async function registerTemplateManagerRoutes(
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const { config, customTemplates } = await withTenantCtx(orgId, async (tx) => {
+		const { config, customTemplates } = await withTenantReadCtx(orgId, async (tx) => {
 			const [cfg] = await tx
 				.select()
 				.from(denteWhatsappBotConfigs)

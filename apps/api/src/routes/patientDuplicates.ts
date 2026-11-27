@@ -16,6 +16,7 @@
 
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
+import { defineStreamRoute } from "../core/routeFactories.js";
 import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
@@ -77,106 +78,124 @@ function validationError(reply: FastifyReply, message: string) {
 
 export async function registerPatientDuplicateRoutes(app: FastifyInstance) {
 	/** Список вероятных дублей по всей картотеке. */
-	app.get("/api/patients/duplicates", async (request, reply) => {
-		const context = await requireClinicalReadContext(
-			request,
-			reply,
-			"patient duplicates",
-		);
-		if (!context) return;
-		if (!enforcePermissionWhenStaffKnown(request, reply, "patients.read"))
-			return;
-
-		const parsed = listQuerySchema.safeParse(request.query);
-		if (!parsed.success)
-			return validationError(
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/duplicates",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalReadContext(
+				request,
 				reply,
-				"Проверьте параметры: порог уверенности и предел списка.",
+				"patient duplicates",
 			);
+			if (!context) return;
+			if (!enforcePermissionWhenStaffKnown(request, reply, "patients.read"))
+				return;
 
-		const options: { minConfidence?: number; limit?: number } = {};
-		if (parsed.data.minConfidence !== undefined)
-			options.minConfidence = parsed.data.minConfidence;
-		if (parsed.data.limit !== undefined) options.limit = parsed.data.limit;
+			const parsed = listQuerySchema.safeParse(request.query);
+			if (!parsed.success)
+				return validationError(
+					reply,
+					"Проверьте параметры: порог уверенности и предел списка.",
+				);
 
-		return findDuplicateCandidates(context.organizationId, options);
+			const options: { minConfidence?: number; limit?: number } = {};
+			if (parsed.data.minConfidence !== undefined)
+				options.minConfidence = parsed.data.minConfidence;
+			if (parsed.data.limit !== undefined) options.limit = parsed.data.limit;
+
+			return findDuplicateCandidates(context.organizationId, options);
+		},
 	});
 
 	/** Дубли конкретной карточки — для показа в самой карточке пациента. */
-	app.get("/api/patients/:patientId/duplicates", async (request, reply) => {
-		const context = await requireClinicalReadContext(
-			request,
-			reply,
-			"patient duplicates by patient",
-		);
-		if (!context) return;
-		if (!enforcePermissionWhenStaffKnown(request, reply, "patients.read"))
-			return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/duplicates",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalReadContext(
+				request,
+				reply,
+				"patient duplicates by patient",
+			);
+			if (!context) return;
+			if (!enforcePermissionWhenStaffKnown(request, reply, "patients.read"))
+				return;
 
-		const patientId = (request.params as { patientId?: string }).patientId;
-		if (!patientId || !PATIENT_DUPLICATES_UUID_PATTERN.test(patientId)) {
-			return validationError(reply, "Некорректный идентификатор пациента (ожидается формат UUID).");
-		}
-		if (
-			!(await patientBelongsToOrganization(context.organizationId, patientId))
-		) {
-			return reply.code(404).send({
-				error: "PatientNotFound",
-				message: "Пациент не найден в этой клинике.",
-			});
-		}
+			const patientId = (request.params as { patientId?: string }).patientId;
+			if (!patientId || !PATIENT_DUPLICATES_UUID_PATTERN.test(patientId)) {
+				return validationError(reply, "Некорректный идентификатор пациента (ожидается формат UUID).");
+			}
+			if (
+				!(await patientBelongsToOrganization(context.organizationId, patientId))
+			) {
+				return reply.code(404).send({
+					error: "PatientNotFound",
+					message: "Пациент не найден в этой клинике.",
+				});
+			}
 
-		const candidates = await duplicatesForPatient(
-			context.organizationId,
-			patientId,
-		);
-		return { patientId, candidates };
+			const candidates = await duplicatesForPatient(
+				context.organizationId,
+				patientId,
+			);
+			return { patientId, candidates };
+		},
 	});
 
 	/**
 	 * Слияние. Ответ перечисляет, что именно перенесено — по таблицам и числу
 	 * строк. Администратор должен видеть результат, а не «готово».
 	 */
-	app.post("/api/patients/duplicates/merge", async (request, reply) => {
-		const context = await requireClinicalMutationContext(
-			request,
-			reply,
-			"patient duplicate merge",
-		);
-		if (!context) return;
-		if (!enforcePermissionWhenStaffKnown(request, reply, "patients.write"))
-			return;
-
-		const parsed = mergeSchema.safeParse(request.body);
-		if (!parsed.success) {
-			return validationError(
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/duplicates/merge",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalMutationContext(
+				request,
 				reply,
-				"Укажите две разные карточки: какая останется и какая объединяется в неё.",
+				"patient duplicate merge",
 			);
-		}
+			if (!context) return;
+			if (!enforcePermissionWhenStaffKnown(request, reply, "patients.write"))
+				return;
 
-		const identity = getRequestIdentity(request);
-		const result = await mergePatients({
-			organizationId: context.organizationId,
-			primaryPatientId: parsed.data.primaryPatientId,
-			duplicatePatientId: parsed.data.duplicatePatientId,
-			performedByUserId: identity.userId ?? null,
-			reason: parsed.data.reason ?? null,
-		});
+			const parsed = mergeSchema.safeParse(request.body);
+			if (!parsed.success) {
+				return validationError(
+					reply,
+					"Укажите две разные карточки: какая останется и какая объединяется в неё.",
+				);
+			}
 
-		if (!result.ok)
-			return reply
-				.code(409)
-				.send({ error: "PatientMergeRejected", message: result.reason });
+			const identity = getRequestIdentity(request);
+			const result = await mergePatients({
+				organizationId: context.organizationId,
+				primaryPatientId: parsed.data.primaryPatientId,
+				duplicatePatientId: parsed.data.duplicatePatientId,
+				performedByUserId: identity.userId ?? null,
+				reason: parsed.data.reason ?? null,
+			});
 
-		return {
-			success: true,
-			...result,
-			summary: formatMergeSummary(result),
-		};
+			if (!result.ok)
+				return reply
+					.code(409)
+					.send({ error: "PatientMergeRejected", message: result.reason });
+
+			return {
+				success: true,
+				...result,
+				summary: formatMergeSummary(result),
+			};
+		},
 	});
 
 	const duplicateMutationOptions = {
+		config: {
+			tenantTxSelfManaged: true,
+		},
 		schema: {
 			description: "Patient duplicate dismiss with mandatory RFC 9562 Idempotency-Key",
 			headers: {

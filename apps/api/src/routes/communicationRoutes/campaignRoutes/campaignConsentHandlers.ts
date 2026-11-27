@@ -4,14 +4,17 @@ import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { defineStreamRoute } from "../../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import { patientCommunicationConsents } from "../../../db/schema.js";
 import { patientIdParamSchema } from "../types.js";
 
 export function registerCampaignConsentHandlers(app: FastifyInstance): void {
-	app.get(
-		"/api/communications/campaigns/consents/:patientId",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/communications/campaigns/consents/:patientId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			if (
 				!(await requireClinicalReadAccess(
 					request,
@@ -37,7 +40,7 @@ export function registerCampaignConsentHandlers(app: FastifyInstance): void {
 			}
 			const { patientId } = paramsParsed.data;
 
-			const consents = await withTenantCtx(organizationId, (tx) =>
+			const consents = await withTenantReadCtx(organizationId, (tx) =>
 				tx
 					.select()
 					.from(patientCommunicationConsents)
@@ -56,5 +59,5 @@ export function registerCampaignConsentHandlers(app: FastifyInstance): void {
 				consents,
 			});
 		},
-	);
+	});
 }

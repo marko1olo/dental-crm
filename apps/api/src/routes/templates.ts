@@ -8,7 +8,8 @@ import {
 } from "../accessGuard.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
-import { withTenantCtx } from "../db/rls.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../db/rls.js";
 import { protocolTemplates } from "../db/schema.js";
 import {
 	ensureClinicalTemplatesSeeded,
@@ -162,224 +163,249 @@ const templateCreateBodySchema = z
 	.strict();
 
 export default async function registerTemplateRoutes(app: FastifyInstance) {
-	app.get("/api/templates", async (req, reply) => {
-		if (!(await requireClinicalReadAccess(req, reply, "read templates")))
-			return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/templates",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			if (!(await requireClinicalReadAccess(req, reply, "read templates")))
+				return;
 
-		const identity = getRequestIdentity(req);
-		const staffRole = identity.role ?? req.user?.role ?? null;
-		if (staffRole) {
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
+			const identity = getRequestIdentity(req);
+			const staffRole = identity.role ?? req.user?.role ?? null;
+			if (staffRole) {
+				const evalAccess = evaluateClinicalAccess(staffRole);
+				if (!evalAccess.hasClinicalAccess) {
+					return reply.code(403).send({
+						error: "PermissionDenied",
+						permission: "clinical.templates.read",
+						role: staffRole,
+						message: `Отказ в доступе к клиническим протоколам (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+					});
+				}
+			}
+
+			const orgId = await resolveOrganizationId(req);
+			if (!orgId)
 				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "clinical.templates.read",
-					role: staffRole,
-					message: `Отказ в доступе к клиническим протоколам (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+					error: "OrgRequired",
+					message: TEMPLATES_CLINIC_UNKNOWN_LIST_MESSAGE,
+				});
+
+			const existing = (
+				await withTenantReadCtx(orgId, async (tx) =>
+					tx
+						.select()
+						.from(protocolTemplates)
+						.where(eq(protocolTemplates.organizationId, orgId)),
+				)
+			).map(mapProtocolTemplateToLegacy);
+
+			const templates =
+				existing.length > 0 ? existing : getBuiltInProtocolTemplatesReadOnly(orgId);
+
+			return reply.send({ templates });
+		},
+	});
+
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/templates/:id",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			if (!(await requireClinicalReadAccess(req, reply, "read template"))) return;
+
+			const identity = getRequestIdentity(req);
+			const staffRole = identity.role ?? req.user?.role ?? null;
+			if (staffRole) {
+				const evalAccess = evaluateClinicalAccess(staffRole);
+				if (!evalAccess.hasClinicalAccess) {
+					return reply.code(403).send({
+						error: "PermissionDenied",
+						permission: "clinical.templates.read",
+						role: staffRole,
+						message: `Отказ в доступе к клиническому протоколу (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+					});
+				}
+			}
+
+			const { id } = req.params as { id: string };
+			const orgId = await resolveOrganizationId(req);
+			if (!orgId)
+				return reply.code(403).send({
+					error: "OrgRequired",
+					message: TEMPLATES_CLINIC_UNKNOWN_ONE_MESSAGE,
+				});
+
+			if (!TEMPLATE_UUID_PATTERN.test(id)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: TEMPLATE_INVALID_ID_MESSAGE,
 				});
 			}
-		}
 
-		const orgId = await resolveOrganizationId(req);
-		if (!orgId)
-			return reply.code(403).send({
-				error: "OrgRequired",
-				message: TEMPLATES_CLINIC_UNKNOWN_LIST_MESSAGE,
+			const [templateRow] = await withTenantReadCtx(orgId, async (tx) =>
+				tx
+					.select()
+					.from(protocolTemplates)
+					.where(
+						and(
+							eq(protocolTemplates.id, id),
+							eq(protocolTemplates.organizationId, orgId),
+						),
+					),
+			);
+
+			if (!templateRow)
+				return reply
+					.code(404)
+					.send({ error: "NotFound", message: TEMPLATE_NOT_FOUND_MESSAGE });
+			return reply.send({ template: mapProtocolTemplateToLegacy(templateRow) });
+		},
+	});
+
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/templates",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			if (!(await requireClinicalMutationAccess(req, reply, "create template")))
+				return;
+			const orgId = await resolveOrganizationId(req);
+			if (!orgId)
+				return reply.code(403).send({
+					error: "OrgRequired",
+					message: TEMPLATES_CLINIC_UNKNOWN_CREATE_MESSAGE,
+				});
+
+			const parsedBody = templateCreateBodySchema.safeParse(req.body ?? {});
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "Title required",
+					message: TEMPLATE_TITLE_REQUIRED_MESSAGE,
+				});
+			}
+			const titleRaw = parsedBody.data.title;
+			const title = typeof titleRaw === "string" ? titleRaw.trim() : "";
+			if (!title) {
+				return reply.code(400).send({
+					error: "Title required",
+					message: TEMPLATE_TITLE_REQUIRED_MESSAGE,
+				});
+			}
+			const str = (v: unknown): string | undefined =>
+				typeof v === "string" ? v : undefined;
+
+			const [inserted] = await withTenantWriteCtx(orgId, async (tx) =>
+				tx
+					.insert(protocolTemplates)
+					.values({
+						organizationId: orgId,
+						title,
+						visitReason: str(parsedBody.data.category) || "",
+						specialty: resolveTemplateSpecialty(parsedBody.data.specialty),
+						complaintPrompt: str(parsedBody.data.prefilledAnamnesis) || "",
+						objectiveTemplate: str(parsedBody.data.prefilledObjective) || "",
+						treatmentPlanTemplate: str(parsedBody.data.prefilledTreatment) || "",
+						diagnosisHints: parsedBody.data.defaultIcd10 ? [String(parsedBody.data.defaultIcd10)] : [],
+						defaultDurationMinutes: 30,
+						requiredDocuments: [],
+						suggestedImaging: [],
+						safetyWarnings: [],
+						updatedAt: new Date(),
+					})
+					.returning(),
+			);
+
+			if (!inserted) {
+				return reply.code(500).send({
+					error: "FailedToInsertTemplate",
+					message:
+						"Новый протокол приёма не сохранился из-за сбоя записи в базе клиники. Проверьте поля формы и повторите сохранение или обновите страницу.",
+				});
+			}
+
+			return reply.code(201).send({ template: mapProtocolTemplateToLegacy(inserted) });
+		},
+	});
+
+	defineStreamRoute(app, {
+		method: "DELETE",
+		path: "/api/templates/:id",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			if (!(await requireClinicalMutationAccess(req, reply, "delete template")))
+				return;
+			const { id } = req.params as { id: string };
+			const orgId = await resolveOrganizationId(req);
+			if (!orgId)
+				return reply.code(403).send({
+					error: "OrgRequired",
+					message: TEMPLATES_CLINIC_UNKNOWN_DELETE_MESSAGE,
+				});
+
+			if (!TEMPLATE_UUID_PATTERN.test(id)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: TEMPLATE_INVALID_ID_MESSAGE,
+				});
+			}
+
+			const deletedOutcome = await withTenantWriteCtx(orgId, async (tx) => {
+				const [template] = await tx
+					.select()
+					.from(protocolTemplates)
+					.where(
+						and(
+							eq(protocolTemplates.id, id),
+							eq(protocolTemplates.organizationId, orgId),
+						),
+					);
+
+				if (!template) return false;
+
+				await tx
+					.delete(protocolTemplates)
+					.where(
+						and(
+							eq(protocolTemplates.id, id),
+							eq(protocolTemplates.organizationId, orgId),
+						),
+					);
+				return true;
 			});
 
-		const existing = (
-			await withTenantCtx(orgId, async (tx) =>
+			if (!deletedOutcome)
+				return reply
+					.code(404)
+					.send({ error: "NotFound", message: TEMPLATE_NOT_FOUND_MESSAGE });
+
+			return reply.send({ success: true });
+		},
+	});
+
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/templates/seed",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			if (!(await requireClinicalMutationAccess(req, reply, "seed templates")))
+				return;
+			const orgId = await resolveOrganizationId(req);
+			if (!orgId)
+				return reply.code(403).send({
+					error: "OrgRequired",
+					message: TEMPLATES_CLINIC_UNKNOWN_SEED_MESSAGE,
+				});
+
+			await ensureClinicalTemplatesSeeded(orgId);
+			const templates = await withTenantReadCtx(orgId, async (tx) =>
 				tx
 					.select()
 					.from(protocolTemplates)
 					.where(eq(protocolTemplates.organizationId, orgId)),
-			)
-		).map(mapProtocolTemplateToLegacy);
-
-		const templates =
-			existing.length > 0 ? existing : getBuiltInProtocolTemplatesReadOnly(orgId);
-
-		return reply.send({ templates });
-	});
-
-	app.get("/api/templates/:id", async (req, reply) => {
-		if (!(await requireClinicalReadAccess(req, reply, "read template"))) return;
-
-		const identity = getRequestIdentity(req);
-		const staffRole = identity.role ?? req.user?.role ?? null;
-		if (staffRole) {
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "clinical.templates.read",
-					role: staffRole,
-					message: `Отказ в доступе к клиническому протоколу (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
-				});
-			}
-		}
-
-		const { id } = req.params as { id: string };
-		const orgId = await resolveOrganizationId(req);
-		if (!orgId)
-			return reply.code(403).send({
-				error: "OrgRequired",
-				message: TEMPLATES_CLINIC_UNKNOWN_ONE_MESSAGE,
-			});
-
-		if (!TEMPLATE_UUID_PATTERN.test(id)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: TEMPLATE_INVALID_ID_MESSAGE,
-			});
-		}
-
-		const [templateRow] = await withTenantCtx(orgId, async (tx) =>
-			tx
-				.select()
-				.from(protocolTemplates)
-				.where(
-					and(
-						eq(protocolTemplates.id, id),
-						eq(protocolTemplates.organizationId, orgId),
-					),
-				),
-		);
-
-		if (!templateRow)
-			return reply
-				.code(404)
-				.send({ error: "NotFound", message: TEMPLATE_NOT_FOUND_MESSAGE });
-		return reply.send({ template: mapProtocolTemplateToLegacy(templateRow) });
-	});
-
-	app.post("/api/templates", async (req, reply) => {
-		if (!(await requireClinicalMutationAccess(req, reply, "create template")))
-			return;
-		const orgId = await resolveOrganizationId(req);
-		if (!orgId)
-			return reply.code(403).send({
-				error: "OrgRequired",
-				message: TEMPLATES_CLINIC_UNKNOWN_CREATE_MESSAGE,
-			});
-
-		const parsedBody = templateCreateBodySchema.safeParse(req.body ?? {});
-		if (!parsedBody.success) {
-			return reply.code(400).send({
-				error: "Title required",
-				message: TEMPLATE_TITLE_REQUIRED_MESSAGE,
-			});
-		}
-		const titleRaw = parsedBody.data.title;
-		const title = typeof titleRaw === "string" ? titleRaw.trim() : "";
-		if (!title) {
-			return reply.code(400).send({
-				error: "Title required",
-				message: TEMPLATE_TITLE_REQUIRED_MESSAGE,
-			});
-		}
-		const str = (v: unknown): string | undefined =>
-			typeof v === "string" ? v : undefined;
-
-		const [inserted] = await withTenantCtx(orgId, async (tx) =>
-			tx
-				.insert(protocolTemplates)
-				.values({
-					organizationId: orgId,
-					title,
-					visitReason: str(parsedBody.data.category) || "",
-					specialty: resolveTemplateSpecialty(parsedBody.data.specialty),
-					complaintPrompt: str(parsedBody.data.prefilledAnamnesis) || "",
-					objectiveTemplate: str(parsedBody.data.prefilledObjective) || "",
-					treatmentPlanTemplate: str(parsedBody.data.prefilledTreatment) || "",
-					diagnosisHints: parsedBody.data.defaultIcd10 ? [String(parsedBody.data.defaultIcd10)] : [],
-					defaultDurationMinutes: 30,
-					requiredDocuments: [],
-					suggestedImaging: [],
-					safetyWarnings: [],
-					updatedAt: new Date(),
-				})
-				.returning(),
-		);
-
-		if (!inserted) {
-			return reply.code(500).send({
-				error: "FailedToInsertTemplate",
-				message:
-					"Новый протокол приёма не сохранился из-за сбоя записи в базе клиники. Проверьте поля формы и повторите сохранение или обновите страницу.",
-			});
-		}
-
-		return reply.code(201).send({ template: mapProtocolTemplateToLegacy(inserted) });
-	});
-
-	app.delete("/api/templates/:id", async (req, reply) => {
-		if (!(await requireClinicalMutationAccess(req, reply, "delete template")))
-			return;
-		const { id } = req.params as { id: string };
-		const orgId = await resolveOrganizationId(req);
-		if (!orgId)
-			return reply.code(403).send({
-				error: "OrgRequired",
-				message: TEMPLATES_CLINIC_UNKNOWN_DELETE_MESSAGE,
-			});
-
-		if (!TEMPLATE_UUID_PATTERN.test(id)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: TEMPLATE_INVALID_ID_MESSAGE,
-			});
-		}
-
-		const deletedOutcome = await withTenantCtx(orgId, async (tx) => {
-			const [template] = await tx
-				.select()
-				.from(protocolTemplates)
-				.where(
-					and(
-						eq(protocolTemplates.id, id),
-						eq(protocolTemplates.organizationId, orgId),
-					),
-				);
-
-			if (!template) return false;
-
-			await tx
-				.delete(protocolTemplates)
-				.where(
-					and(
-						eq(protocolTemplates.id, id),
-						eq(protocolTemplates.organizationId, orgId),
-					),
-				);
-			return true;
-		});
-
-		if (!deletedOutcome)
-			return reply
-				.code(404)
-				.send({ error: "NotFound", message: TEMPLATE_NOT_FOUND_MESSAGE });
-
-		return reply.send({ success: true });
-	});
-
-	app.post("/api/templates/seed", async (req, reply) => {
-		if (!(await requireClinicalMutationAccess(req, reply, "seed templates")))
-			return;
-		const orgId = await resolveOrganizationId(req);
-		if (!orgId)
-			return reply.code(403).send({
-				error: "OrgRequired",
-				message: TEMPLATES_CLINIC_UNKNOWN_SEED_MESSAGE,
-			});
-
-		await ensureClinicalTemplatesSeeded(orgId);
-		const templates = await withTenantCtx(orgId, async (tx) =>
-			tx
-				.select()
-				.from(protocolTemplates)
-				.where(eq(protocolTemplates.organizationId, orgId)),
-		);
-		return reply.send({ success: true, count: templates.length });
+			);
+			return reply.send({ success: true, count: templates.length });
+		},
 	});
 }

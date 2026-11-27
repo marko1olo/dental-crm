@@ -15,10 +15,11 @@ import {
 	splitKopecks,
 } from "@dental/shared";
 import { and, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { defineStreamRoute } from "../core/routeFactories.js";
 import { requireExecutiveAccess } from "./analytics/executiveAccessGuard.js";
-import { withTenantCtx } from "../db/rls.js";
+import { withTenantReadCtx } from "../db/rls.js";
 import {
 	clinicTimeZone,
 	currentMonthPeriod,
@@ -96,20 +97,24 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 	/**
 	 * GET /api/reports/pnl — Управленческий отчет о прибылях и убытках (P&L)
 	 */
-	app.get("/api/reports/pnl", async (req: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireExecutiveAccess(req, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/reports/pnl",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			const orgId = await requireExecutiveAccess(req, reply);
+			if (!orgId) return;
 
-		const parsed = pnlQuerySchema.safeParse(req.query);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный диапазон дат отчета P&L",
-				issues: parsed.error.issues,
-			});
-		}
+			const parsed = pnlQuerySchema.safeParse(req.query);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный диапазон дат отчета P&L",
+					issues: parsed.error.issues,
+				});
+			}
 
-		return withTenantCtx(orgId, async (tx) => {
+			return withTenantReadCtx(orgId, async (tx) => {
 			const orgTimeZone = await clinicTimeZone(orgId, tx);
 			const defaultPeriod = currentMonthPeriod(new Date(), orgTimeZone);
 			const fromDate = parsed.data.from
@@ -467,5 +472,6 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 
 			return reply.send({ data: pnlReport });
 		});
+		},
 	});
 }

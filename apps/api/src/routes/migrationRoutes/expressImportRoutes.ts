@@ -11,7 +11,8 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { kopecksToRubles, parseKopecks } from "@dental/shared";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import { auditEvents, patients, serviceCatalogItems } from "../../db/schema.js";
 import { parseDelimited } from "../../migration/parsers/delimited.js";
 import {
@@ -39,7 +40,11 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 	 * Phase 1: preview / dry_run — анализ колонок (ФИО, Телефон, Баланс), детекция дублей, превью строк.
 	 * Phase 2: commit — транзакционная запись в PostgreSQL 18 с изоляцией по organizationId.
 	 */
-	app.post("/api/migration/import", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/migration/import",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const context = await requireClinicalMutationContext(
 			request,
 			reply,
@@ -205,7 +210,7 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 			const balanceCol = detectedColumns.find((c) => c.field === "balanceRub")?.key;
 
 			const batchAuditId = randomUUID();
-			await withTenantCtx(context.organizationId, async (tx) => {
+			await withTenantWriteCtx(context.organizationId, async (tx) => {
 				const existingPatients = await tx
 					.select({ fullName: patients.fullName, phone: patients.phone })
 					.from(patients)
@@ -297,7 +302,7 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 			const priceCol = detectedColumns.find((c) => c.field === "priceRub")?.key;
 
 			const batchAuditId = randomUUID();
-			await withTenantCtx(context.organizationId, async (tx) => {
+			await withTenantWriteCtx(context.organizationId, async (tx) => {
 				const existingItems = await tx
 					.select({ code: serviceCatalogItems.code, title: serviceCatalogItems.title })
 					.from(serviceCatalogItems)
@@ -385,5 +390,6 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 			skippedDuplicatesCount,
 			message: `Импорт успешно завершен: перенесено ${importedRows} записей в базу данных клиники.`,
 		};
+		},
 	});
 }

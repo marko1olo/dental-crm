@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx } from "../../db/rls.js";
+import type { FastifyInstance } from "fastify";
+import { definePublicRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { users } from "../../db/schema.js";
 import {
 	DEMO_ADMIN_ID,
@@ -51,9 +52,10 @@ function parseDemoStaffPayload(
 
 export function registerSessionRoutes(app: FastifyInstance): void {
 	// ─── Session Status Check ─────────────────────────────────────────────────────
-	app.get(
-		"/api/auth/status",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/auth/status",
+		handler: async ({ request, reply }) => {
 			const clinicHeader = request.headers["x-dente-clinic-token"];
 			const staffHeader = request.headers["x-dente-staff-token"];
 			const clinicToken = Array.isArray(clinicHeader)
@@ -84,7 +86,7 @@ export function registerSessionRoutes(app: FastifyInstance): void {
 			let activeUser: ActiveUserSummary | null = null;
 			if (staffPayload?.userId && clinicPayload?.organizationId) {
 				const clinicOrgId = clinicPayload.organizationId as string;
-				activeUser = await withTenantCtx(clinicOrgId, async (tx) => {
+				activeUser = await withTenantReadCtx(clinicOrgId, async (tx) => {
 					const [user] = await tx
 						.select({ id: users.id, fullName: users.fullName, role: users.role })
 						.from(users)
@@ -107,12 +109,13 @@ export function registerSessionRoutes(app: FastifyInstance): void {
 				activeUser,
 			});
 		},
-	);
+	});
 
 	// ─── SaaS User Profile: Get Current User ──────────────────────────────────────
-	app.get(
-		"/api/auth/user/me",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/auth/user/me",
+		handler: async ({ request, reply }) => {
 			const staffHeader = request.headers["x-dente-staff-token"];
 			const staffToken = Array.isArray(staffHeader)
 				? staffHeader[0]
@@ -127,7 +130,7 @@ export function registerSessionRoutes(app: FastifyInstance): void {
 					.send({ error: "AuthRequired", message: "Требуется авторизация." });
 
 			const user = payload.organizationId
-				? await withTenantCtx(payload.organizationId as string, async (tx) => {
+				? await withTenantReadCtx(payload.organizationId as string, async (tx) => {
 						const [found] = await tx
 							.select({
 								id: users.id,
@@ -213,5 +216,5 @@ export function registerSessionRoutes(app: FastifyInstance): void {
 				},
 			});
 		},
-	);
+	});
 }

@@ -12,8 +12,9 @@ import {
 } from "@dental/shared";
 import { and, eq, ne } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
 import { invalidateStaffSessionCache } from "../../security/identity.js";
 import { assembleStaffProfile, resolveOrganizationId } from "./staffHelpers.js";
@@ -23,6 +24,7 @@ const UUID_PATTERN =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const staffMutationOptions = {
+	config: { tenantTxSelfManaged: true },
 	schema: {
 		description: "Staff mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
 		headers: {
@@ -130,7 +132,7 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 		}
 
 		// 4. Проверка дубликатов по всей организации и загрузка существующей записи в контексте тенанта
-		const { allStaff, existingUser } = await withTenantCtx(
+		const { allStaff, existingUser } = await withTenantReadCtx(
 			auth.orgId,
 			async (tx) => {
 				const staffRows = await tx
@@ -372,7 +374,7 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 		if (data.canManageImports !== undefined)
 			userUpdates.canManageImports = data.canManageImports;
 
-		const { updatedUser, comm } = await withTenantCtx(auth.orgId, async (tx) => {
+		const { updatedUser, comm } = await withTenantWriteCtx(auth.orgId, async (tx) => {
 			await tx
 				.update(schema.users)
 				.set(userUpdates)
@@ -597,7 +599,7 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 			};
 		}
 
-		const result = await withTenantCtx(auth.orgId, async (tx) => {
+		const result = await withTenantWriteCtx(auth.orgId, async (tx) => {
 			const [user] = await tx
 				.select()
 				.from(schema.users)
@@ -656,76 +658,81 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 	/**
 	 * POST /api/staff/:staffId/terminate-session — Принудительное завершение активной сессии
 	 */
-	app.post("/api/staff/:staffId/terminate-session", async (request, reply) => {
-		const auth = await resolveOrganizationId(request, reply);
-		if (!auth) return;
-		/*
-		 * Завершение чужой сессии — административное действие: оно выкидывает
-		 * коллегу из программы. Кабинетный токен стойки без входа конкретного
-		 * человека это делать не может; самоуправство сотрудника ограничено
-		 * правом управления кадрами (свою сессию завершает владелец токена —
-		 * это выход, а не атака).
-		 */
-		const isSelf = auth.callerUserId === (request.params as { staffId: string }).staffId;
-		if (!auth.callerUserId) {
-			reply.code(401);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/staff/:staffId/terminate-session",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const auth = await resolveOrganizationId(request, reply);
+			if (!auth) return;
+			/*
+			 * Завершение чужой сессии — административное действие: оно выкидывает
+			 * коллегу из программы. Кабинетный токен стойки без входа конкретного
+			 * человека это делать не может; самоуправство сотрудника ограничено
+			 * правом управления кадрами (свою сессию завершает владелец токена —
+			 * это выход, а не атака).
+			 */
+			const isSelf = auth.callerUserId === (request.params as { staffId: string }).staffId;
+			if (!auth.callerUserId) {
+				reply.code(401);
+				return {
+					error: "StaffAuthRequired",
+					message:
+						"Завершение сессии сотрудника выполняется от конкретного лица: войдите под своей учётной записью.",
+				};
+			}
+			if (!isSelf && !canManageStaffAuthority(auth.callerRole) && auth.callerRole !== "owner") {
+				reply.code(403);
+				return {
+					error: "Forbidden",
+					message:
+						"Завершать чужие сессии могут владелец клиники и руководство.",
+				};
+			}
+
+			const params = request.params as { staffId: string };
+			if (!params.staffId || !UUID_PATTERN.test(params.staffId.trim())) {
+				reply.code(400);
+				return {
+					error: "ValidationError",
+					message: "Некорректный идентификатор сотрудника (ожидается UUID).",
+				};
+			}
+			await withTenantWriteCtx(auth.orgId, async (tx) => {
+				await tx
+					.update(schema.users)
+					.set({ currentSessionId: null })
+					.where(
+						and(
+							eq(schema.users.id, params.staffId),
+							eq(schema.users.organizationId, auth.orgId),
+						),
+					);
+
+				await tx
+					.delete(schema.singleSessionEnforcements)
+					.where(
+						and(
+							eq(schema.singleSessionEnforcements.userId, params.staffId),
+							eq(schema.singleSessionEnforcements.organizationId, auth.orgId),
+						),
+					);
+
+				await recordAuditEventInDb(auth.orgId, {
+					entityType: "user",
+					entityId: params.staffId,
+					action: "STAFF_SESSION_TERMINATE",
+					actorUserId: auth.callerUserId,
+					reason: `Принудительное завершение активной сессии сотрудника (IP: ${request.ip})`,
+				}, tx);
+			});
+
+			invalidateStaffSessionCache(params.staffId, auth.orgId);
+
 			return {
-				error: "StaffAuthRequired",
-				message:
-					"Завершение сессии сотрудника выполняется от конкретного лица: войдите под своей учётной записью.",
+				ok: true,
+				message: "Активная сессия сотрудника успешно завершена.",
 			};
-		}
-		if (!isSelf && !canManageStaffAuthority(auth.callerRole) && auth.callerRole !== "owner") {
-			reply.code(403);
-			return {
-				error: "Forbidden",
-				message:
-					"Завершать чужие сессии могут владелец клиники и руководство.",
-			};
-		}
-
-		const params = request.params as { staffId: string };
-		if (!params.staffId || !UUID_PATTERN.test(params.staffId.trim())) {
-			reply.code(400);
-			return {
-				error: "ValidationError",
-				message: "Некорректный идентификатор сотрудника (ожидается UUID).",
-			};
-		}
-		await withTenantCtx(auth.orgId, async (tx) => {
-			await tx
-				.update(schema.users)
-				.set({ currentSessionId: null })
-				.where(
-					and(
-						eq(schema.users.id, params.staffId),
-						eq(schema.users.organizationId, auth.orgId),
-					),
-				);
-
-			await tx
-				.delete(schema.singleSessionEnforcements)
-				.where(
-					and(
-						eq(schema.singleSessionEnforcements.userId, params.staffId),
-						eq(schema.singleSessionEnforcements.organizationId, auth.orgId),
-					),
-				);
-
-			await recordAuditEventInDb(auth.orgId, {
-				entityType: "user",
-				entityId: params.staffId,
-				action: "STAFF_SESSION_TERMINATE",
-				actorUserId: auth.callerUserId,
-				reason: `Принудительное завершение активной сессии сотрудника (IP: ${request.ip})`,
-			}, tx);
-		});
-
-		invalidateStaffSessionCache(params.staffId, auth.orgId);
-
-		return {
-			ok: true,
-			message: "Активная сессия сотрудника успешно завершена.",
-		};
+		},
 	});
 }

@@ -1,13 +1,16 @@
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
+import { defineStreamRoute } from "../../../core/routeFactories.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { ChatLockService } from "../../../services/communications/ChatLockService.js";
 import { chatIdParamSchema, lockChatBodySchema } from "../types.js";
 
 export function registerChatLockHandlers(app: FastifyInstance): void {
-	app.post(
-		"/api/communications/chats/:chatId/lock",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/communications/chats/:chatId/lock",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -62,11 +65,13 @@ export function registerChatLockHandlers(app: FastifyInstance): void {
 				expiresAtIso: result.lock.expiresAtIso,
 			});
 		},
-	);
+	});
 
-	app.post(
-		"/api/communications/chats/:chatId/heartbeat",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/communications/chats/:chatId/heartbeat",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -121,5 +126,5 @@ export function registerChatLockHandlers(app: FastifyInstance): void {
 				expiresAtIso: result.expiresAtIso,
 			});
 		},
-	);
+	});
 }

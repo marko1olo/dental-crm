@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	createProtocolTemplateInDb,
 	deleteProtocolTemplateInDb,
@@ -48,86 +49,96 @@ export function registerProtocolTemplatesRoutes(app: FastifyInstance): void {
 	 * документов и нужных снимков. Без записи клиника не могла ни завести свой
 	 * протокол, ни исправить пришедший с посевом.
 	 */
-	app.post("/api/settings/protocols", async (request, reply) => {
-		const orgId = await requireSettingsMutationAccess(request, reply);
-		if (!orgId) return;
-		const input = parseSettingsPayload<CreateProtocolTemplateInput>(
-			createProtocolTemplateSchema,
-			request.body,
-		);
-		if (!input) {
-			reply.code(400);
-			return {
-				error: "SettingsValidationError",
-				message: protocolTemplateCreateValidationMessage,
-			};
-		}
-		try {
-			const created = await createProtocolTemplateInDb(orgId, input);
-			reply.code(201);
-			return created;
-		} catch (error) {
-			return protocolTemplateMutationRejection(
-				reply,
-				error,
-				protocolTemplateCreateNotFoundMessage,
-				protocolTemplateCreateValidationMessage,
-				"ProtocolTemplateCreate",
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/settings/protocols",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsMutationAccess(request, reply);
+			if (!orgId) return;
+			const input = parseSettingsPayload<CreateProtocolTemplateInput>(
+				createProtocolTemplateSchema,
+				request.body,
 			);
-		}
+			if (!input) {
+				reply.code(400);
+				return {
+					error: "SettingsValidationError",
+					message: protocolTemplateCreateValidationMessage,
+				};
+			}
+			try {
+				const created = await createProtocolTemplateInDb(orgId, input);
+				reply.code(201);
+				return created;
+			} catch (error) {
+				return protocolTemplateMutationRejection(
+					reply,
+					error,
+					protocolTemplateCreateNotFoundMessage,
+					protocolTemplateCreateValidationMessage,
+					"ProtocolTemplateCreate",
+				);
+			}
+		},
 	});
 
-	app.put("/api/settings/protocols/:templateId", async (request, reply) => {
-		const orgId = await requireSettingsMutationAccess(request, reply);
-		if (!orgId) return;
-		const paramsParsed = protocolTemplateIdParamsSchema.safeParse(
-			request.params,
-		);
-		if (!paramsParsed.success) {
-			reply.code(400);
-			return {
-				error: "SettingsRouteValidationError",
-				message: protocolTemplateRouteValidationMessage,
-			};
-		}
-		const { templateId } = paramsParsed.data;
-		const input = parseSettingsPayload<UpdateProtocolTemplateInput>(
-			updateProtocolTemplateSchema,
-			request.body,
-		);
-		if (!input) {
-			reply.code(400);
-			return {
-				error: "SettingsValidationError",
-				message: protocolTemplateUpdateValidationMessage,
-			};
-		}
-		// Тело из одних неизвестных полей после разбора неотличимо от пустого. Ответ
-		// 200 на запрос, который ничего не меняет, означал бы, что администратор
-		// считает шаблон исправленным, а на приёме подставится прежний.
-		if (Object.keys(input).length === 0) {
-			reply.code(400);
-			return {
-				error: "SettingsValidationError",
-				message: protocolTemplateEmptyUpdateMessage,
-			};
-		}
-		try {
-			const updated = await updateProtocolTemplateInDb(
-				orgId,
-				templateId,
-				input,
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/settings/protocols/:templateId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsMutationAccess(request, reply);
+			if (!orgId) return;
+			const paramsParsed = protocolTemplateIdParamsSchema.safeParse(
+				request.params,
 			);
-			return updated;
-		} catch (error) {
-			return protocolTemplateMutationRejection(
-				reply,
-				error,
-				protocolTemplateUpdateNotFoundMessage,
-				protocolTemplateUpdateValidationMessage,
-				"ProtocolTemplateUpdate",
+			if (!paramsParsed.success) {
+				reply.code(400);
+				return {
+					error: "SettingsRouteValidationError",
+					message: protocolTemplateRouteValidationMessage,
+				};
+			}
+			const { templateId } = paramsParsed.data;
+			const input = parseSettingsPayload<UpdateProtocolTemplateInput>(
+				updateProtocolTemplateSchema,
+				request.body,
 			);
-		}
+			if (!input) {
+				reply.code(400);
+				return {
+					error: "SettingsValidationError",
+					message: protocolTemplateUpdateValidationMessage,
+				};
+			}
+			// Тело из одних неизвестных полей после разбора неотличимо от пустого. Ответ
+			// 200 на запрос, который ничего не меняет, означал бы, что администратор
+			// считает шаблон исправленным, а на приёме подставится прежний.
+			if (Object.keys(input).length === 0) {
+				reply.code(400);
+				return {
+					error: "SettingsValidationError",
+					message: protocolTemplateEmptyUpdateMessage,
+				};
+			}
+			try {
+				const updated = await updateProtocolTemplateInDb(
+					orgId,
+					templateId,
+					input,
+				);
+				return updated;
+			} catch (error) {
+				return protocolTemplateMutationRejection(
+					reply,
+					error,
+					protocolTemplateUpdateNotFoundMessage,
+					protocolTemplateUpdateValidationMessage,
+					"ProtocolTemplateUpdate",
+				);
+			}
+		},
 	});
 
 	/**
@@ -136,33 +147,38 @@ export function registerProtocolTemplatesRoutes(app: FastifyInstance): void {
 	 * нечего — в отличие от услуги прайса, за которой стоят позиции лечения и
 	 * счёта. Экран обещает оператору именно удаление.
 	 */
-	app.delete("/api/settings/protocols/:templateId", async (request, reply) => {
-		const orgId = await requireSettingsMutationAccess(request, reply);
-		if (!orgId) return;
-		const paramsParsed = protocolTemplateIdParamsSchema.safeParse(
-			request.params,
-		);
-		if (!paramsParsed.success) {
-			reply.code(400);
-			return {
-				error: "SettingsRouteValidationError",
-				message: protocolTemplateRouteValidationMessage,
-			};
-		}
-		try {
-			const deleted = await deleteProtocolTemplateInDb(
-				orgId,
-				paramsParsed.data.templateId,
+	defineStreamRoute(app, {
+		method: "DELETE",
+		path: "/api/settings/protocols/:templateId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsMutationAccess(request, reply);
+			if (!orgId) return;
+			const paramsParsed = protocolTemplateIdParamsSchema.safeParse(
+				request.params,
 			);
-			return deleted;
-		} catch (error) {
-			return protocolTemplateMutationRejection(
-				reply,
-				error,
-				protocolTemplateDeleteNotFoundMessage,
-				protocolTemplateDeleteRejectedMessage,
-				"ProtocolTemplateDelete",
-			);
-		}
+			if (!paramsParsed.success) {
+				reply.code(400);
+				return {
+					error: "SettingsRouteValidationError",
+					message: protocolTemplateRouteValidationMessage,
+				};
+			}
+			try {
+				const deleted = await deleteProtocolTemplateInDb(
+					orgId,
+					paramsParsed.data.templateId,
+				);
+				return deleted;
+			} catch (error) {
+				return protocolTemplateMutationRejection(
+					reply,
+					error,
+					protocolTemplateDeleteNotFoundMessage,
+					protocolTemplateDeleteRejectedMessage,
+					"ProtocolTemplateDelete",
+				);
+			}
+		},
 	});
 }

@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx } from "../../db/rls.js";
+import type { FastifyInstance } from "fastify";
+import { definePublicRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	auditEvents,
 	organizations,
@@ -41,9 +42,10 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 	// СТАЛО: нужен либо владелец/админ с валидным токеном своей организации,
 	// либо настроенный ADMIN_SETUP_KEY (сравнение timing-safe). Без переменной
 	// окружения ключевой путь недоступен вовсе.
-	app.post(
-		"/api/auth/clinic/set-password",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "POST",
+		path: "/api/auth/clinic/set-password",
+		handler: async ({ request, reply }) => {
 			// AUTH first on raw record (adminKey credential), then Zod body for authorized caller.
 			// Anonymous always gets the same 403 regardless of body shape (no policy oracle).
 			const rawBody = authBodyRecord(request.body);
@@ -118,7 +120,7 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 			// политика сверяет `id = current_tenant`, поэтому под этим контекстом можно
 			// изменить ровно ту организацию, которая названа, и никакую другую.
 			// Проверка «не чужая организация» для админа сделана выше и не ослаблена.
-			const passwordUpdated = await withTenantCtx(
+			const passwordUpdated = await withTenantWriteCtx(
 				targetOrganizationId,
 				async (tx) => {
 					const changed = await tx
@@ -154,15 +156,16 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 
 			return reply.send({ ok: true, message: "Пароль клиники обновлён." });
 		},
-	);
+	});
 
 	// ─── Admin: Set Staff PIN ─────────────────────────────────────────────────────
 	// БЫЛО: публичный дефолтный ключ + произвольный userId без проверки организации.
 	// СТАЛО: только владелец/админ своей организации (или настроенный ADMIN_SETUP_KEY),
 	// и целевой сотрудник обязан принадлежать той же организации.
-	app.post(
-		"/api/auth/staff/set-pin",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "POST",
+		path: "/api/auth/staff/set-pin",
+		handler: async ({ request, reply }) => {
 			// AUTH first on raw record, then Zod body. Anonymous always same 403.
 			const rawBody = authBodyRecord(request.body);
 
@@ -213,7 +216,7 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 
 			if (isOrgAdmin && identity.organizationId) {
 				const orgId = identity.organizationId;
-				const target = await withTenantCtx(orgId, async (tx) => {
+				const target = await withTenantReadCtx(orgId, async (tx) => {
 					const [row] = await tx
 						.select({ id: users.id })
 						.from(users)
@@ -271,7 +274,7 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 			}
 
 			const pinOrganizationId = targetOrganizationId;
-			const pinUpdated = await withTenantCtx(pinOrganizationId, async (tx) => {
+			const pinUpdated = await withTenantWriteCtx(pinOrganizationId, async (tx) => {
 				const changed = await tx
 					.update(users)
 					.set({ pinCodeHash: hash })
@@ -306,12 +309,13 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 
 			return reply.send({ ok: true, message: "PIN сотрудника обновлён." });
 		},
-	);
+	});
 
 	// ─── SaaS User Profile: Update Password ───────────────────────────────────────
-	app.post(
-		"/api/auth/user/update-password",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "POST",
+		path: "/api/auth/user/update-password",
+		handler: async ({ request, reply }) => {
 			const staffHeader = request.headers["x-dente-staff-token"];
 			const staffToken = Array.isArray(staffHeader)
 				? staffHeader[0]
@@ -349,7 +353,7 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 			}
 
 			const user = payload.organizationId
-				? await withTenantCtx(payload.organizationId as string, async (tx) => {
+				? await withTenantReadCtx(payload.organizationId as string, async (tx) => {
 						const [found] = await tx
 							.select()
 							.from(users)
@@ -379,7 +383,7 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 			}
 
 			const newPasswordHash = await hashCredential(newPassword);
-			await withTenantCtx(user.organizationId, async (tx) => {
+			await withTenantWriteCtx(user.organizationId, async (tx) => {
 				await tx
 					.update(users)
 					.set({ passwordHash: newPasswordHash })
@@ -394,12 +398,13 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 
 			return reply.send({ ok: true, message: "Пароль успешно изменен." });
 		},
-	);
+	});
 
 	// ─── SaaS User Profile: Update PIN ───────────────────────────────────────────
-	app.post(
-		"/api/auth/user/update-pin",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "POST",
+		path: "/api/auth/user/update-pin",
+		handler: async ({ request, reply }) => {
 			const staffHeader = request.headers["x-dente-staff-token"];
 			const staffToken = Array.isArray(staffHeader)
 				? staffHeader[0]
@@ -437,7 +442,7 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 			}
 
 			const user = payload.organizationId
-				? await withTenantCtx(payload.organizationId as string, async (tx) => {
+				? await withTenantReadCtx(payload.organizationId as string, async (tx) => {
 						const [found] = await tx
 							.select()
 							.from(users)
@@ -467,7 +472,7 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 			}
 
 			const newPinHash = await hashCredential(newPin);
-			await withTenantCtx(user.organizationId, async (tx) => {
+			await withTenantWriteCtx(user.organizationId, async (tx) => {
 				await tx
 					.update(users)
 					.set({ pinCodeHash: newPinHash })
@@ -481,5 +486,5 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 
 			return reply.send({ ok: true, message: "PIN-код успешно изменен." });
 		},
-	);
+	});
 }

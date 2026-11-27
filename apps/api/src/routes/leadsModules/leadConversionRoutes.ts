@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { db } from "../../db/client.js";
 import {
 	extractIdempotencyKey,
@@ -13,53 +14,58 @@ import {
 } from "../leadsConversionModules/index.js";
 
 export async function registerLeadConversionRoutes(app: FastifyInstance): Promise<void> {
-	app.post("/api/leads/:id/convert", async (req, reply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			req,
-			reply,
-			"lead convert",
-		);
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/leads/:id/convert",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				req,
+				reply,
+				"lead convert",
+			);
+			if (!organizationId) return;
 
-		const idempotencyKey = extractIdempotencyKey(req);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
-			});
-		}
+			const idempotencyKey = extractIdempotencyKey(req);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+				});
+			}
 
-		const { id } = req.params as { id: string };
-		if (!isValidUuid(id)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный идентификатор обращения.",
-			});
-		}
-		const convertParsed = convertLeadSchema.safeParse(req.body);
-		if (!convertParsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Проверьте данные конвертации лида: даты, кресло и врач.",
-			});
-		}
+			const { id } = req.params as { id: string };
+			if (!isValidUuid(id)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор обращения.",
+				});
+			}
+			const convertParsed = convertLeadSchema.safeParse(req.body);
+			if (!convertParsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Проверьте данные конвертации лида: даты, кресло и врач.",
+				});
+			}
 
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-		return await convertLeadToAppointment({
-			db,
-			wsBroker,
-			organizationId,
-			leadId: id,
-			payload: convertParsed.data,
-			req,
-			reply,
-		});
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+			return await convertLeadToAppointment({
+				db,
+				wsBroker,
+				organizationId,
+				leadId: id,
+				payload: convertParsed.data,
+				req,
+				reply,
+			});
+		},
 	});
 
 	const createPatientFromLeadHandler = async (
-		req: FastifyRequest<{ Params: { id: string } }>,
+		req: FastifyRequest,
 		reply: FastifyReply,
 	) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -97,6 +103,16 @@ export async function registerLeadConversionRoutes(app: FastifyInstance): Promis
 		});
 	};
 
-	app.post("/api/leads/:id/create-patient", createPatientFromLeadHandler);
-	app.post("/api/leads/:id/convert-to-patient", createPatientFromLeadHandler);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/leads/:id/create-patient",
+		permission: "public",
+		handler: async ({ request, reply }) => createPatientFromLeadHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/leads/:id/convert-to-patient",
+		permission: "public",
+		handler: async ({ request, reply }) => createPatientFromLeadHandler(request, reply),
+	});
 }

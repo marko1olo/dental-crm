@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { unguardedBypassAllowed } from "../../../accessGuard.js";
 import { withSuperuserBypass } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
-import { getRequestIdentity } from "../../../security/identity.js";
+import { getRequestIdentity, verifyActiveStaffSession } from "../../../security/identity.js";
 import {
 	enforcePermissionWhenStaffKnown,
 	roleHasPermission,
@@ -69,6 +69,16 @@ export async function requireSettingsAccess(
 	// Авторизация сотрудника / кабинета клиники по подписанному токену сессии
 	const identity = getRequestIdentity(request);
 	if (identity.organizationId && identity.verified) {
+		if (identity.userId) {
+			const sessionOk = await verifyActiveStaffSession(
+				request,
+				reply,
+				identity.organizationId,
+				identity.userId,
+				identity.sessionId,
+			);
+			if (!sessionOk) return null;
+		}
 		return identity.organizationId;
 	}
 

@@ -287,7 +287,21 @@ export async function requireResolvedOrganizationId(
 	reply: FastifyReply,
 	_protectedArea?: string,
 ): Promise<string | null> {
-	return requireVerifiedOrganizationId(request, reply);
+	const orgId = requireVerifiedOrganizationId(request, reply);
+	if (!orgId) return null;
+
+	const identity = getRequestIdentity(request);
+	if (identity.verified && identity.userId) {
+		const sessionOk = await verifyActiveStaffSession(
+			request,
+			reply,
+			orgId,
+			identity.userId,
+			identity.sessionId,
+		);
+		if (!sessionOk) return null;
+	}
+	return orgId;
 }
 
 /**

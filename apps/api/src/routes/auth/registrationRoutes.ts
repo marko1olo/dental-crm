@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx } from "../../db/rls.js";
+import { definePublicRoute } from "../../core/routeFactories.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import {
 	chairs,
 	clinics,
@@ -23,9 +24,10 @@ import {
 
 export function registerRegistrationRoutes(app: FastifyInstance): void {
 	// ─── Initial Clinic Setup (first-run seed credentials) ───────────────────────
-	app.post(
-		"/api/auth/setup/init",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "POST",
+		path: "/api/auth/setup/init",
+		handler: async ({ request, reply }) => {
 			const parsed = setupInitBodySchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
 				// Old if-order: required -> password length -> PIN form.
@@ -120,7 +122,7 @@ export function registerRegistrationRoutes(app: FastifyInstance): void {
 			// в ТОЙ ЖЕ транзакции: в WITH CHECK политики users обхода нет, а половинчатой
 			// клиники без владельца существовать не должно.
 			const organizationId = crypto.randomUUID();
-			const created = await withTenantCtx(organizationId, async (tx) => {
+			const created = await withTenantWriteCtx(organizationId, async (tx) => {
 				const [organization] = await tx
 					.insert(organizations)
 					.values({
@@ -198,12 +200,12 @@ export function registerRegistrationRoutes(app: FastifyInstance): void {
 				generatedOwnerPin,
 			});
 		},
-	);
+	});
 
 	// ─── SaaS Registration (New Clinic + Owner) ──────────────────────────────────
 	app.post(
 		"/api/auth/register",
-		{ schema: { description: "Clinic registration with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" } } } } },
+		{ config: { tenantTxSelfManaged: true }, schema: { description: "Clinic registration with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" } } } } },
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			const parsed = registerBodySchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
@@ -293,7 +295,7 @@ export function registerRegistrationRoutes(app: FastifyInstance): void {
 			const isSolo = practiceType === "solo";
 			const clinicMode = isSolo ? "solo_doctor" : "small_clinic";
 
-			const created = await withTenantCtx(organizationId, async (tx) => {
+			const created = await withTenantWriteCtx(organizationId, async (tx) => {
 				const [organization] = await tx
 					.insert(organizations)
 					.values({

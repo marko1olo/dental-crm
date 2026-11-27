@@ -31,7 +31,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { recordAuditEvent } from "../audit.js";
-import { withTenantCtx } from "../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../db/rls.js";
 import { patientRelationships, patients } from "../db/schema.js";
 import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 
@@ -111,7 +111,7 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const loaded = await withTenantCtx(organizationId, async (tx) => {
+		const loaded = await withTenantReadCtx(organizationId, async (tx) => {
 			// Verify subject patient exists in organization
 			const [subjectPatient] = await tx
 				.select({
@@ -323,7 +323,7 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 		const defaultCanSpend = isCloseRelative;
 		const effectiveCanSpend = canSpendFamilyWallet ?? defaultCanSpend;
 
-		const outcome = await withTenantCtx(organizationId, async (tx) => {
+		const outcome = await withTenantWriteCtx(organizationId, async (tx) => {
 			// Verify both patients belong to this organization inside tenant TX
 			const existingPatients = await tx
 				.select({
@@ -543,7 +543,7 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 
 		const updates = bodyParsed.data;
 
-		const updated = await withTenantCtx(organizationId, async (tx) => {
+		const updated = await withTenantWriteCtx(organizationId, async (tx) => {
 			const [existing] = await tx
 				.select()
 				.from(patientRelationships)
@@ -694,7 +694,7 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const deleted = await withTenantCtx(organizationId, async (tx) => {
+		const deleted = await withTenantWriteCtx(organizationId, async (tx) => {
 			const [existing] = await tx
 				.select()
 				.from(patientRelationships)
@@ -752,7 +752,10 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 
 	// ─── Route Registrations (both canonical /api and backward-compatible /api/v1) ───
 
+	const selfManagedRouteOpts = { config: { tenantTxSelfManaged: true } } as const;
+
 	const relationshipMutationOptions = {
+		config: { tenantTxSelfManaged: true },
 		schema: {
 			description: "Patient relationship mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
 			headers: {
@@ -768,8 +771,8 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 	} as const;
 
 	// GET
-	app.get("/api/patients/:patientId/relationships", getRelationshipsHandler);
-	app.get("/api/v1/patients/:id/relationships", getRelationshipsHandler);
+	app.get("/api/patients/:patientId/relationships", selfManagedRouteOpts, getRelationshipsHandler);
+	app.get("/api/v1/patients/:id/relationships", selfManagedRouteOpts, getRelationshipsHandler);
 
 	// POST
 	app.post("/api/patients/:patientId/relationships", relationshipMutationOptions, postRelationshipHandler);

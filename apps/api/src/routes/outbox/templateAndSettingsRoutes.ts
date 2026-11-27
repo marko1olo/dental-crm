@@ -37,9 +37,11 @@ import {
 } from "./types.js";
 
 export async function registerTemplateAndSettingsRoutes(app: FastifyInstance) {
+	const selfManagedRouteOpts = { config: { tenantTxSelfManaged: true } } as const;
+
 	// ─── Справочник переменных ────────────────────────────────────────────────
 
-	app.get("/api/communications/variables", async (request, reply) => {
+	app.get("/api/communications/variables", selfManagedRouteOpts, async (request, reply) => {
 		const context = await requireClinicalReadContext(
 			request,
 			reply,
@@ -53,7 +55,7 @@ export async function registerTemplateAndSettingsRoutes(app: FastifyInstance) {
 
 	// ─── Шаблоны ──────────────────────────────────────────────────────────────
 
-	app.get("/api/communications/templates", async (request, reply) => {
+	app.get("/api/communications/templates", selfManagedRouteOpts, async (request, reply) => {
 		const context = await requireClinicalReadContext(
 			request,
 			reply,
@@ -67,7 +69,7 @@ export async function registerTemplateAndSettingsRoutes(app: FastifyInstance) {
 		return { templates };
 	});
 
-	app.post("/api/communications/templates", async (request, reply) => {
+	app.post("/api/communications/templates", selfManagedRouteOpts, async (request, reply) => {
 		const context = await requireClinicalMutationContext(
 			request,
 			reply,
@@ -124,6 +126,7 @@ export async function registerTemplateAndSettingsRoutes(app: FastifyInstance) {
 
 	app.patch(
 		"/api/communications/templates/:templateId",
+		selfManagedRouteOpts,
 		async (request, reply) => {
 			const context = await requireClinicalMutationContext(
 				request,
@@ -202,7 +205,7 @@ export async function registerTemplateAndSettingsRoutes(app: FastifyInstance) {
 		},
 	);
 
-	app.post("/api/communications/templates/preview", async (request, reply) => {
+	app.post("/api/communications/templates/preview", selfManagedRouteOpts, async (request, reply) => {
 		const context = await requireClinicalReadContext(
 			request,
 			reply,
@@ -260,7 +263,7 @@ export async function registerTemplateAndSettingsRoutes(app: FastifyInstance) {
 
 	// ─── Настройки рассылки ───────────────────────────────────────────────────
 
-	app.get("/api/communications/settings", async (request, reply) => {
+	app.get("/api/communications/settings", selfManagedRouteOpts, async (request, reply) => {
 		const context = await requireClinicalReadContext(
 			request,
 			reply,
@@ -274,7 +277,7 @@ export async function registerTemplateAndSettingsRoutes(app: FastifyInstance) {
 		};
 	});
 
-	app.put("/api/communications/settings", async (request, reply) => {
+	app.put("/api/communications/settings", selfManagedRouteOpts, async (request, reply) => {
 		const context = await requireClinicalMutationContext(
 			request,
 			reply,
@@ -354,7 +357,7 @@ export async function registerTemplateAndSettingsRoutes(app: FastifyInstance) {
 
 	// ─── Согласия пациента ────────────────────────────────────────────────────
 
-	app.get("/api/communications/consents/:patientId", async (request, reply) => {
+	app.get("/api/communications/consents/:patientId", selfManagedRouteOpts, async (request, reply) => {
 		const context = await requireClinicalReadContext(
 			request,
 			reply,
@@ -383,7 +386,7 @@ export async function registerTemplateAndSettingsRoutes(app: FastifyInstance) {
 		};
 	});
 
-	app.put("/api/communications/consents/:patientId", async (request, reply) => {
+	app.put("/api/communications/consents/:patientId", selfManagedRouteOpts, async (request, reply) => {
 		const context = await requireClinicalMutationContext(
 			request,
 			reply,

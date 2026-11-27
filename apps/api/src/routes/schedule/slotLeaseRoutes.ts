@@ -15,7 +15,7 @@ import { randomUUID } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, gt, lt, lte, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import { appointments, scheduleSlotLeases } from "../../db/schema.js";
 import { ADMIN_ROLES, getRequestIdentity } from "../../security/identity.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
@@ -112,7 +112,7 @@ export async function handleAcquireSlotLease(
 
 	const identity = getRequestIdentity(request);
 
-	const outcome = await withTenantCtx(orgId, async (tx) => {
+	const outcome = await withTenantWriteCtx(orgId, async (tx) => {
 		// 1. Атомарно удаляем протухшие лизы организации
 		await tx
 			.delete(scheduleSlotLeases)
@@ -319,7 +319,7 @@ export async function handleReleaseSlotLease(
 		  identity.role === "manager"
 		: false;
 
-	const outcome = await withTenantCtx(orgId, async (tx) => {
+	const outcome = await withTenantWriteCtx(orgId, async (tx) => {
 		const [activeLease] = await tx
 			.select()
 			.from(scheduleSlotLeases)
@@ -414,7 +414,7 @@ export async function handleHeartbeatSlotLease(
 
 	const extensionSeconds = parsed.data.extensionSeconds ?? 60;
 
-	const outcome = await withTenantCtx(orgId, async (tx) => {
+	const outcome = await withTenantWriteCtx(orgId, async (tx) => {
 		const [lease] = await tx
 			.select()
 			.from(scheduleSlotLeases)
@@ -463,6 +463,9 @@ export async function handleHeartbeatSlotLease(
 }
 
 export const slotLeaseIdempotencyMutationOptionsWithOrgIdContext = {
+	config: {
+		tenantTxSelfManaged: true,
+	},
 	schema: {
 		description:
 			"Schedule slot lease protocol mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",

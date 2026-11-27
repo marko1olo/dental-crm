@@ -35,6 +35,7 @@ export function registerLoginRoutes(app: FastifyInstance): void {
 		"/api/auth/clinic/login",
 		{
 			config: {
+				tenantTxSelfManaged: true,
 				rateLimit: {
 					max: 5,
 					timeWindow: "1 minute",
@@ -45,14 +46,23 @@ export function registerLoginRoutes(app: FastifyInstance): void {
 	);
 
 	// ─── Staff PIN Unlock & Chairside Role Switch (МАНДАТ 8e: Doctor Autonomy) ────
-	app.post("/api/auth/staff/unlock", handleStaffUnlock);
-	app.post("/api/auth/staff/switch-role", handleStaffSwitchRole);
+	app.post(
+		"/api/auth/staff/unlock",
+		{ config: { tenantTxSelfManaged: true } },
+		handleStaffUnlock,
+	);
+	app.post(
+		"/api/auth/staff/switch-role",
+		{ config: { tenantTxSelfManaged: true } },
+		handleStaffSwitchRole,
+	);
 
 	// ─── SaaS Universal User Login (email / phone / clinic UUID / code) ───────────
 	app.post(
 		"/api/auth/login",
 		{
 			config: {
+				tenantTxSelfManaged: true,
 				rateLimit: {
 					max: 5,
 					timeWindow: "1 minute",
@@ -67,6 +77,7 @@ export function registerLoginRoutes(app: FastifyInstance): void {
 		"/api/auth/demo/seed",
 		{
 			config: {
+				tenantTxSelfManaged: true,
 				rateLimit: {
 					max: 5,
 					timeWindow: "1 minute",

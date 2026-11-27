@@ -3,7 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireOrganizationId } from "../../security/identity.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	bonusTransactions,
 	organizations,
@@ -87,7 +87,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 	 * GET /api/loyalty/referrals/:patientId
 	 * Получение реального списка приглашенных пациентов из таблицы patient_referrals.
 	 */
-	app.get("/api/loyalty/referrals/:patientId", async (request, reply) => {
+	app.get("/api/loyalty/referrals/:patientId", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 		const { patientId } = request.params as { patientId: string };
@@ -95,7 +95,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 			return reply.status(400).send({ message: "Некорректный идентификатор пациента" });
 		}
 
-		return withTenantCtx(orgId, async (tx) => {
+		return withTenantReadCtx(orgId, async (tx) => {
 			const [patient] = await tx
 				.select({ id: patients.id, fullName: patients.fullName })
 				.from(patients)
@@ -172,7 +172,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 	 * POST /api/loyalty/referrals/register
 	 * Регистрация реферального кода и инвайта для пациента.
 	 */
-	app.post("/api/loyalty/referrals/register", async (request, reply) => {
+	app.post("/api/loyalty/referrals/register", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
@@ -189,7 +189,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 
 		const { referrerPatientId, invitedPatientName, rewardRub, note } = parsed.data;
 
-		return withTenantCtx(orgId, async (tx) => {
+		return withTenantWriteCtx(orgId, async (tx) => {
 			const [referrer] = await tx
 				.select({ id: patients.id, fullName: patients.fullName })
 				.from(patients)
@@ -251,7 +251,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 	 * POST /api/loyalty/referrals/credit
 	 * Начисление реферального бонуса по подтвержденному кассовому платежу.
 	 */
-	app.post("/api/loyalty/referrals/credit", async (request, reply) => {
+	app.post("/api/loyalty/referrals/credit", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
@@ -268,7 +268,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 
 		const { referrerPatientId, refereePatientId, paymentId, rewardRub } = parsed.data;
 
-		const res = await withTenantCtx(orgId, async (tx) => {
+		const res = await withTenantWriteCtx(orgId, async (tx) => {
 				// [LOY-07] Verify payment reality in database
 				const [verifiedPayment] = await tx
 					.select()
@@ -398,7 +398,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 	 * GET /api/referrals/my-code/:patientId
 	 * Получение или создание персонального реферального кода пациента и ссылки.
 	 */
-	app.get("/api/referrals/my-code/:patientId", async (request, reply) => {
+	app.get("/api/referrals/my-code/:patientId", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
@@ -409,7 +409,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 
 		const baseInviteUrl = resolveReferralInviteBaseUrl(request);
 
-		return withTenantCtx(orgId, async (tx) => {
+		return withTenantWriteCtx(orgId, async (tx) => {
 			const [patient] = await tx
 				.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
 				.from(patients)
@@ -498,7 +498,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 	 * POST /api/referrals/attribute
 	 * Привязка нового пациента к пригласившему (Реферальная атрибуция).
 	 */
-	app.post("/api/referrals/attribute", async (request, reply) => {
+	app.post("/api/referrals/attribute", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
@@ -512,7 +512,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 
 		const { refereePatientId, referralCode } = parsed.data;
 
-		return withTenantCtx(orgId, async (tx) => {
+		return withTenantWriteCtx(orgId, async (tx) => {
 			const [codeRecord] = await tx
 				.select()
 				.from(patientReferralCodes)
@@ -600,7 +600,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 	 * POST /api/referrals/reward-first-visit
 	 * Начисление реферального бонуса при первой оплате приглашённого пациента.
 	 */
-	app.post("/api/referrals/reward-first-visit", async (request, reply) => {
+	app.post("/api/referrals/reward-first-visit", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
@@ -622,7 +622,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 
 		const { refereePatientId, paymentId, paidAmountRub } = parsed.data;
 
-		return withTenantCtx(orgId, async (tx) => {
+		return withTenantWriteCtx(orgId, async (tx) => {
 			const [referral] = await tx
 				.select()
 				.from(patientReferrals)

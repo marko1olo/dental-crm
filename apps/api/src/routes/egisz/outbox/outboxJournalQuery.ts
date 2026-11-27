@@ -7,7 +7,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadAccess } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import { requireOrganizationId } from "../../../security/identity.js";
 import { formatOutboxRowForJournal } from "./outboxRowFormatter.js";
@@ -57,7 +57,7 @@ export async function handleEgiszJournalQuery(
 		}
 	}
 
-	const rows = await withTenantCtx(orgId, async (tx) =>
+	const rows = await withTenantReadCtx(orgId, async (tx) =>
 		tx
 			.select({
 				id: schema.egiszOutbox.id, visitId: schema.egiszOutbox.visitId, documentId: schema.egiszOutbox.documentId,

@@ -8,7 +8,8 @@ import { kopecksToRubles } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalReadContext } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	migrationReconciliations,
 	migrationRuns,
@@ -19,38 +20,69 @@ import { failIfInvalidRunId } from "../migrationRunRoutes/types.js";
 
 export async function registerMigrationStatusRoutes(app: FastifyInstance) {
 	/** Список прогонов организации. */
-	app.get("/api/migration/runs", async (request, reply) => {
-		const context = await requireClinicalReadContext(
-			request,
-			reply,
-			"migration runs list",
-		);
-		if (!context) return reply;
-		return { runs: await listRuns(context.organizationId) };
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/migration/runs",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalReadContext(
+				request,
+				reply,
+				"migration runs list",
+			);
+			if (!context) return reply;
+			return { runs: await listRuns(context.organizationId) };
+		},
 	});
 
 	/** Один прогон с последней сверкой. */
-	app.get<{ Params: { runId: string } }>(
-		"/api/migration/runs/:runId",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/migration/runs/:runId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const params = request.params as { runId: string };
 			const context = await requireClinicalReadContext(
 				request,
 				reply,
 				"migration run detail",
 			);
 			if (!context) return reply;
-			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			const invalidId = failIfInvalidRunId(reply, params.runId);
 			if (invalidId) return invalidId;
 
-			const [run] = await db
-				.select()
-				.from(migrationRuns)
-				.where(
-					and(
-						eq(migrationRuns.id, request.params.runId),
-						eq(migrationRuns.organizationId, context.organizationId),
-					),
-				);
+			const { run, reconciliation } = await withTenantReadCtx(
+				context.organizationId,
+				async (tx) => {
+					const [runRow] = await tx
+						.select()
+						.from(migrationRuns)
+						.where(
+							and(
+								eq(migrationRuns.id, params.runId),
+								eq(migrationRuns.organizationId, context.organizationId),
+							),
+						);
+
+					if (!runRow) {
+						return { run: undefined, reconciliation: undefined };
+					}
+
+					const [recRow] = await tx
+						.select()
+						.from(migrationReconciliations)
+						.where(
+							and(
+								eq(migrationReconciliations.runId, runRow.id),
+								eq(migrationReconciliations.organizationId, context.organizationId),
+							),
+						)
+						.orderBy(desc(migrationReconciliations.generatedAt))
+						.limit(1);
+
+					return { run: runRow, reconciliation: recRow };
+				},
+			);
 
 			if (!run) {
 				return reply.code(404).send({
@@ -58,18 +90,6 @@ export async function registerMigrationStatusRoutes(app: FastifyInstance) {
 					message: "Прогон переноса не найден.",
 				});
 			}
-
-			const [reconciliation] = await db
-				.select()
-				.from(migrationReconciliations)
-				.where(
-					and(
-						eq(migrationReconciliations.runId, run.id),
-						eq(migrationReconciliations.organizationId, context.organizationId),
-					),
-				)
-				.orderBy(desc(migrationReconciliations.generatedAt))
-				.limit(1);
 
 			return {
 				run: {
@@ -118,79 +138,97 @@ export async function registerMigrationStatusRoutes(app: FastifyInstance) {
 					: null,
 			};
 		},
-	);
+	});
 
 	/** Карантин прогона с постраничной выборкой. */
-	app.get<{
-		Params: { runId: string };
-		Querystring: { limit?: string; offset?: string };
-	}>("/api/migration/runs/:runId/quarantine", async (request, reply) => {
-		const context = await requireClinicalReadContext(
-			request,
-			reply,
-			"migration quarantine",
-		);
-		if (!context) return reply;
-		const invalidId = failIfInvalidRunId(reply, request.params.runId);
-		if (invalidId) return invalidId;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/migration/runs/:runId/quarantine",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const params = request.params as { runId: string };
+			const query = request.query as { limit?: string; offset?: string };
+			const context = await requireClinicalReadContext(
+				request,
+				reply,
+				"migration quarantine",
+			);
+			if (!context) return reply;
+			const invalidId = failIfInvalidRunId(reply, params.runId);
+			if (invalidId) return invalidId;
 
-		const limit = Math.min(
-			Math.max(Number(request.query.limit ?? "200") || 200, 1),
-			500,
-		);
-		const offset = Math.max(Number(request.query.offset ?? "0") || 0, 0);
-		const items = await listQuarantine(
-			context.organizationId,
-			request.params.runId,
-			limit,
-			offset,
-		);
-		return { items, limit, offset };
+			const limit = Math.min(
+				Math.max(Number(query.limit ?? "200") || 200, 1),
+				500,
+			);
+			const offset = Math.max(Number(query.offset ?? "0") || 0, 0);
+			const items = await listQuarantine(
+				context.organizationId,
+				params.runId,
+				limit,
+				offset,
+			);
+			return { items, limit, offset };
+		},
 	});
 
 	/**
 	 * Отчёт сверки в CSV — то, что передаётся клинике как доказательство переноса.
 	 * Кодировка UTF-8 с BOM.
 	 */
-	app.get<{ Params: { runId: string } }>(
-		"/api/migration/runs/:runId/reconciliation.csv",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/migration/runs/:runId/reconciliation.csv",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const params = request.params as { runId: string };
 			const context = await requireClinicalReadContext(
 				request,
 				reply,
 				"migration reconciliation report",
 			);
 			if (!context) return reply;
-			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			const invalidId = failIfInvalidRunId(reply, params.runId);
 			if (invalidId) return invalidId;
 
-			const [run] = await db
-				.select({ id: migrationRuns.id })
-				.from(migrationRuns)
-				.where(
-					and(
-						eq(migrationRuns.id, request.params.runId),
-						eq(migrationRuns.organizationId, context.organizationId),
-					),
-				);
+			const { run, reconciliation } = await withTenantReadCtx(
+				context.organizationId,
+				async (tx) => {
+					const [runRow] = await tx
+						.select({ id: migrationRuns.id })
+						.from(migrationRuns)
+						.where(
+							and(
+								eq(migrationRuns.id, params.runId),
+								eq(migrationRuns.organizationId, context.organizationId),
+							),
+						);
+					if (!runRow) {
+						return { run: undefined, reconciliation: undefined };
+					}
+
+					const [recRow] = await tx
+						.select()
+						.from(migrationReconciliations)
+						.where(
+							and(
+								eq(migrationReconciliations.runId, runRow.id),
+								eq(migrationReconciliations.organizationId, context.organizationId),
+							),
+						)
+						.orderBy(desc(migrationReconciliations.generatedAt))
+						.limit(1);
+
+					return { run: runRow, reconciliation: recRow };
+				},
+			);
+
 			if (!run) {
 				return reply.code(404).send({
 					error: "MigrationRunNotFound",
 					message: "Прогон переноса не найден.",
 				});
 			}
-
-			const [reconciliation] = await db
-				.select()
-				.from(migrationReconciliations)
-				.where(
-					and(
-						eq(migrationReconciliations.runId, run.id),
-						eq(migrationReconciliations.organizationId, context.organizationId),
-					),
-				)
-				.orderBy(desc(migrationReconciliations.generatedAt))
-				.limit(1);
 
 			if (!reconciliation) {
 				return reply.code(404).send({
@@ -226,5 +264,5 @@ export async function registerMigrationStatusRoutes(app: FastifyInstance) {
 			);
 			return reply.send(`﻿${csv}`);
 		},
-	);
+	});
 }

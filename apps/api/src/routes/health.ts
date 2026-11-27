@@ -7,85 +7,104 @@
  * - GET /api/system/metrics — Prometheus-совместимый текстовый формат метрик (OpenMetrics).
  */
 
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { requireClinicalReadAccess, resolveOrganizationId } from "../accessGuard.js";
+import { definePublicRoute, defineStreamRoute } from "../core/routeFactories.js";
 import { ServerHealthWatchdog } from "../services/system/ServerHealthWatchdog.js";
 
 export async function registerHealthRoutes(app: FastifyInstance): Promise<void> {
 	/**
 	 * Базовый liveness probe.
 	 */
-	app.get("/api/health", async () => {
-		return {
-			ok: true,
-			service: "dental-crm-api",
-			status: "healthy",
-			time: new Date().toISOString(),
-		};
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/health",
+		handler: async () => {
+			return {
+				ok: true,
+				service: "dental-crm-api",
+				status: "healthy",
+				time: new Date().toISOString(),
+			};
+		},
 	});
 
 	/**
 	 * LAN Server Discovery & mDNS Beacon.
 	 * Returns minimal public LAN server summary without leaking MAC addresses or interface topology.
 	 */
-	app.get("/api/health/discovery", async () => {
-		const { getPublicLanDiscoverySummary } = await import("../services/lanDiscoveryService.js");
-		return getPublicLanDiscoverySummary();
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/health/discovery",
+		handler: async () => {
+			const { getPublicLanDiscoverySummary } = await import("../services/lanDiscoveryService.js");
+			return getPublicLanDiscoverySummary();
+		},
 	});
 
 	/**
 	 * Детальный отчет о здоровье сервера и системных ресурсах.
 	 * Доступен администраторам клиники (защищен requireClinicalReadAccess).
 	 */
-	app.get("/api/system/health/detailed", async (request: FastifyRequest, reply: FastifyReply) => {
-		const isAllowed = await requireClinicalReadAccess(
-			request,
-			reply,
-			"system health detailed",
-		);
-		if (!isAllowed) {
-			return;
-		}
-
-		const metrics = await ServerHealthWatchdog.getSystemMetrics();
-
-		// Опциональное сохранение снимка в базу данных при запросе с токеном организации
-		const orgId = await resolveOrganizationId(request);
-		if (orgId) {
-			try {
-				await ServerHealthWatchdog.recordRamSnapshot(orgId);
-			} catch (err) {
-				request.log.warn(
-					{ err, organizationId: orgId },
-					"[ServerHealthWatchdog] Failed to record RAM snapshot to DB",
-				);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/system/health/detailed",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const isAllowed = await requireClinicalReadAccess(
+				request,
+				reply,
+				"system health detailed",
+			);
+			if (!isAllowed) {
+				return;
 			}
-		}
 
-		return reply.code(200).send(metrics);
+			const metrics = await ServerHealthWatchdog.getSystemMetrics();
+
+			// Опциональное сохранение снимка в базу данных при запросе с токеном организации
+			const orgId = await resolveOrganizationId(request);
+			if (orgId) {
+				try {
+					await ServerHealthWatchdog.recordRamSnapshot(orgId);
+				} catch (err) {
+					request.log.warn(
+						{ err, organizationId: orgId },
+						"[ServerHealthWatchdog] Failed to record RAM snapshot to DB",
+					);
+				}
+			}
+
+			return reply.code(200).send(metrics);
+		},
 	});
 
 	/**
 	 * Prometheus-совместимый эндпоинт метрик для scraping'а системами мониторинга (Prometheus / Grafana / VictoriaMetrics).
 	 * Защищен requireClinicalReadAccess (секрет администратора или верифицированный токен).
 	 */
-	app.get("/api/system/metrics", async (request: FastifyRequest, reply: FastifyReply) => {
-		const isAllowed = await requireClinicalReadAccess(
-			request,
-			reply,
-			"system metrics",
-		);
-		if (!isAllowed) {
-			return;
-		}
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/system/metrics",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const isAllowed = await requireClinicalReadAccess(
+				request,
+				reply,
+				"system metrics",
+			);
+			if (!isAllowed) {
+				return;
+			}
 
-		const metrics = await ServerHealthWatchdog.getSystemMetrics();
-		const prometheusText = ServerHealthWatchdog.toPrometheusMetrics(metrics);
+			const metrics = await ServerHealthWatchdog.getSystemMetrics();
+			const prometheusText = ServerHealthWatchdog.toPrometheusMetrics(metrics);
 
-		return reply
-			.type("text/plain; version=0.0.4; charset=utf-8")
-			.code(200)
-			.send(prometheusText);
+			return reply
+				.type("text/plain; version=0.0.4; charset=utf-8")
+				.code(200)
+				.send(prometheusText);
+		},
 	});
 }
 

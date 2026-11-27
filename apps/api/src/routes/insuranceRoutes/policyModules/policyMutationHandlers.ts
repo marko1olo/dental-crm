@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { dmsGuaranteeLetters, insuranceContracts, patients } from "../../../db/schema.js";
 import {
 	INSURANCE_COMPANY_NAME_REQUIRED,
@@ -33,7 +33,10 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 			annualLimitRub?: number;
 			annualLimitKopecks?: number | null;
 		};
-	}>("/api/insurance/contracts", async (request, reply) => {
+	}>(
+		"/api/insurance/contracts",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -105,7 +108,7 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 					? annualLimitRub
 					: null;
 
-		const created = await withTenantCtx(orgId, async (tx) => {
+		const created = await withTenantWriteCtx(orgId, async (tx) => {
 			const [inserted] = await tx
 				.insert(insuranceContracts)
 				.values({
@@ -153,7 +156,10 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 			requiresGuaranteeLetter?: boolean;
 			isActive?: boolean;
 		};
-	}>("/api/insurance/contracts/:contractId", async (request, reply) => {
+	}>(
+		"/api/insurance/contracts/:contractId",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -214,7 +220,7 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 
 		const clamp = (v: number) => Math.min(100, Math.max(0, v));
 
-		const txResult = await withTenantCtx(orgId, async (tx) => {
+		const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 			const [existing] = await tx
 				.select({ id: insuranceContracts.id })
 				.from(insuranceContracts)
@@ -301,6 +307,7 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 	// DELETE (soft-delete / deactivate) an insurance contract
 	app.delete<{ Params: { contractId: string } }>(
 		"/api/insurance/contracts/:contractId",
+		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
 			const orgId = await requireResolvedStaffOrAdminOrganizationId(
 				request,
@@ -317,7 +324,7 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const deleteResult = await withTenantCtx(orgId, async (tx) => {
+			const deleteResult = await withTenantWriteCtx(orgId, async (tx) => {
 				const [existing] = await tx
 					.select({ id: insuranceContracts.id })
 					.from(insuranceContracts)
@@ -376,7 +383,10 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 			maxCoverageKopecks?: number;
 			limitKopecks?: number;
 		};
-	}>("/api/insurance/quick-attach", async (request, reply) => {
+	}>(
+		"/api/insurance/quick-attach",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -413,7 +423,7 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 			? `ЭКСТРЕННО-${Date.now().toString().slice(-6)}`
 			: `ДМС-${Date.now().toString().slice(-6)}`;
 
-		const txResult = await withTenantCtx(orgId, async (tx) => {
+		const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 			// Mandate 8z: BOLA/IDOR protection - verify patient belongs to current clinic organization
 			const [patient] = await tx
 				.select({

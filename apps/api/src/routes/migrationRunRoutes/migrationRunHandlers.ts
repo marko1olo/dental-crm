@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { mapRunPhase, stageRunPhase } from "../../migration/phases.js";
 import {
 	countStagingByStatus,
@@ -22,16 +23,19 @@ import {
  */
 export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 	/** Сопоставление колонок: правила плюс языковая модель. Быстрая фаза. */
-	app.post<{ Params: { runId: string } }>(
-		"/api/migration/:runId/map",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/migration/:runId/map",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const params = request.params as { runId: string };
 			const context = await requireClinicalMutationContext(
 				request,
 				reply,
 				"migration map",
 			);
 			if (!context) return reply;
-			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			const invalidId = failIfInvalidRunId(reply, params.runId);
 			if (invalidId) return invalidId;
 
 			const parsed = mapRequestSchema.safeParse(request.body ?? {});
@@ -46,7 +50,7 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 
 			try {
 				const result = await mapRunPhase({
-					runId: request.params.runId,
+					runId: params.runId,
 					organizationId: context.organizationId,
 					allowLlm: parsed.data.allowLlm,
 					sourceSystem: "legacy",
@@ -61,7 +65,7 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 
 				reply.code(200);
 				return {
-					runId: request.params.runId,
+					runId: params.runId,
 					mapping: result.mapping,
 					profile: result.analyze.profile,
 					projectedReady: result.analyze.projectedReady,
@@ -77,7 +81,7 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 				return failFromPhaseError(reply, error, request.log);
 			}
 		},
-	);
+	});
 
 	/**
 	 * Укладка в стейджинг отдельным вызовом.
@@ -86,33 +90,36 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 	 * оператор мог увидеть карантин ДО записи в боевые таблицы: уложить, посмотреть,
 	 * что отсеялось, поправить карту и уложить заново.
 	 */
-	app.post<{ Params: { runId: string } }>(
-		"/api/migration/:runId/stage",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/migration/:runId/stage",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const params = request.params as { runId: string };
 			const context = await requireClinicalMutationContext(
 				request,
 				reply,
 				"migration stage",
 			);
 			if (!context) return reply;
-			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			const invalidId = failIfInvalidRunId(reply, params.runId);
 			if (invalidId) return invalidId;
 
 			try {
 				const result = await stageRunPhase({
-					runId: request.params.runId,
+					runId: params.runId,
 					organizationId: context.organizationId,
 					allowLlm: false,
 					sourceSystem: "legacy",
 					mappingOverrides: [],
 				});
 				const counts = await countStagingByStatus(
-					request.params.runId,
+					params.runId,
 					context.organizationId,
 				);
 				reply.code(200);
 				return {
-					runId: request.params.runId,
+					runId: params.runId,
 					sourceRows: result.sourceRows,
 					staging: counts,
 					nextStep: "POST /api/migration/:runId/execute",
@@ -121,7 +128,7 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 				return failFromPhaseError(reply, error, request.log);
 			}
 		},
-	);
+	});
 
 	/**
 	 * Постановка выполнения в очередь.
@@ -130,16 +137,19 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 	 * клиент опрашивает GET /api/migration/:runId. Возвращать 200 здесь было бы
 	 * неправдой — работа не выполнена, а только принята.
 	 */
-	app.post<{ Params: { runId: string } }>(
-		"/api/migration/:runId/execute",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/migration/:runId/execute",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const params = request.params as { runId: string };
 			const context = await requireClinicalMutationContext(
 				request,
 				reply,
 				"migration execute",
 			);
 			if (!context) return reply;
-			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			const invalidId = failIfInvalidRunId(reply, params.runId);
 			if (invalidId) return invalidId;
 
 			const parsed = executeRequestSchema.safeParse(request.body ?? {});
@@ -152,7 +162,7 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 				);
 			}
 
-			const run = await findRun(request.params.runId, context.organizationId);
+			const run = await findRun(params.runId, context.organizationId);
 			if (!run) {
 				return fail(
 					reply,
@@ -192,7 +202,7 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 			}
 
 			const queued = await enqueueRun(
-				request.params.runId,
+				params.runId,
 				context.organizationId,
 				parsed.data.dryRun,
 			);
@@ -207,21 +217,21 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 			}
 
 			const queuedRun = await findRun(
-				request.params.runId,
+				params.runId,
 				context.organizationId,
 			);
 			reply.code(202);
 			return {
 				accepted: true,
-				runId: request.params.runId,
+				runId: params.runId,
 				status: queuedRun?.status ?? "queued",
 				dryRun: parsed.data.dryRun,
 				message: parsed.data.dryRun
 					? "Сухой прогон принят: боевые таблицы не изменятся."
 					: "Выполнение принято. Загрузка идёт в фоне.",
-				poll: `GET /api/migration/${request.params.runId}`,
+				poll: `GET /api/migration/${params.runId}`,
 				worker: migrationWorkerStatus(),
 			};
 		},
-	);
+	});
 }

@@ -17,6 +17,7 @@ import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	analyzeSource,
 	rollbackRun,
@@ -37,7 +38,7 @@ export async function registerMigrationExecutionRoutes(app: FastifyInstance) {
 	 */
 	app.post(
 		"/api/migration/analyze",
-		{ bodyLimit: MIGRATION_BODY_LIMIT },
+		{ bodyLimit: MIGRATION_BODY_LIMIT, config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
 			const context = await requireClinicalReadContext(
 				request,
@@ -77,7 +78,7 @@ export async function registerMigrationExecutionRoutes(app: FastifyInstance) {
 	 */
 	app.post(
 		"/api/migration/run",
-		{ bodyLimit: MIGRATION_BODY_LIMIT },
+		{ bodyLimit: MIGRATION_BODY_LIMIT, config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
 			const context = await requireClinicalMutationContext(
 				request,
@@ -119,49 +120,54 @@ export async function registerMigrationExecutionRoutes(app: FastifyInstance) {
 	/**
 	 * Откат прогона. Удаляет только созданное этим прогоном; обновлённые записи сохраняются.
 	 */
-	app.post("/api/migration/rollback", async (request, reply) => {
-		const context = await requireClinicalMutationContext(
-			request,
-			reply,
-			"migration rollback",
-		);
-		if (!context) return reply;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/migration/rollback",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalMutationContext(
+				request,
+				reply,
+				"migration rollback",
+			);
+			if (!context) return reply;
 
-		const parsed = parsePayload(
-			migrationRollbackRequestSchema,
-			request.body,
-			"откат переноса",
-		);
-		if (!parsed.ok) {
-			return reply
-				.code(400)
-				.send({ error: "MigrationValidationError", message: parsed.message });
-		}
+			const parsed = parsePayload(
+				migrationRollbackRequestSchema,
+				request.body,
+				"откат переноса",
+			);
+			if (!parsed.ok) {
+				return reply
+					.code(400)
+					.send({ error: "MigrationValidationError", message: parsed.message });
+			}
 
-		const identity = getRequestIdentity(request);
-		try {
-			const result = await rollbackRun({
-				organizationId: context.organizationId,
-				runId: parsed.data.runId,
-				actorUserId: identity.userId ?? null,
-			});
+			const identity = getRequestIdentity(request);
+			try {
+				const result = await rollbackRun({
+					organizationId: context.organizationId,
+					runId: parsed.data.runId,
+					actorUserId: identity.userId ?? null,
+				});
 
-			return migrationRollbackResponseSchema.parse({
-				runId: parsed.data.runId,
-				status: result.status,
-				deletedByEntity: result.outcomes.map((outcome) => ({
-					entityKind: outcome.entityKind,
-					deleted: outcome.deleted,
-					retained: outcome.retained,
-					retainedReason: outcome.retainedReason,
-				})),
-				message: result.message,
-			});
-		} catch (error) {
-			return reply.code(422).send({
-				error: "MigrationRollbackFailed",
-				message: errorMessageOf(error),
-			});
-		}
+				return migrationRollbackResponseSchema.parse({
+					runId: parsed.data.runId,
+					status: result.status,
+					deletedByEntity: result.outcomes.map((outcome) => ({
+						entityKind: outcome.entityKind,
+						deleted: outcome.deleted,
+						retained: outcome.retained,
+						retainedReason: outcome.retainedReason,
+					})),
+					message: result.message,
+				});
+			} catch (error) {
+				return reply.code(422).send({
+					error: "MigrationRollbackFailed",
+					message: errorMessageOf(error),
+				});
+			}
+		},
 	});
 }

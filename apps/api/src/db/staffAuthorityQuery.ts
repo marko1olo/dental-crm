@@ -66,7 +66,7 @@ import {
 	type StaffAuthorityFlags,
 	staffAuthorityFlags,
 } from "../security/permissions.js";
-import { db } from "./client.js";
+import { withTenantWriteCtx } from "./rls.js";
 import * as schema from "./schema.js";
 
 /**
@@ -162,7 +162,7 @@ export async function grantStaffAuthorityInDb(
 	if (process.env.DENTAL_STATE_PERSISTENCE === "off")
 		throw new StaffAuthorityStorageDisabledError();
 
-	return db.transaction(async (tx) => {
+	return withTenantWriteCtx(organizationId, async (tx) => {
 		const [current] = await tx
 			.select({
 				id: schema.users.id,

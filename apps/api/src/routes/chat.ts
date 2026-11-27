@@ -2,7 +2,8 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { and, eq, gt, or } from "drizzle-orm";
-import { withTenantCtx } from "../db/rls.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../db/rls.js";
 import * as schema from "../db/schema.js";
 import { communicationEvents } from "../db/schema.js";
 import {
@@ -22,51 +23,60 @@ const chatSendSchema = z
 	.strict();
 
 export async function registerChatRoutes(app: FastifyInstance) {
-	app.get("/api/chat/quota", async (request, reply) => {
-		try {
-			const organizationId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"chat quota",
-			);
-			if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/chat/quota",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			try {
+				const organizationId = await requireResolvedOrganizationId(
+					request,
+					reply,
+					"chat quota",
+				);
+				if (!organizationId) return;
 
-			const quota = await withTenantCtx(organizationId, (tx) =>
-				getDailySmsQuota(organizationId, tx),
-			);
-			return quota;
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Ошибка при получении квоты SMS.",
-			});
-		}
-	});
-
-	app.post("/api/chat/sms/send", async (request, reply) => {
-		try {
-			const organizationId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"chat sms send",
-			);
-			if (!organizationId) return;
-
-			const parsed = chatSendSchema.safeParse(request.body);
-			if (!parsed.success) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Неверный формат данных",
+				const quota = await withTenantReadCtx(organizationId, (tx) =>
+					getDailySmsQuota(organizationId, tx),
+				);
+				return quota;
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Ошибка при получении квоты SMS.",
 				});
 			}
+		},
+	});
 
-			// 152-ФЗ / 323-ФЗ ст. 13: Запрет передачи сведений, составляющих врачебную тайну, в открытых SMS
-			const leakCheck = MessageTemplateEngine.detectMedicalSecrecyLeaks(
-				parsed.data.message,
-			);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/chat/sms/send",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			try {
+				const organizationId = await requireResolvedOrganizationId(
+					request,
+					reply,
+					"chat sms send",
+				);
+				if (!organizationId) return;
 
-			const txResult = await withTenantCtx(organizationId, async (tx) => {
+				const parsed = chatSendSchema.safeParse(request.body);
+				if (!parsed.success) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Неверный формат данных",
+					});
+				}
+
+				// 152-ФЗ / 323-ФЗ ст. 13: Запрет передачи сведений, составляющих врачебную тайну, в открытых SMS
+				const leakCheck = MessageTemplateEngine.detectMedicalSecrecyLeaks(
+					parsed.data.message,
+				);
+
+				const txResult = await withTenantWriteCtx(organizationId, async (tx) => {
 				const quota = await ensureAndLockDailySmsQuota(organizationId, tx);
 				if (quota.remaining <= 0) {
 					return { kind: "quota_exceeded" as const };
@@ -254,5 +264,6 @@ export async function registerChatRoutes(app: FastifyInstance) {
 				message: "Ошибка при отправке SMS пациенту.",
 			});
 		}
-	});
+	},
+});
 }

@@ -4,7 +4,8 @@ import { Readable } from "node:stream";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { migrationRuns } from "../../db/schema.js";
 import {
 	discoverLocalSources,
@@ -127,7 +128,7 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 	 */
 	app.post(
 		"/api/migration/upload",
-		{ bodyLimit: MAX_UPLOAD_BYTES },
+		{ bodyLimit: MAX_UPLOAD_BYTES, config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
 			const context = await requireClinicalMutationContext(
 				request,
@@ -210,17 +211,19 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 				});
 			}
 
-			const previous = await db
-				.select({ id: migrationRuns.id, createdAt: migrationRuns.createdAt })
-				.from(migrationRuns)
-				.where(
-					and(
-						eq(migrationRuns.organizationId, context.organizationId),
-						eq(migrationRuns.sourceFingerprint, stored.fingerprint),
-					),
-				)
-				.orderBy(desc(migrationRuns.createdAt))
-				.limit(1);
+			const previous = await withTenantReadCtx(context.organizationId, async (tx) =>
+				tx
+					.select({ id: migrationRuns.id, createdAt: migrationRuns.createdAt })
+					.from(migrationRuns)
+					.where(
+						and(
+							eq(migrationRuns.organizationId, context.organizationId),
+							eq(migrationRuns.sourceFingerprint, stored.fingerprint),
+						),
+					)
+					.orderBy(desc(migrationRuns.createdAt))
+					.limit(1),
+			);
 
 			const identity = getRequestIdentity(request);
 			const run = await createRun({
@@ -282,118 +285,123 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 	 * действие уровня администратора: оно раскрывает структуру файловой системы,
 	 * и давать его всем, кто может смотреть карточки, неправильно.
 	 */
-	app.post("/api/migration/discover", async (request, reply) => {
-		const context = await requireClinicalMutationContext(
-			request,
-			reply,
-			"migration discovery",
-		);
-		if (!context) return reply;
-
-		const identity = getRequestIdentity(request);
-		if (
-			identity.userId &&
-			!(ADMIN_ROLES as readonly string[]).includes(identity.role ?? "")
-		) {
-			return fail(
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/migration/discover",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalMutationContext(
+				request,
 				reply,
-				403,
-				"PermissionDenied",
-				"Поиск локальных баз на сервере доступен только владельцу или администратору клиники.",
+				"migration discovery",
 			);
-		}
+			if (!context) return reply;
 
-		const parsed = discoverRequestSchema.safeParse(request.body ?? {});
-		if (!parsed.success) {
-			return failSchemaRefusal(
-				reply,
-				parsed.error.issues,
-				"Запрос поиска не прошёл проверку.",
-				"поиск источников",
-			);
-		}
-
-		let validatedRoots: string[] = getConfiguredMigrationAllowedRoots();
-		if (parsed.data.roots.length > 0) {
-			try {
-				validatedRoots = await Promise.all(
-					parsed.data.roots.map((r) => resolveSafeMigrationPath(r)),
-				);
-			} catch (pathError) {
+			const identity = getRequestIdentity(request);
+			if (
+				identity.userId &&
+				!(ADMIN_ROLES as readonly string[]).includes(identity.role ?? "")
+			) {
 				return fail(
 					reply,
-					400,
-					"InvalidMigrationPath",
-					pathError instanceof Error
-						? pathError.message
-						: "Недопустимый каталог для поиска источников.",
+					403,
+					"PermissionDenied",
+					"Поиск локальных баз на сервере доступен только владельцу или администратору клиники.",
 				);
 			}
-		}
 
-		try {
-			const result = await discoverLocalSources({
-				roots: validatedRoots,
-				maxDepth: parsed.data.maxDepth,
-				timeBudgetMs: parsed.data.timeBudgetMs,
-			});
-			const summary = summarizeDiscovery(result);
+			const parsed = discoverRequestSchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
+				return failSchemaRefusal(
+					reply,
+					parsed.error.issues,
+					"Запрос поиска не прошёл проверку.",
+					"поиск источников",
+				);
+			}
 
-			reply.code(200);
-			return {
-				roots: result.roots,
-				summary,
-				/**
-				 * Читаемые источники идут первыми и отдельным списком: оператору нужно
-				 * сразу видеть, что можно перенести прямо сейчас, а что требует выгрузки
-				 * из старой программы.
-				 */
-				readySources: result.sources
-					.filter((source) => source.format.readable)
-					.slice(0, 60)
-					.map((source) => ({
-						filePath: source.filePath,
-						fileName: source.fileName,
-						byteSize: source.byteSize,
-						modifiedAt: source.modifiedAt,
-						format: source.format.title,
-						formatId: source.format.id,
-						version: source.format.version,
-						details: source.details,
-						relevance: source.relevance,
-					})),
-				needsExportSources: result.sources
-					.filter((source) => !source.format.readable)
-					.slice(0, 60)
-					.map((source) => ({
-						filePath: source.filePath,
-						fileName: source.fileName,
-						byteSize: source.byteSize,
-						format: source.format.title,
-						formatId: source.format.id,
-						version: source.format.version,
-						/** Что именно делать оператору. Ради этого поиск и нужен. */
-						guidance: source.format.guidance,
-						relevance: source.relevance,
-					})),
-				imagingFolders: result.imagingFolders.slice(0, 20),
-				scan: {
-					filesScanned: result.filesScanned,
-					directoriesScanned: result.directoriesScanned,
-					elapsedMs: result.elapsedMs,
-					truncated: result.truncated,
-				},
-				warnings: result.warnings,
-			};
-		} catch (error) {
-			request.log.error(
-				{ err: safeLogError(error), organizationId: context.organizationId },
-				"[migration] Local source discovery failed",
-			);
-			const message =
-				error instanceof Error ? error.message : "Поиск не выполнен.";
-			return fail(reply, 500, "DiscoveryFailed", message);
-		}
+			let validatedRoots: string[] = getConfiguredMigrationAllowedRoots();
+			if (parsed.data.roots.length > 0) {
+				try {
+					validatedRoots = await Promise.all(
+						parsed.data.roots.map((r) => resolveSafeMigrationPath(r)),
+					);
+				} catch (pathError) {
+					return fail(
+						reply,
+						400,
+						"InvalidMigrationPath",
+						pathError instanceof Error
+							? pathError.message
+							: "Недопустимый каталог для поиска источников.",
+					);
+				}
+			}
+
+			try {
+				const result = await discoverLocalSources({
+					roots: validatedRoots,
+					maxDepth: parsed.data.maxDepth,
+					timeBudgetMs: parsed.data.timeBudgetMs,
+				});
+				const summary = summarizeDiscovery(result);
+
+				reply.code(200);
+				return {
+					roots: result.roots,
+					summary,
+					/**
+					 * Читаемые источники идут первыми и отдельным списком: оператору нужно
+					 * сразу видеть, что можно перенести прямо сейчас, а что требует выгрузки
+					 * из старой программы.
+					 */
+					readySources: result.sources
+						.filter((source) => source.format.readable)
+						.slice(0, 60)
+						.map((source) => ({
+							filePath: source.filePath,
+							fileName: source.fileName,
+							byteSize: source.byteSize,
+							modifiedAt: source.modifiedAt,
+							format: source.format.title,
+							formatId: source.format.id,
+							version: source.format.version,
+							details: source.details,
+							relevance: source.relevance,
+						})),
+					needsExportSources: result.sources
+						.filter((source) => !source.format.readable)
+						.slice(0, 60)
+						.map((source) => ({
+							filePath: source.filePath,
+							fileName: source.fileName,
+							byteSize: source.byteSize,
+							format: source.format.title,
+							formatId: source.format.id,
+							version: source.format.version,
+							/** Что именно делать оператору. Ради этого поиск и нужен. */
+							guidance: source.format.guidance,
+							relevance: source.relevance,
+						})),
+					imagingFolders: result.imagingFolders.slice(0, 20),
+					scan: {
+						filesScanned: result.filesScanned,
+						directoriesScanned: result.directoriesScanned,
+						elapsedMs: result.elapsedMs,
+						truncated: result.truncated,
+					},
+					warnings: result.warnings,
+				};
+			} catch (error) {
+				request.log.error(
+					{ err: safeLogError(error), organizationId: context.organizationId },
+					"[migration] Local source discovery failed",
+				);
+				const message =
+					error instanceof Error ? error.message : "Поиск не выполнен.";
+				return fail(reply, 500, "DiscoveryFailed", message);
+			}
+		},
 	});
 
 	/**
@@ -403,65 +411,70 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 	 * дате рождения из самого снимка, и оператор должен увидеть, что там записано,
 	 * до массовой привязки.
 	 */
-	app.post("/api/migration/dicom/inspect", async (request, reply) => {
-		const context = await requireClinicalMutationContext(
-			request,
-			reply,
-			"migration dicom inspect",
-		);
-		if (!context) return reply;
-
-		const identity = getRequestIdentity(request);
-		if (
-			identity.userId &&
-			!(ADMIN_ROLES as readonly string[]).includes(identity.role ?? "")
-		) {
-			return fail(
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/migration/dicom/inspect",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalMutationContext(
+				request,
 				reply,
-				403,
-				"PermissionDenied",
-				"Инспекция файлов DICOM на сервере доступна только владельцу или администратору клиники.",
+				"migration dicom inspect",
 			);
-		}
+			if (!context) return reply;
 
-		const parsed = dicomInspectSchema.safeParse(request.body ?? {});
-		if (!parsed.success) {
-			return failSchemaRefusal(
-				reply,
-				parsed.error.issues,
-				"Запрос разбора снимка не прошёл проверку.",
-				"разбор снимка",
-			);
-		}
+			const identity = getRequestIdentity(request);
+			if (
+				identity.userId &&
+				!(ADMIN_ROLES as readonly string[]).includes(identity.role ?? "")
+			) {
+				return fail(
+					reply,
+					403,
+					"PermissionDenied",
+					"Инспекция файлов DICOM на сервере доступна только владельцу или администратору клиники.",
+				);
+			}
 
-		let safeFilePath: string;
-		try {
-			safeFilePath = await resolveSafeMigrationPath(parsed.data.filePath);
-		} catch (pathError) {
-			return fail(
-				reply,
-				400,
-				"InvalidMigrationPath",
-				pathError instanceof Error
-					? pathError.message
-					: "Недопустимый путь к файлу DICOM.",
-			);
-		}
+			const parsed = dicomInspectSchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
+				return failSchemaRefusal(
+					reply,
+					parsed.error.issues,
+					"Запрос разбора снимка не прошёл проверку.",
+					"разбор снимка",
+				);
+			}
 
-		try {
-			const metadata = await readDicomMetadata(safeFilePath);
-			reply.code(200);
-			return { filePath: safeFilePath, metadata };
-		} catch (error) {
-			request.log.error(
-				{ err: safeLogError(error), organizationId: context.organizationId, filePath: safeFilePath },
-				"[migration] DICOM metadata inspection failed",
-			);
-			const message =
-				error instanceof Error ? error.message : "Снимок не разобран.";
-			return fail(reply, 422, "DicomRejected", message, {
-				filePath: safeFilePath,
-			});
-		}
+			let safeFilePath: string;
+			try {
+				safeFilePath = await resolveSafeMigrationPath(parsed.data.filePath);
+			} catch (pathError) {
+				return fail(
+					reply,
+					400,
+					"InvalidMigrationPath",
+					pathError instanceof Error
+						? pathError.message
+						: "Недопустимый путь к файлу DICOM.",
+				);
+			}
+
+			try {
+				const metadata = await readDicomMetadata(safeFilePath);
+				reply.code(200);
+				return { filePath: safeFilePath, metadata };
+			} catch (error) {
+				request.log.error(
+					{ err: safeLogError(error), organizationId: context.organizationId, filePath: safeFilePath },
+					"[migration] DICOM metadata inspection failed",
+				);
+				const message =
+					error instanceof Error ? error.message : "Снимок не разобран.";
+				return fail(reply, 422, "DicomRejected", message, {
+					filePath: safeFilePath,
+				});
+			}
+		},
 	});
 }

@@ -2,7 +2,8 @@ import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
-import { withSavepoint, withTenantCtx } from "../../db/rls.js";
+import { definePublicRoute } from "../../core/routeFactories.js";
+import { withSavepoint, withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	appointments,
 	denteTelegramBotConfigs,
@@ -35,7 +36,7 @@ const webAppSlotsQuerySchema = z.object({
 
 async function resolveWebAppBotToken(organizationId: string): Promise<string | null> {
 	try {
-		const [botConfig] = await withTenantCtx(organizationId, async (tx) =>
+		const [botConfig] = await withTenantReadCtx(organizationId, async (tx) =>
 			tx
 				.select({ tokenSecretRef: denteTelegramBotConfigs.tokenSecretRef })
 				.from(denteTelegramBotConfigs)
@@ -126,7 +127,7 @@ async function authorizeWebAppPatientAction(
 		const tgUserId = String(validation.user.id);
 		const chatFp = hashTelegramChatFingerprint(tgUserId);
 
-		const linkedPatientId = await withTenantCtx(params.organizationId, async (tx) => {
+		const linkedPatientId = await withTenantReadCtx(params.organizationId, async (tx) => {
 			const [byProfile] = await tx
 				.select({ id: patients.id })
 				.from(patients)
@@ -214,7 +215,10 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 	 * возвращает профиль пациента, баланс бонусов, семейную группу,
 	 * ближайшие записи и историю визитов для легкого мобильного экрана.
 	 */
-	app.post("/api/telegram/webapp/session", async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "POST",
+		path: "/api/telegram/webapp/session",
+		handler: async ({ request, reply }) => {
 		const parsed = webAppSessionSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.status(400).send({
@@ -250,7 +254,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 		const tgUser = validation.user;
 
 		try {
-			return await withTenantCtx(organizationId, async (tx) => {
+			return await withTenantWriteCtx(organizationId, async (tx) => {
 				let authenticatedPatient: typeof patients.$inferSelect | undefined;
 
 				async function verifyAndLinkPatient(
@@ -526,12 +530,16 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 			}
 			throw err;
 		}
+		},
 	});
 
 	/**
 	 * 2. Приём жалобы на зуб из 3D/2D зубной формулы («Беспокоит зуб 16»):
 	 */
-	app.post("/api/telegram/webapp/complaint", async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "POST",
+		path: "/api/telegram/webapp/complaint",
+		handler: async ({ request, reply }) => {
 		const parsed = toothComplaintSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.status(400).send({
@@ -568,12 +576,16 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 		});
 
 		return reply.send(result);
+		},
 	});
 
 	/**
 	 * 3. Доступные слоты врачей на ближайшую неделю для онлайн-календаря WebApp:
 	 */
-	app.get("/api/telegram/webapp/slots", async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/telegram/webapp/slots",
+		handler: async ({ request, reply }) => {
 		const queryParse = webAppSlotsQuerySchema.safeParse(request.query);
 		if (!queryParse.success) {
 			return reply.status(400).send({
@@ -585,7 +597,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 		const { organizationId } = queryParse.data;
 
 		try {
-			return await withTenantCtx(organizationId, async (tx) => {
+			return await withTenantReadCtx(organizationId, async (tx) => {
 				const doctors = await tx
 					.select({
 						id: users.id,
@@ -668,12 +680,16 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 			}
 			throw err;
 		}
+		},
 	});
 
 	/**
 	 * 4. Запись на приём из Telegram WebApp:
 	 */
-	app.post("/api/telegram/webapp/book", async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "POST",
+		path: "/api/telegram/webapp/book",
+		handler: async ({ request, reply }) => {
 		const parsed = webAppBookingSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.status(400).send({
@@ -725,5 +741,6 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 		}
 
 		return reply.send(result);
+		},
 	});
 }

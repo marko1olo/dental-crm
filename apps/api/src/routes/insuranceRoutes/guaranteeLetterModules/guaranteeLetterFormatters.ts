@@ -29,11 +29,13 @@ export type DbInsuranceContractRow = typeof insuranceContracts.$inferSelect;
 export function formatInsuranceContractResponse(c: DbInsuranceContractRow) {
 	const annualLimitKop = resolveDbKopecks(c.annualLimitKopecks, c.annualLimitRub);
 	const resolvedAnnualLimitRub =
-		c.annualLimitRub != null
-			? Number(c.annualLimitRub)
-			: annualLimitKop > 0
-				? kopecksToRubles(annualLimitKop)
-				: null;
+		annualLimitKop > 0
+			? kopecksToRubles(annualLimitKop)
+			: c.annualLimitRub != null
+				? Number(c.annualLimitRub)
+				: c.annualLimitKopecks != null
+					? 0
+					: null;
 
 	return {
 		...c,
@@ -91,7 +93,10 @@ export function formatGuaranteeLetterResponse(l: DbGuaranteeLetterRow, todayIso:
 		usedAmountRub: usedRub,
 		franchisePct: Number(l.franchisePct),
 		franchiseType: (l.franchiseType as "percent" | "fixed_rub") || "percent",
-		franchiseFixedRub: Number(l.franchiseFixedRub),
+		franchiseFixedRub:
+			franchiseFixedKop > 0
+				? kopecksToRubles(franchiseFixedKop)
+				: Number(l.franchiseFixedRub),
 		programExclusions: (l.programExclusions as string[]) || [],
 		approvedServiceCodes: (l.approvedServiceCodes as string[]) || [],
 		approvedTeethFdi: (l.approvedTeethFdi as string[]) || [],

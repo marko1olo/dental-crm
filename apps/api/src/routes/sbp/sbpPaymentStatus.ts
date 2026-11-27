@@ -1,6 +1,6 @@
 import { kopecksToRubles } from "@dental/shared";
 import { and, eq, or } from "drizzle-orm";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { payments, sberbankTransactions } from "../../db/schema.js";
 
 /** Queries payment status for SBP operation with mandatory tenant isolation */
@@ -19,7 +19,7 @@ export async function getSbpPaymentStatus(
 		throw new Error("Контекст организации (orgId) обязателен для проверки статуса СБП.");
 	}
 
-	return await withTenantCtx(orgId, async (tx) => {
+	return await withTenantReadCtx(orgId, async (tx) => {
 		const mutationId = `sbp:${operationId}`;
 		const query = tx
 			.select()

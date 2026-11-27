@@ -223,10 +223,10 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 						const checkedUserId = identity.userId;
 						const checkedOrgId = identity.organizationId;
 						try {
-							const { withTenantCtx } = await import("../db/rls.js");
+							const { withTenantReadCtx } = await import("../db/rls.js");
 							const { users } = await import("../db/schema.js");
 							const { eq, and } = await import("drizzle-orm");
-							const [user] = await withTenantCtx(checkedOrgId, async (tx) =>
+							const [user] = await withTenantReadCtx(checkedOrgId, async (tx) =>
 								tx
 									.select({ currentSessionId: users.currentSessionId })
 									.from(users)
@@ -470,6 +470,14 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 		});
 	};
 
-	app.get("/api/ws/schedule", { websocket: true }, handleSecureWsConnection);
-	app.get("/api/ws/telephony", { websocket: true }, handleSecureWsConnection);
+	app.get(
+		"/api/ws/schedule",
+		{ websocket: true },
+		handleSecureWsConnection,
+	);
+	app.get(
+		"/api/ws/telephony",
+		{ websocket: true },
+		handleSecureWsConnection,
+	);
 }

@@ -1,16 +1,19 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { defineStreamRoute } from "../../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import { patients } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { patientIdParamSchema, sendMessageSchema } from "../types.js";
 import { processSendMessage } from "./inboxMessageSender.js";
 
 export function registerInboxSendHandlers(app: FastifyInstance): void {
-	app.post(
-		"/api/communications/inbox/:patientId/send",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/communications/inbox/:patientId/send",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -38,7 +41,7 @@ export function registerInboxSendHandlers(app: FastifyInstance): void {
 			}
 			const { patientId } = paramsParsed.data;
 
-			const [patient] = await withTenantCtx(orgId, (tx) =>
+			const [patient] = await withTenantReadCtx(orgId, (tx) =>
 				tx
 					.select({ id: patients.id, status: patients.status })
 					.from(patients)
@@ -81,5 +84,5 @@ export function registerInboxSendHandlers(app: FastifyInstance): void {
 
 			return reply.send(result);
 		},
-	);
+	});
 }

@@ -6,7 +6,8 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	applyClinicScalePresetInDb,
@@ -47,27 +48,47 @@ const updateClinicFiscalSettingsSchema = z.object({
 }).strict();
 
 export function registerClinicProfileRoutes(app: FastifyInstance): void {
-	app.get("/api/settings/clinic", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
-		if (!orgId) return;
-		const settings = await withTenantCtx(orgId, async () => getClinicSettingsFromDb(orgId));
-		return clinicSettingsSchema.parse(settings);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/settings/clinic",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsAccess(request, reply);
+			if (!orgId) return;
+			const settings = await withTenantReadCtx(orgId, async () => getClinicSettingsFromDb(orgId));
+			return clinicSettingsSchema.parse(settings);
+		},
 	});
 
 	const handleGetClinicProfile = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireSettingsAccess(request, reply);
 		if (!orgId) return;
-		const settings = await withTenantCtx(orgId, async () => getClinicSettingsFromDb(orgId));
+		const settings = await withTenantReadCtx(orgId, async () => getClinicSettingsFromDb(orgId));
 		return clinicSettingsSchema.parse(settings).profile;
 	};
 
-	app.get("/api/settings/clinic/profile", handleGetClinicProfile);
-	app.get("/api/settings/clinic-profile", handleGetClinicProfile);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/settings/clinic/profile",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetClinicProfile(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/settings/clinic-profile",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetClinicProfile(request, reply),
+	});
 
-	app.get("/api/settings/clinic/fiscal", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
-		if (!orgId) return;
-		return withTenantCtx(orgId, async () => getClinicFiscalSettingsFromDb(orgId));
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/settings/clinic/fiscal",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsAccess(request, reply);
+			if (!orgId) return;
+			return withTenantReadCtx(orgId, async () => getClinicFiscalSettingsFromDb(orgId));
+		},
 	});
 
 	const handleUpdateFiscalSettings = async (
@@ -87,28 +108,43 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 				message: "Некорректные параметры налогообложения СНО или кассы 54-ФЗ.",
 			};
 		}
-		return withTenantCtx(orgId, async () => updateClinicFiscalSettingsInDb(orgId, input));
+		return withTenantWriteCtx(orgId, async () => updateClinicFiscalSettingsInDb(orgId, input));
 	};
 
-	app.put("/api/settings/clinic/fiscal", handleUpdateFiscalSettings);
-	app.patch("/api/settings/clinic/fiscal", handleUpdateFiscalSettings);
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/settings/clinic/fiscal",
+		permission: "public",
+		handler: async ({ request, reply }) => handleUpdateFiscalSettings(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "PATCH",
+		path: "/api/settings/clinic/fiscal",
+		permission: "public",
+		handler: async ({ request, reply }) => handleUpdateFiscalSettings(request, reply),
+	});
 
-	app.post("/api/settings/clinic/mode", async (request, reply) => {
-		const orgId = await requireSettingsMutationAccess(request, reply);
-		if (!orgId) return;
-		const input = parseSettingsPayload(updateClinicModeSchema, request.body);
-		if (!input) {
-			reply.code(400);
-			return {
-				error: "SettingsValidationError",
-				message: clinicModeValidationMessage,
-			};
-		}
-		const settings = await withTenantCtx(orgId, async () => {
-			await updateClinicModeInDb(orgId, input.mode);
-			return getClinicSettingsFromDb(orgId);
-		});
-		return clinicSettingsSchema.parse(settings);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/settings/clinic/mode",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsMutationAccess(request, reply);
+			if (!orgId) return;
+			const input = parseSettingsPayload(updateClinicModeSchema, request.body);
+			if (!input) {
+				reply.code(400);
+				return {
+					error: "SettingsValidationError",
+					message: clinicModeValidationMessage,
+				};
+			}
+			const settings = await withTenantWriteCtx(orgId, async () => {
+				await updateClinicModeInDb(orgId, input.mode);
+				return getClinicSettingsFromDb(orgId);
+			});
+			return clinicSettingsSchema.parse(settings);
+		},
 	});
 
 	const handleApplyScalePreset = async (
@@ -128,7 +164,7 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 				message: clinicScalePresetValidationMessage,
 			};
 		}
-		const settings = await withTenantCtx(orgId, async () =>
+		const settings = await withTenantWriteCtx(orgId, async () =>
 			applyClinicScalePresetInDb(
 				orgId,
 				input.preset,
@@ -138,8 +174,18 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 		return clinicSettingsSchema.parse(settings);
 	};
 
-	app.patch("/api/settings/clinic/scale-preset", handleApplyScalePreset);
-	app.post("/api/settings/clinic/scale-preset", handleApplyScalePreset);
+	defineStreamRoute(app, {
+		method: "PATCH",
+		path: "/api/settings/clinic/scale-preset",
+		permission: "public",
+		handler: async ({ request, reply }) => handleApplyScalePreset(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/settings/clinic/scale-preset",
+		permission: "public",
+		handler: async ({ request, reply }) => handleApplyScalePreset(request, reply),
+	});
 
 	const handleUpdateClinicProfile = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
@@ -166,7 +212,7 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 			};
 		}
 		try {
-			const settings = await withTenantCtx(orgId, async () => {
+			const settings = await withTenantWriteCtx(orgId, async () => {
 				await updateClinicProfileInDb(orgId, input);
 				return getClinicSettingsFromDb(orgId);
 			});
@@ -177,6 +223,7 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 	};
 
 	const clinicProfileMutationOptions = {
+		config: { tenantTxSelfManaged: true },
 		schema: {
 			description: "Clinic profile mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
 			headers: {
@@ -199,26 +246,36 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 	app.patch("/api/settings/clinic", clinicProfileMutationOptions, handleUpdateClinicProfile);
 	app.post("/api/settings/clinic", clinicProfileMutationOptions, handleUpdateClinicProfile);
 
-	app.post("/api/settings/reset-demo", async (request, reply) => {
-		const orgId = await requireSettingsMutationAccess(request, reply);
-		if (!orgId) return;
-		reply.code(410);
-		return {
-			success: false,
-			error: "EndpointDeprecated",
-			message:
-				"Демонстрационный сброс через этот маршрут отключён.",
-		};
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/settings/reset-demo",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsMutationAccess(request, reply);
+			if (!orgId) return;
+			reply.code(410);
+			return {
+				success: false,
+				error: "EndpointDeprecated",
+				message:
+					"Демонстрационный сброс через этот маршрут отключён.",
+			};
+		},
 	});
 
-	app.post("/api/settings/reset-zero", async (request, reply) => {
-		const orgId = await requireSettingsMutationAccess(request, reply);
-		if (!orgId) return;
-		reply.code(410);
-		return {
-			success: false,
-			error: "EndpointDeprecated",
-			message: "Очистка базы через этот маршрут отключена.",
-		};
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/settings/reset-zero",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsMutationAccess(request, reply);
+			if (!orgId) return;
+			reply.code(410);
+			return {
+				success: false,
+				error: "EndpointDeprecated",
+				message: "Очистка базы через этот маршрут отключена.",
+			};
+		},
 	});
 }

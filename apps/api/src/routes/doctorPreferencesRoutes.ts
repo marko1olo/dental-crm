@@ -1,9 +1,11 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { defineStreamRoute } from "../core/routeFactories.js";
 import {
 	getDoctorPreferencesFromDb,
 	saveDoctorPreferencesInDb,
 } from "../db/doctorPreferencesQuery.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../db/rls.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
 
@@ -19,9 +21,11 @@ export async function registerDoctorPreferencesRoutes(app: FastifyInstance) {
 	 * Reads doctor clinical preferences from PostgreSQL (127.0.0.1:5432).
 	 * Ensures cross-device and remote workstation persistence.
 	 */
-	app.get(
-		"/api/settings/doctor-preferences",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/settings/doctor-preferences",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = await requireResolvedStaffOrAdminOrganizationId(
 				request,
 				reply,
@@ -50,7 +54,9 @@ export async function registerDoctorPreferencesRoutes(app: FastifyInstance) {
 
 			const targetDoctorId = requestedDoctorId || identity.userId || null;
 
-			const record = await getDoctorPreferencesFromDb(orgId, targetDoctorId);
+			const record = await withTenantReadCtx(orgId, async (tx) =>
+				getDoctorPreferencesFromDb(orgId, targetDoctorId, tx),
+			);
 			if (!record) {
 				return reply.send({
 					preferences: null,
@@ -65,16 +71,18 @@ export async function registerDoctorPreferencesRoutes(app: FastifyInstance) {
 				updatedAt: record.updatedAt.toISOString(),
 			});
 		},
-	);
+	});
 
 	/**
 	 * PUT /api/settings/doctor-preferences
 	 * Saves doctor clinical preferences (anesthesia, materials, 6-specialty presets, 043/u templates)
 	 * directly to PostgreSQL (127.0.0.1:5432).
 	 */
-	app.put(
-		"/api/settings/doctor-preferences",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/settings/doctor-preferences",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = await requireResolvedStaffOrAdminOrganizationId(
 				request,
 				reply,
@@ -113,11 +121,14 @@ export async function registerDoctorPreferencesRoutes(app: FastifyInstance) {
 			const doctorId = requestedDoctorId || identity.userId || null;
 			const specialty = parsed.data.specialty || "therapist";
 
-			const saved = await saveDoctorPreferencesInDb(
-				orgId,
-				doctorId,
-				parsed.data.preferences,
-				specialty,
+			const saved = await withTenantWriteCtx(orgId, async (tx) =>
+				saveDoctorPreferencesInDb(
+					orgId,
+					doctorId,
+					parsed.data.preferences,
+					specialty,
+					tx,
+				),
 			);
 
 			return reply.send({
@@ -127,5 +138,5 @@ export async function registerDoctorPreferencesRoutes(app: FastifyInstance) {
 				updatedAt: saved.updatedAt.toISOString(),
 			});
 		},
-	);
+	});
 }

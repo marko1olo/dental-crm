@@ -16,8 +16,9 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { dicomCrawlerDaemon, type DicomCrawlerDaemonConfig } from "../../services/dicom/DicomCrawlerDaemon.js";
 import { requireClinicalMutationAccess, requireClinicalReadAccess, requireNonDoctorAccess } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
 import { and, eq, inArray, desc, ne } from "drizzle-orm";
 import { mapImagingStudy } from "../../db/imaging/imagingMappers.js";
@@ -31,70 +32,89 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	/**
 	 * GET /api/imaging/daemon/status
 	 */
-	app.get("/api/imaging/daemon/status", async (request, reply) => {
-		if (!(await requireClinicalReadAccess(request, reply, "dicom daemon status"))) return;
-		const status = dicomCrawlerDaemon.getStatus();
-		return reply.send({ success: true, status });
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/imaging/daemon/status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await requireClinicalReadAccess(request, reply, "dicom daemon status"))) return;
+			const status = dicomCrawlerDaemon.getStatus();
+			return reply.send({ success: true, status });
+		},
 	});
 
 	/**
 	 * POST /api/imaging/daemon/start
 	 */
-	app.post("/api/imaging/daemon/start", async (request, reply) => {
-		if (!(await requireNonDoctorAccess(request, reply, "start dicom daemon"))) return;
-		const orgId = getImagingOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/daemon/start",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await requireNonDoctorAccess(request, reply, "start dicom daemon"))) return;
+			const orgId = getImagingOrganizationId(request, reply);
+			if (!orgId) return;
 
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "InvalidIdempotencyKey",
-				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
+			dicomCrawlerDaemon.start();
+			return reply.send({
+				success: true,
+				message: "Фоновый автопоиск КТ томографов запущен.",
+				status: dicomCrawlerDaemon.getStatus(),
 			});
-		}
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-
-		dicomCrawlerDaemon.start();
-		return reply.send({
-			success: true,
-			message: "Фоновый автопоиск КТ томографов запущен.",
-			status: dicomCrawlerDaemon.getStatus(),
-		});
+		},
 	});
 
 	/**
 	 * POST /api/imaging/daemon/stop
 	 */
-	app.post("/api/imaging/daemon/stop", async (request, reply) => {
-		if (!(await requireNonDoctorAccess(request, reply, "stop dicom daemon"))) return;
-		const orgId = getImagingOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/daemon/stop",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await requireNonDoctorAccess(request, reply, "stop dicom daemon"))) return;
+			const orgId = getImagingOrganizationId(request, reply);
+			if (!orgId) return;
 
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "InvalidIdempotencyKey",
-				message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message: "Некорректный заголовок Idempotency-Key (ожидается UUID RFC 9562)",
+				});
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
+			dicomCrawlerDaemon.stop();
+			return reply.send({
+				success: true,
+				message: "Фоновый автопоиск КТ томографов остановлен.",
+				status: dicomCrawlerDaemon.getStatus(),
 			});
-		}
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-
-		dicomCrawlerDaemon.stop();
-		return reply.send({
-			success: true,
-			message: "Фоновый автопоиск КТ томографов остановлен.",
-			status: dicomCrawlerDaemon.getStatus(),
-		});
+		},
 	});
 
 	/**
 	 * POST /api/imaging/daemon/scan-now
 	 */
-	app.post("/api/imaging/daemon/scan-now", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/daemon/scan-now",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "manual dicom scan"))) return;
 
 		const orgId = getImagingOrganizationId(request, reply);
@@ -145,12 +165,17 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 			result,
 			status: dicomCrawlerDaemon.getStatus(),
 		});
+		},
 	});
 
 	/**
 	 * POST /api/imaging/daemon/config
 	 */
-	app.post("/api/imaging/daemon/config", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/daemon/config",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "configure dicom daemon"))) return;
 
 		const orgId = getImagingOrganizationId(request, reply);
@@ -214,13 +239,18 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 			message: "Настройки автопоиска томографов сохранены.",
 			status: updatedStatus,
 		});
+		},
 	});
 
 	/**
 	 * GET /api/imaging/daemon/pending
 	 * Исследования, ожидающие решения врача или нераспознанные
 	 */
-	app.get("/api/imaging/daemon/pending", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/imaging/daemon/pending",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalReadAccess(request, reply, "pending dicom studies"))) return;
 
 		const identity = getRequestIdentity(request);
@@ -238,7 +268,7 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 		const orgId = getImagingOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const studies = await withTenantCtx(orgId, async (tx) =>
+		const studies = await withTenantReadCtx(orgId, async (tx) =>
 			tx
 				.select({
 					id: schema.imagingStudies.id,
@@ -284,13 +314,18 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 			pendingStudies: studies,
 			count: studies.length,
 		});
+		},
 	});
 
 	/**
 	 * POST /api/imaging/daemon/bind-patient
 	 * Привязка КТ к пациенту
 	 */
-	app.post("/api/imaging/daemon/bind-patient", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/daemon/bind-patient",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "bind study to patient"))) return;
 
 		const orgId = getImagingOrganizationId(request, reply);
@@ -326,7 +361,7 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 		const { studyId, patientId } = parsed.data;
 		const identity = getRequestIdentity(request);
 
-		const txResult = await withTenantCtx(orgId, async (tx) => {
+		const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 			const [patient] = await tx
 				.select({ id: schema.patients.id, fullName: schema.patients.fullName })
 				.from(schema.patients)
@@ -383,13 +418,18 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 			patientId: txResult.patient.id,
 			patientFullName: txResult.patient.fullName,
 		});
+		},
 	});
 
 	/**
 	 * POST /api/imaging/daemon/dismiss
 	 * Архивация исследования
 	 */
-	app.post("/api/imaging/daemon/dismiss", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/daemon/dismiss",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "dismiss study"))) return;
 
 		const orgId = getImagingOrganizationId(request, reply);
@@ -420,7 +460,7 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const [dismissed] = await withTenantCtx(orgId, async (tx) =>
+		const [dismissed] = await withTenantWriteCtx(orgId, async (tx) =>
 			tx
 				.update(schema.imagingStudies)
 				.set({
@@ -443,5 +483,6 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 			success: true,
 			message: "Исследование скрыто из очереди входящих КТ.",
 		});
+		},
 	});
 }

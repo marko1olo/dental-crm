@@ -15,7 +15,8 @@ import {
 	validateIcsRFC5545,
 	type IcalAppointmentItem,
 } from "@dental/shared";
-import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
+import { definePublicRoute, defineStreamRoute } from "../core/routeFactories.js";
+import { withSuperuserBypass, withTenantReadCtx, withTenantWriteCtx } from "../db/rls.js";
 import {
 	appointments,
 	chairs,
@@ -181,12 +182,15 @@ export function generateDoctorIcalToken(params: {
  * Обработчик выдачи RFC 5545 .ics файла расписания врача.
  */
 async function handleIcalFeedRequest(
-	request: FastifyRequest<{ Params: { token?: string } }>,
+	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
 	try {
-		const params = request.params as { token?: string };
-		const rawToken = params.token || "";
+		const rawParams = request.params;
+		const rawToken =
+			typeof rawParams === "object" && rawParams !== null && "token" in rawParams && typeof rawParams.token === "string"
+				? rawParams.token
+				: "";
 		const cleanToken = rawToken.replace(/\.ics$/i, "").trim();
 
 		if (!cleanToken) {
@@ -205,7 +209,7 @@ async function handleIcalFeedRequest(
 			});
 		}
 
-		const rows = await withTenantCtx(doctor.organizationId, async (tx) => {
+		const rows = await withTenantReadCtx(doctor.organizationId, async (tx) => {
 			return tx
 				.select({
 					id: appointments.id,
@@ -286,29 +290,36 @@ async function handleIcalFeedRequest(
 
 export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 	// OAuth URL для Яндекс.Календаря
-	app.get("/api/integrations/yandex-calendar/auth", async (request, reply) => {
-		try {
-			const identity = await requireStaffIdentity(request, reply);
-			if (!identity?.organizationId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/integrations/yandex-calendar/auth",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			try {
+				const identity = await requireStaffIdentity(request, reply);
+				if (!identity?.organizationId) return;
 
-			return {
-				authUrl:
-					"https://oauth.yandex.ru/authorize?response_type=code&client_id=dente_crm",
-				connected: false,
-			};
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Ошибка при получении параметров авторизации Яндекс.Календаря.",
-			});
-		}
+				return {
+					authUrl:
+						"https://oauth.yandex.ru/authorize?response_type=code&client_id=dente_crm",
+					connected: false,
+				};
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Ошибка при получении параметров авторизации Яндекс.Календаря.",
+				});
+			}
+		},
 	});
 
 	// Сохранение настроек Яндекс.Календаря для врача
-	app.post(
-		"/api/integrations/yandex-calendar/settings",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/integrations/yandex-calendar/settings",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const identity = await requireStaffIdentity(request, reply);
 			if (!identity?.userId || !identity?.organizationId) return;
 			const staffId = identity.userId;
@@ -316,7 +327,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 
 			try {
 				const body = SettingsSchema.parse(request.body);
-				await withTenantCtx(orgId, async (tx) => {
+				await withTenantWriteCtx(orgId, async (tx) => {
 					const [existingUser] = await tx
 						.select({ yandexCalendarToken: users.yandexCalendarToken })
 						.from(users)
@@ -371,49 +382,58 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 				});
 			}
 		},
-	);
+	});
 
 	// Список синхронизаций с Яндекс Календарём
-	app.get("/api/integrations/yandex-calendar-syncs", async (request, reply) => {
-		try {
-			const identity = await requireStaffIdentity(request, reply);
-			if (!identity?.organizationId) return;
-			const orgId = identity.organizationId;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/integrations/yandex-calendar-syncs",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			try {
+				const identity = await requireStaffIdentity(request, reply);
+				if (!identity?.organizationId) return;
+				const orgId = identity.organizationId;
 
-			const syncs = await withTenantCtx(orgId, (tx) =>
-				tx
-					.select({
-						id: yandexCalendarSyncs.id,
-						organizationId: yandexCalendarSyncs.organizationId,
-						doctorName: users.fullName,
-						yandexCalendarId: yandexCalendarSyncs.yandexCalendarId,
-						syncStatus: yandexCalendarSyncs.syncStatus,
-						lastSyncedAt: yandexCalendarSyncs.lastSyncAt,
-					})
-					.from(yandexCalendarSyncs)
-					.innerJoin(users, eq(yandexCalendarSyncs.doctorId, users.id))
-					.where(eq(yandexCalendarSyncs.organizationId, orgId)),
-			);
+				const syncs = await withTenantReadCtx(orgId, (tx) =>
+					tx
+						.select({
+							id: yandexCalendarSyncs.id,
+							organizationId: yandexCalendarSyncs.organizationId,
+							doctorName: users.fullName,
+							yandexCalendarId: yandexCalendarSyncs.yandexCalendarId,
+							syncStatus: yandexCalendarSyncs.syncStatus,
+							lastSyncedAt: yandexCalendarSyncs.lastSyncAt,
+						})
+						.from(yandexCalendarSyncs)
+						.innerJoin(users, eq(yandexCalendarSyncs.doctorId, users.id))
+						.where(eq(yandexCalendarSyncs.organizationId, orgId)),
+				);
 
-			return syncs;
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Ошибка при получении статусов синхронизации Яндекс.Календаря.",
-			});
-		}
+				return syncs;
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Ошибка при получении статусов синхронизации Яндекс.Календаря.",
+				});
+			}
+		},
 	});
 
 	// Ручной запуск синхронизации
-	app.post("/api/integrations/yandex-calendar/sync", async (request, reply) => {
-		try {
-			const identity = await requireStaffIdentity(request, reply);
-			if (!identity?.userId || !identity?.organizationId) return;
-			const staffId = identity.userId;
-			const orgId = identity.organizationId;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/integrations/yandex-calendar/sync",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			try {
+				const identity = await requireStaffIdentity(request, reply);
+				if (!identity?.userId || !identity?.organizationId) return;
+				const staffId = identity.userId;
+				const orgId = identity.organizationId;
 
-			const outcome = await withTenantCtx(orgId, async (tx) => {
+				const outcome = await withTenantWriteCtx(orgId, async (tx) => {
 				const [staffInfo] = await tx
 					.select({
 						yandexCalendarId: users.yandexCalendarId,
@@ -479,18 +499,21 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 				message: "Ошибка при синхронизации с Яндекс.Календарем.",
 			});
 		}
+		},
 	});
 
 	// Получение защищенной ссылки на iCal фид текущего авторизованного врача
-	app.get(
-		"/api/integrations/yandex-calendar/feed-url",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/integrations/yandex-calendar/feed-url",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const identity = await requireStaffIdentity(request, reply);
 			if (!identity?.userId || !identity?.organizationId) return;
 
 			const orgId = identity.organizationId;
 			const staffId = identity.userId;
-			const user = await withTenantCtx(orgId, (tx) =>
+			const user = await withTenantReadCtx(orgId, (tx) =>
 				tx
 					.select({
 						id: users.id,
@@ -523,12 +546,14 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 				tokenVersion: version,
 			};
 		},
-	);
+	});
 
 	// Получение защищенной ссылки на iCal фид для конкретного врача (доступно врачу или владельцу)
-	app.get(
-		"/api/schedule/ical/doctor/:doctorId/feed-url",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/schedule/ical/doctor/:doctorId/feed-url",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const identity = await requireStaffIdentity(request, reply);
 			if (!identity?.userId || !identity?.organizationId) return;
 
@@ -555,7 +580,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 			}
 
 			const orgId = identity.organizationId;
-			const targetUser = await withTenantCtx(orgId, (tx) =>
+			const targetUser = await withTenantReadCtx(orgId, (tx) =>
 				tx
 					.select({
 						id: users.id,
@@ -598,7 +623,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 				tokenCreatedAt: tokenMeta?.rotatedAt || null,
 			};
 		},
-	);
+	});
 
 	async function performDoctorIcalRotate(
 		request: FastifyRequest,
@@ -627,7 +652,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 		}
 
 		const orgId = identity.organizationId;
-		const rotateResult = await withTenantCtx(orgId, async (tx) => {
+		const rotateResult = await withTenantWriteCtx(orgId, async (tx) => {
 			const [targetUser] = await tx
 				.select({
 					id: users.id,
@@ -703,9 +728,11 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 	}
 
 	// Мгновенная ротация токена подписки iCal (при компрометации ссылки)
-	app.post(
-		"/api/schedule/ical/doctor/:doctorId/rotate",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/schedule/ical/doctor/:doctorId/rotate",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const identity = await requireStaffIdentity(request, reply);
 			if (!identity?.userId || !identity?.organizationId) return;
 
@@ -713,18 +740,31 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 			const targetDoctorId = params.doctorId || identity.userId;
 			return performDoctorIcalRotate(request, reply, identity, targetDoctorId);
 		},
-	);
+	});
 
 	// Ротация для текущего пользователя
-	app.post("/api/schedule/ical/rotate", async (request, reply) => {
-		const identity = await requireStaffIdentity(request, reply);
-		if (!identity?.userId || !identity?.organizationId) return;
-		return performDoctorIcalRotate(request, reply, identity, identity.userId);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/schedule/ical/rotate",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const identity = await requireStaffIdentity(request, reply);
+			if (!identity?.userId || !identity?.organizationId) return;
+			return performDoctorIcalRotate(request, reply, identity, identity.userId);
+		},
 	});
 
 	// RFC 5545 iCalendar endpoint: /api/schedule/ical/doctor/:token (.ics)
-	app.get("/api/schedule/ical/doctor/:token", handleIcalFeedRequest);
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/schedule/ical/doctor/:token",
+		handler: async ({ request, reply }) => handleIcalFeedRequest(request, reply),
+	});
 
 	// RFC 5545 iCalendar endpoint: /api/schedule/ical/:token (.ics) (legacy alias)
-	app.get("/api/schedule/ical/:token", handleIcalFeedRequest);
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/schedule/ical/:token",
+		handler: async ({ request, reply }) => handleIcalFeedRequest(request, reply),
+	});
 }

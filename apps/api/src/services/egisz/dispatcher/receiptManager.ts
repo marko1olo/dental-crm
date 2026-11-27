@@ -6,7 +6,7 @@
  */
 
 import { and, desc, eq } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import { egiszLogs, egiszOutbox } from "../../../db/schema.js";
 import type { OiisGatewayClient } from "../OiisGatewayClient.js";
 import type { EgiszRemdRegistrationReceipt } from "./types.js";
@@ -26,7 +26,7 @@ export async function getReceiptByOutboxId(
 		return null;
 	}
 
-	const [row] = await withTenantCtx(organizationId, async (tx) =>
+	const [row] = await withTenantReadCtx(organizationId, async (tx) =>
 		tx
 			.select({
 				gatewayResponseJson: egiszOutbox.gatewayResponseJson,
@@ -97,7 +97,7 @@ export async function getReceiptByVisitId(
 		return null;
 	}
 
-	return withTenantCtx(organizationId, async (tx) => {
+	return withTenantReadCtx(organizationId, async (tx) => {
 		const [row] = await tx
 			.select({ id: egiszOutbox.id })
 			.from(egiszOutbox)

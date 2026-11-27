@@ -1,13 +1,16 @@
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
+import { defineStreamRoute } from "../../../core/routeFactories.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { ChatLockService } from "../../../services/communications/ChatLockService.js";
 import { chatIdParamSchema, unlockChatBodySchema } from "../types.js";
 
 export function registerChatUnlockHandlers(app: FastifyInstance): void {
-	app.post(
-		"/api/communications/chats/:chatId/unlock",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/communications/chats/:chatId/unlock",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -58,11 +61,13 @@ export function registerChatUnlockHandlers(app: FastifyInstance): void {
 				released: result.released,
 			});
 		},
-	);
+	});
 
-	app.get(
-		"/api/communications/chats/:chatId/lock-status",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/communications/chats/:chatId/lock-status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -85,5 +90,5 @@ export function registerChatUnlockHandlers(app: FastifyInstance): void {
 
 			return reply.code(200).send(status);
 		},
-	);
+	});
 }

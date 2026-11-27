@@ -7,7 +7,8 @@ import {
 	extractIdempotencyKey,
 	isValidUuid,
 } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import { crmLeads, crmLeadStageHistory } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -57,7 +58,7 @@ async function applyLeadUpdate(params: {
 	data: z.infer<typeof patchLeadSchema>;
 }) {
 	const { req, reply, organizationId, id, idempotencyKey, data } = params;
-	const [lead] = await withTenantCtx(organizationId, async (tx) => {
+	const [lead] = await withTenantWriteCtx(organizationId, async (tx) => {
 		const [current] = await tx
 			.select()
 			.from(crmLeads)
@@ -116,97 +117,110 @@ async function applyLeadUpdate(params: {
 }
 
 export function registerLeadCrudRoutes(app: FastifyInstance): void {
-	app.patch("/api/leads/:id", async (req, reply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			req,
-			reply,
-			"lead update",
-		);
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "PATCH",
+		path: "/api/leads/:id",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				req,
+				reply,
+				"lead update",
+			);
+			if (!organizationId) return;
 
-		const idempotencyKey = extractIdempotencyKey(req);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
-			});
-		}
+			const idempotencyKey = extractIdempotencyKey(req);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+				});
+			}
 
-		const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
-		if (!paramsParsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный идентификатор лида.",
-			});
-		}
-		const { id } = paramsParsed.data;
-		const parsed = patchLeadSchema.safeParse(req.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Проверьте поля лида: переданы некорректные данные.",
-			});
-		}
-		if (Object.keys(parsed.data).length === 0) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Нет данных для обновления лида.",
-			});
-		}
+			const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
+			if (!paramsParsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор лида.",
+				});
+			}
+			const { id } = paramsParsed.data;
+			const parsed = patchLeadSchema.safeParse(req.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Проверьте поля лида: переданы некорректные данные.",
+				});
+			}
+			if (Object.keys(parsed.data).length === 0) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Нет данных для обновления лида.",
+				});
+			}
 
-		return applyLeadUpdate({
-			req,
-			reply,
-			organizationId,
-			id,
-			idempotencyKey,
-			data: parsed.data,
-		});
+			return applyLeadUpdate({
+				req,
+				reply,
+				organizationId,
+				id,
+				idempotencyKey,
+				data: parsed.data,
+			});
+		},
 	});
 
-	app.put("/api/leads/:id", async (req, reply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			req,
-			reply,
-			"lead update",
-		);
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/leads/:id",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				req,
+				reply,
+				"lead update",
+			);
+			if (!organizationId) return;
 
-		const idempotencyKey = extractIdempotencyKey(req);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
-			});
-		}
+			const idempotencyKey = extractIdempotencyKey(req);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+				});
+			}
 
-		const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
-		if (!paramsParsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный идентификатор лида.",
-			});
-		}
-		const { id } = paramsParsed.data;
-		const parsed = leadSchema.safeParse(req.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Проверьте поля лида: нужно непустое имя.",
-			});
-		}
+			const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
+			if (!paramsParsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор лида.",
+				});
+			}
+			const { id } = paramsParsed.data;
+			const parsed = leadSchema.safeParse(req.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Проверьте поля лида: нужно непустое имя.",
+				});
+			}
 
-		return applyLeadUpdate({
-			req,
-			reply,
-			organizationId,
-			id,
-			idempotencyKey,
-			data: parsed.data,
-		});
+			return applyLeadUpdate({
+				req,
+				reply,
+				organizationId,
+				id,
+				idempotencyKey,
+				data: parsed.data,
+			});
+		},
 	});
 
 	const deleteLeadRouteOptions = {
+		config: {
+			tenantTxSelfManaged: true,
+		},
 		schema: {
 			description:
 				"Delete lead mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
@@ -247,7 +261,7 @@ export function registerLeadCrudRoutes(app: FastifyInstance): void {
 		}
 		const { id } = paramsParsed.data;
 
-		const lead = await withTenantCtx(organizationId, async (tx) => {
+		const lead = await withTenantWriteCtx(organizationId, async (tx) => {
 			await tx
 				.delete(crmLeadStageHistory)
 				.where(

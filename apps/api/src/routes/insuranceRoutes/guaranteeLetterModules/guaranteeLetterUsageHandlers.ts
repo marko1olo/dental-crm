@@ -5,7 +5,7 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { dmsGuaranteeLetters } from "../../../db/schema.js";
 import { recordUsageBodySchema } from "../types.js";
 import { isValidUuid, resolveDbKopecks } from "./guaranteeLetterFormatters.js";
@@ -81,7 +81,7 @@ export async function handleRecordGuaranteeLetterUsage(
 		});
 	}
 
-	const result = await withTenantCtx(orgId, async (tx) => {
+	const result = await withTenantWriteCtx(orgId, async (tx) => {
 		const [letter] = await tx
 			.select()
 			.from(dmsGuaranteeLetters)
@@ -395,6 +395,7 @@ export async function handleRecordGuaranteeLetterUsage(
 export function registerGuaranteeLetterUsageRoutes(app: FastifyInstance) {
 	app.post<{ Params: { letterId: string } }>(
 		"/api/insurance/guarantee-letters/:letterId/record-usage",
+		{ config: { tenantTxSelfManaged: true } },
 		handleRecordGuaranteeLetterUsage,
 	);
 }

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { handleCreateInvoice } from "./handlers/createInvoiceHandler.js";
 import { handleGetInvoiceById } from "./handlers/getInvoiceByIdHandler.js";
 import { handleListInvoices } from "./handlers/listInvoicesHandler.js";
@@ -12,10 +13,20 @@ export {
 };
 
 export async function registerInvoiceCrudRoutes(app: FastifyInstance): Promise<void> {
-	app.get("/api/invoices/pending", handlePendingInvoices);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/invoices/pending",
+		permission: "public",
+		handler: async ({ request, reply }) => handlePendingInvoices(request, reply),
+	});
 
 	for (const path of ["/api/invoices", "/api/v1/billing/invoices"]) {
-		app.get(path, handleListInvoices);
+		defineStreamRoute(app, {
+			method: "GET",
+			path,
+			permission: "public",
+			handler: async ({ request, reply }) => handleListInvoices(request, reply),
+		});
 	}
 
 	for (const path of [
@@ -24,7 +35,12 @@ export async function registerInvoiceCrudRoutes(app: FastifyInstance): Promise<v
 		"/api/visits/:visitId/invoice",
 		"/api/v1/visits/:visitId/invoice",
 	]) {
-		app.post(path, handleCreateInvoice);
+		defineStreamRoute(app, {
+			method: "POST",
+			path,
+			permission: "public",
+			handler: async ({ request, reply }) => handleCreateInvoice(request, reply),
+		});
 	}
 
 	for (const path of [
@@ -32,6 +48,11 @@ export async function registerInvoiceCrudRoutes(app: FastifyInstance): Promise<v
 		"/api/v1/billing/invoices/:id",
 		"/api/billing/invoices/:id",
 	]) {
-		app.get(path, handleGetInvoiceById);
+		defineStreamRoute(app, {
+			method: "GET",
+			path,
+			permission: "public",
+			handler: async ({ request, reply }) => handleGetInvoiceById(request, reply),
+		});
 	}
 }

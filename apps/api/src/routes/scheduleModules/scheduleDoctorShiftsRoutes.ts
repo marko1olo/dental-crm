@@ -6,7 +6,8 @@ import {
 	detectCrossBranchScheduleCollisions,
 	type DoctorBranchShift,
 } from "@dental/shared";
-import { withTenantCtx, withTenantReadCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	clinics,
 	doctorShiftRosters,
@@ -87,30 +88,37 @@ const scheduleShiftsSchema = z
  * экстренные запросы на добавление в расписание (urgentScheduleRequests).
  */
 export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
-	app.get("/api/schedule/urgent-schedule-requests", async (request, reply) => {
-		const auth = await requireScheduleReadContext(request, reply);
-		if (!auth) return reply;
-		const orgId = auth.organizationId;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/schedule/urgent-schedule-requests",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const auth = await requireScheduleReadContext(request, reply);
+			if (!auth) return reply;
+			const orgId = auth.organizationId;
 
-		const requests = await withTenantReadCtx(orgId, async (tx) =>
-			tx
-				.select()
-				.from(urgentScheduleRequests)
-				.where(
-					and(
-						eq(urgentScheduleRequests.organizationId, orgId),
-						eq(urgentScheduleRequests.isResolved, false),
-					),
-				)
-				.orderBy(asc(urgentScheduleRequests.createdAt)),
-		);
+			const requests = await withTenantReadCtx(orgId, async (tx) =>
+				tx
+					.select()
+					.from(urgentScheduleRequests)
+					.where(
+						and(
+							eq(urgentScheduleRequests.organizationId, orgId),
+							eq(urgentScheduleRequests.isResolved, false),
+						),
+					)
+					.orderBy(asc(urgentScheduleRequests.createdAt)),
+			);
 
-		return reply.code(200).send(requests);
+			return reply.code(200).send(requests);
+		},
 	});
 
-	app.patch(
-		"/api/schedule/urgent-schedule-requests/:id/resolve",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "PATCH",
+		path: "/api/schedule/urgent-schedule-requests/:id/resolve",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const auth = await requireScheduleMutationContext(
 				request,
 				reply,
@@ -128,7 +136,7 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 			}
 			const { id } = parsedParams.data;
 
-			await withTenantCtx(orgId, async (tx) => {
+			await withTenantWriteCtx(orgId, async (tx) => {
 				await tx
 					.update(urgentScheduleRequests)
 					.set({ isResolved: true })
@@ -142,55 +150,64 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 
 			return reply.code(200).send({ success: true });
 		},
-	);
-
-	app.get("/api/schedule/shifts", async (req, reply) => {
-		const auth = await requireScheduleReadContext(req, reply);
-		if (!auth) return reply;
-		const orgId = auth.organizationId;
-
-		const parsedQuery = scheduleShiftsQuerySchema.safeParse(req.query ?? {});
-		if (!parsedQuery.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message:
-					parsedQuery.error.issues[0]?.message ??
-					"Некорректные параметры фильтрации смен (ожидается UUID).",
-			});
-		}
-		const queryClinicId = parsedQuery.data.clinicId || parsedQuery.data.branchId;
-
-		const condition = queryClinicId
-			? and(
-					eq(doctorShiftRosters.organizationId, orgId),
-					eq(doctorShiftRosters.clinicId, queryClinicId),
-				)
-			: eq(doctorShiftRosters.organizationId, orgId);
-
-		const rows = await withTenantReadCtx(orgId, async (tx) =>
-			tx
-				.select()
-				.from(doctorShiftRosters)
-				.where(condition),
-		);
-
-		const shifts = rows.map((s) => ({
-			id: s.id,
-			clinicId: s.clinicId ?? null,
-			doctorId: s.doctorId,
-			doctorName: s.doctorName,
-			cabinetId: s.cabinetId ?? "",
-			chairId: s.chairId ?? "",
-			dateIso: s.dateIso,
-			startTime: s.startTime,
-			endTime: s.endTime,
-			role: s.role ?? undefined,
-			specialty: s.specialty ?? undefined,
-		}));
-		return reply.send({ ok: true, shifts });
 	});
 
-	app.post("/api/schedule/shifts", async (req, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/schedule/shifts",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			const auth = await requireScheduleReadContext(req, reply);
+			if (!auth) return reply;
+			const orgId = auth.organizationId;
+
+			const parsedQuery = scheduleShiftsQuerySchema.safeParse(req.query ?? {});
+			if (!parsedQuery.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message:
+						parsedQuery.error.issues[0]?.message ??
+						"Некорректные параметры фильтрации смен (ожидается UUID).",
+				});
+			}
+			const queryClinicId = parsedQuery.data.clinicId || parsedQuery.data.branchId;
+
+			const condition = queryClinicId
+				? and(
+						eq(doctorShiftRosters.organizationId, orgId),
+						eq(doctorShiftRosters.clinicId, queryClinicId),
+					)
+				: eq(doctorShiftRosters.organizationId, orgId);
+
+			const rows = await withTenantReadCtx(orgId, async (tx) =>
+				tx
+					.select()
+					.from(doctorShiftRosters)
+					.where(condition),
+			);
+
+			const shifts = rows.map((s) => ({
+				id: s.id,
+				clinicId: s.clinicId ?? null,
+				doctorId: s.doctorId,
+				doctorName: s.doctorName,
+				cabinetId: s.cabinetId ?? "",
+				chairId: s.chairId ?? "",
+				dateIso: s.dateIso,
+				startTime: s.startTime,
+				endTime: s.endTime,
+				role: s.role ?? undefined,
+				specialty: s.specialty ?? undefined,
+			}));
+			return reply.send({ ok: true, shifts });
+		},
+	});
+
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/schedule/shifts",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
 		const auth = await requireScheduleMutationContext(
 			req,
 			reply,
@@ -229,7 +246,7 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 			new Set([...shifts.map((s) => s.dateIso || s.shiftDateIso || ""), explicitDate].filter((d): d is string => Boolean(d))),
 		);
 
-		const outcome = await withTenantCtx(orgId, async (tx) => {
+		const outcome = await withTenantWriteCtx(orgId, async (tx) => {
 			// Загрузка названий филиалов для понятных сообщений об ошибках коллизий
 			const clinicRows = await tx
 				.select({ id: clinics.id, name: clinics.name })
@@ -353,5 +370,6 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 		}
 
 		return reply.send({ ok: true, savedCount: shifts.length });
+		},
 	});
 }

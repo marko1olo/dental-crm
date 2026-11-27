@@ -2,7 +2,7 @@ import { and, asc, eq, gt, lt, ne } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadContext } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	appointments,
 	chairs,
@@ -193,7 +193,7 @@ export async function handleGetNextFreeSlots(
 		});
 	}
 
-	const outcome = await withTenantCtx(orgId, async (tx) => {
+	const outcome = await withTenantReadCtx(orgId, async (tx) => {
 		const [doctor] = await tx
 			.select({
 				id: users.id,

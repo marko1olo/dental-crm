@@ -7,10 +7,11 @@
  */
 
 import { and, desc, eq, inArray } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	appointments,
 	cashBoxes,
@@ -56,9 +57,11 @@ export async function registerShiftRoutes(app: FastifyInstance): Promise<void> {
 	 * Triggers inspection of open shifts in the organization and automatically closes
 	 * shifts that have expired by schedule (+ 30 min buffer), duration (> 12h) or midnight rollover.
 	 */
-	app.post(
-		"/api/shifts/auto-close-check",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/shifts/auto-close-check",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -80,7 +83,7 @@ export async function registerShiftRoutes(app: FastifyInstance): Promise<void> {
 			if (typeof parsed.data.bufferMinutes === "number") options.bufferMinutesAfterSchedule = parsed.data.bufferMinutes;
 			if (typeof parsed.data.force === "boolean") options.force = parsed.data.force;
 
-			const result = await withTenantCtx(orgId, async (tx) => {
+			const result = await withTenantWriteCtx(orgId, async (tx) => {
 				return await checkAndAutoCloseExpiredShifts(tx, orgId, options);
 			});
 
@@ -94,15 +97,17 @@ export async function registerShiftRoutes(app: FastifyInstance): Promise<void> {
 					: "Активные смены в норме, просроченных смен не обнаружено.",
 			});
 		},
-	);
+	});
 
 	/**
 	 * 2. GET /api/shifts/status
 	 * Returns current status of doctor/clinic shifts with schedule bounds.
 	 */
-	app.get(
-		"/api/shifts/status",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/shifts/status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -111,7 +116,7 @@ export async function registerShiftRoutes(app: FastifyInstance): Promise<void> {
 			if (reply.sent) return reply;
 			if (!orgId) return reply;
 
-			const statusData = await withTenantCtx(orgId, async (tx) => {
+			const statusData = await withTenantReadCtx(orgId, async (tx) => {
 				const openShifts = await tx
 					.select()
 					.from(cashBoxShifts)
@@ -148,16 +153,18 @@ export async function registerShiftRoutes(app: FastifyInstance): Promise<void> {
 				...statusData,
 			});
 		},
-	);
+	});
 
 	/**
 	 * 3. POST /api/shifts/send-shift-summary
 	 * Dispatches doctor shift summary report to clinic management / chief doctor (Telegram / Email)
 	 * Mandates 8e, 8n (1-click shift handover).
 	 */
-	app.post(
-		"/api/shifts/send-shift-summary",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/shifts/send-shift-summary",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -282,5 +289,5 @@ export async function registerShiftRoutes(app: FastifyInstance): Promise<void> {
 				message: "Сводка смены успешно сохранена в журнал смен клиники.",
 			});
 		},
-	);
+	});
 }

@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	appointments,
 	denteTelegramBotConfigs,
@@ -32,7 +32,7 @@ async function ensurePatientBelongsToOrg(
 	reply: FastifyReply,
 ): Promise<boolean> {
 	try {
-		const [patient] = await withTenantCtx(orgId, async (tx) =>
+		const [patient] = await withTenantReadCtx(orgId, async (tx) =>
 			tx
 				.select({ id: patients.id })
 				.from(patients)
@@ -104,7 +104,7 @@ async function resolveAuthorizedOrg(
 
 		let dbBotToken: string | null = null;
 		try {
-			const [botConfig] = await withTenantCtx(orgId, async (tx) =>
+			const [botConfig] = await withTenantReadCtx(orgId, async (tx) =>
 				tx
 					.select({ tokenSecretRef: denteTelegramBotConfigs.tokenSecretRef })
 					.from(denteTelegramBotConfigs)
@@ -152,7 +152,7 @@ async function resolveAuthorizedOrg(
 			// BOLA-проверка: принадлежит ли patientId данному пользователю Telegram или его семье
 			if (options.requiredPatientId) {
 				const requiredPatientId = options.requiredPatientId;
-				const { patient, authPatient } = await withTenantCtx(orgId, async (tx) => {
+				const { patient, authPatient } = await withTenantReadCtx(orgId, async (tx) => {
 					const [p] = await tx
 						.select()
 						.from(patients)
@@ -243,10 +243,12 @@ async function resolveAuthorizedOrg(
  * Регистрация маршрутов реферальной программы, NPS-опросов и семейного профиля
  */
 export async function registerTelegramReferralActionRoutes(app: FastifyInstance): Promise<void> {
+	const selfManagedRouteOpts = { config: { tenantTxSelfManaged: true } } as const;
+
 	/**
 	 * 5. Персональная реферальная ссылка пациента:
 	 */
-	app.get("/api/telegram/loyalty/referral-link/:patientId", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.get("/api/telegram/loyalty/referral-link/:patientId", selfManagedRouteOpts, async (request: FastifyRequest, reply: FastifyReply) => {
 		const { patientId } = request.params as { patientId: string };
 		if (!UUID_REGEX.test(patientId)) {
 			return reply.status(400).send({
@@ -268,7 +270,7 @@ export async function registerTelegramReferralActionRoutes(app: FastifyInstance)
 	/**
 	 * 6. Применение реферальной ссылки при входе друга в бот:
 	 */
-	app.post("/api/telegram/loyalty/process-referral", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post("/api/telegram/loyalty/process-referral", selfManagedRouteOpts, async (request: FastifyRequest, reply: FastifyReply) => {
 		const parsed = referralProcessSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.status(400).send({
@@ -303,7 +305,7 @@ export async function registerTelegramReferralActionRoutes(app: FastifyInstance)
 	/**
 	 * 7. Радар оттока пациентов (не были 6+ месяцев):
 	 */
-	app.get("/api/telegram/loyalty/retention-radar", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.get("/api/telegram/loyalty/retention-radar", selfManagedRouteOpts, async (request: FastifyRequest, reply: FastifyReply) => {
 		const auth = await resolveAuthorizedOrg(request, reply);
 		if (!auth) return;
 
@@ -341,7 +343,7 @@ export async function registerTelegramReferralActionRoutes(app: FastifyInstance)
 	/**
 	 * 8. Опрос NPS / индекс лояльности с маршрутизацией отзывов:
 	 */
-	app.post("/api/telegram/loyalty/nps", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post("/api/telegram/loyalty/nps", selfManagedRouteOpts, async (request: FastifyRequest, reply: FastifyReply) => {
 		const parsed = npsSubmitSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.status(400).send({
@@ -366,7 +368,7 @@ export async function registerTelegramReferralActionRoutes(app: FastifyInstance)
 		if (auth.tgUserId !== undefined) {
 			const tgUserIdStr = String(auth.tgUserId);
 			const chatFp = hashTelegramChatFingerprint(tgUserIdStr);
-			const ownership = await withTenantCtx(auth.organizationId, async (tx) => {
+			const ownership = await withTenantReadCtx(auth.organizationId, async (tx) => {
 				const [appt] = await tx
 					.select({ id: appointments.id, patientId: appointments.patientId })
 					.from(appointments)
@@ -467,7 +469,7 @@ export async function registerTelegramReferralActionRoutes(app: FastifyInstance)
 	/**
 	 * 9. Семейный профиль:
 	 */
-	app.get("/api/telegram/family/members/:patientId", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.get("/api/telegram/family/members/:patientId", selfManagedRouteOpts, async (request: FastifyRequest, reply: FastifyReply) => {
 		const { patientId } = request.params as { patientId: string };
 		if (!UUID_REGEX.test(patientId)) {
 			return reply.status(400).send({
@@ -521,6 +523,6 @@ export async function registerTelegramReferralActionRoutes(app: FastifyInstance)
 		return reply.send(result);
 	};
 
-	app.post("/api/telegram/family/confirm-booking", handleFamilyConfirm);
-	app.post("/api/telegram/webapp/family/confirm", handleFamilyConfirm);
+	app.post("/api/telegram/family/confirm-booking", selfManagedRouteOpts, handleFamilyConfirm);
+	app.post("/api/telegram/webapp/family/confirm", selfManagedRouteOpts, handleFamilyConfirm);
 }

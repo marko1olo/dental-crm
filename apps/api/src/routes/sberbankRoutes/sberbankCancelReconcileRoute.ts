@@ -2,7 +2,7 @@ import { kopecksToRubles } from "@dental/shared";
 import { and, eq, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	generatedDocuments,
 	payments,
@@ -68,7 +68,7 @@ export async function registerSberbankCancelReconcileRoute(app: FastifyInstance)
 			}
 
 			try {
-				const preflightLookup = await withTenantCtx(orgId, async (tx) => {
+				const preflightLookup = await withTenantReadCtx(orgId, async (tx) => {
 					return findUniqueSberbankTxInTenant(tx, orgId, orderId, false);
 				});
 
@@ -98,7 +98,7 @@ export async function registerSberbankCancelReconcileRoute(app: FastifyInstance)
 					}
 				}
 
-				return await withTenantCtx(orgId, async (tx) => {
+				return await withTenantWriteCtx(orgId, async (tx) => {
 					const lockedLookup = await findUniqueSberbankTxInTenant(tx, orgId, orderId, true);
 					if (lockedLookup.kind === "ambiguous") {
 						return reply.status(409).send({

@@ -2,7 +2,8 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
-import { withTenantCtx } from "../db/rls.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../db/rls.js";
 import { clinicWorkflows } from "../db/schema.js";
 import { requirePermission } from "../security/permissions.js";
 import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
@@ -42,6 +43,9 @@ function serializeWorkflow(wf: typeof clinicWorkflows.$inferSelect) {
 
 export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 	const workflowMutationOptions = {
+		config: {
+			tenantTxSelfManaged: true,
+		},
 		schema: {
 			description: "Clinic workflow mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
 			headers: {
@@ -60,22 +64,27 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 	 * GET /api/clinic/workflows
 	 * List workflows for organization (settings.read permission required).
 	 */
-	app.get("/api/clinic/workflows", async (request: FastifyRequest, reply: FastifyReply) => {
-		const organizationId = await requireResolvedOrganizationId(request, reply);
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/clinic/workflows",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const organizationId = await requireResolvedOrganizationId(request, reply);
+			if (!organizationId) return;
 
-		const perm = await requirePermission(request, reply, "settings.read");
-		if (!perm) return;
+			const perm = await requirePermission(request, reply, "settings.read");
+			if (!perm) return;
 
-		const rows = await withTenantCtx(organizationId, async (tx) =>
-			tx
-				.select()
-				.from(clinicWorkflows)
-				.where(eq(clinicWorkflows.organizationId, organizationId))
-				.orderBy(clinicWorkflows.createdAt),
-		);
+			const rows = await withTenantReadCtx(organizationId, async (tx) =>
+				tx
+					.select()
+					.from(clinicWorkflows)
+					.where(eq(clinicWorkflows.organizationId, organizationId))
+					.orderBy(clinicWorkflows.createdAt),
+			);
 
-		return reply.status(200).send({ workflows: rows.map(serializeWorkflow) });
+			return reply.status(200).send({ workflows: rows.map(serializeWorkflow) });
+		},
 	});
 
 	/**
@@ -119,7 +128,7 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 
 		const trigger = rawTrigger && rawTrigger.trim() ? rawTrigger.trim() : "manual";
 
-		const [created] = await withTenantCtx(organizationId, async (tx) =>
+		const [created] = await withTenantWriteCtx(organizationId, async (tx) =>
 			tx
 				.insert(clinicWorkflows)
 				.values({
@@ -184,7 +193,7 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 		}
 		const requestedActive = body.data?.active;
 
-		const toggleResult = await withTenantCtx(organizationId, async (tx) => {
+		const toggleResult = await withTenantWriteCtx(organizationId, async (tx) => {
 			const [existing] = await tx
 				.select()
 				.from(clinicWorkflows)
@@ -258,7 +267,7 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const [deleted] = await withTenantCtx(organizationId, async (tx) =>
+		const [deleted] = await withTenantWriteCtx(organizationId, async (tx) =>
 			tx
 				.delete(clinicWorkflows)
 				.where(

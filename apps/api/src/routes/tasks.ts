@@ -13,7 +13,8 @@ import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
 } from "../accessGuard.js";
-import { withTenantCtx } from "../db/rls.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../db/rls.js";
 import {
 	createPatientTaskTicketInDb,
 	deleteTaskTicketByIdInDb,
@@ -134,6 +135,9 @@ const taskIdParamSchema = z
 	.strict();
 
 export const taskIdempotencyMutationOptionsWithOrgIdContext = {
+	config: {
+		tenantTxSelfManaged: true,
+	},
 	schema: {
 		description:
 			"CRM task mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
@@ -155,64 +159,74 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 	/**
 	 * Получение канонических шаблонов стоматологических задач (Мандат 8k).
 	 */
-	app.get("/api/tasks/presets", async (request, reply) => {
-		if (!(await requireClinicalReadAccess(request, reply, "tasks presets read")))
-			return;
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		return reply.code(200).send(CANONICAL_DENTAL_TASK_PRESETS);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/tasks/presets",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await requireClinicalReadAccess(request, reply, "tasks presets read")))
+				return;
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+			return reply.code(200).send(CANONICAL_DENTAL_TASK_PRESETS);
+		},
 	});
 
 	/**
 	 * Получение списка задач CRM по организации.
 	 */
-	app.get("/api/tasks", async (request, reply) => {
-		if (!(await requireClinicalReadAccess(request, reply, "tasks read")))
-			return;
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/tasks",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await requireClinicalReadAccess(request, reply, "tasks read")))
+				return;
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
 
-		const queryParsed = getTasksQuerySchema.safeParse(request.query ?? {});
-		if (!queryParsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректные параметры фильтрации задач.",
-			});
-		}
-		const query = queryParsed.data;
+			const queryParsed = getTasksQuerySchema.safeParse(request.query ?? {});
+			if (!queryParsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры фильтрации задач.",
+				});
+			}
+			const query = queryParsed.data;
 
-		const patientId =
-			query.patientId && UUID_REGEX.test(query.patientId)
-				? query.patientId
-				: undefined;
-		const assignedToId =
-			query.assignedToId && UUID_REGEX.test(query.assignedToId)
-				? query.assignedToId
-				: undefined;
-		const statusParsed = clinicalTaskStatusSchema.safeParse(query.status);
-		const status = statusParsed.success ? statusParsed.data : undefined;
+			const patientId =
+				query.patientId && UUID_REGEX.test(query.patientId)
+					? query.patientId
+					: undefined;
+			const assignedToId =
+				query.assignedToId && UUID_REGEX.test(query.assignedToId)
+					? query.assignedToId
+					: undefined;
+			const statusParsed = clinicalTaskStatusSchema.safeParse(query.status);
+			const status = statusParsed.success ? statusParsed.data : undefined;
 
-		try {
-			const filters: {
-				patientId?: string;
-				assignedToId?: string;
-				status?: PatientTaskTicketStatus;
-			} = {};
-			if (patientId) filters.patientId = patientId;
-			if (assignedToId) filters.assignedToId = assignedToId;
-			if (status) filters.status = status;
+			try {
+				const filters: {
+					patientId?: string;
+					assignedToId?: string;
+					status?: PatientTaskTicketStatus;
+				} = {};
+				if (patientId) filters.patientId = patientId;
+				if (assignedToId) filters.assignedToId = assignedToId;
+				if (status) filters.status = status;
 
-			const tasks = await withTenantCtx(orgId, async (tx) =>
-				getAllTaskTicketsFromDb(orgId, filters, tx),
-			);
-			return reply.code(200).send(tasks);
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Не удалось получить список задач.",
-			});
-		}
+				const tasks = await withTenantReadCtx(orgId, async (tx) =>
+					getAllTaskTicketsFromDb(orgId, filters, tx),
+				);
+				return reply.code(200).send(tasks);
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Не удалось получить список задач.",
+				});
+			}
+		},
 	});
 
 	/**
@@ -240,7 +254,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 			(currentUserId && UUID_REGEX.test(currentUserId) ? currentUserId : null);
 
 		try {
-			const task = await withTenantCtx(orgId, async (tx) =>
+			const task = await withTenantWriteCtx(orgId, async (tx) =>
 				createPatientTaskTicketInDb(
 					orgId,
 					body.patientId,
@@ -294,7 +308,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			const updated = await withTenantCtx(orgId, async (tx) =>
+			const updated = await withTenantWriteCtx(orgId, async (tx) =>
 				setTaskTicketStatusByIdInDb(
 					orgId,
 					id,
@@ -342,7 +356,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 		const { id } = paramsParsed.data;
 
 		try {
-			const deleted = await withTenantCtx(orgId, async (tx) =>
+			const deleted = await withTenantWriteCtx(orgId, async (tx) =>
 				deleteTaskTicketByIdInDb(orgId, id, tx),
 			);
 			if (!deleted) {

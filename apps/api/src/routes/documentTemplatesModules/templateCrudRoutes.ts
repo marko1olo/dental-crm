@@ -1,7 +1,8 @@
 import { type SQL, and, asc, eq, ilike, isNull, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	documentTemplateCategories,
 	documentTemplates,
@@ -27,9 +28,11 @@ export async function registerTemplateCrudRoutes(
 	 * GET /api/document-templates/variables
 	 * Реестр доступных 74+ токенов подстановки для редактора шаблонов
 	 */
-	app.get(
-		"/api/document-templates/variables",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/document-templates/variables",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -38,7 +41,7 @@ export async function registerTemplateCrudRoutes(
 			if (!organizationId) return;
 
 			// Чтение переменных из базы под tenant context
-			const dbVariables = await withTenantCtx(organizationId, async (tx) =>
+			const dbVariables = await withTenantReadCtx(organizationId, async (tx) =>
 				tx
 					.select()
 					.from(documentTemplateVariables)
@@ -72,15 +75,17 @@ export async function registerTemplateCrudRoutes(
 				variables: list,
 			});
 		},
-	);
+	});
 
 	/**
 	 * GET /api/document-templates
 	 * Каталог шаблонов с группировкой по 10 рубрикам Минздрава РФ
 	 */
-	app.get(
-		"/api/document-templates",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/document-templates",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -100,7 +105,7 @@ export async function registerTemplateCrudRoutes(
 			}
 			const query = parsedQuery.data;
 
-			return await withTenantCtx(organizationId, async (tx) => {
+			return await withTenantReadCtx(organizationId, async (tx) => {
 				// Загрузка 10 рубрик
 				const categories = await tx
 					.select()
@@ -177,15 +182,17 @@ export async function registerTemplateCrudRoutes(
 				});
 			});
 		},
-	);
+	});
 
 	/**
 	 * GET /api/document-templates/:id
 	 * Получение одного шаблона по UUID, числовому externalTemplateId или systemAlias
 	 */
-	app.get(
-		"/api/document-templates/:id",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/document-templates/:id",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -224,7 +231,7 @@ export async function registerTemplateCrudRoutes(
 					isNull(documentTemplates.organizationId),
 				) ?? eq(documentTemplates.organizationId, organizationId);
 
-			return await withTenantCtx(organizationId, async (tx) => {
+			return await withTenantReadCtx(organizationId, async (tx) => {
 				const [template] = await tx
 					.select()
 					.from(documentTemplates)
@@ -269,5 +276,5 @@ export async function registerTemplateCrudRoutes(
 				});
 			});
 		},
-	);
+	});
 }

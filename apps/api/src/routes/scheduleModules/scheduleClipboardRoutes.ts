@@ -2,9 +2,10 @@ import { dashboardSchema } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { createAppointmentInDb } from "../../db/appointmentsQuery.js";
 import { getDashboardFromDb } from "../../db/dashboardQuery.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	appointments,
 	chairs,
@@ -63,6 +64,9 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 	 * Буфер обмена расписания — быстрый перенос приёма на другое время.
 	 */
 	const clipboardMutationOptions = {
+		config: {
+			tenantTxSelfManaged: true,
+		},
 		schema: {
 			description: "Schedule clipboard mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
 			headers: {
@@ -77,41 +81,46 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 		},
 	} as const;
 
-	app.get("/api/schedule/clipboard-items", async (request, reply) => {
-		const context = await requireScheduleReadContext(request, reply);
-		if (!context) return reply;
-		const orgId = context.organizationId;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/schedule/clipboard-items",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireScheduleReadContext(request, reply);
+			if (!context) return reply;
+			const orgId = context.organizationId;
 
-		const items = await withTenantCtx(orgId, (tx) =>
-			tx
-				.select({
-					id: scheduleClipboardItems.id,
-					appointmentId: scheduleClipboardItems.appointmentId,
-					patientName: scheduleClipboardItems.patientName,
-					doctorName: scheduleClipboardItems.doctorName,
-					serviceTitle: scheduleClipboardItems.serviceTitle,
-					durationMinutes: scheduleClipboardItems.durationMinutes,
-					clipboardStatus: scheduleClipboardItems.clipboardStatus,
-					copiedAt: scheduleClipboardItems.copiedAt,
-				})
-				.from(scheduleClipboardItems)
-				.where(
-					and(
-						eq(scheduleClipboardItems.organizationId, orgId),
-						eq(scheduleClipboardItems.clipboardStatus, "copied"),
-					),
-				)
-				.orderBy(desc(scheduleClipboardItems.copiedAt))
-				.limit(20),
-		);
+			const items = await withTenantReadCtx(orgId, (tx) =>
+				tx
+					.select({
+						id: scheduleClipboardItems.id,
+						appointmentId: scheduleClipboardItems.appointmentId,
+						patientName: scheduleClipboardItems.patientName,
+						doctorName: scheduleClipboardItems.doctorName,
+						serviceTitle: scheduleClipboardItems.serviceTitle,
+						durationMinutes: scheduleClipboardItems.durationMinutes,
+						clipboardStatus: scheduleClipboardItems.clipboardStatus,
+						copiedAt: scheduleClipboardItems.copiedAt,
+					})
+					.from(scheduleClipboardItems)
+					.where(
+						and(
+							eq(scheduleClipboardItems.organizationId, orgId),
+							eq(scheduleClipboardItems.clipboardStatus, "copied"),
+						),
+					)
+					.orderBy(desc(scheduleClipboardItems.copiedAt))
+					.limit(20),
+			);
 
-		return items.map((item) => ({
-			...item,
-			copiedAt:
-				item.copiedAt instanceof Date
-					? item.copiedAt.toISOString()
-					: String(item.copiedAt),
-		}));
+			return items.map((item) => ({
+				...item,
+				copiedAt:
+					item.copiedAt instanceof Date
+						? item.copiedAt.toISOString()
+						: String(item.copiedAt),
+			}));
+		},
 	});
 
 	app.post("/api/schedule/clipboard-items", clipboardMutationOptions, async (request, reply) => {
@@ -132,7 +141,7 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 		}
 		const appointmentId = parsedBody.data.appointmentId.trim();
 
-		const created = await withTenantCtx(orgId, async (tx) => {
+		const created = await withTenantWriteCtx(orgId, async (tx) => {
 			const [source] = await tx
 				.select({
 					id: appointments.id,
@@ -256,7 +265,7 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 		}
 		const itemId = parsedParams.data.id.trim();
 
-		const [updated] = await withTenantCtx(orgId, (tx) =>
+		const [updated] = await withTenantWriteCtx(orgId, (tx) =>
 			tx
 				.update(scheduleClipboardItems)
 				.set({ clipboardStatus: "cleared" })
@@ -317,7 +326,7 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const lookup = await withTenantCtx(orgId, async (tx) => {
+			const lookup = await withTenantReadCtx(orgId, async (tx) => {
 				const [clipItem] = await tx
 					.select({
 						id: scheduleClipboardItems.id,
@@ -425,7 +434,7 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 			const startsAt = new Date(startsMs).toISOString();
 
 			try {
-				const created = await withTenantCtx(orgId, async (tx) => {
+				const created = await withTenantWriteCtx(orgId, async (tx) => {
 					const newAppt = await createAppointmentInDb(
 						orgId,
 						{

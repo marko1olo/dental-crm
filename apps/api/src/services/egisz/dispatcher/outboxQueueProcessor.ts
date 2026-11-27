@@ -8,7 +8,7 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import type { TenantDb } from "../../../db/client.js";
-import { withSuperuserBypass, withTenantCtx } from "../../../db/rls.js";
+import { withSuperuserBypass, withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
 import {
 	egiszOutbox,
 	type EgiszOutboxItem,
@@ -92,7 +92,7 @@ export class EgiszOutboxDispatcher {
 			? new Date(input.pkg.moSignature.signedAt)
 			: null;
 
-		const outboxRow = await withTenantCtx(input.organizationId, async (tx) => {
+		const outboxRow = await withTenantWriteCtx(input.organizationId, async (tx) => {
 			const [row] = await tx
 				.insert(egiszOutbox)
 				.values({
@@ -280,13 +280,13 @@ export class EgiszOutboxDispatcher {
 				if (organizationId) {
 					await applyRecovery(tx);
 				} else {
-					await withTenantCtx(staleRow.organizationId, applyRecovery);
+					await withTenantWriteCtx(staleRow.organizationId, applyRecovery);
 				}
 			}
 		};
 
 		if (organizationId) {
-			await withTenantCtx(organizationId, recoverStaleInTx);
+			await withTenantWriteCtx(organizationId, recoverStaleInTx);
 		} else {
 			await withSuperuserBypass(recoverStaleInTx);
 		}
@@ -354,7 +354,7 @@ export class EgiszOutboxDispatcher {
 
 			const claimedRows: EgiszOutboxItem[] = [];
 			for (const [orgId, ids] of idsByOrg.entries()) {
-				const orgClaimed = await withTenantCtx(orgId, async (tenantTx) =>
+				const orgClaimed = await withTenantWriteCtx(orgId, async (tenantTx) =>
 					tenantTx
 						.update(egiszOutbox)
 						.set({
@@ -378,7 +378,7 @@ export class EgiszOutboxDispatcher {
 		};
 
 		const claimedOutboxRows = organizationId
-			? await withTenantCtx(organizationId, claimBatchInTx)
+			? await withTenantWriteCtx(organizationId, claimBatchInTx)
 			: await withSuperuserBypass(claimBatchInTx);
 
 		// 3. Dispatch claimed rows outside the claim transaction (no DB locks held during network I/O)
@@ -415,7 +415,7 @@ export class EgiszOutboxDispatcher {
 	 * Returns queue telemetry and health metrics for the clinic.
 	 */
 	public async getQueueStatus(organizationId: string): Promise<EgiszQueueHealthSummary> {
-		const { outboxCounts, nextItem } = await withTenantCtx(organizationId, async (tx) => {
+		const { outboxCounts, nextItem } = await withTenantReadCtx(organizationId, async (tx) => {
 			const counts = await tx
 				.select({
 					status: egiszOutbox.status,

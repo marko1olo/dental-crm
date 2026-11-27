@@ -3,11 +3,16 @@ import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../../../accessGuard.js";
+import { defineStreamRoute } from "../../../core/routeFactories.js";
 import { MessageTemplateEngine } from "../../../services/communications/MessageTemplateEngine.js";
 import { renderTemplateRouteSchema } from "../types.js";
 
 export function registerTemplateRenderHandlers(app: FastifyInstance): void {
-	app.post("/api/communications/templates/render", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/communications/templates/render",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -60,5 +65,6 @@ export function registerTemplateRenderHandlers(app: FastifyInstance): void {
 			success: true,
 			result,
 		});
+		},
 	});
 }

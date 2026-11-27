@@ -1,7 +1,8 @@
 import { and, eq, gt, ilike } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineWebhookRoute } from "../../core/routeFactories.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import { communicationTasks, patients } from "../../db/schema.js";
 import { verifyWebhookSecret } from "../../security/webhookAuth.js";
 
@@ -41,10 +42,10 @@ const flexbePayloadSchema = z
 	.passthrough();
 
 export async function registerFlexbeRoutes(app: FastifyInstance) {
-	app.post(
-		"/api/integrations/flexbe/webhook",
-		{ config: { tenantTxSelfManaged: true } },
-		async (req, reply) => {
+	defineWebhookRoute(app, {
+		method: "POST",
+		path: "/api/integrations/flexbe/webhook",
+		handler: async ({ request: req, reply }) => {
 			if (
 				!verifyWebhookSecret(req, reply, {
 					channel: "flexbe",
@@ -112,7 +113,7 @@ export async function registerFlexbeRoutes(app: FastifyInstance) {
 					? String(subIdRaw).trim()
 					: null;
 
-			return await withTenantCtx(organizationId, async (tx) => {
+			return await withTenantWriteCtx(organizationId, async (tx) => {
 				if (subId) {
 					const existingTask = await tx
 						.select({ id: communicationTasks.id })
@@ -211,5 +212,5 @@ export async function registerFlexbeRoutes(app: FastifyInstance) {
 				return reply.status(200).send({ success: true });
 			});
 		},
-	);
+	});
 }

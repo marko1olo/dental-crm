@@ -5,7 +5,8 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { defineStreamRoute } from "../../../core/routeFactories.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { communicationEvents, communicationTasks } from "../../../db/schema.js";
 import {
 	communicationTaskNotFoundMessage,
@@ -13,24 +14,28 @@ import {
 } from "../types.js";
 
 export function registerCommunicationTasksHandlers(app: FastifyInstance): void {
-	app.post("/api/communications/tasks/complete", async (request, reply) => {
-		const organizationId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"communication task complete",
-		);
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/communications/tasks/complete",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"communication task complete",
+			);
+			if (!organizationId) return;
 
-		const parsedInput = completeCommunicationTaskSchema.safeParse(request.body);
-		if (!parsedInput.success) {
-			return reply.code(400).send({
-				error: "CommunicationTaskValidationError",
-				message: communicationTaskValidationMessage,
-			});
-		}
+			const parsedInput = completeCommunicationTaskSchema.safeParse(request.body);
+			if (!parsedInput.success) {
+				return reply.code(400).send({
+					error: "CommunicationTaskValidationError",
+					message: communicationTaskValidationMessage,
+				});
+			}
 
-		try {
-			const result = await withTenantCtx(organizationId, async (tx) => {
+			try {
+				const result = await withTenantWriteCtx(organizationId, async (tx) => {
 				const [task] = await tx
 					.select()
 					.from(communicationTasks)
@@ -117,5 +122,6 @@ export function registerCommunicationTasksHandlers(app: FastifyInstance): void {
 			}
 			throw error;
 		}
-	});
+	},
+});
 }

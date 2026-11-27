@@ -1,7 +1,8 @@
 import { escapeHtml } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyBaseLogger, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { type TenantDb, withSavepoint, withTenantCtx } from "../db/rls.js";
+import { definePublicRoute } from "../core/routeFactories.js";
+import { type TenantDb, withSavepoint, withTenantWriteCtx } from "../db/rls.js";
 import {
 	appointments,
 	clinics,
@@ -150,7 +151,7 @@ export async function registerPublicAppointmentActionRoutes(
 		};
 		const expectedAction = resolved.action;
 
-		return withTenantCtx(payload.organizationId, async (tx) => {
+		return withTenantWriteCtx(payload.organizationId, async (tx) => {
 			const [appointment] = await tx
 				.select({
 					id: appointments.id,
@@ -452,5 +453,9 @@ export async function registerPublicAppointmentActionRoutes(
 		});
 	};
 
-	app.get("/api/p/:code", async (request, reply) => handle(request, reply));
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/p/:code",
+		handler: async ({ request, reply }) => handle(request, reply),
+	});
 }

@@ -1,6 +1,6 @@
 import { and, asc, eq, gte, inArray, lte } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import {
 	appointments,
 	clinics,
@@ -21,6 +21,9 @@ import {
 } from "./timezoneAndTypes.js";
 
 const dayConfirmationsIdempotencyDispatchOptionsWithOrgId = {
+	config: {
+		tenantTxSelfManaged: true,
+	},
 	schema: {
 		description:
 			"Batch dispatch tomorrow appointment reminders with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
@@ -73,7 +76,7 @@ export function registerDayConfirmationDispatchRoutes(
 
 		const parsed = body.data;
 		try {
-			const txOutcome = await withTenantCtx(organizationId, async (tx) => {
+			const txOutcome = await withTenantWriteCtx(organizationId, async (tx) => {
 				const clinicList = await tx
 					.select({
 						id: clinics.id,

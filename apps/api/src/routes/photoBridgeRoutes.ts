@@ -9,8 +9,9 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { isDemoShowcaseMode, requireResolvedOrganizationId } from "../accessGuard.js";
+import { definePublicRoute, defineStreamRoute } from "../core/routeFactories.js";
 import { BoundedTtlMap } from "../lib/boundedTtlMap.js";
-import { onTenantTxCommit, withSuperuserBypass, withTenantCtx } from "../db/rls.js";
+import { onTenantTxCommit, withSuperuserBypass, withTenantReadCtx, withTenantWriteCtx } from "../db/rls.js";
 import { patients, attachments, systemBackgroundJobs, visits } from "../db/schema.js";
 import { safeLogError } from "../observability/logger.js";
 import { UPLOADS_DIR, validateUploadMagicBytes } from "./fileModules/common.js";
@@ -219,7 +220,7 @@ const photoBridgeSessionSchema = z.object({
 });
 
 async function savePhotoBridgeSessionToDb(session: PhotoBridgeSession): Promise<void> {
-	const write = async (tx: Parameters<Parameters<typeof withTenantCtx>[1]>[0]) => {
+	const write = async (tx: Parameters<Parameters<typeof withTenantWriteCtx>[1]>[0]) => {
 		await tx.insert(systemBackgroundJobs).values({
 			organizationId: UUID_REGEX.test(session.organizationId) ? session.organizationId : null,
 			queueName: PHOTO_BRIDGE_QUEUE,
@@ -234,7 +235,7 @@ async function savePhotoBridgeSessionToDb(session: PhotoBridgeSession): Promise<
 	};
 
 	if (UUID_REGEX.test(session.organizationId)) {
-		await withTenantCtx(session.organizationId, write);
+		await withTenantWriteCtx(session.organizationId, write);
 	} else {
 		await withSuperuserBypass(write);
 	}
@@ -401,7 +402,11 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 	 * POST /api/photo-bridge/session
 	 * Доступно авторизованному клиническому персоналу
 	 */
-	app.post("/api/photo-bridge/session", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/photo-bridge/session",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
@@ -435,7 +440,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		} else {
 			// Проверка пациента в организации под RLS-контекстом клиники (Tenant Isolation)
-			const patient = await withTenantCtx(orgId, async (tx) => {
+			const patient = await withTenantReadCtx(orgId, async (tx) => {
 				const [row] = await tx
 					.select({ id: patients.id, fullName: patients.fullName })
 					.from(patients)
@@ -463,7 +468,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 					});
 				}
 			} else {
-				const visitRow = await withTenantCtx(orgId, async (tx) => {
+				const visitRow = await withTenantReadCtx(orgId, async (tx) => {
 					const [row] = await tx
 						.select({ id: visits.id })
 						.from(visits)
@@ -512,6 +517,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			ttlSeconds: 900,
 			uploadPath,
 		});
+		},
 	});
 
 	/**
@@ -519,7 +525,10 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 	 * GET /api/photo-bridge/session/:token
 	 * Публичный эндпоинт (врач на личном смартфоне в перчатках без ввода паролей)
 	 */
-	app.get("/api/photo-bridge/session/:token", async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/photo-bridge/session/:token",
+		handler: async ({ request, reply }) => {
 		const paramParse = tokenParamSchema.safeParse(request.params);
 		if (!paramParse.success) {
 			return reply.code(400).send({
@@ -548,6 +557,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			photosCount: session.photos.length,
 			uploadedPhotos: session.photos,
 		});
+		},
 	});
 
 	/**
@@ -555,7 +565,10 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 	 * POST /api/photo-bridge/upload/:token
 	 * Поддерживает как multipart/raw бинарные потоки, так и JSON payload
 	 */
-	app.post("/api/photo-bridge/upload/:token", async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "POST",
+		path: "/api/photo-bridge/upload/:token",
+		handler: async ({ request, reply }) => {
 		const paramParse = tokenParamSchema.safeParse(request.params);
 		if (!paramParse.success) {
 			return reply.code(400).send({
@@ -868,7 +881,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		let attachment: typeof attachments.$inferSelect | undefined;
 		let persistedPhotoItem: PhotoBridgeUploadedItem | undefined;
 		try {
-			const txResult = await withTenantCtx(session.organizationId, async (tx) => {
+			const txResult = await withTenantWriteCtx(session.organizationId, async (tx) => {
 				const [lockedJob] = await tx
 					.select({
 						id: systemBackgroundJobs.id,
@@ -972,6 +985,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			success: true,
 			photo: persistedPhotoItem,
 		});
+		},
 	});
 
 	/**
@@ -979,7 +993,11 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 	 * GET /api/photo-bridge/poll/:token
 	 * Возвращает актуальный список фото без ручного F5 (только авторизованной клинике-владельцу)
 	 */
-	app.get("/api/photo-bridge/poll/:token", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/photo-bridge/poll/:token",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "photo bridge poll");
 		if (!orgId) return;
 
@@ -1013,13 +1031,18 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			photos: session.photos,
 			expiresAt: session.expiresAt,
 		});
+		},
 	});
 
 	/**
 	 * Завершение сессии при закрытии модалки врачом
 	 * DELETE /api/photo-bridge/session/:token
 	 */
-	app.delete("/api/photo-bridge/session/:token", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "DELETE",
+		path: "/api/photo-bridge/session/:token",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "photo bridge delete");
 		if (!orgId) return;
 
@@ -1040,7 +1063,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		}
 
 		let deleted = false;
-		const removeFn = async (tx: Parameters<Parameters<typeof withTenantCtx>[1]>[0]) => {
+		const removeFn = async (tx: Parameters<Parameters<typeof withTenantWriteCtx>[1]>[0]) => {
 			const removedRows = await tx
 				.delete(systemBackgroundJobs)
 				.where(
@@ -1056,7 +1079,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		};
 		if (UUID_REGEX.test(orgId)) {
-			await withTenantCtx(orgId, removeFn);
+			await withTenantWriteCtx(orgId, removeFn);
 		} else {
 			await withSuperuserBypass(removeFn);
 			sessionsMap.delete(token);
@@ -1066,6 +1089,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			success: true,
 			deleted,
 		});
+		},
 	});
 }
 

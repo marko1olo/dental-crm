@@ -2,7 +2,7 @@ import { generateSbpDynamicQrSchema } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { patientInvoices, sberbankTransactions } from "../../../db/schema.js";
 import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
 import {
@@ -64,7 +64,7 @@ export async function handleGenerateQr(
 		});
 	}
 
-	const outcome = await withTenantCtx(orgId, async (tx) => {
+	const outcome = await withTenantWriteCtx(orgId, async (tx) => {
 		const bodyPatientId =
 			parsed.data.patientId && isValidUuid(parsed.data.patientId)
 				? parsed.data.patientId

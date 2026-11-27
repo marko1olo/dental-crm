@@ -14,7 +14,8 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { withTenantCtx } from "../db/rls.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
+import { withTenantReadCtx } from "../db/rls.js";
 import { calculateCohortLtv } from "./analytics/cohortLtvCalculator.js";
 import { requireExecutiveAccess } from "./analytics/executiveAccessGuard.js";
 import { queryExecutiveDepartmentsAndDoctors } from "./analytics/executiveDoctorsQuery.js";
@@ -57,9 +58,9 @@ export async function registerManagerReportsRoutes(app: FastifyInstance): Promis
 
 		try {
 			const query = parsedQuery.data;
-			const range = resolveExecutiveDateRange(query.period, query.from, query.to);
-			return await withTenantCtx(orgId, async (tx) => {
+			return await withTenantReadCtx(orgId, async (tx) => {
 				const timeZone = await clinicTimeZone(orgId, tx);
+				const range = resolveExecutiveDateRange(query.period, query.from, query.to, timeZone);
 
 				const scope: ReportScope = {
 					organizationId: orgId,
@@ -107,9 +108,9 @@ export async function registerManagerReportsRoutes(app: FastifyInstance): Promis
 
 		try {
 			const query = parsedQuery.data;
-			const range = resolveExecutiveDateRange(query.period, query.from, query.to);
-			return await withTenantCtx(orgId, async (tx) => {
+			return await withTenantReadCtx(orgId, async (tx) => {
 				const timeZone = await clinicTimeZone(orgId, tx);
+				const range = resolveExecutiveDateRange(query.period, query.from, query.to, timeZone);
 
 				const scope: ReportScope = {
 					organizationId: orgId,
@@ -187,9 +188,9 @@ export async function registerManagerReportsRoutes(app: FastifyInstance): Promis
 
 		try {
 			const query = parsedQuery.data;
-			const range = resolveExecutiveDateRange(query.period, query.from, query.to);
-			return await withTenantCtx(orgId, async (tx) => {
+			return await withTenantReadCtx(orgId, async (tx) => {
 				const timeZone = await clinicTimeZone(orgId, tx);
+				const range = resolveExecutiveDateRange(query.period, query.from, query.to, timeZone);
 
 				const { departments, activeDoctorsCount, topDoctors, topProcedures } =
 					await queryExecutiveDepartmentsAndDoctors(orgId, range.startDate, range.endDate, tx);
@@ -241,12 +242,12 @@ export async function registerManagerReportsRoutes(app: FastifyInstance): Promis
 	};
 
 	// Канонические маршруты v1
-	app.get("/api/v1/manager/reports/financial", getFinancialReport);
-	app.get("/api/v1/manager/reports/chair-occupancy", getChairOccupancyReport);
-	app.get("/api/v1/manager/reports/kpi", getKpiReport);
+	defineStreamRoute(app, { method: "GET", path: "/api/v1/manager/reports/financial", permission: "public", handler: ({ request, reply }) => getFinancialReport(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/v1/manager/reports/chair-occupancy", permission: "public", handler: ({ request, reply }) => getChairOccupancyReport(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/v1/manager/reports/kpi", permission: "public", handler: ({ request, reply }) => getKpiReport(request, reply) });
 
 	// Обратная совместимость без v1
-	app.get("/api/manager/reports/financial", getFinancialReport);
-	app.get("/api/manager/reports/chair-occupancy", getChairOccupancyReport);
-	app.get("/api/manager/reports/kpi", getKpiReport);
+	defineStreamRoute(app, { method: "GET", path: "/api/manager/reports/financial", permission: "public", handler: ({ request, reply }) => getFinancialReport(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/manager/reports/chair-occupancy", permission: "public", handler: ({ request, reply }) => getChairOccupancyReport(request, reply) });
+	defineStreamRoute(app, { method: "GET", path: "/api/manager/reports/kpi", permission: "public", handler: ({ request, reply }) => getKpiReport(request, reply) });
 }

@@ -2,7 +2,7 @@ import { kopecksToRubles, resolveInvoiceTotalAmountRub, rublesToKopecks } from "
 import { and, desc, eq, inArray, or } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadContext } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import { patientInvoices, payments } from "../../../db/schema/billing.js";
 import { patients } from "../../../db/schema/patients.js";
 
@@ -20,7 +20,7 @@ export async function handlePendingInvoices(
 	if (!context) return;
 	const orgId = context.organizationId;
 
-	const { invoiceRows, paidRows } = await withTenantCtx(orgId, async (tx) => {
+	const { invoiceRows, paidRows } = await withTenantReadCtx(orgId, async (tx) => {
 		const rows = await tx
 			.select({
 				id: patientInvoices.id,

@@ -32,7 +32,10 @@ import {
 	validationError,
 } from "./types.js";
 
+const selfManagedRouteOpts = { config: { tenantTxSelfManaged: true } } as const;
+
 const outboxMutationOptions = {
+	config: { tenantTxSelfManaged: true },
 	schema: {
 		description:
 			"Communications outbox mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
@@ -51,7 +54,7 @@ const outboxMutationOptions = {
 export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 	// ─── Очередь и журнал ─────────────────────────────────────────────────────
 
-	app.get("/api/communications/outbox", async (request, reply) => {
+	app.get("/api/communications/outbox", selfManagedRouteOpts, async (request, reply) => {
 		const context = await requireClinicalReadContext(
 			request,
 			reply,
@@ -266,7 +269,7 @@ export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 
 	// ─── Рассылки ─────────────────────────────────────────────────────────────
 
-	app.get("/api/communications/campaigns", async (request, reply) => {
+	app.get("/api/communications/campaigns", selfManagedRouteOpts, async (request, reply) => {
 		const context = await requireClinicalReadContext(
 			request,
 			reply,
@@ -321,6 +324,7 @@ export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 
 	app.get(
 		"/api/communications/campaigns/:campaignId/preview",
+		selfManagedRouteOpts,
 		async (request, reply) => {
 			const context = await requireClinicalReadContext(
 				request,
@@ -417,6 +421,7 @@ export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 
 	app.get(
 		"/api/communications/campaigns/:campaignId/progress",
+		selfManagedRouteOpts,
 		async (request, reply) => {
 			const context = await requireClinicalReadContext(
 				request,
@@ -448,7 +453,7 @@ export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 
 	// ─── Состояние шлюзов ─────────────────────────────────────────────────────
 
-	app.get("/api/communications/gateway-status", async (request, reply) => {
+	app.get("/api/communications/gateway-status", selfManagedRouteOpts, async (request, reply) => {
 		const context = await requireClinicalReadContext(
 			request,
 			reply,

@@ -2,7 +2,8 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { requireClinicalMutationContext, requireClinicalReadContext } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { scheduleTimeReservations } from "../../db/schema.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
@@ -45,6 +46,9 @@ const reservationParamsSchema = z
 	.strict();
 
 const reservationMutationOptions = {
+	config: {
+		tenantTxSelfManaged: true,
+	},
 	schema: {
 		description:
 			"Schedule time reservation mutation with RFC 9562 Idempotency-Key and organizationId tenant isolation",
@@ -101,64 +105,69 @@ function validateAndAttachIdempotencyKey(
  * (Обед, Ремонт кресла, Планёрка — таблица schedule_time_reservations).
  */
 export async function registerScheduleTimeReservationsRoutes(app: FastifyInstance) {
-	app.get("/api/schedule/time-reservations", async (request, reply) => {
-		const context = await requireClinicalReadContext(
-			request,
-			reply,
-			"schedule time reservations read",
-		);
-		if (!context) return reply;
-		const orgId = context.organizationId;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/schedule/time-reservations",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalReadContext(
+				request,
+				reply,
+				"schedule time reservations read",
+			);
+			if (!context) return reply;
+			const orgId = context.organizationId;
 
-		const parsedQuery = reservationQuerySchema.safeParse(request.query ?? {});
-		if (!parsedQuery.success) {
-			return reply.code(400).send({
-				error: "TimeReservationValidationError",
-				message:
-					parsedQuery.error.issues[0]?.message ??
-					"Некорректные параметры фильтрации резервов времени.",
-			});
-		}
-
-		const { date, chairName } = parsedQuery.data;
-
-		const rows = await withTenantCtx(orgId, async (tx) => {
-			const conditions = [eq(scheduleTimeReservations.organizationId, orgId)];
-			if (chairName) {
-				conditions.push(eq(scheduleTimeReservations.chairName, chairName));
+			const parsedQuery = reservationQuerySchema.safeParse(request.query ?? {});
+			if (!parsedQuery.success) {
+				return reply.code(400).send({
+					error: "TimeReservationValidationError",
+					message:
+						parsedQuery.error.issues[0]?.message ??
+						"Некорректные параметры фильтрации резервов времени.",
+				});
 			}
 
-			const allRows = await tx
-				.select()
-				.from(scheduleTimeReservations)
-				.where(and(...conditions))
-				.orderBy(asc(scheduleTimeReservations.startTime));
+			const { date, chairName } = parsedQuery.data;
 
-			if (!date) {
-				return allRows;
-			}
-
-			const zone = (await clinicTimeZone(orgId, tx)) ?? DEFAULT_CLINIC_TIME_ZONE;
-			const { dayStart, dayEnd } = resolveScheduleDateBounds(date, zone);
-			const dayStartMs = dayStart.getTime();
-			const dayEndMs = dayEnd.getTime();
-
-			return allRows.filter((row) => {
-				const rStart = Date.parse(row.startTime);
-				const rEnd = Date.parse(row.endTime);
-				if (Number.isFinite(rStart) && Number.isFinite(rEnd)) {
-					return rStart <= dayEndMs && rEnd >= dayStartMs;
+			const rows = await withTenantReadCtx(orgId, async (tx) => {
+				const conditions = [eq(scheduleTimeReservations.organizationId, orgId)];
+				if (chairName) {
+					conditions.push(eq(scheduleTimeReservations.chairName, chairName));
 				}
-				return row.startTime.startsWith(date);
-			});
-		});
 
-		const reservations = rows.map(serializeReservation);
-		return reply.code(200).send({
-			success: true,
-			data: reservations,
-			reservations,
-		});
+				const allRows = await tx
+					.select()
+					.from(scheduleTimeReservations)
+					.where(and(...conditions))
+					.orderBy(asc(scheduleTimeReservations.startTime));
+
+				if (!date) {
+					return allRows;
+				}
+
+				const zone = (await clinicTimeZone(orgId, tx)) ?? DEFAULT_CLINIC_TIME_ZONE;
+				const { dayStart, dayEnd } = resolveScheduleDateBounds(date, zone);
+				const dayStartMs = dayStart.getTime();
+				const dayEndMs = dayEnd.getTime();
+
+				return allRows.filter((row) => {
+					const rStart = Date.parse(row.startTime);
+					const rEnd = Date.parse(row.endTime);
+					if (Number.isFinite(rStart) && Number.isFinite(rEnd)) {
+						return rStart <= dayEndMs && rEnd >= dayStartMs;
+					}
+					return row.startTime.startsWith(date);
+				});
+			});
+
+			const reservations = rows.map(serializeReservation);
+			return reply.code(200).send({
+				success: true,
+				data: reservations,
+				reservations,
+			});
+		},
 	});
 
 	app.post(
@@ -201,7 +210,7 @@ export async function registerScheduleTimeReservationsRoutes(app: FastifyInstanc
 			const normalizedStartIso = new Date(startMs).toISOString();
 			const normalizedEndIso = new Date(endMs).toISOString();
 
-			const created = await withTenantCtx(orgId, async (tx) => {
+			const created = await withTenantWriteCtx(orgId, async (tx) => {
 				const [inserted] = await tx
 					.insert(scheduleTimeReservations)
 					.values({
@@ -274,7 +283,7 @@ export async function registerScheduleTimeReservationsRoutes(app: FastifyInstanc
 			}
 
 			const reservationId = parsedParams.data.id;
-			const deleted = await withTenantCtx(orgId, async (tx) => {
+			const deleted = await withTenantWriteCtx(orgId, async (tx) => {
 				const [removed] = await tx
 					.delete(scheduleTimeReservations)
 					.where(

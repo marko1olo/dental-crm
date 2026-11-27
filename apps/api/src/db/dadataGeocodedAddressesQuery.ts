@@ -1,9 +1,12 @@
 import { eq } from "drizzle-orm";
-import { db } from "./client.js";
+import { db, type TenantDb } from "./client.js";
 import { dadataGeocodedAddresses } from "./schema.js";
 
-export async function getDadataGeocodedAddressesFromDb(orgId: string) {
-	return db
+export async function getDadataGeocodedAddressesFromDb(
+	orgId: string,
+	targetDb: TenantDb = db,
+) {
+	return targetDb
 		.select()
 		.from(dadataGeocodedAddresses)
 		.where(eq(dadataGeocodedAddresses.organizationId, orgId));

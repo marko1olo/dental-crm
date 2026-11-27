@@ -2,7 +2,7 @@ import { kopecksToRubles } from "@dental/shared";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	generatedDocuments,
 	payments,
@@ -61,7 +61,7 @@ export async function registerSberbankStatusRoutes(app: FastifyInstance): Promis
 				const sberStatus = await client.getOrderStatusExtended(orderId);
 				const mappedStatus = mapSberbankOrderStatus(sberStatus.orderStatus);
 
-				const lookup = await withTenantCtx(orgId, async (tx) => {
+				const lookup = await withTenantReadCtx(orgId, async (tx) => {
 					return findUniqueSberbankTxInTenant(tx, orgId, orderId, false);
 				});
 
@@ -129,7 +129,7 @@ export async function registerSberbankStatusRoutes(app: FastifyInstance): Promis
 				const sberStatus = await client.getOrderStatusExtended(orderId);
 				const mappedStatus = mapSberbankOrderStatus(sberStatus.orderStatus);
 
-				return await withTenantCtx(orgId, async (tx) => {
+				return await withTenantWriteCtx(orgId, async (tx) => {
 					await tx.execute(
 						sql`SELECT pg_advisory_xact_lock(hashtext(${orgId}), hashtext('sberbank_status:' || ${orderId}))`,
 					);

@@ -2,7 +2,8 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
-import { withTenantCtx } from "../db/rls.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../db/rls.js";
 import { patientCtPlannings, patients } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { clinicSessionMissingMessage } from "../utils/clinicSessionRefusal.js";
@@ -172,7 +173,11 @@ const planningSelection = {
 
 export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 	// POST /api/imaging/planning/save
-	app.post("/api/imaging/planning/save", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imaging/planning/save",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		try {
 			if (!getRequestIdentity(request).organizationId) {
 				return reply.status(401).send({
@@ -213,7 +218,7 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 				implantsJson,
 			} = parsed.data;
 
-			const saveOutcome = await withTenantCtx(orgId, async (tx) => {
+			const saveOutcome = await withTenantWriteCtx(orgId, async (tx) => {
 				// Verify patient belongs to organization
 				const [patient] = await tx
 					.select({ id: patients.id })
@@ -293,10 +298,15 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 				.status(500)
 				.send({ error: "InternalServerError", message: SAVE_FAILED_MESSAGE });
 		}
+		},
 	});
 
 	// GET /api/imaging/planning/load
-	app.get("/api/imaging/planning/load", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/imaging/planning/load",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		try {
 			if (!getRequestIdentity(request).organizationId) {
 				return reply.status(401).send({
@@ -320,7 +330,7 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 			}
 			const { studyUid, patientId } = parsed.data;
 
-			const loadOutcome = await withTenantCtx(orgId, async (tx) => {
+			const loadOutcome = await withTenantReadCtx(orgId, async (tx) => {
 				// Verify patient belongs to organization
 				const [patient] = await tx
 					.select({ id: patients.id })
@@ -363,5 +373,6 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 				.status(500)
 				.send({ error: "InternalServerError", message: LOAD_FAILED_MESSAGE });
 		}
+		},
 	});
 }

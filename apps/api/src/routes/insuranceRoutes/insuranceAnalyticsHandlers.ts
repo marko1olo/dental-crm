@@ -13,7 +13,7 @@ import {
 import { and, eq, gte, isNotNull, isNull, lte, ne, or, type SQL } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	clinics,
 	dmsGuaranteeLetters,
@@ -49,66 +49,69 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 			search?: string;
 			format?: "json" | "xml" | "csv";
 		};
-	}>("/api/insurance/registry", async (request, reply) => {
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"insurance claim registry read",
-		);
-		if (!orgId) return;
+	}>(
+		"/api/insurance/registry",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"insurance claim registry read",
+			);
+			if (!orgId) return;
 
-		const parsed = registryQuerySchema.safeParse(request.query);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректные параметры запроса реестра счетов ДМС.",
-				details: parsed.error.issues,
-			});
-		}
-
-		const { insurerKey, contractId, patientId, period, search, format } = parsed.data;
-
-		// 1. Динамическое вычисление дат периода
-		const now = new Date();
-		let startDateStr = parsed.data.periodStart;
-		let endDateStr = parsed.data.periodEnd;
-
-		if (!startDateStr || !endDateStr) {
-			const year = now.getFullYear();
-			const month = now.getMonth();
-
-			if (period === "prev_month") {
-				const prevMonthDate = new Date(year, month - 1, 1);
-				const prevYear = prevMonthDate.getFullYear();
-				const prevMonth = prevMonthDate.getMonth();
-				const lastDay = new Date(prevYear, prevMonth + 1, 0).getDate();
-				startDateStr = `${prevYear}-${String(prevMonth + 1).padStart(2, "0")}-01`;
-				endDateStr = `${prevYear}-${String(prevMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-			} else if (period === "quarter") {
-				const quarterIndex = Math.floor(month / 3);
-				const startMonth = quarterIndex * 3;
-				const endMonth = startMonth + 2;
-				const lastDay = new Date(year, endMonth + 1, 0).getDate();
-				startDateStr = `${year}-${String(startMonth + 1).padStart(2, "0")}-01`;
-				endDateStr = `${year}-${String(endMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-			} else {
-				const lastDay = new Date(year, month + 1, 0).getDate();
-				startDateStr = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-				endDateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+			const parsed = registryQuerySchema.safeParse(request.query);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры запроса реестра счетов ДМС.",
+					details: parsed.error.issues,
+				});
 			}
-		}
 
-		const periodStartTs = new Date(`${startDateStr}T00:00:00.000Z`);
-		const periodEndTs = new Date(`${endDateStr}T23:59:59.999Z`);
-		const matchedInsurer = insurerKey && insurerKey !== "all" ? INSURER_DIRECTORY[insurerKey] : null;
+			const { insurerKey, contractId, patientId, period, search, format } = parsed.data;
 
-		const {
-			org,
-			clinicRow,
-			contract,
-			lettersWithPatients,
-			treatments,
-		} = await withTenantCtx(orgId, async (tx) => {
+			// 1. Динамическое вычисление дат периода
+			const now = new Date();
+			let startDateStr = parsed.data.periodStart;
+			let endDateStr = parsed.data.periodEnd;
+
+			if (!startDateStr || !endDateStr) {
+				const year = now.getFullYear();
+				const month = now.getMonth();
+
+				if (period === "prev_month") {
+					const prevMonthDate = new Date(year, month - 1, 1);
+					const prevYear = prevMonthDate.getFullYear();
+					const prevMonth = prevMonthDate.getMonth();
+					const lastDay = new Date(prevYear, prevMonth + 1, 0).getDate();
+					startDateStr = `${prevYear}-${String(prevMonth + 1).padStart(2, "0")}-01`;
+					endDateStr = `${prevYear}-${String(prevMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+				} else if (period === "quarter") {
+					const quarterIndex = Math.floor(month / 3);
+					const startMonth = quarterIndex * 3;
+					const endMonth = startMonth + 2;
+					const lastDay = new Date(year, endMonth + 1, 0).getDate();
+					startDateStr = `${year}-${String(startMonth + 1).padStart(2, "0")}-01`;
+					endDateStr = `${year}-${String(endMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+				} else {
+					const lastDay = new Date(year, month + 1, 0).getDate();
+					startDateStr = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+					endDateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+				}
+			}
+
+			const periodStartTs = new Date(`${startDateStr}T00:00:00.000Z`);
+			const periodEndTs = new Date(`${endDateStr}T23:59:59.999Z`);
+			const matchedInsurer = insurerKey && insurerKey !== "all" ? INSURER_DIRECTORY[insurerKey] : null;
+
+			const {
+				org,
+				clinicRow,
+				contract,
+				lettersWithPatients,
+				treatments,
+			} = await withTenantReadCtx(orgId, async (tx) => {
 			const [foundOrg] = await tx
 				.select()
 				.from(organizations)

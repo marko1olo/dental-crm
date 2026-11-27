@@ -3,7 +3,7 @@ import { and, eq, inArray, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import type { db } from "../../db/client.js";
-import { withTenantCtx, type TenantDb } from "../../db/rls.js";
+import { withTenantWriteCtx, type TenantDb } from "../../db/rls.js";
 import { familyGroups, patientRelationships, patients } from "../../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -175,7 +175,7 @@ export async function executeCreateFamilyGroup(params: {
 		return { success: true, status: 200, family: created };
 	};
 
-	return txClient ? runInTx(txClient) : withTenantCtx(organizationId, runInTx);
+	return txClient ? runInTx(txClient) : withTenantWriteCtx(organizationId, runInTx);
 }
 
 export type ExecuteAddFamilyMemberResult =
@@ -216,12 +216,14 @@ export async function executeAddFamilyMember(params: {
 		return { success: true, status: 200, body: { success: true, patientId, familyGroupId, canSpendFamilyWallet } };
 	};
 
-	return txClient ? runInTx(txClient) : withTenantCtx(organizationId, runInTx);
+	return txClient ? runInTx(txClient) : withTenantWriteCtx(organizationId, runInTx);
 }
 
 export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
+	const selfManagedRouteOpts = { config: { tenantTxSelfManaged: true } } as const;
+
 	// POST /api/finance/family — create a family group
-	app.post("/api/finance/family", async (req, reply) => {
+	app.post("/api/finance/family", selfManagedRouteOpts, async (req, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "family finance write");
 		if (!organizationId) return;
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
@@ -250,7 +252,7 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 	});
 
 	// PUT /api/finance/family/:id — update a family group
-	app.put("/api/finance/family/:id", async (req, reply) => {
+	app.put("/api/finance/family/:id", selfManagedRouteOpts, async (req, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "family finance write");
 		if (!organizationId) return;
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
@@ -270,7 +272,7 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		}
 		const data = updateParsed.data;
 
-		const updateResult = await withTenantCtx(organizationId, async (tx) => {
+		const updateResult = await withTenantWriteCtx(organizationId, async (tx) => {
 			if (data.headPatientId) {
 				const [head] = await tx
 					.select({ id: patients.id, familyGroupId: patients.familyGroupId })
@@ -363,7 +365,7 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 	});
 
 	// POST /api/finance/family/:id/members — добавить пациента в семью с правами списания
-	app.post("/api/finance/family/:id/members", async (req, reply) => {
+	app.post("/api/finance/family/:id/members", selfManagedRouteOpts, async (req, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "family member add");
 		if (!organizationId) return;
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
@@ -401,7 +403,7 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 	});
 
 	// DELETE /api/finance/family/:id/members/:patientId — исключить пациента из семьи
-	app.delete("/api/finance/family/:id/members/:patientId", async (req, reply) => {
+	app.delete("/api/finance/family/:id/members/:patientId", selfManagedRouteOpts, async (req, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "family member remove");
 		if (!organizationId) return;
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
@@ -410,7 +412,7 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		if (!isValidUuid(id) || !isValidUuid(patientId)) {
 			return reply.code(400).send({ error: "ValidationError", message: "Некорректный UUID семейной группы или пациента" });
 		}
-		const result = await withTenantCtx(organizationId, async (tx) => {
+		const result = await withTenantWriteCtx(organizationId, async (tx) => {
 			const [family] = await tx.select().from(familyGroups)
 				.where(and(eq(familyGroups.id, id), eq(familyGroups.organizationId, organizationId))).for("update").limit(1);
 			if (!family) return { status: 404, body: { error: "FamilyNotFound", message: "Семейная группа не найдена" } };
@@ -524,7 +526,7 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		const data = parsed.data;
 		const targetFamilyId = params.id || data.familyGroupId;
 
-		const result = await withTenantCtx(organizationId, async (tx) => {
+		const result = await withTenantWriteCtx(organizationId, async (tx) => {
 			let family: typeof familyGroups.$inferSelect | undefined;
 			if (targetFamilyId) {
 				const [found] = await tx.select().from(familyGroups)
@@ -570,11 +572,11 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		return reply.code(result.status).send(result.body);
 	};
 
-	app.patch("/api/finance/family/permissions", updatePermissionsHandler);
-	app.patch("/api/finance/family/:id/permissions", updatePermissionsHandler);
+	app.patch("/api/finance/family/permissions", selfManagedRouteOpts, updatePermissionsHandler);
+	app.patch("/api/finance/family/:id/permissions", selfManagedRouteOpts, updatePermissionsHandler);
 
 	// DELETE /api/finance/family/:id — delete a family group
-	app.delete("/api/finance/family/:id", async (req, reply) => {
+	app.delete("/api/finance/family/:id", selfManagedRouteOpts, async (req, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "family finance write");
 		if (!organizationId) return;
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
@@ -588,7 +590,7 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		if (!isValidUuid(id)) {
 			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор семейной группы (ожидается UUID)" });
 		}
-		const deleteResult = await withTenantCtx(organizationId, async (tx) => {
+		const deleteResult = await withTenantWriteCtx(organizationId, async (tx) => {
 			const [family] = await tx
 				.select()
 				.from(familyGroups)

@@ -11,6 +11,7 @@ import {
 	requireClinicalReadAccess,
 	requireNonDoctorAccess,
 } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import { getImagingOrganizationId } from "../imaging/imagingHelpers.js";
@@ -80,33 +81,42 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 	 * GET /api/radiology/dicom/server/status
 	 * Текущее состояние и метрики DICOM C-STORE SCP сервера и Vatech папки.
 	 */
-	app.get("/api/radiology/dicom/server/status", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireClinicalReadAccess(request, reply, "radiology dicom status"))) return;
-		const organizationId = getImagingOrganizationId(request, reply);
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/radiology/dicom/server/status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await requireClinicalReadAccess(request, reply, "radiology dicom status"))) return;
+			const organizationId = getImagingOrganizationId(request, reply);
+			if (!organizationId) return;
 
-		const scpStats = sanitizeScpStatsForTenant(
-			organizationId,
-			dicomCStoreScpServer.getStats(),
-		);
-		const bridgeStats = sanitizeBridgeStatusForTenant(
-			organizationId,
-			vatechDirectBridgeService.getStatus(),
-		);
+			const scpStats = sanitizeScpStatsForTenant(
+				organizationId,
+				dicomCStoreScpServer.getStats(),
+			);
+			const bridgeStats = sanitizeBridgeStatusForTenant(
+				organizationId,
+				vatechDirectBridgeService.getStatus(),
+			);
 
-		return reply.send({
-			success: true,
-			organizationId,
-			scpServer: scpStats,
-			vatechBridge: bridgeStats,
-		});
+			return reply.send({
+				success: true,
+				organizationId,
+				scpServer: scpStats,
+				vatechBridge: bridgeStats,
+			});
+		},
 	});
 
 	/**
 	 * POST /api/radiology/dicom/server/start
 	 * Запуск TCP-сервера DICOM C-STORE SCP.
 	 */
-	app.post("/api/radiology/dicom/server/start", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/radiology/dicom/server/start",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (!(await requireDicomServiceAdminAccess(request, reply, "start dicom scp server"))) return;
 		const organizationId = getImagingOrganizationId(request, reply);
 		if (!organizationId) return;
@@ -163,13 +173,18 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 				message: "Не удалось запустить DICOM SCP сервер.",
 			});
 		}
+		},
 	});
 
 	/**
 	 * POST /api/radiology/dicom/server/stop
 	 * Остановка TCP-сервера DICOM C-STORE SCP.
 	 */
-	app.post("/api/radiology/dicom/server/stop", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/radiology/dicom/server/stop",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (!(await requireDicomServiceAdminAccess(request, reply, "stop dicom scp server"))) return;
 		const organizationId = getImagingOrganizationId(request, reply);
 		if (!organizationId) return;
@@ -211,13 +226,18 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 				message: "Ошибка при остановке DICOM SCP сервера.",
 			});
 		}
+		},
 	});
 
 	/**
 	 * POST /api/radiology/dicom/server/ingest
 	 * Прямая загрузка буфера DICOM-исследования (Base64 или бинарный поток).
 	 */
-	app.post("/api/radiology/dicom/server/ingest", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/radiology/dicom/server/ingest",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "ingest dicom study"))) return;
 
 		const organizationId = getImagingOrganizationId(request, reply);
@@ -276,13 +296,18 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 				message: "Сбой импорта DICOM-исследования.",
 			});
 		}
+		},
 	});
 
 	/**
 	 * POST /api/radiology/dicom/bridge/start
 	 * Запуск фонового мониторинга локальной папки Vatech.
 	 */
-	app.post("/api/radiology/dicom/bridge/start", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/radiology/dicom/bridge/start",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (!(await requireDicomServiceAdminAccess(request, reply, "start vatech bridge"))) return;
 
 		const orgId = getImagingOrganizationId(request, reply);
@@ -350,13 +375,18 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 				message: "Ошибка запуска мониторинга Vatech.",
 			});
 		}
+		},
 	});
 
 	/**
 	 * POST /api/radiology/dicom/bridge/stop
 	 * Остановка мониторинга папки Vatech.
 	 */
-	app.post("/api/radiology/dicom/bridge/stop", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/radiology/dicom/bridge/stop",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (!(await requireDicomServiceAdminAccess(request, reply, "stop vatech bridge"))) return;
 
 		const orgId = getImagingOrganizationId(request, reply);
@@ -399,13 +429,18 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 				message: "Ошибка при остановке мониторинга Vatech.",
 			});
 		}
+		},
 	});
 
 	/**
 	 * POST /api/radiology/dicom/bridge/scan-now
 	 * Принудительное мгновенное сканирование папки Vatech.
 	 */
-	app.post("/api/radiology/dicom/bridge/scan-now", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/radiology/dicom/bridge/scan-now",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "scan vatech directory"))) return;
 
 		const orgId = getImagingOrganizationId(request, reply);
@@ -465,5 +500,6 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 			scannedCount,
 			status: sanitizeBridgeStatusForTenant(orgId, vatechDirectBridgeService.getStatus()),
 		});
+		},
 	});
 }

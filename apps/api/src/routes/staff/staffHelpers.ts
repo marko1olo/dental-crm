@@ -14,7 +14,7 @@ import {
 	validateStaffInn,
 } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { getRequestIdentity } from "../../security/identity.js";
+import { getRequestIdentity, verifyActiveStaffSession } from "../../security/identity.js";
 import { repairMojibakeDeep } from "../../text/repairMojibake.js";
 import type { doctorCommissions, users } from "../../db/schema.js";
 import type { ExtendedHrProfileStorage, StaffAuthContext } from "./types.js";
@@ -59,6 +59,16 @@ export async function resolveOrganizationId(
 					"Заголовок x-organization-id не подтверждён подписанным токеном клиники.",
 			});
 			return null;
+		}
+		if (identity.userId) {
+			const sessionOk = await verifyActiveStaffSession(
+				request,
+				reply,
+				identity.organizationId,
+				identity.userId,
+				identity.sessionId,
+			);
+			if (!sessionOk) return null;
 		}
 		return {
 			orgId: identity.organizationId,

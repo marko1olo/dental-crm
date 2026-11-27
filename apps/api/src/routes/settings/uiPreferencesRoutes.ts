@@ -3,6 +3,7 @@ import {
 	uiPreferencesSchema,
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	getUiPreferencesFromDb,
 	saveUiPreferencesInDb,
@@ -22,12 +23,17 @@ import {
 } from "./types.js";
 
 export function registerUiPreferencesRoutes(app: FastifyInstance): void {
-	app.get("/api/settings/preferences", async (request, reply) => {
-		const orgId = await requireSettingsAccess(request, reply);
-		if (!orgId) return;
-		const userId = getRequestIdentity(request).userId;
-		const prefs = await getUiPreferencesFromDb(orgId, userId);
-		return { preferences: prefs ? uiPreferencesSchema.parse(prefs) : null };
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/settings/preferences",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsAccess(request, reply);
+			if (!orgId) return;
+			const userId = getRequestIdentity(request).userId;
+			const prefs = await getUiPreferencesFromDb(orgId, userId);
+			return { preferences: prefs ? uiPreferencesSchema.parse(prefs) : null };
+		},
 	});
 
 	/**
@@ -45,55 +51,60 @@ export function registerUiPreferencesRoutes(app: FastifyInstance): void {
 	 * Разница видна на неразбираемой строке: прежняя форма записывала её в колонку
 	 * как время, и следующее сохранение сравнивать было уже не с чем.
 	 */
-	app.put("/api/settings/preferences", async (request, reply) => {
-		const orgId = await requireSettingsMutationAccess(request, reply);
-		if (!orgId) return;
-		const input = parseSettingsPayload(uiPreferencesInputSchema, request.body);
-		if (!input) {
-			reply.code(400);
-			return {
-				error: "SettingsValidationError",
-				message: uiPreferencesValidationMessage,
-			};
-		}
-		const updated = {
-			...input,
-			version: 1 as const,
-			savedAt: stampedUiPreferencesSavedAt(input.savedAt),
-		};
-		const userId = getRequestIdentity(request).userId;
-		let outcome: Awaited<ReturnType<typeof saveUiPreferencesInDb>>;
-		try {
-			outcome = await saveUiPreferencesInDb(orgId, updated, userId);
-		} catch (error) {
-			// Проигранная сверка прежнего значения — не ошибка оператора и не сбой
-			// базы: писали одновременно. Отвечать 500 значило бы отправить человека к
-			// администратору вместо того, чтобы обновить страницу и повторить правку.
-			if (error instanceof UiPreferencesConcurrentSaveError) {
-				request.log.error(
-					{ err: error },
-					"[настройки] настройки рабочего места не сохранены",
-				);
-				reply.code(409);
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/settings/preferences",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsMutationAccess(request, reply);
+			if (!orgId) return;
+			const input = parseSettingsPayload(uiPreferencesInputSchema, request.body);
+			if (!input) {
+				reply.code(400);
 				return {
-					error: "UiPreferencesConcurrentSave",
-					reason: "concurrent_ui_preferences_save",
-					message: uiPreferencesConcurrentSaveMessage,
+					error: "SettingsValidationError",
+					message: uiPreferencesValidationMessage,
 				};
 			}
-			throw error;
-		}
-		if (!outcome.applied) {
-			// Действующее значение приложено к отказу: клиенту не нужен второй запрос,
-			// чтобы показать человеку, чем именно перебита его копия.
-			reply.code(409);
-			return {
-				error: "UiPreferencesStaleSave",
-				reason: "stale_ui_preferences_copy",
-				message: uiPreferencesStaleSaveMessage,
-				preferences: uiPreferencesSchema.parse(outcome.stored),
+			const updated = {
+				...input,
+				version: 1 as const,
+				savedAt: stampedUiPreferencesSavedAt(input.savedAt),
 			};
-		}
-		return uiPreferencesSchema.parse(outcome.stored);
+			const userId = getRequestIdentity(request).userId;
+			let outcome: Awaited<ReturnType<typeof saveUiPreferencesInDb>>;
+			try {
+				outcome = await saveUiPreferencesInDb(orgId, updated, userId);
+			} catch (error) {
+				// Проигранная сверка прежнего значения — не ошибка оператора и не сбой
+				// базы: писали одновременно. Отвечать 500 значило бы отправить человека к
+				// администратору вместо того, чтобы обновить страницу и повторить правку.
+				if (error instanceof UiPreferencesConcurrentSaveError) {
+					request.log.error(
+						{ err: error },
+						"[настройки] настройки рабочего места не сохранены",
+					);
+					reply.code(409);
+					return {
+						error: "UiPreferencesConcurrentSave",
+						reason: "concurrent_ui_preferences_save",
+						message: uiPreferencesConcurrentSaveMessage,
+					};
+				}
+				throw error;
+			}
+			if (!outcome.applied) {
+				// Действующее значение приложено к отказу: клиенту не нужен второй запрос,
+				// чтобы показать человеку, чем именно перебита его копия.
+				reply.code(409);
+				return {
+					error: "UiPreferencesStaleSave",
+					reason: "stale_ui_preferences_copy",
+					message: uiPreferencesStaleSaveMessage,
+					preferences: uiPreferencesSchema.parse(outcome.stored),
+				};
+			}
+			return uiPreferencesSchema.parse(outcome.stored);
+		},
 	});
 }

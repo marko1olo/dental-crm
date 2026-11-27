@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadContext } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
 import {
 	findRecallCandidates,
@@ -41,6 +42,16 @@ export function registerCandidateRoutes(app: FastifyInstance) {
 		return reply.code(200).send(report);
 	};
 
-	app.get("/api/patients/recall-candidates", handler);
-	app.get("/api/recalls/candidates", handler);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/recall-candidates",
+		permission: "public",
+		handler: async ({ request, reply }) => handler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/recalls/candidates",
+		permission: "public",
+		handler: async ({ request, reply }) => handler(request, reply),
+	});
 }

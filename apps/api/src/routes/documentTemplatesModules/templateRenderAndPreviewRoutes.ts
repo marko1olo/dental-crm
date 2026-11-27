@@ -9,7 +9,8 @@ import {
 import { type SQL, and, eq, isNull, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	appointments,
 	documentTemplates,
@@ -24,7 +25,6 @@ import {
 	resolveRenderTemplateContentHtml,
 } from "./defaultStatutoryTemplates.js";
 import {
-	type DocumentTemplateIdParams,
 	renderDocumentBodySchema,
 	UUID_REGEX,
 } from "./typesAndSchemas.js";
@@ -39,13 +39,12 @@ export async function registerTemplateRenderAndPreviewRoutes(
 	 * POST /api/document-templates/:id/render
 	 * Рендеринг готового HTML бланка с подстановкой реальных данных пациента/визита
 	 */
-	app.post(
-		"/api/document-templates/:id/render",
-		async (
-			request: FastifyRequest<{ Params: DocumentTemplateIdParams }>,
-			reply: FastifyReply,
-		) => {
-			const identifier = request.params.id?.trim();
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/document-templates/:id/render",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const identifier = (request.params as { id?: string }).id?.trim();
 			if (!identifier) {
 				return reply.code(400).send({
 					error: "MissingId",
@@ -71,7 +70,7 @@ export async function registerTemplateRenderAndPreviewRoutes(
 			);
 			if (!organizationId) return;
 
-			return await withTenantCtx(organizationId, async (tx) => {
+			return await withTenantReadCtx(organizationId, async (tx) => {
 				let org: typeof organizations.$inferSelect | undefined;
 				if (UUID_REGEX.test(organizationId)) {
 					const [foundOrg] = await tx
@@ -576,5 +575,5 @@ export async function registerTemplateRenderAndPreviewRoutes(
 				});
 			});
 		},
-	);
+	});
 }

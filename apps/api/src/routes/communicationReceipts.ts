@@ -87,11 +87,13 @@ function fieldFrom(request: FastifyRequest, name: string): unknown {
 }
 
 export async function registerCommunicationReceiptRoutes(app: FastifyInstance) {
+	const selfManagedRouteOpts = { config: { tenantTxSelfManaged: true } } as const;
+
 	/**
 	 * SMS.RU присылает параметр `data` со строками `<id>=<код>`; одним запросом
 	 * может прийти несколько квитанций.
 	 */
-	app.post("/api/communications/receipts/smsru", async (request, reply) => {
+	app.post("/api/communications/receipts/smsru", selfManagedRouteOpts, async (request, reply) => {
 		if (!guardReceiptCall(request, reply)) return;
 
 		const receipts = parseSmsRuReceipts(fieldFrom(request, "data"));
@@ -127,8 +129,8 @@ export async function registerCommunicationReceiptRoutes(app: FastifyInstance) {
 
 	// SMSC вызывает обратный адрес методом GET или POST в зависимости от
 	// настройки в личном кабинете, поэтому объявлены оба.
-	app.get("/api/communications/receipts/smsc", handleSmsc);
-	app.post("/api/communications/receipts/smsc", handleSmsc);
+	app.get("/api/communications/receipts/smsc", selfManagedRouteOpts, handleSmsc);
+	app.post("/api/communications/receipts/smsc", selfManagedRouteOpts, handleSmsc);
 }
 
 export default registerCommunicationReceiptRoutes;

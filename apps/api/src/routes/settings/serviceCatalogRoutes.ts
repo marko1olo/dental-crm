@@ -1,5 +1,6 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	seedBaseline804nServicesInDb,
 } from "../../db/pricelistQuery.js";
@@ -32,15 +33,34 @@ const seedCatalogBaselineSchema = z
  */
 export function registerServiceCatalogRoutes(app: FastifyInstance): void {
 	// Делегация в канонические обработчики CRUD с ролевым контролем прейскуранта (Мандат 8e / 8n)
-	app.post("/api/settings/catalog", handleCreateCatalogItem);
-	app.put("/api/settings/catalog/:serviceId", handleUpdateCatalogItem);
-	app.delete("/api/settings/catalog/:serviceId", handleDeactivateCatalogItem);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/settings/catalog",
+		permission: "public",
+		handler: async ({ request, reply }) => handleCreateCatalogItem(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/settings/catalog/:serviceId",
+		permission: "public",
+		handler: async ({ request, reply }) => handleUpdateCatalogItem(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "DELETE",
+		path: "/api/settings/catalog/:serviceId",
+		permission: "public",
+		handler: async ({ request, reply }) => handleDeactivateCatalogItem(request, reply),
+	});
 
 	/**
 	 * 1-клик быстрое наполнение каталога базовыми услугами 804н (30 услуг).
 	 * Доступно для соло-врача и клиник (Мандаты 8e, 8k, 8n).
 	 */
-	app.post("/api/settings/catalog-seed-baseline", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/settings/catalog-seed-baseline",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = await requireCatalogMutationAccess(request, reply);
 		if (!orgId) return;
 
@@ -79,5 +99,6 @@ export function registerServiceCatalogRoutes(app: FastifyInstance): void {
 				"ServiceCatalogSeedBaseline",
 			);
 		}
+		},
 	});
 }

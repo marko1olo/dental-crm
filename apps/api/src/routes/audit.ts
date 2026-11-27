@@ -8,7 +8,8 @@ import {
 } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
 import { auditFromRequest } from "../clinicalAuditService.js";
-import { withTenantCtx } from "../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../db/rls.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
 import { ADMIN_ROLES, getRequestIdentity, requireStaffIdentity } from "../security/identity.js";
 import { clinicalAuditLogs, auditEvents } from "../db/schema.js";
 import { getMedicalAccessAuditTrailFromDb } from "../security/medicalAuditTrail.js";
@@ -76,9 +77,11 @@ const ingestAuditEntrySchema = staffActionAuditEntrySchema
 export async function registerAuditRoutes(app: FastifyInstance) {
 	// GET /api/audit/logs — Read audit trail
 	// Мандат 8v [SEC-08]: Журнал действий доступен СТРОГО владельцам и администраторам клиники (owner/admin/administrator).
-	app.get(
-		"/api/audit/logs",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/audit/logs",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const identity = await requireStaffIdentity(request, reply, ADMIN_ROLES);
 			if (!identity || !identity.organizationId) return;
 			const orgId = identity.organizationId;
@@ -127,7 +130,7 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 				conditions.push(lte(auditEvents.createdAt, end));
 			}
 
-			const logs = await withTenantCtx(orgId, async (tx) =>
+			const logs = await withTenantReadCtx(orgId, async (tx) =>
 				tx
 					.select()
 					.from(auditEvents)
@@ -166,12 +169,14 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 
 			return reply.status(200).send({ logs });
 		},
-	);
+	});
 
 	// GET /api/audit/medical-access — 152-ФЗ аудит доступа к медицинским картам и диагнозам
-	app.get(
-		"/api/audit/medical-access",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/audit/medical-access",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const identity = await requireStaffIdentity(request, reply, ADMIN_ROLES);
 			if (!identity || !identity.organizationId) return;
 			const orgId = identity.organizationId;
@@ -202,7 +207,7 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 
 			return reply.status(200).send({ logs });
 		},
-	);
+	});
 
 	// POST /api/audit/events — Ingestion endpoint for staff activity & security audit events (offline-first sync)
 	const handleAuditEventsIngestion = async (
@@ -329,7 +334,7 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 			});
 		}
 
-		await withTenantCtx(orgId, async (tx) => {
+		await withTenantWriteCtx(orgId, async (tx) => {
 			await tx.insert(auditEvents).values(validAuditEvents);
 			await tx.insert(clinicalAuditLogs).values(validClinicalAuditRows);
 		});
@@ -342,13 +347,17 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 	};
 
 	// POST /api/audit/events & /api/audit/events/batch (Idempotency-Key, db.transaction, organizationId)
-	app.post("/api/audit/events", async (request, reply) => {
-		// requireClinicalMutationContext / organizationId / Idempotency-Key / db.transaction
-		return handleAuditEventsIngestion(request, reply);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/audit/events",
+		permission: "public",
+		handler: async ({ request, reply }) => handleAuditEventsIngestion(request, reply),
 	});
-	app.post("/api/audit/events/batch", async (request, reply) => {
-		// requireClinicalMutationContext / organizationId / Idempotency-Key / db.transaction
-		return handleAuditEventsIngestion(request, reply);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/audit/events/batch",
+		permission: "public",
+		handler: async ({ request, reply }) => handleAuditEventsIngestion(request, reply),
 	});
 
 	// IMMUTABILITY GUARANTEE: Block any attempts to modify or delete audit logs
@@ -393,6 +402,7 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 		app.route({
 			method: ["POST", "PUT", "PATCH", "DELETE"],
 			url,
+			config: { tenantTxSelfManaged: true },
 			handler: rejectMutation,
 		});
 	}
@@ -406,6 +416,7 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 		app.route({
 			method: ["PUT", "PATCH", "DELETE"],
 			url,
+			config: { tenantTxSelfManaged: true },
 			handler: rejectMutation,
 		});
 	}

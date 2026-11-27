@@ -16,7 +16,8 @@ import {
 	extractIdempotencyKey,
 	isValidUuid,
 } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	crmLeads,
 	crmLeadStageHistory,
@@ -32,211 +33,221 @@ import {
 import { registerLeadCrudRoutes } from "./leadCrudRoutes.js";
 
 export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise<void> {
-	app.get("/api/leads", async (req: FastifyRequest, reply: FastifyReply) => {
-		const organizationId = await requireResolvedOrganizationId(
-			req,
-			reply,
-			"leads read",
-		);
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/leads",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			const organizationId = await requireResolvedOrganizationId(
+				req,
+				reply,
+				"leads read",
+			);
+			if (!organizationId) return;
 
-		let leads = await withTenantCtx(organizationId, (tx) =>
-			tx
-				.select()
-				.from(crmLeads)
-				.where(eq(crmLeads.organizationId, organizationId))
-				.orderBy(desc(crmLeads.createdAt)),
-		);
-
-		if (
-			leads.length === 0 &&
-			organizationId === DEMO_SHOWCASE_ORG_ID &&
-			isDemoShowcaseMode()
-		) {
-			const freshStageDate = new Date(Date.now() - 3 * 60_000);
-			leads = DEMO_SHOWCASE_SEED_LEADS.map((seed, index) => ({
-				id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
-				organizationId,
-				name: seed.name,
-				patientName: null,
-				patientId: null,
-				appointmentId: null,
-				phone: seed.phone,
-				source: seed.source,
-				status: seed.status,
-				expectedRevenue: seed.expectedRevenue ?? null,
-				expectedRevenueKopecks: seed.expectedRevenue
-					? BigInt(parseKopecks(seed.expectedRevenue))
-					: null,
-				notes: seed.notes ?? null,
-				dropReason: null,
-				assignedDoctorId: null,
-				priority: "normal" as const,
-				clinicalTags: [...seed.clinicalTags],
-				audioRecordUrl: null,
-				transcriptionSnippet: null,
-				metadata: null,
-				lastContactedAt: null,
-				stageEnteredAt: freshStageDate,
-				createdAt: freshStageDate,
-				updatedAt: freshStageDate,
-			}));
-		}
-
-		// Phone deduplication check against existing patients database (Mandates 8l, 8n)
-		const phoneList = leads
-			.map((l) => (l.phone ? normalizePhone(l.phone) ?? l.phone.trim() : null))
-			.filter((p): p is string => Boolean(p));
-
-		const patientMap = new Map<string, { id: string; fullName: string }>();
-		if (phoneList.length > 0) {
-			const uniquePhones = Array.from(new Set(phoneList));
-			const matchedPatients = await withTenantCtx(organizationId, (tx) =>
+			let leads = await withTenantReadCtx(organizationId, (tx) =>
 				tx
-					.select({
-						id: patients.id,
-						fullName: patients.fullName,
-						phone: patients.phone,
-					})
-					.from(patients)
-					.where(
-						and(
-							eq(patients.organizationId, organizationId),
-							inArray(patients.phone, uniquePhones),
-						),
-					),
+					.select()
+					.from(crmLeads)
+					.where(eq(crmLeads.organizationId, organizationId))
+					.orderBy(desc(crmLeads.createdAt)),
 			);
 
-			for (const p of matchedPatients) {
-				if (p.phone) {
-					patientMap.set(p.phone, { id: p.id, fullName: p.fullName });
-					const norm = normalizePhone(p.phone);
-					if (norm) patientMap.set(norm, { id: p.id, fullName: p.fullName });
+			if (
+				leads.length === 0 &&
+				organizationId === DEMO_SHOWCASE_ORG_ID &&
+				isDemoShowcaseMode()
+			) {
+				const freshStageDate = new Date(Date.now() - 3 * 60_000);
+				leads = DEMO_SHOWCASE_SEED_LEADS.map((seed, index) => ({
+					id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+					organizationId,
+					name: seed.name,
+					patientName: null,
+					patientId: null,
+					appointmentId: null,
+					phone: seed.phone,
+					source: seed.source,
+					status: seed.status,
+					expectedRevenue: seed.expectedRevenue ?? null,
+					expectedRevenueKopecks: seed.expectedRevenue
+						? BigInt(parseKopecks(seed.expectedRevenue))
+						: null,
+					notes: seed.notes ?? null,
+					dropReason: null,
+					assignedDoctorId: null,
+					priority: "normal" as const,
+					clinicalTags: [...seed.clinicalTags],
+					audioRecordUrl: null,
+					transcriptionSnippet: null,
+					metadata: null,
+					lastContactedAt: null,
+					stageEnteredAt: freshStageDate,
+					createdAt: freshStageDate,
+					updatedAt: freshStageDate,
+				}));
+			}
+
+			// Phone deduplication check against existing patients database (Mandates 8l, 8n)
+			const phoneList = leads
+				.map((l) => (l.phone ? normalizePhone(l.phone) ?? l.phone.trim() : null))
+				.filter((p): p is string => Boolean(p));
+
+			const patientMap = new Map<string, { id: string; fullName: string }>();
+			if (phoneList.length > 0) {
+				const uniquePhones = Array.from(new Set(phoneList));
+				const matchedPatients = await withTenantReadCtx(organizationId, (tx) =>
+					tx
+						.select({
+							id: patients.id,
+							fullName: patients.fullName,
+							phone: patients.phone,
+						})
+						.from(patients)
+						.where(
+							and(
+								eq(patients.organizationId, organizationId),
+								inArray(patients.phone, uniquePhones),
+							),
+						),
+				);
+
+				for (const p of matchedPatients) {
+					if (p.phone) {
+						patientMap.set(p.phone, { id: p.id, fullName: p.fullName });
+						const norm = normalizePhone(p.phone);
+						if (norm) patientMap.set(norm, { id: p.id, fullName: p.fullName });
+					}
 				}
 			}
-		}
 
-		const freshDemoStageIso =
-			organizationId === DEMO_SHOWCASE_ORG_ID && isDemoShowcaseMode()
-				? new Date(Date.now() - 3 * 60_000)
-				: null;
+			const freshDemoStageIso =
+				organizationId === DEMO_SHOWCASE_ORG_ID && isDemoShowcaseMode()
+					? new Date(Date.now() - 3 * 60_000)
+					: null;
 
-		return leads.map((lead) => {
-			const clean = lead.phone
-				? normalizePhone(lead.phone) ?? lead.phone.trim()
-				: null;
-			const existingPatient = clean ? patientMap.get(clean) ?? null : null;
-			return {
-				...lead,
-				...(freshDemoStageIso ? { stageEnteredAt: freshDemoStageIso } : {}),
-				existingPatient,
-			};
-		});
+			return leads.map((lead) => {
+				const clean = lead.phone
+					? normalizePhone(lead.phone) ?? lead.phone.trim()
+					: null;
+				const existingPatient = clean ? patientMap.get(clean) ?? null : null;
+				return {
+					...lead,
+					...(freshDemoStageIso ? { stageEnteredAt: freshDemoStageIso } : {}),
+					existingPatient,
+				};
+			});
+		},
 	});
 
-	app.post("/api/leads", async (req, reply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			req,
-			reply,
-			"lead create",
-		);
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/leads",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				req,
+				reply,
+				"lead create",
+			);
+			if (!organizationId) return;
 
-		const idempotencyKey = extractIdempotencyKey(req);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
-			});
-		}
-
-		const parsed = leadSchema.safeParse(req.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Проверьте поля лида: нужно непустое имя.",
-			});
-		}
-		const data = parsed.data;
-		const identity = getRequestIdentity(req);
-		const changedByUserId =
-			identity?.userId && z.string().uuid().safeParse(identity.userId).success
-				? identity.userId
-				: null;
-		const now = new Date();
-
-		const cleanPhone = data.phone
-			? normalizePhone(data.phone) ?? data.phone.trim()
-			: null;
-
-		const { lead, existingPatient } = await withTenantCtx(organizationId, async (tx) => {
-			const insertValues: typeof crmLeads.$inferInsert = {
-				organizationId,
-				name: data.name,
-				patientName: data.patientName,
-				patientId: data.patientId,
-				phone: cleanPhone,
-				source: data.source,
-				expectedRevenue: data.expectedRevenue,
-				expectedRevenueKopecks: data.expectedRevenue
-					? BigInt(parseKopecks(data.expectedRevenue))
-					: null,
-				notes: data.notes,
-				dropReason: data.dropReason ?? data.reason ?? null,
-				assignedDoctorId: data.assignedDoctorId,
-				priority: data.priority || "normal",
-				clinicalTags: data.clinicalTags ?? [],
-				audioRecordUrl: data.audioRecordUrl,
-				transcriptionSnippet: data.transcriptionSnippet,
-				metadata: data.metadata ?? null,
-				stageEnteredAt: now,
-				status: "new",
-			};
-			const [created] = await tx
-				.insert(crmLeads)
-				.values(insertValues)
-				.returning();
-
-			if (created) {
-				await tx.insert(crmLeadStageHistory).values({
-					organizationId,
-					leadId: created.id,
-					fromStage: null,
-					toStage: created.status || "new",
-					changedByUserId,
-					durationSeconds: 0,
-					createdAt: now,
+			const idempotencyKey = extractIdempotencyKey(req);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
 				});
 			}
 
-			let matchedPatient: { id: string; fullName: string } | null = null;
-			if (cleanPhone) {
-				const [matched] = await tx
-					.select({ id: patients.id, fullName: patients.fullName })
-					.from(patients)
-					.where(
-						and(
-							eq(patients.organizationId, organizationId),
-							eq(patients.phone, cleanPhone),
-						),
-					)
-					.limit(1);
-				if (matched) matchedPatient = matched;
+			const parsed = leadSchema.safeParse(req.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Проверьте поля лида: нужно непустое имя.",
+				});
 			}
+			const data = parsed.data;
+			const identity = getRequestIdentity(req);
+			const changedByUserId =
+				identity?.userId && z.string().uuid().safeParse(identity.userId).success
+					? identity.userId
+					: null;
+			const now = new Date();
 
-			return { lead: created, existingPatient: matchedPatient };
-		});
+			const cleanPhone = data.phone
+				? normalizePhone(data.phone) ?? data.phone.trim()
+				: null;
 
-		const leadWithPatient = { ...lead, existingPatient };
+			const { lead, existingPatient } = await withTenantWriteCtx(organizationId, async (tx) => {
+				const insertValues: typeof crmLeads.$inferInsert = {
+					organizationId,
+					name: data.name,
+					patientName: data.patientName,
+					patientId: data.patientId,
+					phone: cleanPhone,
+					source: data.source,
+					expectedRevenue: data.expectedRevenue,
+					expectedRevenueKopecks: data.expectedRevenue
+						? BigInt(parseKopecks(data.expectedRevenue))
+						: null,
+					notes: data.notes,
+					dropReason: data.dropReason ?? data.reason ?? null,
+					assignedDoctorId: data.assignedDoctorId,
+					priority: data.priority || "normal",
+					clinicalTags: data.clinicalTags ?? [],
+					audioRecordUrl: data.audioRecordUrl,
+					transcriptionSnippet: data.transcriptionSnippet,
+					metadata: data.metadata ?? null,
+					stageEnteredAt: now,
+					status: "new",
+				};
+				const [created] = await tx
+					.insert(crmLeads)
+					.values(insertValues)
+					.returning();
 
-		wsBroker.broadcastToOrganization(organizationId, {
-			type: "LEAD_CREATED",
-			payload: leadWithPatient,
-		});
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-		return leadWithPatient;
+				if (created) {
+					await tx.insert(crmLeadStageHistory).values({
+						organizationId,
+						leadId: created.id,
+						fromStage: null,
+						toStage: created.status || "new",
+						changedByUserId,
+						durationSeconds: 0,
+						createdAt: now,
+					});
+				}
+
+				let matchedPatient: { id: string; fullName: string } | null = null;
+				if (cleanPhone) {
+					const [matched] = await tx
+						.select({ id: patients.id, fullName: patients.fullName })
+						.from(patients)
+						.where(
+							and(
+								eq(patients.organizationId, organizationId),
+								eq(patients.phone, cleanPhone),
+							),
+						)
+						.limit(1);
+					if (matched) matchedPatient = matched;
+				}
+
+				return { lead: created, existingPatient: matchedPatient };
+			});
+
+			const leadWithPatient = { ...lead, existingPatient };
+
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "LEAD_CREATED",
+				payload: leadWithPatient,
+			});
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+			return leadWithPatient;
+		},
 	});
 
 	async function executeLeadStageTransition(params: {
@@ -271,7 +282,7 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			identity?.userId && isValidUuid(identity.userId) ? identity.userId : null;
 		const now = new Date();
 
-		const result = await withTenantCtx(organizationId, async (tx) => {
+		const result = await withTenantWriteCtx(organizationId, async (tx) => {
 			const [lead] = await tx
 				.select()
 				.from(crmLeads)
@@ -345,129 +356,144 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 		return result.lead;
 	}
 
-	app.patch("/api/leads/:id/stage", async (req, reply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			req,
-			reply,
-			"lead stage update",
-		);
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "PATCH",
+		path: "/api/leads/:id/stage",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				req,
+				reply,
+				"lead stage update",
+			);
+			if (!organizationId) return;
 
-		const idempotencyKey = extractIdempotencyKey(req);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
-			});
-		}
+			const idempotencyKey = extractIdempotencyKey(req);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+				});
+			}
 
-		const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
-		if (!paramsParsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный идентификатор лида.",
-			});
-		}
-		const { id } = paramsParsed.data;
-		const parsed = patchLeadStageSchema.safeParse(req.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message:
-					parsed.error.issues[0]?.message || "Проверьте данные смены этапа.",
-			});
-		}
-		const { toStage, notes, priority, clinicalTags, assignedDoctorId, reason, dropReason } =
-			parsed.data;
+			const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
+			if (!paramsParsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор лида.",
+				});
+			}
+			const { id } = paramsParsed.data;
+			const parsed = patchLeadStageSchema.safeParse(req.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message:
+						parsed.error.issues[0]?.message || "Проверьте данные смены этапа.",
+				});
+			}
+			const { toStage, notes, priority, clinicalTags, assignedDoctorId, reason, dropReason } =
+				parsed.data;
 
-		return await executeLeadStageTransition({
-			req,
-			reply,
-			organizationId,
-			id,
-			idempotencyKey,
-			toStage,
-			dropReason: dropReason ?? reason ?? null,
-			notes,
-			priority,
-			clinicalTags,
-			assignedDoctorId,
-		});
+			return await executeLeadStageTransition({
+				req,
+				reply,
+				organizationId,
+				id,
+				idempotencyKey,
+				toStage,
+				dropReason: dropReason ?? reason ?? null,
+				notes,
+				priority,
+				clinicalTags,
+				assignedDoctorId,
+			});
+		},
 	});
 
-	app.get("/api/leads/:id/stage-history", async (req, reply) => {
-		const organizationId = await requireResolvedOrganizationId(
-			req,
-			reply,
-			"lead stage history read",
-		);
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/leads/:id/stage-history",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			const organizationId = await requireResolvedOrganizationId(
+				req,
+				reply,
+				"lead stage history read",
+			);
+			if (!organizationId) return;
 
-		const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
-		if (!paramsParsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный идентификатор лида.",
-			});
-		}
-		const { id } = paramsParsed.data;
-		const history = await withTenantCtx(organizationId, (tx) =>
-			tx
-				.select()
-				.from(crmLeadStageHistory)
-				.where(
-					and(
-						eq(crmLeadStageHistory.organizationId, organizationId),
-						eq(crmLeadStageHistory.leadId, id),
-					),
-				)
-				.orderBy(desc(crmLeadStageHistory.createdAt)),
-		);
+			const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
+			if (!paramsParsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор лида.",
+				});
+			}
+			const { id } = paramsParsed.data;
+			const history = await withTenantReadCtx(organizationId, (tx) =>
+				tx
+					.select()
+					.from(crmLeadStageHistory)
+					.where(
+						and(
+							eq(crmLeadStageHistory.organizationId, organizationId),
+							eq(crmLeadStageHistory.leadId, id),
+						),
+					)
+					.orderBy(desc(crmLeadStageHistory.createdAt)),
+			);
 
-		return history;
+			return history;
+		},
 	});
 
-	app.patch("/api/leads/:id/status", async (req, reply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			req,
-			reply,
-			"lead status update",
-		);
-		if (!organizationId) return;
+	defineStreamRoute(app, {
+		method: "PATCH",
+		path: "/api/leads/:id/status",
+		permission: "public",
+		handler: async ({ request: req, reply }) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				req,
+				reply,
+				"lead status update",
+			);
+			if (!organizationId) return;
 
-		const idempotencyKey = extractIdempotencyKey(req);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
-			});
-		}
+			const idempotencyKey = extractIdempotencyKey(req);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+				});
+			}
 
-		const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
-		if (!paramsParsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный идентификатор лида.",
+			const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
+			if (!paramsParsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор лида.",
+				});
+			}
+			const { id } = paramsParsed.data;
+			const statusParsed = patchLeadStatusSchema.safeParse(req.body);
+			if (!statusParsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Проверьте статус лида.",
+				});
+			}
+			const { status, dropReason, reason } = statusParsed.data;
+			return await executeLeadStageTransition({
+				req,
+				reply,
+				organizationId,
+				id,
+				idempotencyKey,
+				toStage: status,
+				dropReason: dropReason ?? reason ?? null,
 			});
-		}
-		const { id } = paramsParsed.data;
-		const statusParsed = patchLeadStatusSchema.safeParse(req.body);
-		if (!statusParsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Проверьте статус лида.",
-			});
-		}
-		const { status, dropReason, reason } = statusParsed.data;
-		return await executeLeadStageTransition({
-			req,
-			reply,
-			organizationId,
-			id,
-			idempotencyKey,
-			toStage: status,
-			dropReason: dropReason ?? reason ?? null,
-		});
+		},
 	});
 
 	registerLeadCrudRoutes(app);

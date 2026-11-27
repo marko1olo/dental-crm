@@ -31,7 +31,8 @@ import {
 	unguardedBypassAllowed,
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
+import { withSuperuserBypass, withTenantReadCtx } from "../../db/rls.js";
+import { definePublicRoute } from "../../core/routeFactories.js";
 import {
 	appointments,
 	organizations,
@@ -159,168 +160,180 @@ export async function registerDemoRoutes(app: FastifyInstance): Promise<void> {
 	 * POST /api/demo/seed
 	 * Идемпотентный засев демонстрационного тенанта в PostgreSQL 18.
 	 */
-	app.post("/api/demo/seed", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!isDemoOperationAllowed(request)) {
-			request.log.warn(
-				{ url: request.url },
-				"[DEMO_SEED_FORBIDDEN] Инициализация демо-контура заблокирована в текущем окружении.",
-			);
-			return reply.code(403).send({
-				error: "Forbidden",
-				message: "Демо-контур недоступен в данной конфигурации сервера.",
-			});
-		}
-
-		let forceReset = false;
-		if (request.body !== undefined) {
-			const parsed = demoSeedBodySchema.safeParse(request.body);
-			if (!parsed.success) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Некорректные параметры запуска демо-контура.",
-					details: parsed.error.issues,
+	definePublicRoute(app, {
+		method: "POST",
+		path: "/api/demo/seed",
+		handler: async ({ request, reply }) => {
+			if (!isDemoOperationAllowed(request)) {
+				request.log.warn(
+					{ url: request.url },
+					"[DEMO_SEED_FORBIDDEN] Инициализация демо-контура заблокирована в текущем окружении.",
+				);
+				return reply.code(403).send({
+					error: "Forbidden",
+					message: "Демо-контур недоступен в данной конфигурации сервера.",
 				});
 			}
-			forceReset = Boolean(parsed.data?.forceReset);
-		}
 
-		try {
-			const result = await ensureDemoShowcaseTenant(undefined, { forceReset });
-			return reply.send({
-				ok: true,
-				...result,
-			});
-		} catch (err) {
-			request.log.error({ err }, "[DEMO_SEED_FAIL] Ошибка засева демо-тенанта в БД");
-			return reply.code(500).send({
-				error: "DemoSeedError",
-				message: "Не удалось инициализировать демонстрационный тенант.",
-			});
-		}
+			let forceReset = false;
+			if (request.body !== undefined) {
+				const parsed = demoSeedBodySchema.safeParse(request.body);
+				if (!parsed.success) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Некорректные параметры запуска демо-контура.",
+						details: parsed.error.issues,
+					});
+				}
+				forceReset = Boolean(parsed.data?.forceReset);
+			}
+
+			try {
+				const result = await ensureDemoShowcaseTenant(undefined, { forceReset });
+				return reply.send({
+					ok: true,
+					...result,
+				});
+			} catch (err) {
+				request.log.error({ err }, "[DEMO_SEED_FAIL] Ошибка засева демо-тенанта в БД");
+				return reply.code(500).send({
+					error: "DemoSeedError",
+					message: "Не удалось инициализировать демонстрационный тенант.",
+				});
+			}
+		},
 	});
 
 	/**
 	 * GET /api/demo/state
 	 * Проверка статуса демо-контура в PostgreSQL 18.
 	 */
-	app.get("/api/demo/state", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!isDemoOperationAllowed(request)) {
-			return reply.code(403).send({
-				error: "Forbidden",
-				message: "Демо-контур недоступен в данной конфигурации сервера.",
-			});
-		}
-		try {
-			const [orgRow] = await withSuperuserBypass(async (tx) =>
-				tx
-					.select({ id: organizations.id, name: organizations.name })
-					.from(organizations)
-					.where(eq(organizations.id, DEMO_SHOWCASE_ORG_ID))
-					.limit(1),
-			);
-
-			if (!orgRow) {
-				return reply.send({
-					isDemoMode: true,
-					seeded: false,
-					organizationId: DEMO_SHOWCASE_ORG_ID,
-					clinicId: DEMO_CLINIC_ID,
-					patientsCount: 0,
-					appointmentsCount: 0,
-					staffCount: 0,
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/demo/state",
+		handler: async ({ request, reply }) => {
+			if (!isDemoOperationAllowed(request)) {
+				return reply.code(403).send({
+					error: "Forbidden",
+					message: "Демо-контур недоступен в данной конфигурации сервера.",
 				});
 			}
+			try {
+				const [orgRow] = await withSuperuserBypass(async (tx) =>
+					tx
+						.select({ id: organizations.id, name: organizations.name })
+						.from(organizations)
+						.where(eq(organizations.id, DEMO_SHOWCASE_ORG_ID))
+						.limit(1),
+				);
 
-			const [counts] = await withTenantCtx(DEMO_SHOWCASE_ORG_ID, async (tx) => {
-				const [pCount] = await tx
-					.select({ value: count() })
-					.from(patients)
-					.where(eq(patients.organizationId, DEMO_SHOWCASE_ORG_ID));
-				const [aCount] = await tx
-					.select({ value: count() })
-					.from(appointments)
-					.where(eq(appointments.organizationId, DEMO_SHOWCASE_ORG_ID));
-				const [sCount] = await tx
-					.select({ value: count() })
-					.from(users)
-					.where(eq(users.organizationId, DEMO_SHOWCASE_ORG_ID));
-				return [
-					{
-						patients: Number(pCount?.value ?? 0),
-						appointments: Number(aCount?.value ?? 0),
-						staff: Number(sCount?.value ?? 0),
-					},
-				];
-			});
+				if (!orgRow) {
+					return reply.send({
+						isDemoMode: true,
+						seeded: false,
+						organizationId: DEMO_SHOWCASE_ORG_ID,
+						clinicId: DEMO_CLINIC_ID,
+						patientsCount: 0,
+						appointmentsCount: 0,
+						staffCount: 0,
+					});
+				}
 
-			return reply.send({
-				isDemoMode: true,
-				seeded: true,
-				organizationId: DEMO_SHOWCASE_ORG_ID,
-				clinicId: DEMO_CLINIC_ID,
-				patientsCount: counts.patients,
-				appointmentsCount: counts.appointments,
-				staffCount: counts.staff,
-				availableRoles: Object.keys(ROLE_METADATA_MAP),
-			});
-		} catch (err) {
-			requestLog(reply, err);
-			return reply.code(500).send({
-				error: "DemoStateError",
-				message: "Ошибка при получении состояния демо-контура.",
-			});
-		}
+				const [counts] = await withTenantReadCtx(DEMO_SHOWCASE_ORG_ID, async (tx) => {
+					const [pCount] = await tx
+						.select({ value: count() })
+						.from(patients)
+						.where(eq(patients.organizationId, DEMO_SHOWCASE_ORG_ID));
+					const [aCount] = await tx
+						.select({ value: count() })
+						.from(appointments)
+						.where(eq(appointments.organizationId, DEMO_SHOWCASE_ORG_ID));
+					const [sCount] = await tx
+						.select({ value: count() })
+						.from(users)
+						.where(eq(users.organizationId, DEMO_SHOWCASE_ORG_ID));
+					return [
+						{
+							patients: Number(pCount?.value ?? 0),
+							appointments: Number(aCount?.value ?? 0),
+							staff: Number(sCount?.value ?? 0),
+						},
+					];
+				});
+
+				return reply.send({
+					isDemoMode: true,
+					seeded: true,
+					organizationId: DEMO_SHOWCASE_ORG_ID,
+					clinicId: DEMO_CLINIC_ID,
+					patientsCount: counts.patients,
+					appointmentsCount: counts.appointments,
+					staffCount: counts.staff,
+					availableRoles: Object.keys(ROLE_METADATA_MAP),
+				});
+			} catch (err) {
+				requestLog(reply, err);
+				return reply.code(500).send({
+					error: "DemoStateError",
+					message: "Ошибка при получении состояния демо-контура.",
+				});
+			}
+		},
 	});
 
 	/**
 	 * POST /api/demo/switch-role
 	 * Переключение клинической роли в демо-туре с выдачей токенов и контекста.
 	 */
-	app.post("/api/demo/switch-role", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!isDemoOperationAllowed(request)) {
-			return reply.code(403).send({
-				error: "Forbidden",
-				message: "Переключение демо-роли недоступно.",
-			});
-		}
+	definePublicRoute(app, {
+		method: "POST",
+		path: "/api/demo/switch-role",
+		handler: async ({ request, reply }) => {
+			if (!isDemoOperationAllowed(request)) {
+				return reply.code(403).send({
+					error: "Forbidden",
+					message: "Переключение демо-роли недоступно.",
+				});
+			}
 
-		const parsed = switchRoleBodySchema.safeParse(request.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Неверный идентификатор клинической роли.",
-			});
-		}
+			const parsed = switchRoleBodySchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Неверный идентификатор клинической роли.",
+				});
+			}
 
-		const roleKey = parsed.data.role;
-		const meta = ROLE_METADATA_MAP[roleKey];
+			const roleKey = parsed.data.role;
+			const meta = ROLE_METADATA_MAP[roleKey];
 
-		// Гарантируем, что демо-тенант засеян в PostgreSQL
-		try {
-			await ensureDemoShowcaseTenant();
-		} catch (seedErr) {
-			request.log.error({ seedErr }, "[DEMO_SWITCH_SEED_ERROR] Авто-засев при переключении роли");
-		}
+			// Гарантируем, что демо-тенант засеян в PostgreSQL
+			try {
+				await ensureDemoShowcaseTenant();
+			} catch (seedErr) {
+				request.log.error({ seedErr }, "[DEMO_SWITCH_SEED_ERROR] Авто-засев при переключении роли");
+			}
 
-		const clinicToken = "demo-showcase-token";
-		const staffToken = `demo-showcase-staff-token-${meta.tokenSuffix}`;
+			const clinicToken = "demo-showcase-token";
+			const staffToken = `demo-showcase-staff-token-${meta.tokenSuffix}`;
 
-		return reply.send({
-			ok: true,
-			organizationId: DEMO_SHOWCASE_ORG_ID,
-			clinicId: DEMO_CLINIC_ID,
-			clinicToken,
-			staffToken,
-			staffUser: {
-				id: meta.staffId,
+			return reply.send({
+				ok: true,
 				organizationId: DEMO_SHOWCASE_ORG_ID,
-				fullName: meta.fullName,
-				role: meta.staffRole,
-				specialization: meta.specialization,
-			},
-			targetPatientId: meta.targetPatientId,
-			targetView: meta.targetView,
-		});
+				clinicId: DEMO_CLINIC_ID,
+				clinicToken,
+				staffToken,
+				staffUser: {
+					id: meta.staffId,
+					organizationId: DEMO_SHOWCASE_ORG_ID,
+					fullName: meta.fullName,
+					role: meta.staffRole,
+					specialization: meta.specialization,
+				},
+				targetPatientId: meta.targetPatientId,
+				targetView: meta.targetView,
+			});
+		},
 	});
 }
 

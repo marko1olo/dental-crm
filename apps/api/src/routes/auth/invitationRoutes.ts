@@ -1,8 +1,9 @@
 import crypto from "node:crypto";
 import { staffRoleSchema } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx } from "../../db/rls.js";
+import type { FastifyInstance } from "fastify";
+import { definePublicRoute } from "../../core/routeFactories.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import {
 	organizations,
 	userInvitations,
@@ -27,9 +28,10 @@ import {
 
 export function registerInvitationRoutes(app: FastifyInstance): void {
 	// ─── SaaS Create Invite ──────────────────────────────────────────────────────
-	app.post(
-		"/api/auth/invites/create",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "POST",
+		path: "/api/auth/invites/create",
+		handler: async ({ request, reply }) => {
 			const staffHeader = request.headers["x-dente-staff-token"];
 			const staffToken = Array.isArray(staffHeader)
 				? staffHeader[0]
@@ -98,7 +100,7 @@ export function registerInvitationRoutes(app: FastifyInstance): void {
 			const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
 			const invOrgId = staffPayload.organizationId as string;
-			await withTenantCtx(invOrgId, async (tx) => {
+			await withTenantWriteCtx(invOrgId, async (tx) => {
 				await tx.insert(userInvitations).values({
 					organizationId: invOrgId,
 					email: email.toLowerCase().trim(),
@@ -114,12 +116,13 @@ export function registerInvitationRoutes(app: FastifyInstance): void {
 				inviteLink: `/#/auth/accept-invite?token=${tokenUuid}`,
 			});
 		},
-	);
+	});
 
 	// ─── SaaS Accept Invite ──────────────────────────────────────────────────────
-	app.post(
-		"/api/auth/invites/accept",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "POST",
+		path: "/api/auth/invites/accept",
+		handler: async ({ request, reply }) => {
 			const parsed = acceptInviteBodySchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
 				const message = authSchemaMessage(parsed.error, "Заполните все поля.", [
@@ -175,7 +178,7 @@ export function registerInvitationRoutes(app: FastifyInstance): void {
 			// UPDATE под одним лишь обходом отвергается кодом 42501 (проверено).
 			// Без контекста было хуже: UPDATE затрагивал ноль строк и приглашённый
 			// получал «Приглашение уже использовано» на живое приглашение.
-			const accepted = await withTenantCtx(
+			const accepted = await withTenantWriteCtx(
 				invite.organizationId,
 				async (tx) => {
 					// Приглашение одноразовое: помечаем принятым ДО создания пользователя, чтобы
@@ -274,5 +277,5 @@ export function registerInvitationRoutes(app: FastifyInstance): void {
 				},
 			});
 		},
-	);
+	});
 }

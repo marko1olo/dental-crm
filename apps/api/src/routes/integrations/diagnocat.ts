@@ -1,7 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute, defineWebhookRoute } from "../../core/routeFactories.js";
+import { withSuperuserBypass, withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { patients, radiologyAiReports } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -92,7 +93,7 @@ export async function registerDiagnocatIntegrationRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const inserted = await withTenantCtx(organizationId, async (tx) => {
+		const inserted = await withTenantWriteCtx(organizationId, async (tx) => {
 			const [patientRow] = await tx
 				.select({ id: patients.id })
 				.from(patients)
@@ -160,8 +161,8 @@ export async function registerDiagnocatIntegrationRoutes(app: FastifyInstance) {
 		}
 		const { patientId } = parsedParams.data;
 
-		const reports = await withTenantCtx(organizationId, async (tx) => {
-			const rows = await tx
+		const reports = await withTenantReadCtx(organizationId, async (tx) =>
+			tx
 				.select()
 				.from(radiologyAiReports)
 				.where(
@@ -170,31 +171,47 @@ export async function registerDiagnocatIntegrationRoutes(app: FastifyInstance) {
 						eq(radiologyAiReports.organizationId, organizationId),
 					),
 				)
-				.orderBy(radiologyAiReports.createdAt);
+				.orderBy(radiologyAiReports.createdAt),
+		);
 
-			await auditMedicalAccessFromRequest(request, {
-				organizationId,
-				patientId,
-				action: "VIEW_DIAGNOSIS",
-				metadata: {
-					resourceType: "clinical_ai_report",
-					justification: "Просмотр радиологического AI-отчета",
-				},
-			});
-
-			return rows;
+		await auditMedicalAccessFromRequest(request, {
+			organizationId,
+			patientId,
+			action: "VIEW_DIAGNOSIS",
+			metadata: {
+				resourceType: "clinical_ai_report",
+				justification: "Просмотр радиологического AI-отчета",
+			},
 		});
 
 		return reply.send({ success: true, reports });
 	};
 
 	// Canonical neutral routes (Mandate 8ap)
-	app.post("/api/clinical-ai/webhook", webhookHandler);
-	app.get("/api/clinical-ai/reports/:patientId", reportsHandler);
+	defineWebhookRoute(app, {
+		method: "POST",
+		path: "/api/clinical-ai/webhook",
+		handler: async ({ request, reply }) => webhookHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/clinical-ai/reports/:patientId",
+		permission: "public",
+		handler: async ({ request, reply }) => reportsHandler(request, reply),
+	});
 
 	// Legacy compatibility aliases
-	app.post("/api/integrations/diagnocat/webhook", webhookHandler);
-	app.get("/api/integrations/diagnocat/reports/:patientId", reportsHandler);
+	defineWebhookRoute(app, {
+		method: "POST",
+		path: "/api/integrations/diagnocat/webhook",
+		handler: async ({ request, reply }) => webhookHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/integrations/diagnocat/reports/:patientId",
+		permission: "public",
+		handler: async ({ request, reply }) => reportsHandler(request, reply),
+	});
 }
 
 export const registerDiagnocatRoutes = registerDiagnocatIntegrationRoutes;

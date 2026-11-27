@@ -13,14 +13,15 @@ import {
 	normalizePhone,
 	splitLine,
 } from "@dental/shared";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../accessGuard.js";
-import { db } from "../db/client.js";
-import { withTenantCtx } from "../db/rls.js";
+import type { TenantDb } from "../db/client.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../db/rls.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
 import { auditEvents, importBatches, patients } from "../db/schema.js";
 
 const headerAliases: Record<
@@ -248,6 +249,7 @@ function emptyPreview(sourceName: string): ImportPreviewResponse {
 export async function buildPatientImportPreview(
 	orgId: string,
 	input: ImportPreviewRequest,
+	executor?: TenantDb,
 ): Promise<ImportPreviewResponse> {
 	const normalizedRawText = normalizeImportText(input);
 	const lines = normalizedRawText
@@ -270,25 +272,11 @@ export async function buildPatientImportPreview(
 		(header) => headerAliases[header] ?? null,
 	);
 
-	const existingPatients = await db
-		.select({
-			fullName: patients.fullName,
-			phone: patients.phone,
-		})
-		.from(patients)
-		.where(eq(patients.organizationId, orgId));
-	const knownPhones = new Set(
-		existingPatients
-			.map((patient) => normalizePhone(patient.phone))
-			.filter((phone): phone is string => Boolean(phone)),
-	);
-	const knownNames = new Set(
-		existingPatients.map((patient) => patient.fullName.trim().toLowerCase()),
-	);
-	const seenFilePhones = new Set<string>();
-	const seenFileNames = new Set<string>();
+	// Предварительно разбираем строки, чтобы искать дубли только по ключам батча под FORCE RLS
+	const parsedRows: ImportPreviewRow[] = [];
+	const candidatePhoneSuffixes = new Set<string>();
+	const candidateNames = new Set<string>();
 
-	const rows: ImportPreviewRow[] = [];
 	for (let index = 0; index < lines.length - 1; index++) {
 		const line = lines[index + 1] ?? "";
 		const cells = splitLine(line, delimiter);
@@ -314,6 +302,74 @@ export async function buildPatientImportPreview(
 			}
 		});
 
+		if (row.phone) {
+			const digits = row.phone.replace(/\D/g, "");
+			if (digits.length >= 7) {
+				candidatePhoneSuffixes.add(digits.slice(-10));
+			}
+		}
+		const normalizedName = row.fullName?.trim().toLowerCase();
+		if (normalizedName) {
+			candidateNames.add(normalizedName);
+		}
+		parsedRows.push(row);
+	}
+
+	const loadKnownKeys = async (tx: TenantDb) => {
+		const knownPhones = new Set<string>();
+		const knownNames = new Set<string>();
+		const phoneList = [...candidatePhoneSuffixes];
+		const nameList = [...candidateNames];
+		const keyChunkSize = 500;
+
+		for (let i = 0; i < phoneList.length; i += keyChunkSize) {
+			const phoneChunk = phoneList.slice(i, i + keyChunkSize);
+			const matched = await tx
+				.select({ phone: patients.phone })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, orgId),
+						inArray(
+							sql`right(regexp_replace(coalesce(${patients.phone}, ''), '\\D', '', 'g'), 10)`,
+							phoneChunk,
+						),
+					),
+				);
+			for (const p of matched) {
+				const normalized = normalizePhone(p.phone);
+				if (normalized) knownPhones.add(normalized);
+			}
+		}
+
+		for (let i = 0; i < nameList.length; i += keyChunkSize) {
+			const nameChunk = nameList.slice(i, i + keyChunkSize);
+			const matched = await tx
+				.select({ fullName: patients.fullName })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, orgId),
+						inArray(sql`lower(trim(${patients.fullName}))`, nameChunk),
+					),
+				);
+			for (const p of matched) {
+				knownNames.add(p.fullName.trim().toLowerCase());
+			}
+		}
+
+		return { knownPhones, knownNames };
+	};
+
+	const { knownPhones, knownNames } = executor
+		? await loadKnownKeys(executor)
+		: await withTenantReadCtx(orgId, loadKnownKeys);
+
+	const seenFilePhones = new Set<string>();
+	const seenFileNames = new Set<string>();
+
+	const rows: ImportPreviewRow[] = [];
+	for (const row of parsedRows) {
 		if (!row.fullName) {
 			row.status = "blocked";
 			row.warnings.push("Нет ФИО пациента");
@@ -381,58 +437,73 @@ export async function buildPatientImportPreview(
  * из подписанного токена, и сами отвечают клиенту при отказе.
  */
 export async function registerImportRoutes(app: FastifyInstance) {
-	app.post("/api/imports/patients/intake", async (request, reply) => {
-		const context = await requireClinicalReadContext(
-			request,
-			reply,
-			"patient import intake",
-		);
-		if (!context) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imports/patients/intake",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalReadContext(
+				request,
+				reply,
+				"patient import intake",
+			);
+			if (!context) return;
 
-		const parsed = parseImportPayload(
-			importIntakeRequestSchema,
-			request.body,
-			"Импорт пациентов не проверен: передайте текст, таблицу или распознанную диктовку с названием источника.",
-		);
-		if (!parsed.ok) return reply.code(400).send(parsed.response);
-		const input = parsed.data;
-		return await buildPatientImportIntake(context.organizationId, input);
+			const parsed = parseImportPayload(
+				importIntakeRequestSchema,
+				request.body,
+				"Импорт пациентов не проверен: передайте текст, таблицу или распознанную диктовку с названием источника.",
+			);
+			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const input = parsed.data;
+			return await buildPatientImportIntake(context.organizationId, input);
+		},
 	});
 
-	app.post("/api/imports/patients/preview", async (request, reply) => {
-		const context = await requireClinicalReadContext(
-			request,
-			reply,
-			"patient import preview",
-		);
-		if (!context) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imports/patients/preview",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalReadContext(
+				request,
+				reply,
+				"patient import preview",
+			);
+			if (!context) return;
 
-		const parsed = parseImportPayload(
-			importPreviewRequestSchema,
-			request.body,
-			"Предпросмотр импорта пациентов не построен: передайте непустой текст или табличную выгрузку до 120000 символов.",
-		);
-		if (!parsed.ok) return reply.code(400).send(parsed.response);
-		const input = parsed.data;
-		return await buildPatientImportPreview(context.organizationId, input);
+			const parsed = parseImportPayload(
+				importPreviewRequestSchema,
+				request.body,
+				"Предпросмотр импорта пациентов не построен: передайте непустой текст или табличную выгрузку до 120000 символов.",
+			);
+			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const input = parsed.data;
+			return await buildPatientImportPreview(context.organizationId, input);
+		},
 	});
 
-	app.post("/api/imports/patients/commit", async (request, reply) => {
-		const context = await requireClinicalMutationContext(
-			request,
-			reply,
-			"patient import commit",
-		);
-		if (!context) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/imports/patients/commit",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalMutationContext(
+				request,
+				reply,
+				"patient import commit",
+			);
+			if (!context) return;
 
-		const parsed = parseImportPayload(
-			importCommitRequestSchema,
-			request.body,
-			"Импорт пациентов не выполнен: повторно передайте ту же непустую выгрузку перед записью.",
-		);
-		if (!parsed.ok) return reply.code(400).send(parsed.response);
-		const input = parsed.data;
-		return await commitPatientImport(context.organizationId, input);
+			const parsed = parseImportPayload(
+				importCommitRequestSchema,
+				request.body,
+				"Импорт пациентов не выполнен: повторно передайте ту же непустую выгрузку перед записью.",
+			);
+			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const input = parsed.data;
+			return await commitPatientImport(context.organizationId, input);
+		},
 	});
 }
 
@@ -440,9 +511,8 @@ export async function commitPatientImport(
 	orgId: string,
 	input: ImportPreviewRequest,
 ) {
-	const preview = await buildPatientImportPreview(orgId, input);
-
-	const result = await withTenantCtx(orgId, async (tx) => {
+	const result = await withTenantWriteCtx(orgId, async (tx) => {
+		const preview = await buildPatientImportPreview(orgId, input, tx);
 		const importedPatientIds: string[] = [];
 		/**
 		 * Импортируются строки со статусом ready. Пациент без телефона теперь
@@ -455,30 +525,34 @@ export async function commitPatientImport(
 		);
 
 		if (validRows.length > 0) {
-			const patientPayloads = validRows.map((row) => ({
-				organizationId: orgId,
-				fullName: row.fullName ?? "",
-				birthDate: row.birthDate,
-				phone: row.phone,
-				notes: row.notes,
-				status: "active" as const,
-			}));
+			const batchSize = 200;
+			for (let offset = 0; offset < validRows.length; offset += batchSize) {
+				const chunkRows = validRows.slice(offset, offset + batchSize);
+				const patientPayloads = chunkRows.map((row) => ({
+					organizationId: orgId,
+					fullName: row.fullName ?? "",
+					birthDate: row.birthDate,
+					phone: row.phone,
+					notes: row.notes,
+					status: "active" as const,
+				}));
 
-			const insertedPatients = await tx
-				.insert(patients)
-				.values(patientPayloads)
-				.returning();
-			importedPatientIds.push(...insertedPatients.map((p) => p.id));
+				const insertedPatients = await tx
+					.insert(patients)
+					.values(patientPayloads)
+					.returning();
+				importedPatientIds.push(...insertedPatients.map((p) => p.id));
 
-			const auditPayloads = insertedPatients.map((inserted, idx) => ({
-				organizationId: orgId,
-				entityType: "patient" as const,
-				entityId: inserted.id,
-				action: "patient_imported" as const,
-				reason: `Импорт из ${input.sourceName}, строка ${validRows[idx]?.rowNumber}.`,
-			}));
+				const auditPayloads = insertedPatients.map((inserted, idx) => ({
+					organizationId: orgId,
+					entityType: "patient" as const,
+					entityId: inserted.id,
+					action: "patient_imported" as const,
+					reason: `Импорт из ${input.sourceName}, строка ${chunkRows[idx]?.rowNumber}.`,
+				}));
 
-			await tx.insert(auditEvents).values(auditPayloads);
+				await tx.insert(auditEvents).values(auditPayloads);
+			}
 		}
 
 		const [batch] = await tx
@@ -505,13 +579,13 @@ export async function commitPatientImport(
 			});
 		}
 
-		return { importedPatientIds };
+		return { importedPatientIds, preview };
 	});
 
 	return importCommitResponseSchema.parse({
-		preview,
+		preview: result.preview,
 		importedCount: result.importedPatientIds.length,
-		skippedCount: preview.totalRows - result.importedPatientIds.length,
+		skippedCount: result.preview.totalRows - result.importedPatientIds.length,
 		importedPatientIds: result.importedPatientIds,
 	});
 }

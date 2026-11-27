@@ -1,7 +1,7 @@
 import { sendStaffChatMessageInputSchema } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	getOrCreateDirectStaffChannel,
 	getStaffChannelBySlug,
@@ -18,11 +18,13 @@ import {
 } from "./schemasAndErrors.js";
 
 export function registerStaffChatMessageRoutes(app: FastifyInstance): void {
+	const selfManagedRouteOpts = { config: { tenantTxSelfManaged: true } } as const;
+
 	/**
 	 * GET /api/staff-chat/messages
 	 * История сообщений в выбранном канале / диалоге.
 	 */
-	app.get("/api/staff-chat/messages", async (request, reply) => {
+	app.get("/api/staff-chat/messages", selfManagedRouteOpts, async (request, reply) => {
 		try {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
@@ -74,7 +76,7 @@ export function registerStaffChatMessageRoutes(app: FastifyInstance): void {
 	 * POST /api/staff-chat/messages
 	 * Отправка текстового сообщения, прикрепления карточки пациента или системного уведомления.
 	 */
-	app.post("/api/staff-chat/messages", async (request, reply) => {
+	app.post("/api/staff-chat/messages", selfManagedRouteOpts, async (request, reply) => {
 		try {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
@@ -103,7 +105,7 @@ export function registerStaffChatMessageRoutes(app: FastifyInstance): void {
 			const senderName = identity.fullName || "Сотрудник клиники";
 			const senderRole = identity.role || "staff";
 
-			const txResult = await withTenantCtx(organizationId, async (tx) => {
+			const txResult = await withTenantWriteCtx(organizationId, async (tx) => {
 				let targetChannelId = parsed.data.channelId;
 
 				if (!targetChannelId && parsed.data.channelSlug) {
@@ -183,7 +185,7 @@ export function registerStaffChatMessageRoutes(app: FastifyInstance): void {
 	 * POST /api/staff-chat/read
 	 * Отметить сообщения в канале прочитанными.
 	 */
-	app.post("/api/staff-chat/read", async (request, reply) => {
+	app.post("/api/staff-chat/read", selfManagedRouteOpts, async (request, reply) => {
 		try {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
@@ -207,7 +209,7 @@ export function registerStaffChatMessageRoutes(app: FastifyInstance): void {
 			}
 
 			const channelId = parsed.data.channelId;
-			const updatedCount = await withTenantCtx(organizationId, async (tx) => {
+			const updatedCount = await withTenantWriteCtx(organizationId, async (tx) => {
 				const count = await markStaffChannelAsRead(organizationId, channelId, userId, tx);
 				onTenantTxCommit(() => {
 					wsBroker.broadcastToOrganization(organizationId, {

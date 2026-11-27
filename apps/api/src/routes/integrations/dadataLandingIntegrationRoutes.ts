@@ -3,7 +3,8 @@ import {
 	requireClinicalReadAccess,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	getRequestIdentity,
 	requireOrganizationId,
@@ -48,72 +49,87 @@ async function authorizeDadataAddressRead(
  */
 export async function registerDadataLandingIntegrationRoutes(app: FastifyInstance): Promise<void> {
 	// COMPETITOR FEATURE #60: интеграции::геокодирование_адресов_через_dadata
-	app.get("/api/integrations/dadata-addresses", async (request, reply) => {
-		try {
-			const orgId = await authorizeDadataAddressRead(request, reply);
-			if (!orgId) return;
-			const { getDadataGeocodedAddressesFromDb } = await import(
-				"../../db/dadataGeocodedAddressesQuery.js"
-			);
-			const rows = await withTenantCtx(orgId, () =>
-				getDadataGeocodedAddressesFromDb(orgId),
-			);
-			return reply.status(200).send(rows);
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Внутренняя ошибка сервера при геокодировании адресов через DaData.",
-			});
-		}
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/integrations/dadata-addresses",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			try {
+				const orgId = await authorizeDadataAddressRead(request, reply);
+				if (!orgId) return;
+				const { getDadataGeocodedAddressesFromDb } = await import(
+					"../../db/dadataGeocodedAddressesQuery.js"
+				);
+				const rows = await withTenantReadCtx(orgId, (tx) =>
+					getDadataGeocodedAddressesFromDb(orgId, tx),
+				);
+				return reply.status(200).send(rows);
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Внутренняя ошибка сервера при геокодировании адресов через DaData.",
+				});
+			}
+		},
 	});
 
 	// COMPETITOR FEATURE #54: маркетинг::маппинг_полей_лендингов_и_лид_форм
-	app.get("/api/integrations/landing-field-mappings", async (request, reply) => {
-		try {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"landing field mappings",
-			);
-			if (!orgId) return;
-			if (!enforcePermissionWhenStaffKnown(request, reply, "settings.read")) {
-				return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/integrations/landing-field-mappings",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			try {
+				const orgId = await requireResolvedStaffOrAdminOrganizationId(
+					request,
+					reply,
+					"landing field mappings",
+				);
+				if (!orgId) return;
+				if (!enforcePermissionWhenStaffKnown(request, reply, "settings.read")) {
+					return;
+				}
+				const { getLandingFieldMappingsFromDb } = await import(
+					"../../db/landingFieldMappingsQuery.js"
+				);
+				const rows = await withTenantReadCtx(orgId, (tx) =>
+					getLandingFieldMappingsFromDb(orgId, tx),
+				);
+				return reply.status(200).send(rows);
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Внутренняя ошибка сервера при получении маппинга полей лендингов.",
+				});
 			}
-			const { getLandingFieldMappingsFromDb } = await import(
-				"../../db/landingFieldMappingsQuery.js"
-			);
-			const rows = await withTenantCtx(orgId, () =>
-				getLandingFieldMappingsFromDb(orgId),
-			);
-			return reply.status(200).send(rows);
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Внутренняя ошибка сервера при получении маппинга полей лендингов.",
-			});
-		}
+		},
 	});
 
 	// COMPETITOR FEATURE #58: пациенты::геокодинг_адресов_через_dadata
-	app.get("/api/integrations/dadata-geocoded-addresses", async (request, reply) => {
-		try {
-			const orgId = await authorizeDadataAddressRead(request, reply);
-			if (!orgId) return;
-			const { getDadataGeocodedAddressesFromDb } = await import(
-				"../../db/dadataGeocodedAddressesQuery.js"
-			);
-			const rows = await withTenantCtx(orgId, () =>
-				getDadataGeocodedAddressesFromDb(orgId),
-			);
-			return reply.status(200).send(rows);
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Внутренняя ошибка сервера при геокодировании адресов пациентов.",
-			});
-		}
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/integrations/dadata-geocoded-addresses",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			try {
+				const orgId = await authorizeDadataAddressRead(request, reply);
+				if (!orgId) return;
+				const { getDadataGeocodedAddressesFromDb } = await import(
+					"../../db/dadataGeocodedAddressesQuery.js"
+				);
+				const rows = await withTenantReadCtx(orgId, (tx) =>
+					getDadataGeocodedAddressesFromDb(orgId, tx),
+				);
+				return reply.status(200).send(rows);
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Внутренняя ошибка сервера при геокодировании адресов пациентов.",
+				});
+			}
+		},
 	});
 }
