@@ -2,6 +2,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast";
 import { clientLogger } from "../../services/logging/clientLogger";
+import { printA4Document } from "../../lib/hardwarePrinting/a4DocumentPrinter";
 import type { DirectRvgCaptureModalProps } from "./directRvgTypes";
 import {
 	useDirectRvgCapture,
@@ -65,7 +66,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = (prop
 			</svg>
 			<div className="rvg-capture-modal" data-testid="direct-rvg-capture-modal">
 				<DirectRvgDeviceSelector
-					modalId={logic.modalId} patientName={props.patientName || "Пациент"} patientCardNumber={props.patientCardNumber || "МК-2026/891"} doctorName={props.doctorName || "Лечащий врач"} onClose={props.onClose}
+					modalId={logic.modalId} patientName={props.patientName || "Пациент"} patientCardNumber={props.patientCardNumber || ""} doctorName={props.doctorName || "Лечащий врач"} onClose={props.onClose}
 					sensorStatus={logic.sensorStatus} acquisitionProgress={logic.acquisitionProgress} selectedSensorModel={logic.selectedSensorModel} onSelectSensorModel={logic.setSelectedSensorModel} availableSensors={logic.availableSensors}
 					onTriggerCapture={logic.handleTriggerCapture} onAutoDetectSensor={logic.handleAutoDetectSensor} onTestSensorConnection={logic.handleTestSensorConnection} isDetectingSensor={logic.isDetectingSensor} sensorStatusMessage={logic.sensorHealthStatus}
 					fileInputRef={logic.fileInputRef} onFileInputChange={logic.handleFileInputChange} onOpenCatalog={logic.handleOpenCatalog}
@@ -92,14 +93,26 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = (prop
 					selectedTeeth={logic.selectedTeeth} calculatedDoseMicrosv={logic.calculatedDoseMicrosv} isSaving={logic.isSaving}
 					onExportDicom={logic.handleExportDicom} onSendToLab={logic.handleSendToLab} onSaveToEmr={logic.handleSaveToEmr} onSendToPlan={logic.handleSendToPlan} onRetake={logic.handleTriggerCapture}
 					onPrintReport={() => {
-						try {
-							window.print();
-						} catch (error) {
-							clientLogger.error("[DirectRvgCaptureModal] Failed to execute window.print", error, {
+						const safeEsc = (v: string) =>
+							v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+						const html = `<div style="font-family:sans-serif;padding:24px;max-width:760px;margin:0 auto;">
+							<h2 style="margin:0 0 8px 0;">Протокол прицельной рентгенографии (RVG)</h2>
+							<p style="margin:4px 0;"><strong>Пациент:</strong> ${safeEsc(props.patientName || "Пациент")}</p>
+							<p style="margin:4px 0;"><strong>Врач:</strong> ${safeEsc(props.doctorName || "Лечащий врач")}</p>
+							<p style="margin:4px 0;"><strong>Зубы (FDI):</strong> ${safeEsc(logic.selectedTeeth.join(", ") || "—")} | <strong>Доза:</strong> ${logic.calculatedDoseMicrosv} мкЗв</p>
+							${logic.clinicalNotes ? `<p style="margin:8px 0;"><strong>Примечание:</strong> ${safeEsc(logic.clinicalNotes)}</p>` : ""}
+							${logic.capturedImage ? `<div style="margin-top:16px;"><img src="${safeEsc(logic.capturedImage)}" alt="Рентген-снимок" style="max-width:100%;max-height:480px;border:1px solid #ccc;border-radius:8px;" /></div>` : ""}
+						</div>`;
+						void printA4Document(html, { title: "Прицельный снимок RVG" }).then((res) => {
+							if (!res.success) {
+								showToast(res.error || "Не удалось открыть печать снимка", "error");
+							}
+						}).catch((error: unknown) => {
+							clientLogger.error("[DirectRvgCaptureModal] Failed to print RVG report", error, {
 								module: "DirectRvgCaptureModal",
 							});
 							showToast("Не удалось открыть печать снимка", "error");
-						}
+						});
 					}}
 				/>
 				<UniversalSensorCatalogModal

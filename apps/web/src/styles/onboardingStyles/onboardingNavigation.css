@@ -3,11 +3,12 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 16px 24px;
+	padding: 14px 24px;
 	border-top: 1px solid var(--line);
-	background: var(--paper-soft);
+	background: var(--paper-soft, var(--paper));
 	gap: 12px;
 	flex-wrap: wrap;
+	flex-shrink: 0;
 }
 
 .footer-ghost-skip-btn {

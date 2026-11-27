@@ -98,7 +98,7 @@ export const MarketingCampaignAnalytics: React.FC<MarketingCampaignAnalyticsProp
 				</div>
 				<div className="marketing-funnel-arrow">→</div>
 				<div className="marketing-funnel-step">
-					<span className="marketing-funnel-num font-bold">
+					<span className="marketing-funnel-num font-bold whitespace-nowrap tabular-nums">
 						{stats.revenueRub > 0 ? `${(stats.revenueRub / 1000).toFixed(0)}k ₽` : "0 ₽"}
 					</span>
 					<span className="marketing-funnel-name">Оплачено в кассу</span>

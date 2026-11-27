@@ -87,6 +87,7 @@ describe("KktLanPrinterService — Direct LAN TCP KKT Printing (54-ФЗ)", () =>
 					fiscalSign: "1928374650",
 					fiscalDocNum: "88991",
 					shiftNum: 42,
+					fnSerial: "9960440302145896",
 					kktSerialNumber: "0010670000001234",
 					printedAt: "2026-08-23T10:00:00.000Z",
 				};

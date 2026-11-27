@@ -3,9 +3,9 @@ import type React from "react";
 
 export const AccessSecurityHero: React.FC = () => {
 	return (
-		<div className="import-copy p-4 sm:p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-xs flex items-start gap-3.5 min-w-0">
-			<div className="w-11 h-11 rounded-xl bg-teal-600 dark:bg-teal-700 text-white flex items-center justify-center shrink-0 shadow-xs">
-				<UserCheck size={22} aria-hidden="true" />
+		<div className="p-4 sm:p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-xs flex items-start gap-3.5 min-w-0">
+			<div className="w-11 h-11 rounded-xl bg-[var(--primary)] text-white flex items-center justify-center shrink-0 shadow-xs">
+				<UserCheck className="w-5 h-5 shrink-0" aria-hidden="true" />
 			</div>
 			<div className="flex-1 min-w-0">
 				<div className="flex items-center gap-2 flex-wrap">

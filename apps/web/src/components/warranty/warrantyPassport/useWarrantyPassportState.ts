@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type {
 	HistoricalWarrantyCertificate,
 	PatientReclamationResponse,
@@ -11,12 +11,92 @@ import { useWarrantyCertificateBuild } from "./hooks/useWarrantyCertificateBuild
 import { useWarrantyExportActions } from "./hooks/useWarrantyExportActions";
 import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
-import type { WarrantyRemediationOrder } from "../warrantyEngine.js";
+import { showToast } from "../../GlobalToast";
+import type { WarrantyItem, WarrantyRemediationOrder } from "../warrantyEngine.js";
+import type { WarrantyCategory } from "../warrantyPresets.js";
+
+function parseHistoricalCertificateItems(rawItems: unknown): WarrantyItem[] {
+	if (!Array.isArray(rawItems)) return [];
+	const parsed: WarrantyItem[] = [];
+	for (let i = 0; i < rawItems.length; i++) {
+		const entry = rawItems[i];
+		if (!entry || typeof entry !== "object") continue;
+		const rec = entry as Record<string, unknown>;
+		const toothNumber =
+			typeof rec.toothNumber === "string"
+				? rec.toothNumber
+				: typeof rec.tooth === "string"
+					? rec.tooth
+					: typeof rec.tooth === "number"
+						? String(rec.tooth)
+						: "—";
+		const clinicalWorkTitle =
+			typeof rec.clinicalWorkTitle === "string"
+				? rec.clinicalWorkTitle
+				: typeof rec.name === "string"
+					? rec.name
+					: typeof rec.restorationType === "string"
+						? rec.restorationType
+						: "Стоматологическая работа";
+		const materialName =
+			typeof rec.materialName === "string"
+				? rec.materialName
+				: typeof rec.material === "string"
+					? rec.material
+					: "Конструкционный материал";
+		const manufacturer = typeof rec.manufacturer === "string" ? rec.manufacturer : "Производитель клиники";
+		const country = typeof rec.country === "string" ? rec.country : "РФ / Импорт";
+		const category = (typeof rec.category === "string" ? rec.category : "orthopedics") as WarrantyCategory;
+		const vitaShade =
+			typeof rec.vitaShade === "string"
+				? rec.vitaShade
+				: typeof rec.shade === "string"
+					? rec.shade
+					: typeof rec.color === "string"
+						? rec.color
+						: undefined;
+		const lotNumber =
+			typeof rec.lotNumber === "string"
+				? rec.lotNumber
+				: typeof rec.lot === "string"
+					? rec.lot
+					: typeof rec.batchCode === "string"
+						? rec.batchCode
+						: undefined;
+		const labOrderNumber = typeof rec.labOrderNumber === "string" ? rec.labOrderNumber : undefined;
+		const serviceCode =
+			typeof rec.serviceCode === "string"
+				? rec.serviceCode
+				: typeof rec.serviceCode804n === "string"
+					? rec.serviceCode804n
+					: undefined;
+		const baseWarrantyMonths = typeof rec.warrantyMonths === "number" ? rec.warrantyMonths : typeof rec.baseWarrantyMonths === "number" ? rec.baseWarrantyMonths : 12;
+		const baseServiceLifeMonths = typeof rec.serviceLifeMonths === "number" ? rec.serviceLifeMonths : typeof rec.baseServiceLifeMonths === "number" ? rec.baseServiceLifeMonths : 36;
+
+		parsed.push({
+			id: typeof rec.id === "string" ? rec.id : `hist-${i}-${toothNumber}`,
+			toothNumber,
+			category,
+			clinicalWorkTitle,
+			materialName,
+			manufacturer,
+			country,
+			...(vitaShade ? { vitaShade } : {}),
+			...(lotNumber ? { lotNumber } : {}),
+			...(labOrderNumber ? { labOrderNumber } : {}),
+			...(serviceCode ? { serviceCode, serviceCode804n: serviceCode } : {}),
+			baseWarrantyMonths,
+			baseServiceLifeMonths,
+		});
+	}
+	return parsed;
+}
 
 export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 	const [activeTab, setActiveTab] = useState<WarrantyTab>("editor");
 	const [historicalCertificates, setHistoricalCertificates] = useState<HistoricalWarrantyCertificate[]>([]);
 	const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+	const [persistedCertificateId, setPersistedCertificateId] = useState<string | null>(null);
 
 	const itemsSelection = useWarrantyItemsSelection({
 		isOpen: props.isOpen,
@@ -33,8 +113,24 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 		items: itemsSelection.items, attachedStatus: false, remediations: [],
 	});
 
+	const handleCertificatePersisted = useCallback((savedCert: HistoricalWarrantyCertificate) => {
+		if (!savedCert?.id) return;
+		setPersistedCertificateId(savedCert.id);
+		setHistoricalCertificates((prev) => {
+			const idx = prev.findIndex((c) => c.id === savedCert.id || c.certificateNumber === savedCert.certificateNumber);
+			if (idx >= 0) {
+				const next = [...prev];
+				next[idx] = savedCert;
+				return next;
+			}
+			return [savedCert, ...prev];
+		});
+	}, []);
+
 	const remediation = useWarrantyRemediationState({
-		certificateId: certBuild.certificateId, patient: props.patient, doctorId: props.doctorId,
+		certificateId: certBuild.certificateId,
+		persistedCertificateId,
+		patient: props.patient, doctorId: props.doctorId,
 		doctorName: props.doctorName, doctorSpecialty: props.doctorSpecialty, clinicName: props.clinicName,
 		items: itemsSelection.items, onRemediationCreated: props.onRemediationCreated,
 	});
@@ -44,6 +140,7 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 		patient: props.patient, visitId: props.visitId, doctorName: props.doctorName,
 		onAttachToClinicalNote: props.onAttachToClinicalNote,
 		onCertificateIssued: props.onCertificateIssued,
+		onCertificatePersisted: handleCertificatePersisted,
 	});
 
 	useEffect(() => {
@@ -70,6 +167,10 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 						: certsPayload?.certificates ?? certsJson?.certificates;
 					if (certList && Array.isArray(certList)) {
 						setHistoricalCertificates(certList);
+						const matched = certList.find((c) => c.certificateNumber === certBuild.certificateId);
+						if (matched?.id) {
+							setPersistedCertificateId(matched.id);
+						}
 					}
 				}
 
@@ -153,6 +254,16 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 		};
 	}, [props.isOpen, props.patient?.id, certBuild.certificateId, props.doctorName, props.patient?.fullName, props.patient?.cardNumber, props.clinicName, remediation.setRemediations]);
 
+	const handleSelectHistoricalCertificate = useCallback((cert: HistoricalWarrantyCertificate) => {
+		certBuild.setCertificateId(cert.certificateNumber);
+		setPersistedCertificateId(cert.id);
+		const parsedItems = parseHistoricalCertificateItems(cert.itemsJson);
+		if (parsedItems.length > 0) {
+			itemsSelection.setItems(parsedItems);
+		}
+		showToast(`Выбран гарантийный паспорт ${cert.certificateNumber}`, "info", 2500);
+	}, [certBuild, itemsSelection]);
+
 	const handleOpenRemediation = () => {
 		remediation.handleOpenRemediation();
 		setActiveTab("remediation");
@@ -186,6 +297,10 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 		riskFactors: certBuild.riskFactors,
 		onRiskFactorsChange: certBuild.setRiskFactors,
 		calculation: certBuild.calculation,
+		historicalCertificates,
+		isLoadingHistory,
+		activeCertificateId: certBuild.certificateId,
+		onSelectHistoricalCertificate: handleSelectHistoricalCertificate,
 	};
 
 	const signatureStepProps = {
@@ -223,6 +338,6 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 	return {
 		activeTab, setActiveTab, ...remediation, ...itemsSelection, ...certBuild, ...exportActions,
 		handleOpenRemediation, itemsStepProps, signatureStepProps, shareMenuProps,
-		historicalCertificates, isLoadingHistory,
+		historicalCertificates, isLoadingHistory, persistedCertificateId, handleSelectHistoricalCertificate,
 	};
 }

@@ -17,6 +17,7 @@ import {
 	type UniversalPrintJobPayload,
 	type UniversalPrintResultContract,
 	type PlatformNetworkStatus,
+	type NetworkConnectivityMode,
 	type UnifiedStorageEngineContract,
 	type ChairsidePhotoOptions,
 	type ChairsidePhotoResult,
@@ -257,8 +258,10 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 
 	async getNetworkStatus(): Promise<PlatformNetworkStatus> {
 		const state = await determineNetworkConnectivity();
+		const mode: NetworkConnectivityMode =
+			state.mode === "reconnecting" ? "offline" : state.mode;
 		return {
-			mode: state.mode,
+			mode,
 			isOnline: state.isOnline,
 			isLan: state.isLan,
 			rttMs: state.rttMs,
@@ -270,8 +273,10 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 
 	listenNetworkStatus(callback: (status: PlatformNetworkStatus) => void): () => void {
 		return createNetworkMonitor((state) => {
+			const mode: NetworkConnectivityMode =
+				state.mode === "reconnecting" ? "offline" : state.mode;
 			callback({
-				mode: state.mode,
+				mode,
 				isOnline: state.isOnline,
 				isLan: state.isLan,
 				rttMs: state.rttMs,

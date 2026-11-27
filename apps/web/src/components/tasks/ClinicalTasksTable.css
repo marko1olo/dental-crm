@@ -356,19 +356,19 @@
 
 /* Адаптивное медиа-правило переключения Desktop vs Mobile */
 @media (max-width: 768px) {
-	.clinical-tasks-desktop-table {
-		display: none !important;
+	.clinical-tasks-table-container .clinical-tasks-desktop-table {
+		display: none;
 	}
-	.clinical-tasks-mobile-cards {
-		display: flex !important;
+	.clinical-tasks-table-container .clinical-tasks-mobile-cards {
+		display: flex;
 	}
 }
 
 @media (min-width: 769px) {
-	.clinical-tasks-desktop-table {
-		display: block !important;
+	.clinical-tasks-table-container .clinical-tasks-desktop-table {
+		display: block;
 	}
-	.clinical-tasks-mobile-cards {
-		display: none !important;
+	.clinical-tasks-table-container .clinical-tasks-mobile-cards {
+		display: none;
 	}
 }

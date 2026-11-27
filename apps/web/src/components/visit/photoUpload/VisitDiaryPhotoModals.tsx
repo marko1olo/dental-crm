@@ -50,6 +50,7 @@ export function VisitDiaryPhotoModals({
 		<>
 			{/* Digital Smile Design (DSD) Эстетическая студия Wheeler 2.5D (PHO-02) */}
 			<DsdAestheticStudioModal
+				key={`dsd-${patientId}`}
 				isOpen={isDsdModalOpen}
 				onClose={onCloseDsd}
 				patientId={patientId}
@@ -64,6 +65,7 @@ export function VisitDiaryPhotoModals({
 
 			{/* Мобильный QR-мост загрузки со смартфона врача (Chairside QR Bridge PHO-01) */}
 			<ChairsidePhotoQrBridgeModal
+				key={`qr-${patientId}`}
 				isOpen={isQrBridgeOpen}
 				onClose={onCloseQrBridge}
 				patientId={patientId}

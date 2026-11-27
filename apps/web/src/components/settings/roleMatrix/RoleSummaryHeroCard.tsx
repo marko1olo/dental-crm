@@ -27,7 +27,7 @@ const ROLE_BARRIERS: Record<string, { testId: string; title: string; color: stri
 		],
 	},
 	owner: {
-		testId: "owner-security-barriers", title: "Полномочия роли «Главврач / Владелец»:", color: "text-purple-500",
+		testId: "owner-security-barriers", title: "Полномочия роли «Главврач / Владелец»:", color: "text-[var(--primary)]",
 		items: [
 			["P&L и прибыль:", "Выручка по креслам, чистая прибыль и маржинальность."],
 			["Управление ФОТ:", "Процентные ставки врачей, оклады и удержания за ЗТЛ."],
@@ -36,7 +36,7 @@ const ROLE_BARRIERS: Record<string, { testId: string; title: string; color: stri
 		],
 	},
 	assistant: {
-		testId: "assistant-security-barriers", title: "Барьеры безопасности для роли «Ассистент врача»:", color: "text-amber-500",
+		testId: "assistant-security-barriers", title: "Барьеры безопасности для роли «Ассистент врача»:", color: "text-[var(--primary)]",
 		items: [
 			["Маскирование телефонов:", "Номера телефонов пациентов скрыты в реестрах от утечек."],
 			["Запрет подписи ЭМК:", "Подписание клинических протоколов за врача заблокировано."],
@@ -44,7 +44,7 @@ const ROLE_BARRIERS: Record<string, { testId: string; title: string; color: stri
 		],
 	},
 	registrar: {
-		testId: "admin-security-barriers", title: "Барьеры безопасности для роли «Администратор»:", color: "text-sky-500",
+		testId: "admin-security-barriers", title: "Барьеры безопасности для роли «Администратор»:", color: "text-[var(--primary)]",
 		items: [
 			["Касса и чеки:", "Приём оплат, пробитие чеков, оформление расписания."],
 			["Изоляция зарплат и P&L:", "Финансовые ведомости врачей и прибыль скрыты."],
@@ -82,11 +82,11 @@ export const RoleSummaryHeroCard: React.FC<RoleSummaryHeroCardProps> = ({ role, 
 				{role === "doctor" && onApplyDoctorPreset && (
 					<button
 						type="button" onClick={onApplyDoctorPreset}
-						className="px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-bold bg-[var(--teal-soft)] text-[var(--teal-dark)] hover:bg-[var(--teal)]/20 border border-[var(--teal)]/30 flex items-center gap-1.5 cursor-pointer touch-manipulation transition-colors shrink-0"
+						className="dente-btn dente-btn-secondary min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 px-3 rounded-xl sm:rounded-lg text-xs font-medium bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-colors shrink-0 whitespace-nowrap"
 						title="Применить клинический пресет: скидки до 100%, ЭМК без блокировок"
 					>
-						<Sparkles size={14} className="text-[var(--teal)]" />
-						<span>✓ Автономия врача (скидки 100%)</span>
+						<Sparkles className="w-4 h-4 shrink-0 text-[var(--primary)]" />
+						<span>Автономия врача (100% скидки)</span>
 					</button>
 				)}
 			</div>
@@ -97,7 +97,7 @@ export const RoleSummaryHeroCard: React.FC<RoleSummaryHeroCardProps> = ({ role, 
 						<ShieldCheck size={15} className={barriers.color} />
 						<span>{barriers.title}</span>
 					</div>
-					<div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${barriers.items.length} gap-2 text-[11px]`}>
+					<div className={`grid grid-cols-1 sm:grid-cols-2 ${barriers.items.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-2 text-[11px]`}>
 						{barriers.items.map(([hdr, desc]) => (
 							<div key={hdr} className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
 								<strong className="block text-[var(--ink)]">{hdr}</strong>

@@ -13,6 +13,7 @@
  *   or explicit flushStoredTeethData calls.
  */
 
+import { setBoundedInMemoryMap } from "../../services/offline/storage/idbMemory";
 import type { ToothData } from "./ToothChart";
 import {
 	safeLocalStorageGetJson,
@@ -51,7 +52,7 @@ export function loadStoredTeethData(patientId: string): ToothData[] | null {
 		null,
 	);
 	if (Array.isArray(parsed) && parsed.length > 0) {
-		inMemoryTeethCache.set(patientId, parsed);
+		setBoundedInMemoryMap(inMemoryTeethCache, patientId, parsed);
 		return parsed;
 	}
 	return null;
@@ -117,7 +118,7 @@ export function saveStoredTeethData(
 	data: ToothData[],
 	immediate = false,
 ): void {
-	inMemoryTeethCache.set(patientId, data);
+	setBoundedInMemoryMap(inMemoryTeethCache, patientId, data);
 
 	const isTestEnv =
 		typeof process !== "undefined" &&

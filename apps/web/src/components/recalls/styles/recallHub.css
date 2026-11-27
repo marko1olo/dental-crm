@@ -108,12 +108,12 @@
 	.recall-header { padding: 10px 14px; gap: 8px; flex-direction: column; align-items: stretch; }
 	.recall-header-title-wrap { width: 100%; justify-content: space-between; display: flex; align-items: center; }
 	.recall-header-subtitle { display: none; }
-	.recall-close-btn--desktop { display: none !important; }
-	.recall-close-btn--mobile { display: flex !important; }
-	.recall-tab-label-full { display: none !important; }
-	.recall-tab-label-short { display: inline !important; }
+	.recall-close-btn--desktop { display: none; }
+	.recall-close-btn--mobile { display: flex; }
+	.recall-tab-label-full { display: none; }
+	.recall-tab-label-short { display: inline; }
 	.recall-header-controls { width: 100%; justify-content: stretch; }
-	.recall-view-mode-tabs { width: 100% !important; flex: 1; min-width: 0; }
+	.recall-view-mode-tabs { width: 100%; flex: 1; min-width: 0; }
 	.recall-tab-btn { min-height: 44px; flex: 1; justify-content: center; font-size: 0.8125rem; padding: 6px 4px; }
 }
 

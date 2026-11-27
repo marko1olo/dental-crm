@@ -15,7 +15,7 @@ export function FinanceToolbarLeft({
 	isShiftOpen,
 }: FinanceToolbarLeftProps): React.JSX.Element {
 	return (
-		<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
+		<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
 			<span className="text-xs sm:text-sm font-bold text-[var(--ink)] shrink-0 whitespace-nowrap">
 				<span className="sm:hidden">Оплаты</span>
 				<span className="hidden sm:inline">Оплаты и план</span>
@@ -29,7 +29,7 @@ export function FinanceToolbarLeft({
 			<button
 				type="button"
 				onClick={onToggleCashShift}
-				className={`inline-flex items-center gap-1.5 px-2 py-1 sm:py-0.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 select-none min-h-[44px] sm:min-h-[28px] ${
+				className={`inline-flex items-center gap-1.5 px-2.5 py-1 sm:py-0.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 select-none whitespace-nowrap min-h-[44px] sm:min-h-[28px] ${
 					isCashShiftOpen
 						? "bg-[var(--teal-surface,rgba(13,148,136,0.1))] border-[var(--teal,#0d9488)] text-[var(--teal-strong,#0f766e)] dark:text-[var(--teal,#2dd4bf)]"
 						: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong,rgba(0,0,0,0.15))]"

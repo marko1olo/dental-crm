@@ -22,7 +22,7 @@ export const CANONICAL_BOOKING_CATEGORIES: BookingCategoryOption[] = [
 	},
 	{
 		id: "emergency",
-		title: "⚡ Срочный приём / Острая боль",
+		title: "Срочный приём / Острая боль",
 		subtitle: "Экстренная помощь день-в-день, снятие болевого синдрома",
 		durationMinutes: 30,
 		priceLabel: "от 2 500 ₽",
@@ -36,7 +36,6 @@ export const CANONICAL_BOOKING_CATEGORIES: BookingCategoryOption[] = [
 		durationMinutes: 30,
 		priceLabel: "Бесплатно",
 		iconName: "Smile",
-		badge: "0 ₽",
 	},
 	{
 		id: "orthodontics",

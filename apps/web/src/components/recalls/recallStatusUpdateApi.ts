@@ -30,7 +30,12 @@ export async function sendRecallCandidateStatusUpdate(
 			body: JSON.stringify({ status: params.status, channel: params.channel, note: params.note }),
 		},
 	);
-	const payload = (await response.json().catch(() => ({}))) as {
+	const raw = await response.json().catch(() => ({}));
+	const payload = (
+		raw && typeof raw === "object" && "data" in raw
+			? (raw as { data: Record<string, unknown> }).data
+			: raw
+	) as {
 		ok?: boolean; patientId?: string; status?: string; updatedAt?: string; message?: string;
 	};
 	if (!response.ok) {

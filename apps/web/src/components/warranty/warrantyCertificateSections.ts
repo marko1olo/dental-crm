@@ -83,7 +83,7 @@ export function renderCertificateRemediations(remediations?: WarrantyRemediation
 
 	return `
     <div class="remediations-section" style="margin-bottom: 18px; position: relative; z-index: 1;">
-      <h4 style="font-size: 9.5pt; font-weight: 800; color: #0f172a; margin-bottom: 6px; text-transform: uppercase;">
+      <h4 style="font-size: 9.5pt; font-weight: 800; color: #0f172a; margin-bottom: 6px;">
         Гарантийные рекламации и устранение дефектов (0 ₽):
       </h4>
       <table class="items-table" style="margin-bottom: 8px;">

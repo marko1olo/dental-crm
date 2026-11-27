@@ -130,8 +130,9 @@ export function resolveBraveryDiplomaRequisites(
 				}
 			}
 
-			if (cachedStaff && (cachedStaff.fullName || cachedStaff.name)) {
-				resolvedDoctorName = (cachedStaff.fullName || cachedStaff.name)!.trim();
+			const rawDoctorName = cachedStaff?.fullName || cachedStaff?.name;
+			if (rawDoctorName) {
+				resolvedDoctorName = rawDoctorName.trim();
 				isDoctorFromLiveSession = true;
 			}
 		} catch {

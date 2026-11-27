@@ -103,7 +103,8 @@
 
 /* Sovereign Filter Chips */
 .mobile-filter-chip {
-	min-height: 34px;
+	min-height: 44px;
+	height: 44px;
 	padding: 0 14px;
 	border-radius: 9999px;
 	font-size: 13px;
@@ -125,10 +126,10 @@
 }
 
 .mobile-filter-chip.active {
-	background: var(--teal-fill, var(--teal));
-	color: var(--on-teal, #ffffff);
-	border-color: var(--teal);
-	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+	background: var(--primary, #0f766e);
+	color: #ffffff;
+	border-color: var(--primary, #0f766e);
+	box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25);
 }
 
 .mobile-filter-chip .chip-counter {

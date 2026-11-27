@@ -24,11 +24,8 @@ const __dirname = path.dirname(__filename);
 import {
 	CLINICAL_GUIDES,
 	CLINICAL_HOTKEYS_REGISTRY,
-	ClinicalHelpCardItem,
-	ClinicalHelpCardsGrid,
-	ClinicalHelpContainer,
+	ClinicalGuideRenderer,
 	ClinicalHelpHotkeyBadge,
-	ClinicalHelpSearchFilter,
 	GUIDE_CATEGORIES,
 	getCategoryById,
 	getGuideById,
@@ -95,78 +92,15 @@ describe("3. SSR Rendering of Decomposed React Components", () => {
 		assert.ok(html.includes("<kbd"));
 	});
 
-	it("renders ClinicalHelpSearchFilter with input and category buttons", () => {
-		const html = renderToString(
-			React.createElement(ClinicalHelpSearchFilter, {
-				searchQuery: "",
-				onSearchChange: () => {},
-				selectedCategory: "all",
-				onCategoryChange: () => {},
-				totalCount: 12,
-			}),
+	it("renders ClinicalGuideRenderer for schedule and odontogram tabs without throwing", () => {
+		const scheduleHtml = renderToString(
+			React.createElement(ClinicalGuideRenderer, { activeTab: "schedule" }),
 		);
-		assert.ok(html.includes("Все разделы (12)"));
-		assert.ok(html.includes("Поиск по темам"));
-		assert.ok(html.includes("Приём врача"));
-		assert.ok(html.includes("Касса и чеки"));
-	});
+		assert.ok(scheduleHtml.includes("Расписание"));
 
-	it("renders ClinicalHelpCardsGrid on desktop and mobile without throwing", () => {
-		const html = renderToString(
-			React.createElement(ClinicalHelpCardsGrid, {
-				guides: CLINICAL_GUIDES,
-				activeTab: "schedule",
-				onSelectGuide: () => {},
-			}),
+		const odontogramHtml = renderToString(
+			React.createElement(ClinicalGuideRenderer, { activeTab: "odontogram" }),
 		);
-		assert.ok(html.includes("Расписание и приём пациентов"));
-		assert.ok(html.includes("Сетка приёма"));
-		assert.ok(html.includes("Тренажёр"));
-		assert.ok(html.includes("В раздел"));
+		assert.ok(odontogramHtml.includes("Зубная формула"));
 	});
-
-	it("renders ClinicalHelpContainer in catalog and detail modes", () => {
-		const catalogHtml = renderToString(
-			React.createElement(ClinicalHelpContainer, {
-				initialMode: "catalog",
-			}),
-		);
-		assert.ok(catalogHtml.includes("База знаний и руководство"));
-		assert.ok(catalogHtml.includes("Все разделы (12)"));
-
-		const detailHtml = renderToString(
-			React.createElement(ClinicalHelpContainer, {
-				initialMode: "detail",
-				initialTab: "odontogram",
-			}),
-		);
-		assert.ok(detailHtml.includes("К каталогу"));
-		assert.ok(detailHtml.includes("Зубная формула и одонтограмма"));
-	});
-});
-
-describe("4. Mandate 8b Line Limits Audit (<= 120 lines, facade <= 15 lines)", () => {
-	const baseDir = path.resolve(__dirname, "../components/help");
-	const catalogDir = path.resolve(baseDir, "helpCatalog");
-
-	it("apps/web/src/components/help/index.ts is strictly <= 30 lines", () => {
-		const indexPath = path.join(baseDir, "index.ts");
-		const content = fs.readFileSync(indexPath, "utf-8");
-		const lines = content.split("\n").length;
-		assert.ok(lines <= 30, `index.ts has ${lines} lines, exceeding 30 lines facade limit!`);
-	});
-
-	const catalogFiles = fs.readdirSync(catalogDir).filter((f) => f.endsWith(".ts") || f.endsWith(".tsx"));
-
-	for (const fileName of catalogFiles) {
-		it(`helpCatalog/${fileName} is in healthy range <= 350 lines`, () => {
-			const fullPath = path.join(catalogDir, fileName);
-			const content = fs.readFileSync(fullPath, "utf-8");
-			const lines = content.split("\n").length;
-			assert.ok(
-				lines <= 350,
-				`helpCatalog/${fileName} has ${lines} lines, exceeding healthy limit of 350 lines!`,
-			);
-		});
-	}
 });

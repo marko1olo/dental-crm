@@ -139,26 +139,13 @@ export function SettingsAiTab() {
 								{speechGatewayStatus.chunkingPolicy.dedupeWindowChars} симв.
 							</strong>
 						</div>
-						<div className="ai-gateway-status-pill">
+						<div className="ai-gateway-status-pill" style={{ borderRight: "none" }}>
 							<span>Стоматологический словарь</span>
 							<strong>
 								{speechGatewayStatus.promptPolicy.enabled
 									? `Включен (${speechGatewayStatus.promptPolicy.termCount} терм.)`
 									: "Выключен"}
 							</strong>
-						</div>
-						<div
-							className="ai-gateway-status-pill"
-							style={{ borderRight: "none", marginLeft: "auto" }}
-						>
-							<button
-								className="secondary-button btn--sm"
-								type="button"
-								onClick={() => void refreshSpeechRuntime({ silent: false })}
-							>
-								<Activity size={14} style={{ marginRight: "6px" }} /> Проверить
-								шлюз
-							</button>
 						</div>
 					</div>
 				) : null}

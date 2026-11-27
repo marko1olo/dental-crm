@@ -1,7 +1,15 @@
+import { isValidUuid } from "@dental/shared";
+
 /**
  * DENTE Dental CRM — Leads Kanban Booking Autonomy Helpers
  * Mandate 8e (Doctor Autonomy) & Mandate 8n (Solo Doctor Scale Sovereignty)
  */
+
+export function toApiUuidOrUndefined(id: string | null | undefined): string | undefined {
+	if (!id) return undefined;
+	const trimmed = id.trim();
+	return isValidUuid(trimmed) ? trimmed : undefined;
+}
 
 export type BookableDoctor = {
 	id: string;

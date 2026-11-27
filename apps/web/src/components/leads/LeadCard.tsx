@@ -9,6 +9,8 @@ import React from "react";
 import { useAppStore } from "../../store/appStore";
 import type { Lead } from "../../store/leadsStore";
 import { usePatientStore } from "../../store/patientStore";
+import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 import type { LeadCardProps } from "./card/cardTypes";
 import { formatLeadTimestamp } from "./card/leadCardFormatters";
 import {
@@ -56,8 +58,9 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 			usePatientStore.getState().setSelectedPatientId(patientId);
 			useAppStore.getState().setCurrentView("patients");
 			if (typeof window !== "undefined") window.location.hash = "patients";
-		} catch {
-			// fallback
+		} catch (err: unknown) {
+			logger.warn("[LeadCard] Failed to navigate to patient card:", err);
+			showToast("Не удалось открыть карту пациента", "error");
 		}
 	};
 

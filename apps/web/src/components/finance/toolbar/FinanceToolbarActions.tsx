@@ -60,8 +60,8 @@ export function FinanceToolbarActions({
 					data-testid="btn-finance-open-quick-expense"
 					title="Внесение чека расхода (аренда, материалы, коммуналка)"
 				>
-					<PlusCircle size={13} className="shrink-0 text-[var(--muted)]" />
-					<span className="truncate">+ Расход</span>
+					<PlusCircle className="w-3.5 h-3.5 shrink-0 text-[var(--muted)]" />
+					<span className="truncate">Расход</span>
 				</button>
 			)}
 			{children}

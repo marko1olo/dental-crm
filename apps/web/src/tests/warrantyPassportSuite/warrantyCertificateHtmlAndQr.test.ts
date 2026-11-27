@@ -28,6 +28,9 @@ import {
 const { WarrantyPassportModal } = await import(
 	"../../components/warranty/WarrantyPassportModal.js"
 );
+const { WarrantyItemsStep } = await import(
+	"../../components/warranty/warrantyPassport/WarrantyItemsStep.js"
+);
 
 import {
 	getAllWarrantyDefectTemplates,
@@ -450,4 +453,93 @@ test("Mandate 8k & 8d: generateWarrantyPatientMemo produces official text for me
 	assert.ok(memo.includes("22 февраля 2027 г."));
 	assert.ok(memo.includes("https://dente-clinic.ru/portal/warranty?cert=WAR-2026-9812"));
 	assert.ok(memo.includes("Контрольный хеш ЭЦП: e3b0c44298fc1c14..."));
+});
+
+test("W16-SPEC-03: WarrantyItemsStep renders historical certificates, loading skeleton, and 0px noise when empty", () => {
+	const baseCalc = calculateWarrantyTerms({
+		category: "ceramic_crown_veneer",
+		riskFactors: {
+			hygieneScore: 1.0,
+			bruxism: false,
+			nightGuardPrescribed: false,
+			nightGuardUsed: false,
+			smoking: "none",
+			diabetes: "none",
+			malocclusion: false,
+			periodontitis: "none",
+		},
+		issueDate: "2026-08-22",
+	});
+	const baseProps = {
+		onOpenRemediation: () => {},
+		onImportCompletedStages: () => {},
+		selectedTeeth: [] as string[],
+		onToggleTooth: () => {},
+		items: [],
+		activeCategory: "ceramic_crown_veneer" as const,
+		currentWorkTitle: "Коронка",
+		onWorkTitleChange: () => {},
+		currentMaterial: "ZrO2",
+		onMaterialChange: () => {},
+		currentManufacturer: "Ivoclar",
+		onManufacturerChange: () => {},
+		currentShade: "A2",
+		onShadeChange: () => {},
+		currentLot: "",
+		onLotChange: () => {},
+		currentServiceCode804n: "A16.07.004",
+		onServiceCode804nChange: () => {},
+		currentLabOrderNumber: "",
+		onLabOrderNumberChange: () => {},
+		onApplyStarQuickPreset: () => {},
+		onSelectCategory: () => {},
+		onAddItem: () => {},
+		onRemoveItem: () => {},
+		riskFactors: {
+			hygieneScore: 1.0,
+			kpuIndex: 4,
+			bruxism: false,
+			nightGuardPrescribed: false,
+			nightGuardUsed: false,
+			smoking: "none" as const,
+			diabetes: "none" as const,
+			malocclusion: false,
+			periodontitis: "none" as const,
+			poorCompliance: false,
+			osteoporosis: false,
+		},
+		onRiskFactorsChange: () => {},
+		calculation: baseCalc,
+	};
+
+	const emptyHtml = renderToString(React.createElement(WarrantyItemsStep, baseProps));
+	assert.equal(emptyHtml.includes("warranty-history-list"), false);
+	assert.equal(emptyHtml.includes("warranty-history-skeleton"), false);
+
+	const loadingHtml = renderToString(
+		React.createElement(WarrantyItemsStep, { ...baseProps, isLoadingHistory: true }),
+	);
+	assert.equal(loadingHtml.includes("warranty-history-skeleton"), true);
+
+	const historyHtml = renderToString(
+		React.createElement(WarrantyItemsStep, {
+			...baseProps,
+			isLoadingHistory: false,
+			historicalCertificates: [
+				{
+					id: "cc440000-0000-4000-8000-000000000001",
+					patientId: "cc440000-0000-4000-8000-000000000002",
+					certificateNumber: "WAR-2026-00777",
+					status: "active",
+					warrantyMonths: 24,
+					serviceLifeMonths: 120,
+					issuedAt: "2026-08-22T10:00:00.000Z",
+					integritySha256: "a".repeat(64),
+				},
+			],
+		}),
+	);
+	assert.equal(historyHtml.includes("warranty-history-list"), true);
+	assert.equal(historyHtml.includes("WAR-2026-00777"), true);
+	assert.equal(historyHtml.includes("Активен"), true);
 });

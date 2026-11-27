@@ -98,8 +98,8 @@
 		width: 100%;
 	}
 	.recall-patient-card__actions .recall-action-btn--book {
-		grid-column: 1 / -1 !important;
-		width: 100% !important;
+		grid-column: 1 / -1;
+		width: 100%;
 	}
 	.recall-patient-card__actions .recall-action-btn {
 		width: 100%;

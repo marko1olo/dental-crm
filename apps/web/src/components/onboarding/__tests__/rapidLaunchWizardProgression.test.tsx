@@ -287,26 +287,75 @@ describe("Clinic Onboarding & Rapid Launch Wizard Suite", () => {
 	});
 
 	describe("6. Doctor Autonomy: Non-Blocking Skip & Rapid Completion (Mandate 8e)", () => {
-		it("allows skipping wizard immediately without bureaucratic traps", async () => {
-			const store = useOnboardingStore.getState();
-			const ok = await store.skipWizard();
+		const originalFetch = globalThis.fetch;
 
-			assert.strictEqual(ok, true);
-			const state = useOnboardingStore.getState();
-			assert.strictEqual(state.isSkipped, true);
-			assert.strictEqual(state.isCompleted, false);
-			assert.ok(state.completedAt !== null);
+		const withMockFetch = async (
+			responder: (url: string) => { ok: boolean; status: number; body: unknown },
+			fn: () => Promise<void>,
+		) => {
+			globalThis.fetch = (async (input: RequestInfo | URL) => {
+				const url = typeof input === "string" ? input : input.toString();
+				const res = responder(url);
+				return new Response(JSON.stringify(res.body), {
+					status: res.status,
+					headers: { "Content-Type": "application/json" },
+				});
+			}) as typeof fetch;
+			try {
+				await fn();
+			} finally {
+				globalThis.fetch = originalFetch;
+			}
+		};
+
+		it("allows skipping wizard immediately without bureaucratic traps", async () => {
+			await withMockFetch(
+				() => ({ ok: true, status: 200, body: { success: true, skippedAt: new Date().toISOString() } }),
+				async () => {
+					const store = useOnboardingStore.getState();
+					const ok = await store.skipWizard();
+
+					assert.strictEqual(ok, true);
+					const state = useOnboardingStore.getState();
+					assert.strictEqual(state.isSkipped, true);
+					assert.strictEqual(state.isCompleted, false);
+					assert.ok(state.completedAt !== null);
+				},
+			);
 		});
 
-		it("completes launch wizard and marks setup done", async () => {
-			const store = useOnboardingStore.getState();
-			const ok = await store.finishWizard();
+		it("completes launch wizard and marks setup done when server confirms persistence", async () => {
+			await withMockFetch(
+				() => ({ ok: true, status: 200, body: { success: true, createdCount: 15 } }),
+				async () => {
+					const store = useOnboardingStore.getState();
+					const ok = await store.finishWizard();
 
-			assert.strictEqual(ok, true);
-			const state = useOnboardingStore.getState();
-			assert.strictEqual(state.isCompleted, true);
-			assert.strictEqual(state.isSkipped, false);
-			assert.ok(state.completedAt !== null);
+					assert.strictEqual(ok, true);
+					const state = useOnboardingStore.getState();
+					assert.strictEqual(state.isCompleted, true);
+					assert.strictEqual(state.isSkipped, false);
+					assert.ok(state.completedAt !== null);
+				},
+			);
+		});
+
+		it("[W16-BK-05] refuses false completion and keeps isCompleted=false when server returns 401/403", async () => {
+			await withMockFetch(
+				(url) =>
+					url.includes("/api/onboarding/complete")
+						? { ok: false, status: 401, body: { error: "Unauthorized" } }
+						: { ok: true, status: 200, body: { createdCount: 15 } },
+				async () => {
+					const store = useOnboardingStore.getState();
+					const ok = await store.finishWizard();
+
+					assert.strictEqual(ok, false);
+					const state = useOnboardingStore.getState();
+					assert.strictEqual(state.isCompleted, false);
+					assert.ok(state.submitError && state.submitError.includes("401"));
+				},
+			);
 		});
 	});
 
@@ -395,28 +444,48 @@ describe("Clinic Onboarding & Rapid Launch Wizard Suite", () => {
 		});
 
 		it("automatically applies fallback clinic name in finishWizard if left blank", async () => {
-			const store = useOnboardingStore.getState();
-			store.updateProfile({ clinicName: "" });
-			assert.strictEqual(useOnboardingStore.getState().profile.clinicName, "");
+			const originalFetch = globalThis.fetch;
+			globalThis.fetch = (async () =>
+				new Response(JSON.stringify({ success: true, createdCount: 15 }), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				})) as typeof fetch;
+			try {
+				const store = useOnboardingStore.getState();
+				store.updateProfile({ clinicName: "" });
+				assert.strictEqual(useOnboardingStore.getState().profile.clinicName, "");
 
-			const ok = await store.finishWizard();
-			assert.strictEqual(ok, true);
-			const finishedProfile = useOnboardingStore.getState().profile;
-			assert.ok(finishedProfile.clinicName.trim().length > 0);
-			assert.ok(
-				finishedProfile.clinicName.includes("Кабинет доктора") ||
-				finishedProfile.clinicName.includes("Стоматологический кабинет")
-			);
+				const ok = await store.finishWizard();
+				assert.strictEqual(ok, true);
+				const finishedProfile = useOnboardingStore.getState().profile;
+				assert.ok(finishedProfile.clinicName.trim().length > 0);
+				assert.ok(
+					finishedProfile.clinicName.includes("Кабинет доктора") ||
+					finishedProfile.clinicName.includes("Стоматологический кабинет")
+				);
+			} finally {
+				globalThis.fetch = originalFetch;
+			}
 		});
 
 		it("automatically applies fallback clinic name in skipWizard if left blank", async () => {
-			const store = useOnboardingStore.getState();
-			store.updateProfile({ clinicName: "   " });
+			const originalFetch = globalThis.fetch;
+			globalThis.fetch = (async () =>
+				new Response(JSON.stringify({ success: true, skippedAt: new Date().toISOString() }), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				})) as typeof fetch;
+			try {
+				const store = useOnboardingStore.getState();
+				store.updateProfile({ clinicName: "   " });
 
-			const ok = await store.skipWizard();
-			assert.strictEqual(ok, true);
-			const finishedProfile = useOnboardingStore.getState().profile;
-			assert.ok(finishedProfile.clinicName.trim().length > 0);
+				const ok = await store.skipWizard();
+				assert.strictEqual(ok, true);
+				const finishedProfile = useOnboardingStore.getState().profile;
+				assert.ok(finishedProfile.clinicName.trim().length > 0);
+			} finally {
+				globalThis.fetch = originalFetch;
+			}
 		});
 	});
 });

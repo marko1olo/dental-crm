@@ -49,7 +49,7 @@ export const SeniorNursePurchaseOrderModal: React.FC<SeniorNursePurchaseOrderMod
 					<div className="flex items-center gap-3 min-w-0">
 						<ShoppingCart size={20} className="text-[var(--primary)] shrink-0" />
 						<div className="min-w-0">
-							<div className="font-bold text-sm truncate">Заказ поставщику {po.orderNumber}</div>
+							<div className="font-semibold text-sm truncate">Заказ поставщику {po.orderNumber}</div>
 							<div className="text-xs text-[var(--muted)] truncate">
 								Автоматическое пополнение неснижаемого остатка (СанПиН 3.3686-21)
 							</div>
@@ -57,7 +57,7 @@ export const SeniorNursePurchaseOrderModal: React.FC<SeniorNursePurchaseOrderMod
 					</div>
 					<button
 						type="button"
-						className="p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
+						className="h-9 w-9 inline-flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 						onClick={onClose}
 						aria-label="Назад к акту списания"
 					>
@@ -89,7 +89,7 @@ export const SeniorNursePurchaseOrderModal: React.FC<SeniorNursePurchaseOrderMod
 					</div>
 					<button
 						type="button"
-						className="h-9 px-4 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm inline-flex items-center justify-center"
+						className="h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm inline-flex items-center justify-center shrink-0"
 						onClick={onClose}
 					>
 						Готово

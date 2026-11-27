@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from "react";
+import { useEffect, useRef, type Dispatch, type SetStateAction } from "react";
 import { showToast } from "../GlobalToast";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { clientLogger } from "../../services/logging/clientLogger";
@@ -16,6 +16,7 @@ import {
 
 export interface UseRecallHubActionsParams {
 	readonly clinicName: string;
+	readonly candidates?: readonly PatientRecallRecord[] | undefined;
 	readonly setCandidates: Dispatch<SetStateAction<readonly PatientRecallRecord[]>>;
 	readonly setStatusNotice: (msg: string | null) => void;
 	readonly setActivePreviewCandidate: (c: PatientRecallRecord | null) => void;
@@ -29,6 +30,7 @@ export interface UseRecallHubActionsParams {
 
 export function useRecallHubActions({
 	clinicName,
+	candidates,
 	setCandidates,
 	setStatusNotice,
 	setActivePreviewCandidate,
@@ -39,34 +41,67 @@ export function useRecallHubActions({
 	onSendTelegram,
 	authHeaders,
 }: UseRecallHubActionsParams) {
+	const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (noticeTimerRef.current) {
+				clearTimeout(noticeTimerRef.current);
+				noticeTimerRef.current = null;
+			}
+		};
+	}, []);
+
+	const scheduleNoticeClear = () => {
+		if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+		noticeTimerRef.current = setTimeout(() => {
+			setStatusNotice(null);
+			noticeTimerRef.current = null;
+		}, 3500);
+	};
+
 	const handleStatusUpdate = (
 		candidateId: string,
 		newStatus: RecallContactStatus,
 		channel?: "whatsapp" | "telegram" | "sms" | "phone",
 		note?: string,
 	) => {
-		setCandidates((prev) => {
-			const candidate = prev.find(
-				(c) => c.id === candidateId || c.patientId === candidateId,
-			);
-			const targetPatientId = candidate?.patientId ?? candidateId;
+		const matchedCandidate = candidates?.find(
+			(c) => c.id === candidateId || c.patientId === candidateId,
+		);
+		const targetPatientId = matchedCandidate?.patientId ?? candidateId;
+		const previousStatus = matchedCandidate?.status;
 
-			void sendRecallCandidateStatusUpdate({
+		setCandidates((prev) =>
+			prev.map((c) =>
+				c.id === candidateId || c.patientId === candidateId
+					? { ...c, status: newStatus }
+					: c,
+			),
+		);
+
+		void sendRecallCandidateStatusUpdate(
+			{
 				patientId: targetPatientId,
 				status: newStatus,
 				channel,
 				note,
-			}).catch((err) => {
-				clientLogger.error("[RecallActions] Status persist error:", err);
-				showToast("Не удалось сохранить статус осмотра на сервере", "error");
-			});
-
-			return prev.map((c) =>
-				c.id === candidateId || c.patientId === candidateId
-					? { ...c, status: newStatus }
-					: c,
-			);
+			},
+			authHeaders,
+		).catch((err) => {
+			clientLogger.error("[RecallActions] Status persist error:", err);
+			if (previousStatus !== undefined) {
+				setCandidates((prev) =>
+					prev.map((c) =>
+						c.id === candidateId || c.patientId === candidateId
+							? { ...c, status: previousStatus }
+							: c,
+					),
+				);
+			}
+			showToast("Не удалось сохранить статус осмотра на сервере", "error");
 		});
+
 		if (onStatusChange) onStatusChange(candidateId, newStatus);
 	};
 
@@ -91,7 +126,7 @@ export function useRecallHubActions({
 		} catch (err) {
 			setStatusNotice(`WhatsApp открыт. ${err instanceof Error ? err.message : String(err)}`);
 		}
-		setTimeout(() => setStatusNotice(null), 3500);
+		scheduleNoticeClear();
 	};
 
 	const handleTelegram = async (candidate: PatientRecallRecord) => {
@@ -106,6 +141,16 @@ export function useRecallHubActions({
 			window.open(buildTelegramUrl(candidate.phone, message), "_blank", "noopener,noreferrer");
 		}
 		handleStatusUpdate(candidate.id, "invited", "telegram");
+		try {
+			const res = await sendRecallCandidateInvite(
+				{ patientId: candidate.patientId, channel: "telegram", body: message },
+				authHeaders,
+			);
+			setStatusNotice(res.message);
+		} catch (err) {
+			setStatusNotice(`Telegram открыт. ${err instanceof Error ? err.message : String(err)}`);
+		}
+		scheduleNoticeClear();
 	};
 
 	const handleCopySms = async (candidate: PatientRecallRecord) => {

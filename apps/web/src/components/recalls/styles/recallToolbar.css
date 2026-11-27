@@ -22,10 +22,10 @@
 	flex: 1;
 	min-width: 220px;
 }
-.recall-search-input {
+.recall-search-input-wrap .recall-search-input {
 	width: 100%;
 	min-height: 36px;
-	padding: 6px 12px 6px 38px !important;
+	padding: 6px 12px 6px 38px;
 	border: 1px solid var(--rm-border);
 	border-radius: var(--rm-radius-sm);
 	background: var(--rm-bg);

@@ -22,35 +22,35 @@ export const DOCTOR_SPECIALTIES_REGISTRY: readonly DoctorSpecialtyMeta[] = [
 	{
 		code: "therapist",
 		title: "Стоматолог-терапевт",
-		defaultAllowedForms: ["043/у", "СЭМД-101", "СЭМД-108", "ИДС"],
+		defaultAllowedForms: ["Медкарта", "СЭМД-101", "СЭМД-108", "ИДС"],
 		canSignDoctorUkep: true,
 		canSignClinicUkep: false,
 	},
 	{
 		code: "surgeon",
 		title: "Стоматолог-хирург",
-		defaultAllowedForms: ["043/у", "СЭМД-101", "СЭМД-108", "СЭМД-103", "ИДС"],
+		defaultAllowedForms: ["Медкарта", "СЭМД-101", "СЭМД-108", "СЭМД-103", "ИДС"],
 		canSignDoctorUkep: true,
 		canSignClinicUkep: false,
 	},
 	{
 		code: "orthopedist",
 		title: "Стоматолог-ортопед",
-		defaultAllowedForms: ["043/у", "СЭМД-101", "СЭМД-108", "ИДС"],
+		defaultAllowedForms: ["Медкарта", "СЭМД-101", "СЭМД-108", "ИДС"],
 		canSignDoctorUkep: true,
 		canSignClinicUkep: false,
 	},
 	{
 		code: "orthodontist",
 		title: "Врач-ортодонт",
-		defaultAllowedForms: ["043/у", "СЭМД-101", "СЭМД-108", "СЭМД-103", "ИДС"],
+		defaultAllowedForms: ["Медкарта", "СЭМД-101", "СЭМД-108", "СЭМД-103", "ИДС"],
 		canSignDoctorUkep: true,
 		canSignClinicUkep: false,
 	},
 	{
 		code: "chief",
 		title: "Главный врач клиники",
-		defaultAllowedForms: ["043/у", "СЭМД-101", "СЭМД-108", "СЭМД-103", "ИДС", "Справка 1151156"],
+		defaultAllowedForms: ["Медкарта", "СЭМД-101", "СЭМД-108", "СЭМД-103", "ИДС", "Налоговая справка"],
 		canSignDoctorUkep: true,
 		canSignClinicUkep: true,
 	},
@@ -108,11 +108,11 @@ export function cleanBlankLabel(
 
 	let title = code;
 	if (code.includes("043-1") || field.toLowerCase().includes("ортодонт")) {
-		title = "Медицинская карта ортодонтического пациента (043-1/у)";
+		title = "Медицинская карта ортодонтического пациента";
 	} else if (code.includes("043")) {
-		title = "Медицинская карта стоматологического больного (043/у)";
+		title = "Медицинская карта стоматологического пациента";
 	} else if (code.includes("025")) {
-		title = "Медицинская карта амбулаторного пациента (025/у)";
+		title = "Медицинская карта амбулаторного пациента";
 	} else if (code.includes("101") || field.toLowerCase().includes("консультац")) {
 		title = "Протокол консультации и осмотра";
 	} else if (

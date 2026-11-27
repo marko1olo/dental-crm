@@ -29,62 +29,62 @@ export function WhatsappStatusHeader({
 							Сообщение пациенту ({channel === "whatsapp" ? "WhatsApp" : channel === "max" ? "MAX" : "Telegram"})
 						</span>
 					</h3>
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 flex-wrap">
 						{/* Omnichannel Channel Selector (Apple HIG Segmented Control) */}
 						<div
-							className="inline-flex items-center p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] shadow-xs"
+							className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] shadow-xs shrink-0"
 							role="radiogroup"
 							aria-label="Канал связи с пациентом"
 						>
 							<button
 								type="button"
 								onClick={() => onChannelChange("whatsapp")}
-								className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1 ${
+								className={`min-h-[44px] sm:min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1 whitespace-nowrap border-0 cursor-pointer ${
 									channel === "whatsapp"
 										? "bg-[var(--primary)] text-white shadow-xs"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
+										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 								role="radio"
 								aria-checked={channel === "whatsapp"}
 								title="Отправить через WhatsApp"
 							>
-								<MessageSquare size={12} />
+								<MessageSquare size={12} className="shrink-0" />
 								<span>WA</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => onChannelChange("telegram")}
-								className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1 ${
+								className={`min-h-[44px] sm:min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1 whitespace-nowrap border-0 cursor-pointer ${
 									channel === "telegram"
 										? "bg-[var(--primary)] text-white shadow-xs"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
+										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 								role="radio"
 								aria-checked={channel === "telegram"}
 								title="Отправить через Telegram"
 							>
-								<Send size={12} />
+								<Send size={12} className="shrink-0" />
 								<span>TG</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => onChannelChange("max")}
-								className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1 ${
+								className={`min-h-[44px] sm:min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1 whitespace-nowrap border-0 cursor-pointer ${
 									channel === "max"
 										? "bg-[var(--primary)] text-white shadow-xs"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
+										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 								role="radio"
 								aria-checked={channel === "max"}
 								title="Отправить через MAX (VK Max)"
 							>
-								<Bot size={12} />
+								<Bot size={12} className="shrink-0" />
 								<span>MAX</span>
 							</button>
 						</div>
 
 						{phoneHint && (
-							<span className="text-xs font-mono font-medium text-[var(--success)] bg-[var(--success-soft)] px-2 py-0.5 rounded-lg border border-[var(--line)]">
+							<span className="text-xs font-mono font-medium text-[var(--success)] bg-[var(--success-soft)] px-2.5 py-1 rounded-lg border border-[var(--line)] whitespace-nowrap shrink-0">
 								{phoneHint}
 							</span>
 						)}

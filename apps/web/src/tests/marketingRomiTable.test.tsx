@@ -30,8 +30,15 @@ const mockAppLogicValue: any = {
 };
 
 describe("MarketingRomiTable Component & SSR Rendering", () => {
-	it("1. Renders MarketingRomiTable into static HTML markup with complete StomX structure", () => {
-		const html = renderToStaticMarkup(createElement(MarketingRomiTable));
+	it("1. Renders MarketingRomiTable into static HTML markup with complete StomX structure", async () => {
+		const { setRuntimeDemoMode } = await import("../lib/demoMode.js");
+		setRuntimeDemoMode(true);
+		let html = "";
+		try {
+			html = renderToStaticMarkup(createElement(MarketingRomiTable));
+		} finally {
+			setRuntimeDemoMode(null);
+		}
 
 		// Check container and testid
 		assert.ok(html.includes("data-testid=\"marketing-romi-table-section\""));

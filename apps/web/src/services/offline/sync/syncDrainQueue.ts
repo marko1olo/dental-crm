@@ -1,8 +1,8 @@
 import { logger } from "../../../utils/logger";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { clearSyncedOfflineMutations, getPendingOfflineMutations } from "./syncStorageBridge";
 import { getOrCreateClientId } from "./syncMetricsTracker";
 import { processBatchWithRetry } from "./syncBatchProcessor";
-import { flushOfflinePatientBookings } from "../../../pwa/patientOfflineStorage";
 import type { SyncBatchDrainOptions, SyncBatchDrainResult } from "../types";
 
 export async function executeDrainOutbox(
@@ -14,6 +14,10 @@ export async function executeDrainOutbox(
 		jitter = true, organizationId, gatewayUrl = "/api/sync/gateway", headers = {},
 		fetchImpl = typeof fetch !== "undefined" ? fetch : undefined,
 	} = options;
+	const mergedHeaders = {
+		...denteClinicalMutationHeaders(),
+		...headers,
+	};
 
 	const totalResult: SyncBatchDrainResult = {
 		processedCount: 0, appliedCount: 0, duplicateCount: 0, mergedCount: 0,
@@ -28,7 +32,7 @@ export async function executeDrainOutbox(
 	for (let i = 0; i < pending.length; i += batchSize) {
 		const batch = pending.slice(i, i + batchSize);
 		const batchResult = await processBatchWithRetry({
-			batch, clientId, gatewayUrl, headers, maxRetries, baseBackoffMs, maxBackoffMs, jitter, fetchImpl, emit,
+			batch, clientId, gatewayUrl, headers: mergedHeaders, maxRetries, baseBackoffMs, maxBackoffMs, jitter, fetchImpl, emit,
 		});
 
 		totalResult.processedCount += batchResult.processedCount;
@@ -45,7 +49,6 @@ export async function executeDrainOutbox(
 	}
 
 	await clearSyncedOfflineMutations();
-	try { await flushOfflinePatientBookings(); } catch (err) { logger.warn("[OfflineSyncService] Flush PWA err:", err); }
 
 	emit("complete", totalResult);
 	return totalResult;

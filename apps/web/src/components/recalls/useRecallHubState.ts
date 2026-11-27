@@ -50,7 +50,12 @@ export function useRecallHubState(
 				headers: { ...denteClinicalReadHeaders, Accept: "application/json" },
 			});
 			if (!res.ok) throw new Error(`Сервер ответил ${res.status}`);
-			const payload = (await res.json()) as RecallReport;
+			const raw = await res.json();
+			const payload = (
+				raw && typeof raw === "object" && "data" in raw
+					? (raw as { data: RecallReport }).data
+					: raw
+			) as RecallReport;
 			setCandidates((payload.candidates || []).map(mapRecallCandidateToRecord));
 		} catch (err) {
 			setCandidates([]);

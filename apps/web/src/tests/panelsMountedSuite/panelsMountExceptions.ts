@@ -74,22 +74,10 @@ export const DECLARED_UNMOUNTED: ReadonlyArray<DeclaredUnmountedItem> = [
 			"Устаревший калькулятор токсичности анестетиков, сохраненный как прокси-обертка для обратной совместимости тестов. Каноническим SSOT настроек анестезии является DoctorAnesthesiaDefaultsSection.tsx.",
 	},
 	{
-		file: "components/tutorial/CoachMarkTooltip.tsx",
-		name: "CoachMarkTooltip",
-		reason:
-			"Интерактивная всплывающая подсказка с расчетом геометрии подсветки (spotlight) для пошагового обучения врачей и персонала клиники. Протестирована и зафиксирована в src/tests/coachMarkTooltip.test.ts.",
-	},
-	{
 		file: "components/workspace/WorkspaceHeaderBar.tsx",
 		name: "WorkspaceHeaderBar",
 		reason:
 			"Композитная шапка рабочего пространства клиники для демонстрационных стендов. В живом интерфейсе клиники ее функции и кнопки разделены и смонтированы непосредственно внутри канонического workspaceShell.tsx.",
-	},
-	{
-		file: "components/hardware/HardwareSettingsModal.tsx",
-		name: "HardwareSettingsModal",
-		reason:
-			"Модальное окно конфигурации аппаратных интеграций клиники (фискальные регистраторы АТОЛ/Штрих-М, рентген-датчики Visiograph TWAIN, эквайринг-терминалы). В активном веб-клиенте вызывается из контекстной вкладки настроек оборудования по требованию оператора.",
 	},
 ];
 

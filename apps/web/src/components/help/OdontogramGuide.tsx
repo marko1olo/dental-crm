@@ -228,7 +228,7 @@ export const OdontogramGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) 
 				<div className="p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] space-y-3 overflow-x-auto">
 					{/* Upper Arch (Верхняя челюсть) */}
 					<div className="space-y-1">
-						<div className="text-[10px] font-semibold text-[var(--muted)] text-center tracking-wide uppercase">
+						<div className="text-xs font-semibold text-[var(--muted)] text-center">
 							Верхняя челюсть (Правая 18..11 · Левая 21..28)
 						</div>
 						<div className="flex items-center justify-center gap-1 flex-wrap">
@@ -285,7 +285,7 @@ export const OdontogramGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) 
 									</button>
 								))}
 						</div>
-						<div className="text-[10px] font-semibold text-[var(--muted)] text-center tracking-wide uppercase">
+						<div className="text-xs font-semibold text-[var(--muted)] text-center">
 							Нижняя челюсть (Правая 48..41 · Левая 31..38)
 						</div>
 					</div>
@@ -528,9 +528,9 @@ export const OdontogramGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) 
 				<button
 					type="button"
 					onClick={handleLaunchTour}
-					className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
+					className="h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium text-sm inline-flex items-center justify-center gap-2 transition-colors cursor-pointer shrink-0"
 				>
-					<Zap size={14} />
+					<Zap className="w-4 h-4 shrink-0 text-[var(--primary)]" />
 					<span>Запустить обучение</span>
 				</button>
 			</div>

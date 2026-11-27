@@ -9,7 +9,8 @@
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import { clientLogger } from "../../services/logging/clientLogger";
-import { calculateOhiSScore, rublesToKopecks } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { calculateOhiSScore, generateUuidV7, rublesToKopecks } from "@dental/shared";
 
 export type OhiSLevel = "ideal" | "fair" | "poor" | "severe";
 
@@ -172,7 +173,7 @@ export interface CleaningProtocol {
 	readonly clinicalDiaryTemplate: string;
 }
 
-export const CLEANING_PROTOCOLS: readonly CleaningProtocol[] = [
+export const CLEANING_PROTOCOLS: readonly [CleaningProtocol, ...CleaningProtocol[]] = [
 	{
 		id: "complex",
 		title: "Комплекс профессиональной гигиены",
@@ -225,7 +226,7 @@ export interface HomeCarePlan {
 	readonly clinicalAdvice: string;
 }
 
-export const HOME_CARE_PLANS: readonly HomeCarePlan[] = [
+export const HOME_CARE_PLANS: readonly [HomeCarePlan, ...HomeCarePlan[]] = [
 	{
 		id: "standard",
 		label: "Стандартный уход",
@@ -264,11 +265,11 @@ export const HOME_CARE_PLANS: readonly HomeCarePlan[] = [
 	},
 ];
 
-export function resolveHygieneOrganizationId(overrideOrgId?: string | undefined): string {
+export function resolveHygieneOrganizationId(overrideOrgId?: string | undefined): string | null {
 	if (overrideOrgId && overrideOrgId.trim().length > 0) {
 		return overrideOrgId.trim();
 	}
-	if (typeof window !== "undefined") {
+	if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
 		try {
 			const directOrg = localStorage.getItem("dente_organization_id");
 			if (directOrg && directOrg.trim().length > 0) return directOrg.trim();
@@ -287,11 +288,11 @@ export function resolveHygieneOrganizationId(overrideOrgId?: string | undefined)
 				if (parsed?.user?.organizationId) return String(parsed.user.organizationId).trim();
 				if (parsed?.organizationId) return String(parsed.organizationId).trim();
 			}
-		} catch {
-			// Fallback to safe default tenant
+		} catch (err) {
+			clientLogger.warn("Failed to parse hygiene organization context", err, { module: "hygieneCatalogData" });
 		}
 	}
-	return "01a00000-0000-0000-0000-000000000000";
+	return null;
 }
 
 export async function deductWarehouseHygieneConsumables(options: {
@@ -299,24 +300,27 @@ export async function deductWarehouseHygieneConsumables(options: {
 	readonly visitId?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly protocolTitle?: string | undefined;
+	readonly idempotencyKey?: string | undefined;
 }): Promise<boolean> {
 	const orgId = resolveHygieneOrganizationId(options.organizationId);
+	if (!orgId) {
+		clientLogger.warn("Skipped warehouse deduction: organizationId is missing", undefined, { module: "hygieneCatalogData" });
+		showToast("Склад: расходники гигиены учтены в карте приёма (организация не определена)", "info", 2500);
+		return false;
+	}
 	try {
 		const baseUrl = typeof window !== "undefined" && window.location?.origin ? window.location.origin : "http://127.0.0.1:4100";
 		const url = `${baseUrl}/api/inventory/${encodeURIComponent(orgId)}/quick-writeoff-visit-bundle`;
-		const token = typeof window !== "undefined" && typeof localStorage !== "undefined"
-			? (localStorage.getItem("dente_active_session_token") || localStorage.getItem("dente_staff_token") || localStorage.getItem("dente_clinic_token"))
-			: null;
-		const headers: Record<string, string> = { "Content-Type": "application/json" };
-		if (token) {
-			headers["Authorization"] = `Bearer ${token}`;
-		}
+		const headers = denteClinicalMutationHeaders({
+			"Content-Type": "application/json",
+			"Idempotency-Key": options.idempotencyKey ?? generateUuidV7(),
+		});
 		const response = await fetch(url, {
 			method: "POST",
 			headers,
 			body: JSON.stringify({
 				visitType: "hygiene",
-				visitId: options.visitId,
+				...(options.visitId ? { visitId: options.visitId } : {}),
 				notes: `Профгигиена: ${options.protocolTitle || "Комплекс"} [Врач: ${options.doctorName || "Терапевт"}]`,
 			}),
 		});
@@ -393,11 +397,12 @@ export interface CommitHygieneProtocolParams {
 	readonly visitId?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly customNotes?: string | undefined;
+	readonly warehouseIdempotencyKey?: string | undefined;
 }
 
 export function commitHygieneVisitProtocol(params: CommitHygieneProtocolParams): void {
-	const activeProtocol = params.protocol ?? params.cleaningProtocol ?? CLEANING_PROTOCOLS[0]!;
-	const activeCarePlan = params.carePlan ?? params.homeCarePlan ?? HOME_CARE_PLANS[0]!;
+	const activeProtocol = params.protocol ?? params.cleaningProtocol ?? CLEANING_PROTOCOLS[0];
+	const activeCarePlan = params.carePlan ?? params.homeCarePlan ?? HOME_CARE_PLANS[0];
 
 	const ohiSData = {
 		ohi_s: params.ohiS.score,
@@ -428,8 +433,10 @@ export function commitHygieneVisitProtocol(params: CommitHygieneProtocolParams):
 
 	dispatchHygieneInvoiceAndServices(activeProtocol);
 	void deductWarehouseHygieneConsumables({
+		visitId: params.visitId,
 		doctorName: params.doctorName,
 		protocolTitle: activeProtocol.title,
+		idempotencyKey: params.warehouseIdempotencyKey,
 	});
 	showToast("✓ Протокол гигиены успешно зафиксирован в карте приёма и кассе", "success", 3500);
 }

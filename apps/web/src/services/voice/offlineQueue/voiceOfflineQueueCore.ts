@@ -157,4 +157,7 @@ export class VoiceOfflineQueue {
 	}
 }
 
-export const globalVoiceOfflineQueue = new VoiceOfflineQueue();
+export const globalVoiceOfflineQueue = new VoiceOfflineQueue({
+	autoSyncIntervalMs: 0,
+	autoProcessOnEnqueue: false,
+});

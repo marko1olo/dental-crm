@@ -116,7 +116,10 @@ export const DsdCanvasOverlay: React.FC<DsdCanvasOverlayProps> = ({
 		if (activeDragId) {
 			try {
 				(e.target as HTMLElement).releasePointerCapture(e.pointerId);
-			} catch {}
+			} catch (releaseErr) {
+				// Pointer capture may already have been released by browser
+				void releaseErr;
+			}
 			setActiveDragId(null);
 		}
 	};

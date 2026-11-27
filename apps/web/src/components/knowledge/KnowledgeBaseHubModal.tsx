@@ -212,10 +212,10 @@ export const KnowledgeBaseHubModal: React.FC<KnowledgeBaseHubModalProps> = React
 						<button
 							type="button"
 							onClick={() => handleLaunchTour(getTourTrackForGuide(activeTab))}
-							className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-teal-500 text-white text-xs font-semibold hover:bg-teal-600 shadow-xs transition-colors cursor-pointer min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-0"
+							className="inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:bg-[var(--primary-hover)] shadow-sm transition-colors cursor-pointer shrink-0 min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0"
 							title="Запустить интерактивный обучающий квест с подсветкой кнопок"
 						>
-							<Gamepad2 size={16} />
+							<Gamepad2 className="w-4 h-4 shrink-0" />
 							<span className="hidden md:inline">Интерактивный тренажёр</span>
 						</button>
 
@@ -271,7 +271,7 @@ export const KnowledgeBaseHubModal: React.FC<KnowledgeBaseHubModalProps> = React
 									value={searchQuery}
 									onChange={(e) => setSearchQuery(e.target.value)}
 									placeholder="Поиск по темам, кнопкам и клавишам..."
-									className="w-full pl-9 pr-8 py-2 text-xs bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg text-[var(--ink)] placeholder-[var(--muted)] focus:outline-hidden focus:ring-1 focus:ring-teal-500 min-h-[44px] sm:min-h-[34px]"
+									className="w-full !pl-9 pr-8 py-2 text-xs bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg text-[var(--ink)] placeholder-[var(--muted)] focus:outline-hidden focus:ring-1 focus:ring-[var(--primary)] min-h-[44px] sm:min-h-[34px]"
 								/>
 								{searchQuery && (
 									<button
@@ -420,7 +420,7 @@ export const KnowledgeBaseHubModal: React.FC<KnowledgeBaseHubModalProps> = React
 								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 									<div>
 										<div className="flex items-center gap-2 mb-1 flex-wrap">
-											<span className="text-[10px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
+											<span className="text-xs font-semibold tracking-wider text-[var(--primary)] bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
 												{activeGuideMeta.badge}
 											</span>
 											{activeGuideMeta.hotkeys && activeGuideMeta.hotkeys.length > 0 && (
@@ -442,9 +442,9 @@ export const KnowledgeBaseHubModal: React.FC<KnowledgeBaseHubModalProps> = React
 									<button
 										type="button"
 										onClick={() => handleLaunchTour(getTourTrackForGuide(activeTab))}
-										className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-500 text-white text-xs font-semibold hover:bg-teal-600 transition-colors cursor-pointer shrink-0 self-start sm:self-auto min-h-[44px] sm:min-h-[32px]"
+										className="inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-sm font-medium transition-colors cursor-pointer shrink-0 self-start sm:self-auto min-h-[44px] sm:min-h-[36px]"
 									>
-										<Gamepad2 size={14} />
+										<Gamepad2 className="w-4 h-4 shrink-0" />
 										<span>Тренажёр по разделу</span>
 									</button>
 								</div>
@@ -476,7 +476,7 @@ export const KnowledgeBaseHubModal: React.FC<KnowledgeBaseHubModalProps> = React
 							<div className="flex items-center gap-3">
 								<span>Система клинического обучения DENTE</span>
 								<span>•</span>
-								<span className="text-teal-600 dark:text-teal-400 font-medium">100% готовность к работе</span>
+								<span className="text-[var(--primary)] font-medium">Справочный центр клиники</span>
 							</div>
 
 							<div className="flex items-center gap-2">

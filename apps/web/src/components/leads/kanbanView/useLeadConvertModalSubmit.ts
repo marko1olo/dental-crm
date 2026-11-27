@@ -13,6 +13,7 @@ import {
 	resolveLeadBookingChairs,
 	resolveLeadBookingStaff,
 	resolveLeadVisitMinutes,
+	toApiUuidOrUndefined,
 } from "../leadsKanbanTypes";
 import { submitPatientOnlyConversion } from "./submitPatientOnlyConversion";
 import type { ConvertSubmitOptions } from "./convertSubmitTypes";
@@ -52,27 +53,29 @@ export function useLeadConvertModalSubmit(opts: ConvertSubmitOptions) {
 		const chairIdToBook =
 			opts.selectedChairId || resolveLeadBookingChairs(opts.chairs)[0]?.id || FALLBACK_DEFAULT_CHAIR.id;
 
+		const apiDoctorId = toApiUuidOrUndefined(doctorIdToBook);
+		const apiChairId = toApiUuidOrUndefined(chairIdToBook);
+
 		opts.setIsBooking(true);
 		try {
 			const res = await opts.convertLeadToAppointment(opts.convertingLeadId, {
 				appointmentStart: startDateTime.toISOString(),
 				appointmentEnd: endDateTime.toISOString(),
-				chairId: chairIdToBook,
-				doctorId: doctorIdToBook,
+				...(apiChairId ? { chairId: apiChairId } : {}),
+				...(apiDoctorId ? { doctorId: apiDoctorId } : {}),
 				reason: options?.reason,
 				comment: options?.comment,
 				consentMedical: options?.consentMedical,
 				consentMarketing: options?.consentMarketing,
 			});
 			const activeLead = opts.leads.find((l) => l.id === opts.convertingLeadId);
-			const src = activeLead?.source ? ` (источник: ${activeLead.source})` : "";
 			const msg = activeLead?.existingPatient
 				? `Пациент ${activeLead.existingPatient.fullName} записан на приём`
 				: `Пациент успешно записан на приём, создана карта`;
 			showToast(msg, "success");
 			opts.setIsConvertOpen(false);
 			opts.setConvertingLeadId(null);
-			opts.fetchLeads();
+			await opts.fetchLeads();
 
 			const createdPatient = res?.patient as { id?: string; fullName?: string; phone?: string } | undefined;
 			opts.navigateToScheduleWithBooking({

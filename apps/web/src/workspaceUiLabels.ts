@@ -32,19 +32,54 @@ export const appointmentLabels: Record<Appointment["status"], string> = {
 	...({ in_progress: "В кресле", IN_PROGRESS: "В кресле", IN_TREATMENT: "В кресле" }),
 };
 
-export const documentLabels = Object.fromEntries(
-	Object.entries(documentKindMetadata).map(([kind, metadata]) => [
-		kind,
-		metadata.label,
-	]),
-) as Record<GeneratedDocument["kind"], string>;
+function buildDocumentLabelMap(
+	pick: "label" | "actionLabel",
+): Record<GeneratedDocument["kind"], string> {
+	return {
+		paid_medical_services_contract: documentKindMetadata.paid_medical_services_contract[pick],
+		completed_works_act: documentKindMetadata.completed_works_act[pick],
+		tax_deduction_certificate: documentKindMetadata.tax_deduction_certificate[pick],
+		informed_consent: documentKindMetadata.informed_consent[pick],
+		procedure_specific_consent_packet: documentKindMetadata.procedure_specific_consent_packet[pick],
+		treatment_plan: documentKindMetadata.treatment_plan[pick],
+		treatment_plan_acceptance: documentKindMetadata.treatment_plan_acceptance[pick],
+		anesthesia_consent_log: documentKindMetadata.anesthesia_consent_log[pick],
+		prescription_medication_order: documentKindMetadata.prescription_medication_order[pick],
+		personal_data_processing_consent: documentKindMetadata.personal_data_processing_consent[pick],
+		minor_legal_representative_consent: documentKindMetadata.minor_legal_representative_consent[pick],
+		photo_video_consent: documentKindMetadata.photo_video_consent[pick],
+		medical_intervention_refusal: documentKindMetadata.medical_intervention_refusal[pick],
+		treatment_cost_estimate: documentKindMetadata.treatment_cost_estimate[pick],
+		payment_invoice: documentKindMetadata.payment_invoice[pick],
+		payment_receipt: documentKindMetadata.payment_receipt[pick],
+		installment_payment_schedule: documentKindMetadata.installment_payment_schedule[pick],
+		post_visit_recommendations: documentKindMetadata.post_visit_recommendations[pick],
+		parent_memo: documentKindMetadata.parent_memo[pick],
+		bravery_diploma: documentKindMetadata.bravery_diploma[pick],
+		outpatient_medical_card_025u: documentKindMetadata.outpatient_medical_card_025u[pick],
+		dental_medical_card_043u: documentKindMetadata.dental_medical_card_043u[pick],
+		orthodontic_medical_card_043_1u: documentKindMetadata.orthodontic_medical_card_043_1u[pick],
+		daily_dentist_diary_037u: documentKindMetadata.daily_dentist_diary_037u[pick],
+		summary_dentist_statement_039u: documentKindMetadata.summary_dentist_statement_039u[pick],
+		medical_record_extract: documentKindMetadata.medical_record_extract[pick],
+		medical_record_copy_request: documentKindMetadata.medical_record_copy_request[pick],
+		medical_document_release_receipt: documentKindMetadata.medical_document_release_receipt[pick],
+		xray_cbct_referral: documentKindMetadata.xray_cbct_referral[pick],
+		radiation_dose_sheet: documentKindMetadata.radiation_dose_sheet[pick],
+		lab_work_order: documentKindMetadata.lab_work_order[pick],
+		visit_attendance_certificate: documentKindMetadata.visit_attendance_certificate[pick],
+		warranty_service_memo: documentKindMetadata.warranty_service_memo[pick],
+		payment_refund_correction_request: documentKindMetadata.payment_refund_correction_request[pick],
+		tax_deduction_application: documentKindMetadata.tax_deduction_application[pick],
+		legacy_tax_deduction_certificate: documentKindMetadata.legacy_tax_deduction_certificate[pick],
+		tax_deduction_registry: documentKindMetadata.tax_deduction_registry[pick],
+		patient_intake_questionnaire: documentKindMetadata.patient_intake_questionnaire[pick],
+	};
+}
 
-export const documentActionLabels = Object.fromEntries(
-	Object.entries(documentKindMetadata).map(([kind, metadata]) => [
-		kind,
-		metadata.actionLabel,
-	]),
-) as Record<GeneratedDocument["kind"], string>;
+export const documentLabels: Record<GeneratedDocument["kind"], string> = buildDocumentLabelMap("label");
+
+export const documentActionLabels: Record<GeneratedDocument["kind"], string> = buildDocumentLabelMap("actionLabel");
 
 export const documentSourceStatusClassNames: Record<
 	DocumentSourceStatus,
@@ -299,11 +334,20 @@ export const communicationStatusLabels: Record<
 	failed: "ошибка",
 };
 
-export const moneyDocumentKinds = new Set<GeneratedDocument["kind"]>(
-	Object.entries(documentKindMetadata)
-		.filter(([, metadata]) => metadata.amountSource !== "none")
-		.map(([kind]) => kind as GeneratedDocument["kind"]),
-);
+function isGeneratedDocumentKind(
+	value: string,
+): value is GeneratedDocument["kind"] {
+	return value in documentLabels;
+}
+
+const moneyKindList: GeneratedDocument["kind"][] = [];
+for (const [kind, metadata] of Object.entries(documentKindMetadata)) {
+	if (metadata.amountSource !== "none" && isGeneratedDocumentKind(kind)) {
+		moneyKindList.push(kind);
+	}
+}
+
+export const moneyDocumentKinds = new Set<GeneratedDocument["kind"]>(moneyKindList);
 
 export const structuredPayloadDocumentKinds = new Set<
 	GeneratedDocument["kind"]

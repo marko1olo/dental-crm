@@ -96,6 +96,11 @@
 	border-color: var(--primary);
 	color: #ffffff;
 }
+.rvg-capture-modal .rvg-projection-btn.active {
+	background: rgba(13, 148, 136, 0.28);
+	border-color: var(--teal, #14b8a6);
+	color: #ffffff;
+}
 .rvg-capture-footer {
 	background: var(--paper, #070b14);
 	border-top-color: var(--line, rgba(255, 255, 255, 0.12));

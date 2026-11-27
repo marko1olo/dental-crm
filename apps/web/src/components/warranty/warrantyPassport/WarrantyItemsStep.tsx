@@ -1,8 +1,8 @@
-import { CheckCircle2, FileCheck } from "lucide-react";
+import { CheckCircle2, FileCheck, History } from "lucide-react";
 import type React from "react";
 import type { WarrantyCalculationResult, WarrantyItem, WarrantyRiskFactors } from "../warrantyEngine.js";
 import type { StarQuickPreset, WarrantyCategory } from "../warrantyPresets.js";
-import type { CompletedTreatmentStage } from "./types";
+import type { CompletedTreatmentStage, HistoricalWarrantyCertificate } from "./types";
 import { WarrantyTeethFormula } from "./itemsStep/WarrantyTeethFormula";
 import { WarrantyCategoryPresetsBar } from "./itemsStep/WarrantyCategoryPresetsBar";
 import { WarrantyItemFormInputs } from "./itemsStep/WarrantyItemFormInputs";
@@ -38,10 +38,34 @@ export interface WarrantyItemsStepProps {
 	riskFactors: WarrantyRiskFactors;
 	onRiskFactorsChange: React.Dispatch<React.SetStateAction<WarrantyRiskFactors>>;
 	calculation: WarrantyCalculationResult;
+	historicalCertificates?: HistoricalWarrantyCertificate[] | undefined;
+	isLoadingHistory?: boolean | undefined;
+	activeCertificateId?: string | undefined;
+	onSelectHistoricalCertificate?: ((cert: HistoricalWarrantyCertificate) => void) | undefined;
+}
+
+function formatCertificateDateRu(isoStr: string): string {
+	const d = new Date(isoStr);
+	if (Number.isNaN(d.getTime())) return isoStr;
+	return d.toLocaleDateString("ru-RU");
+}
+
+function formatCertificateStatusRu(status: string): string {
+	if (status === "active") return "Активен";
+	if (status === "conditional") return "Условная";
+	if (status === "voided") return "Приостановлен";
+	return status;
 }
 
 export const WarrantyItemsStep: React.FC<WarrantyItemsStepProps> = (props) => {
-	const { completedStages, onImportCompletedStages } = props;
+	const {
+		completedStages,
+		onImportCompletedStages,
+		historicalCertificates = [],
+		isLoadingHistory = false,
+		activeCertificateId,
+		onSelectHistoricalCertificate,
+	} = props;
 
 	return (
 		<div className="warranty-studio-grid">
@@ -66,6 +90,59 @@ export const WarrantyItemsStep: React.FC<WarrantyItemsStepProps> = (props) => {
 						</button>
 					</div>
 				)}
+
+				{/* История оформленных гарантийных паспортов пациента (0px шума если пусто) */}
+				{isLoadingHistory ? (
+					<div
+						className="h-14 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] animate-pulse"
+						data-testid="warranty-history-skeleton"
+						aria-label="Загрузка истории гарантийных паспортов"
+					/>
+				) : historicalCertificates.length > 0 ? (
+					<div className="warranty-card-section" data-testid="warranty-history-list">
+						<div className="warranty-section-header">
+							<h4>
+								<History size={16} />
+								Ранее оформленные паспорта пациента ({historicalCertificates.length})
+							</h4>
+						</div>
+						<div className="flex flex-wrap gap-2">
+							{historicalCertificates.map((cert) => {
+								const isSelected = activeCertificateId === cert.certificateNumber;
+								return (
+									<button
+										key={cert.id}
+										type="button"
+										onClick={() => onSelectHistoricalCertificate?.(cert)}
+										className={`w-full sm:w-auto min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg border text-xs flex flex-wrap items-center justify-between gap-2 text-left transition-colors cursor-pointer ${
+											isSelected
+												? "border-[var(--primary)] bg-[var(--teal-soft)] text-[var(--ink)] font-semibold"
+												: "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)]"
+										}`}
+										data-testid={`warranty-history-item-${cert.certificateNumber}`}
+									>
+										<span className="font-mono font-semibold break-all">{cert.certificateNumber}</span>
+										<span className="inline-flex items-center gap-2 shrink-0 ml-auto whitespace-nowrap">
+											<span className="text-[var(--ink-muted)]">{formatCertificateDateRu(cert.issuedAt)}</span>
+											<span className="text-[var(--ink-muted)]">{cert.warrantyMonths} мес.</span>
+											<span
+												className={`h-6 px-2 text-xs font-medium rounded-full inline-flex items-center shrink-0 ${
+													cert.status === "active"
+														? "bg-[var(--success-soft)] text-[var(--ok-fg,#059669)]"
+														: cert.status === "conditional"
+															? "bg-[var(--warn-bg)] text-[var(--warn-fg)]"
+															: "bg-[var(--danger-soft)] text-[var(--danger)]"
+												}`}
+											>
+												{formatCertificateStatusRu(cert.status)}
+											</span>
+										</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+				) : null}
 
 				{/* 1. Зубная формула FDI */}
 				<WarrantyTeethFormula

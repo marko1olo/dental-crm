@@ -96,6 +96,8 @@
 	gap: 10px;
 	grid-template-columns: auto minmax(0, 1fr);
 	min-height: 88px;
+	min-width: 0;
+	max-width: 100%;
 	padding: 12px;
 }
 
@@ -110,6 +112,8 @@
 	font-size: 13px;
 	font-weight: 600;
 	margin: 0;
+	min-width: 0;
+	overflow-wrap: anywhere;
 }
 
 .finance-empty-state .text-button {
@@ -299,12 +303,23 @@
 	display: grid;
 	gap: 12px;
 	grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+	min-width: 0;
+	max-width: 100%;
+}
+
+@media (max-width: 860px) {
+	.finance-split {
+		grid-template-columns: minmax(0, 1fr) !important;
+	}
 }
 
 .finance-list {
 	display: grid;
+	grid-template-columns: minmax(0, 1fr);
 	gap: 9px;
 	padding: 12px;
+	min-width: 0;
+	max-width: 100%;
 }
 
 .finance-list .panel-heading {

@@ -7,6 +7,12 @@ import type {
 } from "@dental/shared";
 import type { VisitNoteForm } from "./clinicalConstants";
 import {
+	OFFLINE_DB_NAME,
+	OFFLINE_DB_VERSION,
+	PENDING_SPEECH_CHUNKS_STORE_NAME,
+	PENDING_VISIT_SAVES_STORE_NAME,
+} from "../services/offline/storage/constants";
+import {
 	dicomWorkbenchDraftStoreName,
 	mprWorkbenchDraftStoreName,
 } from "./imagingConstants";
@@ -111,13 +117,13 @@ export const pendingVisitSaveQueueKey = "dental-crm:pending-visit-saves";
 
 export const pendingSpeechChunkQueueKey = "dental-crm:pending-speech-chunks";
 
-export const speechChunkDbName = "dental-crm-offline";
+export const speechChunkDbName = OFFLINE_DB_NAME;
 
-export const speechChunkDbVersion = 4;
+export const speechChunkDbVersion = OFFLINE_DB_VERSION;
 
-export const pendingVisitSaveStoreName = "pendingVisitSaves";
+export const pendingVisitSaveStoreName = PENDING_VISIT_SAVES_STORE_NAME;
 
-export const speechChunkStoreName = "pendingSpeechChunks";
+export const speechChunkStoreName = PENDING_SPEECH_CHUNKS_STORE_NAME;
 
 export const speechLocalStorageFallbackMaxBytes = 4_000_000;
 

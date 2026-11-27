@@ -75,28 +75,28 @@
 
 @media (max-width: 768px) {
 	.recall-task-calls-stream {
-		padding: 0 12px 20px 12px !important;
-		gap: 10px !important;
+		padding: 0 12px 20px 12px;
+		gap: 10px;
 	}
 	.recall-task-call-card {
-		flex-direction: column !important;
-		align-items: stretch !important;
-		gap: 12px !important;
-		padding: 12px !important;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 12px;
+		padding: 12px;
 	}
 	.recall-task-call-card__actions {
-		display: grid !important;
-		grid-template-columns: repeat(2, 1fr) !important;
-		gap: 8px !important;
-		width: 100% !important;
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+		width: 100%;
 	}
 	.recall-task-call-card__actions .recall-action-btn--book {
-		grid-column: 1 / -1 !important;
-		width: 100% !important;
+		grid-column: 1 / -1;
+		width: 100%;
 	}
 	.recall-task-call-card__actions .recall-action-btn {
-		width: 100% !important;
-		min-height: 44px !important;
-		justify-content: center !important;
+		width: 100%;
+		min-height: 44px;
+		justify-content: center;
 	}
 }

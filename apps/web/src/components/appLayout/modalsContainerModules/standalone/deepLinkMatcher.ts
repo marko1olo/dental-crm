@@ -55,6 +55,25 @@ export function matchesDeepLink(
 
 	const { search, hash } = context;
 
+	// 0. Guard workspace Settings (#settings, #settings/*) and Patients (#patients) routes unless explicitly opened as standalone
+	if (
+		(hash === "#settings" ||
+			hash.startsWith("#settings/") ||
+			hash.startsWith("#settings?") ||
+			hash === "#patients" ||
+			hash.startsWith("#patients?")) &&
+		!context.searchParams.has("standalone") &&
+		!context.searchParams.has("stand") &&
+		!search.includes("=1") &&
+		!search.includes("=true") &&
+		!context.searchParams.has("access") &&
+		!context.searchParams.has("staff") &&
+		!context.searchParams.has("rbac") &&
+		!context.searchParams.has("hardware")
+	) {
+		return false;
+	}
+
 	// 1. Негативный фильтр (Negative Guard / Exclusions)
 	if (criteria.exclude && criteria.exclude.length > 0) {
 		const isExcluded = criteria.exclude.some((ex) => {

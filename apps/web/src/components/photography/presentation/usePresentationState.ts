@@ -13,6 +13,7 @@ import {
 } from '../presentationSyncProtocol';
 import { clamp } from '../photoProtocolMath';
 import { PatientPresentationStandaloneViewProps } from '../PatientPresentationStandaloneView';
+import { logger } from '../../../utils/logger';
 import { PatientPresentationState, PresentationColors } from './types';
 
 export function usePresentationState(props: PatientPresentationStandaloneViewProps) {
@@ -22,7 +23,7 @@ export function usePresentationState(props: PatientPresentationStandaloneViewPro
 	const [afterLabel, setAfterLabel] = useState(props.initialAfterLabel || 'После лечения');
 	const [beforeShade, setBeforeShade] = useState(props.initialBeforeShade);
 	const [afterShade, setAfterShade] = useState(props.initialAfterShade);
-	const [clinicName, setClinicName] = useState(props.initialClinicName || 'DENTE CLINIC');
+	const [clinicName, setClinicName] = useState(props.initialClinicName || 'Стоматологическая клиника');
 	const [patientName, setPatientName] = useState(props.initialPatientName || '');
 	const [mode, setMode] = useState<PresentationComparisonMode>(props.initialMode || 'split');
 	const [splitDirection, setSplitDirection] = useState<PresentationSplitDirection>('vertical');
@@ -61,7 +62,9 @@ export function usePresentationState(props: PatientPresentationStandaloneViewPro
 				if (typeof p.splitPercent === 'number') setSplitPercent(p.splitPercent);
 				if (typeof p.blendOpacity === 'number') setBlendOpacity(p.blendOpacity);
 			}
-		} catch {}
+		} catch (err) {
+			logger.warn('[usePresentationState] Failed to restore presentation session state', err);
+		}
 	}, []);
 
 	useEffect(() => {

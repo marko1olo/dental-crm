@@ -3,7 +3,7 @@
  * apps/web/src/components/endo/ChairsideEndoQuickBar.tsx
  *
  * Монолитная компактная экспресс-полоса эндодонтии у кресла врача (Мандаты 8e, 8n, 8am).
- * Ровно 1 Primary CTA кнопка #0d9488, 1-клик анатомические нормы, списание материалов в бэке.
+ * Ровно 1 Primary CTA кнопка #0d9488, анатомические нормы по умолчанию, списание материалов в бэке.
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";

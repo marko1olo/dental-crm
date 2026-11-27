@@ -25,11 +25,28 @@ export function usePublicBookingState(props: PublicBookingWidgetProps) {
 	const tg = useBookingTelegramContext(embedMode, form.patientName, form.setPatientName, form.patientPhone, form.setPatientPhone, showToast);
 	const sms = useBookingSmsState(organizationId, apiBaseUrl, form.patientPhone, requireSmsVerification, showToast);
 
-	const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(() => initialDoctorId || (customDoctors?.length === 1 ? customDoctors[0]!.id : null));
+	const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(() => {
+		if (initialDoctorId) return initialDoctorId;
+		return customDoctors?.length === 1 && customDoctors[0] ? customDoctors[0].id : null;
+	});
 	const avail = useBookingAvailability({ organizationId, apiBaseUrl, selectedDate: cal.selectedDate, selectedDoctorId });
 	const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(() => initialCategoryId || "therapy");
 
-	const selectedCategory: BookingCategoryOption = useMemo(() => CANONICAL_BOOKING_CATEGORIES.find((c) => c.id === selectedCategoryId) || CANONICAL_BOOKING_CATEGORIES[0]!, [selectedCategoryId]);
+	const selectedCategory: BookingCategoryOption = useMemo(() => {
+		const fallbackCategory: BookingCategoryOption = {
+			id: "therapy",
+			title: "Консультация",
+			subtitle: "Первичный осмотр врача",
+			durationMinutes: 30,
+			priceLabel: "Бесплатно",
+			iconName: "Stethoscope",
+		};
+		return (
+			CANONICAL_BOOKING_CATEGORIES.find((c) => c.id === selectedCategoryId) ??
+			CANONICAL_BOOKING_CATEGORIES[0] ??
+			fallbackCategory
+		);
+	}, [selectedCategoryId]);
 
 	const activeDoctors: BookingDoctorData[] = useMemo(() => {
 		if (customDoctors && customDoctors.length > 0) {
@@ -60,8 +77,9 @@ export function usePublicBookingState(props: PublicBookingWidgetProps) {
 			if (found) return found;
 		}
 		// При selectedDoctorId === null («Любой врач») подставляем свободного доктора для выбранного слота
-		if (avail.selectedSlot?.availableDoctorIds && avail.selectedSlot.availableDoctorIds.length > 0) {
-			const freeDoctor = activeDoctors.find((d) => avail.selectedSlot!.availableDoctorIds!.includes(d.id));
+		const slotDoctorIds = avail.selectedSlot?.availableDoctorIds;
+		if (slotDoctorIds && slotDoctorIds.length > 0) {
+			const freeDoctor = activeDoctors.find((d) => slotDoctorIds.includes(d.id));
 			if (freeDoctor) return freeDoctor;
 		}
 		if (activeDoctors.length > 0 && activeDoctors[0]) {

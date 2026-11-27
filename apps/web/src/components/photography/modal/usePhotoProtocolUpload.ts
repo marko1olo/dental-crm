@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { generateUuidV7 } from '@dental/shared';
 import { PhotoProtocolPreset, PhotoSlotRecord, EXPRESS_6_SLOT_PROTOCOL, getPresetById } from '../photoGridPresets';
 import { compressChairsidePhotoToBlobUrl } from '../chairsidePhotoCompressor';
 import { showToast } from '../../GlobalToast';
-import { denteAdminSecretRequestHeaders } from '../../../lib/denteRequestHeaders';
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from '../../../lib/denteRequestHeaders';
 import { clientLogger } from '../../../services/logging/clientLogger';
 
 export interface UsePhotoProtocolUploadProps {
@@ -62,7 +66,7 @@ export function usePhotoProtocolUpload(
 		const fetchSavedProtocol = async () => {
 			try {
 				const res = await fetch(`/api/patients/${patientId}/photo-protocol`, {
-					headers: denteAdminSecretRequestHeaders(),
+					headers: denteClinicalReadHeaders(),
 				});
 				if (!res.ok) return;
 				const data = await res.json();
@@ -130,7 +134,13 @@ export function usePhotoProtocolUpload(
 			const url = visitId ? `/api/files/visits/${visitId}/attachments` : `/api/files/patients/${patientId}/attachments`;
 			const fd = new FormData();
 			fd.append('file', blob, rawFilename.endsWith('.webp') ? rawFilename : `${rawFilename}.webp`);
-			const res = await fetch(url, { method: 'POST', headers: denteAdminSecretRequestHeaders(), body: fd });
+			const res = await fetch(url, {
+				method: 'POST',
+				headers: denteClinicalMutationHeaders({
+					'Idempotency-Key': generateUuidV7(),
+				}),
+				body: fd,
+			});
 			return res.ok ? ((await res.json())?.file?.url || null) : null;
 		} catch {
 			return null;
@@ -204,9 +214,9 @@ export function usePhotoProtocolUpload(
 				const res = await fetch(`/api/patients/${patientId}/photo-protocol`, {
 					method: 'POST',
 					headers: {
-						...denteAdminSecretRequestHeaders(),
+						...denteClinicalMutationHeaders(),
 						'Content-Type': 'application/json',
-						'Idempotency-Key': crypto.randomUUID(),
+						'Idempotency-Key': generateUuidV7(),
 					},
 					body: JSON.stringify({
 						presetId: activePreset.id,

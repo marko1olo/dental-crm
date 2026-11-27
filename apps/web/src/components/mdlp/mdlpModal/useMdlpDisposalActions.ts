@@ -1,8 +1,13 @@
-import { useEffect, useState } from "react";
-import { type ChestnyZnakScannedItem, generateUuidV7 } from "@dental/shared";
+import { useEffect, useRef, useState } from "react";
+import {
+	type ChestnyZnakScannedItem,
+	createChestnyZnakScannedItem,
+	generateUuidV7,
+} from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
+import { logger } from "../../../utils/logger.js";
 import {
 	type MdlpOfflinePackage,
 	createShiftCarpulesBatch,
@@ -45,24 +50,39 @@ export function useMdlpDisposalActions(
 	const [offlineQueue, setOfflineQueue] = useState<MdlpOfflinePackage[]>([]);
 	const [showOfflineDrawer, setShowOfflineDrawer] = useState(false);
 	const [showEmergencyScannerBypass, setShowEmergencyScannerBypass] = useState(false);
+	const disposalIdempotencyKeyRef = useRef<string | null>(null);
 
 	useEffect(() => {
-		if (isOpen) {
-			fetchMdlpStatus().then((statusInfo) => {
+		if (!isOpen) {
+			disposalIdempotencyKeyRef.current = null;
+			return;
+		}
+		fetchMdlpStatus()
+			.then((statusInfo) => {
 				setCrptStatus(statusInfo.status);
 				setCrptMessage(statusInfo.message);
-			}).catch(() => {
+			})
+			.catch((err: unknown) => {
+				logger.warn("[useMdlpDisposalActions] fetchMdlpStatus failed:", err);
 				setCrptStatus("offline");
 				setCrptMessage("Автономный режим клиники");
 			});
 
-			if (offlineQueue.length === 0) {
-				fetchMdlpLiveQueue().then((live) => {
+		if (offlineQueue.length === 0) {
+			fetchMdlpLiveQueue()
+				.then((live) => {
 					if (live.length > 0) setOfflineQueue(live);
-				}).catch(() => null);
-			}
+				})
+				.catch((err: unknown) => {
+					logger.warn("[useMdlpDisposalActions] fetchMdlpLiveQueue failed:", err);
+					showToast("Не удалось загрузить сохранённую очередь МДЛП", "warning");
+				});
 		}
 	}, [isOpen, offlineQueue.length]);
+
+	useEffect(() => {
+		disposalIdempotencyKeyRef.current = null;
+	}, [scannedItems]);
 
 	const handleDeferredDisposal = async () => {
 		let itemsToQueue = scannedItems;
@@ -127,37 +147,30 @@ export function useMdlpDisposalActions(
 	const handleEmergencyDispense = (preset: (typeof EMERGENCY_DISPENSE_PRESETS)[0]) => {
 		const isDemo = isDemoShowcaseMode();
 		const name = isDemo ? `${preset.shortName} [ДЕМО]` : preset.shortName;
-		const batch = createShiftCarpulesBatch(1);
-		const baseItem = batch[0] ?? {
-			id: `emg-${Date.now()}`,
-			rawBarcode: preset.code,
-			gtin: "03664798000016",
-			serialNumber: `EMG${Date.now()}`,
-			sgtin: `03664798000016EMG${Date.now()}`,
-			expirationDate: "2028-12-31",
-			expirationDateRaw: "281231",
-			isExpired: false,
-			isExpiringSoon: false,
-			daysUntilExpiration: 730,
-			series: "EMG-2026",
-			lot: "EMG-2026",
-			cryptoKey: "ABCD",
-			cryptoSignature: "SIG1234567890abcdefghijklmnopqrstuvwxyz1234",
-			status: "verified" as const,
-			statusReason: "Аварийная выдача",
+		const parsedItem = createChestnyZnakScannedItem(preset.code, { costRub: preset.cost });
+		const newItem: ChestnyZnakScannedItem = {
+			...parsedItem,
 			tradeName: name,
-			inn: "Артикаин + Эпинефрин",
-			dosageForm: "Раствор для инъекций",
-			recognizedDrug: null,
 			costRub: preset.cost,
-			vatRate: 10 as const,
-			scannedAt: new Date().toISOString(),
 		};
-		const newItem = { ...baseItem, tradeName: name, costRub: preset.cost };
 		setScannedItems((prev) => [newItem, ...prev]);
 		playMdlpBeep(true);
-		submitMdlpBarcodeScan(preset.code, true).catch(() => null);
 		showToast(`Аварийная выдача: ${name} выдан врачу`, "success");
+		void submitMdlpBarcodeScan(preset.code, true)
+			.then((scanRes) => {
+				if (!scanRes.success) {
+					showToast(
+						scanRes.error || "Не удалось зафиксировать аварийную выдачу в журнале МДЛП",
+						"warning",
+					);
+				}
+			})
+			.catch((err: unknown) => {
+				showToast(
+					err instanceof Error ? err.message : "Ошибка отправки аварийной выдачи в МДЛП",
+					"error",
+				);
+			});
 	};
 
 	const handleSyncOfflineQueue = async () => {
@@ -185,7 +198,8 @@ export function useMdlpDisposalActions(
 		}
 
 		playMdlpBeep(true);
-		const idempotencyKey = generateUuidV7();
+		const idempotencyKey = disposalIdempotencyKeyRef.current ?? generateUuidV7();
+		disposalIdempotencyKeyRef.current = idempotencyKey;
 		const staffName = getActiveStaffName();
 		try {
 			const res = await fetch("/api/mdlp/batch-disposal", {
@@ -216,6 +230,7 @@ export function useMdlpDisposalActions(
 				throw new Error(`Ошибка сервера: ${res.status} ${res.statusText}`);
 			}
 
+			disposalIdempotencyKeyRef.current = null;
 			showToast(
 				`✓ Списание успешно подтверждено: ${itemsToDispose.length} упаковок зафиксировано`,
 				"success",
@@ -237,6 +252,7 @@ export function useMdlpDisposalActions(
 				reason: "Списание при оказании медпомощи (сохранено в офлайн-буфер при сетевом сбое)",
 				patientId: patientId ?? undefined,
 				visitId: visitId ?? undefined,
+				idempotencyKey,
 			};
 			const updated = [offlinePkg, ...offlineQueue];
 			setOfflineQueue(updated);

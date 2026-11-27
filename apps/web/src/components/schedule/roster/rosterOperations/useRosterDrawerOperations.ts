@@ -30,7 +30,7 @@ export function useRosterDrawerOperations({
 
 	const handleOpenCreateInCell = (dateIso: string, cabinetId: string, chairId: string) => {
 		const defaultDoc = staffList.find((s) => s.isDoctor) || staffList[0] ||
-			(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0]! : undefined);
+			(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0] : undefined);
 
 		if (!defaultDoc) {
 			setNotification({

@@ -8,16 +8,13 @@
  * - Автономная защита: отсутствие потери данных врача при аварийных сбоях питания
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
-	AlertCircle,
 	CheckCircle2,
-	Clock,
-	Download,
 	Layers,
 	RefreshCw,
-	ShieldCheck,
 } from "lucide-react";
+import type { CrdtOutboxQueueItem } from "@dental/shared";
 import { useOfflineSync } from "../../hooks/useOfflineSync";
 import type { OfflineMutation } from "../../services/offline";
 import { showToast } from "../GlobalToast";
@@ -25,28 +22,87 @@ import { showToast } from "../GlobalToast";
 export interface OfflineMutationQueueViewerProps {
 	readonly className?: string | undefined;
 	readonly maxHeight?: string | undefined;
+	readonly crdtItems?: readonly CrdtOutboxQueueItem[] | undefined;
+	readonly onSyncAll?: (() => Promise<void>) | undefined;
+}
+
+interface UnifiedQueueRow {
+	id: string;
+	action: string;
+	entityType: string;
+	entityId: string;
+	timestamp: number | string;
+	status: string;
+	retryCount: number;
+	payload: unknown;
 }
 
 export const OfflineMutationQueueViewer: React.FC<OfflineMutationQueueViewerProps> = ({
 	className = "",
 	maxHeight = "360px",
+	crdtItems = [],
+	onSyncAll,
 }) => {
 	const {
 		pendingMutations,
-		pendingMutationCount,
 		isSyncing,
 		isOnline,
 		syncNow,
-		clearSynced,
-		lastSyncAt,
-		lastSyncError,
 	} = useOfflineSync();
 
-	const [selectedMutation, setSelectedMutation] = useState<OfflineMutation | null>(null);
+	const [selectedMutation, setSelectedMutation] = useState<UnifiedQueueRow | null>(null);
+
+	const unifiedRows = useMemo<UnifiedQueueRow[]>(() => {
+		const seenIds = new Set<string>();
+		const rows: UnifiedQueueRow[] = [];
+
+		for (const mut of pendingMutations as OfflineMutation[]) {
+			seenIds.add(mut.mutationId);
+			rows.push({
+				id: mut.mutationId,
+				action: mut.action,
+				entityType: mut.entityType,
+				entityId: mut.entityId,
+				timestamp: mut.timestamp,
+				status: mut.status,
+				retryCount: mut.retryCount,
+				payload: mut.payload,
+			});
+		}
+
+		for (const item of crdtItems) {
+			if (seenIds.has(item.mutationId)) continue;
+			seenIds.add(item.mutationId);
+			rows.push({
+				id: item.mutationId,
+				action: item.action,
+				entityType: item.entityKind,
+				entityId: item.entityId,
+				timestamp: item.createdAtMs || item.createdAtIso,
+				status: item.retryCount > 0 ? "Повтор" : "Ожидает",
+				retryCount: item.retryCount,
+				payload: item.payload,
+			});
+		}
+
+		return rows;
+	}, [pendingMutations, crdtItems]);
 
 	const handleSync = useCallback(async () => {
 		if (isSyncing) return;
+		if (!isOnline) {
+			showToast("Нет подключения к сети клиники", "warning");
+			return;
+		}
+		if (unifiedRows.length === 0) {
+			showToast("Все клинические данные уже синхронизированы", "info");
+			return;
+		}
 		try {
+			if (onSyncAll) {
+				await onSyncAll();
+				return;
+			}
 			const result = await syncNow();
 			if (result.appliedCount > 0) {
 				showToast(
@@ -55,7 +111,7 @@ export const OfflineMutationQueueViewer: React.FC<OfflineMutationQueueViewerProp
 				);
 			} else if (result.failedCount > 0) {
 				showToast(
-					`Не удалось синхронизировать ${result.failedCount} мутаций`,
+					`Не удалось синхронизировать ${result.failedCount} записей`,
 					"warning",
 				);
 			}
@@ -63,44 +119,67 @@ export const OfflineMutationQueueViewer: React.FC<OfflineMutationQueueViewerProp
 			const msg = err instanceof Error ? err.message : "Ошибка сети";
 			showToast(`Сбой отправки очереди: ${msg}`, "error");
 		}
-	}, [isSyncing, syncNow]);
+	}, [isSyncing, isOnline, unifiedRows.length, onSyncAll, syncNow]);
 
 	const formatEntityType = (type: string) => {
 		switch (type) {
 			case "appointment":
 				return "Прием / Запись";
 			case "odontogram":
+			case "odontogram_state":
 				return "Зубная формула (FDI)";
 			case "visit_diary":
 				return "Дневник приема";
 			case "patient":
 				return "Пациент";
+			case "patient_administrative_profile":
+				return "Профиль пациента";
 			case "payment":
 				return "Платеж / Чек";
+			case "patient_invoice":
+				return "Счет на оплату";
 			case "treatment_plan":
+			case "treatment_item":
 				return "План лечения";
+			case "clinical_task":
+				return "Назначение";
 			default:
 				return type;
 		}
 	};
 
+	const formatActionLabel = (action: string) => {
+		switch (action.toLowerCase()) {
+			case "create":
+				return "Создание";
+			case "update":
+				return "Обновление";
+			case "delete":
+				return "Удаление";
+			case "upsert":
+				return "Сохранение";
+			default:
+				return action;
+		}
+	};
+
 	return (
 		<div
-			className={`flex flex-col rounded-xl border border-[var(--glass-border,rgba(0,0,0,0.08))] dark:border-white/10 bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong)] text-[var(--ink,#0f172a)] dark:text-slate-100 overflow-hidden shadow-sm ${className}`}
+			className={`flex flex-col rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] overflow-hidden shadow-sm ${className}`}
 			data-testid="offline-mutation-queue-viewer"
 		>
 			{/* Header bar */}
-			<div className="flex items-center justify-between px-4 py-3 border-b border-[var(--glass-border,rgba(0,0,0,0.06))] dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
-				<div className="flex items-center gap-2">
-					<div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-						<Layers className="w-4 h-4" />
+			<div className="flex items-center justify-between px-4 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)]">
+				<div className="flex items-center gap-2.5">
+					<div className="p-1.5 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]">
+						<Layers className="w-4 h-4 shrink-0" />
 					</div>
 					<div>
-						<div className="text-xs font-bold">Очередь сброса мутаций (Outbox)</div>
-						<div className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400">
-							{pendingMutationCount === 0
+						<div className="text-sm font-semibold">Очередь сброса мутаций</div>
+						<div className="text-xs text-[var(--ink-muted)]">
+							{unifiedRows.length === 0
 								? "Все клинические данные синхронизированы"
-								: `${pendingMutationCount} операций ожидают передачи на сервер`}
+								: `${unifiedRows.length} операций ожидают передачи на сервер`}
 						</div>
 					</div>
 				</div>
@@ -109,54 +188,54 @@ export const OfflineMutationQueueViewer: React.FC<OfflineMutationQueueViewerProp
 					<button
 						type="button"
 						onClick={handleSync}
-						disabled={isSyncing || pendingMutationCount === 0 || !isOnline}
-						className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--brand,#2563eb)] hover:bg-[var(--brand-strong,#1d4ed8)] text-white shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed h-[30px]"
+						disabled={isSyncing}
+						className="h-8 px-2.5 rounded-md text-xs font-medium inline-flex items-center justify-center gap-1.5 shrink-0 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-sm transition-colors disabled:opacity-50"
 						data-testid="drain-outbox-button"
 					>
-						<RefreshCw className={`w-3 h-3 ${isSyncing ? "animate-spin" : ""}`} />
-						<span>{isSyncing ? "Сброс..." : "Сбросить сейчас"}</span>
+						<RefreshCw className={`w-3.5 h-3.5 shrink-0 ${isSyncing ? "animate-spin" : ""}`} />
+						<span>{isSyncing ? "Отправка..." : "Отправить сейчас"}</span>
 					</button>
 				</div>
 			</div>
 
 			{/* Queue Items List */}
 			<div
-				className="overflow-y-auto divide-y divide-[var(--glass-border,rgba(0,0,0,0.06))] dark:divide-white/5 p-2"
+				className="overflow-y-auto divide-y divide-[var(--line)] p-2"
 				style={{ maxHeight }}
 			>
-				{pendingMutations.length === 0 ? (
-					<div className="py-8 text-center text-xs text-[var(--muted,#64748b)] dark:text-slate-400">
-						<CheckCircle2 className="w-6 h-6 mx-auto text-emerald-500 mb-1" />
-						<div className="font-semibold text-slate-800 dark:text-slate-200">Очередь пуста</div>
-						<div className="text-[11px] mt-0.5">Данные врача в полной безопасности</div>
+				{unifiedRows.length === 0 ? (
+					<div className="py-12 flex flex-col items-center text-center gap-2.5 text-[var(--ink-muted)]">
+						<CheckCircle2 className="w-10 h-10 text-[var(--success)]" />
+						<div className="text-sm font-semibold text-[var(--ink)]">Очередь пуста</div>
+						<div className="text-xs">Данные врача в полной безопасности</div>
 					</div>
 				) : (
-					pendingMutations.map((mut) => (
+					unifiedRows.map((mut) => (
 						<div
-							key={mut.mutationId}
+							key={mut.id}
 							onClick={() => setSelectedMutation(mut)}
-							className="p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors cursor-pointer flex items-center justify-between gap-3 text-xs"
+							className="p-2.5 rounded-lg hover:bg-[var(--paper-soft)] transition-colors cursor-pointer flex items-center justify-between gap-3 text-xs"
 						>
 							<div className="min-w-0">
 								<div className="flex items-center gap-2">
-									<span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400">
-										{mut.action.toUpperCase()}
+									<span className="h-6 px-2 text-xs font-medium rounded-full inline-flex items-center gap-1 shrink-0 bg-[var(--primary)]/10 text-[var(--primary)]">
+										{formatActionLabel(mut.action)}
 									</span>
-									<span className="font-semibold truncate">
+									<span className="font-medium text-sm truncate text-[var(--ink)]">
 										{formatEntityType(mut.entityType)}
 									</span>
 								</div>
-								<div className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400 truncate mt-0.5">
-									ID: {mut.entityId} • {new Date(mut.timestamp).toLocaleTimeString("ru-RU")}
+								<div className="text-xs text-[var(--ink-muted)] truncate mt-0.5">
+									Код: {mut.entityId.slice(0, 8)} • {new Date(mut.timestamp).toLocaleTimeString("ru-RU")}
 								</div>
 							</div>
 
-							<div className="flex items-center gap-2 flex-shrink-0">
-								<span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+							<div className="flex items-center gap-2 shrink-0">
+								<span className="h-6 px-2 text-xs font-medium rounded-full inline-flex items-center gap-1 shrink-0 bg-[var(--warning-soft)] text-[var(--warning)]">
 									{mut.status}
 								</span>
 								{mut.retryCount > 0 && (
-									<span className="text-[10px] font-mono text-slate-400">
+									<span className="text-xs font-mono text-[var(--ink-muted)] tabular-nums">
 										Попыток: {mut.retryCount}
 									</span>
 								)}
@@ -168,18 +247,18 @@ export const OfflineMutationQueueViewer: React.FC<OfflineMutationQueueViewerProp
 
 			{/* Payload Inspector Drawer */}
 			{selectedMutation && (
-				<div className="p-3 border-t border-[var(--glass-border,rgba(0,0,0,0.06))] dark:border-white/5 bg-slate-50/50 dark:bg-black/30">
+				<div className="p-3 border-t border-[var(--line)] bg-[var(--paper-soft)]">
 					<div className="flex items-center justify-between text-xs mb-1.5">
-						<span className="font-semibold">Полезная нагрузка ({selectedMutation.mutationId}):</span>
+						<span className="font-semibold text-[var(--ink)]">Содержимое операции:</span>
 						<button
 							type="button"
 							onClick={() => setSelectedMutation(null)}
-							className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
+							className="h-8 px-2.5 rounded-md text-xs font-medium text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 						>
 							Закрыть
 						</button>
 					</div>
-					<pre className="text-[10px] font-mono p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-white/10 overflow-x-auto max-h-[140px]">
+					<pre className="text-xs font-mono p-2 bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] overflow-x-auto max-h-[140px]">
 						{JSON.stringify(selectedMutation.payload, null, 2)}
 					</pre>
 				</div>

@@ -80,7 +80,7 @@ export const SeniorNurseDisposalActFooter: React.FC<SeniorNurseDisposalActFooter
 
 				<button
 					type="button"
-					className="h-9 px-4 rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] text-sm font-semibold shadow-sm inline-flex items-center gap-2 cursor-pointer transition-colors"
+					className="h-9 px-3.5 rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] text-sm font-medium shadow-sm inline-flex items-center justify-center gap-2 shrink-0 cursor-pointer transition-colors"
 					onClick={() => onApproveAct(paperJournalAcknowledged)}
 					data-testid="approve-act-paper-journal-btn"
 					title={
@@ -89,7 +89,7 @@ export const SeniorNurseDisposalActFooter: React.FC<SeniorNurseDisposalActFooter
 							: "Утвердить акт списания материалов"
 					}
 				>
-					<CheckCircle2 size={16} />
+					<CheckCircle2 className="w-4 h-4 shrink-0" />
 					<span>
 						{isApproved
 							? paperJournalAcknowledged

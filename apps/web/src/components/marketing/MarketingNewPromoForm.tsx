@@ -69,7 +69,7 @@ export const MarketingNewPromoForm: React.FC<MarketingNewPromoFormProps> = ({
 				</div>
 				<div className="marketing-form-field">
 					<label htmlFor="promo-code" className="marketing-form-label">Промокод</label>
-					<input id="promo-code" type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())} placeholder="HYGIENE3500" className="marketing-form-input uppercase" data-testid="input-promo-code" />
+					<input id="promo-code" type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())} placeholder="HYGIENE3500" className="marketing-form-input font-mono" data-testid="input-promo-code" />
 				</div>
 				<div className="marketing-form-field">
 					<label htmlFor="promo-category" className="marketing-form-label">Категория</label>
@@ -99,9 +99,9 @@ export const MarketingNewPromoForm: React.FC<MarketingNewPromoFormProps> = ({
 				<textarea id="promo-desc" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Описание для регистратора…" className="marketing-form-textarea" />
 			</div>
 			<div className="marketing-modal-footer">
-				<button type="button" className="secondary-button min-h-[36px]" onClick={onClose}>Отмена</button>
-				<button type="submit" className="primary-button min-h-[36px]" data-testid="btn-save-new-promo">
-					<Plus size={14} />
+				<button type="button" className="secondary-button h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center shrink-0" onClick={onClose}>Отмена</button>
+				<button type="submit" className="primary-button h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 shrink-0" data-testid="btn-save-new-promo">
+					<Plus className="w-4 h-4 shrink-0" />
 					<span>Создать акцию</span>
 				</button>
 			</div>

@@ -30,7 +30,7 @@ export const ScheduleMobileGridMode: React.FC<ScheduleMobileGridModeProps> = ({
 }) => {
 	return (
 		<div
-			className="schedule-mobile-grid-mode p-3 flex flex-col gap-3"
+			className="schedule-mobile-grid-mode p-3 pb-28 flex flex-col gap-3"
 			data-testid="schedule-mobile-grid-container"
 		>
 			{chairs.length === 0 ? (

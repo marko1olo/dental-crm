@@ -2,8 +2,13 @@
  * syncWatcher.ts — Фоновый наблюдатель и передача отложенных КТ на сервер (Мандат 8b <= 120 строк).
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import { logger } from "../../../utils/logger";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import {
+	DEFAULT_CHUNK_SIZE_BYTES,
+	uploadImagingScanChunked,
+} from "../../imaging/upload/chunkedImagingUpload";
 import { listLocalDicomStudies, getLocalDicomSlices } from "./studyReader";
 import { markStudyAsSynced, markStudySyncFailed } from "./syncStatusUpdater";
 
@@ -37,13 +42,32 @@ export async function syncPendingStudiesToServer(options?: {
 					: "/api/dicomweb/studies";
 
 				try {
-					const res = await fetch(url, {
-						method: "POST",
-						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/dicom" }),
-						body: slice.buffer,
-					});
-					if (res.ok) syncedSlices++;
-					else failedInStudy++;
+					if (slice.buffer.byteLength > DEFAULT_CHUNK_SIZE_BYTES && targetPatientId) {
+						const dicomBlob = new Blob([slice.buffer], { type: "application/dicom" });
+						const dicomFile =
+							typeof File !== "undefined"
+								? new File([dicomBlob], `${study.studyInstanceUid}_${i}.dcm`, { type: "application/dicom" })
+								: (Object.assign(dicomBlob, { name: `${study.studyInstanceUid}_${i}.dcm` }) as File);
+						const chunkRes = await uploadImagingScanChunked({
+							file: dicomFile,
+							patientId: targetPatientId,
+							kind: "cbct",
+							title: `DICOM Slice ${i + 1}`,
+						});
+						if (chunkRes.success) syncedSlices++;
+						else failedInStudy++;
+					} else {
+						const res = await fetch(url, {
+							method: "POST",
+							headers: denteClinicalMutationHeaders({
+								"Content-Type": "application/dicom",
+								"Idempotency-Key": generateUuidV7(),
+							}),
+							body: slice.buffer,
+						});
+						if (res.ok) syncedSlices++;
+						else failedInStudy++;
+					}
 				} catch {
 					failedInStudy++;
 				}

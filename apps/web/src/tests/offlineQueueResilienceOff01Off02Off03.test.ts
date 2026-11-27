@@ -79,22 +79,50 @@ describe("Red Team Offline Resilience Suite [OFF-01, OFF-02, OFF-03]", () => {
 				items: [{ name: "Профгигиена", priceKopecks: 300000, quantity: 1 }],
 			});
 
-			let dispatchedBody: any = null;
+			let dispatchedPayloads: any[] = [];
+			let idempotencyHeader: string | null = null;
 			globalThis.fetch = async (url: RequestInfo | URL, init?: RequestInit) => {
-				if (String(url).includes("/api/cashbox/payments")) {
-					dispatchedBody = JSON.parse(String(init?.body));
-					return new Response(JSON.stringify({ success: true, paymentId: "server-pay-123" }), {
-						status: 200,
-						headers: { "Content-Type": "application/json" },
-					});
+				const urlStr = String(url);
+				if (urlStr.includes("/api/sync/gateway")) {
+					const reqBody = JSON.parse(String(init?.body));
+					idempotencyHeader = (init?.headers as Record<string, string>)?.["Idempotency-Key"] || null;
+					const mutations = Array.isArray(reqBody?.mutations) ? reqBody.mutations : [];
+					for (const mut of mutations) {
+						if (mut.entityKind === "payment") dispatchedPayloads.push(mut.payload);
+					}
+					return new Response(
+						JSON.stringify({
+							syncBatchId: reqBody.syncBatchId,
+							processedCount: mutations.length,
+							appliedCount: mutations.length,
+							duplicateCount: 0,
+							mergedCount: 0,
+							rejectedCount: 0,
+							results: mutations.map((m: any) => ({
+								mutationId: m.mutationId,
+								idempotencyKey: m.idempotencyKey,
+								status: "applied",
+								entityKind: m.entityKind,
+								entityId: m.entityId,
+								appliedAt: new Date().toISOString(),
+							})),
+							serverTime: new Date().toISOString(),
+						}),
+						{
+							status: 200,
+							headers: { "Content-Type": "application/json" },
+						},
+					);
 				}
 				return new Response(null, { status: 404 });
 			};
 
 			const result = await flushOfflinePaymentsToServer();
 			assert.ok(result.syncedCount >= 1, "At least one queued payment should be synced");
-			assert.ok(dispatchedBody, "Request body must be sent to server");
-			assert.equal(dispatchedBody.amountKopecks, 300000);
+			const dispatchedBody = dispatchedPayloads.find((p) => p?.patientId === "pat-uuid-002");
+			assert.ok(dispatchedBody, "Payment payload must be sent through /api/sync/gateway");
+			assert.ok(idempotencyHeader, "Idempotency-Key header must be sent");
+			assert.equal(dispatchedBody.totalKopecks, 300000);
 			assert.equal(dispatchedBody.patientId, "pat-uuid-002");
 		});
 	});
@@ -251,18 +279,36 @@ describe("Red Team Offline Resilience Suite [OFF-01, OFF-02, OFF-03]", () => {
 			});
 
 			let dispatchedUrl: string | null = null;
-			let dispatchedBody: any = null;
+			let dispatchedAppts: any[] = [];
 			let idempotencyHeader: string | null = null;
 
 			globalThis.fetch = async (url: RequestInfo | URL, init?: RequestInit) => {
-				if (String(url).includes("/api/appointments")) {
-					dispatchedUrl = String(url);
-					dispatchedBody = JSON.parse(String(init?.body));
+				const urlStr = String(url);
+				if (urlStr.includes("/api/sync/gateway")) {
+					dispatchedUrl = urlStr;
+					const reqBody = JSON.parse(String(init?.body));
 					idempotencyHeader = (init?.headers as any)?.["Idempotency-Key"] || null;
+					const mutations = Array.isArray(reqBody?.mutations) ? reqBody.mutations : [];
+					for (const mut of mutations) {
+						if (mut.entityKind === "appointment") dispatchedAppts.push(mut.payload);
+					}
 					return new Response(
 						JSON.stringify({
-							success: true,
-							id: "server-appt-999",
+							syncBatchId: reqBody.syncBatchId,
+							processedCount: mutations.length,
+							appliedCount: mutations.length,
+							duplicateCount: 0,
+							mergedCount: 0,
+							rejectedCount: 0,
+							results: mutations.map((m: any) => ({
+								mutationId: m.mutationId,
+								idempotencyKey: m.idempotencyKey,
+								status: "applied",
+								entityKind: m.entityKind,
+								entityId: m.entityId,
+								appliedAt: new Date().toISOString(),
+							})),
+							serverTime: new Date().toISOString(),
 						}),
 						{
 							status: 200,
@@ -276,9 +322,10 @@ describe("Red Team Offline Resilience Suite [OFF-01, OFF-02, OFF-03]", () => {
 			const result = await flushOfflineAppointmentsToServer();
 			assert.ok(result.syncedCount >= 1, "At least one queued appointment must be synced");
 			assert.ok(dispatchedUrl);
+			const dispatchedBody = dispatchedAppts.find((a) => a?.patientId === "pat-offline-002");
 			assert.ok(dispatchedBody);
 			assert.equal(dispatchedBody.patientId, "pat-offline-002");
-			assert.equal(dispatchedBody.reason, "Лечение пульпита");
+			assert.equal(dispatchedBody.notes, "Лечение пульпита");
 			assert.ok(idempotencyHeader, "Idempotency-Key header must be sent with offline flush");
 		});
 	});

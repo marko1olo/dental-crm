@@ -55,7 +55,8 @@ export async function submitPhaseCompletion(params: CompletePhaseParams): Promis
 			headers: { "Content-Type": "application/json", ...params.headers },
 			body: JSON.stringify(body),
 		});
-	} catch {
+	} catch (err: unknown) {
+		logger.warn("[Dente phase-completion] network error:", err);
 		return {
 			ok: false,
 			status: 0,

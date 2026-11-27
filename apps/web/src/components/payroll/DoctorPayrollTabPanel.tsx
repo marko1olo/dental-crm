@@ -64,7 +64,15 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 	const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
 	const summary: DoctorPayrollSummary = useMemo(() => {
-		if (apiSummary && !isDemo && customPercent === null && advanceRub === 0 && apiSummary.doctorId === doctor.id) {
+		if (
+			apiSummary &&
+			!isDemo &&
+			customPercent === null &&
+			advanceRub === 0 &&
+			apiSummary.doctorId === doctor.id &&
+			(!("identSalaryModel" in apiSummary) || (apiSummary as { identSalaryModel?: string }).identSalaryModel === identSalaryModel) &&
+			(!("cashAdvancePolicy" in apiSummary) || (apiSummary as { cashAdvancePolicy?: string }).cashAdvancePolicy === cashAdvancePolicy)
+		) {
 			return { ...apiSummary, payoutStatus: isRkoPaid ? "paid_rko" : "accrued" };
 		}
 		return calculateDoctorPayrollSummary({
@@ -74,8 +82,10 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 			shiftsCount,
 			advanceKop: rublesToKopecks(advanceRub),
 			isRkoPaid,
+			identSalaryModel,
+			cashAdvancePolicy,
 		});
-	}, [doctor, effectiveOrders, customPercent, shiftsCount, advanceRub, isRkoPaid, apiSummary, isDemo]);
+	}, [doctor, effectiveOrders, customPercent, shiftsCount, advanceRub, isRkoPaid, apiSummary, isDemo, identSalaryModel, cashAdvancePolicy]);
 
 	React.useEffect(() => {
 		onSummaryCalculated?.(summary, advanceRub, customPercent);

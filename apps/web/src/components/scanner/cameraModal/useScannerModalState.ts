@@ -5,7 +5,8 @@
  * filters, presets, and patient attachment upload.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import { useCameraStream } from "../hooks/useCameraStream";
@@ -21,6 +22,7 @@ export function useScannerModalState(
 	const [isUploading, setIsUploading] = useState<boolean>(false);
 	const presets = useDocumentPresets();
 	const stream = useCameraStream(true, isOpen);
+	const activeVideoRef = useRef<HTMLVideoElement | null>(null);
 
 	const onCaptureDone = useCallback(() => {
 		stream.stopCamera();
@@ -29,10 +31,11 @@ export function useScannerModalState(
 
 	const onRetake = useCallback(() => {
 		presets.resetOcr();
-		void stream.startCamera(capture.videoRef.current);
+		void stream.startCamera(activeVideoRef.current);
 	}, [presets, stream]);
 
 	const capture = usePhotoCapture(onCaptureDone, onRetake);
+	activeVideoRef.current = capture.videoRef.current;
 
 	const stopCameraTracks = useCallback(() => {
 		stream.stopCamera(capture.videoRef.current);
@@ -45,7 +48,7 @@ export function useScannerModalState(
 			stopCameraTracks();
 		}
 		return () => { stopCameraTracks(); };
-	}, [isOpen, capture.isCapturing, stopCameraTracks, stream]);
+	}, [isOpen, capture.isCapturing, capture.videoRef, stopCameraTracks, stream]);
 
 	const handleModalClose = useCallback(() => {
 		stopCameraTracks();

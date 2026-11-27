@@ -46,21 +46,21 @@
 .recall-preset-label-full { display: inline; }
 
 @media (max-width: 768px) {
-	.recall-preset-label-full { display: none !important; }
-	.recall-preset-label-short { display: inline !important; }
+	.recall-preset-label-full { display: none; }
+	.recall-preset-label-short { display: inline; }
 	.recall-solo-presets {
-		padding: 8px 12px !important;
-		gap: 6px !important;
-		overflow-x: auto !important;
-		flex-wrap: nowrap !important;
-		justify-content: flex-start !important;
-		-webkit-overflow-scrolling: touch !important;
+		padding: 8px 12px;
+		gap: 6px;
+		overflow-x: auto;
+		flex-wrap: nowrap;
+		justify-content: flex-start;
+		-webkit-overflow-scrolling: touch;
 	}
 	.recall-preset-btn {
-		min-height: 44px !important;
-		padding: 6px 10px !important;
-		font-size: 0.8125rem !important;
-		flex-shrink: 0 !important;
-		white-space: nowrap !important;
+		min-height: 44px;
+		padding: 6px 10px;
+		font-size: 0.8125rem;
+		flex-shrink: 0;
+		white-space: nowrap;
 	}
 }

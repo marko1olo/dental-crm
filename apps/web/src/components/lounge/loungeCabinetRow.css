@@ -24,19 +24,19 @@
 	animation: lounge-call-pulse 2.4s infinite ease-in-out;
 }
 
-.lounge-cabinet-meta { display: flex; flex-direction: column; gap: 3px; }
+.lounge-cabinet-meta { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .lounge-cabinet-number { font-size: 18px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em; }
-.lounge-cabinet-spec { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lounge-cabinet-spec { font-size: 12px; color: var(--muted); line-height: 1.3; }
 
-.lounge-doctor-meta { display: flex; flex-direction: column; gap: 2px; }
+.lounge-doctor-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .lounge-doctor-name { font-size: 16px; font-weight: 600; color: var(--ink); }
 .lounge-doctor-role { font-size: 12px; color: var(--muted); }
 
 .lounge-flow-arrow { display: flex; align-items: center; justify-content: center; color: var(--muted); }
 .lounge-cabinet-item--calling .lounge-flow-arrow { color: var(--ok-fg, #22c55e); animation: lounge-arrow-bounce 1.5s infinite ease-in-out; }
 
-.lounge-patient-meta { display: flex; flex-direction: column; gap: 2px; }
-.lounge-patient-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.lounge-patient-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.lounge-patient-label { font-size: 11px; color: var(--muted); font-weight: 500; }
 .lounge-patient-name { font-size: 20px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em; }
 .lounge-cabinet-item--calling .lounge-patient-name { color: var(--ok-fg, #4ade80); text-shadow: 0 0 12px rgba(74, 222, 128, 0.4); }
 
@@ -48,9 +48,7 @@
 	padding: 8px 14px;
 	border-radius: 10px;
 	font-size: 12px;
-	font-weight: 700;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
+	font-weight: 600;
 	white-space: nowrap;
 }
 

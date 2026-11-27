@@ -28,7 +28,7 @@ export interface PatientRecallsHubModalProps {
 export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 	isOpen = true,
 	onClose,
-	clinicName = "DENTE Clinic",
+	clinicName,
 	initialCandidates,
 	onBookAppointment,
 	onSendWhatsApp,
@@ -37,9 +37,14 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 	embedded = false,
 }) => {
 	const appLogic = useOptionalAppLogicContext();
+	const effectiveClinicName =
+		clinicName ||
+		appLogic?.dashboard?.clinicSettings?.profile?.clinicName ||
+		"Клиника ДЕНТЕ";
 	const hub = useRecallHubState(isOpen, initialCandidates ?? []);
 	const actions = useRecallHubActions({
-		clinicName,
+		clinicName: effectiveClinicName,
+		candidates: hub.candidates,
 		setCandidates: hub.setCandidates,
 		setStatusNotice: hub.setStatusNotice,
 		setActivePreviewCandidate: hub.setActivePreviewCandidate,

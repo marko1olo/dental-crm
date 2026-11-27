@@ -112,7 +112,7 @@ export const CashierGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => 
 					{/* Header Total Bar */}
 					<div className="px-4 py-3 bg-[var(--paper)] border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-2">
 						<div>
-							<span className="text-[10px] text-[var(--muted)] uppercase font-semibold">Итого к оплате по счёту:</span>
+							<span className="text-[10px] text-[var(--muted)] font-semibold">Итого к оплате по счёту:</span>
 							<div className="text-lg font-bold text-[var(--ink)]">
 								{totalAmount.toLocaleString("ru-RU")} ₽
 							</div>
@@ -403,9 +403,9 @@ export const CashierGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => 
 				<button
 					type="button"
 					onClick={handleLaunchTour}
-					className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
+					className="h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium text-sm inline-flex items-center justify-center gap-2 transition-colors cursor-pointer shrink-0"
 				>
-					<Zap size={14} />
+					<Zap className="w-4 h-4 shrink-0 text-[var(--primary)]" />
 					<span>Запустить обучение</span>
 				</button>
 			</div>

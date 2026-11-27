@@ -94,9 +94,9 @@ export const MedicalRecordGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour 
 						</div>
 
 						{/* Autosave Indicator (Mandate 8e) */}
-						<div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+						<div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
 							<CheckCircle2 size={13} />
-							<span>СОХРАНЕНО (Ctrl+S)</span>
+							<span>Сохранено (Ctrl+S)</span>
 						</div>
 					</div>
 
@@ -341,9 +341,9 @@ export const MedicalRecordGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour 
 				<button
 					type="button"
 					onClick={handleLaunchTour}
-					className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
+					className="h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium text-sm inline-flex items-center justify-center gap-2 transition-colors cursor-pointer shrink-0"
 				>
-					<Zap size={14} />
+					<Zap className="w-4 h-4 shrink-0 text-[var(--primary)]" />
 					<span>Запустить обучение</span>
 				</button>
 			</div>

@@ -22,11 +22,17 @@ interface MdlpQueueRow {
 export async function submitMdlpBarcodeScan(
 	rawBarcode: string,
 	autoRegister = true,
+	idempotencyKey = generateUuidV7(),
 ): Promise<{ success: boolean; item?: Record<string, unknown> | null; parsed?: unknown; status?: string; error?: string }> {
 	try {
 		const res = await fetch("/api/mdlp/scan", {
 			method: "POST",
-			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+			headers: {
+				"Content-Type": "application/json",
+				"Idempotency-Key": idempotencyKey,
+				"X-Idempotency-Key": idempotencyKey,
+				...denteAdminSecretRequestHeaders(),
+			},
 			body: JSON.stringify({ rawBarcode, autoRegister }),
 		});
 		if (!res.ok) {
@@ -118,7 +124,8 @@ export async function syncMdlpQueueToBackend(
 		const current = updated[i];
 		if (!current || current.status === "synced") continue;
 		try {
-			const idempotencyKey = generateUuidV7();
+			const idempotencyKey = current.idempotencyKey ?? generateUuidV7();
+			updated[i] = { ...current, idempotencyKey };
 			const res = await fetch("/api/mdlp/batch-disposal", {
 				method: "POST",
 				headers: {

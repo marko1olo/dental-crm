@@ -48,6 +48,10 @@ export interface DoctorPayrollStudioModalProps {
 	readonly orders?: readonly PayrollServiceOrder[] | undefined;
 	/** Closed settlement periods passed directly from parent */
 	readonly closedPeriods?: readonly ClosedPayrollPeriodItem[] | undefined;
+	/** Initial IDENT salary model */
+	readonly initialIdentSalaryModel?: IdentSalaryModel | undefined;
+	/** Initial cash advance allocation policy */
+	readonly initialCashAdvancePolicy?: CashAdvanceAllocationPolicy | undefined;
 }
 
 export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> = ({
@@ -59,6 +63,8 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	initialPeriodPreset = "current_month",
 	orders: propsOrders,
 	closedPeriods: propsClosedPeriods,
+	initialIdentSalaryModel,
+	initialCashAdvancePolicy,
 }) => {
 	const isDemo = isDemoShowcaseMode();
 	const [apiDoctors, setApiDoctors] = useState<PayrollDoctorProfile[]>([]);
@@ -117,8 +123,14 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	const [activeTabDoctorSummary, setActiveTabDoctorSummary] = useState<DoctorPayrollSummary | null>(null);
 	const [activeTabAdvanceRub, setActiveTabAdvanceRub] = useState<number>(0);
 	const [activeTabCustomPercent, setActiveTabCustomPercent] = useState<number | null>(null);
-	const [identSalaryModel, setIdentSalaryModel] = useState<IdentSalaryModel>("net_proportional_discount");
-	const [cashAdvancePolicy, setCashAdvancePolicy] = useState<CashAdvanceAllocationPolicy>("proportional");
+	const [identSalaryModel, setIdentSalaryModel] = useState<IdentSalaryModel>(initialIdentSalaryModel ?? "net_proportional_discount");
+	const [cashAdvancePolicy, setCashAdvancePolicy] = useState<CashAdvanceAllocationPolicy>(initialCashAdvancePolicy ?? "proportional");
+
+	useEffect(() => {
+		if (!isOpen) return;
+		if (initialIdentSalaryModel) setIdentSalaryModel(initialIdentSalaryModel);
+		if (initialCashAdvancePolicy) setCashAdvancePolicy(initialCashAdvancePolicy);
+	}, [isOpen, initialIdentSalaryModel, initialCashAdvancePolicy]);
 	const [payoutStatus, setPayoutStatus] = useState<PayrollPayoutStatus>("accrued");
 	const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -187,8 +199,10 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 		return calculateDoctorPayrollSummary({
 			orders: effectiveOrders, doctor: selectedDoctor,
 			isRkoPaid: payoutStatus === "paid_rko",
+			identSalaryModel,
+			cashAdvancePolicy,
 		});
-	}, [activeTabDoctorSummary, selectedDoctor, effectiveOrders, payoutStatus]);
+	}, [activeTabDoctorSummary, selectedDoctor, effectiveOrders, payoutStatus, identSalaryModel, cashAdvancePolicy]);
 
 	const allDoctorsSummaries: readonly {
 		readonly doctor: PayrollDoctorProfile;
@@ -220,9 +234,11 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 				orders: effectiveOrders,
 				doctor: doc,
 				isRkoPaid: payoutStatus === "paid_rko",
+				identSalaryModel,
+				cashAdvancePolicy,
 			});
 		return { doctor: doc, summary: docSummary };
-	}), [doctors, effectiveOrders, payoutStatus, apiDoctorSummaries, isDemo]);
+	}), [doctors, effectiveOrders, payoutStatus, apiDoctorSummaries, isDemo, identSalaryModel, cashAdvancePolicy]);
 
 	const clinicTotals = useMemo(() => allDoctorsSummaries.reduce((acc, item) => ({
 		gross: acc.gross + item.summary.totalGrossKopecks,

@@ -75,11 +75,20 @@ export function FinanceLedger({
 	return (
 		<div className="finance-split max-w-full min-w-0 overflow-x-hidden">
 			<section className="finance-list min-w-0 max-w-full" aria-label="План лечения">
-				<div className="panel-heading">
-					<h3>План лечения</h3>
-					<span className="status-pill status-arrived">
-						{safeTreatmentItems.length}
-					</span>
+				<div
+					className="panel-heading"
+					style={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+					}}
+				>
+					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+						<h3 style={{ margin: 0 }}>План лечения</h3>
+						<span className="status-pill status-arrived shrink-0 w-fit">
+							{safeTreatmentItems.length}
+						</span>
+					</div>
 				</div>
 				{safeTreatmentItems.length ? (
 					<>

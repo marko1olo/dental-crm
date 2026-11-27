@@ -8,6 +8,8 @@
 import {
 	computeNetBaseKopecks, calculateDoctorCommissionKopecks,
 	applyMinimumGuarantee, type DoctorPayrollResult,
+	resolveIdentItemBasis, computeEffectiveDoctorBaseAfterRefund,
+	type IdentSalaryModel, type CashAdvanceAllocationPolicy, type DoctorCompletedServiceItem,
 } from "@dental/shared/payroll";
 import { calculateProgressiveNdflTax, formatKopecksToRubles } from "@dental/shared";
 import { generateDoctorPayslipHtml } from "./exports/doctorPayslipHtmlExporter";
@@ -177,11 +179,52 @@ export function calculateDoctorPayrollSummary(params: {
 	hourlyRateKop?: number | undefined; hoursWorked?: number | undefined;
 	advanceKop?: number | undefined; isRkoPaid?: boolean | undefined;
 	applyMinimumGuarantee?: boolean | undefined;
+	identSalaryModel?: IdentSalaryModel | undefined;
+	cashAdvancePolicy?: CashAdvanceAllocationPolicy | undefined;
 }): DoctorPayrollSummary {
-	const docOrders = params.orders.filter((o) => o.doctorId === params.doctor.id && o.isPaid54Fz);
-	const totalGrossKopecks = docOrders.reduce((sum, o) => sum + (o.paidKopecks ?? o.grossKopecks ?? 0), 0);
-	const totalLabCostKopecks = docOrders.reduce((sum, o) => sum + o.labCostKopecks, 0);
-	const totalMaterialCostKopecks = docOrders.reduce((sum, o) => sum + o.materialCostKopecks, 0);
+	const identModel: IdentSalaryModel = params.identSalaryModel ?? "net_proportional_discount";
+	const advancePolicy: CashAdvanceAllocationPolicy = params.cashAdvancePolicy ?? "proportional";
+	const docOrders = params.orders.filter((o) => {
+		if (o.doctorId !== params.doctor.id) return false;
+		if (identModel === "gross_before_discount") return true;
+		return o.isPaid54Fz;
+	});
+	let totalGrossKopecks = 0;
+	let totalLabCostKopecks = 0;
+	let totalMaterialCostKopecks = 0;
+	let serviceSalaryPriceKopecks = 0;
+	for (const o of docOrders) {
+		const rawPaidKop = o.paidKopecks ?? o.grossKopecks ?? 0;
+		const svcItem: DoctorCompletedServiceItem = {
+			id: o.id,
+			dateIso: o.dateIso,
+			patientName: o.patientName,
+			medicalCardNumber: o.medicalCardNumber,
+			serviceNameRu: o.serviceNameRu,
+			category: o.category,
+			grossRevenueKop: o.grossKopecks,
+			...(o.salaryPriceKopecks !== undefined ? { salaryPriceKop: o.salaryPriceKopecks } : {}),
+			labCostKop: o.labCostKopecks,
+			materialCostKop: o.materialCostKopecks,
+			isPaid: o.isPaid54Fz,
+			paidAmountKop: rawPaidKop,
+			actuallyPaidGrossKop: rawPaidKop,
+		};
+		const basis = resolveIdentItemBasis(svcItem, identModel, advancePolicy);
+		if (!basis.shouldInclude) continue;
+		const effectiveGross = computeEffectiveDoctorBaseAfterRefund({
+			item: svcItem,
+			identSalaryModel: identModel,
+			cashAdvancePolicy: advancePolicy,
+			salaryPriceKop: basis.salaryBaseConfiguredKop,
+			actualPaidKop: basis.actualPaidKop,
+			refundKop: 0,
+		});
+		totalGrossKopecks += effectiveGross;
+		serviceSalaryPriceKopecks += basis.salaryBaseConfiguredKop;
+		totalLabCostKopecks += o.labCostKopecks;
+		totalMaterialCostKopecks += o.materialCostKopecks;
+	}
 	const totalNetBaseKopecks = computeNetBaseKopecks(totalGrossKopecks, totalLabCostKopecks, totalMaterialCostKopecks);
 
 	const scheme: MotivationSchemeType = params.schemeType
@@ -224,6 +267,7 @@ export function calculateDoctorPayrollSummary(params: {
 		doctorId: params.doctor.id, doctorName: params.doctor.name, schemeType: scheme,
 		totalGrossKopecks, totalLabCostKopecks, totalMaterialCostKopecks, totalNetBaseKopecks,
 		doctorAccruedKopecks, chairRentalKopecks, advanceKopecks, ndfl13TaxKopecks, payoutKopecks,
+		serviceSalaryPriceKopecks,
 		payoutStatus: params.isRkoPaid ? "paid_rko" : "accrued",
 		servicesCount: docOrders.length, minimumGuaranteeApplied,
 	};

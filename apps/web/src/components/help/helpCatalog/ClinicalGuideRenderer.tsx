@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import type { ClinicalGuideTab } from "./helpTypes";
+import type { ClinicalGuideTab } from "../clinicalHelpCatalog";
 import { ScheduleGuide } from "../ScheduleGuide";
 import { OdontogramGuide } from "../OdontogramGuide";
 import { MedicalRecordGuide } from "../MedicalRecordGuide";

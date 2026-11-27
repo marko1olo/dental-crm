@@ -9,6 +9,17 @@
  */
 
 import { generateUuidV7 } from "@dental/shared";
+import {
+	MEDIA_BLOBS_STORE_NAME,
+	MEDIA_ITEMS_STORE_NAME,
+	OFFLINE_DB_NAME,
+	OFFLINE_DB_VERSION,
+} from "../offline/storage/constants";
+import {
+	isIndexedDbAvailable,
+	openOfflineOutboxDb,
+	resetOfflineDbConnection,
+} from "../offline/storage/idbDatabase";
 import { logger } from "../../utils/logger";
 
 export type MediaPhotoType =
@@ -66,19 +77,30 @@ export interface MediaVaultQuotaInfo {
 	pendingCount: number;
 }
 
-export const MEDIA_VAULT_DB_NAME = "dente-media-vault";
-export const MEDIA_VAULT_DB_VERSION = 1;
-export const MEDIA_ITEMS_STORE = "media_items";
-export const MEDIA_BLOBS_STORE = "media_blobs";
+export const MEDIA_VAULT_DB_NAME = OFFLINE_DB_NAME;
+export const MEDIA_VAULT_DB_VERSION = OFFLINE_DB_VERSION;
+export const MEDIA_ITEMS_STORE = MEDIA_ITEMS_STORE_NAME;
+export const MEDIA_BLOBS_STORE = MEDIA_BLOBS_STORE_NAME;
 
-let mediaDbPromise: Promise<IDBDatabase> | null = null;
+const MAX_MEMORY_MEDIA_ITEMS = 150;
+const MAX_MEMORY_MEDIA_BLOBS = 32;
 
-// In-memory / mock storage for test / private browsing environments
+// Bounded in-memory / fallback storage for test / private browsing environments
 const memoryMediaItems = new Map<string, StoredMediaItem>();
 const memoryMediaBlobs = new Map<string, Blob | ArrayBuffer>();
 
+function setBoundedMediaMap<V>(map: Map<string, V>, key: string, value: V, maxEntries: number): void {
+	if (map.has(key)) {
+		map.delete(key);
+	} else if (map.size >= maxEntries) {
+		const oldest = map.keys().next().value;
+		if (oldest !== undefined) map.delete(oldest);
+	}
+	map.set(key, value);
+}
+
 export function resetMediaDbConnection(): void {
-	mediaDbPromise = null;
+	resetOfflineDbConnection(false);
 }
 
 export function clearMemoryMediaStorage(): void {
@@ -91,15 +113,11 @@ export function clearMemoryMediaStorage(): void {
  * Проверка доступности IndexedDB
  */
 export function isMediaIndexedDbAvailable(): boolean {
-	return (
-		typeof window !== "undefined" &&
-		Boolean(window.indexedDB) &&
-		typeof window.indexedDB.open === "function"
-	);
+	return isIndexedDbAvailable();
 }
 
 /**
- * Открытие базы данных медиа-хранилища
+ * Открытие единой базы данных медиа-хранилища (dente-crm-offline-outbox)
  */
 export function openMediaVaultDb(): Promise<IDBDatabase> {
 	if (!isMediaIndexedDbAvailable()) {
@@ -107,54 +125,7 @@ export function openMediaVaultDb(): Promise<IDBDatabase> {
 			new Error("IndexedDB is not available for Media Vault"),
 		);
 	}
-
-	if (mediaDbPromise) {
-		return mediaDbPromise;
-	}
-
-	mediaDbPromise = new Promise<IDBDatabase>((resolve, reject) => {
-		try {
-			const request = window.indexedDB.open(
-				MEDIA_VAULT_DB_NAME,
-				MEDIA_VAULT_DB_VERSION,
-			);
-
-			request.onupgradeneeded = () => {
-				const db = request.result;
-
-				if (!db.objectStoreNames.contains(MEDIA_ITEMS_STORE)) {
-					const itemStore = db.createObjectStore(MEDIA_ITEMS_STORE, {
-						keyPath: "mediaId",
-					});
-					itemStore.createIndex("patientId", "patientId");
-					itemStore.createIndex("toothNumber", "toothNumber");
-					itemStore.createIndex("syncStatus", "syncStatus");
-					itemStore.createIndex("capturedAtMs", "capturedAtMs");
-					itemStore.createIndex("organizationId", "organizationId");
-				}
-
-				if (!db.objectStoreNames.contains(MEDIA_BLOBS_STORE)) {
-					db.createObjectStore(MEDIA_BLOBS_STORE);
-				}
-			};
-
-			request.onsuccess = () => {
-				resolve(request.result);
-			};
-
-			request.onerror = () => {
-				logger.error(
-					"[OfflineMediaVault] Failed to open IndexedDB",
-					request.error,
-				);
-				reject(request.error || new Error("Failed to open media vault database"));
-			};
-		} catch (err) {
-			reject(err);
-		}
-	});
-
-	return mediaDbPromise;
+	return openOfflineOutboxDb();
 }
 
 /**
@@ -302,7 +273,7 @@ export async function saveMediaToVault(
 			`[OfflineMediaVault] IDB write failed for ${mediaId}, using memory cache`,
 			err,
 		);
-		memoryMediaItems.set(mediaId, item);
+		setBoundedMediaMap(memoryMediaItems, mediaId, item, MAX_MEMORY_MEDIA_ITEMS);
 		let blobOrBuffer: Blob | ArrayBuffer;
 		if (input.file instanceof Blob || input.file instanceof ArrayBuffer) {
 			blobOrBuffer = input.file;
@@ -313,7 +284,7 @@ export async function saveMediaToVault(
 				u8.byteOffset + u8.byteLength,
 			) as ArrayBuffer;
 		}
-		memoryMediaBlobs.set(originalBlobKey, blobOrBuffer);
+		setBoundedMediaMap(memoryMediaBlobs, originalBlobKey, blobOrBuffer, MAX_MEMORY_MEDIA_BLOBS);
 		return item;
 	}
 }
@@ -422,7 +393,7 @@ export async function updateMediaSyncStatus(
 			tx.objectStore(MEDIA_ITEMS_STORE).put(item);
 		});
 	} catch {
-		memoryMediaItems.set(mediaId, item);
+		setBoundedMediaMap(memoryMediaItems, mediaId, item, MAX_MEMORY_MEDIA_ITEMS);
 	}
 
 	return item;

@@ -26,7 +26,7 @@ export function createDefaultWeeklySchedule(
 	const startDate = new Date(startDateIso);
 	const fallbackDoc =
 		staffList[0] ||
-		(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0]! : undefined);
+		(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0] : undefined);
 	if (!fallbackDoc) return [];
 
 	// Create 7 days of shifts

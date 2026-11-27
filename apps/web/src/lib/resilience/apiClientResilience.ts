@@ -343,6 +343,12 @@ export async function resilientFetch(
 			globalCircuitBreaker.recordSuccess();
 			return res;
 		} catch (err: unknown) {
+			const isAbort =
+				(err instanceof Error && err.name === "AbortError") ||
+				Boolean(init?.signal?.aborted || (input instanceof Request && input.signal?.aborted));
+			if (isAbort) {
+				throw err;
+			}
 			lastError = err;
 			const isTransient = isTransientNetworkFailure(err);
 			globalCircuitBreaker.recordFailure(err);

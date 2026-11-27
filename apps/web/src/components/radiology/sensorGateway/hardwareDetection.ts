@@ -11,6 +11,12 @@ import { UNIVERSAL_SENSOR_CATALOG } from "./sensorCatalogs";
 import { lookupSensorByUsbVidPid, NON_CONFLICTING_USB_POLICY } from "./twainAndUsbDrivers";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { logger } from "../../../utils/logger";
+
+function pickCatalogModel(id?: string) {
+	const found = id ? UNIVERSAL_SENSOR_CATALOG.find((s) => s.id === id) : undefined;
+	return found ?? UNIVERSAL_SENSOR_CATALOG[0];
+}
 
 interface WebUsbDevice {
 	readonly vendorId: number;
@@ -37,7 +43,8 @@ export async function autoDetectConnectedSensor(): Promise<SensorDetectionResult
 			for (const dev of usbDevices) {
 				const match = lookupSensorByUsbVidPid(dev.vendorId, dev.productId);
 				if (match) {
-					const model = UNIVERSAL_SENSOR_CATALOG.find((s) => s.id === match.defaultModelId) || UNIVERSAL_SENSOR_CATALOG[0]!;
+					const model = pickCatalogModel(match.defaultModelId);
+					if (!model) continue;
 					return {
 						isDetected: true,
 						sensorModelId: model.id,
@@ -53,8 +60,8 @@ export async function autoDetectConnectedSensor(): Promise<SensorDetectionResult
 					};
 				}
 			}
-		} catch {
-			// WebUSB silent fall-through
+		} catch (usbErr) {
+			logger.debug("[hardwareDetection] WebUSB enumeration skipped", usbErr);
 		}
 	}
 
@@ -68,43 +75,47 @@ export async function autoDetectConnectedSensor(): Promise<SensorDetectionResult
 			if (resp.ok) {
 				const data = await resp.json();
 				if (data?.isDetected && data.sensorModelId && data.sensorModelId !== "none") {
-					const model = UNIVERSAL_SENSOR_CATALOG.find((s) => s.id === data.sensorModelId) || UNIVERSAL_SENSOR_CATALOG[0]!;
-					return {
-						isDetected: true,
-						sensorModelId: model.id,
-						sensorModelName: model.name,
-						brand: model.brand,
-						brandName: model.brandName,
-						intakeChannel: data.intakeChannel || "hot_folder",
-						calibratedPixelSpacingMm: model.pixelSpacing,
-						calibratedResolution: model.resolution,
-						statusMessage: data.statusMessage || `Ожидание снимка (Hot Folder / Автоподхват) — Обнаружен сенсор: ${model.name}`,
-						details: data.details || `Шлюз оборудования: ${model.name}. ${NON_CONFLICTING_USB_POLICY.notice}`,
-						nonConflictingNotice: NON_CONFLICTING_USB_POLICY.notice,
-					};
+					const model = pickCatalogModel(data.sensorModelId);
+					if (model) {
+						return {
+							isDetected: true,
+							sensorModelId: model.id,
+							sensorModelName: model.name,
+							brand: model.brand,
+							brandName: model.brandName,
+							intakeChannel: data.intakeChannel || "hot_folder",
+							calibratedPixelSpacingMm: model.pixelSpacing,
+							calibratedResolution: model.resolution,
+							statusMessage: data.statusMessage || `Ожидание снимка (Hot Folder / Автоподхват) — Обнаружен сенсор: ${model.name}`,
+							details: data.details || `Шлюз оборудования: ${model.name}. ${NON_CONFLICTING_USB_POLICY.notice}`,
+							nonConflictingNotice: NON_CONFLICTING_USB_POLICY.notice,
+						};
+					}
 				}
 			}
 		}
-	} catch {
-		// Quiet network fallback
+	} catch (netErr) {
+		logger.debug("[hardwareDetection] Sensor status probe fallback", netErr);
 	}
 
 	// 3. Isolated showcase demo mode: provides virtual sensor for presentations
 	if (isDemoShowcaseMode()) {
-		const demoSensor = UNIVERSAL_SENSOR_CATALOG.find((s) => s.id === "vatech_ezsensor_hd") || UNIVERSAL_SENSOR_CATALOG[0]!;
-		return {
-			isDetected: true,
-			sensorModelId: demoSensor.id,
-			sensorModelName: demoSensor.name,
-			brand: demoSensor.brand,
-			brandName: demoSensor.brandName,
-			intakeChannel: "hot_folder",
-			calibratedPixelSpacingMm: demoSensor.pixelSpacing,
-			calibratedResolution: demoSensor.resolution,
-			statusMessage: `Демо-стенд: Эмуляция сенсора ${demoSensor.name} (${demoSensor.resolution})`,
-			details: `Демонстрационный режим витрины. Папка автозахвата: ${demoSensor.recommendedHotFolder}. ${NON_CONFLICTING_USB_POLICY.notice}`,
-			nonConflictingNotice: NON_CONFLICTING_USB_POLICY.notice,
-		};
+		const demoSensor = pickCatalogModel("vatech_ezsensor_hd");
+		if (demoSensor) {
+			return {
+				isDetected: true,
+				sensorModelId: demoSensor.id,
+				sensorModelName: demoSensor.name,
+				brand: demoSensor.brand,
+				brandName: demoSensor.brandName,
+				intakeChannel: "hot_folder",
+				calibratedPixelSpacingMm: demoSensor.pixelSpacing,
+				calibratedResolution: demoSensor.resolution,
+				statusMessage: `Демо-стенд: Эмуляция сенсора ${demoSensor.name} (${demoSensor.resolution})`,
+				details: `Демонстрационный режим витрины. Папка автозахвата: ${demoSensor.recommendedHotFolder}. ${NON_CONFLICTING_USB_POLICY.notice}`,
+				nonConflictingNotice: NON_CONFLICTING_USB_POLICY.notice,
+			};
+		}
 	}
 
 	// 4. Honest Production State: No physical sensor attached to workstation
@@ -181,8 +192,8 @@ export async function testSensorConnection(sensorModelId: string): Promise<Senso
 					};
 				}
 			}
-		} catch {
-			// fall-through
+		} catch (usbErr) {
+			logger.debug("[hardwareDetection] WebUSB test skipped", usbErr);
 		}
 	}
 
@@ -210,8 +221,8 @@ export async function testSensorConnection(sensorModelId: string): Promise<Senso
 				}
 			}
 		}
-	} catch {
-		// fall-through
+	} catch (netErr) {
+		logger.debug("[hardwareDetection] Hardware status check failed", netErr);
 	}
 
 	// 3. Isolated demo showcase mode

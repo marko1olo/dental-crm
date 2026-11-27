@@ -36,7 +36,7 @@ export interface FinanceToolbarProps {
 
 export function FinanceToolbar(p: FinanceToolbarProps): React.JSX.Element {
 	return (
-		<div className="finance-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-1.5 sm:mb-2 flex-nowrap overflow-hidden shrink-0 select-none">
+		<div className="finance-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex flex-wrap sm:flex-nowrap items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-1.5 sm:mb-2 shrink-0 select-none">
 			<FinanceToolbarLeft
 				documentPatient={p.documentPatient}
 				isCashShiftOpen={p.isCashShiftOpen}

@@ -1,9 +1,9 @@
 /* ---------- Step Body Container ---------- */
 .wizard-step-container {
-	padding: 24px;
+	padding: 20px 24px;
 	overflow-y: auto;
-	max-height: calc(85vh - 200px);
-	min-height: 400px;
+	flex: 1 1 auto;
+	min-height: 0;
 }
 
 .step-intro-header {

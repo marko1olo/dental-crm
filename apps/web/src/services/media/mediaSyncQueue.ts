@@ -8,6 +8,9 @@
  * - Уведомления об успешной синхронизации для одонтограммы
  */
 
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { uploadImagingScanChunked } from "../../components/imaging/upload/chunkedImagingUpload";
 import { logger } from "../../utils/logger";
 import {
 	getMediaItemById,
@@ -114,12 +117,35 @@ export async function uploadSingleMediaItem(
 	}
 
 	try {
-		const formData = new FormData();
 		const binaryBlob =
 			blob instanceof Blob
 				? blob
 				: new Blob([blob], { type: item.mimeType });
 
+		if (!options.targetUploadUrl && binaryBlob.size > 4 * 1024 * 1024) {
+			const chunkedFile =
+				binaryBlob instanceof File
+					? binaryBlob
+					: new File([binaryBlob], item.fileName, { type: item.mimeType });
+			const chunkedResult = await uploadImagingScanChunked({
+				file: chunkedFile,
+				patientId: item.patientId,
+				visitId: item.visitId ?? null,
+				kind: "photo",
+				title: item.fileName,
+				toothCode: item.toothNumber ? String(item.toothNumber) : null,
+			});
+			if (!chunkedResult.success) {
+				throw new Error(chunkedResult.error || "Chunked upload failed");
+			}
+			const remoteUrl = chunkedResult.study?.id
+				? `/api/imaging/studies/${chunkedResult.study.id}`
+				: `/media/patients/${item.patientId}/${item.fileName}`;
+			await updateMediaSyncStatus(mediaId, "synced", { remoteUrl });
+			return { success: true, remoteUrl };
+		}
+
+		const formData = new FormData();
 		formData.append("file", binaryBlob, item.fileName);
 		formData.append("mediaId", item.mediaId);
 		formData.append("patientId", item.patientId);
@@ -128,11 +154,15 @@ export async function uploadSingleMediaItem(
 		formData.append("photoType", item.photoType);
 		if (item.organizationId) formData.append("organizationId", item.organizationId);
 
+		const headers = denteClinicalMutationHeaders({
+			"Idempotency-Key": generateUuidV7(),
+			"x-dente-media-sync": "1",
+		});
+		delete (headers as Record<string, string>)["Content-Type"];
+
 		const response = await fetchFn(uploadUrl, {
 			method: "POST",
-			headers: {
-				"x-dente-media-sync": "1",
-			},
+			headers,
 			body: formData,
 		});
 
@@ -141,8 +171,17 @@ export async function uploadSingleMediaItem(
 			throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
 		}
 
-		const data = (await response.json()) as { url?: string; remoteUrl?: string };
-		const remoteUrl = data.remoteUrl || data.url || `/media/patients/${item.patientId}/${item.fileName}`;
+		const rawJson = (await response.json().catch((parseErr: unknown) => {
+			logger.warn("[MediaSyncQueue] Failed to parse media upload JSON response:", parseErr);
+			return null;
+		})) as
+			| { data?: { url?: string; remoteUrl?: string }; url?: string; remoteUrl?: string }
+			| null;
+		const data =
+			rawJson && typeof rawJson === "object" && "data" in rawJson && rawJson.data
+				? rawJson.data
+				: rawJson;
+		const remoteUrl = data?.remoteUrl || data?.url || `/media/patients/${item.patientId}/${item.fileName}`;
 
 		await updateMediaSyncStatus(mediaId, "synced", { remoteUrl });
 

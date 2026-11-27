@@ -92,7 +92,7 @@ export const InventoryWarehouseGuide: React.FC<ClinicalGuideProps> = ({ onLaunch
 					<div className="overflow-x-auto">
 						<table className="w-full text-[11px] text-left">
 							<thead>
-								<tr className="border-b border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] text-[10px] uppercase font-bold tracking-wider">
+								<tr className="border-b border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] text-xs font-semibold">
 									<th className="py-2 px-3 font-semibold">Артикул</th>
 									<th className="py-2 px-3 font-semibold">Наименование</th>
 									<th className="py-2 px-3 font-semibold">Партия FEFO</th>
@@ -314,9 +314,9 @@ export const InventoryWarehouseGuide: React.FC<ClinicalGuideProps> = ({ onLaunch
 				<button
 					type="button"
 					onClick={handleLaunchTour}
-					className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
+					className="h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium text-sm inline-flex items-center justify-center gap-2 transition-colors cursor-pointer shrink-0"
 				>
-					<Zap size={14} />
+					<Zap className="w-4 h-4 shrink-0 text-[var(--primary)]" />
 					<span>Запустить обучение</span>
 				</button>
 			</div>

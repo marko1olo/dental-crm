@@ -44,7 +44,7 @@ export function mapRawToAuditEntryParams(raw: Record<string, unknown>): CreateAu
 	if (action.includes('emr') || action.includes('card') || action.includes('043')) {
 		eventType = 'view_patient_card';
 		eventCategory = 'patient_pii';
-		actionDesc = 'Просмотр медкарты 043/у';
+		actionDesc = 'Просмотр медицинской карты';
 	} else if (action.includes('bill') || action.includes('payment') || action.includes('discount') || action.includes('price')) {
 		eventType = 'modify_bill';
 		eventCategory = 'financial';

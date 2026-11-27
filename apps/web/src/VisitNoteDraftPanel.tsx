@@ -20,6 +20,7 @@ import { useCallback, useState } from "react";
 import { Check } from "lucide-react";
 import { operatorReadableErrorDetail } from "./AppHelpers";
 import { showToast } from "./components/GlobalToast";
+import { clientLogger } from "./utils/logger";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast, requestFailureCause } from "./lib/panelStateText";
 import { logger } from "./utils/logger";
@@ -90,7 +91,8 @@ function jsonObjectOrNull(raw: string): Record<string, unknown> | null {
 		return typeof p === "object" && p !== null && !Array.isArray(p)
 			? (p as Record<string, unknown>)
 			: null;
-	} catch {
+	} catch (jsonErr: unknown) {
+		clientLogger.debug("[VisitNoteDraftPanel] Invalid JSON object candidate", jsonErr);
 		return null;
 	}
 }

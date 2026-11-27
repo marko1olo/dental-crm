@@ -91,18 +91,39 @@ export interface UseDesktopShortcutsOptions {
  */
 function isDesktopEnv(): boolean {
 	if (typeof window === "undefined") return false;
-	const win = window as unknown as {
-		denteDesktopNative?: { isDesktop?: boolean };
-		electron?: unknown;
-		process?: { versions?: { electron?: string } };
-		__TAURI__?: unknown;
-	};
-	return Boolean(
-		win.denteDesktopNative?.isDesktop ||
-		win.electron !== undefined ||
-		win.process?.versions?.electron !== undefined ||
-		win.__TAURI__ !== undefined,
-	);
+	if (
+		"denteDesktopNative" in window &&
+		typeof window.denteDesktopNative === "object" &&
+		window.denteDesktopNative !== null
+	) {
+		const bridge = window.denteDesktopNative;
+		if ("isDesktop" in bridge && Boolean(bridge.isDesktop)) {
+			return true;
+		}
+	}
+	if ("electron" in window && window.electron !== undefined) {
+		return true;
+	}
+	if ("__TAURI__" in window && window.__TAURI__ !== undefined) {
+		return true;
+	}
+	if (
+		"process" in window &&
+		typeof window.process === "object" &&
+		window.process !== null &&
+		"versions" in window.process
+	) {
+		const versions = window.process.versions;
+		if (
+			typeof versions === "object" &&
+			versions !== null &&
+			"electron" in versions &&
+			versions.electron !== undefined
+		) {
+			return true;
+		}
+	}
+	return false;
 }
 
 /**

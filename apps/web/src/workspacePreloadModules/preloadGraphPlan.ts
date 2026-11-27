@@ -72,7 +72,7 @@ export function isLowSpecDevice(): boolean {
 		}
 	}
 	if (typeof navigator === "undefined") return false;
-	const nav = navigator as NetworkAwareNavigator;
+	const nav: Partial<NetworkAwareNavigator> = navigator;
 	// Двухъядерный процессор врача (<= 2 физических ядер или <= 4 виртуальных потоков)
 	if (
 		typeof nav.hardwareConcurrency === "number" &&
@@ -109,7 +109,7 @@ export function shouldPreloadWorkspaceRoutes(
 	}
 
 	if (typeof navigator === "undefined") return true;
-	const nav = navigator as NetworkAwareNavigator;
+	const nav: Partial<NetworkAwareNavigator> = navigator;
 	const connection = nav.connection;
 
 	if (connection) {

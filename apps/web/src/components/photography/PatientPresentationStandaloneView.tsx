@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Camera } from 'lucide-react';
+import { logger } from '../../utils/logger';
 import { PresentationComparisonMode } from './presentationSyncProtocol';
 import { usePresentationState } from './presentation/usePresentationState';
 import { PresentationHeader } from './presentation/PresentationHeader';
@@ -32,8 +33,17 @@ export const PatientPresentationStandaloneView: React.FC<PatientPresentationStan
 	const isEmpty = !state.beforeImageUrl && !state.afterImageUrl;
 
 	const onToggleFs = () => {
-		if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(() => {}); setIsFullscreen(true); }
-		else { document.exitFullscreen().catch(() => {}); setIsFullscreen(false); }
+		if (!document.fullscreenElement) {
+			document.documentElement.requestFullscreen().catch((err: unknown) => {
+				logger.warn('[PatientPresentation] Fullscreen enter failed', err);
+			});
+			setIsFullscreen(true);
+		} else {
+			document.exitFullscreen().catch((err: unknown) => {
+				logger.warn('[PatientPresentation] Fullscreen exit failed', err);
+			});
+			setIsFullscreen(false);
+		}
 	};
 
 	return (
@@ -107,7 +117,14 @@ export const PatientPresentationStandaloneView: React.FC<PatientPresentationStan
 								state={effectiveState} sliderContainerRef={sliderContainerRef}
 								onPointerDown={(e) => { isDraggingRef.current = true; (e.target as HTMLElement).setPointerCapture(e.pointerId); updateSplit(e); }}
 								onPointerMove={(e) => { if (isDraggingRef.current) updateSplit(e); }}
-								onPointerUp={(e) => { isDraggingRef.current = false; try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {} }}
+								onPointerUp={(e) => {
+									isDraggingRef.current = false;
+									try {
+										(e.target as HTMLElement).releasePointerCapture(e.pointerId);
+									} catch (err) {
+										logger.debug('[PatientPresentation] releasePointerCapture warning', err);
+									}
+								}}
 							/>
 						)}
 						{state.mode === 'side_by_side' && <PresentationSideBySideViewport state={effectiveState} />}

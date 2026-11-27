@@ -29,6 +29,7 @@ export type ThemeMode =
 	| "light"
 	| "dark"
 	| "night"
+	| "oled"
 	| "calm_teal"
 	| "contrast"
 	| "sakura"
@@ -47,6 +48,7 @@ export type ResolvedTheme = {
 		| "light"
 		| "dark"
 		| "night"
+		| "oled"
 		| "calm_teal"
 		| "contrast"
 		| "sakura"
@@ -89,6 +91,7 @@ export function resolveTheme(
 	const isDark =
 		theme === "dark" ||
 		theme === "night" ||
+		theme === "oled" ||
 		theme === "ocean" ||
 		theme === "emerald" ||
 		theme === "cyber_xray";

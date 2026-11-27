@@ -142,8 +142,7 @@ export function ScheduleFilterChips({
 							isMyChairActive
 								? "active font-bold bg-[var(--paper)] text-[var(--ink)] shadow-2xs"
 								: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
-						} dente-filter-chip schedule-my-chair-chip min-h-[44px] rounded-full px-2.5 text-[12px] border border-[var(--line)] shrink-0 flex-shrink-0 cursor-pointer inline-flex items-center gap-1 select-none whitespace-nowrap transition-all`}
-						style={{ minHeight: "44px" }}
+						} dente-filter-chip schedule-my-chair-chip h-[30px] min-h-[30px] max-h-[30px] rounded-full px-2.5 text-[12px] border border-[var(--line)] shrink-0 flex-shrink-0 cursor-pointer inline-flex items-center gap-1 select-none whitespace-nowrap transition-all`}
 						onClick={onSelectMyChair}
 						title={`Моё дежурное кресло: ${cleanChairName}`}
 						aria-label={`Моё дежурное кресло: ${cleanChairName}`}
@@ -172,8 +171,7 @@ export function ScheduleFilterChips({
 				<button
 					type="button"
 					onClick={onOpenAddChair}
-					className="secondary-button schedule-add-chair-chip-btn dente-filter-chip min-h-[44px] min-w-[44px] rounded-full px-2.5 border border-dashed border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] text-[12px] font-medium inline-flex items-center justify-center gap-1 cursor-pointer transition-all shrink-0 whitespace-nowrap"
-					style={{ minHeight: "44px", minWidth: "44px" }}
+					className="secondary-button schedule-add-chair-chip-btn dente-filter-chip min-h-[44px] min-w-[44px] sm:h-[30px] sm:min-h-[30px] sm:max-h-[30px] sm:min-w-0 rounded-full px-2.5 border border-dashed border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] text-[12px] font-medium inline-flex items-center justify-center gap-1 cursor-pointer transition-all shrink-0 whitespace-nowrap"
 					title="Добавить кресло в расписание"
 					aria-label="Добавить кресло в расписание"
 					data-testid="schedule-add-chair-btn"

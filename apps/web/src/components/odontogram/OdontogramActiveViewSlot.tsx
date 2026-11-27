@@ -1,12 +1,14 @@
 import type { OdontogramViewMode } from "@dental/shared";
 import React, { useState, useEffect, useCallback } from "react";
+import { showToast } from "../../components/GlobalToast";
+import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 import { useAppStore } from "../../store/appStore";
 import { WheelerToothArch } from "./WheelerToothArch";
 import { OdontogramBatchBar } from "./OdontogramBatchBar";
 
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { OdontogramQuickTextInput } from "./OdontogramQuickTextInput";
-import { OdontogramStampPalette } from "./OdontogramStampPalette";
+import { type CatalogDefectOption, OdontogramStampPalette } from "./OdontogramStampPalette";
 import { ToothChart, type ToothData, type ToothState } from "./ToothChart";
 import {
 	resolveClinicProcedureForState,
@@ -218,9 +220,28 @@ export const OdontogramActiveViewSlot: React.FC<
 							setActiveStampTool={setActiveStampTool}
 							onQuickStateChange={handleInterceptedQuickStateChange}
 							handleQuickTriggerState={(state) => {
-								handleQuickTriggerState(state);
 								if (selectedTeeth.length > 0) {
-									handleInterceptedQuickStateChange(selectedTeeth, state);
+									handleInterceptedQuickStateChange(selectedTeeth, state, []);
+									SoundFeedbackService.getInstance().playActionSuccess();
+									showToast(
+										`Статус «${state}» применён к ${selectedTeeth.length} зубам`,
+										"success",
+									);
+									return;
+								}
+								handleQuickTriggerState(state);
+							}}
+							onApplyCatalogDefect={(defect: CatalogDefectOption) => {
+								const procedure = resolveClinicProcedureForState(defect.mappedState, clinicServiceCatalog);
+								if (selectedTeeth.length > 0) {
+									setLiveEstimateToast({
+										toothNumbers: [...selectedTeeth],
+										state: defect.mappedState,
+										title: procedure?.title ? `${defect.name} — ${procedure.title}` : defect.name,
+										priceRub: (procedure?.price ?? 0) * selectedTeeth.length,
+									});
+								} else {
+									showToast(`Выбран штамп: ${defect.name} (${defect.alias})`, "info");
 								}
 							}}
 							selectedTeeth={selectedTeeth}
@@ -235,9 +256,23 @@ export const OdontogramActiveViewSlot: React.FC<
 								maybeSurfaces?: readonly string[],
 							) => {
 								if (Array.isArray(batchOrTargets) && batchOrTargets.length > 0 && typeof batchOrTargets[0] === "object" && batchOrTargets[0] !== null) {
-									for (const item of (batchOrTargets as readonly { readonly toothNumber: number; readonly state: ToothState; readonly surfaces?: readonly string[] }[])) {
-										handleInterceptedQuickStateChange([item.toothNumber], item.state, item.surfaces);
-									}
+									const grouped = new Map<string, { teeth: number[]; state: ToothState; surfaces?: readonly string[] }>();
+									(batchOrTargets as readonly { readonly toothNumber: number; readonly state: ToothState; readonly surfaces?: readonly string[] }[]).forEach((item) => {
+										const key = `${item.state}::${(item.surfaces ?? []).join(",")}`;
+										const existing = grouped.get(key);
+										if (existing) {
+											existing.teeth.push(item.toothNumber);
+										} else {
+											grouped.set(key, {
+												teeth: [item.toothNumber],
+												state: item.state,
+												...(item.surfaces ? { surfaces: item.surfaces } : {}),
+											});
+										}
+									});
+									grouped.forEach((group) => {
+										handleInterceptedQuickStateChange(group.teeth, group.state, group.surfaces);
+									});
 								} else if (Array.isArray(batchOrTargets) && maybeState) {
 									handleInterceptedQuickStateChange(batchOrTargets as number[], maybeState, maybeSurfaces);
 								}

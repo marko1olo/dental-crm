@@ -4,7 +4,7 @@ import type {
 	SpeechProviderHealth,
 	SpeechProviderRuntimeStatus,
 } from "@dental/shared";
-import { CheckCircle2, ExternalLink } from "lucide-react";
+import { CheckCircle2, ExternalLink, MicOff } from "lucide-react";
 
 export interface SpeechProvidersGridProps {
 	providers: SpeechProvider[];
@@ -21,6 +21,23 @@ export const SpeechProvidersGrid: React.FC<SpeechProvidersGridProps> = ({
 	modeLabels,
 	healthLabels,
 }) => {
+	if (providers.length === 0) {
+		return (
+			<div
+				className="py-10 px-4 flex flex-col items-center justify-center text-center gap-2 rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)]"
+				data-testid="speech-providers-empty"
+			>
+				<MicOff className="w-10 h-10 text-[var(--muted)]" aria-hidden="true" />
+				<p className="text-sm font-semibold text-[var(--ink)] m-0">
+					Провайдеры распознавания речи не настроены
+				</p>
+				<p className="text-xs text-[var(--muted)] m-0 max-w-md">
+					Добавьте ключ Google Gemini, OpenAI Whisper или локального сервера диктовки в настройках клиники, чтобы включить голосовой ввод у кресла.
+				</p>
+			</div>
+		);
+	}
+
 	return (
 		<div className="ai-provider-grid">
 			{providers.map((provider) => {

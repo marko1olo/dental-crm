@@ -22,9 +22,9 @@ export const TaxSystemSelector: React.FC<TaxSystemSelectorProps> = ({
 	activeTaxation,
 	onSelectTaxation,
 }) => {
-	const currentSystem: TaxationSystemConfig =
+	const currentSystem: TaxationSystemConfig | undefined =
 		TAXATION_SYSTEMS.find((s) => s.id === activeTaxation) ??
-		TAXATION_SYSTEMS[0]!;
+		TAXATION_SYSTEMS[0];
 
 	return (
 		<div className="space-y-2.5" data-testid="tax-system-selector-section">
@@ -92,13 +92,15 @@ export const TaxSystemSelector: React.FC<TaxSystemSelectorProps> = ({
 				})}
 			</div>
 
-			<div className="px-3 py-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)] flex items-center gap-2">
-				<Info size={14} className="text-[var(--teal)] shrink-0" />
-				<span>
-					<strong className="text-[var(--ink)]">{currentSystem.name}:</strong>{" "}
-					{currentSystem.recommendedFor}
-				</span>
-			</div>
+			{currentSystem && (
+				<div className="px-3 py-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)] flex items-center gap-2">
+					<Info size={14} className="text-[var(--teal)] shrink-0" />
+					<span>
+						<strong className="text-[var(--ink)]">{currentSystem.name}:</strong>{" "}
+						{currentSystem.recommendedFor}
+					</span>
+				</div>
+			)}
 		</div>
 	);
 };

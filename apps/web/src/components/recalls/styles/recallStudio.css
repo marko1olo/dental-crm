@@ -368,111 +368,111 @@
 /* ── Mobile Apple HIG Bottom Sheet (<= 768px) ── */
 @media (max-width: 768px) {
 	.recall-studio-backdrop {
-		padding: 0 !important;
-		align-items: flex-end !important;
-		justify-content: stretch !important;
+		padding: 0;
+		align-items: flex-end;
+		justify-content: stretch;
 	}
 
 	.recall-studio-container {
-		width: 100vw !important;
-		max-width: 100vw !important;
-		height: 92vh !important;
-		max-height: 94vh !important;
-		border-radius: 24px 24px 0 0 !important;
-		border-bottom: none !important;
-		border-left: none !important;
-		border-right: none !important;
-		overflow-x: clip !important;
-		display: flex !important;
-		flex-direction: column !important;
+		width: 100vw;
+		max-width: 100vw;
+		height: 92vh;
+		max-height: 94vh;
+		border-radius: 24px 24px 0 0;
+		border-bottom: none;
+		border-left: none;
+		border-right: none;
+		overflow-x: clip;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.recall-studio-drag-handle {
-		display: block !important;
-		width: 36px !important;
-		height: 5px !important;
-		border-radius: 3px !important;
-		background: var(--line) !important;
-		margin: 10px auto 4px auto !important;
-		flex-shrink: 0 !important;
+		display: block;
+		width: 36px;
+		height: 5px;
+		border-radius: 3px;
+		background: var(--line);
+		margin: 10px auto 4px auto;
+		flex-shrink: 0;
 	}
 
 	.recall-studio-header {
-		padding: 10px 14px 8px 14px !important;
-		gap: 8px !important;
+		padding: 10px 14px 8px 14px;
+		gap: 8px;
 	}
 
 	.recall-studio-title {
-		font-size: 1.05rem !important;
+		font-size: 1.05rem;
 	}
 
 	.recall-studio-subtitle {
-		display: none !important;
+		display: none;
 	}
 
 	.recall-studio-kpi-bar {
-		display: flex !important;
-		gap: 6px !important;
-		flex-wrap: nowrap !important;
-		overflow-x: auto !important;
-		scrollbar-width: none !important;
+		display: flex;
+		gap: 6px;
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		scrollbar-width: none;
 	}
 
 	.recall-studio-kpi-bar::-webkit-scrollbar {
-		display: none !important;
+		display: none;
 	}
 
 	.recall-studio-kpi-chip {
-		padding: 4px 8px !important;
-		font-size: 0.75rem !important;
-		white-space: nowrap !important;
-		flex-shrink: 0 !important;
+		padding: 4px 8px;
+		font-size: 0.75rem;
+		white-space: nowrap;
+		flex-shrink: 0;
 	}
 
 	.recall-studio-search-box {
-		max-width: 100% !important;
-		width: 100% !important;
+		max-width: 100%;
+		width: 100%;
 	}
 
 	.recall-studio-body {
-		padding: 10px 14px !important;
-		gap: 12px !important;
-		flex: 1 1 auto !important;
-		min-height: 0 !important;
-		overflow-y: auto !important;
-		-webkit-overflow-scrolling: touch !important;
+		padding: 10px 14px;
+		gap: 12px;
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
 	}
 
 	.recall-studio-card-main {
-		flex-direction: column !important;
-		align-items: stretch !important;
-		gap: 10px !important;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
 	}
 
 	.recall-studio-actions-row {
-		width: 100% !important;
-		display: flex !important;
-		gap: 8px !important;
+		width: 100%;
+		display: flex;
+		gap: 8px;
 	}
 
 	.recall-studio-actions-row button {
-		flex: 1 1 0 !important;
-		min-height: 44px !important;
-		justify-content: center !important;
-		font-size: 0.75rem !important;
-		padding: 8px 10px !important;
+		flex: 1 1 0;
+		min-height: 44px;
+		justify-content: center;
+		font-size: 0.75rem;
+		padding: 8px 10px;
 	}
 
 	.recall-studio-bottom-bar {
-		padding: 10px 14px !important;
-		padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
-		flex-direction: column !important;
-		gap: 8px !important;
-		flex-shrink: 0 !important;
+		padding: 10px 14px;
+		padding-bottom: max(16px, env(safe-area-inset-bottom));
+		flex-direction: column;
+		gap: 8px;
+		flex-shrink: 0;
 	}
 
 	.recall-studio-bottom-bar .recall-studio-btn-primary {
-		width: 100% !important;
-		min-height: 48px !important;
+		width: 100%;
+		min-height: 48px;
 	}
 }

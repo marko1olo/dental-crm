@@ -73,8 +73,7 @@
 
 .tg-info-label {
 	font-size: 11px;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
+	letter-spacing: 0.02em;
 	color: var(--muted, #64748b);
 	font-weight: 600;
 }

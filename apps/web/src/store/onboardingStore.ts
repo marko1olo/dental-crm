@@ -21,9 +21,8 @@ import {
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { showToast } from "../components/GlobalToast";
-import { denteAdminSecretRequestHeaders, denteClinicalMutationHeaders } from "../lib/denteRequestHeaders";
-import { useSettingsStore } from "./settings";
-import { saveWorkspaceFlags } from "../hooks/useWorkspaceProfile";
+import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../lib/denteRequestHeaders";
+import { useWorkspaceProfileStore } from "../hooks/useWorkspaceProfile";
 import { logger } from "../utils/logger";
 
 export interface OnboardingState {
@@ -68,6 +67,7 @@ export interface OnboardingState {
 	// Completion & Doctor Autonomy actions
 	finishWizard: () => Promise<boolean>;
 	skipWizard: () => Promise<boolean>;
+	hydrateFromServer: () => Promise<void>;
 	resetWizard: () => void;
 }
 
@@ -364,86 +364,59 @@ export const useOnboardingStore = create<OnboardingState>()(
 					// 1. Seed pricelist if not already seeded
 					await seedStarterPricelist();
 
-					// 2. Commit full onboarding payload to PostgreSQL via /api/onboarding/complete
-					try {
-						await fetch("/api/onboarding/complete", {
-							method: "POST",
-							headers: denteClinicalMutationHeaders({
-								"Content-Type": "application/json",
-								"Idempotency-Key": generateUuidV7(),
-							}),
-							body: JSON.stringify({
-								profile: {
-									clinicName: profile.clinicName,
-									phone: profile.phone,
-									timezone: profile.timezone,
-									mode: profile.mode,
-								},
-								chairs: chairs.map((c) => ({
-									name: c.name,
-									specialty: c.specialty,
-									isDefault: c.isDefault,
-								})),
-								schedule: {
-									workdayStart: schedule.workdayStart,
-									workdayEnd: schedule.workdayEnd,
-									workingDays: schedule.workingDays,
-									defaultVisitMinutes: Number(schedule.defaultVisitMinutes) || 30,
-								},
-								preset: profile.mode,
-							}),
-						});
-					} catch (onboardingApiErr) {
-						logger.warn("Non-blocking onboarding complete API sync notice:", onboardingApiErr);
-					}
-
-					// 3. Persist workspace profile flags
-					const isSolo = profile.mode === "solo_doctor";
-					const isOneChair = profile.mode === "one_chair";
-
-					await saveWorkspaceFlags({
-						onboardingCompleted: true,
-						workspacePreset: profile.mode,
-						hasMultipleChairs: chairs.length > 1,
-						hasAssistants: !isSolo,
-						hasDentalLab: !isSolo && !isOneChair,
-						hasInsuranceCoPay: !isSolo,
-						hasPayrollModule: !isSolo,
-						hasMarketingModule: !isSolo,
-						hasAnalyticsModule: !isSolo,
-						hasInventoryModule: true,
-					});
-
-					// 4. Save clinic profile details into PostgreSQL 18
-					const profileRes = await fetch("/api/settings/clinic/profile", {
+					// 2. Commit full onboarding payload to PostgreSQL via single atomic /api/onboarding/complete
+					const completeRes = await fetch("/api/onboarding/complete", {
 						method: "POST",
-						headers: denteAdminSecretRequestHeaders(
-							{
-								"Content-Type": "application/json",
-								"Idempotency-Key": generateUuidV7(),
-							},
-							useSettingsStore.getState().settingsAdminSecretSession,
-						),
+						headers: denteClinicalMutationHeaders({
+							"Content-Type": "application/json",
+							"Idempotency-Key": generateUuidV7(),
+						}),
 						body: JSON.stringify({
-							clinicName: profile.clinicName,
-							phone: profile.phone,
-							timezone: profile.timezone,
-							defaultVisitMinutes: Number(schedule.defaultVisitMinutes) || 30,
-							scheduleDefaults: {
+							profile: {
+								clinicName: profile.clinicName,
+								phone: profile.phone,
+								timezone: profile.timezone,
+								mode: profile.mode,
+							},
+							chairs: chairs.map((c) => ({
+								name: c.name,
+								specialty: c.specialty,
+								isDefault: c.isDefault,
+							})),
+							schedule: {
 								workdayStart: schedule.workdayStart,
 								workdayEnd: schedule.workdayEnd,
 								workingDays: schedule.workingDays,
+								defaultVisitMinutes: Number(schedule.defaultVisitMinutes) || 30,
 								appointmentBufferMinutes: Number(schedule.appointmentBufferMinutes) || 5,
 							},
+							preset: profile.mode,
 						}),
 					});
 
-					if (!profileRes.ok) {
-						const errBody = await profileRes.text();
-						throw new Error(`Ошибка сохранения профиля клиники (HTTP ${profileRes.status}): ${errBody.slice(0, 160)}`);
+					if (!completeRes.ok) {
+						const errBody = await completeRes.text().catch(() => "");
+						throw new Error(
+							`Ошибка сохранения настроек клиники (HTTP ${completeRes.status})${errBody ? `: ${errBody.slice(0, 160)}` : ""}`,
+						);
 					}
 
-					// 5. Mark completed
+					// 3. Synchronize local workspace profile store without duplicate HTTP request
+					const isSolo = profile.mode === "solo_doctor";
+					const isOneChair = profile.mode === "one_chair";
+					const wsStore = useWorkspaceProfileStore.getState();
+					wsStore.setFlag("onboardingCompleted", true);
+					wsStore.setFlag("workspacePreset", profile.mode);
+					wsStore.setFlag("hasMultipleChairs", chairs.length > 1);
+					wsStore.setFlag("hasAssistants", !isSolo);
+					wsStore.setFlag("hasDentalLab", !isSolo && !isOneChair);
+					wsStore.setFlag("hasInsuranceCoPay", !isSolo);
+					wsStore.setFlag("hasPayrollModule", !isSolo);
+					wsStore.setFlag("hasMarketingModule", !isSolo);
+					wsStore.setFlag("hasAnalyticsModule", !isSolo);
+					wsStore.setFlag("hasInventoryModule", true);
+
+					// 4. Mark completed only after server persistence succeeded
 					const nowIso = new Date().toISOString();
 					set({
 						isCompleted: true,
@@ -458,21 +431,18 @@ export const useOnboardingStore = create<OnboardingState>()(
 				} catch (error) {
 					const errorMsg = error instanceof Error ? error.message : "Не удалось сохранить настройки";
 					logger.error("Onboarding finish error:", error);
-					// Doctor autonomy: never block on failures, save locally with explicit error toast
 					set({
-						isCompleted: true,
-						isSkipped: false,
-						completedAt: new Date().toISOString(),
+						isCompleted: false,
 						isSubmitting: false,
 						submitError: errorMsg,
 					});
-					showToast(`Настройки сохранены локально (${errorMsg})`, "info", 5000);
-					return true;
+					showToast(`Не удалось сохранить настройки клиники: ${errorMsg}`, "error", 5000);
+					return false;
 				}
 			},
 
 			skipWizard: async () => {
-				set({ isSubmitting: true });
+				set({ isSubmitting: true, submitError: null });
 				const { profile } = get();
 				if (!profile.clinicName?.trim()) {
 					const fallback =
@@ -483,26 +453,108 @@ export const useOnboardingStore = create<OnboardingState>()(
 				}
 
 				try {
-					await saveWorkspaceFlags({
-						onboardingCompleted: true,
+					const skipRes = await fetch("/api/onboarding/skip", {
+						method: "POST",
+						headers: denteClinicalMutationHeaders({
+							"Content-Type": "application/json",
+							"Idempotency-Key": generateUuidV7(),
+						}),
+						body: JSON.stringify({}),
+					});
+					if (!skipRes.ok) {
+						const errBody = await skipRes.text().catch(() => "");
+						throw new Error(`HTTP ${skipRes.status}${errBody ? `: ${errBody.slice(0, 120)}` : ""}`);
+					}
+
+					useWorkspaceProfileStore.getState().setFlag("onboardingCompleted", true);
+					set({
+						isCompleted: false,
+						isSkipped: true,
+						completedAt: new Date().toISOString(),
+						isSubmitting: false,
+						submitError: null,
+					});
+
+					showToast(
+						"Мастер пропущен. Вы можете настроить клинику в любой момент в разделе «Настройки».",
+						"info",
+						4000,
+					);
+					return true;
+				} catch (err) {
+					const errorMsg = err instanceof Error ? err.message : "Не удалось пропустить мастер";
+					logger.error("Skip onboarding API error:", err);
+					set({
+						isSubmitting: false,
+						submitError: errorMsg,
+					});
+					showToast(`Не удалось сохранить пропуск мастера: ${errorMsg}`, "error", 5000);
+					return false;
+				}
+			},
+
+			hydrateFromServer: async () => {
+				try {
+					const res = await fetch("/api/onboarding/status", {
+						method: "GET",
+						headers: denteClinicalReadHeaders(),
+					});
+					if (!res.ok) return;
+					let raw: unknown = null;
+					try {
+						raw = await res.json();
+					} catch (jsonErr) {
+						logger.warn("Onboarding hydrateFromServer invalid JSON:", jsonErr);
+						return;
+					}
+					const payload = (
+						raw && typeof raw === "object" && "data" in raw
+							? (raw as { data: Record<string, unknown> }).data
+							: raw
+					) as {
+						completed?: boolean;
+						mode?: ClinicOperationalMode;
+						clinicName?: string;
+						phone?: string;
+						timezone?: string;
+						defaultVisitMinutes?: number;
+						schedule?: {
+							workdayStart?: string;
+							workdayEnd?: string;
+							workingDays?: number[];
+							appointmentBufferMinutes?: number;
+						} | null;
+					} | null;
+					if (!payload) return;
+
+					const prev = get();
+					set({
+						isCompleted: Boolean(payload.completed),
+						profile: {
+							...prev.profile,
+							...(payload.clinicName ? { clinicName: payload.clinicName } : {}),
+							...(payload.phone !== undefined ? { phone: payload.phone } : {}),
+							...(payload.timezone ? { timezone: payload.timezone } : {}),
+							...(payload.mode ? { mode: payload.mode } : {}),
+						},
+						schedule: {
+							...prev.schedule,
+							...(payload.schedule?.workdayStart ? { workdayStart: payload.schedule.workdayStart } : {}),
+							...(payload.schedule?.workdayEnd ? { workdayEnd: payload.schedule.workdayEnd } : {}),
+							...(Array.isArray(payload.schedule?.workingDays) && payload.schedule.workingDays.length > 0
+								? { workingDays: payload.schedule.workingDays }
+								: {}),
+							...(typeof payload.defaultVisitMinutes === "number"
+								? { defaultVisitMinutes: payload.defaultVisitMinutes }
+								: {}),
+							...(typeof payload.schedule?.appointmentBufferMinutes === "number"
+								? { appointmentBufferMinutes: payload.schedule.appointmentBufferMinutes }
+								: {}),
+						},
 					});
 				} catch (err) {
-					logger.warn("Skip onboarding flag persist notice:", err);
+					logger.warn("Onboarding hydrateFromServer failed:", err);
 				}
-
-				set({
-					isCompleted: false,
-					isSkipped: true,
-					completedAt: new Date().toISOString(),
-					isSubmitting: false,
-				});
-
-				showToast(
-					"Мастер пропущен. Вы можете настроить клинику в любой момент в разделе «Настройки».",
-					"info",
-					4000,
-				);
-				return true;
 			},
 
 			resetWizard: () => {

@@ -2,6 +2,7 @@ import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
 } from "../../../lib/safeLocalStorage";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { ClinicalTask } from "../clinicalTasksTypes";
 
 const LOCAL_STORAGE_KEY_PREFIX = "dente_clinical_local_tasks_";
@@ -12,7 +13,8 @@ export function getLocalTasks(patientId: string): ClinicalTask[] {
 		if (!raw) return [];
 		const parsed = JSON.parse(raw);
 		return Array.isArray(parsed) ? (parsed as ClinicalTask[]) : [];
-	} catch {
+	} catch (err: unknown) {
+		clientLogger.warn("[clinicalTaskStorage] Failed to parse local tasks", err);
 		return [];
 	}
 }
@@ -25,8 +27,8 @@ export function saveLocalTask(patientId: string, task: ClinicalTask): void {
 			`${LOCAL_STORAGE_KEY_PREFIX}${patientId}`,
 			JSON.stringify(updated.slice(0, 50)),
 		);
-	} catch {
-		// Ignore storage quota errors
+	} catch (err: unknown) {
+		clientLogger.warn("[clinicalTaskStorage] Failed to save local task", err);
 	}
 }
 
@@ -44,7 +46,7 @@ export function updateLocalTaskStatus(
 			`${LOCAL_STORAGE_KEY_PREFIX}${patientId}`,
 			JSON.stringify(updated),
 		);
-	} catch {
-		// Ignore storage quota errors
+	} catch (err: unknown) {
+		clientLogger.warn("[clinicalTaskStorage] Failed to update local task status", err);
 	}
 }

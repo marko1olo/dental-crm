@@ -15,18 +15,18 @@ export const FamilyWalletSection: React.FC<FamilyWalletSectionProps> = React.mem
 	onOpenModal,
 }) => {
 	return (
-		<div className="flex flex-col gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
-			<div className="flex items-center justify-between gap-1.5">
-				<span className="flex items-center gap-1.5 font-semibold text-xs text-[var(--ink)]">
-					<Users size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+		<div className="flex flex-col gap-2 p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] min-w-0">
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<span className="flex items-center gap-1.5 font-semibold text-xs text-[var(--ink)] whitespace-nowrap">
+					<Users size={14} className="text-[var(--primary)] shrink-0" />
 					<span>Семейный счёт</span>
 				</span>
 				{familyData ? (
-					<span className="font-mono font-bold text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded">
+					<span className="font-mono font-bold text-xs text-[var(--primary)] bg-[var(--primary)]/10 px-2 py-0.5 rounded whitespace-nowrap">
 						Баланс: {money(familyData.balance ?? familyData.sharedBalanceRub ?? 0)}
 					</span>
 				) : (
-					<span className="text-[11px] text-[var(--muted)]">
+					<span className="text-[11px] text-[var(--muted)] whitespace-nowrap">
 						{isLoadingFamily ? "Загрузка..." : "Индивидуальный счёт"}
 					</span>
 				)}
@@ -47,9 +47,9 @@ export const FamilyWalletSection: React.FC<FamilyWalletSectionProps> = React.mem
 				type="button"
 				data-testid="widget-open-family-wallet-btn"
 				onClick={onOpenModal}
-				className="secondary-button mt-1 min-h-[44px] sm:min-h-[32px] h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+				className="secondary-button mt-auto min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
 			>
-				<Wallet size={13} className="text-[var(--teal)] shrink-0" />
+				<Wallet size={14} className="text-[var(--primary)] shrink-0" />
 				<span>Управление семейным кошельком</span>
 			</button>
 		</div>

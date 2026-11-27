@@ -5,9 +5,9 @@ export * from "./imagingReferralHelpers.js";
 export { imagingSourceLabels } from "../../imagingUiLabels";
 export * from "../imagingMprHelpers.js";
 export {
-	dicomWorkbenchDraftStoreName,
-	mprWorkbenchDraftStoreName,
-} from "../../helpers/offlineStorageEngine";
+	DICOM_WORKBENCH_DRAFTS_STORE_NAME as dicomWorkbenchDraftStoreName,
+	MPR_WORKBENCH_DRAFTS_STORE_NAME as mprWorkbenchDraftStoreName,
+} from "../../services/offline/storage/constants";
 
 export type {
 	DicomWorkbenchIndexedDbDraft,

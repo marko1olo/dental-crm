@@ -4,9 +4,9 @@
     "version":  "0.1.0",
     "type":  "module",
     "scripts":  {
-                    "dev":  "node --max-old-space-size=8192 ../../node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5173",
-                    "build":  "tsc -b \u0026\u0026 node --max-old-space-size=4096 ../../node_modules/vite/bin/vite.js build",
-                    "typecheck":  "node --max-old-space-size=8192 ../../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
+                    "dev":  "node --max-old-space-size=2048 ../../node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5173",
+                    "build":  "tsc -b \u0026\u0026 node --max-old-space-size=3072 ../../node_modules/vite/bin/vite.js build",
+                    "typecheck":  "node --max-old-space-size=3072 ../../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
                     "pretest":  "node --max-old-space-size=2048 ../../scripts/dice-audit.mjs",
                     "test":  "node --max-old-space-size=1024 --test-concurrency=6 --test-timeout=10000 --import tsx --import ./testCssStub.mjs --test \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
                     "preview":  "vite preview --host 127.0.0.1 --port 4173",

@@ -19,10 +19,10 @@ export interface LanCitoEmergencyBannerProps {
 }
 
 const URGENCY_LABELS: Record<string, string> = {
-	cito_emergency: "ЭКСТРЕННО",
-	emergency: "ЭКСТРЕННО",
-	urgent: "СРОЧНО",
-	normal: "ВЫЗОВ",
+	cito_emergency: "Экстренно",
+	emergency: "Экстренно",
+	urgent: "Срочно",
+	normal: "Вызов",
 };
 
 export const LanCitoEmergencyBanner: React.FC<LanCitoEmergencyBannerProps> = ({
@@ -36,22 +36,10 @@ export const LanCitoEmergencyBanner: React.FC<LanCitoEmergencyBannerProps> = ({
 		<aside
 			role="alert"
 			aria-live="assertive"
-			className="lan-cito-emergency-container"
-			style={{
-				display: "flex",
-				flexDirection: "column",
-				gap: "8px",
-				width: "100%",
-				padding: "8px 16px",
-				backgroundColor: "#fef2f2",
-				borderBottom: "2px solid #ef4444",
-				boxShadow: "0 4px 12px rgba(239, 68, 68, 0.15)",
-				zIndex: 999,
-				animation: "pulse-subtle 2s infinite ease-in-out",
-			}}
+			className="lan-cito-emergency-container flex flex-col gap-2 w-full px-4 py-2 bg-[var(--danger-soft)] border-b-2 border-[var(--danger)] shadow-sm z-[999]"
 		>
 			{alerts.map((alert) => {
-				const urgencyLabel = URGENCY_LABELS[alert.urgency || "normal"] || "ВЫЗОВ";
+				const urgencyLabel = URGENCY_LABELS[alert.urgency || "normal"] || "Вызов";
 				const isCritical =
 					(alert.urgency as string) === "cito_emergency" ||
 					(alert.urgency as string) === "emergency" ||
@@ -60,102 +48,48 @@ export const LanCitoEmergencyBanner: React.FC<LanCitoEmergencyBannerProps> = ({
 				return (
 					<div
 						key={alert.alertId}
-						className="lan-cito-alert-item"
-						style={{
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "space-between",
-							flexWrap: "wrap",
-							gap: "12px",
-							padding: "8px 12px",
-							backgroundColor: isCritical ? "#fee2e2" : "#ffffff",
-							border: `1px solid ${isCritical ? "#f87171" : "#fca5a5"}`,
-							borderRadius: "8px",
-						}}
+						className="lan-cito-alert-item flex items-center justify-between flex-wrap gap-3 px-3 py-2 rounded-xl bg-[var(--paper)] border border-[var(--danger)]/40 text-[var(--ink)]"
 					>
-						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "10px",
-								flex: "1 1 auto",
-							}}
-						>
+						<div className="flex items-center gap-2.5 flex-1 min-w-0">
 							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-									width: "36px",
-									height: "36px",
-									borderRadius: "50%",
-									backgroundColor: isCritical ? "#ef4444" : "#f97316",
-									color: "#ffffff",
-									flexShrink: 0,
-								}}
+								className={`flex items-center justify-center w-9 h-9 rounded-full shrink-0 text-white ${
+									isCritical ? "bg-[var(--danger)]" : "bg-[var(--warning)]"
+								}`}
 							>
-								{isCritical ? <AlertTriangle size={20} /> : <Bell size={20} />}
+								{isCritical ? <AlertTriangle className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
 							</div>
 
-							<div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-								<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+							<div className="flex flex-col gap-0.5 min-w-0">
+								<div className="flex items-center gap-2 flex-wrap">
 									<span
-										style={{
-											fontSize: "11px",
-											fontWeight: 700,
-											letterSpacing: "0.05em",
-											padding: "2px 6px",
-											borderRadius: "4px",
-											backgroundColor: isCritical ? "#dc2626" : "#ea580c",
-											color: "#ffffff",
-										}}
+										className={`inline-flex items-center h-6 px-2 text-xs font-medium rounded-full text-white ${
+											isCritical ? "bg-[var(--danger)]" : "bg-[var(--warning)]"
+										}`}
 									>
-										⚡ Экстренный вызов в кабинет / Срочно • {urgencyLabel}
+										Экстренный вызов • {urgencyLabel}
 									</span>
-									<span style={{ fontWeight: 600, fontSize: "14px", color: "#111827" }}>
+									<span className="font-semibold text-sm text-[var(--ink)]">
 										Кабинет {alert.cabinetNumber}
 									</span>
-									<span style={{ fontSize: "13px", color: "#4b5563" }}>
+									<span className="text-xs text-[var(--ink-muted)]">
 										({alert.doctorName})
 									</span>
 								</div>
 
-								<div style={{ fontSize: "13px", color: "#1f2937" }}>
+								<div className="text-sm text-[var(--ink)]">
 									{alert.customMessage || alert.reason || "Срочный вызов ассистента в кабинет"}
 								</div>
 							</div>
 						</div>
 
-						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "8px",
-								flexShrink: 0,
-							}}
-						>
+						<div className="flex items-center gap-2 shrink-0">
 							{onAcknowledge && (
 								<button
 									type="button"
 									onClick={() => onAcknowledge(alert.alertId)}
-									style={{
-										minWidth: "44px",
-										minHeight: "44px",
-										display: "inline-flex",
-										alignItems: "center",
-										gap: "6px",
-										padding: "0 14px",
-										borderRadius: "6px",
-										border: "none",
-										backgroundColor: "#16a34a",
-										color: "#ffffff",
-										fontSize: "13px",
-										fontWeight: 600,
-										cursor: "pointer",
-										touchAction: "manipulation",
-									}}
+									className="min-h-[44px] h-11 px-4 rounded-xl text-sm font-medium inline-flex items-center justify-center gap-2 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-sm transition-colors cursor-pointer touch-manipulation"
 								>
-									<Check size={16} />
+									<Check className="w-4 h-4 shrink-0" />
 									<span>Принять</span>
 								</button>
 							)}
@@ -164,21 +98,9 @@ export const LanCitoEmergencyBanner: React.FC<LanCitoEmergencyBannerProps> = ({
 								type="button"
 								onClick={() => onDismiss(alert.alertId)}
 								aria-label="Скрыть экстренное оповещение"
-								style={{
-									minWidth: "44px",
-									minHeight: "44px",
-									display: "inline-flex",
-									alignItems: "center",
-									justifyContent: "center",
-									borderRadius: "6px",
-									border: "1px solid #d1d5db",
-									backgroundColor: "#ffffff",
-									color: "#4b5563",
-									cursor: "pointer",
-									touchAction: "manipulation",
-								}}
+								className="min-w-[44px] min-h-[44px] h-11 px-3 rounded-xl inline-flex items-center justify-center border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] transition-colors cursor-pointer touch-manipulation"
 							>
-								<X size={18} />
+								<X className="w-4 h-4 shrink-0" />
 							</button>
 						</div>
 					</div>

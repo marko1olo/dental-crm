@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { parse } from "@babel/parser";
+import { workspaceTopbarLabels } from "../workspaceUiLabels";
+import { formatDisplayClinicName } from "../workspaceShellModules/topBarModules/workspaceTopBarTypes";
 
 /**
  * СТРОКА ДЕЙСТВИЙ ШАПКИ: СОСТАВ, ПОДПИСИ И ПОРЯДОК.
@@ -33,9 +35,6 @@ import { parse } from "@babel/parser";
 
 const shellPath = fileURLToPath(
 	new URL("../workspaceShellModules/topBarModules/WorkspaceTopBarActions.tsx", import.meta.url),
-);
-const labelsPath = fileURLToPath(
-	new URL("../workspaceUiLabels.ts", import.meta.url),
 );
 const redesignCssPath = fileURLToPath(
 	new URL("../styles/dente-redesign.css", import.meta.url),
@@ -230,6 +229,10 @@ test("два безымянных дубля не вернулись: значо
 });
 
 test("«Запись» стоит раньше кнопок, которые забирает перенос", () => {
+	assert.ok(
+		workspaceTopbarLabels.book.label.trim().length > 0,
+		"подпись главного действия «Запись» в словаре не может быть пустой",
+	);
 	const primary = controls.find((control) =>
 		(control.className ?? "").split(/\s+/).includes("primary-button"),
 	);
@@ -253,6 +256,10 @@ test("«Запись» стоит раньше кнопок, которые за
 });
 
 test("главное действие в строке ровно одно", () => {
+	assert.ok(
+		workspaceTopbarLabels.book.title.trim().length > 0,
+		"подсказка главного действия «Запись» в словаре не может быть пустой",
+	);
 	const primaries = controls.filter((control) =>
 		(control.className ?? "").split(/\s+/).includes("primary-button"),
 	);
@@ -299,31 +306,16 @@ test("необязательные кнопки действительно ск�
 });
 
 test("каждая подпись шапки лежит в словаре и не пуста", () => {
-	/*
-	 * Русский текст в JSX не пишется (UI_STANDARDS, «Decouple Strings»), а
-	 * словарь без подписи возвращает нас к значку без слов. Проверяется само
-	 * содержимое словаря: у каждого действия обязаны быть и подпись, и
-	 * объяснение.
-	 */
-	const labelsSource = readFileSync(labelsPath, "utf8");
-	const dictionary = labelsSource.slice(
-		labelsSource.indexOf("export const workspaceTopbarLabels"),
-	);
-	assert.ok(
-		dictionary.length > 0,
-		"словарь workspaceTopbarLabels исчез из workspaceUiLabels.ts",
-	);
-	for (const action of ["book", "visit", "setup", "lock"]) {
-		const entry = new RegExp(`${action}:\\s*\\{[^}]*\\}`, "s").exec(dictionary);
+	const requiredActions = ["book", "visit", "setup", "lock"] as const;
+	for (const action of requiredActions) {
+		const entry = workspaceTopbarLabels[action];
 		assert.ok(entry, `в словаре подписей шапки нет действия «${action}»`);
-		assert.match(
-			entry[0],
-			/label:\s*"[^"]+"/,
+		assert.ok(
+			entry.label.trim().length > 0,
 			`у действия «${action}» нет непустой видимой подписи label`,
 		);
-		assert.match(
-			entry[0],
-			/title:\s*"[^"]+"/,
+		assert.ok(
+			entry.title.trim().length > 0,
 			`у действия «${action}» нет объяснения title`,
 		);
 	}
@@ -343,6 +335,11 @@ test("в шапку не вернулась плавающая фурнитур�
 	 * был арифметически неисполним и удалён целиком. Возврат к нему через шапку
 	 * запрещён так же, как через собственный файл группы.
 	 */
+	assert.equal(formatDisplayClinicName(null), "Стоматология");
+	assert.equal(
+		formatDisplayClinicName("Стоматология Smile 7701234567"),
+		"Smile",
+	);
 	assert.ok(
 		!/position:\s*["']?fixed/.test(shellSource),
 		"в workspaceShell.tsx появился position: fixed — плавающая фурнитура уже была удалена один раз",

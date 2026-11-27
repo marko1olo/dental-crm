@@ -3,8 +3,9 @@
  * Governed by Mandate 8b (<= 120 lines), Mandate 8e, 8am, 8ap (Anti-Simulation, No Dead-Ends).
  */
 
-import React, { useState } from "react";
-import type { MarketingPromo, MessageChannel, PatientSegmentOption } from "./marketingTypes";
+import React, { useRef, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
+import type { MarketingPromo, MessageChannel } from "./marketingTypes";
 import { showToast } from "../GlobalToast";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
@@ -22,7 +23,7 @@ export interface MarketingCampaignDetailProps {
 	readonly onTogglePromoStatus: (promoId: string) => void;
 }
 
-const CHANNEL_RATES: Record<MessageChannel, { rateRub: number; label: string }> = {
+const DEFAULT_CHANNEL_RATES: Record<MessageChannel, { rateRub: number; label: string }> = {
 	sms: { rateRub: 2.8, label: "SMS · 2.80 ₽ / сообщение" },
 	whatsapp: { rateRub: 3.9, label: "WhatsApp Business · 3.90 ₽ / диалог" },
 	telegram: { rateRub: 0.0, label: "Telegram Bot · 0.00 ₽" },
@@ -40,38 +41,69 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 	const [consentOnly, setConsentOnly] = useState(true);
 	const [isSending, setIsSending] = useState(false);
 	const [testSent, setTestSent] = useState(false);
+	const testSendKeyRef = useRef<string | null>(null);
+	const launchKeysRef = useRef<{
+		createTemplateKey: string;
+		createCampaignKey: string;
+		launchKey: string;
+	} | null>(null);
 
 	const activeSegment = segments.find((s) => s.id === segmentId) ?? segments[0] ?? {
 		id: "default",
 		name: "Все пациенты",
-		count: 100,
+		count: 0,
 		description: "База пациентов клиники",
 	};
 
-	const estimatedCostRub = (activeSegment.count * CHANNEL_RATES[channel].rateRub).toFixed(2);
+	const estimatedCostRub = (activeSegment.count * DEFAULT_CHANNEL_RATES[channel].rateRub).toFixed(2);
+	const clinicSettingsTyped = appLogic?.dashboard?.clinicSettings as
+		| { name?: string | null; website?: string | null; profile?: { legalName?: string | null } }
+		| undefined;
+	const resolvedClinicName =
+		clinicName.trim() ||
+		clinicSettingsTyped?.name?.trim() ||
+		clinicSettingsTyped?.profile?.legalName?.trim() ||
+		"Клиника";
+	const clinicBookingUrl =
+		clinicSettingsTyped?.website?.trim() ||
+		(typeof window !== "undefined" && window.location?.origin ? `${window.location.origin}/#booking` : "");
 
 	const compiledPreview = (
 		channel === "whatsapp" ? promo.templates.whatsapp : channel === "telegram" ? promo.templates.telegram : promo.templates.sms
 	)
-		.replace(/\{Имя\}/g, "Роман")
-		.replace(/\{Клиника\}/g, clinicName || "ДЕНТЕ Премиум")
+		.replace(/\{Имя\}/g, "Пациент")
+		.replace(/\{Клиника\}/g, resolvedClinicName)
 		.replace(/\{Скидка\}/g, promo.discountText)
 		.replace(/\{Промокод\}/g, promo.promoCode)
 		.replace(/\{Срок\}/g, promo.validUntil)
-		.replace(/\{Ссылка\}/g, "dente.ru/b/h35");
+		.replace(/\{Ссылка\}/g, clinicBookingUrl);
 
 	const handleTestSend = async () => {
 		setTestSent(true);
 		try {
-			const headers = { "Content-Type": "application/json", ...denteClinicalMutationHeaders() };
-			await fetch("/api/communications/outbox", {
+			if (!testSendKeyRef.current) {
+				testSendKeyRef.current = generateUuidV7();
+			}
+			const headers = {
+				"Content-Type": "application/json",
+				...denteClinicalMutationHeaders({ "Idempotency-Key": testSendKeyRef.current }),
+			};
+			const res = await fetch("/api/communications/outbox", {
 				method: "POST",
 				headers,
-				body: JSON.stringify({ channel, intent: "general", scope: "marketing", body: `[ТЕСТ] ${compiledPreview}`, dedupeKey: `test_${promo.id}_${Date.now()}` }),
+				body: JSON.stringify({ channel, intent: "general", scope: "marketing", body: `[ТЕСТ] ${compiledPreview}`, dedupeKey: `test_${promo.id}_${testSendKeyRef.current}` }),
 			});
+			if (!res.ok) {
+				throw new Error(`HTTP ${res.status}`);
+			}
+			testSendKeyRef.current = null;
 			showToast(`Тестовое сообщение (${channel.toUpperCase()}) отправлено`, "info");
-		} catch {
-			showToast(`Тестовое сообщение сформировано (${channel.toUpperCase()})`, "info");
+		} catch (err) {
+			setTestSent(false);
+			showToast(
+				err instanceof Error ? `Не удалось отправить тестовое сообщение: ${err.message}` : "Ошибка тестовой отправки",
+				"error",
+			);
 		} finally {
 			setTimeout(() => setTestSent(false), 3000);
 		}
@@ -80,6 +112,13 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 	const handleLaunchCampaign = async () => {
 		setIsSending(true);
 		try {
+			if (!launchKeysRef.current) {
+				launchKeysRef.current = {
+					createTemplateKey: generateUuidV7(),
+					createCampaignKey: generateUuidV7(),
+					launchKey: generateUuidV7(),
+				};
+			}
 			const mutationHeaders = denteClinicalMutationHeaders();
 			const result = await launchMarketingCampaign({
 				promo,
@@ -87,7 +126,9 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 				segmentId,
 				consentOnly,
 				mutationHeaders,
+				idempotencyKeys: launchKeysRef.current,
 			});
+			launchKeysRef.current = null;
 			if (result.queued > 0) {
 				showToast(`Рассылка «${promo.title}» запущена! В очереди: ${result.queued} (${channel.toUpperCase()}).`, "info");
 			} else if (result.alreadyQueued > 0) {
@@ -107,8 +148,8 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 			<MarketingCampaignHeader promo={promo} onTogglePromoStatus={onTogglePromoStatus} />
 			<MarketingCampaignConditions conditions={promo.conditions} />
 			<MarketingCampaignAnalytics stats={promo.stats} />
-			<MarketingCampaignMessageCard selectedChannel={channel} onSelectChannel={setChannel} compiledText={compiledPreview} channelRateLabel={CHANNEL_RATES[channel].label} />
-			<MarketingCampaignLaunchSection segments={segments} selectedSegmentId={segmentId} onSelectSegment={setSegmentId} consentOnly={consentOnly} onChangeConsentOnly={setConsentOnly} estimatedCostRub={estimatedCostRub} activeSegment={activeSegment} channelRateRub={CHANNEL_RATES[channel].rateRub} isSending={isSending} testSent={testSent} onLaunch={handleLaunchCampaign} onTestSend={handleTestSend} />
+			<MarketingCampaignMessageCard selectedChannel={channel} onSelectChannel={setChannel} compiledText={compiledPreview} channelRateLabel={DEFAULT_CHANNEL_RATES[channel].label} />
+			<MarketingCampaignLaunchSection segments={segments} selectedSegmentId={segmentId} onSelectSegment={setSegmentId} consentOnly={consentOnly} onChangeConsentOnly={setConsentOnly} estimatedCostRub={estimatedCostRub} activeSegment={activeSegment} channelRateRub={DEFAULT_CHANNEL_RATES[channel].rateRub} isSending={isSending} testSent={testSent} onLaunch={handleLaunchCampaign} onTestSend={handleTestSend} />
 		</div>
 	);
 };

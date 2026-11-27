@@ -1,4 +1,43 @@
+import { isValidUuid } from "@dental/shared";
+import { safeLocalStorageGetItem } from "../../../lib/safeLocalStorage";
 import { clientLogger } from "../../../services/logging/clientLogger";
+
+export function resolveBookingOrganizationId(
+	contextOrgId: string | null | undefined,
+): string | null {
+	if (typeof window !== "undefined") {
+		const searchParams = new URLSearchParams(window.location.search || "");
+		const fromSearch = searchParams.get("organizationId") || searchParams.get("org");
+		if (fromSearch && isValidUuid(fromSearch)) return fromSearch;
+
+		const hash = window.location.hash || "";
+		const qIdx = hash.indexOf("?");
+		if (qIdx >= 0) {
+			const hashParams = new URLSearchParams(hash.slice(qIdx + 1));
+			const fromHash = hashParams.get("organizationId") || hashParams.get("org");
+			if (fromHash && isValidUuid(fromHash)) return fromHash;
+		}
+	}
+
+	if (contextOrgId && isValidUuid(contextOrgId)) return contextOrgId;
+
+	try {
+		const cachedUser =
+			safeLocalStorageGetItem("dente_cached_active_staff_user") ||
+			safeLocalStorageGetItem("dental-crm:active-user:v1");
+		if (cachedUser) {
+			const parsed = JSON.parse(cachedUser) as { organizationId?: unknown };
+			if (typeof parsed.organizationId === "string" && isValidUuid(parsed.organizationId)) {
+				return parsed.organizationId;
+			}
+		}
+		const storedOrgId = safeLocalStorageGetItem("dente_organization_id");
+		if (storedOrgId && isValidUuid(storedOrgId)) return storedOrgId;
+	} catch {
+		return null;
+	}
+	return null;
+}
 
 export interface BookingReceiptData {
 	bookingId: string;

@@ -37,7 +37,7 @@ export const SAMPLE_BARCODES = [
 		code: "010366479800001921SNBADCHECKSUM\x1d17280531\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz1234",
 		cost: 450,
 	},
-];
+] as const;
 
 /**
  * Изоляция демонстрационных кодов маркировки от боевого контура (Мандат 8wy).
@@ -53,14 +53,14 @@ export const EMERGENCY_DISPENSE_PRESETS = [
 	{
 		label: "Ультракаин® Д-С форте 1:100 000 (1 карпула)",
 		shortName: "Ультракаин 1:100 000",
-		code: SAMPLE_BARCODES[0]!.code,
+		code: SAMPLE_BARCODES[0].code,
 		cost: 450,
 		badge: "Анестезия",
 	},
 	{
 		label: "Септанест 1:100 000 (1 карпула)",
 		shortName: "Септанест 1:100 000",
-		code: SAMPLE_BARCODES[1]!.code,
+		code: SAMPLE_BARCODES[1].code,
 		cost: 390,
 		badge: "Анестезия",
 	},
@@ -74,14 +74,14 @@ export const EMERGENCY_DISPENSE_PRESETS = [
 	{
 		label: "Хлоргексидина биглюконат 0.05% (Антисептик)",
 		shortName: "Хлоргексидин 0.05%",
-		code: SAMPLE_BARCODES[3]!.code,
+		code: SAMPLE_BARCODES[3].code,
 		cost: 85,
 		badge: "Антисептик",
 	},
 	{
 		label: "Мирамистин 0.01% (Антисептический раствор)",
 		shortName: "Мирамистин 0.01%",
-		code: SAMPLE_BARCODES[4]!.code,
+		code: SAMPLE_BARCODES[4].code,
 		cost: 410,
 		badge: "Антисептик",
 	},

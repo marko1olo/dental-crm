@@ -2,6 +2,8 @@
  * indexedDbStorageDriver.ts — Персистентный драйвер очереди на базе нативного IndexedDB
  */
 
+import { OFFLINE_DB_NAME } from "../../offline/storage/constants";
+import { openOfflineOutboxDb } from "../../offline/storage/idbDatabase";
 import { type PendingTranscriptionRecord, VOICE_OFFLINE_STORE_NAME } from "./types";
 import type { StorageDriver } from "./storageDriverInterface";
 
@@ -16,6 +18,9 @@ export class IndexedDbStorageDriver implements StorageDriver {
 	}
 
 	private getDb(): Promise<IDBDatabase> {
+		if (this.dbName === OFFLINE_DB_NAME) {
+			return openOfflineOutboxDb();
+		}
 		if (this.dbPromise) return this.dbPromise;
 
 		this.dbPromise = new Promise<IDBDatabase>((resolve, reject) => {

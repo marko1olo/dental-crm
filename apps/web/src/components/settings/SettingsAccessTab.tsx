@@ -38,8 +38,8 @@ export function SettingsAccessTab({ props = {} }: SettingsAccessTabProps) {
 			aria-label="Доступы, рабочие профили и роли"
 		>
 			<AccessSecurityHero />
-			<AccessSecurityGuaranteesGrid />
 			<GranularRoleMatrixView />
+			<AccessSecurityGuaranteesGrid />
 			<InviteStaffCard />
 			<ActiveWorkspaceProfileCard
 				profile={activeWorkspaceProfile}

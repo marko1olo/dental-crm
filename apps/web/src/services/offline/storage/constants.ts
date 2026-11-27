@@ -21,7 +21,7 @@ export {
 };
 
 export const OFFLINE_DB_NAME = "dente-crm-offline-outbox";
-export const OFFLINE_DB_VERSION = 3;
+export const OFFLINE_DB_VERSION = 4;
 export const MUTATIONS_STORE_NAME = "mutations";
 export const DRAFTS_STORE_NAME = "drafts";
 export const CLINICAL_CACHE_STORE_NAME = "clinical_cache";
@@ -30,6 +30,16 @@ export const PATIENTS_CACHE_STORE_NAME = "patients_cache";
 export const ODONTOGRAM_CACHE_STORE_NAME = "odontogram_cache";
 export const PRICELIST_CACHE_STORE_NAME = "pricelist_804n_cache";
 export const ICD10_CACHE_STORE_NAME = "icd10_cache";
+export const PENDING_VISIT_SAVES_STORE_NAME = "pendingVisitSaves";
+export const DICOM_WORKBENCH_DRAFTS_STORE_NAME = "dicomWorkbenchDrafts";
+export const MPR_WORKBENCH_DRAFTS_STORE_NAME = "mprWorkbenchDrafts";
+export const PENDING_SPEECH_CHUNKS_STORE_NAME = "pendingSpeechChunks";
+export const VOICE_TRANSCRIPTIONS_STORE_NAME = "pending_transcriptions";
+export const DICOM_PENDING_STUDIES_STORE_NAME = "pending_studies";
+export const DICOM_LOCAL_STUDIES_STORE_NAME = "local_studies";
+export const DICOM_LOCAL_SLICES_STORE_NAME = "local_slices";
+export const MEDIA_ITEMS_STORE_NAME = "media_items";
+export const MEDIA_BLOBS_STORE_NAME = "media_blobs";
 
 export const LOCAL_STORAGE_MUTATIONS_KEY = "dente_offline_mutations_v1";
 export const LOCAL_STORAGE_DRAFTS_PREFIX = "dente_offline_draft_v1:";

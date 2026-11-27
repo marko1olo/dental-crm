@@ -26,15 +26,15 @@ export const WARRANTY_CERTIFICATE_TABLE_CSS = `
     .risk-summary-box .title { font-weight: 800; color: #0f766e; margin-bottom: 4px; display: flex; justify-content: space-between; }
 
     .checkups-section { margin-bottom: 18px; position: relative; z-index: 1; }
-    .checkups-section h4 { font-size: 9.5pt; font-weight: 800; color: #0f172a; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .checkups-section h4 { font-size: 9.5pt; font-weight: 800; color: #0f172a; margin-bottom: 8px; letter-spacing: 0.3px; }
     .checkup-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .checkup-pill { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px; font-size: 8pt; display: flex; flex-direction: column; }
     .chk-num { color: #64748b; font-size: 7.5pt; }
     .chk-date { color: #0f766e; font-size: 9.5pt; }
-    .chk-status { color: #475569; font-size: 7pt; text-transform: uppercase; }
+    .chk-status { color: #475569; font-size: 7pt; }
 
     .conditions-section { margin-bottom: 20px; position: relative; z-index: 1; }
-    .conditions-section h4 { font-size: 9.5pt; font-weight: 800; color: #0f172a; margin-bottom: 6px; text-transform: uppercase; }
+    .conditions-section h4 { font-size: 9.5pt; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
     .conditions-list { list-style: none; font-size: 8pt; color: #334155; }
     .condition-item { margin-bottom: 6px; padding-left: 4px; }
     .cond-head { font-weight: 700; color: #0f172a; }

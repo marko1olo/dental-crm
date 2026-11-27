@@ -79,21 +79,27 @@ export async function printThermalReceipt(payload: FiscalReceiptPrintPayload, op
 				copies: opt.copies ?? 1,
 			});
 			if (labelRes.success) return { success: true, method: "desktop_silent" };
-		} catch {}
+		} catch (desktopErr) {
+			console.warn("[thermalReceiptPrinter] Desktop print fallback triggered", desktopErr);
+		}
 	}
 
 	if (isAndroidNativeApp()) {
 		try {
 			const res = await hardwarePrinter.printFiscalReceipt(payload);
 			if (res.success) return { success: true, method: "mobile_native" };
-		} catch {}
+		} catch (mobileErr) {
+			console.warn("[thermalReceiptPrinter] Mobile print fallback triggered", mobileErr);
+		}
 	}
 
 	if (opt.connection === "usb" && isWebUsbSupported()) {
 		try {
 			const usbRes = await printWebUsbEscPosReceipt(hardwarePrinter.buildEscPosFiscalReceipt(payload));
 			if (usbRes.success) return { success: true, method: "desktop_silent" };
-		} catch {}
+		} catch (usbErr) {
+			console.warn("[thermalReceiptPrinter] WebUSB print fallback triggered", usbErr);
+		}
 	}
 
 	try {

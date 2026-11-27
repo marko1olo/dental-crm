@@ -41,9 +41,8 @@
 }
 
 .tg-sim-live-badge {
-	font-size: 9px;
+	font-size: 10px;
 	font-weight: 700;
-	text-transform: uppercase;
 	padding: 2px 5px;
 	border-radius: 4px;
 	background: rgba(13, 148, 136, 0.15);

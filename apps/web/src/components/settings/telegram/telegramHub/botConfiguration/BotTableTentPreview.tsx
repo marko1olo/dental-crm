@@ -33,11 +33,10 @@ export function BotTableTentPreview({
 		>
 			<div
 				style={{
-					fontSize: "11px",
-					fontWeight: 800,
-					letterSpacing: "0.08em",
-					textTransform: "uppercase",
-					color: "#0d9488",
+					fontSize: "12px",
+					fontWeight: 700,
+					letterSpacing: "0.02em",
+					color: "#0f766e",
 				}}
 			>
 				Стоматологическая клиника DENTE

@@ -12,6 +12,8 @@
  */
 
 import { generateUuidV7, kopecksToRub } from "@dental/shared";
+import { CLINICAL_CACHE_STORE_NAME } from "../services/offline/storage/constants.js";
+import { queueBatchedStorePut } from "../services/offline/storage/idbBatchBuffer.js";
 import {
 	enqueueOfflineMutation,
 	getPendingOfflineMutations,
@@ -84,8 +86,18 @@ export interface EnqueueOfflinePaymentInput {
 }
 
 // In-memory fast optimistic ledger of offline payments
+const MAX_MEMORY_PAYMENT_CACHE = 100;
 const memoryPaymentCache = new Map<string, OfflinePaymentItem>();
-const PAYMENT_STORAGE_PREFIX = "dente_offline_payments_";
+
+function setBoundedPaymentCache(id: string, item: OfflinePaymentItem): void {
+	if (memoryPaymentCache.has(id)) {
+		memoryPaymentCache.delete(id);
+	} else if (memoryPaymentCache.size >= MAX_MEMORY_PAYMENT_CACHE) {
+		const oldest = memoryPaymentCache.keys().next().value;
+		if (oldest !== undefined) memoryPaymentCache.delete(oldest);
+	}
+	memoryPaymentCache.set(id, item);
+}
 
 function getCryptoRandomString(length: number): string {
 	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
@@ -188,20 +200,23 @@ export async function enqueueOfflinePayment(
 		fiscalQueueId,
 	};
 
-	// 1. Instant L1 RAM update (0ms latency, zero HDD seek contention)
-	memoryPaymentCache.set(id, paymentItem);
+	// 1. Instant L1 RAM update (0ms latency, bounded LRU)
+	setBoundedPaymentCache(id, paymentItem);
 
-	// 2. Persist to localStorage / IndexedDB for crash safety
-	try {
-		if (typeof localStorage !== "undefined") {
-			const dayKey = createdAt.substring(0, 10);
-			const stored = getCachedDailyPayments(dayKey);
-			stored.push(paymentItem);
-			localStorage.setItem(`${PAYMENT_STORAGE_PREFIX}${dayKey}`, JSON.stringify(stored));
-		}
-	} catch (e) {
-		logger.warn("[offlinePaymentQueue] LocalStorage quota reached while caching payment:", e);
-	}
+	// 2. Persist daily summary in unified IndexedDB outbox (zero localStorage PII leak)
+	const dayKey = createdAt.substring(0, 10);
+	const dailyList = getCachedDailyPayments(dayKey);
+	queueBatchedStorePut({
+		storeName: CLINICAL_CACHE_STORE_NAME,
+		key: `daily_payments_${dayKey}`,
+		record: {
+			cacheKey: `daily_payments_${dayKey}`,
+			entityKind: "daily_payments",
+			entityId: dayKey,
+			data: dailyList,
+			cachedAtMs: Date.now(),
+		},
+	});
 
 	// 3. Register in background mutation queue for server synchronization
 	try {
@@ -245,37 +260,15 @@ export async function getPendingOfflinePayments(): Promise<OfflinePaymentItem[]>
 }
 
 /**
- * Retrieves cached daily payments from memory or localStorage.
+ * Retrieves cached daily payments from bounded L1 memory cache.
  */
 export function getCachedDailyPayments(dateStr?: string): OfflinePaymentItem[] {
 	const dayKey = (dateStr || new Date().toISOString()).substring(0, 10);
 
-	// Filter in-memory cache first
 	const memList = Array.from(memoryPaymentCache.values()).filter(
 		(p) => p.createdAt.substring(0, 10) === dayKey,
 	);
-	if (memList.length > 0) {
-		return memList;
-	}
-
-	try {
-		if (typeof localStorage !== "undefined") {
-			const raw = localStorage.getItem(`${PAYMENT_STORAGE_PREFIX}${dayKey}`);
-			if (raw) {
-				const parsed = JSON.parse(raw);
-				if (Array.isArray(parsed)) {
-					for (const it of parsed) {
-						memoryPaymentCache.set(it.id, it);
-					}
-					return parsed;
-				}
-			}
-		}
-	} catch (e) {
-		logger.warn("[OfflinePaymentQueue] Failed to read cached daily payments:", e);
-	}
-
-	return [];
+	return memList;
 }
 
 /**

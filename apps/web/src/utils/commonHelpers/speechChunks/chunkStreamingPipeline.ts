@@ -12,11 +12,13 @@ import {
 } from "../../localStorageHelpers";
 import { logger } from "../../logger";
 import {
-	openSpeechChunkDb,
-	pendingVisitSaveStoreName,
-	speechChunkIndexedDbAvailable,
-	speechChunkStoreName,
-} from "../../../helpers/offlineStorageEngine";
+	PENDING_SPEECH_CHUNKS_STORE_NAME as speechChunkStoreName,
+	PENDING_VISIT_SAVES_STORE_NAME as pendingVisitSaveStoreName,
+} from "../../../services/offline/storage/constants";
+import {
+	isIndexedDbAvailable as speechChunkIndexedDbAvailable,
+	openOfflineOutboxDb as openSpeechChunkDb,
+} from "../../../services/offline/storage/idbDatabase";
 import {
 	pendingSpeechChunkQueueKey,
 	pendingSpeechChunkQueueLocalKey,

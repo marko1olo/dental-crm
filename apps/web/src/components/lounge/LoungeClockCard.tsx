@@ -4,9 +4,10 @@ import "./loungeClock.css";
 
 export interface LoungeClockCardProps {
 	readonly currentTime: Date;
+	readonly wifiName?: string | null | undefined;
 }
 
-export const LoungeClockCard: React.FC<LoungeClockCardProps> = ({ currentTime }) => {
+export const LoungeClockCard: React.FC<LoungeClockCardProps> = ({ currentTime, wifiName }) => {
 	const hours = String(currentTime.getHours()).padStart(2, "0");
 	const minutes = String(currentTime.getMinutes()).padStart(2, "0");
 	const seconds = String(currentTime.getSeconds()).padStart(2, "0");
@@ -55,7 +56,7 @@ export const LoungeClockCard: React.FC<LoungeClockCardProps> = ({ currentTime })
 					</div>
 					<div className="lounge-comfort-item">
 						<Wifi size={18} className="lounge-comfort-icon" aria-hidden="true" />
-						<span>Скоростной Wi-Fi: Dente_Guest</span>
+						<span>{wifiName ? `Скоростной Wi-Fi: ${wifiName}` : "Бесплатный Wi-Fi для гостей клиники"}</span>
 					</div>
 					<div className="lounge-comfort-item">
 						<ShieldCheck size={18} className="lounge-comfort-icon" aria-hidden="true" />

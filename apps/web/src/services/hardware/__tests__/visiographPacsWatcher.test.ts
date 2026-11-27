@@ -59,8 +59,16 @@ describe("VisiographPacsWatcherService — Local Radiography Watch Folder & Inst
 		assert.equal(event.patientId, "patient-uuid-12345");
 		assert.equal(event.toothCode, "16");
 		assert.equal(event.modality, "IO");
-		assert.equal(event.previewReady, true);
-		assert.ok(event.thumbnailDataUri?.startsWith("data:image/png;base64,"));
+		assert.equal(event.previewReady, false);
+		assert.equal(event.thumbnailDataUri, undefined);
+
+		const eventWithPreview = VisiographPacsWatcherService.dispatchScanEvent({
+			filePath: "C:\\DentalImages\\Incoming\\sensor_capture_17.dcm",
+			fileName: "sensor_capture_17.dcm",
+			thumbnailDataUri: "/api/imaging/studies/study-17/file",
+		});
+		assert.equal(eventWithPreview.previewReady, true);
+		assert.equal(eventWithPreview.thumbnailDataUri, "/api/imaging/studies/study-17/file");
 	});
 
 	it("should broadcast scan capture events to all registered UI subscribers", () => {

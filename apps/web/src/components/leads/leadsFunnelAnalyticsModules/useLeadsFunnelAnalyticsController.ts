@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import { calculateFunnelAnalysis } from "./funnelAnalyticsUtils";
 import type {
 	FunnelTimePeriod,
@@ -19,7 +19,7 @@ export function useLeadsFunnelAnalyticsController({
 	onClose,
 	leads,
 	attributionEndpoint = "/api/marketing/attribution",
-	getRequestHeaders = denteAdminSecretRequestHeaders,
+	getRequestHeaders = denteClinicalReadHeaders,
 }: LeadsFunnelControllerOptions): LeadsFunnelAnalyticsControllerState {
 	const [period, setPeriod] = useState<FunnelTimePeriod>("all");
 	const [isWaterfallOpen, setIsWaterfallOpen] = useState(false);

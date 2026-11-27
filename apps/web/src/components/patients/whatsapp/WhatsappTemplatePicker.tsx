@@ -42,19 +42,19 @@ export function WhatsappTemplatePicker({
 				<Sparkles size={12} className="text-amber-500" />
 				Быстрые шаблоны:
 			</span>
-			<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
 				{templates.map((tpl) => (
 					<button
 						key={tpl.type}
 						type="button"
 						onClick={() => onApplyTemplate(tpl.type)}
-						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 border border-[var(--glass-border)] hover:border-emerald-500/40 text-[var(--ink)] hover:text-emerald-600 dark:hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center cursor-pointer"
+						className="min-h-[44px] sm:min-h-[36px] min-w-0 px-3 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 border border-[var(--line)] hover:border-[var(--primary)]/40 text-[var(--ink)] hover:text-[var(--primary)] text-xs font-semibold text-left transition-all flex flex-col justify-center cursor-pointer"
 					>
-						<span className="flex items-center gap-1">
+						<span className="flex items-center gap-1.5 min-w-0">
 							{tpl.icon}
-							<span>{tpl.title}</span>
+							<span className="truncate whitespace-nowrap">{tpl.title}</span>
 						</span>
-						<span className="text-[10px] text-[var(--muted)] font-normal truncate">
+						<span className="text-[11px] text-[var(--muted)] font-normal truncate">
 							{tpl.subtitle}
 						</span>
 					</button>

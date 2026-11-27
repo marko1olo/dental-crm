@@ -28,7 +28,7 @@ export const SeniorNurseDisposalSanpinBanner: React.FC<SeniorNurseDisposalSanpin
 					className={paperJournalAcknowledged ? "text-[var(--success-ink)] shrink-0" : "text-[var(--warning-ink)] shrink-0"}
 				/>
 				<div>
-					<div className="text-xs font-bold text-[var(--ink)]">
+					<div className="text-xs font-semibold text-[var(--ink)]">
 						{paperJournalAcknowledged
 							? "Бумажный журнал учтён • Медсестра ЦСО не требуется"
 							: "СанПиН 3.3686-21: Контроль неснижаемого остатка медикаментов"}
@@ -58,10 +58,10 @@ export const SeniorNurseDisposalSanpinBanner: React.FC<SeniorNurseDisposalSanpin
 				{hasPurchaseOrder && (
 					<button
 						type="button"
-						className="h-8 px-3 rounded-lg text-xs font-medium bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm inline-flex items-center gap-1.5"
+						className="h-8 px-2.5 rounded-md text-xs font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center gap-1.5 shrink-0"
 						onClick={onOpenPoModal}
 					>
-						<ShoppingCart size={14} />
+						<ShoppingCart className="w-3.5 h-3.5 shrink-0" />
 						Заказ поставщику
 					</button>
 				)}

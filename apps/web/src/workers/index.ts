@@ -2,6 +2,8 @@
  * DENTE CRM — Web Workers Module Exports & Factory Helpers
  */
 
+import { clientLogger } from "../utils/logger";
+
 export * from "../utils/math/mprMath";
 
 export interface MprWorkerClientOptions {
@@ -22,7 +24,8 @@ export function createMprWorker(options?: MprWorkerClientOptions): Worker | null
 		return new Worker(targetUrl, {
 			type: "module",
 		});
-	} catch {
+	} catch (err: unknown) {
+		clientLogger.warn("[workers] Failed to create MPR worker", err);
 		return null;
 	}
 }
@@ -48,7 +51,8 @@ export function createEndoCanalWorker(options?: EndoCanalWorkerClientOptions): W
 		return new Worker(targetUrl, {
 			type: "module",
 		});
-	} catch {
+	} catch (err: unknown) {
+		clientLogger.warn("[workers] Failed to create MPR worker", err);
 		return null;
 	}
 }

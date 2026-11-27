@@ -17,7 +17,7 @@ export const SeniorNurseDisposalActHeader: React.FC<SeniorNurseDisposalActHeader
 			<div className="flex items-center gap-3 min-w-0" id="mdlp-act-title">
 				<FileText size={22} className="text-[var(--primary)] shrink-0" />
 				<div className="min-w-0">
-					<div className="font-bold text-base leading-tight truncate">
+					<div className="font-semibold text-base leading-tight truncate">
 						{approverRole === "senior_nurse"
 							? "Акт списания медикаментов и анестетиков (Старшая медсестра)"
 							: "Акт списания медикаментов и анестетиков"}
@@ -30,7 +30,7 @@ export const SeniorNurseDisposalActHeader: React.FC<SeniorNurseDisposalActHeader
 			</div>
 			<button
 				type="button"
-				className="p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
+				className="h-9 w-9 inline-flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 				onClick={onClose}
 				aria-label="Закрыть окно"
 			>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { clientLogger } from "../../utils/logger";
 import type { BookingDoctorData, BookingSlotItem } from "./contracts/bookingContracts";
 import { useBookingDoctorsQuery } from "./hooks/useBookingDoctorsQuery";
 import { useBookingSlotsQuery } from "./hooks/useBookingSlotsQuery";
@@ -24,13 +25,44 @@ export function useBookingAvailability({
 			return;
 		}
 		let isCancelled = false;
-		fetch(`${apiBaseUrl}/default-clinic`)
-			.then((res) => (res.ok ? res.json() : null))
-			.then((data) => {
-				if (!isCancelled && data?.organizationId) setEffectiveOrgId(data.organizationId);
+		const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+		const timeoutId = setTimeout(() => {
+			controller?.abort();
+		}, 7000);
+		fetch(`${apiBaseUrl}/default-clinic?allowDefault=1`, controller ? { signal: controller.signal } : {})
+			.then(async (res) => {
+				if (!res.ok) return null;
+				let raw: unknown = null;
+				try {
+					raw = await res.json();
+				} catch (jsonErr: unknown) {
+					if (!isCancelled) {
+						clientLogger.warn("[useBookingAvailability] Invalid JSON response", jsonErr);
+					}
+					return null;
+				}
+				return raw && typeof raw === "object" && "data" in raw ? (raw as { data: unknown }).data : raw;
 			})
-			.catch(() => {});
-		return () => { isCancelled = true; };
+			.then((data) => {
+				const resolvedOrgId =
+					data && typeof data === "object" && "organizationId" in data
+						? (data as { organizationId?: string }).organizationId
+						: undefined;
+				if (!isCancelled && resolvedOrgId) setEffectiveOrgId(resolvedOrgId);
+			})
+			.catch((err: unknown) => {
+				if (!isCancelled) {
+					clientLogger.warn("[useBookingAvailability] Failed to resolve default clinic", err);
+				}
+			})
+			.finally(() => {
+				clearTimeout(timeoutId);
+			});
+		return () => {
+			isCancelled = true;
+			clearTimeout(timeoutId);
+			controller?.abort();
+		};
 	}, [organizationId, apiBaseUrl]);
 
 	const { loadedDoctors, doctorsLoading } = useBookingDoctorsQuery(effectiveOrgId, apiBaseUrl);

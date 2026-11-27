@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { createPortal } from "react-dom";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 import {
 	FUNNEL_MODAL_BODY_STYLE,
 	FUNNEL_MODAL_CONTAINER_STYLE,
@@ -29,7 +29,7 @@ export function LeadsFunnelAnalyticsModal(
 	const ctrl = useLeadsFunnelAnalyticsController({
 		...props,
 		attributionEndpoint: "/api/marketing/attribution",
-		getRequestHeaders: denteAdminSecretRequestHeaders,
+		getRequestHeaders: denteClinicalReadHeaders,
 	});
 
 	if (!props.isOpen) return null;

@@ -96,7 +96,7 @@ export const CashRegisterStudioHeader: React.FC<CashRegisterStudioHeaderProps> =
 							key={t.id}
 							type="button"
 							onClick={() => onTabChange(t.id)}
-							className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold min-h-[36px] cursor-pointer transition-all text-center border-0 ${
+							className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold min-h-[44px] cursor-pointer transition-all text-center border-0 ${
 								activeTab === t.id
 									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
 									: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"

@@ -12,15 +12,17 @@
  * - Mandate 8b compliant (Sweet spot ~300L).
  */
 
-import React, { useEffect, useCallback, useState, useMemo } from "react";
+import React, { useEffect, useCallback, useState, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { MousePointer, Sparkles, X, Check, ChevronDown, Search } from "lucide-react";
 import { findClinicalDefectByAlias, CLINICAL_TOOTH_DEFECTS } from "@dental/shared";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import type { ToothState } from "./ToothChart";
 import { TOOTH_STATE_LABELS } from "./chart/toothChartTypes";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
+import { logger } from "../../utils/logger";
 
-interface CatalogDefectOption {
+export interface CatalogDefectOption {
 	readonly id: number;
 	readonly name: string;
 	readonly alias: string;
@@ -35,6 +37,7 @@ export interface OdontogramStampPaletteProps {
 	setActiveStampTool: React.Dispatch<React.SetStateAction<ToothState | null>>;
 	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
 	handleQuickTriggerState: (state: ToothState) => void;
+	onApplyCatalogDefect?: ((defect: CatalogDefectOption) => void) | undefined;
 	selectedTeeth?: number[] | undefined;
 	className?: string;
 }
@@ -274,6 +277,7 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 	setActiveStampTool,
 	onQuickStateChange,
 	handleQuickTriggerState,
+	onApplyCatalogDefect,
 	selectedTeeth = [],
 	className = "",
 }) => {
@@ -281,6 +285,14 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 	const [catalogDefects, setCatalogDefects] = useState<readonly CatalogDefectOption[]>(FALLBACK_CATALOG_DEFECTS);
 	const [isCatalogOpen, setIsCatalogOpen] = useState(false);
 	const [catalogSearch, setCatalogSearch] = useState("");
+	const [selectedCatalogDefect, setSelectedCatalogDefect] = useState<CatalogDefectOption | null>(null);
+	const triggerRef = useRef<HTMLButtonElement | null>(null);
+	const popoverRef = useRef<HTMLDivElement | null>(null);
+	const [popoverPosition, setPopoverPosition] = useState<{ top: number; left: number; width: number }>({
+		top: 0,
+		left: 0,
+		width: 320,
+	});
 
 	useEffect(() => {
 		if (typeof fetch !== "function") return;
@@ -291,12 +303,16 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 		})
 			.then(async (res) => {
 				if (!res.ok) return;
-				const rawJson = (await res.json()) as {
+				const rawJson = (await res.json().catch((parseErr: unknown) => {
+					logger.warn("[OdontogramStampPalette] Failed to parse tooth defects JSON:", parseErr);
+					return null;
+				})) as {
 					defects?: unknown;
 					data?: { defects?: unknown };
-				};
+				} | null;
+				if (!rawJson || typeof rawJson !== "object") return;
 				const payload = rawJson.data ?? rawJson;
-				if (!Array.isArray(payload.defects) || payload.defects.length === 0) return;
+				if (!Array.isArray(payload?.defects) || payload.defects.length === 0) return;
 				const mapped: CatalogDefectOption[] = payload.defects
 					.filter((item): item is { id: number; name: string; alias: string; type?: string; key?: string | null; color?: string | null } =>
 						typeof item === "object" &&
@@ -323,6 +339,40 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 		return () => controller.abort();
 	}, []);
 
+	const updatePopoverPosition = useCallback(() => {
+		if (typeof window === "undefined" || !triggerRef.current) return;
+		const rect = triggerRef.current.getBoundingClientRect();
+		const width = Math.min(340, Math.max(288, window.innerWidth - 16));
+		const maxLeft = Math.max(8, window.innerWidth - width - 8);
+		const left = Math.min(Math.max(8, rect.left), maxLeft);
+		const estimatedHeight = 320;
+		const fitsBelow = rect.bottom + 6 + estimatedHeight <= window.innerHeight - 8;
+		const top = fitsBelow
+			? rect.bottom + 6
+			: Math.max(8, rect.top - estimatedHeight - 6);
+		setPopoverPosition({ top, left, width });
+	}, []);
+
+	useEffect(() => {
+		if (!isCatalogOpen || typeof window === "undefined") return;
+		updatePopoverPosition();
+		const handleReposition = () => updatePopoverPosition();
+		const handleOutsideClick = (e: MouseEvent) => {
+			const target = e.target as Node | null;
+			if (!target) return;
+			if (triggerRef.current?.contains(target) || popoverRef.current?.contains(target)) return;
+			setIsCatalogOpen(false);
+		};
+		window.addEventListener("resize", handleReposition);
+		window.addEventListener("scroll", handleReposition, true);
+		window.addEventListener("mousedown", handleOutsideClick);
+		return () => {
+			window.removeEventListener("resize", handleReposition);
+			window.removeEventListener("scroll", handleReposition, true);
+			window.removeEventListener("mousedown", handleOutsideClick);
+		};
+	}, [isCatalogOpen, updatePopoverPosition]);
+
 	// Dismiss active stamp tool and catalog popover on Escape key
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -333,6 +383,7 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 				}
 				if (activeStampTool) {
 					setActiveStampTool(null);
+					setSelectedCatalogDefect(null);
 				}
 			}
 		};
@@ -343,6 +394,7 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 	const handleResetStamp = useCallback(() => {
 		if (activeStampTool) {
 			setActiveStampTool(null);
+			setSelectedCatalogDefect(null);
 			SoundFeedbackService.getInstance().playActionSuccess();
 		}
 	}, [activeStampTool, setActiveStampTool]);
@@ -373,16 +425,16 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 		>
 			{/* Left section: Title + Category Segmented Tabs + Stamp Buttons */}
 			<div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
-				<div className="flex items-center gap-1.5 text-xs font-bold shrink-0">
-					<Sparkles size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<span className="font-extrabold text-[12px] text-slate-800 dark:text-slate-100 hidden sm:inline">
+				<div className="flex items-center gap-1.5 text-xs font-semibold shrink-0">
+					<Sparkles size={14} className="text-[var(--primary)] shrink-0" />
+					<span className="font-semibold text-xs text-[var(--ink)] hidden sm:inline">
 						Штамп:
 					</span>
 				</div>
 
 				{/* Segmented Category Filter Tabs */}
 				<div
-					className="inline-flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/70 border border-slate-200/80 dark:border-white/10 max-w-full overflow-x-auto scrollbar-none shrink-0"
+					className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] max-w-full overflow-x-auto scrollbar-none shrink-0"
 					role="tablist"
 					aria-label="Категории клинических штампов"
 				>
@@ -396,10 +448,10 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 								aria-selected={isSelected}
 								onClick={() => setActiveCategory(cat.id)}
 								data-testid={cat.testId}
-								className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer select-none whitespace-nowrap shrink-0 ${
+								className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer select-none whitespace-nowrap shrink-0 ${
 									isSelected
-										? "bg-white dark:bg-slate-900 text-teal-800 dark:text-teal-300 shadow-2xs border border-black/5 dark:border-white/10"
-										: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+										? "bg-[var(--paper)] text-[var(--primary)] shadow-xs border border-[var(--line-subtle)]"
+										: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 								}`}
 							>
 								{cat.label}
@@ -408,7 +460,7 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 					})}
 				</div>
 
-				<div className="hidden lg:block h-4 w-px bg-[var(--line,#e2e8f0)] dark:bg-white/15 shrink-0" aria-hidden="true" />
+				<div className="hidden lg:block h-4 w-px bg-[var(--line)] shrink-0" aria-hidden="true" />
 
 				{/* Clinical Pathology Triggers — Tactile 32px Delimited Tile Cards */}
 				<div
@@ -422,7 +474,10 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 							<button
 								key={opt.state}
 								type="button"
-								onClick={() => handleQuickTriggerState(opt.state)}
+								onClick={() => {
+									setSelectedCatalogDefect(null);
+									handleQuickTriggerState(opt.state);
+								}}
 								className={`odontogram-stamp-tool-btn ${opt.colorStyleClass} ${
 									isActive ? "odontogram-stamp-tool-btn--active" : ""
 								}`}
@@ -455,71 +510,80 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 					{/* Full catalog defects selector (loaded from /api/catalogs/tooth-defects with shared fallback) */}
 					<div className="relative">
 						<button
+							ref={triggerRef}
 							type="button"
 							data-testid="odontogram-all-defects-trigger"
 							aria-expanded={isCatalogOpen}
 							onClick={() => setIsCatalogOpen((prev) => !prev)}
-							className="h-8 px-2.5 rounded-md text-xs font-medium inline-flex items-center gap-1.5 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer shrink-0"
+							className="h-8 px-2.5 rounded-md text-xs font-medium inline-flex items-center gap-1.5 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer shrink-0 whitespace-nowrap"
 							title="Полный клинический классификатор дефектов зубного ряда"
 						>
 							<span>Классификатор ({catalogDefects.length})</span>
 							<ChevronDown className="w-3.5 h-3.5 shrink-0" />
 						</button>
 
-						{isCatalogOpen && (
-							<div
-								data-testid="odontogram-all-defects-popover"
-								className="absolute left-0 top-full mt-1.5 z-50 w-72 sm:w-80 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl p-2.5 space-y-2"
-							>
-								<div className="relative flex items-center">
-									<Search className="w-3.5 h-3.5 text-[var(--ink-muted)] absolute left-2.5 pointer-events-none" />
-									<input
-										type="text"
-										value={catalogSearch}
-										onChange={(e) => setCatalogSearch(e.target.value)}
-										placeholder="Поиск патологии или аномалии..."
-										className="w-full h-9 pl-8 pr-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none"
-									/>
+						{isCatalogOpen && (() => {
+							const popoverNode = (
+								<div
+									ref={popoverRef}
+									data-testid="odontogram-all-defects-popover"
+									style={{
+										position: "fixed",
+										top: `${popoverPosition.top}px`,
+										left: `${popoverPosition.left}px`,
+										width: `${popoverPosition.width}px`,
+									}}
+									className="z-40 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl p-2.5 space-y-2"
+								>
+									<div className="relative flex items-center">
+										<Search className="w-3.5 h-3.5 text-[var(--ink-muted)] absolute left-2.5 pointer-events-none" />
+										<input
+											type="text"
+											value={catalogSearch}
+											onChange={(e) => setCatalogSearch(e.target.value)}
+											placeholder="Поиск патологии или аномалии..."
+											className="w-full h-9 pl-8 pr-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none"
+										/>
+									</div>
+									<div className="max-h-60 overflow-y-auto divide-y divide-[var(--line-subtle)]">
+										{filteredCatalogDefects.map((defect) => (
+											<button
+												key={`${defect.id}-${defect.alias}`}
+												type="button"
+												data-testid={`catalog-defect-item-${defect.alias}`}
+												onClick={() => {
+													setSelectedCatalogDefect(defect);
+													if (onApplyCatalogDefect) {
+														onApplyCatalogDefect(defect);
+													}
+													if (hasSelection && onQuickStateChange) {
+														onQuickStateChange(selectedTeeth, defect.mappedState, []);
+													} else {
+														handleQuickTriggerState(defect.mappedState);
+													}
+													setIsCatalogOpen(false);
+													setCatalogSearch("");
+												}}
+												className="w-full px-2.5 py-2 text-left text-xs flex items-center justify-between gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer rounded-md"
+											>
+												<span className="font-medium truncate">{defect.name}</span>
+												<span className="text-[11px] font-mono text-[var(--ink-muted)] shrink-0">
+													{TOOTH_STATE_LABELS[defect.mappedState] || defect.mappedState}
+												</span>
+											</button>
+										))}
+										{filteredCatalogDefects.length === 0 && (
+											<div className="py-4 text-center text-xs text-[var(--ink-muted)]">
+												Дефекты не найдены
+											</div>
+										)}
+									</div>
 								</div>
-								<div className="max-h-60 overflow-y-auto divide-y divide-[var(--line-subtle)]">
-									{filteredCatalogDefects.map((defect) => (
-										<button
-											key={`${defect.id}-${defect.alias}`}
-											type="button"
-											data-testid={`catalog-defect-item-${defect.alias}`}
-											onClick={() => {
-												handleQuickTriggerState(defect.mappedState);
-												if (typeof window !== "undefined") {
-													window.dispatchEvent(
-														new CustomEvent("dente:apply-tooth-defect", {
-															detail: {
-																id: defect.id,
-																alias: defect.alias,
-																name: defect.name,
-																state: defect.mappedState,
-															},
-														}),
-													);
-												}
-												setIsCatalogOpen(false);
-												setCatalogSearch("");
-											}}
-											className="w-full px-2.5 py-2 text-left text-xs flex items-center justify-between gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer rounded-md"
-										>
-											<span className="font-medium truncate">{defect.name}</span>
-											<span className="text-[11px] font-mono text-[var(--ink-muted)] shrink-0">
-												{TOOTH_STATE_LABELS[defect.mappedState] || defect.mappedState}
-											</span>
-										</button>
-									))}
-									{filteredCatalogDefects.length === 0 && (
-										<div className="py-4 text-center text-xs text-[var(--ink-muted)]">
-											Дефекты не найдены
-										</div>
-									)}
-								</div>
-							</div>
-						)}
+							);
+							return typeof document !== "undefined"
+								? createPortal(popoverNode, document.body)
+								: popoverNode;
+						})()}
 					</div>
 				</div>
 			</div>
@@ -528,20 +592,22 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 			<div className="flex items-center gap-2 shrink-0">
 				{activeStampTool ? (
 					<div
-						className="inline-flex items-center gap-1.5 px-3 h-8 min-h-[32px] rounded-lg bg-amber-500/15 border border-amber-600/50 dark:border-amber-500/60 text-amber-950 dark:text-amber-100 text-xs font-bold shrink-0 animate-in fade-in duration-150 whitespace-nowrap shadow-2xs"
+						className="inline-flex items-center gap-1.5 px-3 h-8 rounded-md bg-[var(--warning-soft)] border border-[var(--line)] text-[var(--ink)] text-xs font-semibold shrink-0 whitespace-nowrap"
 						data-testid="odontogram-active-stamp-indicator"
 					>
-						<span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
+						<span className="w-2 h-2 rounded-full bg-[var(--primary)] shrink-0" />
 						<span>
 							Штамп:{" "}
-							<strong className="font-black text-amber-950 dark:text-white">
-								{TOOTH_STATE_LABELS[activeStampTool] || activeStampTool}
+							<strong className="font-semibold text-[var(--ink)]">
+								{selectedCatalogDefect && selectedCatalogDefect.mappedState === activeStampTool
+									? `${selectedCatalogDefect.name} (${selectedCatalogDefect.alias})`
+									: TOOTH_STATE_LABELS[activeStampTool] || activeStampTool}
 							</strong>
 						</span>
 						<button
 							type="button"
 							onClick={handleResetStamp}
-							className="ml-1 px-2 py-0.5 rounded-md border border-amber-600/40 bg-amber-500/20 hover:bg-amber-500/35 text-amber-950 dark:text-amber-100 transition-all cursor-pointer flex items-center gap-1 font-bold shadow-2xs text-[11px]"
+							className="ml-1 px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-all cursor-pointer flex items-center gap-1 font-medium text-xs"
 							title="Сбросить штамп (Режим осмотра) [Esc]"
 							aria-label="Сбросить активный штамп"
 							data-testid="clear-active-stamp-btn"
@@ -558,8 +624,8 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 						title="Режим стандартного осмотра и выделения зубов (без штампа) [Esc]"
 						data-testid="clear-active-stamp-btn"
 					>
-						<MousePointer size={14} className="shrink-0 text-teal-600 dark:text-teal-400 stroke-[2.5]" />
-						<span className="whitespace-nowrap font-bold">Режим осмотра [Esc]</span>
+						<MousePointer size={14} className="shrink-0 text-[var(--primary)] stroke-[2.5]" />
+						<span className="whitespace-nowrap font-medium">Режим осмотра [Esc]</span>
 					</button>
 				)}
 			</div>

@@ -42,7 +42,7 @@ export function printParentMemo({
 					color: #0f172a; line-height: 1.5; font-size: 13px;
 				}
 				.header { border-bottom: 2px solid #0d9488; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; page-break-inside: avoid; break-inside: avoid; }
-				.clinic { font-size: 16px; font-weight: 800; color: #0d9488; text-transform: uppercase; }
+				.clinic { font-size: 16px; font-weight: 800; color: #0d9488; }
 				.title { font-size: 20px; font-weight: 900; margin: 0 0 4px 0; color: #0f172a; }
 				.content { white-space: pre-wrap; font-family: inherit; font-size: 13px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; page-break-inside: avoid; break-inside: avoid; }
 				.footer { margin-top: 24px; padding-top: 12px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; font-size: 12px; color: #64748b; font-weight: 600; page-break-inside: avoid; break-inside: avoid; }

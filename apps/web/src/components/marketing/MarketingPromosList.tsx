@@ -66,12 +66,12 @@ export const MarketingPromosList: React.FC<MarketingPromosListProps> = ({
 
 				<button
 					type="button"
-					className="primary-button marketing-add-btn h-9 min-h-[36px] rounded-xl px-3"
+					className="secondary-button marketing-add-btn h-8 px-2.5 rounded-md text-xs font-medium inline-flex items-center gap-1.5 shrink-0"
 					onClick={onOpenNewPromoModal}
 					title="Создать новую промо-акцию клиники"
 					data-testid="btn-new-promo"
 				>
-					<Plus size={14} />
+					<Plus className="w-3.5 h-3.5 shrink-0" />
 					<span>Новая</span>
 				</button>
 			</div>

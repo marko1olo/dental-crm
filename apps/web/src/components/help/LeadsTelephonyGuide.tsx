@@ -409,10 +409,10 @@ export const LeadsTelephonyGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour
 							<button
 								type="button"
 								onClick={() => handleAdvanceStage(selectedLead.id)}
-								className="h-6 px-2.5 rounded bg-[var(--teal,#0d9488)] hover:opacity-90 text-white font-semibold text-[10px] inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+								className="h-8 px-2.5 rounded-md bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-medium text-xs inline-flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0"
 							>
 								<span>Продвинуть этап</span>
-								<ArrowRight size={10} />
+								<ArrowRight className="w-3.5 h-3.5 shrink-0" />
 							</button>
 						</div>
 					</div>
@@ -534,9 +534,9 @@ export const LeadsTelephonyGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour
 				<button
 					type="button"
 					onClick={handleLaunchTour}
-					className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
+					className="h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium text-sm inline-flex items-center justify-center gap-2 transition-colors cursor-pointer shrink-0"
 				>
-					<Zap size={14} />
+					<Zap className="w-4 h-4 shrink-0 text-[var(--primary)]" />
 					<span>Запустить обучение</span>
 				</button>
 			</div>

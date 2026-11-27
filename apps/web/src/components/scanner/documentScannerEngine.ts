@@ -155,14 +155,14 @@ export function parsePassportOcrText(text: string): ExtractedPassportData {
 	let number: string | undefined;
 
 	const snMatch = cleaned.match(/(?:серия|паспорт)?\s*([0-9]{2}\s*[0-9]{2})\s*(?:№|N|no)?\s*([0-9]{6})\b/i);
-	if (snMatch) {
-		series = snMatch[1]!.replace(/\s+/g, " ");
+	if (snMatch?.[1]) {
+		series = snMatch[1].replace(/\s+/g, " ");
 		number = snMatch[2];
 	} else {
 		// Fallback: 10 consecutive digits
 		const tenMatch = cleaned.match(/\b([0-9]{4})[\s-]*([0-9]{6})\b/);
-		if (tenMatch) {
-			series = `${tenMatch[1]!.slice(0, 2)} ${tenMatch[1]!.slice(2, 4)}`;
+		if (tenMatch?.[1]) {
+			series = `${tenMatch[1].slice(0, 2)} ${tenMatch[1].slice(2, 4)}`;
 			number = tenMatch[2];
 		}
 	}
@@ -211,8 +211,8 @@ export function parseOmsPolicyOcrText(text: string): ExtractedOmsData {
 
 	// Look for 16-digit sequence
 	const match16 = text.match(/\b([0-9]{4}\s*[0-9]{4}\s*[0-9]{4}\s*[0-9]{4})\b/);
-	if (match16) {
-		policyNumber = match16[1]!.replace(/\s+/g, "");
+	if (match16?.[1]) {
+		policyNumber = match16[1].replace(/\s+/g, "");
 	} else if (digitsOnly.length === 16) {
 		policyNumber = digitsOnly;
 	} else {

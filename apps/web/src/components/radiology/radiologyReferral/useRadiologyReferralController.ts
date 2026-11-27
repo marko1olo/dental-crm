@@ -62,7 +62,7 @@ export function useRadiologyReferralController(p: RadiologyReferralModalProps) {
 	});
 
 	const barcodeSvg = generateReferralBarcodeSvg(referralNumber, 240, 48);
-	const qrPayloadData = `CT-REF:${referralNumber}|CLINIC:${p.clinicName || "Денте"}|PATIENT:${p.patient?.fullName || "Пациент"}|FOV:${currentFov.fovDimensions}|TEETH:${targetTeethDisplay}|GOAL:${currentGoal.titleRu}|DATE:${new Date().toISOString().slice(0, 10)}`;
+	const qrPayloadData = `CT-REF:${referralNumber}|CLINIC:${p.clinicName || "Клиника"}|PATIENT:${p.patient?.fullName || "Пациент"}|FOV:${currentFov.fovDimensions}|TEETH:${targetTeethDisplay}|GOAL:${currentGoal.titleRu}|DATE:${new Date().toISOString().slice(0, 10)}`;
 	const qrCodeSvg = generateReferralQrCodeSvg(qrPayloadData, 96);
 
 	const handleInsertToDiary = () => {
@@ -76,11 +76,11 @@ export function useRadiologyReferralController(p: RadiologyReferralModalProps) {
 
 	const handlePrint = () => {
 		const html = generateRadiologyReferralHtml({
-			clinic: p.clinicName || 'Стоматологическая клиника "Денте"', license: p.clinicLicense || "ЛО-77-01-019842",
-			address: p.clinicAddress || "г. Москва", phone: p.clinicPhone || "+7 (495) 700-00-00", referralNumber,
+			clinic: p.clinicName || "Стоматологическая клиника", license: p.clinicLicense || "",
+			address: p.clinicAddress || "", phone: p.clinicPhone || "", referralNumber,
 			partner: currentPartner, barcodeSvg, qrCodeSvg, patientFullName: p.patient?.fullName || "Пациент",
-			patientBirth: p.patient?.birthDate || "1985-05-15", patientCard: p.patient?.medicalCardNumber || p.patient?.cardNumber || "2026",
-			patientPhoneStr: p.patient?.phone || "+7 (___) ___-__-__", docName: p.doctorName || "Лечащий врач",
+			patientBirth: p.patient?.birthDate || "", patientCard: p.patient?.medicalCardNumber || p.patient?.cardNumber || "",
+			patientPhoneStr: p.patient?.phone || "", docName: p.doctorName || "Лечащий врач",
 			docSpec: p.doctorSpecialty || "Врач-стоматолог", diagnosisIcd10, goal: currentGoal, fov: currentFov,
 			clinicalNotes, selectedTeeth, targetTeethDisplay, isPregnancyExcluded, hasMetallicArtifacts, isTmjOpenClosedProtocol,
 		});

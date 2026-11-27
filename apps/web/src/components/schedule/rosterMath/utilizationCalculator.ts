@@ -83,7 +83,7 @@ export function applyCellShiftPreset(
 		staffList.find((s) => s.id === doctorId) ||
 		staffList.find((s) => s.isDoctor) ||
 		staffList[0] ||
-		(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0]! : undefined);
+		(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0] : undefined);
 
 	if (!foundDoc) {
 		return filtered;

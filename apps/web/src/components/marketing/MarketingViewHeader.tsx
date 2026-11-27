@@ -30,29 +30,31 @@ export function MarketingViewHeader({
 	onOpenNewPromoModal,
 }: MarketingViewHeaderProps) {
 	return (
-		<div className="marketing-header-row min-h-[48px] mb-3 flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--line)]">
-			<div className="marketing-header-title-wrap flex items-center gap-2.5 min-w-0 shrink-0">
+		<div className="marketing-header-row min-h-[48px] mb-3 pr-12 flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--line)]">
+			<div className="marketing-header-title-wrap flex items-center gap-2.5 min-w-0 flex-1 sm:flex-initial">
 				<div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--primary)]/10 text-[var(--primary)] shrink-0">
 					<Megaphone size={18} aria-hidden="true" />
 				</div>
 				<div className="min-w-0">
-					<h2 className="marketing-header-title text-base sm:text-lg font-bold tracking-tight text-[var(--ink)] truncate" title="Маркетинг и акции клиники">
+					<h2 className="marketing-header-title text-[15px] sm:text-lg font-semibold tracking-tight text-[var(--ink)] leading-tight" title="Маркетинг и акции клиники">
 						Акции и реклама клиники
 					</h2>
 				</div>
-				<span className="status-pill status-confirmed hidden sm:inline-flex">активен</span>
+				<span className="hidden sm:inline-flex shrink-0">
+					<span className="status-pill status-confirmed">активен</span>
+				</span>
 			</div>
 
 			{activeTab === "promos" && (
 				<div className="marketing-header-actions flex items-center gap-2 shrink-0 ml-auto sm:order-3">
 					<button
 						type="button"
-						className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs px-3.5 inline-flex items-center gap-1.5 font-medium text-xs sm:text-sm shrink-0 cursor-pointer"
+						className="primary-button h-9 px-3.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-sm inline-flex items-center justify-center gap-2 font-medium text-sm shrink-0 cursor-pointer"
 						onClick={onOpenNewPromoModal}
 						data-testid="btn-marketing-primary-cta"
 						title="Создать новую рекламную кампанию или акцию"
 					>
-						<Plus size={15} aria-hidden="true" />
+						<Plus className="w-4 h-4 shrink-0" aria-hidden="true" />
 						<span className="hidden sm:inline">Запустить акцию</span>
 						<span className="sm:hidden">Акция</span>
 					</button>

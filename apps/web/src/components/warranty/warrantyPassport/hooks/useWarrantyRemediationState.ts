@@ -9,6 +9,7 @@ import type { WarrantyPatientMeta } from "../types";
 
 export interface UseWarrantyRemediationParams {
 	certificateId: string;
+	persistedCertificateId?: string | null | undefined;
 	organizationId?: string | null | undefined;
 	patient?: WarrantyPatientMeta | null | undefined;
 	doctorId?: string | null | undefined;
@@ -20,7 +21,7 @@ export interface UseWarrantyRemediationParams {
 }
 
 export function useWarrantyRemediationState({
-	certificateId, organizationId, patient, doctorId, doctorName, doctorSpecialty, clinicName, items, onRemediationCreated,
+	certificateId, persistedCertificateId, organizationId, patient, doctorId, doctorName, doctorSpecialty, clinicName, items, onRemediationCreated,
 }: UseWarrantyRemediationParams) {
 	const [remediations, setRemediations] = useState<WarrantyRemediationOrder[]>([]);
 	const [selectedRemediationTooth, setSelectedRemediationTooth] = useState(items[0]?.toothNumber ?? "");
@@ -127,6 +128,16 @@ export function useWarrantyRemediationState({
 				}
 
 				const numericTooth = Number.parseInt(tooth.replace(/\D/g, ""), 10);
+				const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+				const validWarrantyUuid =
+					persistedCertificateId && uuidRegex.test(persistedCertificateId)
+						? persistedCertificateId
+						: null;
+				const baseDetails = `Гарантийный случай: ${order.defectTitle} (Зуб ${tooth}). ${customRemediationFinding || ""}${ztlNote}`;
+				const complicationDetails =
+					certificateId && !baseDetails.includes(certificateId)
+						? `${baseDetails} [Паспорт: ${certificateId}]`
+						: baseDetails;
 
 				const reclRes = await fetch(`/api/patients/${patient.id}/reclamations`, {
 					method: "POST",
@@ -135,11 +146,12 @@ export function useWarrantyRemediationState({
 						"Idempotency-Key": generateUuidV7(),
 					}),
 					body: JSON.stringify({
-						complicationDetails: `Гарантийный случай: ${order.defectTitle} (Зуб ${tooth}). ${customRemediationFinding || ""}${ztlNote}`,
+						complicationDetails,
 						proposedAction: `Гарантийная переделка (0 ₽): ${customRemediationAction || ""}`,
 						...(effectiveDoctorId ? { doctorId: effectiveDoctorId } : {}),
 						toothNumber: Number.isFinite(numericTooth) ? numericTooth : undefined,
-						warrantyCertificateId: certificateId,
+						warrantyCertificateId: validWarrantyUuid,
+						...(certificateId ? { certificateNumber: certificateId } : {}),
 						defectType: selectedDefectType,
 					}),
 				});

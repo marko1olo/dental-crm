@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { clientLogger } from "../../../utils/logger";
 import type { BookingDoctorData } from "../contracts/bookingContracts";
 
 interface RawDoctorDto {
@@ -40,12 +41,22 @@ export function useBookingDoctorsQuery(effectiveOrgId: string | null, apiBaseUrl
 				if (isCancelled) return null;
 				try {
 					const reqInit: RequestInit = controller ? { signal: controller.signal } : {};
-					const res = await fetch(url, reqInit).catch(() => null);
-					if (res && res.ok) {
-						return await res.json().catch(() => null);
+					const res = await fetch(url, reqInit);
+					if (res.ok) {
+						let raw: unknown = null;
+						try {
+							raw = await res.json();
+						} catch (jsonErr: unknown) {
+							clientLogger.warn("[useBookingDoctorsQuery] Invalid JSON response", { url, jsonErr });
+						}
+						return raw && typeof raw === "object" && "data" in raw
+							? (raw as { data: unknown }).data
+							: raw;
 					}
-				} catch {
-					// continue next url
+				} catch (err: unknown) {
+					if (!isCancelled) {
+						clientLogger.warn("[useBookingDoctorsQuery] Candidate endpoint failed", { url, err });
+					}
 				}
 			}
 			return null;
@@ -73,8 +84,11 @@ export function useBookingDoctorsQuery(effectiveOrgId: string | null, apiBaseUrl
 					setLoadedDoctors([]);
 				}
 			})
-			.catch(() => {
-				if (!isCancelled) setLoadedDoctors([]);
+			.catch((err: unknown) => {
+				if (!isCancelled) {
+					clientLogger.warn("[useBookingDoctorsQuery] Doctors fetch failed", err);
+					setLoadedDoctors([]);
+				}
 			})
 			.finally(() => {
 				clearTimeout(timeoutId);

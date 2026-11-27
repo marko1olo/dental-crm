@@ -246,7 +246,7 @@ export class VisiographHotFolderEngine {
 			modelName: brandName,
 			folderPath: detail.folderPath || route.matchedFolder,
 			detectedAtIso: new Date().toISOString(),
-			thumbnailUrl: detail.imageUrl || VisiographPacsWatcherService.generateSamplePreview(),
+			thumbnailUrl: detail.imageUrl || "",
 			detectedTooth,
 			confidence: route.confidence,
 		};

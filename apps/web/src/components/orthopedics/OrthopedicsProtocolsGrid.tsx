@@ -1,5 +1,5 @@
 /**
- * OrthopedicsProtocolsGrid.tsx — Сетка канонических ортопедических протоколов (1 клик).
+ * OrthopedicsProtocolsGrid.tsx — Сетка канонических ортопедических протоколов (быстрое заполнение).
  *
  * Декомпозиция монолита OrthopedicsChairsidePanel (Мандат 8b: строго <= 800 строк).
  * Тач-таргеты min-h-[48px] (Мандат 8e, Apple HIG).

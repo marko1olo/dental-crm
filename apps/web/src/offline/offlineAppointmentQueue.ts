@@ -11,6 +11,8 @@
  */
 
 import { type AppointmentStatus, generateUuidV7 } from "@dental/shared";
+import { SCHEDULES_CACHE_STORE_NAME } from "../services/offline/storage/constants.js";
+import { queueBatchedStorePut } from "../services/offline/storage/idbBatchBuffer.js";
 import {
 	enqueueOfflineMutation,
 	getPendingOfflineMutations,
@@ -47,8 +49,19 @@ export interface QueuedAppointmentMutation {
 	readonly timestamp: number;
 }
 
-// In-memory optimistic schedule cache keyed by YYYY-MM-DD
+// Bounded in-memory optimistic schedule cache keyed by YYYY-MM-DD (max 31 days)
+const MAX_CACHED_SCHEDULE_DAYS = 31;
 const scheduleDateCache = new Map<string, OfflineAppointmentItem[]>();
+
+function setBoundedScheduleCache(dateKey: string, list: OfflineAppointmentItem[]): void {
+	if (scheduleDateCache.has(dateKey)) {
+		scheduleDateCache.delete(dateKey);
+	} else if (scheduleDateCache.size >= MAX_CACHED_SCHEDULE_DAYS) {
+		const oldest = scheduleDateCache.keys().next().value;
+		if (oldest !== undefined) scheduleDateCache.delete(oldest);
+	}
+	scheduleDateCache.set(dateKey, [...list]);
+}
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -146,44 +159,31 @@ export function cacheScheduleOffline(
 	appointments: OfflineAppointmentItem[],
 ): void {
 	const normalizedDate = dateStr.substring(0, 10);
-	scheduleDateCache.set(normalizedDate, [...appointments]);
+	setBoundedScheduleCache(normalizedDate, appointments);
 
-	try {
-		if (typeof localStorage !== "undefined") {
-			const cacheKey = `dente_schedule_cache_${normalizedDate}`;
-			localStorage.setItem(cacheKey, JSON.stringify({
-				cachedAt: Date.now(),
-				data: appointments,
-			}));
-		}
-	} catch (e) {
-		// Quota or disabled, safe to ignore
-	}
+	const nowMs = Date.now();
+	const scheduleKey = `schedule_default_${normalizedDate}`;
+	queueBatchedStorePut({
+		storeName: SCHEDULES_CACHE_STORE_NAME,
+		key: scheduleKey,
+		record: {
+			scheduleKey,
+			date: normalizedDate,
+			appointments: [...appointments],
+			cachedAt: new Date(nowMs).toISOString(),
+			cachedAtMs: nowMs,
+		},
+	});
 }
 
 /**
- * Retrieves cached appointments for a given date (memory first, then localStorage).
+ * Retrieves cached appointments for a given date from bounded L1 cache.
  */
 export function getCachedScheduleOffline(dateStr: string): OfflineAppointmentItem[] | null {
 	const normalizedDate = dateStr.substring(0, 10);
 
 	if (scheduleDateCache.has(normalizedDate)) {
 		return scheduleDateCache.get(normalizedDate) || [];
-	}
-
-	try {
-		if (typeof localStorage !== "undefined") {
-			const raw = localStorage.getItem(`dente_schedule_cache_${normalizedDate}`);
-			if (raw) {
-				const parsed = JSON.parse(raw);
-				if (Array.isArray(parsed?.data)) {
-					scheduleDateCache.set(normalizedDate, parsed.data);
-					return parsed.data;
-				}
-			}
-		}
-	} catch (e) {
-		// Parse error, ignore
 	}
 
 	return null;

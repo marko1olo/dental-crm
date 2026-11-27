@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import {
 	HARDWARE_PRESETS,
 	createDefaultDeviceConfig,
@@ -22,6 +23,7 @@ import {
 	type HardwarePreset,
 } from "../services/hardware/hardwarePresets.js";
 import { denteClinicalReadHeaders, denteClinicalMutationHeaders } from "../lib/denteRequestHeaders";
+import { clientLogger } from "../services/logging/clientLogger";
 
 export function useHardwareSettings() {
 	const [devices, setDevices] = useState<HardwareDeviceConfig[]>(() => loadHardwareConfigs());
@@ -71,10 +73,17 @@ export function useHardwareSettings() {
 	const syncDevicesToServer = useCallback((nextDevices: HardwareDeviceConfig[]) => {
 		fetch("/api/hardware/devices/sync", {
 			method: "POST",
-			headers: { ...denteClinicalMutationHeaders(), "Content-Type": "application/json" },
+			headers: {
+				...denteClinicalMutationHeaders({
+					"Idempotency-Key": generateUuidV7(),
+				}),
+				"Content-Type": "application/json",
+			},
 			body: JSON.stringify({ devices: nextDevices }),
-		}).catch(() => {
-			// Silent background sync fallback
+		}).catch((err: unknown) => {
+			clientLogger.debug("Background hardware settings sync deferred", err, {
+				module: "useHardwareSettings",
+			});
 		});
 	}, []);
 

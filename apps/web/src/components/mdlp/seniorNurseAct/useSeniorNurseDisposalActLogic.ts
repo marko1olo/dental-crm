@@ -2,6 +2,7 @@ import {
 	type SeniorNurseDisposalActData,
 	formatSeniorNurseDisposalActData,
 	generateSeniorNurseDisposalActHtml,
+	rublesToKopecks,
 } from "@dental/shared";
 import { useEffect, useMemo, useState } from "react";
 import { showToast } from "../../GlobalToast.js";
@@ -83,18 +84,13 @@ export function useSeniorNurseDisposalActLogic(props: SeniorNurseDisposalActModa
 
 	const deductionLines = useMemo<DeductionLineItem[]>(() => {
 		if (!items || items.length === 0) {
-			return [{
-				id: "anes-disposal-def",
-				materialName: "Анестетик артикаиновый 4% с эпинефрином 1:100 000 (Ультракаин Д-С Форте)",
-				category: "anesthesia", unit: "карп.", quantity: 10, standardQuantity: 10,
-				unitCostKopecks: 23000, stockQuantity: 2, criticalThreshold: 10, source: "tech_map", mandatory: true,
-			}];
+			return [];
 		}
 		return items.map((it, idx) => ({
 			id: `mdlp-item-${it.id || idx}`,
 			materialName: it.drugInfo?.tradeName || "Анестетик артикаиновый 1.7 мл (карпула)",
 			category: "anesthesia" as const, unit: "карп.", quantity: 1, standardQuantity: 1,
-			unitCostKopecks: 23000, stockQuantity: 0, criticalThreshold: 5, lotNumber: it.series ?? undefined,
+			unitCostKopecks: it.costRub != null ? rublesToKopecks(it.costRub) : 0, stockQuantity: 0, criticalThreshold: 5, lotNumber: it.series ?? undefined,
 			expirationDate: it.expirationDate ?? undefined, source: "tech_map" as const, mandatory: true,
 		}));
 	}, [items]);

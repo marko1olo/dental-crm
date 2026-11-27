@@ -41,7 +41,21 @@ export function useMdlpHidScanner({
 			resetXml();
 			const isVerified = newItem.status === "verified";
 			playBeep(isVerified);
-			submitMdlpBarcodeScan(trimmed, true).catch(() => null);
+			void submitMdlpBarcodeScan(trimmed, true)
+				.then((scanRes) => {
+					if (!scanRes.success) {
+						showToast(
+							scanRes.error || "Не удалось сохранить сканирование в журнале МДЛП",
+							"warning",
+						);
+					}
+				})
+				.catch((err: unknown) => {
+					showToast(
+						err instanceof Error ? err.message : "Сбой при отправке скана в журнал МДЛП",
+						"error",
+					);
+				});
 			if (isVerified) {
 				showToast(`Отсканировано ${source}: ${newItem.tradeName}`, "success");
 			} else if (newItem.status === "warning") {

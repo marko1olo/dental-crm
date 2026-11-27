@@ -18,6 +18,7 @@ import {
 	resolveLeadBookingChairs,
 	resolveLeadBookingStaff,
 	resolveLeadVisitMinutes,
+	toApiUuidOrUndefined,
 } from "../leadsKanbanTypes";
 import type { PendingBookingInfo } from "./useLeadBookingNavigation";
 
@@ -70,12 +71,15 @@ export function useLeadScheduleHandlers(opts: ScheduleHandlersOptions) {
 					? `Первичная консультация: ${targetLead.notes.slice(0, 100)}`
 					: "Первичная консультация";
 
+		const apiDoctorId = toApiUuidOrUndefined(doctorIdToBook);
+		const apiChairId = toApiUuidOrUndefined(chairIdToBook);
+
 		try {
 			const res = await opts.convertLeadToAppointment(leadId, {
 				appointmentStart: startDateTime.toISOString(),
 				appointmentEnd: endDateTime.toISOString(),
-				chairId: chairIdToBook,
-				doctorId: doctorIdToBook,
+				...(apiChairId ? { chairId: apiChairId } : {}),
+				...(apiDoctorId ? { doctorId: apiDoctorId } : {}),
 				reason: quickReason,
 				comment: targetLead?.notes || null,
 			});
@@ -83,7 +87,7 @@ export function useLeadScheduleHandlers(opts: ScheduleHandlersOptions) {
 				? `Создан приём в расписании для постоянного пациента: ${targetLead.existingPatient.fullName}`
 				: "Создан первичный приём в расписании и карта пациента";
 			showToast(successMsg, "success");
-			opts.fetchLeads();
+			await opts.fetchLeads();
 
 			const createdPatient = res?.patient as
 				| { id?: string; fullName?: string; phone?: string }

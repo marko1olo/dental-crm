@@ -30,7 +30,7 @@ export const PatientDuplicateActions: React.FC<Props> = ({
 					Останется карточка «{pendingConfirm.keepLeft ? candidate.leftName : candidate.rightName}». Вторая станет архивной ссылкой, ничего не удалится.
 				</span>
 				<button
-					className="primary-button"
+					className="primary-button h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm inline-flex items-center justify-center gap-2 shrink-0"
 					type="button"
 					disabled={isBusy}
 					onClick={() => onMerge(candidate, pendingConfirm.keepLeft)}
@@ -38,7 +38,7 @@ export const PatientDuplicateActions: React.FC<Props> = ({
 					{isBusy ? "Объединяю…" : "Подтвердить объединение"}
 				</button>
 				<button
-					className="secondary-button"
+					className="secondary-button h-9 px-3.5 rounded-lg text-sm font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center gap-2 shrink-0"
 					type="button"
 					onClick={onCancelConfirm}
 				>
@@ -51,7 +51,7 @@ export const PatientDuplicateActions: React.FC<Props> = ({
 	return (
 		<>
 			<button
-				className="secondary-button"
+				className="secondary-button h-9 px-3.5 rounded-lg text-sm font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center gap-2 shrink-0"
 				type="button"
 				disabled={isBusy}
 				onClick={() => onStartConfirm(pairKey, true)}
@@ -59,7 +59,7 @@ export const PatientDuplicateActions: React.FC<Props> = ({
 				Оставить первую
 			</button>
 			<button
-				className="secondary-button"
+				className="secondary-button h-9 px-3.5 rounded-lg text-sm font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center gap-2 shrink-0"
 				type="button"
 				disabled={isBusy}
 				onClick={() => onStartConfirm(pairKey, false)}
@@ -67,7 +67,7 @@ export const PatientDuplicateActions: React.FC<Props> = ({
 				Оставить вторую
 			</button>
 			<button
-				className="secondary-button"
+				className="secondary-button h-9 px-3.5 rounded-lg text-sm font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center gap-2 shrink-0"
 				type="button"
 				disabled={isBusy}
 				onClick={() => onDismiss(candidate)}

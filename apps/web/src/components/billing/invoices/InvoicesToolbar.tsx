@@ -81,11 +81,11 @@ export const InvoicesToolbar: React.FC<InvoicesToolbarProps> = ({
 					</div>
 				</div>
 
-				<button type="button" onClick={onOpenCreate} className="primary-button h-8 px-2 sm:px-2.5 rounded-lg text-xs font-bold text-white shrink-0 flex items-center gap-1" data-testid="btn-create-invoice-open" title="Новый счёт">
+				<button type="button" onClick={onOpenCreate} className="primary-button h-11 min-h-[44px] min-w-[44px] sm:h-8 sm:min-h-[32px] sm:min-w-0 px-2.5 sm:px-2.5 rounded-lg text-xs font-bold text-white shrink-0 flex items-center justify-center gap-1" data-testid="btn-create-invoice-open" title="Новый счёт">
 					<Plus size={14} /> <span className="hidden sm:inline">Новый счёт</span>
 				</button>
-				<button type="button" onClick={onOpenCashDrawer} className="secondary-button h-8 px-2 sm:px-2.5 rounded-lg text-xs font-bold shrink-0 flex items-center gap-1" data-testid="btn-invoices-open-cash-drawer" title="Касса">
-					<Wallet size={14} className="text-teal-600" /> <span className="hidden sm:inline">Касса</span>
+				<button type="button" onClick={onOpenCashDrawer} className="secondary-button h-11 min-h-[44px] min-w-[44px] sm:h-8 sm:min-h-[32px] sm:min-w-0 px-2.5 sm:px-2.5 rounded-lg text-xs font-bold shrink-0 flex items-center justify-center gap-1" data-testid="btn-invoices-open-cash-drawer" title="Касса">
+					<Wallet size={14} className="text-[var(--primary)]" /> <span className="hidden sm:inline">Касса</span>
 				</button>
 				<div className="hidden sm:flex items-center gap-1.5 shrink-0">
 					<button type="button" onClick={onOpenShift} className="secondary-button h-8 px-2.5 rounded-lg text-xs font-bold shrink-0 inline-flex items-center gap-1" data-testid="btn-invoices-open-shift-modal">
@@ -97,20 +97,20 @@ export const InvoicesToolbar: React.FC<InvoicesToolbarProps> = ({
 				</div>
 
 				<div className="relative" ref={toolbarMenuRef}>
-					<button type="button" onClick={() => setIsToolbarMenuOpen((prev) => !prev)} className="secondary-button w-8 h-8 p-0 rounded-lg shrink-0 flex items-center justify-center text-[var(--muted,#64748b)]" data-testid="invoices-toolbar-options-btn" aria-label="Опции реестра">
+					<button type="button" onClick={() => setIsToolbarMenuOpen((prev) => !prev)} className="secondary-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] p-0 rounded-lg shrink-0 flex items-center justify-center text-[var(--muted,#64748b)]" data-testid="invoices-toolbar-options-btn" aria-label="Опции реестра">
 						<MoreHorizontal size={15} />
 					</button>
 					{isToolbarMenuOpen && (
 						<div className="absolute right-0 top-full mt-1 w-48 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl shadow-lg py-1 z-30 text-xs" data-testid="invoices-toolbar-menu-dropdown">
 							<button type="button" onClick={onPrintRegistry} className="w-full text-left px-3 py-2 text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer font-medium" data-testid="btn-print-invoices-registry">
-								<Printer size={14} className="text-teal-600" /> <span>Печать реестра</span>
+								<Printer size={14} className="text-[var(--primary)]" /> <span>Печать реестра</span>
 							</button>
 						</div>
 					)}
 				</div>
 
 				{onClose && (
-					<button type="button" onClick={onClose} className="secondary-button w-8 h-8 p-0 rounded-lg shrink-0 flex items-center justify-center text-[var(--muted,#64748b)]" aria-label="Закрыть реестр счетов" data-testid="btn-invoices-close">
+					<button type="button" onClick={onClose} className="secondary-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] p-0 rounded-lg shrink-0 flex items-center justify-center text-[var(--muted,#64748b)]" aria-label="Закрыть реестр счетов" data-testid="btn-invoices-close">
 						<X size={15} />
 					</button>
 				)}

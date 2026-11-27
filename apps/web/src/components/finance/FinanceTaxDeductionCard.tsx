@@ -24,38 +24,21 @@ export const FinanceTaxDeductionCard: React.FC<FinanceTaxDeductionCardProps> = (
 
 	return (
 		<article
-			className={`finance-tax-deduction-card pb-3 flex flex-col justify-between ${className}`.trim()}
+			className={`finance-tax-deduction-card pb-3 flex flex-col justify-between gap-1.5 min-w-0 overflow-hidden ${className}`.trim()}
 			data-testid="finance-tax-deduction-card"
-			style={{ display: "inline-flex", flexDirection: "row", alignItems: "center", gap: "8px", flexWrap: "nowrap" }}
 		>
-			<div className="finance-tax-card-header" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-				<span style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted, #64748b)" }}>Вычет:</span>
-				<strong style={{ fontSize: "13px", fontWeight: 800, color: "var(--ink, #0f172a)" }}>{displayValue}</strong>
+			<div className="finance-tax-card-header flex items-baseline justify-between gap-2 min-w-0 flex-wrap">
+				<span className="text-[11px] font-bold text-[var(--muted)] shrink-0">Вычет</span>
+				<strong className="font-mono tracking-tight tabular-nums text-[var(--ink)] whitespace-nowrap">{displayValue}</strong>
 			</div>
-			<p className="leading-relaxed text-xs text-[var(--muted,#64748b)] mt-1.5 m-0" style={{ display: "none" }}>
+			<p className="sr-only leading-relaxed text-xs text-[var(--muted)] m-0">
 				медицинские услуги, пригодные для справки
 			</p>
 			{onOpenCertificateModal && (
 				<button
 					type="button"
 					onClick={onOpenCertificateModal}
-					className="finance-tax-cert-btn"
-					style={{
-						display: "inline-flex",
-						alignItems: "center",
-						gap: "4px",
-						padding: "2px 8px",
-						fontSize: "11px",
-						fontWeight: 600,
-						color: "var(--teal, #0d9488)",
-						background: "var(--paper-soft, #f1f5f9)",
-						border: "1px solid var(--line-subtle, var(--line, #e2e8f0))",
-						borderRadius: "6px",
-						cursor: "pointer",
-						whiteSpace: "nowrap",
-						marginLeft: "4px",
-						transition: "all 0.15s ease",
-					}}
+					className="finance-tax-cert-btn w-full max-w-full min-h-[44px] sm:min-h-[28px] px-2 py-1 text-[11px] font-medium text-[var(--primary)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line)] rounded-lg cursor-pointer inline-flex items-center justify-center text-center leading-snug whitespace-normal break-words transition-colors"
 				>
 					Сформировать справку для ФНС →
 				</button>

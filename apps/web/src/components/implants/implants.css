@@ -166,7 +166,7 @@
 	box-shadow: 0 0 0 2px var(--primary-shadow, rgba(14, 165, 233, 0.2));
 }
 
-/* 3.1 Кнопки хирургических экспресс-протоколов (1 клик) */
+/* 3.1 Кнопки хирургических экспресс-протоколов (быстрый выбор) */
 .implant-preset-btn {
 	height: auto !important;
 	min-height: 60px !important;

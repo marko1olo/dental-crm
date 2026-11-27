@@ -21,30 +21,30 @@
 .mobile-chairside-steps-scroll::-webkit-scrollbar { display: none; }
 
 .mobile-chairside-step-chip {
-  min-height: 32px; padding: 4px 5px; border-radius: 9px;
-  font-size: 9.5px; font-weight: 600; white-space: nowrap; letter-spacing: -0.02em;
+  min-height: 44px; padding: 6px 10px; border-radius: 10px;
+  font-size: 12px; font-weight: 600; white-space: nowrap; letter-spacing: -0.01em;
   display: inline-flex; align-items: center; justify-content: center;
-  gap: 2px; border: 1px solid var(--line, #e2e8f0);
+  gap: 4px; border: 1px solid var(--line, #e2e8f0);
   background: var(--paper, #ffffff); color: var(--muted, #64748b);
   cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   flex: 0 0 auto; flex-shrink: 0; scroll-snap-align: start;
 }
 
 .mobile-chairside-step-chip.is-active {
-  background: var(--teal, #0d9488); color: #ffffff;
-  border-color: var(--teal, #0d9488); font-weight: 700;
-  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.28);
+  background: var(--primary, #0f766e); color: #ffffff;
+  border-color: var(--primary, #0f766e); font-weight: 700;
+  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.28);
 }
 
 .mobile-chairside-step-chip.is-completed:not(.is-active) {
-  background: color-mix(in srgb, var(--teal, #0d9488) 12%, transparent);
-  color: var(--teal, #0d9488);
-  border-color: color-mix(in srgb, var(--teal, #0d9488) 35%, transparent);
+  background: color-mix(in srgb, var(--primary, #0f766e) 12%, transparent);
+  color: var(--primary, #0f766e);
+  border-color: color-mix(in srgb, var(--primary, #0f766e) 35%, transparent);
 }
 .mobile-chairside-step-chip:active { transform: scale(0.95); }
 
 .mobile-chairside-recommend-chip {
-  min-height: 38px; padding: 6px 14px; border-radius: 10px;
+  min-height: 44px; padding: 6px 14px; border-radius: 10px;
   font-size: 12.5px; font-weight: 600; border: 1px solid var(--line, #e2e8f0);
   background: var(--paper-soft, #f8fafc); color: var(--ink, #0f172a);
   display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
@@ -65,5 +65,5 @@
 
 [data-theme="dark"] .mobile-chairside-step-chip.is-active,
 .dark .mobile-chairside-step-chip.is-active {
-  background: var(--teal, #0d9488); color: #ffffff; border-color: var(--teal, #0d9488);
+  background: var(--primary, #0f766e); color: #ffffff; border-color: var(--primary, #0f766e);
 }

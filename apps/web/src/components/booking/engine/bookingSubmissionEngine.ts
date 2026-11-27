@@ -1,6 +1,16 @@
 import { generateUuidV7, parseUtmFromUrl } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
+import { clientLogger } from "../../../utils/logger";
 import type { BookingConfirmationData, BookingDoctorData, BookingSlotItem, ClinicBranch } from "../contracts/bookingContracts";
+
+async function parseJsonWithLog(response: Response, context: string): Promise<unknown> {
+	try {
+		return await response.json();
+	} catch (jsonErr: unknown) {
+		clientLogger.warn(`[bookingSubmissionEngine] Invalid JSON on ${context}`, jsonErr);
+		return null;
+	}
+}
 
 export interface BookingSubmissionParams {
 	organizationId: string | null;
@@ -27,7 +37,6 @@ export async function submitBookingRequest(params: BookingSubmissionParams): Pro
 		patientName,
 		patientPhone,
 		patientComment,
-		patientId,
 		selectedDate,
 		selectedSlot,
 		selectedDoctor,
@@ -65,7 +74,6 @@ export async function submitBookingRequest(params: BookingSubmissionParams): Pro
 	const bookingPayload = {
 		organizationId: organizationId || undefined,
 		doctorId: selectedDoctor.id,
-		patientId: patientId || undefined,
 		startsAt: selectedSlot.startsAt,
 		endsAt: selectedSlot.endsAt,
 		patientName: patientName.trim(),
@@ -93,11 +101,16 @@ export async function submitBookingRequest(params: BookingSubmissionParams): Pro
 		? `${apiBaseUrl}/${organizationId}/book`
 		: `${apiBaseUrl}/create`;
 
-	const response = await fetch(targetUrl, {
-		method: "POST",
-		headers: requestHeaders,
-		body: JSON.stringify(bookingPayload),
-	}).catch(() => null);
+	let response: Response | null = null;
+	try {
+		response = await fetch(targetUrl, {
+			method: "POST",
+			headers: requestHeaders,
+			body: JSON.stringify(bookingPayload),
+		});
+	} catch (netErr: unknown) {
+		clientLogger.warn("[bookingSubmissionEngine] Network error on submitBookingRequest", netErr);
+	}
 
 	if (!response || !response.ok) {
 		if (response?.status === 409) {
@@ -107,9 +120,31 @@ export async function submitBookingRequest(params: BookingSubmissionParams): Pro
 		throw new Error(errData?.message || errData?.error || `Не удалось завершить запись. Позвоните: ${selectedBranch.phone}`);
 	}
 
-	const responseData = await response.json().catch(() => null);
-	if (responseData?.bookingId || responseData?.appointment?.id) {
-		finalConfirmation.referenceNumber = responseData.bookingId || responseData.appointment.id;
+	const rawResponse = await parseJsonWithLog(response, "submitBookingRequest");
+	const responseData = (
+		rawResponse && typeof rawResponse === "object" && "data" in rawResponse
+			? (rawResponse as { data: Record<string, unknown> }).data
+			: rawResponse
+	) as {
+		referenceNumber?: string;
+		booking?: { referenceNumber?: string };
+		bookingId?: string;
+		appointment?: { id?: string };
+		cabinetNumber?: string;
+		cabinet?: string;
+	} | null;
+	if (
+		responseData?.referenceNumber ||
+		responseData?.booking?.referenceNumber ||
+		responseData?.bookingId ||
+		responseData?.appointment?.id
+	) {
+		finalConfirmation.referenceNumber =
+			responseData.referenceNumber ||
+			responseData.booking?.referenceNumber ||
+			responseData.bookingId ||
+			responseData.appointment?.id ||
+			finalConfirmation.referenceNumber;
 	}
 	if (responseData?.cabinetNumber || responseData?.cabinet) {
 		finalConfirmation.cabinetNumber = responseData.cabinetNumber || responseData.cabinet;
@@ -196,24 +231,34 @@ export async function submitWaitlistRequest(params: WaitlistSubmissionParams): P
 		? `${apiBaseUrl}/${organizationId}/waitlist`
 		: `${apiBaseUrl}/waitlist`;
 
-	const response = await fetch(targetUrl, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			"Idempotency-Key": idempotencyKey,
-			"X-Idempotency-Key": idempotencyKey,
-		},
-		body: JSON.stringify(payload),
-	}).catch(() => null);
+	let response: Response | null = null;
+	try {
+		response = await fetch(targetUrl, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"Idempotency-Key": idempotencyKey,
+				"X-Idempotency-Key": idempotencyKey,
+			},
+			body: JSON.stringify(payload),
+		});
+	} catch (netErr: unknown) {
+		clientLogger.warn("[bookingSubmissionEngine] Network error on submitWaitlistRequest", netErr);
+	}
 
 	if (!response || !response.ok) {
 		const errData = response ? await response.json().catch(() => ({})) : null;
 		throw new Error(errData?.message || errData?.error || `Не удалось отправить заявку в лист ожидания. Позвоните: ${selectedBranch.phone}`);
 	}
 
-	const responseData = await response.json().catch(() => null);
+	const rawResponse = await parseJsonWithLog(response, "submitBookingRequest");
+	const responseData = (
+		rawResponse && typeof rawResponse === "object" && "data" in rawResponse
+			? (rawResponse as { data: Record<string, unknown> }).data
+			: rawResponse
+	) as { waitlistId?: string; id?: string } | null;
 	if (responseData?.waitlistId || responseData?.id) {
-		finalConfirmation.referenceNumber = responseData.waitlistId || responseData.id;
+		finalConfirmation.referenceNumber = responseData.waitlistId || responseData.id || finalConfirmation.referenceNumber;
 	}
 
 	return finalConfirmation;

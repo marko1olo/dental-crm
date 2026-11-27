@@ -46,7 +46,7 @@ export async function submitPatientOnlyConversion(params: PatientOnlyConvertPara
 		showToast(msg, "success");
 		params.setIsConvertOpen(false);
 		params.setConvertingLeadId(null);
-		params.fetchLeads();
+		await params.fetchLeads();
 		const rawPatient = res?.patient;
 		const createdPatient =
 			rawPatient &&

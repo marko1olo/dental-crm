@@ -51,7 +51,7 @@ export const WarrantyConditionsStep: React.FC<WarrantyConditionsStepProps> = ({
 							</div>
 							<div style={{ textAlign: "right" }}>
 								<strong style={{ fontSize: "15px", color: "var(--ink)" }}>{chk.formattedDate}</strong>
-								<div style={{ fontSize: "11px", color: "var(--ok-fg)", fontWeight: 700 }}>БЕСПЛАТНЫЙ ОСМОТР</div>
+								<div style={{ fontSize: "11px", color: "var(--ok-fg)", fontWeight: 700 }}>Бесплатный осмотр</div>
 							</div>
 						</div>
 					))}

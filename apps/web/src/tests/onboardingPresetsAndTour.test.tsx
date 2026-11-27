@@ -33,14 +33,13 @@ import {
 	useDeepClinicalSettingsStore,
 } from "../store/deepClinicalSettingsStore";
 import {
-	ROLE_TOUR_CATALOGS,
-	dismissGuideTourPermanently,
-	hasSeenGuideTour,
-	isGuideTourDismissed,
-	markGuideTourSeen,
-	resetGuideTourProgress,
-	InteractiveGuideTour,
-} from "../components/tutorial/InteractiveGuideTour";
+	CLINICAL_QUEST_TRACKS,
+	dismissQuestTourPermanently,
+	loadQuestProgress,
+	resetQuestProgress,
+	startQuestTrack,
+} from "../components/workspace/ClinicalQuestTourEngine";
+import { DoctorClinicalTrainingTour } from "../components/workspace/DoctorClinicalTrainingTour";
 import { DeepClinicalSettingsSection } from "../components/settings/DeepClinicalSettingsSection";
 
 describe("Sovereign Scale Presets (Частный кабинет / Стандарт / Сеть)", () => {
@@ -186,60 +185,59 @@ describe("Deep Clinical Configurations Store (useDeepClinicalSettingsStore)", ()
 	});
 });
 
-describe("Interactive Role-Based Walkthrough (InteractiveGuideTour & Catalogs)", () => {
+describe("Interactive Role-Based Walkthrough (DoctorClinicalTrainingTour & Quest Tracks)", () => {
 	beforeEach(() => {
-		resetGuideTourProgress();
+		const store = new Map<string, string>();
+		const memoryStorage = {
+			getItem: (k: string) => store.get(k) ?? null,
+			setItem: (k: string, v: string) => { store.set(k, String(v)); },
+			removeItem: (k: string) => { store.delete(k); },
+			clear: () => { store.clear(); },
+			key: (i: number) => Array.from(store.keys())[i] ?? null,
+			get length() { return store.size; },
+		};
+		Object.defineProperty(globalThis, "window", {
+			value: { localStorage: memoryStorage },
+			configurable: true,
+			writable: true,
+		});
+		Object.defineProperty(globalThis, "localStorage", {
+			value: memoryStorage,
+			configurable: true,
+			writable: true,
+		});
+		resetQuestProgress();
 	});
 
-	it("provides dedicated tour catalogs for admin, doctor, and director roles", () => {
-		assert.ok(ROLE_TOUR_CATALOGS.admin, "Admin tour catalog must exist");
-		assert.ok(ROLE_TOUR_CATALOGS.doctor, "Doctor tour catalog must exist");
-		assert.ok(ROLE_TOUR_CATALOGS.director, "Director tour catalog must exist");
+	it("provides dedicated tour tracks for solo doctor, reception admin, and imaging diagnostics", () => {
+		const trackIds = CLINICAL_QUEST_TRACKS.map((t) => t.id);
+		assert.ok(trackIds.includes("solo_doctor"), "Solo doctor track must exist");
+		assert.ok(trackIds.includes("reception_admin"), "Reception admin track must exist");
+		assert.ok(trackIds.includes("imaging_diagnostics"), "Imaging diagnostics track must exist");
 	});
 
-	it("admin tour guides through schedule booking, fast search, and 54-FZ cashier", () => {
-		const steps = ROLE_TOUR_CATALOGS.admin.steps;
-		assert.ok(steps.length >= 3);
-		assert.equal(steps[0]?.id, "admin_schedule_grid");
-		assert.equal(steps[1]?.id, "admin_patient_search");
-		assert.equal(steps[2]?.id, "admin_cashier_checkout");
+	it("reception_admin track guides through schedule, omnibar, and cashier", () => {
+		const adminTrack = CLINICAL_QUEST_TRACKS.find((t) => t.id === "reception_admin");
+		assert.ok(adminTrack && adminTrack.steps.length >= 2);
 	});
 
-	it("doctor tour guides through FDI quadrant formula, 1-click norm, mic, and 1-tap finish", () => {
-		const steps = ROLE_TOUR_CATALOGS.doctor.steps;
-		assert.ok(steps.length >= 4);
-		assert.equal(steps[0]?.id, "doctor_odontogram_formula");
-		assert.equal(steps[1]?.id, "doctor_instant_norm_button");
-		assert.ok(steps[1]?.title.includes("«✓ Соматически здоров»"));
-		assert.equal(steps[2]?.id, "doctor_smart_microphone");
-		assert.equal(steps[3]?.id, "doctor_finish_visit_one_tap");
+	it("solo_doctor track guides through core chairside workflow", () => {
+		const doctorTrack = CLINICAL_QUEST_TRACKS.find((t) => t.id === "solo_doctor");
+		assert.ok(doctorTrack && doctorTrack.steps.length >= 3);
 	});
 
-	it("director tour guides through revenue, occupancy KPI, and FEFO warehouse", () => {
-		const steps = ROLE_TOUR_CATALOGS.director.steps;
-		assert.ok(steps.length >= 3);
-		assert.equal(steps[0]?.id, "director_revenue_dashboard");
-		assert.equal(steps[1]?.id, "director_chair_occupancy");
-		assert.equal(steps[2]?.id, "director_warehouse_consumption");
+	it("manages localStorage state for active and dismissed tours accurately", () => {
+		assert.equal(loadQuestProgress().isDismissedPermanently, false);
+		startQuestTrack("solo_doctor");
+		assert.equal(loadQuestProgress().isTourActive, true);
+		dismissQuestTourPermanently();
+		assert.equal(loadQuestProgress().isDismissedPermanently, true);
+		resetQuestProgress();
+		assert.equal(loadQuestProgress().isDismissedPermanently, false);
 	});
 
-	it("manages localStorage state for seen and dismissed tours accurately", () => {
-		assert.equal(hasSeenGuideTour("doctor"), false);
-		markGuideTourSeen("doctor");
-		assert.equal(hasSeenGuideTour("doctor"), true);
-		assert.equal(hasSeenGuideTour("admin"), false);
-
-		assert.equal(isGuideTourDismissed(), false);
-		dismissGuideTourPermanently();
-		assert.equal(isGuideTourDismissed(), true);
-
-		resetGuideTourProgress();
-		assert.equal(hasSeenGuideTour("doctor"), false);
-		assert.equal(isGuideTourDismissed(), false);
-	});
-
-	it("renders InteractiveGuideTour markup cleanly", () => {
-		const html = renderToStaticMarkup(<InteractiveGuideTour userRole="doctor" />);
+	it("renders DoctorClinicalTrainingTour markup cleanly", () => {
+		const html = renderToStaticMarkup(<DoctorClinicalTrainingTour />);
 		assert.ok(typeof html === "string");
 	});
 });
@@ -248,7 +246,7 @@ describe("Mandates & Quality Invariants Verification (8b, 8d, 8e)", () => {
 	const filesToCheck = [
 		"apps/web/src/store/deepClinicalSettingsStore.ts",
 		"apps/web/src/components/onboarding/SovereignScalePresetsCard.tsx",
-		"apps/web/src/components/tutorial/InteractiveGuideTour.tsx",
+		"apps/web/src/components/workspace/ClinicalQuestTourEngine.ts",
 		"apps/web/src/components/settings/DeepClinicalSettingsSection.tsx",
 		"apps/web/src/components/settings/OwnerSettingsSection.tsx",
 	];

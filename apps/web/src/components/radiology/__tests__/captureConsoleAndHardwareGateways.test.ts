@@ -185,15 +185,6 @@ describe("Window #3: Capture Console & Hardware Gateways (Вкладка «СН�
 			const ssotSrc = readSource(ssotPath);
 			expect(ssotSrc).toContain("SensorStudyViewer");
 		});
-
-		it("confirms components/hardware/HardwareSettingsModal.tsx exists and renders HardwareSettingsTab", () => {
-			const modalPath = "components/hardware/HardwareSettingsModal.tsx";
-			expect(existsSync(path.join(webSrcRoot, modalPath))).toBeTruthy();
-			const modalSrc = readSource(modalPath);
-			expect(modalSrc).toContain("HardwareSettingsTab");
-			expect(modalSrc).toContain('data-testid="hardware-settings-modal"');
-			expect(modalSrc).toContain('data-testid="hardware-settings-modal-close"');
-		});
 	});
 
 	describe("6. Non-Conflicting USB Hardware Architecture & Coexistence Law", () => {

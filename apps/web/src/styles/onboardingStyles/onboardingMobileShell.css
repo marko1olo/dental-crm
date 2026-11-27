@@ -17,6 +17,7 @@
 		width: 100vw;
 		min-height: 100dvh;
 		height: 100dvh;
+		max-height: 100dvh;
 		border-radius: 0;
 		border: none;
 		box-shadow: none;

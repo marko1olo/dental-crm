@@ -102,10 +102,10 @@ export function checkPatient(payload: EgiszDentalCdaPayload, checks: EgiszPrefli
 	}
 
 	checks.push(!payload.patient.cardNumber ? {
-		id: "pat_card_missing", category: "patient", title: "Номер амбулаторной карты 043/у",
+		id: "pat_card_missing", category: "patient", title: "Номер медицинской карты",
 		status: "warning", details: "Номер медицинской карты стоматологического пациента не заполнен",
 	} : {
-		id: "pat_card_ok", category: "patient", title: "Номер амбулаторной карты 043/у",
+		id: "pat_card_ok", category: "patient", title: "Номер медицинской карты",
 		status: "passed", details: `Карта: ${payload.patient.cardNumber}`,
 	});
 }

@@ -4,6 +4,7 @@
  * Enforces 152-FZ / 38-FZ consent verification and audience deduplication.
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import type { MarketingPromo, MessageChannel } from "./marketingTypes";
 
 export interface LaunchCampaignResult {
@@ -14,14 +15,21 @@ export interface LaunchCampaignResult {
 	readonly message: string;
 }
 
+export interface LaunchCampaignIdempotencyKeys {
+	readonly createTemplateKey?: string | undefined;
+	readonly createCampaignKey?: string | undefined;
+	readonly launchKey?: string | undefined;
+}
+
 export async function launchMarketingCampaign(params: {
 	readonly promo: MarketingPromo;
 	readonly channel: MessageChannel;
 	readonly segmentId: string;
 	readonly consentOnly: boolean;
 	readonly mutationHeaders: Record<string, string>;
+	readonly idempotencyKeys?: LaunchCampaignIdempotencyKeys | undefined;
 }): Promise<LaunchCampaignResult> {
-	const { promo, channel, segmentId, consentOnly, mutationHeaders } = params;
+	const { promo, channel, segmentId, consentOnly, mutationHeaders, idempotencyKeys } = params;
 	const headers: Record<string, string> = { "Content-Type": "application/json", ...mutationHeaders };
 
 	let criteria: Record<string, unknown> = { status: "active" };
@@ -53,7 +61,10 @@ export async function launchMarketingCampaign(params: {
 
 		const createTplRes = await fetch("/api/communications/templates", {
 			method: "POST",
-			headers,
+			headers: {
+				...headers,
+				"Idempotency-Key": idempotencyKeys?.createTemplateKey ?? generateUuidV7(),
+			},
 			body: JSON.stringify({
 				title: promo.title,
 				channel,
@@ -76,7 +87,10 @@ export async function launchMarketingCampaign(params: {
 	// 2. Create communication campaign record
 	const createCampaignRes = await fetch("/api/communications/campaigns", {
 		method: "POST",
-		headers,
+		headers: {
+			...headers,
+			"Idempotency-Key": idempotencyKeys?.createCampaignKey ?? generateUuidV7(),
+		},
 		body: JSON.stringify({
 			title: `${promo.title} · ${channel.toUpperCase()}`,
 			templateId,
@@ -99,7 +113,10 @@ export async function launchMarketingCampaign(params: {
 	// 3. Launch campaign via canonical route
 	const launchRes = await fetch(`/api/communications/campaigns/${campaignId}/launch`, {
 		method: "POST",
-		headers,
+		headers: {
+			...headers,
+			"Idempotency-Key": idempotencyKeys?.launchKey ?? generateUuidV7(),
+		},
 	});
 
 	if (!launchRes.ok) {

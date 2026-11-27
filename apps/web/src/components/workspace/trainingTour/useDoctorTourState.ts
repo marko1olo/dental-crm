@@ -30,10 +30,18 @@ export function useDoctorTourState({ forceOpen, onClose, onComplete }: UseDoctor
 	const cardRef = useRef<HTMLDivElement | null>(null);
 	const setCurrentView = useAppStore((s) => s.setCurrentView);
 
-	const activeTrack: QuestTrack =
-		CLINICAL_QUEST_TRACKS.find((t) => t.id === progress.activeTrackId) || CLINICAL_QUEST_TRACKS[0]!;
-	const currentStepIndex = Math.min(progress.currentStepIndex, activeTrack.steps.length - 1);
-	const currentStep: QuestStep = activeTrack.steps[currentStepIndex] || activeTrack.steps[0]!;
+	const activeTrack =
+		CLINICAL_QUEST_TRACKS.find((t) => t.id === progress.activeTrackId) ??
+		CLINICAL_QUEST_TRACKS[0];
+	const currentStepIndex = activeTrack
+		? Math.min(progress.currentStepIndex, activeTrack.steps.length - 1)
+		: 0;
+	const currentStep = activeTrack
+		? activeTrack.steps[currentStepIndex] ?? activeTrack.steps[0]
+		: undefined;
+	if (!activeTrack || !currentStep) {
+		throw new Error("CLINICAL_QUEST_TRACKS must contain at least one track and step");
+	}
 
 	const handleClose = useCallback(() => {
 		const updated: QuestProgressState = { ...progress, isTourActive: false };

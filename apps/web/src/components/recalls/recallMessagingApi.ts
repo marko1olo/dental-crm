@@ -71,7 +71,12 @@ export async function sendRecallCandidateInvite(
 		body: JSON.stringify({ patientId: params.patientId, channel: params.channel, body: params.body }),
 	});
 
-	const payload = (await response.json().catch(() => ({}))) as {
+	const raw = await response.json().catch(() => ({}));
+	const payload = (
+		raw && typeof raw === "object" && "data" in raw
+			? (raw as { data: Record<string, unknown> }).data
+			: raw
+	) as {
 		ok?: boolean; outboxId?: string; duplicate?: boolean; message?: string; error?: string;
 	};
 	if (!response.ok) {

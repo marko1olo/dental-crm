@@ -223,7 +223,6 @@ test("Spotlight Geometry & Coach Mark Math Invariants", async (t) => {
 		assert.ok(indexContent.includes("./spotlightGeometry"));
 		assert.ok(indexContent.includes("./SpotlightOverlay"));
 		assert.ok(indexContent.includes("./PulsingHaloAnchor"));
-		assert.ok(indexContent.includes("./CoachMarkTooltip"));
 	});
 
 	await t.test("12. Stress Test: Partially clipped elements with negative coordinates clamp accurately", () => {
@@ -369,23 +368,12 @@ test("Spotlight Geometry & Coach Mark Math Invariants", async (t) => {
 		);
 	});
 
-	await t.test("20. SpotlightOverlay and CoachMarkTooltip support visualViewport for Retina zoom scaling", () => {
+	await t.test("20. SpotlightOverlay supports visualViewport for Retina zoom scaling", () => {
 		const spotlightPath = path.resolve(__dirname, "../components/tutorial/SpotlightOverlay.tsx");
 		const spotlightContent = fs.readFileSync(spotlightPath, "utf8");
 		assert.ok(
 			spotlightContent.includes("window.visualViewport"),
 			"SpotlightOverlay must inspect window.visualViewport for Retina and pinch-zoom resilience",
-		);
-
-		const tooltipPath = path.resolve(__dirname, "../components/tutorial/CoachMarkTooltip.tsx");
-		const tooltipContent = fs.readFileSync(tooltipPath, "utf8");
-		assert.ok(
-			tooltipContent.includes("window.visualViewport"),
-			"CoachMarkTooltip must inspect window.visualViewport for Retina and pinch-zoom resilience",
-		);
-		assert.ok(
-			tooltipContent.includes("arrowOffsetYPx"),
-			"CoachMarkTooltip must utilize arrowOffsetYPx for side placements",
 		);
 	});
 });

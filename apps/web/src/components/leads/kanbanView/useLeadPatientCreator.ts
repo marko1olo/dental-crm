@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import type { Lead } from "../../../store/leadsStore";
+import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
 
 export interface LeadPatientCreationResult {
@@ -34,8 +35,8 @@ export function useLeadPatientCreator(
 					`Открыта амбулаторная карта: ${lead.existingPatient.fullName}`,
 					"info",
 				);
-			} catch {
-				// fallback
+			} catch (err: unknown) {
+				logger.warn("[useLeadPatientCreator] Failed to open existing patient card:", err);
 			}
 			return;
 		}
@@ -65,11 +66,11 @@ export function useLeadPatientCreator(
 			if (targetPatientId) {
 				try {
 					handleOpenPatientCard(targetPatientId);
-				} catch {
-					// safe fallback
+				} catch (err: unknown) {
+					logger.warn("[useLeadPatientCreator] Failed to navigate to created patient card:", err);
 				}
 			}
-			fetchLeads();
+			await fetchLeads();
 		} catch (err: unknown) {
 			const text =
 				err instanceof Error && err.message.trim()

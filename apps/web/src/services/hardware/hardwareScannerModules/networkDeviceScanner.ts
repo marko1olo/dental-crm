@@ -100,9 +100,12 @@ export async function scanLocalNetworkDevices(
 	options: DeviceScanOptions = {},
 ): Promise<HardwareDevice[]> {
 	const timeoutMs = options.timeoutMs ?? 500;
-	const candidateHosts = options.ipRange && options.ipRange.length > 0
-		? options.ipRange
-		: ["127.0.0.1", "192.168.1.150", "192.168.1.200"];
+	const candidateHosts = (options.ipRange ?? []).filter(
+		(ip) => ip && ip !== "127.0.0.1" && ip !== "::1" && !ip.startsWith("169.254."),
+	);
+	if (candidateHosts.length === 0) {
+		return [];
+	}
 
 	const targetPorts = options.portList && options.portList.length > 0
 		? options.portList

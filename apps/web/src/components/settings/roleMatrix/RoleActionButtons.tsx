@@ -45,11 +45,11 @@ export const RoleActionButtons: React.FC<RoleActionButtonsProps> = ({
 				)}
 			</div>
 
-			<div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2">
+			<div className="flex flex-col-reverse sm:flex-row sm:flex-nowrap items-stretch sm:items-center justify-end gap-2">
 				<button
 					type="button"
 					onClick={onReset}
-					className="h-11 sm:h-9 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium whitespace-nowrap shrink-0 bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] cursor-pointer touch-manipulation inline-flex items-center justify-center gap-2 flex-1 sm:flex-initial"
+					className="dente-btn dente-btn-secondary min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium sm:whitespace-nowrap shrink-0 bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] cursor-pointer touch-manipulation inline-flex items-center justify-center gap-2"
 					title="Сбросить права выбранной роли к заводскому стандарту DENTE"
 				>
 					<RotateCcw className="w-4 h-4 shrink-0 text-[var(--muted)]" />
@@ -60,7 +60,7 @@ export const RoleActionButtons: React.FC<RoleActionButtonsProps> = ({
 				<button
 					type="button"
 					onClick={onSave}
-					className="h-11 sm:h-9 px-4 rounded-xl sm:rounded-lg text-sm font-medium whitespace-nowrap shrink-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm cursor-pointer touch-manipulation inline-flex items-center justify-center gap-2 flex-1 sm:flex-initial"
+					className="dente-btn dente-btn-primary min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 px-4 rounded-xl sm:rounded-lg text-sm font-medium sm:whitespace-nowrap shrink-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm cursor-pointer touch-manipulation inline-flex items-center justify-center gap-2"
 					data-testid="save-role-permissions-button"
 				>
 					<Save className="w-4 h-4 shrink-0" />

@@ -165,8 +165,8 @@ export class KktLanPrinterService {
 					fnFiscalized: status.fnFiscalized,
 					latencyMs: status.latencyMs,
 					modelName: status.modelName ?? (cfg.protocol === "shtrih" ? "ШТРИХ-М-01Ф (LAN)" : "АТОЛ 27Ф (LAN)"),
-					fnSerial: status.fnSerial ?? "9960440302145896",
-					kktSerialNumber: status.kktSerialNumber ?? "0010670000012345",
+					fnSerial: status.fnSerial,
+					kktSerialNumber: status.kktSerialNumber,
 					error: status.error,
 					checkedAt: nowIso,
 				};
@@ -207,8 +207,8 @@ export class KktLanPrinterService {
 						fnFiscalized: Boolean(data.status.fnFiscalized),
 						latencyMs: data.status.latencyMs ?? 8,
 						modelName: data.status.modelName ?? (cfg.protocol === "shtrih" ? "ШТРИХ-М-01Ф (LAN)" : "АТОЛ 27Ф (LAN)"),
-						fnSerial: data.status.fnSerial ?? "9960440302145896",
-						kktSerialNumber: data.status.kktSerialNumber ?? "0010670000012345",
+						fnSerial: data.status.fnSerial,
+						kktSerialNumber: data.status.kktSerialNumber,
 						error: data.status.error ?? undefined,
 						checkedAt: nowIso,
 					};
@@ -298,7 +298,6 @@ export class KktLanPrinterService {
 	): Promise<FiscalReceiptPrintResult> {
 		const cfg = { ...this.defaultConfig, ...overrideConfig };
 		const now = new Date();
-		const fnSerial = "9960440302145896";
 
 		// Mandate 8e: Гарантийный прием и 100% скидки (0.00 ₽) — фискальный чек в ККТ не направляется
 		if (payload.totalRub <= 0) {
@@ -351,10 +350,10 @@ export class KktLanPrinterService {
 
 			if (desktopResult.success) {
 				this.recordSuccess();
-				const resultFn = desktopResult.fnSerial || "9999078900012345";
+				const resultFn = desktopResult.fnSerial;
 				const resultFiscalSign = desktopResult.fiscalSign;
 				const resultFiscalDocNum = desktopResult.fiscalDocNum ? String(desktopResult.fiscalDocNum) : undefined;
-				const qrString = resultFiscalSign && resultFiscalDocNum ? this.generate54FzQrString({
+				const qrString = resultFn && resultFiscalSign && resultFiscalDocNum ? this.generate54FzQrString({
 					issuedAt: desktopResult.printedAt || now,
 					totalRub: payload.totalRub,
 					fnSerial: resultFn,
@@ -362,7 +361,7 @@ export class KktLanPrinterService {
 					fiscalSign: resultFiscalSign,
 					operationType: payload.operationType,
 				}) : undefined;
-				const ofdUrl = resultFiscalSign && resultFiscalDocNum ? `https://ofd.ru/check?fn=${resultFn}&fd=${resultFiscalDocNum}&fpd=${resultFiscalSign}&s=${payload.totalRub.toFixed(2)}&n=${payload.operationType === "income_return" ? "2" : "1"}` : undefined;
+				const ofdUrl = resultFn && resultFiscalSign && resultFiscalDocNum ? `https://ofd.ru/check?fn=${resultFn}&fd=${resultFiscalDocNum}&fpd=${resultFiscalSign}&s=${payload.totalRub.toFixed(2)}&n=${payload.operationType === "income_return" ? "2" : "1"}` : undefined;
 
 				return {
 					success: true,
@@ -370,7 +369,7 @@ export class KktLanPrinterService {
 					fiscalSign: resultFiscalSign,
 					fiscalDocNum: resultFiscalDocNum,
 					shiftNum: desktopResult.shiftNum || 1,
-					kktSerialNumber: desktopResult.kktSerialNumber || "0010670000001234",
+					kktSerialNumber: desktopResult.kktSerialNumber,
 					fnSerial: resultFn,
 					printedAt: desktopResult.printedAt || now.toISOString(),
 					qrString,
@@ -451,7 +450,7 @@ export class KktLanPrinterService {
 					queueId: data.queueId,
 					fiscalSign: isOffline ? undefined : data.fiscalSign,
 					fiscalDocNum: isOffline ? undefined : (data.fiscalDocumentNumber ? String(data.fiscalDocumentNumber) : undefined),
-					fnSerial: isOffline ? undefined : (data.fnSerial || fnSerial),
+					fnSerial: isOffline ? undefined : data.fnSerial,
 					printedAt: data.receiptIssuedAt || now.toISOString(),
 					qrString: isOffline ? undefined : data.qrString,
 					ofdVerificationUrl: isOffline ? undefined : data.ofdVerificationUrl,

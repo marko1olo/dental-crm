@@ -11,7 +11,7 @@ import { STANDARD_ZTL_ORDER_PRESETS } from "../orthopedicCatalogData";
 import type { CanonicalManufacturing5StageItem } from "../../lab/labMath";
 import { calculateDueDateStr, type OrthopedicsChairsidePanelProps } from "./orthopedicsChairsideTypes";
 import type { OrthopedicsChairsideState } from "./useOrthopedicsChairsideState";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { PARTNER_LABS } from "../../lab/dentalLabCatalogData";
 
 export function useOrthopedicsChairsideActions(
@@ -36,11 +36,11 @@ export function useOrthopedicsChairsideActions(
 			try {
 				const res = await fetch(`/api/lab/orders/${state.activeOrderId}`, {
 					method: "PATCH",
-					headers: denteAdminSecretRequestHeaders({
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": crypto.randomUUID(),
 					}),
-					body: JSON.stringify({ stage: stage.id, techStage: stage.shortLabelRu }),
+					body: JSON.stringify({ stage: stage.id }),
 				});
 				if (!res.ok) {
 					clientLogger.warn("Failed to update lab order stage on server", { status: res.status }, { module: "useOrthopedicsChairsideActions" });
@@ -67,10 +67,12 @@ export function useOrthopedicsChairsideActions(
 		const laboratoryName = props.initialLabOrder?.laboratoryName?.trim()
 			|| (typeof window !== "undefined" && window.localStorage?.getItem("dente_default_lab_name")?.trim())
 			|| defaultLabName;
+		const validPatientId =
+			props.patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(props.patientId)
+				? props.patientId
+				: undefined;
 		const labOrderPayload = {
 			orderNumber: props.initialLabOrder?.orderNumber || undefined,
-			createdAt: new Date().toISOString(),
-			teeth: teethParts.length > 0 ? teethParts : [],
 			teethFdi: teethParts.length > 0 ? teethParts.join(", ") : undefined,
 			jawScope: state.jawScope !== "none" ? state.jawScope : "upper",
 			construction: preset.constructionType,
@@ -87,7 +89,7 @@ export function useOrthopedicsChairsideActions(
 			attachedXrayUrl: state.activeXrayUrl ?? undefined,
 			laboratoryName,
 			dueDate: state.dueDate,
-			patientId: props.patientId || undefined,
+			patientId: validPatientId,
 			patientName: props.patientName || undefined,
 			priceRub: state.isWarrantyRework ? 0 : state.grossPriceRub,
 			priceKopecks: state.isWarrantyRework ? 0 : rublesToKopecks(state.grossPriceRub),
@@ -105,7 +107,7 @@ export function useOrthopedicsChairsideActions(
 		try {
 			const res = await fetch("/api/lab/orders", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": crypto.randomUUID(),
 				}),

@@ -48,7 +48,7 @@ export function validateSoapPreset(preset: ClinicalSoapPreset): {
 	if (!preset.statusLocalis || preset.statusLocalis.trim().length < 10) errors.push("Осмотр и зубная формула должны содержать объективное описание осмотра");
 	if (!preset.treatmentDescription || preset.treatmentDescription.trim().length < 15) errors.push("Протокол лечения должен содержать описание вмешательства");
 	if (preset.service804n && !/^[AB]\d{2}\.\d{2,3}\.\d{2,3}(?:\.\d{2,3})?$/i.test(preset.service804n.code804n)) {
-		errors.push(`Некорректный код номенклатуры 804н: ${preset.service804n.code804n}`);
+		errors.push(`Некорректный код услуги прейскуранта: ${preset.service804n.code804n}`);
 	}
 	if (preset.materialsToDeduct) {
 		for (const m of preset.materialsToDeduct) {

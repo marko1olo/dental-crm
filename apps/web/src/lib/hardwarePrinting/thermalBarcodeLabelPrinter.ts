@@ -8,6 +8,7 @@
 import { printDesktopEscPosReceipt } from "../../native/desktopBridge.js";
 import { dispatchThermalLabelPrint } from "../../native/hardwareDispatcher.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
+import { logger } from "../../utils/logger.js";
 import { isDesktopExecutable } from "../omniPlatformAdapter.js";
 import type { UniversalLabelOptions, UniversalPrintResult } from "./printingTypes.js";
 
@@ -31,7 +32,9 @@ export async function printSterilizationLabel(
 					copies: options.copies ?? 1,
 				});
 				if (res.success) return { success: true, method: "desktop_silent" };
-			} catch {}
+			} catch (err) {
+				logger.warn("[thermalBarcodeLabelPrinter] Desktop ESC/POS print failed, falling back", err);
+			}
 		}
 
 		const res = await dispatchThermalLabelPrint({

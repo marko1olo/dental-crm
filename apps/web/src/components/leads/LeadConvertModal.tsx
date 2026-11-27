@@ -74,11 +74,13 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 			setReason(tagReason || "Первичная консультация");
 			setComment(lead.notes || "");
 
-			if (!selectedDoctorId && effectiveStaff.length > 0) {
-				setSelectedDoctorId(effectiveStaff[0]!.id);
+			const firstDoctor = effectiveStaff[0];
+			if (!selectedDoctorId && firstDoctor) {
+				setSelectedDoctorId(firstDoctor.id);
 			}
-			if (!selectedChairId && effectiveChairs.length > 0) {
-				setSelectedChairId(effectiveChairs[0]!.id);
+			const firstChair = effectiveChairs[0];
+			if (!selectedChairId && firstChair) {
+				setSelectedChairId(firstChair.id);
 			}
 		}
 	}, [isOpen, lead, effectiveStaff, effectiveChairs, selectedDoctorId, selectedChairId, setSelectedDoctorId, setSelectedChairId]);

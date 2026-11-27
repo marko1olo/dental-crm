@@ -34,7 +34,7 @@ export function DoctorForm043TemplatesSection() {
 	}, [activeSpecialtyFilter]);
 
 	const currentTemplate = useMemo(() => {
-		return STATUTORY_DIARY_TEMPLATES.find((t) => t.id === selectedTemplateId) || STATUTORY_DIARY_TEMPLATES[0]!;
+		return STATUTORY_DIARY_TEMPLATES.find((t) => t.id === selectedTemplateId) ?? STATUTORY_DIARY_TEMPLATES[0];
 	}, [selectedTemplateId]);
 
 	const tagContext = useMemo(() => {
@@ -42,15 +42,15 @@ export function DoctorForm043TemplatesSection() {
 	}, [preferences, testTooth, testDiagnosis]);
 
 	const interpolatedComplaints = useMemo(
-		() => interpolateDiaryTemplateTags(currentTemplate.complaintTemplate, tagContext),
+		() => (currentTemplate ? interpolateDiaryTemplateTags(currentTemplate.complaintTemplate, tagContext) : ""),
 		[currentTemplate, tagContext],
 	);
 	const interpolatedObjective = useMemo(
-		() => interpolateDiaryTemplateTags(currentTemplate.objectiveTemplate, tagContext),
+		() => (currentTemplate ? interpolateDiaryTemplateTags(currentTemplate.objectiveTemplate, tagContext) : ""),
 		[currentTemplate, tagContext],
 	);
 	const interpolatedTreatment = useMemo(
-		() => interpolateDiaryTemplateTags(currentTemplate.treatmentTemplate, tagContext),
+		() => (currentTemplate ? interpolateDiaryTemplateTags(currentTemplate.treatmentTemplate, tagContext) : ""),
 		[currentTemplate, tagContext],
 	);
 
@@ -63,10 +63,13 @@ export function DoctorForm043TemplatesSection() {
 	}, [interpolatedComplaints, interpolatedObjective, interpolatedTreatment]);
 
 	const templateTags = useMemo(() => {
+		if (!currentTemplate) return [];
 		return extractTemplateTags(
 			`${currentTemplate.complaintTemplate} ${currentTemplate.objectiveTemplate} ${currentTemplate.treatmentTemplate}`,
 		);
 	}, [currentTemplate]);
+
+	if (!currentTemplate) return null;
 
 	const handleCopyFullDiary = () => {
 		navigator.clipboard.writeText(fullDiaryText);

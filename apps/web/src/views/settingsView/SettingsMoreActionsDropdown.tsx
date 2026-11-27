@@ -5,7 +5,7 @@
 
 import React, { useState } from "react";
 import { ClipboardCheck, GraduationCap, MoreHorizontal } from "lucide-react";
-import { startInteractiveTour } from "../../components/tutorial/InteractiveGuideTour";
+import { startDoctorTour } from "../../components/workspace/DoctorClinicalTrainingTour";
 import type { SettingsStaffUser } from "./types.js";
 
 export interface SettingsMoreActionsDropdownProps {
@@ -21,13 +21,14 @@ export function SettingsMoreActionsDropdown({
 
 	const handleStartTour = () => {
 		setIsOpen(false);
-		const currentRole =
-			activeStaffUser?.role === "admin" || activeStaffUser?.role === "receptionist"
-				? "admin"
-				: activeStaffUser?.role === "director" || activeStaffUser?.role === "owner"
-					? "director"
-					: "doctor";
-		startInteractiveTour(currentRole);
+		const trackId =
+			activeStaffUser?.role === "admin" ||
+			activeStaffUser?.role === "receptionist" ||
+			activeStaffUser?.role === "director" ||
+			activeStaffUser?.role === "owner"
+				? "reception_admin"
+				: "solo_doctor";
+		startDoctorTour(trackId);
 	};
 
 	return (

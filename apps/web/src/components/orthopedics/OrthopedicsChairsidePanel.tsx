@@ -2,6 +2,7 @@ import React, { useId, useMemo, useState } from "react";
 import { useOrthopedicsChairsideState } from "./chairside/useOrthopedicsChairsideState";
 import { useOrthopedicsChairsideActions } from "./chairside/useOrthopedicsChairsideActions";
 import { clientLogger } from "../../services/logging/clientLogger";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 import type { OrthopedicsChairsidePanelProps } from "./chairside/orthopedicsChairsideTypes";
 import { OrthopedicsChairsideTopBar, OrthopedicsChairsideLabOrderBanner, OrthopedicsChairsideFooterBar, type LinkedChairsideLabOrderInfo } from "./OrthopedicsChairsideLabOrderBanner";
 import { OrthopedicsProtocolsGrid } from "./OrthopedicsProtocolsGrid";
@@ -34,7 +35,7 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 			try {
 				setIsPassportLoading(true);
 				const res = await fetch(`/api/lab/orders/${effectiveOrderId}/warranty-passport`, {
-					headers: { "Content-Type": "application/json" },
+					headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
 				});
 				if (res.ok) {
 					const json = await res.json();

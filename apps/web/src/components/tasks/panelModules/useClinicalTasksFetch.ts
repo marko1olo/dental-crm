@@ -4,6 +4,7 @@ import { getLocalTasks } from "../clinicalTasksPresets";
 import type { ClinicalTask, CustomTaskType } from "../clinicalTasksTypes";
 import { getLoadFailureMessage } from "./clinicalPhaseTransitionEngine";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 
 export function useClinicalTasksFetch(
 	patientId: string | null | undefined,
@@ -35,17 +36,31 @@ export function useClinicalTasksFetch(
 			let response: Response;
 			let customTypesResponse: Response | null = null;
 			try {
-				const denteClinicalReadHeaders = auth ? auth.denteClinicalReadHeaders() : {};
+				const denteClinicalReadHeaders = auth ? auth.denteClinicalReadHeaders() : getDenteAuthHeaders();
 				response = await fetch(`/api/clinical/tasks?patientId=${encodeURIComponent(patientId)}`, { headers: denteClinicalReadHeaders });
-				customTypesResponse = await fetch("/api/crm/custom-task-types", { headers: denteClinicalReadHeaders }).catch(() => null);
-			} catch {
+				customTypesResponse = await fetch("/api/crm/custom-task-types", { headers: denteClinicalReadHeaders }).catch((err: unknown) => {
+					logger.warn("[ClinicalTasks] custom-task-types fetch failed", err);
+					return null;
+				});
+			} catch (err: unknown) {
+				logger.warn("[ClinicalTasks] tasks fetch failed", err);
 				if (!isMountedRef.current) return;
 				const local = getLocalTasks(patientId);
 				setTasks(local.length > 0 ? local : null);
 				if (local.length === 0) setError("Сервер клиники не ответил. Проверьте соединение.");
 				return;
 			}
-			const payload = (await response.json().catch(() => null)) as ClinicalTask[] | { message?: string } | null;
+			let rawTasks: unknown = null;
+			try {
+				rawTasks = await response.json();
+			} catch (jsonErr: unknown) {
+				logger.warn("[ClinicalTasks] tasks invalid JSON", jsonErr);
+			}
+			const payload = (
+				rawTasks && typeof rawTasks === "object" && "data" in rawTasks
+					? (rawTasks as { data: unknown }).data
+					: rawTasks
+			) as ClinicalTask[] | { message?: string } | null;
 			if (!isMountedRef.current) return;
 			if (!response.ok || !Array.isArray(payload)) {
 				const local = getLocalTasks(patientId);
@@ -61,7 +76,16 @@ export function useClinicalTasksFetch(
 			setTasks([...payload, ...local.filter((t) => !serverIds.has(t.id))]);
 
 			if (customTypesResponse?.ok) {
-				const customData = await customTypesResponse.json().catch(() => null);
+				let rawCustom: unknown = null;
+				try {
+					rawCustom = await customTypesResponse.json();
+				} catch (jsonErr: unknown) {
+					logger.warn("[ClinicalTasks] custom-task-types invalid JSON", jsonErr);
+				}
+				const customData =
+					rawCustom && typeof rawCustom === "object" && "data" in rawCustom
+						? (rawCustom as { data: unknown }).data
+						: rawCustom;
 				if (isMountedRef.current && Array.isArray(customData)) setCustomTaskTypes(customData as CustomTaskType[]);
 			}
 		} finally {

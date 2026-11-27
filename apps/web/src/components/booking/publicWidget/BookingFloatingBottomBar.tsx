@@ -51,7 +51,7 @@ export const BookingFloatingBottomBar: React.FC<BookingFloatingBottomBarProps> =
 						<span>
 							{selectedSlot
 								? `${formatRussianDate(selectedDate)} в ${selectedSlot.time}`
-								: "Подбор времени / лист ожидания"}
+								: "Подбор времени"}
 						</span>
 					</div>
 				</div>

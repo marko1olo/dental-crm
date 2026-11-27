@@ -15,7 +15,8 @@ export function useCameraStream(isOpen: boolean) {
 	const [selectedDeviceId, setSelectedDeviceId] = useState<string>(() => {
 		try {
 			return localStorage.getItem(PREFERRED_CAMERA_KEY) || '';
-		} catch {
+		} catch (storageErr) {
+			logger.debug('[IntraoralCamera] localStorage unavailable for preferred camera read', storageErr);
 			return '';
 		}
 	});
@@ -44,7 +45,11 @@ export function useCameraStream(isOpen: boolean) {
 			if (videoInputs.length > 0 && !videoInputs.some((d) => d.deviceId === selectedDeviceId)) {
 				const firstId = videoInputs[0]?.deviceId || '';
 				setSelectedDeviceId(firstId);
-				try { localStorage.setItem(PREFERRED_CAMERA_KEY, firstId); } catch {}
+				try {
+					localStorage.setItem(PREFERRED_CAMERA_KEY, firstId);
+				} catch (storageErr) {
+					logger.debug('[IntraoralCamera] localStorage unavailable for camera save', storageErr);
+				}
 			}
 		} catch (err) {
 			logger.error('[IntraoralCamera] Enumerate devices failed', err);
@@ -104,7 +109,11 @@ export function useCameraStream(isOpen: boolean) {
 
 	const handleDeviceSelect = (deviceId: string) => {
 		setSelectedDeviceId(deviceId);
-		try { localStorage.setItem(PREFERRED_CAMERA_KEY, deviceId); } catch {}
+		try {
+			localStorage.setItem(PREFERRED_CAMERA_KEY, deviceId);
+		} catch (storageErr) {
+			logger.debug('[IntraoralCamera] localStorage unavailable for camera save', storageErr);
+		}
 		void startStream(deviceId);
 	};
 

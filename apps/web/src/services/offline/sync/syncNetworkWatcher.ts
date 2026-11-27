@@ -1,6 +1,5 @@
 import { logger } from "../../../utils/logger";
 import { getPendingOfflineMutations } from "./syncStorageBridge";
-import { flushOfflinePatientBookings } from "../../../pwa/patientOfflineStorage";
 
 export class SyncNetworkWatcher {
 	private autoDrainIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -51,7 +50,6 @@ export class SyncNetworkWatcher {
 						logger.info(`[OfflineSyncService] Auto-draining ${pending.length} pending mutations on restore`);
 						await onDrain();
 					}
-					try { await flushOfflinePatientBookings(); } catch (err) { logger.warn("[OfflineSyncService] PWA flush err", err); }
 				} catch (err) { logger.warn("[OfflineSyncService] Auto-drain on visibility restore failed", err); }
 			})();
 		};

@@ -398,9 +398,9 @@ export const HARDWARE_PRESETS: readonly HardwarePreset[] = [
 		protocolLabel: "Папка автозахвата снимков",
 		protocolTemplate: "AutoSort --slot-protocol=12_standard",
 		supportedExtensions: [".jpg", ".jpeg", ".cr2", ".cr3", ".nef", ".arw", ".png"],
-		description: "Авто-сортировка макро-снимков с SD-карт зеркальных камер (Canon, Nikon, Sony) по 12/8/6 слотам Формы 043/у",
+		description: "Авто-сортировка макро-снимков с SD-карт зеркальных камер (Canon, Nikon, Sony) по 12/8/6 слотам фотопротокола медицинской карты",
 		manufacturerCountry: "Универсальный",
-		badgeText: "Форма 043/у",
+		badgeText: "Фотопротокол",
 	},
 ] as const;
 

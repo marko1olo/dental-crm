@@ -15,6 +15,7 @@ import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom';
 import { clientLogger } from '../../../services/logging/clientLogger';
 import type { DsdAnalysisData } from '@dental/shared';
+import { generateUuidV7 } from '@dental/shared';
 import {
 	DsdCanvasOverlay,
 	type DsdCanvasGuideFlags,
@@ -26,7 +27,7 @@ import { DsdStudioHeader } from './DsdStudioHeader';
 import { DsdEmptyState } from './DsdEmptyState';
 import { showToast } from '../../GlobalToast';
 import { compressChairsidePhotoToBlobUrl } from '../chairsidePhotoCompressor';
-import { getDenteAuthHeaders } from '../../../lib/denteRequestHeaders';
+import { denteClinicalMutationHeaders } from '../../../lib/denteRequestHeaders';
 
 // Канонический экспорт константы фото-слота (без карикатурных моков)
 export const DEFAULT_CLINICAL_SMILE_PHOTO = '';
@@ -121,6 +122,21 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 	const [activeMobileTab, setActiveMobileTab] = useState<'canvas' | 'metrics'>('canvas');
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const createdBlobUrlsRef = useRef<Set<string>>(new Set());
+	const pendingBlobFilesRef = useRef<Map<string, { blob: Blob; fileName: string }>>(new Map());
+
+	// Zero-Leak Draft Reset: очищаем временный черновик и blob-URL при смене пациента или закрытии (Мандат 8bn/8zq)
+	useEffect(() => {
+		if (!isOpen) {
+			setActivePhotoUrl(initialPhotoUrl || effectivePhotos[0]?.url || '');
+			setRotationDegrees(0);
+			setActiveMobileTab('canvas');
+			for (const url of createdBlobUrlsRef.current) {
+				URL.revokeObjectURL(url);
+			}
+			createdBlobUrlsRef.current.clear();
+			pendingBlobFilesRef.current.clear();
+		}
+	}, [isOpen, patientId, initialPhotoUrl, effectivePhotos]);
 
 	// Очистка выделенной памяти Blob URL при размонтировании (ликвидация утечек PHO-04)
 	useEffect(() => {
@@ -253,7 +269,10 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 			}).catch(() => null);
 
 			const blobUrl = comp ? comp.blobUrl : URL.createObjectURL(file);
+			const uploadBlob = comp ? comp.blob : file;
+			const uploadName = file.name.endsWith('.webp') ? file.name : `${file.name}.webp`;
 			createdBlobUrlsRef.current.add(blobUrl);
+			pendingBlobFilesRef.current.set(blobUrl, { blob: uploadBlob, fileName: uploadName });
 
 			setActivePhotoUrl(blobUrl);
 			showToast('Фото пациента сжато в WebP и загружено в студию DSD', 'success');
@@ -261,6 +280,7 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 			clientLogger.error('Upload compression failed', err, { module: 'DsdAestheticStudioModal' });
 			const fallbackUrl = URL.createObjectURL(file);
 			createdBlobUrlsRef.current.add(fallbackUrl);
+			pendingBlobFilesRef.current.set(fallbackUrl, { blob: file, fileName: file.name });
 			setActivePhotoUrl(fallbackUrl);
 		} finally {
 			if (fileInputRef.current) fileInputRef.current.value = '';
@@ -270,9 +290,54 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 	// Применение к плану лечения и заказ-наряду ЗТЛ в 1 клик (Мандаты 8e, 8k, PHO-02)
 	const handleApplyToTreatmentPlanAndLab = useCallback(
 		async (analysis: Partial<DsdAnalysisData>) => {
+			let persistedPhotoUrl = activePhotoUrl;
+
+			// Загружаем локальный blob-снимок в хранилище файлов до записи DSD в базу данных (запрет blob: в БД)
+			if (persistedPhotoUrl.startsWith('blob:') && patientId && patientId !== 'chairside') {
+				const pendingFile = pendingBlobFilesRef.current.get(persistedPhotoUrl);
+				if (!pendingFile) {
+					showToast('Повторно выберите фото для загрузки на сервер', 'error');
+					return;
+				}
+				try {
+					const uploadEndpoint = visitId
+						? `/api/files/visits/${visitId}/attachments`
+						: `/api/files/patients/${patientId}/attachments`;
+					const formData = new FormData();
+					formData.append('file', pendingFile.blob, pendingFile.fileName);
+					const uploadRes = await fetch(uploadEndpoint, {
+						method: 'POST',
+						headers: denteClinicalMutationHeaders({
+							'Idempotency-Key': generateUuidV7(),
+						}),
+						body: formData,
+					});
+					if (!uploadRes.ok) {
+						showToast(`Не удалось загрузить портрет DSD на сервер (${uploadRes.status})`, 'error');
+						return;
+					}
+					const uploadJson = (await uploadRes.json().catch(() => ({}))) as {
+						file?: { url?: string };
+						data?: { file?: { url?: string } };
+					};
+					const uploadedUrl = uploadJson?.file?.url || uploadJson?.data?.file?.url;
+					if (!uploadedUrl || uploadedUrl.startsWith('blob:')) {
+						showToast('Сервер не вернул постоянный URL загруженного фото', 'error');
+						return;
+					}
+					persistedPhotoUrl = uploadedUrl;
+				} catch (uploadErr: unknown) {
+					showToast(
+						uploadErr instanceof Error ? uploadErr.message : 'Сетевой сбой при загрузке фото DSD',
+						'error',
+					);
+					return;
+				}
+			}
+
 			const fullAnalysisPayload: DsdAnalysisData = {
 				id: `dsd_${Date.now()}`,
-				photoUrl: activePhotoUrl,
+				photoUrl: persistedPhotoUrl,
 				slotId,
 				calibratedMmPerPx: analysis.calibratedMmPerPx ?? 0.05,
 				calibrationDistancePx: analysis.calibrationDistancePx ?? 200,
@@ -307,13 +372,13 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 				try {
 					const res = await fetch(`/api/patients/${patientId}/photo-protocol`, {
 						method: 'POST',
-						headers: getDenteAuthHeaders({
+						headers: denteClinicalMutationHeaders({
 							'Content-Type': 'application/json',
-							'Idempotency-Key': crypto.randomUUID(),
+							'Idempotency-Key': generateUuidV7(),
 						}),
 						body: JSON.stringify({
 							presetId: 'dsd_aesthetic_protocol',
-							slots: { [slotId]: { imageUrl: activePhotoUrl, dsdAnalysis: fullAnalysisPayload, landmarks } },
+							slots: { [slotId]: { imageUrl: persistedPhotoUrl, dsdAnalysis: fullAnalysisPayload, landmarks } },
 							stage: 'before',
 							notes: `DSD анализ: материал ${fullAnalysisPayload.recommendedMaterial}, оттенок ${fullAnalysisPayload.recommendedVitaShade}, дуга ${fullAnalysisPayload.smileArcCurvature}`,
 							dsdAnalysis: fullAnalysisPayload,

@@ -6,8 +6,18 @@
 
 import { printDesktopEscPosReceipt } from "../../native/desktopBridge.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
+import { logger } from "../../utils/logger.js";
 import { isAndroidNativeApp, isDesktopExecutable, printMobileThermalBinary } from "../omniPlatformAdapter.js";
 import type { UniversalPrintResult } from "./printingTypes.js";
+
+function escapeHtml(text: string): string {
+	return text
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
+}
 
 interface WebUsbEndpointLike {
 	direction?: string;
@@ -77,7 +87,11 @@ export async function printWebUsbEscPosReceipt(rawBytes: Uint8Array): Promise<{ 
 		}
 		await device.claimInterface(ifaceNumber);
 		await device.transferOut(outEndpoint, rawBytes);
-		try { await device.close(); } catch {}
+		try {
+			await device.close();
+		} catch (closeErr) {
+			logger.warn("[browserPrintFallback] WebUSB device close error", closeErr);
+		}
 		return { success: true };
 	} catch (err) {
 		return { success: false, error: err instanceof Error ? err.message : "Ошибка WebUSB печати" };
@@ -103,7 +117,9 @@ export async function printDirectEscPosSocket(
 				copies: options.copies ?? 1,
 			});
 			if (res.success) return { success: true, method: "desktop_silent" };
-		} catch {}
+		} catch (desktopErr) {
+			logger.warn("[browserPrintFallback] Desktop silent print failed, falling back to browser", desktopErr);
+		}
 	}
 
 	if (isAndroidNativeApp()) {
@@ -111,11 +127,13 @@ export async function printDirectEscPosSocket(
 			const bytes = options.isBase64 ? Uint8Array.from(atob(textOrRawPayload), (c) => c.charCodeAt(0)) : new TextEncoder().encode(textOrRawPayload);
 			const mobileRes = await printMobileThermalBinary(bytes);
 			if (mobileRes.success) return { success: true, method: "mobile_native" };
-		} catch {}
+		} catch (mobileErr) {
+			logger.warn("[browserPrintFallback] Mobile thermal print failed, falling back to browser", mobileErr);
+		}
 	}
 
 	try {
-		const html = `<pre style="font-family:monospace;font-size:12px;white-space:pre-wrap;margin:0;padding:12px;">${textOrRawPayload}</pre>`;
+		const html = `<pre style="font-family:monospace;font-size:12px;white-space:pre-wrap;margin:0;padding:12px;">${escapeHtml(textOrRawPayload)}</pre>`;
 		const res = await hardwarePrinter.printHtmlWithPopupFallback(html, { downloadFilename: `receipt_${Date.now()}.html` });
 		return { success: res.success, method: res.interfaceUsed === "browser_dialog" ? "browser_dialog" : "iframe_silent" };
 	} catch (err) {

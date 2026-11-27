@@ -67,8 +67,8 @@ export function MarketingView({
 							<p className="text-[var(--ink)] font-medium mb-1" data-testid="marketing-empty-state-text">
 								Акции клиники пока не созданы. Нажмите «Новая акция» для запуска рекламной кампании
 							</p>
-							<button type="button" className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs px-3.5 mt-3 inline-flex items-center gap-1.5" onClick={() => setIsNewModalOpen(true)} data-testid="btn-empty-new-promo">
-								<Plus size={15} /><span>Новая акция</span>
+							<button type="button" className="secondary-button h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] mt-3 inline-flex items-center justify-center gap-2 text-sm font-medium shrink-0" onClick={() => setIsNewModalOpen(true)} data-testid="btn-empty-new-promo">
+								<Plus className="w-4 h-4 shrink-0" /><span>Новая акция</span>
 							</button>
 						</div>
 					)}

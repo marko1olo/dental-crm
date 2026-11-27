@@ -24,16 +24,11 @@ export const SoftPresenceIndicator: React.FC<SoftPresenceIndicatorProps> = ({
 	className = "",
 }) => {
 	const [isTooltipOpen, setIsTooltipOpen] = useState(false);
-
-	if (!activePeers || activePeers.length === 0) {
-		return null;
-	}
-
-	const primaryPeer = activePeers[0];
-	if (!primaryPeer) return null;
+	const primaryPeer = activePeers?.[0];
+	const primaryRole = primaryPeer?.role;
 
 	const roleLabelRu = useMemo(() => {
-		switch (primaryPeer.role) {
+		switch (primaryRole) {
 			case "doctor":
 				return "Врач";
 			case "nurse":
@@ -46,7 +41,11 @@ export const SoftPresenceIndicator: React.FC<SoftPresenceIndicatorProps> = ({
 			default:
 				return "Коллега";
 		}
-	}, [primaryPeer.role]);
+	}, [primaryRole]);
+
+	if (!activePeers || activePeers.length === 0 || !primaryPeer) {
+		return null;
+	}
 
 	return (
 		<div

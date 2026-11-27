@@ -52,7 +52,7 @@ export function PatientOverviewTab(props: PatientOverviewTabProps = {}) {
 						<div className="pt-3 flex flex-col gap-2">
 							<PatientCommunicationTimelineWidget patientId={selectedPatientId} />
 							<PatientArchiveAndBlacklistWidget patientId={selectedPatientId} />
-							<PatientDuplicateMergeQueuesWidget />
+							<PatientDuplicateMergeQueuesWidget patientId={selectedPatientId} />
 						</div>
 					</details>
 				</div>

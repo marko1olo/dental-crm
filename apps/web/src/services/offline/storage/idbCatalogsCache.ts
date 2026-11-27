@@ -18,6 +18,7 @@ import {
 	inMemoryIcd10Map,
 	inMemoryOdontogramsMap,
 	inMemoryPriceListsMap,
+	setBoundedInMemoryMap,
 } from "./idbMemory";
 import type {
 	CachedIcd10Dictionary,
@@ -48,7 +49,7 @@ export async function cacheOdontogramState(params: {
 		cachedAtMs: nowMs,
 	};
 
-	inMemoryOdontogramsMap.set(params.patientId, record);
+	setBoundedInMemoryMap(inMemoryOdontogramsMap, params.patientId, record);
 
 	queueBatchedStorePut({
 		storeName: ODONTOGRAM_CACHE_STORE_NAME,
@@ -91,7 +92,7 @@ export async function getCachedOdontogramState(
 
 	if (idbResult) {
 		if (!organizationId || !idbResult.organizationId || idbResult.organizationId === organizationId) {
-			inMemoryOdontogramsMap.set(patientId, idbResult);
+			setBoundedInMemoryMap(inMemoryOdontogramsMap, patientId, idbResult);
 			return idbResult;
 		}
 	}
@@ -102,7 +103,7 @@ export async function getCachedOdontogramState(
 			const parsed = (await parseJsonNonBlocking<CachedOdontogram>(rawLocal)) as CachedOdontogram;
 			if (parsed && typeof parsed === "object") {
 				if (!organizationId || !parsed.organizationId || parsed.organizationId === organizationId) {
-					inMemoryOdontogramsMap.set(patientId, parsed);
+					setBoundedInMemoryMap(inMemoryOdontogramsMap, patientId, parsed);
 					return parsed;
 				}
 			}
@@ -183,7 +184,7 @@ export async function cachePriceList804n(
 		cachedAtMs: nowMs,
 	};
 
-	inMemoryPriceListsMap.set(catalogKey, record);
+	setBoundedInMemoryMap(inMemoryPriceListsMap, catalogKey, record);
 
 	queueBatchedStorePut({
 		storeName: PRICELIST_CACHE_STORE_NAME,
@@ -223,7 +224,7 @@ export async function getCachedPriceList804n(
 	}
 
 	if (idbResult) {
-		inMemoryPriceListsMap.set(catalogKey, idbResult);
+		setBoundedInMemoryMap(inMemoryPriceListsMap, catalogKey, idbResult);
 		return idbResult;
 	}
 
@@ -232,7 +233,7 @@ export async function getCachedPriceList804n(
 		try {
 			const parsed = (await parseJsonNonBlocking<CachedPriceList804n>(rawLocal)) as CachedPriceList804n;
 			if (parsed && typeof parsed === "object") {
-				inMemoryPriceListsMap.set(catalogKey, parsed);
+				setBoundedInMemoryMap(inMemoryPriceListsMap, catalogKey, parsed);
 				return parsed;
 			}
 		} catch (err: unknown) {
@@ -277,7 +278,7 @@ export async function cacheIcd10Dictionary(
 		cachedAtMs: nowMs,
 	};
 
-	inMemoryIcd10Map.set(dictionaryKey, record);
+	setBoundedInMemoryMap(inMemoryIcd10Map, dictionaryKey, record);
 
 	queueBatchedStorePut({
 		storeName: ICD10_CACHE_STORE_NAME,
@@ -314,7 +315,7 @@ export async function getCachedIcd10Dictionary(
 	}
 
 	if (idbResult) {
-		inMemoryIcd10Map.set(dictionaryKey, idbResult);
+		setBoundedInMemoryMap(inMemoryIcd10Map, dictionaryKey, idbResult);
 		return idbResult;
 	}
 
@@ -323,7 +324,7 @@ export async function getCachedIcd10Dictionary(
 		try {
 			const parsed = (await parseJsonNonBlocking<CachedIcd10Dictionary>(rawLocal)) as CachedIcd10Dictionary;
 			if (parsed && typeof parsed === "object") {
-				inMemoryIcd10Map.set(dictionaryKey, parsed);
+				setBoundedInMemoryMap(inMemoryIcd10Map, dictionaryKey, parsed);
 				return parsed;
 			}
 		} catch {

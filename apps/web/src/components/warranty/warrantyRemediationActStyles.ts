@@ -31,7 +31,6 @@ export const WARRANTY_REMEDIATION_ACT_CSS = `
       font-size: 14pt;
       font-weight: 900;
       color: #0f766e;
-      text-transform: uppercase;
     }
     .act-meta {
       font-size: 9pt;
@@ -60,13 +59,12 @@ export const WARRANTY_REMEDIATION_ACT_CSS = `
       font-size: 9.5pt;
     }
     .act-grid .field { margin-bottom: 4px; }
-    .act-grid .lbl { font-size: 8pt; text-transform: uppercase; color: #64748b; font-weight: 700; }
+    .act-grid .lbl { font-size: 8pt; color: #64748b; font-weight: 700; }
     .act-grid .val { font-weight: 700; color: #0f172a; }
     .section-title {
       font-size: 10pt;
       font-weight: 800;
       color: #0f172a;
-      text-transform: uppercase;
       margin: 14px 0 6px 0;
     }
     .box {

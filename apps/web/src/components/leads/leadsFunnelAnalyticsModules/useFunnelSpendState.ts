@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
 import {
 	getDefaultChannelSpendMap,
@@ -43,7 +44,12 @@ export function useFunnelSpendState({
 					...(headers ? { headers } : {}),
 				});
 				if (!res.ok) return;
-				const data = (await res.json()) as LiveMarketingAttributionPayload;
+				const raw = await res.json();
+				const data = (
+					raw && typeof raw === "object" && "data" in raw
+						? (raw as { data: LiveMarketingAttributionPayload }).data
+						: raw
+				) as LiveMarketingAttributionPayload;
 				if (cancelled || !data) return;
 
 				const liveSpends = mapLiveAttributionToChannelSpends(data);
@@ -53,8 +59,8 @@ export function useFunnelSpendState({
 						...liveSpends,
 					}));
 				}
-			} catch {
-				// Silently fallback to default spend map on network hiccups
+			} catch (err: unknown) {
+				logger.warn("[useFunnelSpendState] Live attribution fetch failed, keeping defaults:", err);
 			}
 		}
 

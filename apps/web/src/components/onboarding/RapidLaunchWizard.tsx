@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ONBOARDING_WIZARD_STEPS } from "@dental/shared";
 import {
 	ArrowLeft,
@@ -105,7 +106,16 @@ export function RapidLaunchWizard({
 	}, [handleSkip, isModal]);
 
 	const content = (
-		<div className={`rapid-launch-wizard-shell ${isModal ? "modal-view" : "standalone-view"}`}>
+		<div
+			className={`rapid-launch-wizard-shell ${isModal ? "modal-view" : "standalone-view"}`}
+			{...(isModal
+				? {
+						role: "dialog" as const,
+						"aria-modal": true,
+						"aria-label": "Мастер быстрого запуска клиники",
+					}
+				: {})}
+		>
 			{/* Top Bar / Header */}
 			<header className="wizard-top-bar">
 				<div className="wizard-brand-block">
@@ -272,16 +282,15 @@ export function RapidLaunchWizard({
 	);
 
 	if (isModal) {
-		return (
-			<div
-				className="rapid-onboarding-modal-overlay"
-				role="dialog"
-				aria-modal="true"
-				aria-label="Мастер быстрого запуска клиники"
-			>
+		const modalTree = (
+			<div className="rapid-onboarding-modal-overlay">
 				{content}
 			</div>
 		);
+		if (typeof document !== "undefined" && document.body) {
+			return createPortal(modalTree, document.body);
+		}
+		return modalTree;
 	}
 
 	return content;

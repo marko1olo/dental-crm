@@ -64,6 +64,13 @@ export function TelephonyHeaderCapsule({
 		};
 	}, [isOpen]);
 
+	// Streamline Header Capsule & Prevent UI competition:
+	// When full-sized IncomingCallPopup banner is expanded on screen, do not duplicate
+	// answer/reject buttons inside capsule and give caller name adequate breathing room.
+	// Binds directly to reactive Zustand store without fragile DOM MutationObserver cargo cult.
+	// Keep all hooks unconditional before any early return (React 19 Rules of Hooks / W15-UI-01).
+	const isStorePopupExpanded = useTelephonyStore((s) => s.isIncomingCallPopupExpanded);
+
 	// Mandate 8v & 8e: Doctor sterile zone & chairside chart immunity.
 	// Telephony is completely silent and hidden for doctor role or during clinical visit screens.
 	const sterileViews = new Set(["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"]);
@@ -79,12 +86,6 @@ export function TelephonyHeaderCapsule({
 	const isRinging = activeCall?.status === "ringing";
 	const isAnswered = Boolean(activeCall && activeCall.status !== "ringing");
 	const durationSeconds = activeCall?.callStartedAt ? Math.floor((Date.now() - activeCall.callStartedAt) / 1000) : 0;
-
-	// Streamline Header Capsule & Prevent UI competition:
-	// When full-sized IncomingCallPopup banner is expanded on screen, do not duplicate
-	// answer/reject buttons inside capsule and give caller name adequate breathing room.
-	// Binds directly to reactive Zustand store without fragile DOM MutationObserver cargo cult.
-	const isStorePopupExpanded = useTelephonyStore((s) => s.isIncomingCallPopupExpanded);
 	const isFullBannerActive = propIsPopupExpanded !== undefined ? propIsPopupExpanded : isStorePopupExpanded;
 	const shouldShowActionButtons = isRinging && !isFullBannerActive;
 

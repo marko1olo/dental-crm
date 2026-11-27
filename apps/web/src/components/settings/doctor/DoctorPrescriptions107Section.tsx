@@ -42,7 +42,9 @@ export function DoctorPrescriptions107Section() {
 	};
 
 	const filteredMedications = FAVORITE_MEDICATION_OPTIONS.filter((m) => activeCategoryFilter === "all" || m.category === activeCategoryFilter);
-	const currentMed: FavoriteMedicationOption = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === selectedMedId) || FAVORITE_MEDICATION_OPTIONS[0]!;
+	const currentMed: FavoriteMedicationOption | undefined =
+		FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === selectedMedId) ?? FAVORITE_MEDICATION_OPTIONS[0];
+	if (!currentMed) return null;
 
 	const handleCopyLatin = () => {
 		navigator.clipboard.writeText(currentMed.rpLatin);

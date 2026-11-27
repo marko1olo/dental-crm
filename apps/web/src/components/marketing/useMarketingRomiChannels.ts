@@ -3,7 +3,7 @@
  * Governed by Mandate 8b (<= 120 lines), Mandate 8e, Mandate 8n (Solo Doctor, 1-Click Sync).
  */
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { showToast } from "../GlobalToast.js";
 import {
 	type AdvertisingChannelInput,
@@ -11,34 +11,56 @@ import {
 	buildAdvertisingChannelMetric,
 	calculateMarketingRomiSummary,
 	aggregateCrmMarketingMetrics,
+	generateUuidV7,
 	rublesToKopecks,
 	formatKopecksToRub,
 } from "@dental/shared";
 import { logger } from "../../utils/logger.js";
-import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../lib/denteRequestHeaders.js";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 import { DEFAULT_DENTE_CHANNELS } from "./marketingRomiPresets.js";
 import type { RomiFieldKey } from "./MarketingRomiTableRow.js";
 
 export function useMarketingRomiChannels() {
 	const appLogic = useOptionalAppLogicContext();
-	const [channels, setChannels] = useState<AdvertisingChannelInput[]>(() => [...DEFAULT_DENTE_CHANNELS]);
+	const [channels, setChannels] = useState<AdvertisingChannelInput[]>(() => {
+		if (isDemoShowcaseMode()) return [...DEFAULT_DENTE_CHANNELS];
+		type CrmMarketingMetricsParams = Parameters<typeof aggregateCrmMarketingMetrics>[0];
+		const patients = (appLogic?.dashboard?.patients ?? appLogic?.patients ?? []) as CrmMarketingMetricsParams["patients"];
+		if (patients.length > 0) {
+			const appointments = (appLogic?.dashboard?.appointments ?? appLogic?.appointments ?? appLogic?.sortedAppointments ?? []) as CrmMarketingMetricsParams["appointments"];
+			const payments = (appLogic?.dashboard?.payments ?? appLogic?.payments ?? appLogic?.activePayments ?? []) as CrmMarketingMetricsParams["payments"];
+			const communicationEvents = (appLogic?.dashboard?.communicationEvents ?? []) as CrmMarketingMetricsParams["communicationEvents"];
+			return aggregateCrmMarketingMetrics({ patients, appointments, payments, communicationEvents });
+		}
+		return [];
+	});
 	const [draftInputs, setDraftInputs] = useState<Record<string, string>>({});
 	const [syncMessage, setSyncMessage] = useState<string | null>(null);
+	const persistKeyRef = useRef<string | null>(null);
 
-	const persistChannels = useCallback((updated: AdvertisingChannelInput[]) => {
+	const persistChannels = useCallback((updated: AdvertisingChannelInput[], retryKey?: string) => {
 		setChannels(updated);
+		const idempotencyKey = retryKey ?? generateUuidV7();
+		persistKeyRef.current = idempotencyKey;
 		try {
-			const headers = { "Content-Type": "application/json", ...denteClinicalMutationHeaders() };
+			const headers = {
+				"Content-Type": "application/json",
+				...denteClinicalMutationHeaders({ "Idempotency-Key": idempotencyKey }),
+			};
 			fetch("/api/marketing/campaigns", { method: "POST", headers, body: JSON.stringify({ channels: updated, campaigns: updated }) })
-				.then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
+				.then((res) => {
+					if (!res.ok) throw new Error(`HTTP ${res.status}`);
+					if (persistKeyRef.current === idempotencyKey) persistKeyRef.current = null;
+				})
 				.catch((err) => {
 					logger.error("[useMarketingRomiChannels] Save channels error:", err);
-					showToast("Не удалось сохранить рекламные каналы", "error", 6000, { label: "Повторить", onAction: () => persistChannels(updated) });
+					showToast("Не удалось сохранить рекламные каналы", "error", 6000, { label: "Повторить", onAction: () => persistChannels(updated, idempotencyKey) });
 				});
 		} catch (err) {
 			logger.error("[useMarketingRomiChannels] Send error:", err);
-			showToast("Сбой сохранения рекламных каналов", "error", 6000, { label: "Повторить", onAction: () => persistChannels(updated) });
+			showToast("Сбой сохранения рекламных каналов", "error", 6000, { label: "Повторить", onAction: () => persistChannels(updated, idempotencyKey) });
 		}
 	}, []);
 
@@ -75,6 +97,23 @@ export function useMarketingRomiChannels() {
 		}
 	}, [draftInputs, handleUpdateField]);
 
+	const loadRomiFromServer = useCallback(() => {
+		fetch("/api/marketing/romi", { headers: denteClinicalReadHeaders() })
+			.then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+			.then((d) => {
+				if (Array.isArray(d?.channels)) {
+					setChannels(d.channels);
+				}
+			})
+			.catch((err) => {
+				logger.error("[useMarketingRomiChannels] Load error:", err);
+				showToast("Не удалось загрузить данные ROMI", "error", 6000, {
+					label: "Повторить",
+					onAction: () => loadRomiFromServer(),
+				});
+			});
+	}, []);
+
 	const handleSyncWithCrm = useCallback(() => {
 		type CrmMarketingMetricsParams = Parameters<typeof aggregateCrmMarketingMetrics>[0];
 		const patients = (appLogic?.dashboard?.patients ?? appLogic?.patients ?? []) as CrmMarketingMetricsParams["patients"];
@@ -85,7 +124,7 @@ export function useMarketingRomiChannels() {
 		for (const ch of channels) if (ch.spentKopecks > 0) customBudgetsKopecks[ch.channelKey] = ch.spentKopecks;
 		const aggregated = aggregateCrmMarketingMetrics({ patients, appointments, payments, communicationEvents, customBudgetsKopecks });
 		persistChannels(aggregated);
-		fetch("/api/marketing/romi", { headers: denteClinicalMutationHeaders() })
+		fetch("/api/marketing/romi", { headers: denteClinicalReadHeaders() })
 			.then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); })
 			.catch((err) => {
 				logger.error("[useMarketingRomiChannels] Sync error:", err);
@@ -98,22 +137,18 @@ export function useMarketingRomiChannels() {
 
 	const handleSaveNewChannel = useCallback((newEntry: AdvertisingChannelInput) => persistChannels([...channels, newEntry]), [channels, persistChannels]);
 	const handleRemoveChannel = useCallback((id: string) => persistChannels(channels.filter((c) => c.id !== id)), [channels, persistChannels]);
-	const handleResetDefaults = useCallback(() => { persistChannels([...DEFAULT_DENTE_CHANNELS]); setSyncMessage(null); }, [persistChannels]);
+	const handleResetDefaults = useCallback(() => {
+		setSyncMessage(null);
+		if (isDemoShowcaseMode()) {
+			persistChannels([...DEFAULT_DENTE_CHANNELS]);
+		} else {
+			loadRomiFromServer();
+		}
+	}, [persistChannels, loadRomiFromServer]);
 
 	useEffect(() => {
 		if ((appLogic?.dashboard?.patients?.length ?? 0) > 0) handleSyncWithCrm();
-		else {
-			fetch("/api/marketing/romi", { headers: denteClinicalMutationHeaders() })
-				.then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-				.then((d) => { if (d?.channels?.length) setChannels(d.channels); })
-				.catch((err) => {
-					logger.error("[useMarketingRomiChannels] Load error:", err);
-					showToast("Не удалось загрузить данные ROMI", "error", 6000, {
-						label: "Повторить",
-						onAction: () => { void fetch("/api/marketing/romi", { headers: denteClinicalMutationHeaders() }).then((r) => r.ok ? r.json() : null).then((d) => { if (d?.channels?.length) setChannels(d.channels); }).catch(() => {}); },
-					});
-				});
-		}
+		else loadRomiFromServer();
 	}, []);
 
 	return { channels, summary, calculatedMetrics, syncMessage, getInputValue, handleInputChange, handleInputBlur, handleSyncWithCrm, handleSaveNewChannel, handleRemoveChannel, handleResetDefaults };

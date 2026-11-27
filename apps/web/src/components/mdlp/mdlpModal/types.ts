@@ -15,6 +15,7 @@ export interface MdlpOfflinePackage {
 	readonly patientId?: string | null | undefined;
 	readonly visitId?: string | null | undefined;
 	readonly protocolNumber?: string | undefined; // Медицинская карта приёма
+	readonly idempotencyKey?: string | undefined;
 }
 
 /** Семантические режимы работы модуля учета маркированных препаратов */

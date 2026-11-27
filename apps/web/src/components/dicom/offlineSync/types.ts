@@ -2,12 +2,20 @@
  * types.ts — Константы и интерфейсы IndexedDB офлайн-хранилища DICOM (Мандат 8b <= 120 строк).
  */
 
-export const DICOM_OFFLINE_DB_NAME = "dente-dicom-offline-cache";
-export const DICOM_OFFLINE_DB_VERSION = 2;
+import {
+	DICOM_LOCAL_SLICES_STORE_NAME,
+	DICOM_LOCAL_STUDIES_STORE_NAME,
+	DICOM_PENDING_STUDIES_STORE_NAME,
+	OFFLINE_DB_NAME,
+	OFFLINE_DB_VERSION,
+} from "../../../services/offline/storage/constants";
 
-export const DICOM_OFFLINE_STORE_NAME = "pending_studies";
-export const DICOM_STUDIES_STORE_NAME = "local_studies";
-export const DICOM_SLICES_STORE_NAME = "local_slices";
+export const DICOM_OFFLINE_DB_NAME = OFFLINE_DB_NAME;
+export const DICOM_OFFLINE_DB_VERSION = OFFLINE_DB_VERSION;
+
+export const DICOM_OFFLINE_STORE_NAME = DICOM_PENDING_STUDIES_STORE_NAME;
+export const DICOM_STUDIES_STORE_NAME = DICOM_LOCAL_STUDIES_STORE_NAME;
+export const DICOM_SLICES_STORE_NAME = DICOM_LOCAL_SLICES_STORE_NAME;
 
 export type DicomSyncStatus = "pending_sync" | "synced" | "sync_failed";
 

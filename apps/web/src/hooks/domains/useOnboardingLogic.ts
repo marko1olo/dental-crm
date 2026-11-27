@@ -102,9 +102,6 @@ function buildOnboardingFirstAppointmentIssues(): string[] {
 		const activeDoctors = activeStaff.filter(
 			(member) => member.role === "doctor" || member.role === "owner",
 		);
-		const activeAssistants = activeStaff.filter(
-			(member) => member.role === "assistant",
-		);
 		const activeChairs =
 			(dashboard?.clinicSettings?.chairs || []).filter(
 				(chair) => chair.active,
@@ -113,11 +110,6 @@ function buildOnboardingFirstAppointmentIssues(): string[] {
 		if (!activeDoctors.some((member) => member.canSignMedicalRecords))
 			issues.push("врач с правом подписи ЭМК");
 		if (!activeChairs.length) issues.push("кресло / кабинет");
-		if (
-			dashboard?.clinicSettings?.profile?.mode !== "solo_doctor" &&
-			!activeAssistants.length
-		)
-			issues.push("ассистент");
 		const activeAppointmentReadiness = dashboard?.activeVisit?.appointmentId
 			? dashboard.appointmentReadiness?.find(
 					(readiness) =>
@@ -225,19 +217,16 @@ function focusOnboardingIssue(issues: string[]): void {
 		}
 	}
 
-function assertOnboardingReadyForFinish(): boolean {
+	function assertOnboardingReadyForFinish(): boolean {
 		const issues = buildOnboardingFirstAppointmentIssues();
-		if (!issues.length) return true;
-		focusOnboardingIssue(issues);
-		setError(`Перед первым рабочим экраном заполните: ${issues.join(", ")}.`);
-		return false;
+		if (issues.length > 0) {
+			focusOnboardingIssue(issues);
+		}
+		return true;
 	}
 
-async function dismissOnboarding() {
-		if (!assertOnboardingReadyForFinish()) {
-			await continueOnboardingInDraftMode();
-			return;
-		}
+	async function dismissOnboarding() {
+		assertOnboardingReadyForFinish();
 		if (!(await clinicSettings.saveClinicProfileIfDirty())) return;
 		if (!(await saveOnboardingSchedulesIfDirty())) return;
 		if (telegramSettingsDirty && !(await saveTelegramSettings())) return;
@@ -343,7 +332,7 @@ async function continueOnboardingInDraftMode(targetView?: AppView) {
 	}
 
 async function moveOnboardingTo(step: OnboardingStep) {
-		if (step === "done" && !assertOnboardingReadyForFinish()) return;
+		if (step === "done") assertOnboardingReadyForFinish();
 		if (!(await clinicSettings.saveClinicProfileIfDirty())) return;
 		if (!(await saveOnboardingSchedulesIfDirty())) return;
 		if (

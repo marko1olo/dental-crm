@@ -14,20 +14,25 @@ test("компонент WaitingLoungeSignage экспортируется и я
 	assert.equal(typeof WaitingLoungeSignage, "function");
 });
 
-test("маршрут /lounge-display и #lounge-display подключен в main.tsx", () => {
+test("маршрут /lounge-display и #lounge-display подключен в main.tsx / mainRouter", () => {
 	const mainSource = readSource("main.tsx");
+	const routesSource = readSource("mainRouter/standaloneRoutes.ts");
+	const dispatcherSource = readSource("mainRouter/standaloneDispatcher.tsx");
 	assert.ok(
-		mainSource.includes('window.location.pathname === "/lounge-display"'),
-		"main.tsx должен разбирать путь /lounge-display",
+		mainSource.includes("STANDALONE_ROUTES") && mainSource.includes("renderStandaloneRoute"),
+		"main.tsx должен делегировать standalone-маршруты в mainRouter",
 	);
 	assert.ok(
-		mainSource.includes('window.location.hash === "#/lounge-display"') ||
-			mainSource.includes('window.location.hash === "#lounge-display"'),
-		"main.tsx должен поддерживать хеш #/lounge-display",
+		routesSource.includes('"/lounge-display"'),
+		"standaloneRoutes.ts должен разбирать путь /lounge-display",
 	);
 	assert.ok(
-		mainSource.includes("<WaitingLoungeSignage"),
-		"main.tsx должен монтировать WaitingLoungeSignage при переходе на /lounge-display",
+		routesSource.includes('"#/lounge-display"') || routesSource.includes('"#lounge-display"'),
+		"standaloneRoutes.ts должен поддерживать хеш #/lounge-display",
+	);
+	assert.ok(
+		routesSource.includes("WaitingLoungeSignage") && dispatcherSource.includes("descriptor.viewImport"),
+		"standaloneRoutes.ts и standaloneDispatcher.tsx должны монтировать WaitingLoungeSignage",
 	);
 });
 

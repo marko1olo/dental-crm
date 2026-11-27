@@ -26,14 +26,17 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = (pr
 	if (!isOpen || typeof document === "undefined") return null;
 
 	const patientFullName = patient?.fullName || "Пациент";
-	const patientBirth = patient?.birthDate || "1985-05-15";
-	const patientCard = patient?.medicalCardNumber || patient?.cardNumber || `МК-${patient?.id ? patient.id.slice(0, 8).toUpperCase() : "2026"}`;
+	const patientBirth = patient?.birthDate || "";
+	const patientCard = patient?.medicalCardNumber || patient?.cardNumber || "";
 	const docName = doctorName || "Лечащий врач";
-	const clinic = clinicName || 'Стоматологическая клиника "Денте"';
+	const clinic = clinicName || "Стоматологическая клиника";
 
 	const handleCopyText = () => {
 		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-			navigator.clipboard.writeText(ctrl.referralSummary).then(() => showToast("Текст направления скопирован в буфер", "success", 2500)).catch(() => {});
+			navigator.clipboard
+				.writeText(ctrl.referralSummary)
+				.then(() => showToast("Текст направления скопирован в буфер", "success", 2500))
+				.catch(() => showToast("Не удалось скопировать текст направления", "error"));
 		}
 	};
 
@@ -49,7 +52,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = (pr
 						<RadiologyReferralTeethSection selectedTeeth={ctrl.selectedTeeth} customTeethInput={ctrl.customTeethInput} onToggleTooth={ctrl.handleToggleTooth} onApplyZonePreset={(teeth) => { ctrl.setSelectedTeeth([...teeth]); ctrl.setCustomTeethInput(teeth.join(", ")); }} onResetTeeth={() => { ctrl.setSelectedTeeth([]); ctrl.setCustomTeethInput(""); }} onChangeCustomInput={ctrl.setCustomTeethInput} />
 					</div>
 
-					<RadiologyReferralPreviewPane activeTab={ctrl.activeTab} referralNumber={ctrl.referralNumber} clinic={clinic} license={clinicLicense || "ЛО-77-01-019842"} phone={clinicPhone || "+7 (495) 700-00-00"} currentPartner={ctrl.currentPartner} barcodeSvg={ctrl.barcodeSvg} qrCodeSvg={ctrl.qrCodeSvg} patientFullName={patientFullName} patientBirth={patientBirth} patientCard={patientCard} docName={docName} currentFov={ctrl.currentFov} currentGoal={ctrl.currentGoal} targetTeethDisplay={ctrl.targetTeethDisplay} diagnosisIcd10={ctrl.diagnosisIcd10} isPregnancyExcluded={ctrl.isPregnancyExcluded} hasMetallicArtifacts={ctrl.hasMetallicArtifacts} onCopyText={handleCopyText} />
+					<RadiologyReferralPreviewPane activeTab={ctrl.activeTab} referralNumber={ctrl.referralNumber} clinic={clinic} license={clinicLicense || ""} phone={clinicPhone || ""} currentPartner={ctrl.currentPartner} barcodeSvg={ctrl.barcodeSvg} qrCodeSvg={ctrl.qrCodeSvg} patientFullName={patientFullName} patientBirth={patientBirth} patientCard={patientCard} docName={docName} currentFov={ctrl.currentFov} currentGoal={ctrl.currentGoal} targetTeethDisplay={ctrl.targetTeethDisplay} diagnosisIcd10={ctrl.diagnosisIcd10} isPregnancyExcluded={ctrl.isPregnancyExcluded} hasMetallicArtifacts={ctrl.hasMetallicArtifacts} onCopyText={handleCopyText} />
 				</div>
 
 				<RadiologyReferralFooter onClose={onClose} onInsertToDiary={ctrl.handleInsertToDiary} onPrint={ctrl.handlePrint} />

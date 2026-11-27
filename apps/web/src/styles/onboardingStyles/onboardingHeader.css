@@ -3,10 +3,11 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 20px 24px;
+	padding: 16px 24px;
 	border-bottom: 1px solid var(--line);
 	gap: 16px;
 	flex-wrap: wrap;
+	flex-shrink: 0;
 }
 
 .wizard-brand-block {
@@ -49,14 +50,14 @@
 }
 
 .wizard-zero-click-btn {
-	height: 32px;
-	padding: 0 12px;
+	height: 36px;
+	padding: 0 14px;
 	border-radius: 8px;
-	background: var(--amber-soft, rgba(245, 158, 11, 0.12));
-	border: 1px solid var(--amber, #f59e0b);
-	color: var(--amber-ink, #d97706);
-	font-size: 12px;
-	font-weight: 600;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 500;
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
@@ -64,9 +65,13 @@
 	transition: all 0.15s ease;
 }
 
+.wizard-zero-click-btn svg {
+	color: var(--primary, #0d9488);
+}
+
 .wizard-zero-click-btn:hover {
-	background: var(--amber, #f59e0b);
-	color: var(--on-amber, #ffffff);
+	background: var(--paper-soft);
+	border-color: var(--primary, #0d9488);
 }
 
 .wizard-skip-top-btn {

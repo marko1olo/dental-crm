@@ -283,7 +283,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 				{/* Инструкция к текущему выбранному ракурсу */}
 				<div className="bg-[var(--paper-soft)] p-3.5 rounded-2xl border border-[var(--line)] flex flex-col gap-1 shadow-xs">
 					<div className="flex items-center justify-between">
-						<span className="text-[11px] font-bold uppercase tracking-wider text-[var(--teal)]">
+						<span className="text-[11px] font-semibold text-[var(--primary)]">
 							Текущий ракурс
 						</span>
 						{uploadedSlots[selectedSlotId] && (

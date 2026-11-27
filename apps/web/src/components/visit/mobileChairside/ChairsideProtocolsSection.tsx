@@ -309,7 +309,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
                   <button
                     type="button"
                     onClick={() => onRemoveBillingItem(item.id)}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-500/10"
+                    className="w-11 h-11 min-w-[44px] min-h-[44px] sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] rounded-xl sm:rounded-lg bg-transparent border-0 flex items-center justify-center text-rose-500 hover:bg-rose-500/10 cursor-pointer"
                     aria-label="Удалить услугу"
                   >
                     <Trash2 size={15} />

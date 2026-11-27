@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { isValidRussianPhone } from "../engine/bookingPhoneUtils";
 
 export function useBookingSmsState(
@@ -30,10 +31,15 @@ export function useBookingSmsState(
 		setSmsError(null);
 		if (organizationId) {
 			try {
+				const idempotencyKey = generateUuidV7();
 				const response = await fetch(`${apiBaseUrl}/${organizationId}/send-otp`, {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ phone: patientPhone }),
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+						"X-Idempotency-Key": idempotencyKey,
+					},
+					body: JSON.stringify({ phone: patientPhone, organizationId }),
 				});
 				if (!response.ok) {
 					const errData = await response.json().catch(() => ({}));
@@ -61,10 +67,19 @@ export function useBookingSmsState(
 		setSmsError(null);
 		if (organizationId) {
 			try {
+				const idempotencyKey = generateUuidV7();
 				const response = await fetch(`${apiBaseUrl}/${organizationId}/verify-otp`, {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ phone: patientPhone, code: enteredSmsCode.trim() }),
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+						"X-Idempotency-Key": idempotencyKey,
+					},
+					body: JSON.stringify({
+						phone: patientPhone,
+						code: enteredSmsCode.trim(),
+						organizationId,
+					}),
 				});
 				if (!response.ok) {
 					const errData = await response.json().catch(() => ({}));

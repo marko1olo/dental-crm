@@ -11,40 +11,25 @@ import {
 	loadStoredTeethData,
 	saveStoredTeethData,
 } from "../odontogramStorage";
+import { ODONTOGRAM_CACHE_STORE_NAME } from "../../../services/offline/storage/constants";
+import {
+	isIndexedDbAvailable,
+	openOfflineOutboxDb,
+} from "../../../services/offline/storage/idbDatabase";
 import { logger } from "../../../utils/logger";
 
-const DB_NAME = "dente_odontogram_db";
-const DB_VERSION = 1;
-const STORE_NAME = "tooth_states";
+const STORE_NAME = ODONTOGRAM_CACHE_STORE_NAME;
 
-let dbPromise: Promise<IDBDatabase | null> | null = null;
-
-function getIndexedDb(): Promise<IDBDatabase | null> {
-	if (typeof indexedDB === "undefined") {
-		return Promise.resolve(null);
+async function getIndexedDb(): Promise<IDBDatabase | null> {
+	if (!isIndexedDbAvailable()) {
+		return null;
 	}
-	if (!dbPromise) {
-		dbPromise = new Promise((resolve) => {
-			try {
-				const req = indexedDB.open(DB_NAME, DB_VERSION);
-				req.onupgradeneeded = (e) => {
-					const db = (e.target as IDBOpenDBRequest).result;
-					if (!db.objectStoreNames.contains(STORE_NAME)) {
-						db.createObjectStore(STORE_NAME, { keyPath: "patientId" });
-					}
-				};
-				req.onsuccess = () => resolve(req.result);
-				req.onerror = () => {
-					logger.error("[IndexedDB Odontogram] Failed to open database", req.error);
-					resolve(null);
-				};
-			} catch (err) {
-				logger.error("[IndexedDB Odontogram] Exception opening database", err);
-				resolve(null);
-			}
-		});
+	try {
+		return await openOfflineOutboxDb();
+	} catch (err) {
+		logger.error("[IndexedDB Odontogram] Failed to open unified outbox database", err);
+		return null;
 	}
-	return dbPromise;
 }
 
 /**
@@ -58,12 +43,17 @@ export async function saveToothStatesToIndexedDb(
 	try {
 		const db = await getIndexedDb();
 		if (!db) return;
+		const nowMs = Date.now();
 		const tx = db.transaction(STORE_NAME, "readwrite");
 		const store = tx.objectStore(STORE_NAME);
 		store.put({
 			patientId,
+			teeth: states,
 			states,
-			savedAt: new Date().toISOString(),
+			adultMode: true,
+			cachedAt: new Date(nowMs).toISOString(),
+			cachedAtMs: nowMs,
+			savedAt: new Date(nowMs).toISOString(),
 		});
 	} catch (err) {
 		logger.error("[IndexedDB Odontogram] write failure", err);
@@ -85,12 +75,13 @@ export async function loadToothStatesFromIndexedDb(
 			const store = tx.objectStore(STORE_NAME);
 			const req = store.get(patientId);
 			req.onsuccess = () => {
-				const res = req.result as { states?: ToothData[] } | undefined;
-				if (res && Array.isArray(res.states) && res.states.length > 0) {
-					resolve(res.states);
-				} else {
-					resolve(null);
-				}
+				const res = req.result as { states?: ToothData[]; teeth?: ToothData[] } | undefined;
+				const resolved = Array.isArray(res?.states) && res.states.length > 0
+					? res.states
+					: Array.isArray(res?.teeth) && res.teeth.length > 0
+						? res.teeth
+						: null;
+				resolve(resolved);
 			};
 			req.onerror = () => resolve(null);
 		});

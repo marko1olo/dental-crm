@@ -42,6 +42,7 @@ import {
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { useOfflineSync } from "../../hooks/useOfflineSync";
 import { OfflineMutationQueueViewer } from "./OfflineMutationQueueViewer";
 
 export interface OfflineSyncGuardModalProps {
@@ -61,6 +62,13 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 	const [pendingItems, setPendingItems] = useState<CrdtOutboxQueueItem[]>([]);
 	const [isSyncing, setIsSyncing] = useState(false);
 	const [activeTab, setActiveTab] = useState<"overview" | "queue" | "diagnostics">("overview");
+	const {
+		pendingMutationCount,
+		syncNow: drainOfflineOutbox,
+		refresh: refreshPendingMutations,
+	} = useOfflineSync({ autoSyncOnReconnect: false });
+
+	const totalPendingUnified = pendingItems.length + pendingMutationCount;
 
 	const refreshTelemetry = useCallback(async () => {
 		try {
@@ -120,11 +128,25 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 			});
 
 			const result = await crdtSyncEngine.forceSync(gatewayFn);
-			await refreshTelemetry();
+			if (pendingMutationCount > 0) {
+				try {
+					await drainOfflineOutbox();
+				} catch (drainErr) {
+					showToast(
+						drainErr instanceof Error ? `Часть локальной очереди не синхронизирована: ${drainErr.message}` : "Часть локальной очереди не синхронизирована",
+						"warning",
+					);
+				}
+			}
+			await Promise.all([refreshTelemetry(), refreshPendingMutations()]);
 
+			const totalSynced =
+				result.pushedBatch.appliedCount +
+				result.pushedBatch.duplicateCount +
+				result.pushedBatch.mergedCount;
 			if (result.success) {
 				showToast(
-					`Синхронизация завершена. Успешно отправлено пакетов: ${result.pushedBatch.appliedCount + result.pushedBatch.duplicateCount + result.pushedBatch.mergedCount}`,
+					`Синхронизация завершена. Успешно отправлено пакетов: ${totalSynced}`,
 					"success",
 				);
 				if (onSyncComplete) onSyncComplete(result);
@@ -194,20 +216,20 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 			case "HEALTHY":
 				return {
 					text: "Хранилище в норме",
-					bg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+					bg: "bg-[var(--success-soft)] text-[var(--success)]",
 					icon: CheckCircle2,
 				};
 			case "DEGRADED":
 				return {
 					text: "Буферизация изменений",
-					bg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+					bg: "bg-[var(--warning-soft)] text-[var(--warning)]",
 					icon: AlertTriangle,
 				};
 			case "CRITICAL":
 			default:
 				return {
 					text: "Критическое переполнение",
-					bg: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+					bg: "bg-[var(--danger-soft)] text-[var(--danger)]",
 					icon: AlertCircle,
 				};
 		}
@@ -217,225 +239,224 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
+			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-x-clip max-w-[100vw]"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Модальное окно статуса автономной синхронизации"
 			data-testid="offline-sync-guard-modal"
 		>
-			<div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong)] text-[var(--ink,#0f172a)] dark:text-slate-100 rounded-xl shadow-2xl border border-[var(--glass-border,rgba(255,255,255,0.1))] overflow-hidden">
+			<div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-[var(--paper)] text-[var(--ink)] rounded-2xl shadow-2xl border border-[var(--line)] overflow-hidden">
 				{/* ── Modal Header ── */}
-				<div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--glass-border,rgba(0,0,0,0.08))] dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
-					<div className="flex items-center gap-3">
-						<div className="p-2 rounded-lg bg-[var(--brand,#2563eb)]/10 text-[var(--brand,#2563eb)] dark:text-blue-400">
-							<Radio className="w-5 h-5 animate-pulse" />
+				<div className="h-14 px-6 border-b border-[var(--line)] flex items-center justify-between shrink-0 bg-[var(--paper-soft)]/50">
+					<div className="flex items-center gap-3 min-w-0">
+						<div className="p-2 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] shrink-0">
+							<Radio className="w-4 h-4 animate-pulse" />
 						</div>
-						<div>
-							<div className="flex items-center gap-2">
-								<h2 className="text-base font-bold tracking-tight">
-									Автономная синхронизация и CRDT-хранилище
+						<div className="min-w-0">
+							<div className="flex items-center gap-2 flex-wrap">
+								<h2 className="text-base font-semibold tracking-tight">
+									Автономная синхронизация
 								</h2>
 								<span
-									className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full border ${survivabilityBadge.bg}`}
+									className={`h-6 px-2 text-xs font-medium rounded-full inline-flex items-center gap-1 shrink-0 ${survivabilityBadge.bg}`}
 								>
-									<survivabilityBadge.icon className="w-3 h-3" />
+									<survivabilityBadge.icon className="w-3.5 h-3.5 shrink-0" />
 									{survivabilityBadge.text}
 								</span>
 							</div>
-							<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400">
-								Отказоустойчивое сохранение приемов, зубных формул (FDI 11–48) и SOAP-дневников
-							</p>
 						</div>
 					</div>
 
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+						className="h-9 w-9 rounded-lg inline-flex items-center justify-center text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 						aria-label="Закрыть окно"
 						data-testid="close-sync-modal-button"
 					>
-						<X className="w-5 h-5" />
+						<X className="w-4 h-4 shrink-0" />
 					</button>
 				</div>
 
 				{/* ── Status Banner ── */}
-				<div className="px-5 py-3 bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-cyan-500/5 dark:from-blue-500/10 dark:via-indigo-500/10 dark:to-cyan-500/10 border-b border-[var(--glass-border,rgba(0,0,0,0.06))] dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
-					<div className="flex items-center gap-4 text-xs">
+				<div className="px-6 py-3 bg-[var(--paper-soft)] border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-3 shrink-0">
+					<div className="flex items-center gap-4 text-xs flex-wrap">
 						<div className="flex items-center gap-1.5">
 							{status.isOnline ? (
-								<Wifi className="w-4 h-4 text-emerald-500" />
+								<Wifi className="w-4 h-4 text-[var(--success)]" />
 							) : (
-								<WifiOff className="w-4 h-4 text-amber-500" />
+								<WifiOff className="w-4 h-4 text-[var(--warning)]" />
 							)}
-							<span className="font-semibold">
-								{status.isOnline ? "Сеть доступна (Онлайн)" : "Офлайн-режим (Без сети)"}
+							<span className="font-medium text-sm text-[var(--ink)]">
+								{status.isOnline ? "Сеть доступна" : "Автономный режим"}
 							</span>
 						</div>
 
-						<div className="flex items-center gap-1.5 text-[var(--muted,#64748b)] dark:text-slate-400">
-							<Database className="w-3.5 h-3.5" />
-							<span>Драйвер: <strong className="text-[var(--ink,#0f172a)] dark:text-slate-200 uppercase">{status.storageDriver}</strong></span>
+						<div className="flex items-center gap-1.5 text-[var(--ink-muted)]">
+							<Database className="w-3.5 h-3.5 shrink-0" />
+							<span>Хранилище: <strong className="text-[var(--ink)]">{status.storageDriver}</strong></span>
 						</div>
 
-						<div className="flex items-center gap-1.5 text-[var(--muted,#64748b)] dark:text-slate-400">
-							<Layers className="w-3.5 h-3.5" />
-							<span>В очереди: <strong className="text-[var(--ink,#0f172a)] dark:text-slate-200">{status.totalPending}</strong></span>
+						<div className="flex items-center gap-1.5 text-[var(--ink-muted)]">
+							<Layers className="w-3.5 h-3.5 shrink-0" />
+							<span>В очереди: <strong className="text-[var(--ink)] font-mono tabular-nums">{totalPendingUnified}</strong></span>
 						</div>
 
 						{status.lastSyncTimestampIso && (
-							<div className="flex items-center gap-1.5 text-[var(--muted,#64748b)] dark:text-slate-400">
-								<Clock className="w-3.5 h-3.5" />
-								<span>Посл. выгрузка: {new Date(status.lastSyncTimestampIso).toLocaleTimeString("ru-RU")}</span>
+							<div className="flex items-center gap-1.5 text-[var(--ink-muted)]">
+								<Clock className="w-3.5 h-3.5 shrink-0" />
+								<span>Выгрузка: {new Date(status.lastSyncTimestampIso).toLocaleTimeString("ru-RU")}</span>
 							</div>
 						)}
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 shrink-0">
 						<button
 							type="button"
 							onClick={handleExportEmergencyBackup}
-							className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--glass-border,rgba(0,0,0,0.12))] dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 text-[var(--ink,#0f172a)] dark:text-slate-200 transition-colors h-[32px]"
+							className="h-9 px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0 bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] transition-colors"
 							title="Экспорт локального слепка данных"
 						>
-							<Download className="w-3.5 h-3.5" />
-							<span>Экспорт .dente</span>
+							<Download className="w-4 h-4 shrink-0" />
+							<span>Экспорт слепка</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={handleManualSync}
 							disabled={isSyncing}
-							className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[var(--brand,#2563eb)] hover:bg-[var(--brand-strong,#1d4ed8)] text-white shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed h-[32px]"
+							className="h-9 px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm transition-colors disabled:opacity-50"
 							data-testid="force-sync-button"
 						>
-							<RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
-							<span>{isSyncing ? "Синхронизация..." : "Синхронизировать сейчас"}</span>
+							<RefreshCw className={`w-4 h-4 shrink-0 ${isSyncing ? "animate-spin" : ""}`} />
+							<span>{isSyncing ? "Синхронизация..." : "Синхронизировать"}</span>
 						</button>
 					</div>
 				</div>
 
-				{/* ── Navigation Tabs ── */}
-				<div className="flex items-center gap-2 px-5 pt-3 border-b border-[var(--glass-border,rgba(0,0,0,0.06))] dark:border-white/5">
-					<button
-						type="button"
-						onClick={() => setActiveTab("overview")}
-						className={`pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors ${
-							activeTab === "overview"
-								? "border-[var(--brand,#2563eb)] text-[var(--brand,#2563eb)] dark:text-blue-400"
-								: "border-transparent text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)]"
-						}`}
-					>
-						Сводка хранилища
-					</button>
+				{/* ── Navigation Tabs (Apple Segmented) ── */}
+				<div className="px-6 pt-4 shrink-0">
+					<div className="p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] inline-flex items-center gap-1">
+						<button
+							type="button"
+							onClick={() => setActiveTab("overview")}
+							className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
+								activeTab === "overview"
+									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
+									: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+							}`}
+						>
+							Сводка хранилища
+						</button>
 
-					<button
-						type="button"
-						onClick={() => setActiveTab("queue")}
-						className={`pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
-							activeTab === "queue"
-								? "border-[var(--brand,#2563eb)] text-[var(--brand,#2563eb)] dark:text-blue-400"
-								: "border-transparent text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)]"
-						}`}
-					>
-						<span>Очередь Outbox</span>
-						{pendingItems.length > 0 && (
-							<span className="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
-								{pendingItems.length}
-							</span>
-						)}
-					</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("queue")}
+							className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors inline-flex items-center gap-1.5 ${
+								activeTab === "queue"
+									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
+									: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+							}`}
+						>
+							<span>Очередь отправки</span>
+							{totalPendingUnified > 0 && (
+								<span className="h-5 px-1.5 text-xs font-medium rounded-full inline-flex items-center bg-[var(--warning-soft)] text-[var(--warning)] font-mono tabular-nums">
+									{totalPendingUnified}
+								</span>
+							)}
+						</button>
 
-					<button
-						type="button"
-						onClick={() => setActiveTab("diagnostics")}
-						className={`pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors ${
-							activeTab === "diagnostics"
-								? "border-[var(--brand,#2563eb)] text-[var(--brand,#2563eb)] dark:text-blue-400"
-								: "border-transparent text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)]"
-						}`}
-					>
-						CRDT & Векторные часы
-					</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("diagnostics")}
+							className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
+								activeTab === "diagnostics"
+									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
+									: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+							}`}
+						>
+							Телеметрия узла
+						</button>
+					</div>
 				</div>
 
 				{/* ── Tab Content Area ── */}
-				<div className="flex-1 overflow-y-auto p-5 space-y-4">
+				<div className="flex-1 overflow-y-auto p-6 space-y-4">
 					{activeTab === "overview" && (
 						<div className="space-y-4">
 							{/* Metric Cards Grid */}
 							<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-								<div className="p-3.5 rounded-lg border border-[var(--glass-border,rgba(0,0,0,0.08))] dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
-									<div className="flex items-center justify-between text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mb-1">
+								<div className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]/50">
+									<div className="flex items-center justify-between text-xs text-[var(--ink-muted)] mb-1">
 										<span>Зубные формулы</span>
-										<Sparkles className="w-3.5 h-3.5 text-blue-500" />
+										<Sparkles className="w-3.5 h-3.5 text-[var(--primary)]" />
 									</div>
-									<div className="text-xl font-bold text-[var(--ink,#0f172a)] dark:text-white">
+									<div className="text-xl font-semibold text-[var(--ink)] font-mono tabular-nums">
 										{status.bufferedRecordsCount.odontograms}
 									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400 mt-0.5">
-										FDI 11–48 / 51–85
+									<div className="text-xs text-[var(--ink-muted)] mt-0.5">
+										Постоянный и молочный прикус
 									</div>
 								</div>
 
-								<div className="p-3.5 rounded-lg border border-[var(--glass-border,rgba(0,0,0,0.08))] dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
-									<div className="flex items-center justify-between text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mb-1">
-										<span>SOAP-дневники</span>
-										<FileText className="w-3.5 h-3.5 text-indigo-500" />
+								<div className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]/50">
+									<div className="flex items-center justify-between text-xs text-[var(--ink-muted)] mb-1">
+										<span>Дневники приема</span>
+										<FileText className="w-3.5 h-3.5 text-[var(--primary)]" />
 									</div>
-									<div className="text-xl font-bold text-[var(--ink,#0f172a)] dark:text-white">
+									<div className="text-xl font-semibold text-[var(--ink)] font-mono tabular-nums">
 										{status.bufferedRecordsCount.diaries}
 									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400 mt-0.5">
+									<div className="text-xs text-[var(--ink-muted)] mt-0.5">
 										Медицинская карта
 									</div>
 								</div>
 
-								<div className="p-3.5 rounded-lg border border-[var(--glass-border,rgba(0,0,0,0.08))] dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
-									<div className="flex items-center justify-between text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mb-1">
+								<div className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]/50">
+									<div className="flex items-center justify-between text-xs text-[var(--ink-muted)] mb-1">
 										<span>Приемы / Визиты</span>
-										<Activity className="w-3.5 h-3.5 text-emerald-500" />
+										<Activity className="w-3.5 h-3.5 text-[var(--success)]" />
 									</div>
-									<div className="text-xl font-bold text-[var(--ink,#0f172a)] dark:text-white">
+									<div className="text-xl font-semibold text-[var(--ink)] font-mono tabular-nums">
 										{status.bufferedRecordsCount.appointments}
 									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400 mt-0.5">
+									<div className="text-xs text-[var(--ink-muted)] mt-0.5">
 										Расписание врачей
 									</div>
 								</div>
 
-								<div className="p-3.5 rounded-lg border border-[var(--glass-border,rgba(0,0,0,0.08))] dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
-									<div className="flex items-center justify-between text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mb-1">
+								<div className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]/50">
+									<div className="flex items-center justify-between text-xs text-[var(--ink-muted)] mb-1">
 										<span>Оплаты / Чеки</span>
-										<ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
+										<ShieldCheck className="w-3.5 h-3.5 text-[var(--warning)]" />
 									</div>
-									<div className="text-xl font-bold text-[var(--ink,#0f172a)] dark:text-white">
+									<div className="text-xl font-semibold text-[var(--ink)] font-mono tabular-nums">
 										{status.bufferedRecordsCount.payments}
 									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400 mt-0.5">
+									<div className="text-xs text-[var(--ink-muted)] mt-0.5">
 										Копеечная точность
 									</div>
 								</div>
 							</div>
 
 							{/* Clinical Guarantees Card */}
-							<div className="p-4 rounded-lg border border-blue-500/20 bg-blue-500/5 dark:bg-blue-500/10 space-y-2 text-xs">
-								<div className="font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
-									<ShieldCheck className="w-4 h-4" />
-									<span>Гарантии автономной работы клиники (CRDT LWW-Element-Set)</span>
+							<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2 text-xs">
+								<div className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
+									<ShieldCheck className="w-4 h-4 text-[var(--primary)] shrink-0" />
+									<span>Гарантии автономной работы клиники</span>
 								</div>
-								<ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-300">
+								<ul className="list-disc list-inside space-y-1 text-[var(--ink-muted)]">
 									<li>
-										<strong>Без потери данных:</strong> Все записи приемов, одонтограммы и дневники сохраняются в локальную IndexedDB при потере связи.
+										<strong className="text-[var(--ink)]">Без потери данных:</strong> Все записи приемов, одонтограммы и дневники сохраняются локально при потере связи.
 									</li>
 									<li>
-										<strong>Неблокирующий интерфейс:</strong> Врач продолжает заполнять протокол приема без всплывающих окон ошибок.
+										<strong className="text-[var(--ink)]">Неблокирующий интерфейс:</strong> Врач продолжает заполнять протокол приема без всплывающих окон ошибок.
 									</li>
 									<li>
-										<strong>Бесконфликтное слияние:</strong> Изменения разных поверхностей одного зуба (напр. O и M) объединяются без перезаписи.
+										<strong className="text-[var(--ink)]">Бесконфликтное слияние:</strong> Изменения разных поверхностей одного зуба объединяются без перезаписи.
 									</li>
 									<li>
-										<strong>Идемпотентность пакетов:</strong> Повторная отправка при нестабильной сети не создает дубликатов чеков или записей.
+										<strong className="text-[var(--ink)]">Идемпотентность пакетов:</strong> Повторная отправка при нестабильной сети не создает дубликатов чеков или записей.
 									</li>
 								</ul>
 							</div>
@@ -444,22 +465,24 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 
 					{activeTab === "queue" && (
 						<div className="space-y-3">
-							<OfflineMutationQueueViewer maxHeight="380px" />
+							<OfflineMutationQueueViewer
+								maxHeight="380px"
+								crdtItems={pendingItems}
+								onSyncAll={handleManualSync}
+							/>
 						</div>
 					)}
 
 					{activeTab === "diagnostics" && (
 						<div className="space-y-3 text-xs">
-							<div className="p-3.5 rounded-lg border border-[var(--glass-border,rgba(0,0,0,0.08))] dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] space-y-2">
-								<h3 className="font-semibold text-slate-800 dark:text-slate-200">Телеметрия узла</h3>
-								<div className="grid grid-cols-2 gap-2 text-[11px]">
-									<div>ID Узла / Рабочего места:</div>
-									<div className="font-mono text-right">{crdtSyncEngine.getNodeId()}</div>
-									<div>Счетчик Lamport Clocks:</div>
-									<div className="font-mono text-right">L{status.lamportTime}</div>
-									<div>Калибровка часов (Skew):</div>
-									<div className="font-mono text-right">{status.clockSkewMs} мс</div>
-									<div>Активный уровень синхронизации:</div>
+							<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]/50 space-y-2">
+								<h3 className="text-sm font-semibold text-[var(--ink)]">Телеметрия рабочего места</h3>
+								<div className="grid grid-cols-2 gap-2 text-xs">
+									<div className="text-[var(--ink-muted)]">Счетчик последовательности:</div>
+									<div className="font-mono text-right tabular-nums">L{status.lamportTime}</div>
+									<div className="text-[var(--ink-muted)]">Сдвиг времени:</div>
+									<div className="font-mono text-right tabular-nums">{status.clockSkewMs} мс</div>
+									<div className="text-[var(--ink-muted)]">Уровень синхронизации:</div>
 									<div className="font-mono text-right">{status.activeTier}</div>
 								</div>
 							</div>
@@ -468,15 +491,11 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 				</div>
 
 				{/* ── Modal Footer ── */}
-				<div className="px-5 py-3 border-t border-[var(--glass-border,rgba(0,0,0,0.08))] dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] flex items-center justify-between">
-					<div className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400">
-						DENTE CRM • LWW-Element-Set Offline Engine
-					</div>
-
+				<div className="h-16 px-6 border-t border-[var(--line)] bg-[var(--paper-soft)]/50 flex items-center justify-end gap-3 shrink-0">
 					<button
 						type="button"
 						onClick={onClose}
-						className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-[var(--ink,#0f172a)] dark:text-slate-100 transition-colors h-[32px]"
+						className="h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center shrink-0 bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] transition-colors"
 						data-testid="close-sync-modal-footer-button"
 					>
 						Закрыть

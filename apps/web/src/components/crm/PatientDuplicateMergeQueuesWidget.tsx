@@ -8,7 +8,13 @@ import { DOUBTFUL_BELOW, duplicatePairKey } from "../../lib/patientDuplicatesApi
 import { PatientDuplicateTableRow } from "./patientDuplicates/PatientDuplicateTableRow";
 import { usePatientDuplicates } from "./patientDuplicates/usePatientDuplicates";
 
-export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
+export interface PatientDuplicateMergeQueuesWidgetProps {
+	readonly patientId?: string | undefined;
+}
+
+export const PatientDuplicateMergeQueuesWidget: React.FC<PatientDuplicateMergeQueuesWidgetProps> = ({
+	patientId,
+}) => {
 	const {
 		report,
 		error,
@@ -19,7 +25,7 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
 		setConfirming,
 		merge,
 		dismiss,
-	} = usePatientDuplicates();
+	} = usePatientDuplicates(patientId);
 
 	return (
 		<section

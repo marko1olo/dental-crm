@@ -53,7 +53,7 @@
 }
 
 .mobile-smart-mic-chip {
-  min-height: 36px; padding: 6px 12px; border-radius: 10px;
+  min-height: 44px; padding: 8px 14px; border-radius: 12px;
   font-size: 13px; font-weight: 600; background: var(--paper-soft, #f8fafc);
   color: var(--ink, #0f172a); border: 1px solid var(--line, #e2e8f0);
   white-space: nowrap; flex-shrink: 0; display: inline-flex;

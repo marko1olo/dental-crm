@@ -38,12 +38,14 @@ import {
 	isNullableString,
 } from "./guardUtils";
 import {
-	openSpeechChunkDb,
-	pendingVisitSaveIndexedDbAvailable,
-	pendingVisitSaveStoreName,
-	speechChunkIndexedDbAvailable,
-	dicomWorkbenchDraftStoreName,
-} from "./offlineStorageEngine";
+	DICOM_WORKBENCH_DRAFTS_STORE_NAME as dicomWorkbenchDraftStoreName,
+	PENDING_VISIT_SAVES_STORE_NAME as pendingVisitSaveStoreName,
+} from "../services/offline/storage/constants";
+import {
+	isIndexedDbAvailable as speechChunkIndexedDbAvailable,
+	openOfflineOutboxDb as openSpeechChunkDb,
+} from "../services/offline/storage/idbDatabase";
+const pendingVisitSaveIndexedDbAvailable = speechChunkIndexedDbAvailable;
 import {
 	type DicomWorkbenchIndexedDbDraft,
 	type DicomWorkbenchLocalDraft,

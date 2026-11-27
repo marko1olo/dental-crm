@@ -47,6 +47,7 @@ export function TopBarModalsHost(props: AppTopBarProps) {
 				<Suspense fallback={null}>
 					<OnboardingWizardModal
 						{...props}
+						initialShowRapidWizard={props.initialShowRapidWizard ?? true}
 						selectedSpecialty={(props.selectedSpecialty as DentalSpecialty) || "universal"}
 					/>
 				</Suspense>

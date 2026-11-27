@@ -9,6 +9,8 @@ import { createPortal } from "react-dom";
 import { useAppStore } from "../../store/appStore";
 import type { Lead } from "../../store/leadsStore";
 import { usePatientStore } from "../../store/patientStore";
+import { logger } from "../../utils/logger";
+import { showToast } from "../GlobalToast";
 import { LeadFormFields } from "./leadForm/LeadFormFields";
 import { LeadFormFooterActions } from "./leadForm/LeadFormFooterActions";
 import { LeadFormHeader } from "./leadForm/LeadFormHeader";
@@ -56,8 +58,9 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 			useAppStore.getState().setCurrentView("patients");
 			if (typeof window !== "undefined") window.location.hash = "patients";
 			onClose();
-		} catch {
-			// fallback
+		} catch (err: unknown) {
+			logger.warn("[LeadFormModal] Failed to navigate to patient card:", err);
+			showToast("Не удалось открыть карту пациента", "error");
 		}
 	};
 

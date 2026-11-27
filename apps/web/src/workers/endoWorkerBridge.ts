@@ -179,14 +179,22 @@ export class EndoWorkerBridge {
 				reject(new Error(`Endo Worker computation timed out after ${timeoutMs}ms`));
 			}, timeoutMs);
 
+			const activeWorker = this.worker;
+			if (!activeWorker) {
+				clearTimeout(timer);
+				this.pendingRequests.delete(requestId);
+				reject(new Error("Endo Worker is not initialized"));
+				return;
+			}
+
 			this.pendingRequests.set(requestId, { resolve, reject, timer });
 
 			try {
 				// Zero-copy array buffer transfer if input buffer is standalone
-				this.worker!.postMessage(payload, [input.voxelData.buffer]);
+				activeWorker.postMessage(payload, [input.voxelData.buffer]);
 			} catch {
 				// Fallback to structured clone if buffer cannot be transferred (e.g. SharedArrayBuffer or shared view)
-				this.worker!.postMessage(payload);
+				activeWorker.postMessage(payload);
 			}
 		});
 	}

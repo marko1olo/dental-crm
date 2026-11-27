@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
@@ -56,45 +57,58 @@ export function useMarketingPromos() {
 
 	const selectedPromo = promos.find((p) => p.id === selectedPromoId) || promos[0];
 
-	const handleTogglePromoStatus = useCallback((promoId: string) => {
-		let targetNextStatus: MarketingPromo["status"] = "archived";
+	const handleTogglePromoStatus = useCallback((promoId: string, retryKey?: string) => {
+		const targetPromo = promos.find((p) => p.id === promoId);
+		if (!targetPromo) return;
+		const previousStatus = targetPromo.status;
+		const nextStatus: MarketingPromo["status"] = previousStatus === "active" ? "archived" : "active";
+		const idempotencyKey = retryKey ?? generateUuidV7();
+
 		setPromos((prev) =>
-			prev.map((p) => {
-				if (p.id !== promoId) return p;
-				targetNextStatus = p.status === "active" ? "archived" : "active";
-				return { ...p, status: targetNextStatus };
-			}),
+			prev.map((p) => (p.id === promoId ? { ...p, status: nextStatus } : p)),
 		);
 
 		fetch(`/api/marketing/promos/${encodeURIComponent(promoId)}/status`, {
 			method: "PATCH",
 			headers: {
 				"Content-Type": "application/json",
-				...denteAdminSecretRequestHeaders(),
+				...denteAdminSecretRequestHeaders({ "Idempotency-Key": idempotencyKey }),
 			},
-			body: JSON.stringify({ status: targetNextStatus }),
+			body: JSON.stringify({ status: nextStatus }),
 		})
 			.then((res) => {
 				if (!res.ok) throw new Error(`HTTP ${res.status}`);
 			})
 			.catch((err) => {
 				clientLogger.error("[useMarketingPromos] Ошибка смены статуса акции:", err);
+				setPromos((prev) =>
+					prev.map((p) => (p.id === promoId ? { ...p, status: previousStatus } : p)),
+				);
 				showToast("Не удалось обновить статус акции", "error", 6000, {
 					label: "Повторить",
-					onAction: () => handleTogglePromoStatus(promoId),
+					onAction: () => handleTogglePromoStatus(promoId, idempotencyKey),
 				});
 			});
-	}, []);
+	}, [promos]);
 
-	const handleSaveNewPromo = useCallback((newPromo: MarketingPromo) => {
-		setPromos((prev) => [newPromo, ...prev.filter((p) => p.id !== newPromo.id)]);
-		setSelectedPromoId(newPromo.id);
+	const handleSaveNewPromo = useCallback((newPromo: MarketingPromo, retryKey?: string) => {
+		const idempotencyKey = retryKey ?? generateUuidV7();
+		let previousPromos: readonly MarketingPromo[] = [];
+		let previousSelectedId = "";
+		setPromos((prev) => {
+			previousPromos = prev;
+			return [newPromo, ...prev.filter((p) => p.id !== newPromo.id)];
+		});
+		setSelectedPromoId((prevId) => {
+			previousSelectedId = prevId;
+			return newPromo.id;
+		});
 
 		fetch("/api/marketing/promos", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				...denteAdminSecretRequestHeaders(),
+				...denteAdminSecretRequestHeaders({ "Idempotency-Key": idempotencyKey }),
 			},
 			body: JSON.stringify(newPromo),
 		})
@@ -103,9 +117,11 @@ export function useMarketingPromos() {
 			})
 			.catch((err) => {
 				clientLogger.error("[useMarketingPromos] Ошибка сохранения новой акции:", err);
+				setPromos(previousPromos);
+				setSelectedPromoId(previousSelectedId);
 				showToast("Не удалось сохранить акцию в базе", "error", 6000, {
 					label: "Повторить",
-					onAction: () => handleSaveNewPromo(newPromo),
+					onAction: () => handleSaveNewPromo(newPromo, idempotencyKey),
 				});
 			});
 	}, []);

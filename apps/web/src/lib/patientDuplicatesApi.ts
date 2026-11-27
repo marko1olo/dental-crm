@@ -40,8 +40,16 @@
  * накрыло бы и соседние вызовы, и пятый добавленный без заголовков уже не нашли бы.
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../components/GlobalToast";
 import { actionFailureToast } from "./panelStateText";
+
+function extractErrorStatus(err: unknown): number | null {
+	if (err && typeof err === "object" && "status" in err && typeof err.status === "number") {
+		return err.status;
+	}
+	return null;
+}
 
 import type {
 	DuplicateCandidate,
@@ -76,7 +84,7 @@ async function readJson<T>(response: Response): Promise<T> {
 		showToast(
 			actionFailureToast(
 				"Ошибка чтения данных",
-				(err as { status?: number })?.status ?? null,
+				extractErrorStatus(err),
 			),
 			"error",
 		);
@@ -125,7 +133,12 @@ export async function fetchDuplicatesForPatient(
  * архивной ссылкой на неё, её данные переносятся, ничего не удаляется.
  */
 export async function mergeDuplicatePair(
-	input: { keepPatientId: string; mergePatientId: string; reason?: string },
+	input: {
+		keepPatientId: string;
+		mergePatientId: string;
+		reason?: string | undefined;
+		idempotencyKey?: string | undefined;
+	},
 	headers: RequestHeaders,
 ): Promise<{ summary: string }> {
 	const body: Record<string, string> = {
@@ -133,10 +146,16 @@ export async function mergeDuplicatePair(
 		duplicatePatientId: input.mergePatientId,
 	};
 	if (input.reason) body.reason = input.reason;
+	const idempotencyKey = input.idempotencyKey ?? generateUuidV7();
 	return readJson<{ summary: string }>(
 		await fetch("/api/patients/duplicates/merge", {
 			method: "POST",
-			headers: { ...headers, "content-type": "application/json" },
+			headers: {
+				...headers,
+				"content-type": "application/json",
+				"Idempotency-Key": idempotencyKey,
+				"X-Idempotency-Key": idempotencyKey,
+			},
 			body: JSON.stringify(body),
 		}),
 	);
@@ -144,7 +163,12 @@ export async function mergeDuplicatePair(
 
 /** «Это разные люди»: пара больше не предлагается. */
 export async function dismissDuplicatePair(
-	input: { leftPatientId: string; rightPatientId: string; reason?: string },
+	input: {
+		leftPatientId: string;
+		rightPatientId: string;
+		reason?: string | undefined;
+		idempotencyKey?: string | undefined;
+	},
 	headers: RequestHeaders,
 ): Promise<{ message: string }> {
 	const body: Record<string, string> = {
@@ -152,10 +176,16 @@ export async function dismissDuplicatePair(
 		rightPatientId: input.rightPatientId,
 	};
 	if (input.reason) body.reason = input.reason;
+	const idempotencyKey = input.idempotencyKey ?? generateUuidV7();
 	return readJson<{ message: string }>(
 		await fetch("/api/patients/duplicates/dismiss", {
 			method: "POST",
-			headers: { ...headers, "content-type": "application/json" },
+			headers: {
+				...headers,
+				"content-type": "application/json",
+				"Idempotency-Key": idempotencyKey,
+				"X-Idempotency-Key": idempotencyKey,
+			},
 			body: JSON.stringify(body),
 		}),
 	);

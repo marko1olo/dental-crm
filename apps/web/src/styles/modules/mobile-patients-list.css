@@ -102,9 +102,9 @@
 }
 
 .mobile-filter-chip {
-	height: 34px;
-	min-height: 34px;
-	padding: 0 12px;
+	height: 44px;
+	min-height: 44px;
+	padding: 0 14px;
 	border-radius: 9999px;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
@@ -113,7 +113,7 @@
 	font-weight: 500;
 	display: inline-flex;
 	align-items: center;
-	gap: 5px;
+	gap: 6px;
 	white-space: nowrap;
 	flex-shrink: 0;
 	cursor: pointer;
@@ -126,11 +126,11 @@
 }
 
 .mobile-filter-chip.active {
-	background: var(--teal) !important;
-	color: var(--on-teal, #ffffff) !important;
-	border-color: var(--teal) !important;
+	background: var(--primary, #0f766e) !important;
+	color: #ffffff !important;
+	border-color: var(--primary, #0f766e) !important;
 	font-weight: 600;
-	box-shadow: 0 2px 6px rgba(20, 184, 166, 0.25);
+	box-shadow: 0 2px 6px rgba(15, 118, 110, 0.25);
 }
 
 .mobile-filter-chip-count {

@@ -36,34 +36,54 @@ import {
 	isRecordKey,
 } from "./guardUtils";
 import {
-	openSpeechChunkDb,
-	assertSpeechChunkDbStores,
-	speechChunkIndexedDbAvailable,
-	pendingVisitSaveIndexedDbAvailable,
-	speechChunkDbName,
-	speechChunkDbVersion,
-	pendingVisitSaveStoreName,
-	dicomWorkbenchDraftStoreName,
-	mprWorkbenchDraftStoreName,
-	speechChunkStoreName,
-	requiredSpeechChunkDbStoreNames,
-	speechChunkDbPromise,
-} from "./offlineStorageEngine";
+	DICOM_WORKBENCH_DRAFTS_STORE_NAME,
+	MPR_WORKBENCH_DRAFTS_STORE_NAME,
+	OFFLINE_DB_NAME,
+	OFFLINE_DB_VERSION,
+	PENDING_SPEECH_CHUNKS_STORE_NAME,
+	PENDING_VISIT_SAVES_STORE_NAME,
+} from "../services/offline/storage/constants";
+import {
+	isIndexedDbAvailable,
+	openOfflineOutboxDb,
+} from "../services/offline/storage/idbDatabase";
 
-export {
-	openSpeechChunkDb,
-	assertSpeechChunkDbStores,
-	speechChunkIndexedDbAvailable,
-	pendingVisitSaveIndexedDbAvailable,
-	speechChunkDbName,
-	speechChunkDbVersion,
+export const speechChunkDbName = OFFLINE_DB_NAME;
+export const speechChunkDbVersion = OFFLINE_DB_VERSION;
+export const pendingVisitSaveStoreName = PENDING_VISIT_SAVES_STORE_NAME;
+export const dicomWorkbenchDraftStoreName = DICOM_WORKBENCH_DRAFTS_STORE_NAME;
+export const mprWorkbenchDraftStoreName = MPR_WORKBENCH_DRAFTS_STORE_NAME;
+export const speechChunkStoreName = PENDING_SPEECH_CHUNKS_STORE_NAME;
+export const requiredSpeechChunkDbStoreNames = [
 	pendingVisitSaveStoreName,
 	dicomWorkbenchDraftStoreName,
 	mprWorkbenchDraftStoreName,
 	speechChunkStoreName,
-	requiredSpeechChunkDbStoreNames,
-	speechChunkDbPromise,
-};
+] as const;
+export const speechChunkDbPromise: Promise<IDBDatabase> | null = null;
+
+export function speechChunkIndexedDbAvailable(): boolean {
+	return isIndexedDbAvailable();
+}
+
+export function pendingVisitSaveIndexedDbAvailable(): boolean {
+	return isIndexedDbAvailable();
+}
+
+export function assertSpeechChunkDbStores(db: IDBDatabase): void {
+	const missingStores = requiredSpeechChunkDbStoreNames.filter(
+		(storeName) => !db.objectStoreNames.contains(storeName),
+	);
+	if (missingStores.length) {
+		throw new Error(
+			`Offline IndexedDB schema is missing stores: ${missingStores.join(", ")}`,
+		);
+	}
+}
+
+export function openSpeechChunkDb(): Promise<IDBDatabase> {
+	return openOfflineOutboxDb();
+}
 export {
 	pendingVisitSaveQueueKey,
 	buildOfflineVisitDraftFromTranscript,

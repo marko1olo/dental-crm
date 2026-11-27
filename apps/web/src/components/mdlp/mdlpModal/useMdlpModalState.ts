@@ -73,11 +73,21 @@ export function useMdlpModalState(props: MdlpScanningModalProps) {
 		xml.setGeneratedXml(null);
 		const isVerified = newItem.status === "verified";
 		actions.playBeep(isVerified);
-		submitMdlpBarcodeScan(raw, true).catch(() => null);
 		if (isVerified) showToast(`Отсканировано: ${newItem.tradeName}`, "success");
 		else if (newItem.status === "warning") showToast(`Внимание: ${newItem.statusReason}`, "warning");
 		else showToast(`Ошибка маркировки: ${newItem.statusReason}`, "error");
 		inputRef.current?.focus();
+		try {
+			const scanRes = await submitMdlpBarcodeScan(raw, true);
+			if (!scanRes.success) {
+				showToast(scanRes.error || "Не удалось сохранить сканирование в журнале МДЛП", "warning");
+			}
+		} catch (err: unknown) {
+			showToast(
+				err instanceof Error ? err.message : "Сбой при отправке скана в журнал МДЛП",
+				"error",
+			);
+		}
 	};
 
 	const handleRemoveItem = (id: string) => {

@@ -1,3 +1,4 @@
+import { generateUuidV7 } from "@dental/shared";
 import { cleanPhoneDigits } from "../../../utils/formatters";
 
 export type VerificationMethod = "sms" | "flash_call";
@@ -19,9 +20,14 @@ export async function sendOtpVerificationRequest(
 	apiBaseUrl: string = "/api/public/booking",
 ): Promise<SendOtpResult> {
 	try {
+		const idempotencyKey = generateUuidV7();
 		const res = await fetch(`${apiBaseUrl}/send-otp`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: {
+				"Content-Type": "application/json",
+				"Idempotency-Key": idempotencyKey,
+				"X-Idempotency-Key": idempotencyKey,
+			},
 			body: JSON.stringify({
 				phone: cleanPhoneDigits(phone),
 				method,
@@ -29,7 +35,8 @@ export async function sendOtpVerificationRequest(
 			}),
 		});
 
-		const data = (await res.json().catch(() => ({}))) as {
+		const raw = await res.json().catch(() => ({}));
+		const data = (raw && typeof raw === "object" && "data" in raw ? raw.data : raw) as {
 			success?: boolean;
 			error?: string;
 			message?: string;

@@ -41,7 +41,7 @@ export const WarrantyCategoryPresetsBar: React.FC<WarrantyCategoryPresetsBarProp
 	onApplyStarQuickPreset,
 	onSelectCategory,
 }) => {
-	// Основные 4 популярных клинических пресета клиники (с полной преднастройкой материала и 804н)
+	// Основные 4 популярных клинических пресета клиники (с полной преднастройкой материала и кода услуги)
 	const compositeQp = STAR_COMPOSITE_QUICK_PRESET;
 	const emaxQp = STAR_EMAX_QUICK_PRESET;
 	const zirconiaQp = STAR_ZIRCONIA_QUICK_PRESET;

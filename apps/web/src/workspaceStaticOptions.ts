@@ -56,9 +56,15 @@ export const telegramFeatureHelp: Record<DenteTelegramFeature, string> = {
 		"Любые чувствительные файлы и подробности уходят только через портал.",
 };
 
-export const telegramFeatureOptions = Object.keys(
-	telegramFeatureLabels,
-) as DenteTelegramFeature[];
+export const telegramFeatureOptions: DenteTelegramFeature[] = [
+	"appointment_reminders",
+	"review_requests",
+	"staff_daily_digest",
+	"staff_task_alerts",
+	"callback_requests",
+	"voice_note_intake",
+	"secure_portal_links",
+];
 
 export const telegramVisualCardFields: Array<{
 	key: DenteTelegramVisualCardKey;

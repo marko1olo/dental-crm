@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import {
@@ -7,12 +8,20 @@ import {
 	dismissDuplicatePair,
 	duplicatePairKey,
 	fetchDuplicateReport,
+	fetchDuplicatesForPatient,
 	mergeDuplicatePair,
 } from "../../../lib/patientDuplicatesApi";
 import { showToast } from "../../GlobalToast";
 import type { DuplicateConfirmState } from "./types";
 
-export function usePatientDuplicates() {
+function extractHttpStatus(err: unknown): number | null {
+	if (err && typeof err === "object" && "status" in err && typeof err.status === "number") {
+		return err.status;
+	}
+	return null;
+}
+
+export function usePatientDuplicates(patientId?: string | undefined) {
 	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
 	const [report, setReport] = useState<DuplicateReport | null>(null);
@@ -21,17 +30,30 @@ export function usePatientDuplicates() {
 	const [busyPair, setBusyPair] = useState<string | null>(null);
 	const [notice, setNotice] = useState<string | null>(null);
 	const [confirming, setConfirming] = useState<DuplicateConfirmState | null>(null);
+	const mergeKeysRef = useRef(new Map<string, string>());
+	const dismissKeysRef = useRef(new Map<string, string>());
 
 	const load = useCallback(async () => {
 		setLoading(true);
 		setError(null);
 		try {
-			setReport(await fetchDuplicateReport(auth ? auth.denteClinicalReadHeaders() : {}));
+			const headers = auth ? auth.denteClinicalReadHeaders() : {};
+			if (patientId) {
+				const candidates = await fetchDuplicatesForPatient(patientId, headers);
+				setReport({
+					candidates,
+					examinedPatients: candidates.length,
+					dismissedPairs: 0,
+					note: "Показаны вероятные дубли для открытой карточки пациента.",
+				});
+			} else {
+				setReport(await fetchDuplicateReport(headers));
+			}
 		} catch (loadError) {
 			showToast(
 				actionFailureToast(
 					"Ошибка выполнения операции",
-					(loadError as { status?: number })?.status ?? null,
+					extractHttpStatus(loadError),
 				),
 				"error",
 			);
@@ -40,7 +62,7 @@ export function usePatientDuplicates() {
 		} finally {
 			setLoading(false);
 		}
-	}, [auth]);
+	}, [auth, patientId]);
 
 	useEffect(() => {
 		void load();
@@ -48,6 +70,9 @@ export function usePatientDuplicates() {
 
 	const merge = async (candidate: DuplicateCandidate, keepLeft: boolean) => {
 		const key = duplicatePairKey(candidate);
+		const actionKey = `${key}:${keepLeft ? "left" : "right"}`;
+		const idempotencyKey = mergeKeysRef.current.get(actionKey) ?? generateUuidV7();
+		mergeKeysRef.current.set(actionKey, idempotencyKey);
 		setBusyPair(key);
 		setNotice(null);
 		try {
@@ -56,9 +81,11 @@ export function usePatientDuplicates() {
 					keepPatientId: keepLeft ? candidate.leftPatientId : candidate.rightPatientId,
 					mergePatientId: keepLeft ? candidate.rightPatientId : candidate.leftPatientId,
 					reason: "Объединено в разборе дублей",
+					idempotencyKey,
 				},
 				auth ? auth.denteClinicalMutationHeaders() : {},
 			);
+			mergeKeysRef.current.delete(actionKey);
 			setNotice(data.summary);
 			setConfirming(null);
 			await load();
@@ -66,7 +93,7 @@ export function usePatientDuplicates() {
 			showToast(
 				actionFailureToast(
 					"Ошибка выполнения операции",
-					(mergeError as { status?: number })?.status ?? null,
+					extractHttpStatus(mergeError),
 				),
 				"error",
 			);
@@ -78,6 +105,8 @@ export function usePatientDuplicates() {
 
 	const dismiss = async (candidate: DuplicateCandidate) => {
 		const key = duplicatePairKey(candidate);
+		const idempotencyKey = dismissKeysRef.current.get(key) ?? generateUuidV7();
+		dismissKeysRef.current.set(key, idempotencyKey);
 		setBusyPair(key);
 		setNotice(null);
 		try {
@@ -86,16 +115,18 @@ export function usePatientDuplicates() {
 					leftPatientId: candidate.leftPatientId,
 					rightPatientId: candidate.rightPatientId,
 					reason: "Отмечено в разборе дублей",
+					idempotencyKey,
 				},
 				auth ? auth.denteClinicalMutationHeaders() : {},
 			);
+			dismissKeysRef.current.delete(key);
 			setNotice(data.message);
 			await load();
 		} catch (dismissError) {
 			showToast(
 				actionFailureToast(
 					"Ошибка выполнения операции",
-					(dismissError as { status?: number })?.status ?? null,
+					extractHttpStatus(dismissError),
 				),
 				"error",
 			);

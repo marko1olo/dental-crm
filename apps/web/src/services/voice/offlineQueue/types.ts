@@ -2,6 +2,12 @@
  * types.ts — Типы данных и константы отказоустойчивой очереди диктовки DENTE
  */
 
+import {
+	OFFLINE_DB_NAME,
+	OFFLINE_DB_VERSION,
+	VOICE_TRANSCRIPTIONS_STORE_NAME,
+} from "../../offline/storage/constants";
+
 export type OfflineTranscriptionStatus =
 	| "pending"
 	| "syncing"
@@ -74,6 +80,6 @@ export interface VoiceOfflineQueueOptions {
 	onBadgeMessage?: ((badgeText: string) => void) | undefined;
 }
 
-export const VOICE_OFFLINE_DB_NAME = "dente_voice_offline_db";
-export const VOICE_OFFLINE_DB_VERSION = 1;
-export const VOICE_OFFLINE_STORE_NAME = "pending_transcriptions";
+export const VOICE_OFFLINE_DB_NAME = OFFLINE_DB_NAME;
+export const VOICE_OFFLINE_DB_VERSION = OFFLINE_DB_VERSION;
+export const VOICE_OFFLINE_STORE_NAME = VOICE_TRANSCRIPTIONS_STORE_NAME;

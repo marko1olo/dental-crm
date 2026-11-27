@@ -1,6 +1,8 @@
 import React from "react";
 import {
 	STARTER_15_ESSENTIAL_DENTAL_SERVICES,
+	formatKopecksToRub,
+	sumKopecks,
 	type StarterDentalService,
 } from "@dental/shared";
 import {
@@ -45,17 +47,9 @@ export function Step3StarterPricelist() {
 		selectedServiceCodes.includes(s.code),
 	);
 
-	const totalRub = selectedServices.reduce((sum, s) => sum + s.priceRub, 0);
+	const totalKopecks = sumKopecks(selectedServices.map((s) => s.priceKopecks));
 	const allSelected = selectedServiceCodes.length === STARTER_15_ESSENTIAL_DENTAL_SERVICES.length;
 	const noneSelected = selectedServiceCodes.length === 0;
-
-	const formatPrice = (rub: number) => {
-		return new Intl.NumberFormat("ru-RU", {
-			style: "currency",
-			currency: "RUB",
-			maximumFractionDigits: 0,
-		}).format(rub);
-	};
 
 	return (
 		<div className="onboarding-step-body animate-fade-in">
@@ -135,7 +129,7 @@ export function Step3StarterPricelist() {
 				<div className="pricelist-sum-badge">
 					<span>Выбрано: <strong>{selectedServices.length}</strong> из 15</span>
 					<span className="sum-divider" aria-hidden="true">|</span>
-					<span className="sum-total">Итого: <strong>{formatPrice(totalRub)}</strong></span>
+					<span className="sum-total">Итого: <strong>{formatKopecksToRub(totalKopecks)}</strong></span>
 				</div>
 			</div>
 
@@ -203,7 +197,7 @@ export function Step3StarterPricelist() {
 
 							<div className="service-price-cell">
 								<span className="service-price-amount">
-									{formatPrice(service.priceRub)}
+									{formatKopecksToRub(service.priceKopecks)}
 								</span>
 								<small className="service-kopecks-hint">
 									({service.priceKopecks.toLocaleString("ru-RU")} коп)

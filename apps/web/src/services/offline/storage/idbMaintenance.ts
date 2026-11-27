@@ -275,7 +275,7 @@ export function prewarmOfflineCachesToRam(): Promise<void> {
 					let schedCount = 0;
 					for (const sched of schedules) {
 						if (sched && sched.scheduleKey && !inMemorySchedulesMap.has(sched.scheduleKey)) {
-							inMemorySchedulesMap.set(sched.scheduleKey, sched);
+							setBoundedInMemoryMap(inMemorySchedulesMap, sched.scheduleKey, sched);
 						}
 						if (++schedCount % 40 === 0) await yieldToMainThread();
 					}
@@ -298,7 +298,7 @@ export function prewarmOfflineCachesToRam(): Promise<void> {
 					let plCount = 0;
 					for (const pl of priceLists) {
 						if (pl && pl.catalogKey && !inMemoryPriceListsMap.has(pl.catalogKey)) {
-							inMemoryPriceListsMap.set(pl.catalogKey, pl);
+							setBoundedInMemoryMap(inMemoryPriceListsMap, pl.catalogKey, pl);
 						}
 						if (++plCount % 40 === 0) await yieldToMainThread();
 					}
@@ -321,7 +321,7 @@ export function prewarmOfflineCachesToRam(): Promise<void> {
 					let icdCount = 0;
 					for (const dict of icd10List) {
 						if (dict && dict.dictionaryKey && !inMemoryIcd10Map.has(dict.dictionaryKey)) {
-							inMemoryIcd10Map.set(dict.dictionaryKey, dict);
+							setBoundedInMemoryMap(inMemoryIcd10Map, dict.dictionaryKey, dict);
 						}
 						if (++icdCount % 40 === 0) await yieldToMainThread();
 					}
@@ -344,7 +344,7 @@ export function prewarmOfflineCachesToRam(): Promise<void> {
 					let ptCount = 0;
 					for (const pt of patients) {
 						if (pt && pt.patientId && !inMemoryPatientsMap.has(pt.patientId)) {
-							inMemoryPatientsMap.set(pt.patientId, pt);
+							setBoundedInMemoryMap(inMemoryPatientsMap, pt.patientId, pt);
 						}
 						if (++ptCount % 40 === 0) await yieldToMainThread();
 					}
@@ -367,7 +367,7 @@ export function prewarmOfflineCachesToRam(): Promise<void> {
 					let odCount = 0;
 					for (const od of odontograms) {
 						if (od && od.patientId && !inMemoryOdontogramsMap.has(od.patientId)) {
-							inMemoryOdontogramsMap.set(od.patientId, od);
+							setBoundedInMemoryMap(inMemoryOdontogramsMap, od.patientId, od);
 						}
 						if (++odCount % 40 === 0) await yieldToMainThread();
 					}

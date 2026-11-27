@@ -5,7 +5,7 @@
  * Соответствует Мандатам: 8b (<=300 строк), 8e (Автономия врача), 8am (Ровно 1 Primary CTA), 8ze (Apple HIG).
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { generateUuidV7 } from "@dental/shared";
 import { clientLogger } from "../../services/logging/clientLogger";
 import {
@@ -83,10 +83,19 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 		setSelectedOhiS(calculatedOhiS);
 	}, [calculatedOhiS]);
 
-	const [selectedProtocol, setSelectedProtocol] = useState<CleaningProtocol>(CLEANING_PROTOCOLS[0]!);
-	const [selectedCarePlan, setSelectedCarePlan] = useState<HomeCarePlan>(HOME_CARE_PLANS[0]!);
+	const [selectedProtocol, setSelectedProtocol] = useState<CleaningProtocol>(CLEANING_PROTOCOLS[0]);
+	const [selectedCarePlan, setSelectedCarePlan] = useState<HomeCarePlan>(HOME_CARE_PLANS[0]);
 	const [activeSection, setActiveSection] = useState<"protocol" | "homecare">("protocol");
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+	const commitIdempotencyKeyRef = useRef<string | null>(null);
+	const warehouseIdempotencyKeyRef = useRef<string | null>(null);
+
+	useEffect(() => {
+		if (!isOpen) {
+			commitIdempotencyKeyRef.current = null;
+			warehouseIdempotencyKeyRef.current = null;
+		}
+	}, [isOpen]);
 
 	const previousScore = useMemo<number | null>(() => {
 		if (effectivePreviousOhiS === null || effectivePreviousOhiS === undefined) return null;
@@ -119,17 +128,26 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 	const handleCommit = useCallback(async () => {
 		setIsSubmitting(true);
 		try {
+			if (!warehouseIdempotencyKeyRef.current) {
+				warehouseIdempotencyKeyRef.current = generateUuidV7();
+			}
 			commitHygieneVisitProtocol({
 				ohiS: selectedOhiS,
 				protocol: selectedProtocol,
 				carePlan: selectedCarePlan,
+				patientId,
+				visitId,
 				patientName,
 				doctorName,
+				warehouseIdempotencyKey: warehouseIdempotencyKeyRef.current,
 			});
 
 			if (visitId?.trim()) {
 				try {
-					const idempotencyKey = generateUuidV7();
+					if (!commitIdempotencyKeyRef.current) {
+						commitIdempotencyKeyRef.current = generateUuidV7();
+					}
+					const idempotencyKey = commitIdempotencyKeyRef.current;
 					const res = await fetch(`/api/visits/${encodeURIComponent(visitId)}/hygiene-indices`, {
 						method: "POST",
 						headers: getDenteAuthHeaders({
@@ -148,18 +166,21 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 					});
 					if (!res.ok) {
 						clientLogger.warn("Failed to persist hygiene indices on server", { status: res.status, statusText: res.statusText }, { module: "HygieneStudioModal" });
-						showToast("Индексы гигиены зафиксированы в карте приёма (сервер вернул " + res.status + ")", "info", 3500);
+						showToast("Индексы гигиены зафиксированы в карте приёма (ошибка сохранения на сервере: " + res.status + ")", "error", 4000);
+					} else {
+						commitIdempotencyKeyRef.current = null;
 					}
 				} catch (netErr) {
 					clientLogger.warn("Network/offline persistence fallback", netErr, { module: "HygieneStudioModal" });
 					showToast("Индексы гигиены зафиксированы в локальной карте приёма", "info", 3000);
 				}
 			}
+			warehouseIdempotencyKeyRef.current = null;
 			onClose();
 		} finally {
 			setIsSubmitting(false);
 		}
-	}, [selectedOhiS, selectedProtocol, selectedCarePlan, patientName, doctorName, visitId, onClose]);
+	}, [selectedOhiS, selectedProtocol, selectedCarePlan, patientId, patientName, doctorName, visitId, onClose]);
 
 	const handlePrint = useCallback(() => {
 		printHygieneHomeCareMemo({

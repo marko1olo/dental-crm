@@ -1,10 +1,7 @@
 import { create } from "zustand";
 import { generateUuidV7 } from "@dental/shared";
 import { isDemoShowcaseMode } from "../lib/demoMode";
-import {
-	readDenteClinicToken,
-	readDenteStaffToken,
-} from "../lib/safeLocalStorage";
+import { getDenteAuthHeaders } from "../lib/denteRequestHeaders";
 import { getDemoShowcaseLeads } from "../utils/demoModeEngine";
 import { logger } from "../utils/logger";
 
@@ -162,16 +159,7 @@ async function leadsFailureMessage(
 }
 
 function authHeaders(extra?: Record<string, string>): Record<string, string> {
-	const isDemo = isDemoShowcaseMode();
-	const clinicToken =
-		readDenteClinicToken() || (isDemo ? "demo-showcase-token-owner" : "");
-	const staffToken =
-		readDenteStaffToken() || (isDemo ? "demo-showcase-staff-token-owner" : "");
-	return {
-		...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
-		...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-		...extra,
-	};
+	return getDenteAuthHeaders(extra);
 }
 
 function generateIdempotencyKey(): string {
@@ -188,17 +176,6 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 			const res = await fetch(`${API_URL}/leads`, {
 				headers: authHeaders(),
 			});
-			if (res.ok) {
-				const data = await res.json();
-				if (Array.isArray(data)) {
-					const effectiveLeads =
-						data.length === 0 && isDemoShowcaseMode()
-							? (getDemoShowcaseLeads() as Lead[])
-							: data;
-					set({ leads: effectiveLeads, isLoading: false });
-					return;
-				}
-			}
 			if (!res.ok) {
 				throw new Error(
 					await leadsFailureMessage(
@@ -207,8 +184,9 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 					),
 				);
 			}
-			const data = await res.json();
-			const parsed = Array.isArray(data) ? data : [];
+			const raw = await res.json();
+			const data = raw && typeof raw === "object" && "data" in raw ? (raw as { data: unknown }).data : raw;
+			const parsed = Array.isArray(data) ? (data as Lead[]) : [];
 			set({
 				leads:
 					parsed.length === 0 && isDemoShowcaseMode()
@@ -328,7 +306,12 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 				);
 			}
 
-			const data = (await res.json()) as { leads?: Lead[] };
+			const raw = await res.json();
+			const data = (
+				raw && typeof raw === "object" && "data" in raw
+					? (raw as { data: unknown }).data
+					: raw
+			) as { leads?: Lead[] };
 			if (data.leads && Array.isArray(data.leads)) {
 				const updatedMap = new Map(data.leads.map((l) => [l.id, l]));
 				set({
@@ -362,7 +345,12 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 					),
 				);
 			}
-			const lead = await res.json();
+			const raw = await res.json();
+			const lead = (
+				raw && typeof raw === "object" && "data" in raw
+					? (raw as { data: Lead }).data
+					: raw
+			) as Lead;
 			set({ leads: [...get().leads, lead] });
 		} catch (e: unknown) {
 			logger.error("addLead Error:", e);
@@ -388,7 +376,12 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 					),
 				);
 			}
-			const updatedLead = await res.json();
+			const raw = await res.json();
+			const updatedLead = (
+				raw && typeof raw === "object" && "data" in raw
+					? (raw as { data: Partial<Lead> }).data
+					: raw
+			) as Partial<Lead>;
 			set({
 				leads: get().leads.map((l) =>
 					l.id === id ? { ...l, ...updatedLead } : l,
@@ -485,7 +478,12 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 					),
 				);
 			}
-			const data = await res.json();
+			const raw = await res.json();
+			const data = (
+				raw && typeof raw === "object" && "data" in raw
+					? (raw as { data: unknown }).data
+					: raw
+			) as Awaited<ReturnType<LeadsState["createPatientFromLead"]>>;
 			set({
 				leads: get().leads.map((l) =>
 					l.id === id ? { ...l, status: "converted" } : l,

@@ -4,7 +4,7 @@ import { generateWarrantyPatientMemo, generateWarrantyRemediationActHtml, type W
 import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../../services/logging/clientLogger";
 import { showToast } from "../../../GlobalToast";
-import type { AttachedWarrantyPayload, WarrantyPatientMeta } from "../types";
+import type { AttachedWarrantyPayload, HistoricalWarrantyCertificate, WarrantyPatientMeta } from "../types";
 
 export interface UseWarrantyExportActionsParams {
 	certificateData: WarrantyCertificateData;
@@ -14,10 +14,11 @@ export interface UseWarrantyExportActionsParams {
 	doctorName?: string | null | undefined;
 	onAttachToClinicalNote?: ((payload: AttachedWarrantyPayload) => void) | undefined;
 	onCertificateIssued?: ((data: WarrantyCertificateData) => void) | undefined;
+	onCertificatePersisted?: ((certificate: HistoricalWarrantyCertificate) => void) | undefined;
 }
 
 export function useWarrantyExportActions({
-	certificateData, certificateHtml, patient, visitId, doctorName, onAttachToClinicalNote, onCertificateIssued,
+	certificateData, certificateHtml, patient, visitId, doctorName, onAttachToClinicalNote, onCertificateIssued, onCertificatePersisted,
 }: UseWarrantyExportActionsParams) {
 	const [copiedLink, setCopiedLink] = useState(false);
 	const [copiedMemo, setCopiedMemo] = useState(false);
@@ -70,6 +71,25 @@ export function useWarrantyExportActions({
 					errText,
 				}, { module: "Warranty" });
 				showToast("Не удалось сохранить гарантийный паспорт на сервере", "error");
+			} else {
+				let json: {
+					data?: { certificate?: HistoricalWarrantyCertificate };
+					certificate?: HistoricalWarrantyCertificate;
+				} | null = null;
+				try {
+					json = (await res.json()) as {
+						data?: { certificate?: HistoricalWarrantyCertificate };
+						certificate?: HistoricalWarrantyCertificate;
+					} | null;
+				} catch (jsonErr: unknown) {
+					clientLogger.warn("[useWarrantyExportActions] Invalid JSON response on certificate save", jsonErr, {
+						module: "Warranty",
+					});
+				}
+				const savedCert = json?.data?.certificate ?? json?.certificate;
+				if (savedCert?.id) {
+					onCertificatePersisted?.(savedCert);
+				}
 			}
 		} catch (err) {
 			clientLogger.error("[useWarrantyExportActions] Сетевой сбой при сохранении гарантийного паспорта", err, {
@@ -77,7 +97,7 @@ export function useWarrantyExportActions({
 			});
 			showToast("Сетевая ошибка: гарантийный паспорт не сохранён на сервере", "error");
 		}
-	}, [certificateData, doctorName, onCertificateIssued, patient?.id, visitId]);
+	}, [certificateData, doctorName, onCertificateIssued, onCertificatePersisted, patient?.id, visitId]);
 
 	const handlePrint = useCallback(() => {
 		void persistCertificateToBackend();

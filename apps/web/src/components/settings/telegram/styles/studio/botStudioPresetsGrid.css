@@ -55,8 +55,7 @@
 	font-size: 10px;
 	font-weight: 700;
 	color: var(--teal, #0d9488);
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
+	letter-spacing: 0.02em;
 	display: block;
 }
 

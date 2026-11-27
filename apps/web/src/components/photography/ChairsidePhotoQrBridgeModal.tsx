@@ -2,7 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { QrCode, Smartphone, CheckCircle, Copy, Clock, X, ExternalLink, RefreshCw, AlertCircle } from "lucide-react";
 import { generateQrCodeSvg, generateUuidV7 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../lib/denteRequestHeaders";
 import { logger } from "../../utils/logger";
 import { getPresetById } from "./photoGridPresets";
 
@@ -74,7 +77,7 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 			const res = await fetch("/api/photo-bridge/session", {
 				method: "POST",
 				headers: {
-					...denteAdminSecretRequestHeaders(),
+					...denteClinicalMutationHeaders(),
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
 				},
@@ -141,7 +144,7 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 		const pollSession = async () => {
 			try {
 				const res = await fetch(`/api/photo-bridge/poll/${token}`, {
-					headers: denteAdminSecretRequestHeaders(),
+					headers: denteClinicalReadHeaders(),
 				});
 				if (!res.ok) return;
 				const data = await res.json();
@@ -188,7 +191,7 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 			void fetch(`/api/photo-bridge/session/${token}`, {
 				method: "DELETE",
 				headers: {
-					...denteAdminSecretRequestHeaders(),
+					...denteClinicalMutationHeaders(),
 					"Idempotency-Key": generateUuidV7(),
 				},
 			}).catch((err: unknown) => {

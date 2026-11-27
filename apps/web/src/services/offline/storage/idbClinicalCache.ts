@@ -213,7 +213,7 @@ export async function cacheActiveSchedule(params: {
 		cachedAtMs: nowMs,
 	};
 
-	inMemorySchedulesMap.set(scheduleKey, record);
+	setBoundedInMemoryMap(inMemorySchedulesMap, scheduleKey, record);
 
 	queueBatchedStorePut({
 		storeName: SCHEDULES_CACHE_STORE_NAME,
@@ -258,7 +258,7 @@ export async function getCachedActiveSchedule(
 	}
 
 	if (idbResult) {
-		inMemorySchedulesMap.set(scheduleKey, idbResult);
+		setBoundedInMemoryMap(inMemorySchedulesMap, scheduleKey, idbResult);
 		return idbResult;
 	}
 
@@ -268,7 +268,7 @@ export async function getCachedActiveSchedule(
 			const parsed = await parseJsonNonBlocking(rawLocal);
 			if (parsed && typeof parsed === "object") {
 				const record = parsed as CachedActiveSchedule;
-				inMemorySchedulesMap.set(scheduleKey, record);
+				setBoundedInMemoryMap(inMemorySchedulesMap, scheduleKey, record);
 				return record;
 			}
 		} catch (err: unknown) {
@@ -360,7 +360,7 @@ export async function cachePatientCard(
 		cachedAtMs: nowMs,
 	};
 
-	inMemoryPatientsMap.set(card.patientId, record);
+	setBoundedInMemoryMap(inMemoryPatientsMap, card.patientId, record);
 
 	queueBatchedStorePut({
 		storeName: PATIENTS_CACHE_STORE_NAME,
@@ -403,7 +403,7 @@ export async function getCachedPatientCard(
 
 	if (idbResult) {
 		if (!organizationId || !idbResult.organizationId || idbResult.organizationId === organizationId) {
-			inMemoryPatientsMap.set(patientId, idbResult);
+			setBoundedInMemoryMap(inMemoryPatientsMap, patientId, idbResult);
 			return idbResult;
 		}
 	}
@@ -414,7 +414,7 @@ export async function getCachedPatientCard(
 			const parsed = (await parseJsonNonBlocking<CachedPatientCard>(rawLocal)) as CachedPatientCard;
 			if (parsed && typeof parsed === "object") {
 				if (!organizationId || !parsed.organizationId || parsed.organizationId === organizationId) {
-					inMemoryPatientsMap.set(patientId, parsed);
+					setBoundedInMemoryMap(inMemoryPatientsMap, patientId, parsed);
 					return parsed;
 				}
 			}

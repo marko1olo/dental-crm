@@ -104,7 +104,12 @@ export class VisiographPacsWatcherService {
 		}
 
 		// Check 'DICM' at byte offset 128..131
-		const magic = String.fromCharCode(buffer[128]!, buffer[129]!, buffer[130]!, buffer[131]!);
+		const magic = String.fromCharCode(
+			buffer[128] ?? 0,
+			buffer[129] ?? 0,
+			buffer[130] ?? 0,
+			buffer[131] ?? 0,
+		);
 		const hasMagicPrefix = magic === "DICM";
 
 		return {
@@ -167,27 +172,18 @@ export class VisiographPacsWatcherService {
 	}
 
 	/**
-	 * Generates sample data URI preview for instant patient chart display.
-	 */
-	public static generateSamplePreview(): string {
-		const sample1x1Png =
-			"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
-		return `data:image/png;base64,${sample1x1Png}`;
-	}
-
-	/**
 	 * Dispatches scan event to all registered listeners.
 	 */
 	public static dispatchScanEvent(rawEvent: Partial<RadiographyScanEvent> & { filePath: string; fileName: string; studyId?: string | undefined }): RadiographyScanEvent {
 		const metadata = this.parseScanMetadata(rawEvent.fileName);
 		const targetPatientId = rawEvent.patientId || metadata.patientId || this.activeConfig.activePatientId;
 		const targetToothCode = rawEvent.toothCode || metadata.toothCode;
-		const thumbnailDataUri = rawEvent.thumbnailDataUri || this.generateSamplePreview();
+		const thumbnailDataUri = rawEvent.thumbnailDataUri;
 
 		const event: RadiographyScanEvent = {
 			filePath: rawEvent.filePath,
 			fileName: rawEvent.fileName,
-			fileSize: rawEvent.fileSize || 1024 * 512, // 512 KB default
+			fileSize: rawEvent.fileSize || 0,
 			detectedAt: rawEvent.detectedAt || new Date().toISOString(),
 			patientName: rawEvent.patientName,
 			patientId: targetPatientId,
@@ -195,7 +191,7 @@ export class VisiographPacsWatcherService {
 			studyId: rawEvent.studyId,
 			modality: rawEvent.modality || metadata.modality,
 			thumbnailDataUri,
-			previewReady: true,
+			previewReady: Boolean(thumbnailDataUri),
 			windowCenter: metadata.windowCenter,
 			windowWidth: metadata.windowWidth,
 		};
@@ -213,12 +209,12 @@ export class VisiographPacsWatcherService {
 			}
 		}
 
-		if (typeof window !== "undefined") {
+		if (typeof window !== "undefined" && (thumbnailDataUri || rawEvent.studyId)) {
 			try {
 				window.dispatchEvent(
 					new CustomEvent("dente:attach-photo-to-visit", {
 						detail: {
-							url: thumbnailDataUri,
+							url: thumbnailDataUri || rawEvent.filePath,
 							name: targetToothCode ? `Рентген RVG: зуб ${targetToothCode}` : "Рентген RVG (без привязки к зубу)",
 							toothNumber: targetToothCode || undefined,
 							photoType: "xray",
@@ -226,8 +222,8 @@ export class VisiographPacsWatcherService {
 						},
 					}),
 				);
-			} catch {
-				// non-blocking
+			} catch (dispatchErr) {
+				logger.debug("[VisiographPacsWatcherService] Failed to dispatch attach-photo event", dispatchErr);
 			}
 		}
 

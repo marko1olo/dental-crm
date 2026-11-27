@@ -46,11 +46,21 @@ export function useBookingSlotsQuery(
 			try {
 				const reqInit: RequestInit = controller ? { signal: controller.signal } : {};
 				const res = await fetch(targetUrl, reqInit);
-				const data = await res.json().catch(() => null);
-				if (!res.ok) {
-					throw new Error(data?.message || data?.error || "На выбранную дату приём не ведётся");
+				let raw: unknown = null;
+				try {
+					raw = await res.json();
+				} catch (jsonErr: unknown) {
+					if (!res.ok) {
+						throw new Error("На выбранную дату приём не ведётся");
+					}
+					throw jsonErr;
 				}
-				return data;
+				const payload = raw && typeof raw === "object" && "data" in raw ? (raw as { data: unknown }).data : raw;
+				if (!res.ok) {
+					const errObj = (payload && typeof payload === "object" ? payload : raw) as { message?: string; error?: string } | null;
+					throw new Error(errObj?.message || errObj?.error || "На выбранную дату приём не ведётся");
+				}
+				return payload;
 			} catch (err: unknown) {
 				if (err instanceof Error && err.name === "AbortError") {
 					throw new Error("Таймаут соединения с клиникой. Проверьте интернет или позвоните администратору.");

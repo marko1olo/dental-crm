@@ -21,9 +21,9 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 	const {
 		isOpen,
 		onClose,
-		patientId = "PAT-001",
+		patientId = "",
 		patientName = "Пациент",
-		patientCardNumber = "МК-2026/891",
+		patientCardNumber = "",
 		doctorName = "Лечащий врач",
 		initialToothFdi = "16",
 		initialImageUrl,
@@ -107,9 +107,7 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 	}, [effectiveInitialTooth]);
 
 	const [projectionType, setProjectionType] = useState<ProjectionAngleType>("periapical");
-	const [clinicalNotes, setClinicalNotes] = useState<string>(
-		"Контрольный прицельный снимок после эндодонтической обработки и пломбирования.",
-	);
+	const [clinicalNotes, setClinicalNotes] = useState<string>("");
 
 	// Sensor Acquisition Sub-hook
 	const sensorAcq = useDirectRvgSensorAcquisition({
@@ -121,9 +119,21 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 			if (suggestedProj) setProjectionType(suggestedProj);
 		},
 		onClinicalNoteDetected: (note) => {
-			setClinicalNotes((prev) => (prev.startsWith("Контрольный прицельный") ? note : prev));
+			setClinicalNotes((prev) => (prev.trim().length === 0 ? note : prev));
 		},
 	});
+
+	// Zero-Leak Draft Reset: clear stale RVG state when patient changes or modal closes (Mandate 8bn/8zq)
+	const { setCapturedImage: resetSensorImage, setSensorStatus: resetSensorStatus } = sensorAcq;
+	useEffect(() => {
+		if (!isOpen) {
+			setClinicalNotes("");
+			setActivePresetId("standard");
+			setIsSplitCompare(false);
+			resetSensorImage(initialImageUrl ?? "");
+			resetSensorStatus(isDemo ? "ready" : "not_detected");
+		}
+	}, [isOpen, patientId, initialImageUrl, isDemo, resetSensorImage, resetSensorStatus]);
 
 	// Viewport & Image Filters
 	const [filters, setFilters] = useState<RvgFilterValues>(DEFAULT_RVG_FILTERS);

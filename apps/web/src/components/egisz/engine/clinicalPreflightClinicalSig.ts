@@ -12,7 +12,7 @@ export function checkClinicalAndSignature(payload: EgiszDentalCdaPayload, checks
 	if (!primaryDiag || !primaryDiag.icd10Code) {
 		checks.push({
 			id: "diag_missing", category: "clinical", title: "Клинический диагноз по МКБ-10",
-			status: "failed", details: "Отсутствует основной диагноз по МКБ-10. Для СЭМД 043/у требуется минимум один диагноз",
+			status: "failed", details: "Отсутствует основной диагноз по МКБ-10. Для медицинской карты требуется минимум один диагноз",
 			oid: EGISZ_REMD_OIDS.ICD10,
 		});
 	} else {
@@ -28,7 +28,7 @@ export function checkClinicalAndSignature(payload: EgiszDentalCdaPayload, checks
 	if (toothCount === 0) {
 		checks.push({
 			id: "tooth_formula_empty", category: "clinical", title: "Зубная формула (FDI ISO 3950)",
-			status: "warning", details: "Зубная формула пуста. Рекомендуется заполнить статус зубов пациента для протокола 043/у",
+			status: "warning", details: "Зубная формула пуста. Рекомендуется заполнить статус зубов пациента для протокола приёма",
 			oid: EGISZ_REMD_OIDS.DENTAL_TOOTH,
 		});
 	} else {

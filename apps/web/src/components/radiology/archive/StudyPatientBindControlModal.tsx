@@ -199,6 +199,7 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 
 	// Отвязка от пациента
 	const handleUnbind = useCallback(async () => {
+		if (isSubmitting) return;
 		setIsSubmitting(true);
 		try {
 			const res = await fetch(`/api/imaging/studies/${encodeURIComponent(study.id)}/unbind-patient`, {
@@ -315,12 +316,11 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 							<button
 								type="button"
 								onClick={handleUnbind}
-								disabled={isSubmitting}
-								className="h-8 px-3 text-[13px] font-medium rounded-lg border border-[var(--danger-soft)] text-[var(--danger)] hover:bg-[var(--danger-soft)] transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-50"
+								className="h-9 px-3.5 text-sm font-medium rounded-lg border border-[var(--danger-soft)] text-[var(--danger)] hover:bg-[var(--danger-soft)] transition-colors inline-flex items-center gap-2 cursor-pointer shrink-0"
 								data-testid="btn-unbind-patient"
 								title="Отвязать исследование от текущего пациента"
 							>
-								<Unlink className="w-3.5 h-3.5" />
+								<Unlink className="w-4 h-4 shrink-0" />
 								<span>Отвязать</span>
 							</button>
 						)}

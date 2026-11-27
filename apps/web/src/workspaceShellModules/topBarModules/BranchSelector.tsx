@@ -54,7 +54,10 @@ export function BranchSelector({
 					// Если активный филиал не установлен или не найден среди существующих, выбираем первый
 					setActiveBranchId((prev) => {
 						const exists = items.some((b) => b.id === prev);
-						const nextId = exists ? prev : items[0]!.id;
+						if (exists) return prev;
+						const firstItem = items[0];
+						if (!firstItem) return prev;
+						const nextId = firstItem.id;
 						if (typeof window !== "undefined") {
 							localStorage.setItem(STORAGE_KEY, nextId);
 						}

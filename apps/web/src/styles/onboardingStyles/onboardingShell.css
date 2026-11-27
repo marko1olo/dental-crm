@@ -6,13 +6,16 @@
 .rapid-onboarding-modal-overlay {
 	position: fixed;
 	inset: 0;
+	width: 100vw;
+	height: 100vh;
+	max-height: none;
 	z-index: 99999;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	overflow-y: auto;
 	overflow-x: hidden;
-	padding: 24px 16px;
+	padding: 20px 16px;
 	box-sizing: border-box;
 	background: rgba(10, 18, 17, 0.65);
 	backdrop-filter: blur(16px);
@@ -21,7 +24,7 @@
 
 [data-theme="light"] .rapid-onboarding-modal-overlay,
 html.light .rapid-onboarding-modal-overlay {
-	background: rgba(240, 253, 250, 0.45);
+	background: rgba(240, 253, 250, 0.55);
 }
 
 .onboarding-page-container {
@@ -37,16 +40,16 @@ html.light .rapid-onboarding-modal-overlay {
 
 .rapid-launch-wizard-shell {
 	position: relative;
-	background: var(--glass-panel, var(--paper-strong));
+	margin: auto;
+	background: var(--paper, #ffffff);
 	border: 1px solid var(--line);
 	border-radius: 16px;
 	box-shadow: var(--shadow-2, 0 20px 40px -10px rgba(0, 0, 0, 0.4));
-	backdrop-filter: blur(24px);
-	-webkit-backdrop-filter: blur(24px);
 	display: flex;
 	flex-direction: column;
 	width: 100%;
 	max-width: 980px;
+	max-height: calc(100vh - 40px);
 	box-sizing: border-box;
 	overflow: hidden;
 }
