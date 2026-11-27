@@ -1,10 +1,11 @@
-import { kopecksToRubles } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 
 export interface InventoryItem {
 	id: string;
 	name: string;
 	stockQuantity: number;
 	criticalThreshold: number;
+	unitCostKopecks?: number;
 	unitCostRub: string;
 	updatedAt: string;
 	unit?: string;
@@ -56,6 +57,25 @@ export function inventoryItemFromServer(raw: unknown): InventoryItem {
 	const category = asText(row.category);
 	const supplier = asText(row.supplier);
 	const unit = asText(row.unit || row.unitOfMeasure);
+	const rawKopecks =
+		row.unitCostKopecks ??
+		row.unit_cost_kopecks ??
+		row.pricePerUnitKopecks ??
+		row.price_per_unit_kopecks;
+	const rawLegacyRub =
+		row.unitCostRub ??
+		row.unit_cost_rub ??
+		row.pricePerUnit ??
+		row.price_per_unit;
+	const parsedKopecks =
+		rawKopecks !== null && rawKopecks !== undefined ? asNumber(rawKopecks) : null;
+	const parsedLegacyRub =
+		rawLegacyRub !== null && rawLegacyRub !== undefined ? asNumber(rawLegacyRub) : null;
+	const resolvedUnitCostKopecks =
+		parsedKopecks !== null &&
+		(parsedKopecks !== 0 || parsedLegacyRub === null || parsedLegacyRub === 0)
+			? Math.round(parsedKopecks)
+			: rublesToKopecks(parsedLegacyRub ?? 0);
 	return {
 		id: String(row.id ?? ""),
 		name: typeof row.name === "string" ? row.name : "",
@@ -65,19 +85,9 @@ export function inventoryItemFromServer(raw: unknown): InventoryItem {
 		criticalThreshold: asNumber(
 			row.criticalThreshold ?? row.critical_threshold ?? row.minQty ?? row.min_qty,
 		),
+		unitCostKopecks: resolvedUnitCostKopecks,
 		// Цена остаётся строкой: так объявлен тип, и её везде читают через Number().
-		unitCostRub:
-			row.unitCostRub !== null && row.unitCostRub !== undefined
-				? String(row.unitCostRub)
-				: row.unit_cost_rub !== null && row.unit_cost_rub !== undefined
-				? String(row.unit_cost_rub)
-				: row.pricePerUnit !== null && row.pricePerUnit !== undefined
-				? String(row.pricePerUnit)
-				: row.price_per_unit !== null && row.price_per_unit !== undefined
-				? String(row.price_per_unit)
-				: row.unitCostKopecks !== null && row.unitCostKopecks !== undefined
-				? String(kopecksToRubles(Number(row.unitCostKopecks)))
-				: "0",
+		unitCostRub: String(kopecksToRubles(resolvedUnitCostKopecks)),
 		updatedAt: typeof row.updatedAt === "string" ? row.updatedAt : "",
 		...(unit ? { unit } : {}),
 		...(sku ? { sku } : {}),

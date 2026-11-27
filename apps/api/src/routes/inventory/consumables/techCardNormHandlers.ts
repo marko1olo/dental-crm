@@ -6,7 +6,37 @@
 import { and, eq, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { isValidUuid } from "@dental/shared";
+import {
+	isValidUuid,
+	kopecksToNumericString,
+	rublesToKopecks,
+	toExactKopecks,
+} from "@dental/shared";
+
+function resolveInventoryItemUnitCost(row: {
+	unitCostKopecks: bigint | null;
+	pricePerUnitKopecks: bigint | null;
+	unitCostRub: string | null;
+}): { unitCostKopecks: number; pricePerUnitKopecks: number; unitCostRub: string } {
+	const legacyRub = Number(row.unitCostRub ?? 0);
+	const primaryKop =
+		row.unitCostKopecks !== null &&
+		(Number(row.unitCostKopecks) !== 0 || !Number.isFinite(legacyRub) || legacyRub === 0)
+			? Number(row.unitCostKopecks)
+			: row.pricePerUnitKopecks !== null &&
+				  (Number(row.pricePerUnitKopecks) !== 0 || !Number.isFinite(legacyRub) || legacyRub === 0)
+				? Number(row.pricePerUnitKopecks)
+				: rublesToKopecks(Number.isFinite(legacyRub) ? legacyRub : 0);
+	const pricePerUnitKop =
+		row.pricePerUnitKopecks !== null && Number(row.pricePerUnitKopecks) !== 0
+			? Number(row.pricePerUnitKopecks)
+			: primaryKop;
+	return {
+		unitCostKopecks: primaryKop,
+		pricePerUnitKopecks: pricePerUnitKop,
+		unitCostRub: kopecksToNumericString(toExactKopecks(primaryKop)),
+	};
+}
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -48,7 +78,7 @@ export async function registerTechCardNormHandlers(
 		if (!orgId) return;
 
 		const mappings = await withTenantCtx(orgId, async (tx) => {
-			return tx
+			const rows = await tx
 				.select({
 					id: treatmentConsumables.id,
 					organizationId: treatmentConsumables.organizationId,
@@ -62,6 +92,8 @@ export async function registerTechCardNormHandlers(
 					itemCategory: inventoryItems.category,
 					unit: inventoryItems.unit,
 					currentStock: inventoryItems.currentQty,
+					unitCostKopecks: inventoryItems.unitCostKopecks,
+					pricePerUnitKopecks: inventoryItems.pricePerUnitKopecks,
 					unitCostRub: inventoryItems.unitCostRub,
 				})
 				.from(treatmentConsumables)
@@ -70,6 +102,11 @@ export async function registerTechCardNormHandlers(
 					eq(treatmentConsumables.inventoryItemId, inventoryItems.id),
 				)
 				.where(eq(treatmentConsumables.organizationId, orgId));
+
+			return rows.map((row) => ({
+				...row,
+				...resolveInventoryItemUnitCost(row),
+			}));
 		});
 
 		return mappings;

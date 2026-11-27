@@ -14,6 +14,7 @@
  * - Saves the generated draft into `visits.draftAutosave` for 1-click review and signing.
  */
 
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import {
@@ -31,6 +32,16 @@ import {
 import { createApiLogger, safeLogError } from "../../observability/index.js";
 
 const logger = createApiLogger("emrSaviorDaemon");
+
+function resolveRowKopecks(
+	kopecksVal: bigint | number | null | undefined,
+	legacyRubVal: number | string | null | undefined,
+): number {
+	const kop = kopecksVal != null ? Number(kopecksVal) : 0;
+	if (Number.isFinite(kop) && kop !== 0) return Math.round(kop);
+	const rub = legacyRubVal != null ? Number(legacyRubVal) : 0;
+	return Number.isFinite(rub) ? rublesToKopecks(rub) : 0;
+}
 
 export interface EmrSaviorDraftAlert {
 	readonly id: string;
@@ -255,6 +266,7 @@ export async function runEmrSaviorScan(options?: {
 								id: payments.id,
 								organizationId: payments.organizationId,
 								visitId: payments.visitId,
+								amountKopecks: payments.amountKopecks,
 								amountRub: payments.amountRub,
 								note: payments.note,
 							})
@@ -272,6 +284,7 @@ export async function runEmrSaviorScan(options?: {
 								visitId: treatmentItems.visitId,
 								toothCode: treatmentItems.toothCode,
 								title: treatmentItems.title,
+								priceKopecks: treatmentItems.priceKopecks,
 								priceRub: treatmentItems.priceRub,
 							})
 							.from(treatmentItems)
@@ -291,6 +304,7 @@ export async function runEmrSaviorScan(options?: {
 								id: payments.id,
 								organizationId: payments.organizationId,
 								visitId: payments.visitId,
+								amountKopecks: payments.amountKopecks,
 								amountRub: payments.amountRub,
 								note: payments.note,
 							})
@@ -303,6 +317,7 @@ export async function runEmrSaviorScan(options?: {
 								visitId: treatmentItems.visitId,
 								toothCode: treatmentItems.toothCode,
 								title: treatmentItems.title,
+								priceKopecks: treatmentItems.priceKopecks,
 								priceRub: treatmentItems.priceRub,
 							})
 							.from(treatmentItems)
@@ -357,23 +372,25 @@ export async function runEmrSaviorScan(options?: {
 			}
 
 			const billedItems: Array<{ code: string | null; title: string; priceRub: number }> = [];
-			let totalBilled = 0;
+			let totalBilledKopecks = 0;
 
 			for (const p of visitPayments) {
-				totalBilled += Number(p.amountRub) || 0;
+				const amountKop = resolveRowKopecks(p.amountKopecks, p.amountRub);
+				totalBilledKopecks += amountKop;
 				billedItems.push({
 					code: "A16.07.002",
 					title: p.note || "Терапевтический прием (лечение кариеса/реставрация)",
-					priceRub: Number(p.amountRub) || 0,
+					priceRub: kopecksToRubles(amountKop),
 				});
 			}
 
 			for (const item of visitTreatmentItems) {
-				totalBilled += Number(item.priceRub) || 0;
+				const priceKop = resolveRowKopecks(item.priceKopecks, item.priceRub);
+				totalBilledKopecks += priceKop;
 				billedItems.push({
 					code: "A16.07.002",
 					title: item.title,
-					priceRub: Number(item.priceRub) || 0,
+					priceRub: kopecksToRubles(priceKop),
 				});
 			}
 
@@ -406,7 +423,7 @@ export async function runEmrSaviorScan(options?: {
 				doctorName,
 				visitDate: now.toLocaleDateString("ru-RU"),
 				billedServices: billedItems,
-				totalBilledRub: totalBilled,
+				totalBilledRub: kopecksToRubles(totalBilledKopecks),
 				generatedSoapDraft: soapDraft,
 				renderedDiaryText: soapDraft.form043Text,
 				createdAt: now.toISOString(),

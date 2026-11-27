@@ -174,6 +174,7 @@ export interface SurgicalActInput {
 		readonly serviceTitle?: string | null;
 		readonly serviceCode?: string | null;
 		readonly quantity?: number | string | null;
+		readonly priceKopecks?: bigint | number | null;
 		readonly priceRub?: number | string | null;
 	}>;
 }
@@ -186,6 +187,7 @@ export interface WarehouseTransactionInput {
 	readonly category?: string | null;
 	readonly qty?: number | string | null;
 	readonly quantityChanged?: number | string | null;
+	readonly unitCostKopecks?: bigint | number | null;
 	readonly unitCostRub?: number | string | null;
 	readonly notes?: string | null;
 }

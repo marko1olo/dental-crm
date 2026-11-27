@@ -38,4 +38,5 @@ export interface ClinicalServiceLookup {
 	id: string | undefined;
 	title: string;
 	price: number;
+	priceKopecks: number;
 }

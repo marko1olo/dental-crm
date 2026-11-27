@@ -26,8 +26,6 @@ export async function handleCreateBudgetLink(
 				status: treatmentPlans.status,
 				patientId: treatmentPlans.patientId,
 				doctorId: treatmentPlans.doctorId,
-				totalPriceRub: treatmentPlans.totalPriceRub,
-				planDiscountRub: treatmentPlans.planDiscountRub,
 			})
 			.from(treatmentPlans)
 			.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))

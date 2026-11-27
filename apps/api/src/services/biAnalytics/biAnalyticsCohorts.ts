@@ -1,3 +1,4 @@
+import { kopecksToRubles } from "@dental/shared";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
@@ -11,11 +12,13 @@ import {
 /**
  * ЕДИНИЦА И ОТБОР ВЫРУЧКИ.
  *
- * payments."amount_rub" — колонка integer в ЦЕЛЫХ РУБЛЯХ.
- * Правильную конвенцию задаёт routes/analytics.ts: `sum(amount_rub)` без деления.
+ * Первичный источник суммы платежа — `payments.amount_kopecks` (`BIGINT`),
+ * с fallback на `ROUND(payments.amount_rub * 100)::bigint` только для legacy-строк с `0`/`NULL`.
  * Отбирать нужно только оплаченные платежи `status = 'paid'`.
  */
 export const PAID_PAYMENTS_ONLY = eq(payments.status, "paid");
+
+const PAYMENT_KOPECKS_SQL = sql<string>`case when ${payments.amountKopecks} is not null and ${payments.amountKopecks} <> 0 then ${payments.amountKopecks}::bigint else round(coalesce(${payments.amountRub}, 0)::numeric * 100)::bigint end`;
 
 /**
  * Корзина выручки: месяц по часам клиники и сумма ОПЛАЧЕННЫХ платежей за него.
@@ -46,7 +49,7 @@ export async function computeCohortLtvAll(organizationIds: readonly string[]) {
 			const rows = await tx
 				.select({
 					month: sql<string>`to_char(${monthBucket}, 'YYYY-MM')`,
-					total: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
+					totalKopecks: sql<string>`coalesce(sum(${PAYMENT_KOPECKS_SQL}), 0)::bigint`,
 				})
 				.from(payments)
 				.where(
@@ -61,7 +64,7 @@ export async function computeCohortLtvAll(organizationIds: readonly string[]) {
 				organizationId,
 				rows.map((r) => ({
 					cohort: r.month,
-					"Month 1": Number(r.total ?? 0),
+					"Month 1": kopecksToRubles(Number(r.totalKopecks ?? 0)),
 				})),
 			);
 		});
@@ -118,7 +121,7 @@ export async function computeDoctorProfitabilityAll(
 			organizationId: payments.organizationId,
 			doctorId: visitDiaries.doctorId,
 			doctorName: users.fullName,
-			totalRevenue: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
+			totalRevenueKopecks: sql<string>`coalesce(sum(${PAYMENT_KOPECKS_SQL}), 0)::bigint`,
 		})
 		.from(payments)
 		.leftJoin(
@@ -145,7 +148,10 @@ export async function computeDoctorProfitabilityAll(
 			map.set(r.organizationId, []);
 		}
 		map.get(r.organizationId)?.push(
-			doctorProfitabilityRow(r.doctorName ?? "Врач не указан", r.totalRevenue),
+			doctorProfitabilityRow(
+				r.doctorName ?? "Врач не указан",
+				kopecksToRubles(Number(r.totalRevenueKopecks ?? 0)),
+			),
 		);
 	}
 

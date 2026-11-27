@@ -51,10 +51,16 @@ export async function completeBudgetSigning({
 	const signer = (parsedSignData.signerName || budget.patientFirstName || "Пациент").trim();
 
 	// Формируем неизменяемый документный хеш
+	const primaryNetKopecks =
+		budget.netTotalKopecks != null &&
+		(Number(budget.netTotalKopecks) !== 0 || Number(budget.netTotalRub || 0) === 0)
+			? Number(budget.netTotalKopecks)
+			: rublesToKopecks(Number(budget.netTotalRub) || 0);
 	const docData = JSON.stringify({
 		token: budget.token,
 		planId: budget.planId,
-		totalPriceRub: budget.netTotalRub,
+		totalPriceKopecks: primaryNetKopecks,
+		totalPriceRub: kopecksToRubles(primaryNetKopecks),
 		signer,
 		signedAtIso: signedAt.toISOString(),
 		ipHash: clientIpHash,
@@ -150,6 +156,7 @@ export async function completeBudgetSigning({
 						? Number(budget.discountKopecks)
 						: rublesToKopecks(Number(budget.discountRub) || 0);
 
+				let overrideTotalKopecks: number | undefined;
 				let overrideTotalRub: string | number | undefined;
 				if (normalizedSelectedTier && targetPlan.id === planToLock.id && normalizedSelectedTier !== anchorTier) {
 					const derived = buildDerived3TierSummary(
@@ -161,6 +168,7 @@ export async function completeBudgetSigning({
 						(t) => t.tierId === normalizedSelectedTier,
 					);
 					if (chosenSummary) {
+						overrideTotalKopecks = chosenSummary.netTotalKopecks;
 						overrideTotalRub = kopecksToNumericString(chosenSummary.netTotalKopecks);
 					}
 				}
@@ -210,19 +218,31 @@ export async function completeBudgetSigning({
 				});
 
 				// Создаем реальный счет/наряд в кассе в целочисленных копейках
+				const resolvedPlanTotalKopecks =
+					overrideTotalKopecks !== undefined
+						? BigInt(overrideTotalKopecks)
+						: updatedPlan?.totalPriceKopecks != null &&
+								(updatedPlan.totalPriceKopecks !== 0n || Number(updatedPlan.totalPriceRub ?? updatedPlan.totalPrice ?? 0) === 0)
+							? updatedPlan.totalPriceKopecks
+							: BigInt(baseNetKopecks);
+				const resolvedPlanDiscountKopecks =
+					updatedPlan?.planDiscountKopecks != null &&
+					(updatedPlan.planDiscountKopecks !== 0n || Number(updatedPlan.planDiscountRub ?? 0) === 0)
+						? updatedPlan.planDiscountKopecks
+						: BigInt(rublesToKopecks(Number(updatedPlan?.planDiscountRub ?? 0)));
 				await createInvoiceForApprovedPlan(tx, {
 					organizationId: budget.organizationId,
 					patientId: budget.patientId,
 					planId: targetPlan.id,
 					planName: updatedPlan?.name || targetPlan.name || "План лечения (подписан пациентом)",
+					totalPriceKopecks: resolvedPlanTotalKopecks,
+					planDiscountKopecks: resolvedPlanDiscountKopecks,
 					planTotalPriceRub:
 						overrideTotalRub ??
-						updatedPlan?.totalPriceRub ??
-						updatedPlan?.totalPrice ??
-						budget.netTotalRub,
+						kopecksToRubles(resolvedPlanTotalKopecks),
 					discountMode: updatedPlan?.discountMode ?? "plan_fixed",
 					planDiscountPercent: updatedPlan?.planDiscountPercent ? Number(updatedPlan.planDiscountPercent) : 0,
-					planDiscountRub: updatedPlan?.planDiscountRub ? Number(updatedPlan.planDiscountRub) : 0,
+					planDiscountRub: kopecksToRubles(resolvedPlanDiscountKopecks),
 				});
 
 				// Журнал аудита пишется строго внутри единой ACID-транзакции tx
@@ -301,7 +321,9 @@ export async function generateBudgetPortalToken(
 						name: treatmentPlans.name,
 						status: treatmentPlans.status,
 						totalPrice: treatmentPlans.totalPrice,
+						totalPriceKopecks: treatmentPlans.totalPriceKopecks,
 						totalPriceRub: treatmentPlans.totalPriceRub,
+						planDiscountKopecks: treatmentPlans.planDiscountKopecks,
 						planDiscountRub: treatmentPlans.planDiscountRub,
 						doctorId: treatmentPlans.doctorId,
 						patientId: treatmentPlans.patientId,
@@ -318,11 +340,21 @@ export async function generateBudgetPortalToken(
 					.limit(1);
 
 				if (planRow) {
-					if (planRow.totalPriceRub) {
-						computedTotal = Number(planRow.totalPriceRub) || computedTotal;
+					const rowTotalKop =
+						planRow.totalPriceKopecks != null &&
+						(Number(planRow.totalPriceKopecks) !== 0 || Number(planRow.totalPriceRub ?? planRow.totalPrice ?? 0) === 0)
+							? Number(planRow.totalPriceKopecks)
+							: rublesToKopecks(Number(planRow.totalPriceRub ?? planRow.totalPrice ?? 0) || 0);
+					if (rowTotalKop > 0) {
+						computedTotal = kopecksToRubles(rowTotalKop);
 					}
-					if (planRow.planDiscountRub) {
-						computedDiscount = Number(planRow.planDiscountRub) || computedDiscount;
+					const rowDiscountKop =
+						planRow.planDiscountKopecks != null &&
+						(Number(planRow.planDiscountKopecks) !== 0 || Number(planRow.planDiscountRub ?? 0) === 0)
+							? Number(planRow.planDiscountKopecks)
+							: rublesToKopecks(Number(planRow.planDiscountRub ?? 0) || 0);
+					if (rowDiscountKop > 0) {
+						computedDiscount = kopecksToRubles(rowDiscountKop);
 					}
 
 					// Загрузка пациента с изоляцией тенанта

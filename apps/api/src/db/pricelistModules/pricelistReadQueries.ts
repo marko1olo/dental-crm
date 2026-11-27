@@ -1,5 +1,6 @@
 import {
 	type ServiceCatalogItem,
+	kopecksToRubles,
 	rublesToKopecks,
 	serviceCatalogItemSchema,
 } from "@dental/shared";
@@ -41,8 +42,27 @@ export function useInMemory(): boolean {
 }
 
 function readMoneyRub(value: unknown): number | null {
+	if (value === null || value === undefined) return null;
 	const parsed = typeof value === "number" ? value : Number(value);
 	return Number.isFinite(parsed) ? parsed : null;
+}
+
+function readKopecksValue(value: unknown): number | null {
+	if (value === null || value === undefined) return null;
+	const parsed = typeof value === "bigint" ? Number(value) : typeof value === "number" ? value : Number(value);
+	return Number.isFinite(parsed) ? Math.round(parsed) : null;
+}
+
+function resolvePrimaryKopecks(
+	kopecksVal: unknown,
+	legacyRubVal: unknown,
+): number | null {
+	const kop = readKopecksValue(kopecksVal);
+	const legacyRub = readMoneyRub(legacyRubVal);
+	if (kop !== null && (kop !== 0 || legacyRub === null || legacyRub === 0)) {
+		return kop;
+	}
+	return legacyRub !== null ? rublesToKopecks(legacyRub) : null;
 }
 
 function readDurationMinutes(value: unknown): number | null {
@@ -86,8 +106,11 @@ export function projectServiceCatalogRows(
 	const rejected: RejectedServiceCatalogRow[] = [];
 
 	for (const row of rows) {
-		const basePriceRub = readMoneyRub(row.basePriceRub);
-		if (basePriceRub === null) {
+		const resolvedBasePriceKopecks = resolvePrimaryKopecks(
+			row.basePriceKopecks ?? row.priceKopecks,
+			row.basePriceRub ?? row.priceRub,
+		);
+		if (resolvedBasePriceKopecks === null) {
 			rejected.push({
 				code: row.code,
 				title: row.title,
@@ -96,6 +119,14 @@ export function projectServiceCatalogRows(
 			});
 			continue;
 		}
+		const basePriceRub = kopecksToRubles(resolvedBasePriceKopecks);
+		const resolvedPriceKopecks =
+			resolvePrimaryKopecks(row.priceKopecks, row.priceRub) ??
+			resolvedBasePriceKopecks;
+		const resolvedMaterialsCostKopecks =
+			resolvePrimaryKopecks(row.materialsCostKopecks, row.materialsCostRub) ?? 0;
+		const resolvedLabCostKopecks =
+			resolvePrimaryKopecks(row.labCostKopecks, row.labCostRub) ?? 0;
 		const durationMinutes = readDurationMinutes(row.durationMinutes);
 		if (durationMinutes === null) {
 			rejected.push({
@@ -120,14 +151,8 @@ export function projectServiceCatalogRows(
 			taxDeductible: row.taxDeductible,
 			active: row.isActive,
 			order804nCode: row.order804nCode ?? null,
-			materialsCostRub:
-				row.materialsCostRub !== null && row.materialsCostRub !== undefined
-					? Number(row.materialsCostRub)
-					: 0,
-			labCostRub:
-				row.labCostRub !== null && row.labCostRub !== undefined
-					? Number(row.labCostRub)
-					: 0,
+			materialsCostRub: kopecksToRubles(resolvedMaterialsCostKopecks),
+			labCostRub: kopecksToRubles(resolvedLabCostKopecks),
 			salaryPriceKopecks:
 				row.salaryPriceKopecks !== null && row.salaryPriceKopecks !== undefined
 					? Number(row.salaryPriceKopecks)
@@ -136,7 +161,7 @@ export function projectServiceCatalogRows(
 				row.tierPrices && typeof row.tierPrices === "object"
 					? (row.tierPrices as Record<string, unknown>)
 					: {},
-			priceKopecks: rublesToKopecks(basePriceRub),
+			priceKopecks: resolvedPriceKopecks,
 		});
 
 		if (!parsed.success) {

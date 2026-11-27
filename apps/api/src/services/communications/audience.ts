@@ -23,6 +23,7 @@
  * оператора в конце месяца.
  */
 
+import { kopecksToRubles } from "@dental/shared";
 import {
 	and,
 	eq,
@@ -334,10 +335,11 @@ async function debtByPatient(
 	tx?: TenantDb | undefined,
 ): Promise<Map<string, number>> {
 	const run = async (client: TenantDb) => {
+		const paymentAmountKopecksExpr = sql`case when ${payments.amountKopecks} is not null and ${payments.amountKopecks} <> 0 then ${payments.amountKopecks}::bigint else round(coalesce(${payments.amountRub}, 0)::numeric * 100)::bigint end`;
 		const paidRows = await client
 			.select({
 				patientId: payments.patientId,
-				total: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`,
+				totalKopecks: sql<string>`coalesce(sum(${paymentAmountKopecksExpr}), 0)::bigint`,
 			})
 			.from(payments)
 			.where(
@@ -348,6 +350,8 @@ async function debtByPatient(
 			)
 			.groupBy(payments.patientId);
 
+		const unitPriceKopecksExpr = sql`case when ${treatmentItems.unitPriceKopecks} is not null and ${treatmentItems.unitPriceKopecks} <> 0 then ${treatmentItems.unitPriceKopecks}::bigint else round(coalesce(${treatmentItems.unitPriceRub}, 0)::numeric * 100)::bigint end`;
+		const discountKopecksExpr = sql`case when ${treatmentItems.discountKopecks} is not null and ${treatmentItems.discountKopecks} <> 0 then ${treatmentItems.discountKopecks}::bigint else round(coalesce(${treatmentItems.discountRub}, 0)::numeric * 100)::bigint end`;
 		const plannedRows = await client
 			.select({
 				patientId: treatmentItems.patientId,
@@ -389,7 +393,7 @@ async function debtByPatient(
 				 * невозможным: у колонки есть ограничения `quantity > 0` и
 				 * `quantity = trunc(quantity)`.
 				 */
-				total: sql<number>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * ${treatmentItems.quantity} - ${treatmentItems.discountRub}, 0)), 0)::numeric(12,2)`,
+				totalKopecks: sql<string>`coalesce(sum(greatest(round(${unitPriceKopecksExpr} * ${treatmentItems.quantity})::bigint - ${discountKopecksExpr}, 0)), 0)::bigint`,
 			})
 			.from(treatmentItems)
 			.where(
@@ -407,12 +411,12 @@ async function debtByPatient(
 		: await withTenantCtx(organizationId, run);
 
 	const paid = new Map(
-		paidRows.map((row) => [row.patientId, Number(row.total)]),
+		paidRows.map((row) => [row.patientId, Number(row.totalKopecks ?? 0)]),
 	);
 	const debts = new Map<string, number>();
 	for (const row of plannedRows) {
-		const debt = Number(row.total) - (paid.get(row.patientId) ?? 0);
-		if (debt > 0) debts.set(row.patientId, debt);
+		const debtKopecks = Number(row.totalKopecks ?? 0) - (paid.get(row.patientId) ?? 0);
+		if (debtKopecks > 0) debts.set(row.patientId, kopecksToRubles(debtKopecks));
 	}
 	return debts;
 }

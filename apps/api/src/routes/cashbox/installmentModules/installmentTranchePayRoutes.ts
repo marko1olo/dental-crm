@@ -145,7 +145,12 @@ export function registerInstallmentTranchePayRoutes(app: FastifyInstance): void 
 					return { kind: "contract_not_found" as const };
 				}
 
-				const replayAmountRub = existingPayment?.amountRub ?? existingOp?.amountRub ?? 0;
+				const replayAmountKopecks = existingPayment
+					? resolveSafeKopecks(existingPayment.amountKopecks, existingPayment.amountRub)
+					: existingOp
+						? resolveSafeKopecks(existingOp.amountKopecks, existingOp.amountRub)
+						: 0;
+				const replayAmountRub = kopecksToRubles(replayAmountKopecks);
 
 				return {
 					kind: "ok" as const,

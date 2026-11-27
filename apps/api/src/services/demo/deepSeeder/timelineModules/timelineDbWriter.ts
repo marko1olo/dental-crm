@@ -3,7 +3,7 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { SHOWCASE_PATIENTS } from "@dental/shared";
+import { rublesToKopecks, SHOWCASE_PATIENTS } from "@dental/shared";
 import {
 	patients,
 	serviceCatalogItems,
@@ -195,6 +195,7 @@ export async function writePatientTreatmentPlan(
 			status: "Active",
 			totalPriceRub: "18500.00",
 			totalPrice: "18500.00",
+			totalPriceKopecks: BigInt(rublesToKopecks(18500)),
 			approvedAt: new Date(),
 		})
 		.onConflictDoNothing()
@@ -249,6 +250,8 @@ export async function writePatientTreatmentItems(
 			id: serviceCatalogItems.id,
 			code: serviceCatalogItems.code,
 			title: serviceCatalogItems.title,
+			basePriceKopecks: serviceCatalogItems.basePriceKopecks,
+			priceKopecks: serviceCatalogItems.priceKopecks,
 			basePriceRub: serviceCatalogItems.basePriceRub,
 		})
 		.from(serviceCatalogItems)

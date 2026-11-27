@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
+	kopecksToRubles,
 	rublesToKopecks,
 	type DocumentIssueSignatureAttestation,
 	type DocumentReleaseJournalEntry,
@@ -98,6 +99,12 @@ function toSafeIsoString(date: unknown, fallbackIso: string | null = null): stri
 function mapDocument(
 	record: typeof schema.generatedDocuments.$inferSelect,
 ): GeneratedDocument {
+	const resolvedTotalAmountKopecks =
+		record.totalAmountKopecks !== null && record.totalAmountKopecks !== undefined
+			? Number(record.totalAmountKopecks)
+			: (record.totalAmountRub !== null && record.totalAmountRub !== undefined
+				? rublesToKopecks(record.totalAmountRub)
+				: null);
 	return {
 		id: record.id,
 		organizationId: record.organizationId,
@@ -107,13 +114,11 @@ function mapDocument(
 		status: record.status,
 		title: record.title,
 		storagePath: record.storagePath,
-		totalAmountRub: record.totalAmountRub,
-		totalAmountKopecks:
-			record.totalAmountKopecks !== null && record.totalAmountKopecks !== undefined
-				? Number(record.totalAmountKopecks)
-				: (record.totalAmountRub !== null && record.totalAmountRub !== undefined
-					? rublesToKopecks(record.totalAmountRub)
-					: null),
+		totalAmountRub:
+			resolvedTotalAmountKopecks !== null
+				? kopecksToRubles(resolvedTotalAmountKopecks)
+				: record.totalAmountRub,
+		totalAmountKopecks: resolvedTotalAmountKopecks,
 		taxYear: record.taxYear,
 		taxPayerInn: record.taxPayerInn,
 		payload: safeJsonParse<Record<string, unknown> | null>(record.payloadJson, null),
@@ -257,6 +262,16 @@ export async function createGeneratedDocumentInDb(
 			}
 		}
 		const title = input.title?.trim() || documentTitles[input.kind] || "Документ";
+		const resolvedTotalAmountKopecks =
+			input.totalAmountKopecks !== undefined && input.totalAmountKopecks !== null
+				? BigInt(input.totalAmountKopecks)
+				: (input.totalAmountRub !== undefined && input.totalAmountRub !== null
+					? BigInt(rublesToKopecks(input.totalAmountRub))
+					: null);
+		const resolvedTotalAmountRub =
+			resolvedTotalAmountKopecks !== null
+				? kopecksToRubles(resolvedTotalAmountKopecks)
+				: (input.totalAmountRub ?? null);
 		const [record] = await client
 			.insert(schema.generatedDocuments)
 			.values({
@@ -266,13 +281,8 @@ export async function createGeneratedDocumentInDb(
 				kind: input.kind,
 				title: title.length > 240 ? title.slice(0, 240) : title,
 				status: "draft",
-				totalAmountRub: input.totalAmountRub ?? null,
-				totalAmountKopecks:
-					input.totalAmountKopecks !== undefined && input.totalAmountKopecks !== null
-						? BigInt(input.totalAmountKopecks)
-						: (input.totalAmountRub !== undefined && input.totalAmountRub !== null
-							? BigInt(rublesToKopecks(input.totalAmountRub))
-							: null),
+				totalAmountRub: resolvedTotalAmountRub,
+				totalAmountKopecks: resolvedTotalAmountKopecks,
 				taxYear: input.taxYear ?? null,
 				taxPayerInn: input.taxPayerInn ?? null,
 				payloadJson: input.payload ? JSON.stringify(input.payload) : null,
@@ -379,6 +389,17 @@ export async function issueGeneratedDocumentInDb(
 				}
 			: null;
 
+		const resolvedTotalAmountKopecks =
+			options.totalAmountKopecks !== undefined && options.totalAmountKopecks !== null
+				? BigInt(options.totalAmountKopecks)
+				: (options.totalAmountRub !== undefined && options.totalAmountRub !== null
+					? BigInt(rublesToKopecks(options.totalAmountRub))
+					: existing.totalAmountKopecks);
+		const resolvedTotalAmountRub =
+			resolvedTotalAmountKopecks !== null
+				? kopecksToRubles(resolvedTotalAmountKopecks)
+				: existing.totalAmountRub;
+
 		const [updated] = await client
 			.update(schema.generatedDocuments)
 			.set({
@@ -397,13 +418,8 @@ export async function issueGeneratedDocumentInDb(
 					options.taxXmlSnapshot !== undefined
 						? options.taxXmlSnapshot
 						: existing.taxXmlSnapshot,
-				totalAmountRub: options.totalAmountRub ?? existing.totalAmountRub,
-				totalAmountKopecks:
-					options.totalAmountKopecks !== undefined && options.totalAmountKopecks !== null
-						? BigInt(options.totalAmountKopecks)
-						: (options.totalAmountRub !== undefined && options.totalAmountRub !== null
-							? BigInt(rublesToKopecks(options.totalAmountRub))
-							: existing.totalAmountKopecks),
+				totalAmountRub: resolvedTotalAmountRub,
+				totalAmountKopecks: resolvedTotalAmountKopecks,
 				...(snapshotMeta
 					? {
 							storagePath: snapshotMeta.snapshotPath,

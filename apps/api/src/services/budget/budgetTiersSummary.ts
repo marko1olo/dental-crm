@@ -59,17 +59,23 @@ function normalizeTierKey(rawTier: string | null | undefined): TierKey | null {
 	return null;
 }
 
-function resolvePlanNetKopecks(plan: {
+export function resolvePlanNetKopecks(plan: {
 	totalPriceKopecks: bigint | number | null;
 	totalPriceRub: string | number | null;
 	totalPrice: string | number | null;
-	planDiscountRub: string | number | null;
+	planDiscountKopecks?: bigint | number | null | undefined;
+	planDiscountRub?: string | number | null | undefined;
 }): { readonly netKopecks: number; readonly discountKopecks: number } {
 	const grossKop =
-		plan.totalPriceKopecks != null && Number(plan.totalPriceKopecks) > 0
+		plan.totalPriceKopecks != null &&
+		(Number(plan.totalPriceKopecks) !== 0 || Number(plan.totalPriceRub ?? plan.totalPrice ?? 0) === 0)
 			? Math.round(Number(plan.totalPriceKopecks))
 			: rublesToKopecks(Number(plan.totalPriceRub ?? plan.totalPrice ?? 0) || 0);
-	const discKop = rublesToKopecks(Number(plan.planDiscountRub ?? 0) || 0);
+	const discKop =
+		plan.planDiscountKopecks != null &&
+		(Number(plan.planDiscountKopecks) !== 0 || Number(plan.planDiscountRub ?? 0) === 0)
+			? Math.round(Number(plan.planDiscountKopecks))
+			: rublesToKopecks(Number(plan.planDiscountRub ?? 0) || 0);
 	return {
 		netKopecks: Math.max(0, grossKop - discKop),
 		discountKopecks: Math.max(0, discKop),
@@ -192,6 +198,7 @@ export async function loadPublicBudgetTiersSummary(params: {
 					totalPriceKopecks: treatmentPlans.totalPriceKopecks,
 					totalPriceRub: treatmentPlans.totalPriceRub,
 					totalPrice: treatmentPlans.totalPrice,
+					planDiscountKopecks: treatmentPlans.planDiscountKopecks,
 					planDiscountRub: treatmentPlans.planDiscountRub,
 				})
 				.from(treatmentPlans)

@@ -164,12 +164,12 @@ export async function queryExecutiveKpiAndFunnel(
 		);
 
 		// 4. Планы лечения и санация
+		const planPriceKopecksExpr = sql`case when ${treatmentPlans.totalPriceKopecks} is not null and ${treatmentPlans.totalPriceKopecks} <> 0 then ${treatmentPlans.totalPriceKopecks}::bigint else round(coalesce(${treatmentPlans.totalPriceRub}, 0)::numeric * 100)::bigint end`;
 		const planStats = await tx
 			.select({
 				status: treatmentPlans.status,
 				count: sql<number>`count(*)::int`,
-				totalPriceKopecks: sql<number>`coalesce(sum(coalesce(${treatmentPlans.totalPriceKopecks}, 0)), 0)::bigint`,
-				totalRub: sql<number>`coalesce(sum(${treatmentPlans.totalPriceRub}), 0)`,
+				totalPriceKopecks: sql<number>`coalesce(sum(${planPriceKopecksExpr}), 0)::bigint`,
 			})
 			.from(treatmentPlans)
 			.where(
@@ -189,7 +189,7 @@ export async function queryExecutiveKpiAndFunnel(
 
 		for (const row of planStats) {
 			const count = Number(row.count || 0);
-			const volKop = Number(row.totalPriceKopecks || rublesToKopecks(Number(row.totalRub || 0)));
+			const volKop = Number(row.totalPriceKopecks || 0);
 			plansPresentedCount += count;
 			plansPresentedVolumeKopecks += volKop;
 

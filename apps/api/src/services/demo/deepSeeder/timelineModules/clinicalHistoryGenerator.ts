@@ -2,6 +2,7 @@
  * clinicalHistoryGenerator.ts — Deterministic Generator for Clinical Episodes, Tooth States & Treatment Items (Layer 1/2).
  */
 
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import {
 	DEMO_TREATMENT_ITEM_1_ID,
 	DEMO_TREATMENT_ITEM_2_ID,
@@ -153,27 +154,46 @@ export function buildPatientVisitDiaryValues(params: {
 	};
 }
 
+interface CatalogServicePriceInput {
+	id: string;
+	code?: string | null | undefined;
+	title: string;
+	basePriceKopecks?: bigint | number | null | undefined;
+	priceKopecks?: bigint | number | null | undefined;
+	basePriceRub?: number | string | null | undefined;
+}
+
+function resolveCatalogServiceKopecks(
+	row: CatalogServicePriceInput,
+	fallbackPriceRub: number,
+): number {
+	const baseKop = row.basePriceKopecks != null ? Number(row.basePriceKopecks) : 0;
+	if (Number.isFinite(baseKop) && baseKop > 0) return Math.round(baseKop);
+	const priceKop = row.priceKopecks != null ? Number(row.priceKopecks) : 0;
+	if (Number.isFinite(priceKop) && priceKop > 0) return Math.round(priceKop);
+	const legacyRub = row.basePriceRub != null ? Number(row.basePriceRub) : 0;
+	if (Number.isFinite(legacyRub) && legacyRub > 0) return rublesToKopecks(legacyRub);
+	return rublesToKopecks(fallbackPriceRub);
+}
+
 /**
  * Поиск номенклатурной услуги в каталоге организации по коду 804н с безопасным фолбеком.
  */
 export function findCatalogService(
-	catalogRows: Array<{
-		id: string;
-		code: string | null;
-		title: string;
-		basePriceRub: number | string | null;
-	}>,
-	byCode: Map<string, { id: string; title: string; basePriceRub: number | string | null }>,
+	catalogRows: Array<CatalogServicePriceInput>,
+	byCode: Map<string, CatalogServicePriceInput>,
 	code: string,
 	fallbackTitle: string,
 	fallbackPrice: number,
 ): ClinicalServiceLookup {
 	const found = byCode.get(code.toUpperCase());
 	if (found && found.id) {
+		const priceKopecks = resolveCatalogServiceKopecks(found, fallbackPrice);
 		return {
 			id: found.id,
 			title: found.title,
-			price: found.basePriceRub ? Number(found.basePriceRub) : fallbackPrice,
+			price: kopecksToRubles(priceKopecks),
+			priceKopecks,
 		};
 	}
 	const normalizedPrefix = fallbackTitle.trim().toLowerCase().slice(0, 28);
@@ -183,16 +203,19 @@ export function findCatalogService(
 			)
 		: undefined;
 	if (byTitle && byTitle.id) {
+		const priceKopecks = resolveCatalogServiceKopecks(byTitle, fallbackPrice);
 		return {
 			id: byTitle.id,
 			title: byTitle.title,
-			price: byTitle.basePriceRub ? Number(byTitle.basePriceRub) : fallbackPrice,
+			price: kopecksToRubles(priceKopecks),
+			priceKopecks,
 		};
 	}
 	return {
 		id: undefined,
 		title: fallbackTitle,
 		price: fallbackPrice,
+		priceKopecks: rublesToKopecks(fallbackPrice),
 	};
 }
 
@@ -202,12 +225,7 @@ export function findCatalogService(
 export function buildDeterministicTreatmentItems(
 	params: PatientTreatmentItemsParams & {
 		isCanonicalDemo: boolean;
-		catalogRows: Array<{
-			id: string;
-			code: string | null;
-			title: string;
-			basePriceRub: number | string | null;
-		}>;
+		catalogRows: Array<CatalogServicePriceInput>;
 	},
 ) {
 	const {
@@ -225,10 +243,7 @@ export function buildDeterministicTreatmentItems(
 		catalogRows,
 	} = params;
 
-	const byCode = new Map<
-		string,
-		{ id: string; title: string; basePriceRub: number | string | null }
-	>();
+	const byCode = new Map<string, CatalogServicePriceInput>();
 	for (const row of catalogRows) {
 		if (row.code) {
 			byCode.set(row.code.trim().toUpperCase(), row);
@@ -307,6 +322,9 @@ export function buildDeterministicTreatmentItems(
 			priceRub: sTherapyConsult.price,
 			unitPriceRub: sTherapyConsult.price,
 			discountRub: 0,
+			priceKopecks: BigInt(sTherapyConsult.priceKopecks),
+			unitPriceKopecks: BigInt(sTherapyConsult.priceKopecks),
+			discountKopecks: 0n,
 			status: "completed" as const,
 			plannedDoctorUserId: doctorUserId,
 			plannedChairId: chair1Id,
@@ -324,6 +342,9 @@ export function buildDeterministicTreatmentItems(
 			priceRub: sAnesthesia.price,
 			unitPriceRub: sAnesthesia.price,
 			discountRub: 0,
+			priceKopecks: BigInt(sAnesthesia.priceKopecks),
+			unitPriceKopecks: BigInt(sAnesthesia.priceKopecks),
+			discountKopecks: 0n,
 			status: "completed" as const,
 			plannedDoctorUserId: doctorUserId,
 			plannedChairId: chair1Id,
@@ -341,6 +362,9 @@ export function buildDeterministicTreatmentItems(
 			priceRub: sCofferdam.price,
 			unitPriceRub: sCofferdam.price,
 			discountRub: 0,
+			priceKopecks: BigInt(sCofferdam.priceKopecks),
+			unitPriceKopecks: BigInt(sCofferdam.priceKopecks),
+			discountKopecks: 0n,
 			status: "completed" as const,
 			plannedDoctorUserId: doctorUserId,
 			plannedChairId: chair1Id,
@@ -358,6 +382,9 @@ export function buildDeterministicTreatmentItems(
 			priceRub: sFillingCaries.price,
 			unitPriceRub: sFillingCaries.price,
 			discountRub: 0,
+			priceKopecks: BigInt(sFillingCaries.priceKopecks),
+			unitPriceKopecks: BigInt(sFillingCaries.priceKopecks),
+			discountKopecks: 0n,
 			status: "completed" as const,
 			plannedDoctorUserId: doctorUserId,
 			plannedChairId: chair1Id,
@@ -376,6 +403,9 @@ export function buildDeterministicTreatmentItems(
 			priceRub: sEndoPrep.price,
 			unitPriceRub: sEndoPrep.price,
 			discountRub: 0,
+			priceKopecks: BigInt(sEndoPrep.priceKopecks),
+			unitPriceKopecks: BigInt(sEndoPrep.priceKopecks),
+			discountKopecks: 0n,
 			status: "approved" as const,
 			plannedDoctorUserId: doctorUserId,
 			plannedChairId: chair1Id,
@@ -393,6 +423,9 @@ export function buildDeterministicTreatmentItems(
 			priceRub: sEndoObturation.price,
 			unitPriceRub: sEndoObturation.price,
 			discountRub: 0,
+			priceKopecks: BigInt(sEndoObturation.priceKopecks),
+			unitPriceKopecks: BigInt(sEndoObturation.priceKopecks),
+			discountKopecks: 0n,
 			status: "proposed" as const,
 			plannedDoctorUserId: doctorUserId,
 			plannedChairId: chair1Id,
@@ -412,6 +445,9 @@ export function buildDeterministicTreatmentItems(
 			priceRub: sCrownZirconia.price,
 			unitPriceRub: sCrownZirconia.price,
 			discountRub: 0,
+			priceKopecks: BigInt(sCrownZirconia.priceKopecks),
+			unitPriceKopecks: BigInt(sCrownZirconia.priceKopecks),
+			discountKopecks: 0n,
 			status: "in_progress" as const,
 			plannedDoctorUserId: orthopedistUserId,
 			plannedChairId: chair2Id,
@@ -431,6 +467,9 @@ export function buildDeterministicTreatmentItems(
 			priceRub: sImplant.price,
 			unitPriceRub: sImplant.price,
 			discountRub: 0,
+			priceKopecks: BigInt(sImplant.priceKopecks),
+			unitPriceKopecks: BigInt(sImplant.priceKopecks),
+			discountKopecks: 0n,
 			status: "proposed" as const,
 			plannedDoctorUserId: surgeonUserId,
 			plannedChairId: chair2Id,

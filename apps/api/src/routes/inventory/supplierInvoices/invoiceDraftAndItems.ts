@@ -191,6 +191,7 @@ export const registerSupplierInvoiceQueries = (server: FastifyInstance): void =>
 						notes: inventoryTransactions.notes,
 						metadata: inventoryTransactions.metadata,
 						quantity: inventoryTransactions.quantityChanged,
+						unitCostKopecks: inventoryTransactions.unitCostKopecks,
 						unitCostRub: inventoryTransactions.unitCostRub,
 						itemId: inventoryTransactions.itemId,
 						itemName: inventoryItems.name,
@@ -293,8 +294,13 @@ export const registerSupplierInvoiceQueries = (server: FastifyInstance): void =>
 					const group = waybillsMap.get(groupKey);
 					if (group) {
 						const qty = Math.abs(Number(r.quantity) || 1);
-						const costRub = Number(r.unitCostRub) || 0;
-						const unitPriceKopecks = rublesToKopecks(costRub);
+						const legacyCostRub = Number(r.unitCostRub) || 0;
+						const unitPriceKopecks =
+							r.unitCostKopecks !== null &&
+							r.unitCostKopecks !== undefined &&
+							(Number(r.unitCostKopecks) !== 0 || legacyCostRub === 0)
+								? Number(r.unitCostKopecks)
+								: rublesToKopecks(legacyCostRub);
 						const subtotalKopecks = Math.round(qty * unitPriceKopecks);
 
 						group.items.push({

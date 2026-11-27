@@ -72,7 +72,7 @@ export async function buildCatalogXml(params: ExportCatalogParams): Promise<OneC
 				code: serviceCatalogItems.code,
 				order804nCode: serviceCatalogItems.order804nCode,
 				title: serviceCatalogItems.title,
-				priceRub: serviceCatalogItems.priceRub,
+				priceKopecks: serviceCatalogItems.priceKopecks,
 				category: serviceCatalogItems.category,
 				isActive: serviceCatalogItems.isActive,
 			})

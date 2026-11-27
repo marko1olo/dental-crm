@@ -6,6 +6,7 @@
  * Detects missing write-offs, SKU/brand discrepancies (пересорт), and unrecorded biomaterials.
  */
 
+import { kopecksToRubles } from "@dental/shared";
 import { and, desc, eq, gte, lte, or, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import {
@@ -92,6 +93,31 @@ export function extractRecognizedBrand(text: string): string | null {
 	return null;
 }
 
+function resolvePrimaryUnitCostRub(
+	unitCostKopecks: bigint | number | null | undefined,
+	legacyUnitCostRub: number | string | null | undefined,
+): number | null {
+	const kop = unitCostKopecks != null ? Number(unitCostKopecks) : null;
+	const legacyRub = legacyUnitCostRub != null ? Number(legacyUnitCostRub) : null;
+	if (kop !== null && Number.isFinite(kop) && (kop !== 0 || legacyRub === null || !Number.isFinite(legacyRub) || legacyRub === 0)) {
+		return kopecksToRubles(kop);
+	}
+	return legacyRub !== null && Number.isFinite(legacyRub) ? legacyRub : null;
+}
+
+function resolvePrimaryItemPriceRub(
+	priceKopecks: bigint | number | null | undefined,
+	legacyPriceRub: number | string | null | undefined,
+	fallbackRub: number,
+): number {
+	const kop = priceKopecks != null ? Number(priceKopecks) : 0;
+	if (Number.isFinite(kop) && kop > 0) {
+		return kopecksToRubles(kop);
+	}
+	const legacyRub = legacyPriceRub != null ? Number(legacyPriceRub) : 0;
+	return Number.isFinite(legacyRub) && legacyRub > 0 ? legacyRub : fallbackRub;
+}
+
 /**
  * Reconciles a single surgical act against warehouse stock movement transactions.
  * Pure evaluation function for deterministic unit testing.
@@ -109,7 +135,7 @@ export function reconcileSurgicalActWithInventory(
 		itemId: t.itemId ?? null,
 		itemName: t.itemName || t.notes || "ТМЦ со склада",
 		quantityDeducted: Math.abs(Number(t.quantityChanged ?? t.qty ?? 0)),
-		unitCostRub: t.unitCostRub != null ? Number(t.unitCostRub) : null,
+		unitCostRub: resolvePrimaryUnitCostRub(t.unitCostKopecks, t.unitCostRub),
 	}));
 
 	// 1. Cross-reference clinical implant installations
@@ -323,7 +349,7 @@ export function reconcileSurgicalActWithInventory(
 						brand: recognizedBrand,
 						sku: itemCode,
 						quantity: Number(item.quantity) || 1,
-						estimatedPriceRub: Number(item.priceRub) || 35000,
+						estimatedPriceRub: resolvePrimaryItemPriceRub(item.priceKopecks, item.priceRub, 35000),
 						lotNumber: null,
 						toothNumberFdi: null,
 					},
@@ -369,7 +395,7 @@ export function reconcileSurgicalActWithInventory(
 							brand: recognizedBrand,
 							sku: itemCode,
 							quantity: Number(item.quantity) || 1,
-							estimatedPriceRub: Number(item.priceRub) || 55000,
+							estimatedPriceRub: resolvePrimaryItemPriceRub(item.priceKopecks, item.priceRub, 55000),
 							lotNumber: null,
 							toothNumberFdi: null,
 						},
@@ -491,6 +517,7 @@ export async function runExpensiveMaterialsInventoryAudit(options?: ExpensiveMat
 					id: treatmentItems.id,
 					serviceId: treatmentItems.serviceId,
 					quantity: treatmentItems.quantity,
+					priceKopecks: treatmentItems.priceKopecks,
 					priceRub: treatmentItems.priceRub,
 					status: treatmentItems.status,
 					serviceTitle: services.title,
@@ -527,6 +554,7 @@ export async function runExpensiveMaterialsInventoryAudit(options?: ExpensiveMat
 					transactionType: inventoryTransactions.transactionType,
 					qty: inventoryTransactions.qty,
 					quantityChanged: inventoryTransactions.quantityChanged,
+					unitCostKopecks: inventoryTransactions.unitCostKopecks,
 					unitCostRub: inventoryTransactions.unitCostRub,
 					notes: inventoryTransactions.notes,
 					createdAt: inventoryTransactions.createdAt,

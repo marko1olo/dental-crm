@@ -99,6 +99,7 @@ export async function handleUpsertPatientTreatmentPlan(
 						version: treatmentPlans.version,
 						discountMode: treatmentPlans.discountMode,
 						planDiscountPercent: treatmentPlans.planDiscountPercent,
+						planDiscountKopecks: treatmentPlans.planDiscountKopecks,
 						planDiscountRub: treatmentPlans.planDiscountRub,
 					})
 					.from(treatmentPlans)
@@ -118,6 +119,14 @@ export async function handleUpsertPatientTreatmentPlan(
 					isRevision = true;
 				}
 
+				const hasExplicitDiscountInput =
+					input.planDiscountRub !== undefined || input.planDiscountPercent !== undefined;
+				const existingDiscountKopecks =
+					!hasExplicitDiscountInput &&
+					existing.planDiscountKopecks != null &&
+					(Number(existing.planDiscountKopecks) !== 0 || Number(existing.planDiscountRub ?? 0) === 0)
+						? existing.planDiscountKopecks
+						: undefined;
 				const effectiveDiscount = calculateEffectivePlanDiscount({
 					baseTotalKopecks: calculatedTotals.totalPriceKopecks,
 					discountMode: input.discountMode ?? existing.discountMode ?? "plan_fixed",
@@ -127,6 +136,9 @@ export async function handleUpsertPatientTreatmentPlan(
 					planDiscountRub: input.planDiscountRub !== undefined
 						? input.planDiscountRub
 						: Number(existing.planDiscountRub ?? 0),
+					...(existingDiscountKopecks !== undefined
+						? { planDiscountKopecks: existingDiscountKopecks }
+						: {}),
 				});
 				totalPriceKopecks = effectiveDiscount.finalTotalKopecks;
 				const effectiveTotalPriceText = debtNumericText(totalPriceKopecks);

@@ -1,5 +1,30 @@
-import { isValidUuid } from "@dental/shared";
+import {
+	isValidUuid,
+	kopecksToNumericString,
+	rublesToKopecks,
+	toExactKopecks,
+} from "@dental/shared";
 import { and, eq, inArray } from "drizzle-orm";
+
+function resolveRuleUnitCost(row: {
+	unitCostKopecks: bigint | null;
+	pricePerUnitKopecks: bigint | null;
+	unitCostRub: string | null;
+}): { unitCostKopecks: number; unitCostRub: string } {
+	const legacyRub = Number(row.unitCostRub ?? 0);
+	const resolvedKop =
+		row.unitCostKopecks !== null &&
+		(Number(row.unitCostKopecks) !== 0 || !Number.isFinite(legacyRub) || legacyRub === 0)
+			? Number(row.unitCostKopecks)
+			: row.pricePerUnitKopecks !== null &&
+				  (Number(row.pricePerUnitKopecks) !== 0 || !Number.isFinite(legacyRub) || legacyRub === 0)
+				? Number(row.pricePerUnitKopecks)
+				: rublesToKopecks(Number.isFinite(legacyRub) ? legacyRub : 0);
+	return {
+		unitCostKopecks: resolvedKop,
+		unitCostRub: kopecksToNumericString(toExactKopecks(resolvedKop)),
+	};
+}
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import {
 	requireResolvedOrganizationId,
@@ -152,6 +177,8 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 					category: inventoryItems.category,
 					unit: inventoryItems.unit,
 					stockQuantity: inventoryItems.stockQuantity,
+					unitCostKopecks: inventoryItems.unitCostKopecks,
+					pricePerUnitKopecks: inventoryItems.pricePerUnitKopecks,
 					unitCostRub: inventoryItems.unitCostRub,
 					criticalThreshold: inventoryItems.criticalThreshold,
 					quantityToDeduct: procedureMaterialRules.quantityToDeduct,
@@ -169,7 +196,14 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 				)
 				.where(and(...conditions));
 
-			return rules;
+			return rules.map(({ pricePerUnitKopecks, ...rule }) => ({
+				...rule,
+				...resolveRuleUnitCost({
+					unitCostKopecks: rule.unitCostKopecks,
+					pricePerUnitKopecks,
+					unitCostRub: rule.unitCostRub,
+				}),
+			}));
 		});
 	});
 
@@ -243,6 +277,8 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 						createdAt: procedureMaterialRules.createdAt,
 						itemName: inventoryItems.name,
 						unit: inventoryItems.unit,
+						unitCostKopecks: inventoryItems.unitCostKopecks,
+						pricePerUnitKopecks: inventoryItems.pricePerUnitKopecks,
 						unitCostRub: inventoryItems.unitCostRub,
 						stockQuantity: inventoryItems.stockQuantity,
 					})
@@ -258,7 +294,14 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 						),
 					);
 
-				return rules;
+				return rules.map(({ pricePerUnitKopecks, ...rule }) => ({
+					...rule,
+					...resolveRuleUnitCost({
+						unitCostKopecks: rule.unitCostKopecks,
+						pricePerUnitKopecks,
+						unitCostRub: rule.unitCostRub,
+					}),
+				}));
 			});
 		},
 	);

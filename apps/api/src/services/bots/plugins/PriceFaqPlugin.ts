@@ -1,4 +1,5 @@
-import { and, desc, eq, ilike, or } from "drizzle-orm";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { and, desc, eq, ilike, sql } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import { serviceCatalogItems } from "../../../db/schema.js";
 import type {
@@ -7,6 +8,19 @@ import type {
 	BotReply,
 	OmnichannelBotRuntime,
 } from "../types.js";
+
+export function resolvePriceFaqItemKopecks(item: {
+	basePriceKopecks?: bigint | number | null | undefined;
+	priceKopecks?: bigint | number | null | undefined;
+	basePriceRub?: number | string | null | undefined;
+}): number {
+	const baseKop = item.basePriceKopecks != null ? Number(item.basePriceKopecks) : 0;
+	if (Number.isFinite(baseKop) && baseKop > 0) return Math.round(baseKop);
+	const priceKop = item.priceKopecks != null ? Number(item.priceKopecks) : 0;
+	if (Number.isFinite(priceKop) && priceKop > 0) return Math.round(priceKop);
+	const legacyRub = item.basePriceRub != null ? Number(item.basePriceRub) : 0;
+	return Number.isFinite(legacyRub) && legacyRub > 0 ? rublesToKopecks(legacyRub) : 0;
+}
 
 /**
  * Плагин автоматического ответа по прейскуранту клиники (Price FAQ Auto-responder).
@@ -86,10 +100,13 @@ export class PriceFaqPlugin implements BotPlugin {
 			}
 
 			// Выполняем поиск по реальной таблице `serviceCatalogItems` клиники
+			const effectivePriceKopecksExpr = sql`COALESCE(NULLIF(${serviceCatalogItems.basePriceKopecks}, 0), NULLIF(${serviceCatalogItems.priceKopecks}, 0), ROUND(COALESCE(${serviceCatalogItems.basePriceRub}, 0) * 100)::bigint)`;
 			const matchedServices = await tx
 				.select({
 					id: serviceCatalogItems.id,
 					title: serviceCatalogItems.title,
+					basePriceKopecks: serviceCatalogItems.basePriceKopecks,
+					priceKopecks: serviceCatalogItems.priceKopecks,
 					basePriceRub: serviceCatalogItems.basePriceRub,
 					code: serviceCatalogItems.code,
 					category: serviceCatalogItems.category,
@@ -102,7 +119,7 @@ export class PriceFaqPlugin implements BotPlugin {
 						searchQuery ? ilike(serviceCatalogItems.title, `%${searchQuery}%`) : undefined,
 					),
 				)
-				.orderBy(desc(serviceCatalogItems.basePriceRub))
+				.orderBy(desc(effectivePriceKopecksExpr))
 				.limit(6);
 
 			if (matchedServices.length === 0) {
@@ -111,6 +128,8 @@ export class PriceFaqPlugin implements BotPlugin {
 					.select({
 						id: serviceCatalogItems.id,
 						title: serviceCatalogItems.title,
+						basePriceKopecks: serviceCatalogItems.basePriceKopecks,
+						priceKopecks: serviceCatalogItems.priceKopecks,
 						basePriceRub: serviceCatalogItems.basePriceRub,
 						code: serviceCatalogItems.code,
 					})
@@ -147,7 +166,7 @@ export class PriceFaqPlugin implements BotPlugin {
 				}
 
 				const lines = defaultServices.map((s) => {
-					const rub = Math.round(Number(s.basePriceRub));
+					const rub = Math.round(kopecksToRubles(resolvePriceFaqItemKopecks(s)));
 					return `• <b>${s.title}</b>: ${rub.toLocaleString("ru-RU")} ₽`;
 				});
 
@@ -171,7 +190,7 @@ export class PriceFaqPlugin implements BotPlugin {
 			}
 
 			const lines = matchedServices.map((s) => {
-				const rub = Math.round(Number(s.basePriceRub));
+				const rub = Math.round(kopecksToRubles(resolvePriceFaqItemKopecks(s)));
 				const codeLabel = s.code ? ` <i>[${s.code}]</i>` : "";
 				return `• <b>${s.title}</b>${codeLabel}: <b>${rub.toLocaleString("ru-RU")} ₽</b>`;
 			});
