@@ -82,10 +82,10 @@ function parseJsonSafe<T>(value: unknown, fallback: T, logger?: { error: (obj: u
 	return value as T;
 }
 
-/** Точная проверка пути вебхука (без учёта query-строки). */
+/** Точная проверка пути MAX-вебхука (без перехвата сторонних webhook-маршрутов). */
 function isWebhookPath(url: string): boolean {
 	const pathname = (url.split("?")[0] ?? "").replace(/\/+$/, "");
-	return pathname.endsWith("/webhook");
+	return pathname === "/api/max/webhook";
 }
 
 export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {

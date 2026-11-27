@@ -185,7 +185,7 @@ export class ServiceReminderPlugin implements BotPlugin {
 				}
 			}
 
-			if (!appointmentId) {
+			if (!verifiedPatientId || !appointmentId) {
 				return {
 					text: "ℹ️ Не найдено активных записей на приём для вашего профиля. Если вы хотите записаться к врачу, нажмите кнопку ниже:",
 					keyboard: {
@@ -199,7 +199,7 @@ export class ServiceReminderPlugin implements BotPlugin {
 				};
 			}
 
-			// Получаем детали записи (с проверкой владения при наличии verifiedPatientId)
+			// Получаем детали записи со строгой проверкой владения verifiedPatientId
 			const [existingApp] = await tx
 				.select({
 					id: appointments.id,
@@ -215,7 +215,7 @@ export class ServiceReminderPlugin implements BotPlugin {
 					and(
 						eq(appointments.id, appointmentId),
 						eq(appointments.organizationId, orgId),
-						...(verifiedPatientId ? [eq(appointments.patientId, verifiedPatientId)] : []),
+						eq(appointments.patientId, verifiedPatientId),
 					),
 				)
 				.limit(1);

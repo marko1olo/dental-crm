@@ -302,7 +302,10 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 						),
 					);
 				for (const ex of existingOtherShifts) {
-					if (!shifts.some((s) => s.id === ex.id)) {
+					const isReplacedByScope =
+						(scopeChairId && (ex.chairId === scopeChairId || ex.cabinetId === scopeChairId)) ||
+						(scopeDoctorId && ex.doctorId === scopeDoctorId);
+					if (!isReplacedByScope && !shifts.some((s) => s.id === ex.id)) {
 						const bId = ex.clinicId || "default";
 						shiftsToCheck.push({
 							id: ex.id,

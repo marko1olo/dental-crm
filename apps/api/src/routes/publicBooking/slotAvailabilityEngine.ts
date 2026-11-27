@@ -12,8 +12,16 @@ export function clockToMinutes(value: unknown): number | null {
 	if (!match) return null;
 	const hours = Number.parseInt(match[1] as string, 10);
 	const minutes = Number.parseInt(match[2] as string, 10);
+	if (hours === 24 && minutes === 0) return 1440;
 	if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
 	return hours * 60 + minutes;
+}
+
+function resolveCloseMinutes(value: unknown, openMinute: number): number | null {
+	const parsed = clockToMinutes(value);
+	if (parsed === null) return null;
+	if (parsed === 0 && openMinute > 0) return 1440;
+	return parsed;
 }
 
 /**
@@ -36,7 +44,10 @@ export function resolveDaySchedule(
 
 	if (!day) {
 		const workdayOpen = clockToMinutes(schedule?.workdayStart);
-		const workdayClose = clockToMinutes(schedule?.workdayEnd);
+		const workdayClose =
+			workdayOpen !== null
+				? resolveCloseMinutes(schedule?.workdayEnd, workdayOpen)
+				: clockToMinutes(schedule?.workdayEnd);
 		if (
 			workdayOpen !== null &&
 			workdayClose !== null &&
@@ -85,7 +96,7 @@ export function resolveDaySchedule(
 	}
 
 	const openMinute = clockToMinutes(day.startsAt) ?? DEFAULT_OPEN_MINUTE;
-	const closeMinute = clockToMinutes(day.endsAt) ?? DEFAULT_CLOSE_MINUTE;
+	const closeMinute = resolveCloseMinutes(day.endsAt, openMinute) ?? DEFAULT_CLOSE_MINUTE;
 	return {
 		isWorking: day.isWorking !== false,
 		openMinute,
@@ -129,7 +140,7 @@ export function resolveDoctorDaySchedule(
 	}
 
 	const startMinute = clockToMinutes(entry.start) ?? clinicDay.openMinute;
-	const endMinute = clockToMinutes(entry.end) ?? clinicDay.closeMinute;
+	const endMinute = resolveCloseMinutes(entry.end, startMinute) ?? clinicDay.closeMinute;
 
 	if (endMinute <= startMinute) {
 		return { isWorking: false, startMinute: 0, endMinute: 0 };

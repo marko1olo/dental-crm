@@ -499,7 +499,7 @@ describe("маршруты сообщений пациентам", { concurrency
 		const body = JSON.parse(response.body);
 		assert.equal(body.channels.sms.configured, false);
 		assert.equal(body.channels.email.configured, false);
-		// VK и MAX отправку не поддерживают — так и написано.
+		// VK и MAX поддерживают отправку при наличии токена; без конфигурации они не настроены.
 		assert.equal(body.channels.vk.configured, false);
 		assert.equal(body.channels.max.configured, false);
 		assert.deepEqual(body.deliverableChannels, [
@@ -508,6 +508,7 @@ describe("маршруты сообщений пациентам", { concurrency
 			"whatsapp",
 			"telegram",
 			"max",
+			"vk",
 		]);
 	});
 

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { getPeriodStartInTimeZone, tomorrowDateKeyInTimeZone, wallClockToUtcInTimeZone } from "@dental/shared";
+import { getPeriodStartInTimeZone, shiftCalendarDay, tomorrowDateKeyInTimeZone, wallClockToUtcInTimeZone } from "@dental/shared";
 import { db } from "../../db/client.js";
 import {
 	appointments,
@@ -46,6 +46,7 @@ const CLINIC_ID = fixtureUuid(FIXTURE, 10);
 const CHAIR_1_ID = fixtureUuid(FIXTURE, 20);
 const CHAIR_2_ID = fixtureUuid(FIXTURE, 21);
 const DOCTOR_ID = fixtureUuid(FIXTURE, 30);
+const DOCTOR_2_ID = fixtureUuid(FIXTURE, 32);
 const RECEPTION_ID = fixtureUuid(FIXTURE, 31);
 const PATIENT_ID = fixtureUuid(FIXTURE, 40);
 const OTHER_PATIENT_ID = fixtureUuid(FIXTURE, 41);
@@ -99,7 +100,7 @@ describe("Wave 7 Schedule, Bots, Telephony & Timezones Regression Suite", () => 
 
 		app = await createIdempotentTenantTestApp();
 		await registerScheduleRoutes(app);
-		await registerPublicBookingRoutes(app);
+		await app.register(registerPublicBookingRoutes, { prefix: "/api/public/booking" });
 		await registerDiagnocatIntegrationRoutes(app);
 		await registerFlexbeRoutes(app);
 		await registerMaxRoutes(app);
@@ -122,13 +123,13 @@ describe("Wave 7 Schedule, Bots, Telephony & Timezones Regression Suite", () => 
 					name: "Клиника Волна 7",
 					inn: "7707777701",
 					clinicSchedule: {
-						monday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
-						tuesday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
-						wednesday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
-						thursday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
-						friday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
-						saturday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
-						sunday: { isWorking: true, startsAt: "08:00", endsAt: "23:59" },
+						monday: { isWorking: true, startsAt: "08:00", endsAt: "24:00" },
+						tuesday: { isWorking: true, startsAt: "08:00", endsAt: "24:00" },
+						wednesday: { isWorking: true, startsAt: "08:00", endsAt: "24:00" },
+						thursday: { isWorking: true, startsAt: "08:00", endsAt: "24:00" },
+						friday: { isWorking: true, startsAt: "08:00", endsAt: "24:00" },
+						saturday: { isWorking: true, startsAt: "08:00", endsAt: "24:00" },
+						sunday: { isWorking: true, startsAt: "08:00", endsAt: "24:00" },
 						requireSmsVerification: false,
 					},
 				},
@@ -162,15 +163,22 @@ describe("Wave 7 Schedule, Bots, Telephony & Timezones Regression Suite", () => 
 					fullName: "Д-р Тихоокеанский А.В.",
 					role: "doctor",
 					isActive: true,
-					workingHours: [
-						{ weekday: 1, enabled: true, start: "08:00", end: "23:59" },
-						{ weekday: 2, enabled: true, start: "08:00", end: "23:59" },
-						{ weekday: 3, enabled: true, start: "08:00", end: "23:59" },
-						{ weekday: 4, enabled: true, start: "08:00", end: "23:59" },
-						{ weekday: 5, enabled: true, start: "08:00", end: "23:59" },
-						{ weekday: 6, enabled: true, start: "08:00", end: "23:59" },
-						{ weekday: 7, enabled: true, start: "08:00", end: "23:59" },
-					],
+					workingHours: {
+						monday: { isWorking: true, startMinute: 8 * 60, endMinute: 24 * 60 },
+						tuesday: { isWorking: true, startMinute: 8 * 60, endMinute: 24 * 60 },
+						wednesday: { isWorking: true, startMinute: 8 * 60, endMinute: 24 * 60 },
+						thursday: { isWorking: true, startMinute: 8 * 60, endMinute: 24 * 60 },
+						friday: { isWorking: true, startMinute: 8 * 60, endMinute: 24 * 60 },
+						saturday: { isWorking: true, startMinute: 8 * 60, endMinute: 24 * 60 },
+						sunday: { isWorking: true, startMinute: 8 * 60, endMinute: 24 * 60 },
+					},
+				},
+				{
+					id: DOCTOR_2_ID,
+					organizationId: ORG_ID,
+					fullName: "Д-р Второй Б.В.",
+					role: "doctor",
+					isActive: true,
 				},
 				{
 					id: RECEPTION_ID,
@@ -280,7 +288,7 @@ describe("Wave 7 Schedule, Bots, Telephony & Timezones Regression Suite", () => 
 		// Lease during 12:00-12:30 must return 409 SLOT_RESERVED
 		const leaseRes = await app.inject({
 			method: "POST",
-			url: "/api/schedule/slot-lease",
+			url: "/api/schedule/leases/acquire",
 			headers: {
 				authorization: `Bearer ${tokenReception}`,
 				"idempotency-key": randomUUID(),
@@ -288,6 +296,7 @@ describe("Wave 7 Schedule, Bots, Telephony & Timezones Regression Suite", () => 
 			payload: {
 				chairId: CHAIR_2_ID,
 				doctorUserId: DOCTOR_ID,
+				holderSessionId: "test-lease-session-1",
 				startsAt: reserveStart.toISOString(),
 				endsAt: new Date(reserveStart.getTime() + 30 * 60_000).toISOString(),
 			},
@@ -316,7 +325,7 @@ describe("Wave 7 Schedule, Bots, Telephony & Timezones Regression Suite", () => 
 		// Public booking slots must exclude 12:00..12:30
 		const slotsRes = await app.inject({
 			method: "GET",
-			url: `/api/public/booking/slots?organizationId=${ORG_ID}&date=${tomorrowIso}`,
+			url: `/api/public/booking/${ORG_ID}/slots?date=${tomorrowIso}`,
 		});
 		assert.equal(slotsRes.statusCode, 200, slotsRes.body);
 		const slotsJson = slotsRes.json() as { slots?: Array<{ time?: string; startTime?: string }> };
@@ -329,21 +338,21 @@ describe("Wave 7 Schedule, Bots, Telephony & Timezones Regression Suite", () => 
 			t.skip("PostgreSQL unavailable");
 			return;
 		}
+		const dayAfter = shiftCalendarDay(tomorrowIso, 1);
 		const res = await app.inject({
 			method: "POST",
-			url: "/api/public/booking",
+			url: `/api/public/booking/${ORG_ID}/book`,
 			headers: { "idempotency-key": randomUUID() },
 			payload: {
 				organizationId: ORG_ID,
 				doctorId: DOCTOR_ID,
-				date: tomorrowIso,
-				startTime: "23:30",
-				endTime: "00:00",
+				startsAt: `${tomorrowIso}T23:30:00+10:00`,
+				endsAt: `${dayAfter}T00:00:00+10:00`,
 				patientName: "Ночной Пациент",
 				patientPhone: "+79005556677",
 			},
 		});
-		assert.equal(res.statusCode, 201, res.body);
+		assert.equal(res.statusCode, 200, res.body);
 	});
 
 	it("4. POST /api/schedule/shifts scopes deletion by chairId/doctorId and accepts .strict() metadata", async (t) => {
@@ -369,7 +378,7 @@ describe("Wave 7 Schedule, Bots, Telephony & Timezones Regression Suite", () => 
 					id: `shift-${tomorrowIso}-${CHAIR_2_ID}`,
 					organizationId: ORG_ID,
 					clinicId: CLINIC_ID,
-					doctorId: DOCTOR_ID,
+					doctorId: DOCTOR_2_ID,
 					doctorName: "Д-р Б",
 					chairId: CHAIR_2_ID,
 					cabinetId: CHAIR_2_ID,
@@ -382,7 +391,7 @@ describe("Wave 7 Schedule, Bots, Telephony & Timezones Regression Suite", () => 
 
 		const shiftSaveRes = await app.inject({
 			method: "POST",
-			url: "/api/schedule/shifts",
+			url: `/api/schedule/shifts?clinicId=${CLINIC_ID}`,
 			headers: {
 				authorization: `Bearer ${tokenReception}`,
 				"idempotency-key": randomUUID(),
@@ -396,6 +405,7 @@ describe("Wave 7 Schedule, Bots, Telephony & Timezones Regression Suite", () => 
 						doctorId: DOCTOR_ID,
 						doctorName: "Д-р А",
 						doctorSpecialty: "therapist",
+						clinicId: CLINIC_ID,
 						assistantId: null,
 						assistantName: null,
 						chairId: CHAIR_1_ID,
@@ -466,7 +476,7 @@ describe("Wave 7 Schedule, Bots, Telephony & Timezones Regression Suite", () => 
 			},
 			BOT_RUNTIME,
 		);
-		assert.equal(foreignAttemptReply?.actionExecuted, "no_active_appointment_found");
+		assert.equal(foreignAttemptReply?.actionExecuted, "appointment_not_found");
 
 		// Verified chat link confirming OWN appointment succeeds in clinic TZ
 		const ownConfirmReply = await plugin.handle(
@@ -571,17 +581,32 @@ describe("Wave 7 Schedule, Bots, Telephony & Timezones Regression Suite", () => 
 					isEnabled: true,
 				});
 			});
-			const maxRes = await app.inject({
-				method: "POST",
-				url: "/api/max/webhook",
-				headers: { "x-max-bot-id": "shared-bot-id-collision" },
-				payload: {
-					update_type: "message_created",
-					timestamp: Math.floor(Date.now() / 1000),
-					payload: { chat: { chatId: "chat-1" }, text: "Привет", msgId: "m-1" },
-				},
-			});
-			assert.equal(maxRes.statusCode, 409, maxRes.body);
+			const prevMaxSecret = process.env.MAX_WEBHOOK_SECRET;
+			const prevDenteSecret = process.env.DENTE_WEBHOOK_SECRET;
+			delete process.env.MAX_WEBHOOK_SECRET;
+			delete process.env.DENTE_WEBHOOK_SECRET;
+			try {
+				const maxRes = await app.inject({
+					method: "POST",
+					url: "/api/max/webhook",
+					headers: {
+						"x-max-bot-id": "shared-bot-id-collision",
+						"x-dente-webhook-secret": "any-secret",
+						"idempotency-key": randomUUID(),
+					},
+					payload: {
+						update_type: "message_created",
+						timestamp: Math.floor(Date.now() / 1000),
+						payload: { chat: { chatId: "chat-1" }, text: "Привет", msgId: "m-1" },
+					},
+				});
+				assert.equal(maxRes.statusCode, 409, maxRes.body);
+			} finally {
+				if (prevMaxSecret === undefined) delete process.env.MAX_WEBHOOK_SECRET;
+				else process.env.MAX_WEBHOOK_SECRET = prevMaxSecret;
+				if (prevDenteSecret === undefined) delete process.env.DENTE_WEBHOOK_SECRET;
+				else process.env.DENTE_WEBHOOK_SECRET = prevDenteSecret;
+			}
 
 			// Telephony: when org has per-org secret, global TELEPHONY_WEBHOOK_SECRET must be rejected (401)
 			let telephonyRejectedStatus = 0;
