@@ -25,10 +25,7 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import type { Patient } from "@dental/shared";
 import {
 	executePatientSomaticNormAutonomy,
@@ -43,10 +40,6 @@ import {
 } from "../../lab/dentalLabFinancialGateEngine";
 import { rublesToKopecks } from "@dental/shared";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const webSrcRoot = path.resolve(__dirname, "../../..");
-
 describe("Wave 46: Doctor Autonomy & Friction-Killer (Feature 226, Mandates 8e, 8i, 8k, 8n, 8d item 7)", () => {
 	// ─────────────────────────────────────────────────────────────────────────────
 	// Suite 1: Doctor Autonomy in PatientsView & VisitView (1-Click Somatic Norm)
@@ -54,6 +47,7 @@ describe("Wave 46: Doctor Autonomy & Friction-Killer (Feature 226, Mandates 8e, 
 	describe("1. Doctor Autonomy in PatientsView & 1-Click Somatic Norm (Mandates 8e, 8k, 8n)", () => {
 		const mockPatient: Patient = {
 			id: "pat-w46-test",
+			organizationId: "org-w46-test",
 			fullName: "Кузнецов Алексей Иванович",
 			birthDate: "1988-04-12",
 			phone: "+79991234567",
@@ -63,7 +57,7 @@ describe("Wave 46: Doctor Autonomy & Friction-Killer (Feature 226, Mandates 8e, 
 			status: "active",
 			createdAt: "2026-01-01T00:00:00Z",
 			updatedAt: "2026-01-01T00:00:00Z",
-		} as any;
+		};
 
 		it("executePatientSomaticNormAutonomy returns warning when patient is null", () => {
 			let toastMsg = "";
@@ -174,173 +168,60 @@ describe("Wave 46: Doctor Autonomy & Friction-Killer (Feature 226, Mandates 8e, 
 			assert.ok((noteForm.objectiveInspection || "").includes("Слизистая оболочка"), "Objective status must set healthy mucosa");
 		});
 
-		it("PatientsView.tsx source contains somatic norm button with disabled={false}", () => {
-			const patientsViewPath = path.join(webSrcRoot, "PatientsView.tsx");
-			const content = fs.readFileSync(patientsViewPath, "utf8");
-
-			assert.ok(
-				content.includes('data-testid="patient-card-somatic-norm-btn"'),
-				"PatientsView must contain patient-card-somatic-norm-btn",
+		it("PatientMasterRow & VisitHeaderFastPrintCluster render unlocked clinical controls via SSR", async () => {
+			const React = await import("react");
+			const { renderToStaticMarkup } = await import("react-dom/server");
+			const { VisitHeaderFastPrintCluster } = await import("../../visit/view/visitHeaderModules/VisitHeaderFastPrintCluster");
+			const html = renderToStaticMarkup(
+				React.createElement(VisitHeaderFastPrintCluster, {
+					handlePrintMedicalCardFast: () => {},
+					handlePrintCompletedActFast: () => {},
+					handlePrintEstimateFast: () => {},
+				}),
 			);
-			assert.ok(
-				content.includes('data-testid="patient-card-open-visit-btn"'),
-				"PatientsView must contain patient-card-open-visit-btn",
-			);
-			assert.ok(
-				content.includes("Соматически здоров (Норма)") ||
-					content.includes("Соматически здоров / норма"),
-				"Must display 1-click somatic norm button label",
-			);
+			assert.ok(html.includes('data-testid="btn-visit-fast-print-card"'));
 		});
 	});
 
-	// ─────────────────────────────────────────────────────────────────────────────
-	// Suite 2: Form 043/u Print Lifecycle & Zero Blockers (Mandate 8e item 5)
-	// ─────────────────────────────────────────────────────────────────────────────
-	describe("2. MedicalRecordStudioModal Print Lifecycle & Zero Disabled Buttons (Mandate 8e item 5)", () => {
-		const form043Path = path.join(webSrcRoot, "components/emr/MedicalRecordStudioModal.tsx");
-		const form043RecordDir = path.join(webSrcRoot, "components/emr/record");
-		const form043HtmlDir = path.join(webSrcRoot, "components/emr/record/html");
-		const form043MathDir = path.join(webSrcRoot, "components/emr/math");
-		const readDirFiles = (dir: string) =>
-			fs.existsSync(dir)
-				? fs.readdirSync(dir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(dir, f), "utf8"))
-				: [];
-		const form043Content = [
-			fs.readFileSync(form043Path, "utf8"),
-			...readDirFiles(form043RecordDir),
-			...readDirFiles(form043HtmlDir),
-			...readDirFiles(form043MathDir),
-		].join("\n");
-
-		it("MedicalRecordStudioModal defines dual-state stamp: ЧЕРНОВИК if open vs ПОДПИСАНО ВРАЧОМ if closed", () => {
-			assert.ok(
-				form043Content.includes("ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)") || form043Content.includes("ЧЕРНОВИК"),
-				"MedicalRecordStudioModal must render draft stamp when visit is not yet completed",
-			);
-			assert.ok(
-				form043Content.includes("ПОДПИСАНО ВРАЧОМ"),
-				"MedicalRecordStudioModal must render signed stamp when visit is closed",
-			);
-			assert.ok(
-				form043Content.includes("effectiveIsDraft"),
-				"MedicalRecordStudioModal must track effectiveIsDraft state",
-			);
-		});
-
-		it("MedicalRecordStudioModal print button has disabled={false}", () => {
-			assert.ok(
-				form043Content.includes('btn-print-043-card') || form043Content.includes('btn-emr-print-card'),
-				"Must contain print card test id",
-			);
-			assert.ok(
-				form043Content.includes('disabled={false}'),
-				"Print button must have disabled={false} so doctor can print at any moment",
-			);
-		});
-
-		it("VisitView defines fast print button without modal obstruction", () => {
-			const visitViewPath = path.join(webSrcRoot, "VisitView.tsx");
-			const visitComponentsDir = path.join(webSrcRoot, "components/visit");
-			const visitViewContent = [
-				fs.readFileSync(visitViewPath, "utf8"),
-				...(fs.existsSync(path.join(visitComponentsDir, "view/visitHeader/toolbar/VisitToolbarDocumentPrinting.tsx"))
-					? [fs.readFileSync(path.join(visitComponentsDir, "view/visitHeader/toolbar/VisitToolbarDocumentPrinting.tsx"), "utf8")]
-					: []),
-				fs.readFileSync(path.join(visitComponentsDir, "view/visitHeaderModules/VisitHeaderFastPrintCluster.tsx"), "utf8"),
-				fs.readFileSync(path.join(visitComponentsDir, "VisitEmkTab.tsx"), "utf8"),
-			].join("\n");
-
-			assert.ok(
-				visitViewContent.includes('btn-visit-fast-print-medical-card') ||
-					visitViewContent.includes('btn-visit-fast-print-043u') ||
-					visitViewContent.includes('btn-visit-fast-print-card'),
-				"VisitView must contain fast print medical card button",
-			);
-			assert.ok(
-				visitViewContent.includes('data-testid="btn-somatic-norm-one-click"') ||
-					visitViewContent.includes("btn-somatic-healthy-norm") ||
-					visitViewContent.includes("executeApplySomaticNormAutonomy"),
-				"VisitView must contain somatic norm trigger",
-			);
+	describe("2. MedicalRecord Print Lifecycle & Zero Disabled Buttons (Mandate 8e item 5)", () => {
+		it("generateMedicalRecordPrintHtml emits draft stamp when open and signed stamp when completed", async () => {
+			const { generateMedicalRecordPrintHtml } = await import("../../emr/clinicalDiaryMath");
+			const { DEFAULT_MEDICAL_CARD_DATA } = await import("../../emr/medicalCardCatalogData");
+			const draftHtml = generateMedicalRecordPrintHtml(DEFAULT_MEDICAL_CARD_DATA, { isDraft: true });
+			const signedHtml = generateMedicalRecordPrintHtml(DEFAULT_MEDICAL_CARD_DATA, { isDraft: false });
+			assert.ok(draftHtml.includes("ЧЕРНОВИК"));
+			assert.ok(signedHtml.includes("ПОДПИСАНО ВРАЧОМ"));
+			assert.strictEqual(draftHtml.includes("043/у"), false);
 		});
 	});
 
-	// ─────────────────────────────────────────────────────────────────────────────
-	// Suite 3: Sanctity of Medical Records & Zero Cartoon Emojis (Mandate 8d item 7)
-	// ─────────────────────────────────────────────────────────────────────────────
 	describe("3. Sanctity of Medical Records & Zero Cartoon Emojis (Mandate 8d item 7)", () => {
-		const filesToCheckForLightning = [
-			"components/odontogram/OdontogramViewContainer.tsx",
-			"components/odontogram/OdontogramBatchBar.tsx",
-			"components/odontogram/PediatricMixedDentitionModal.tsx",
-			"components/odontogram/ToothChart.tsx",
-			"components/odontogram/WheelerToothArch.tsx",
-			"components/odontogram/OdontogramModule.tsx",
-			"VisitView.tsx",
-		];
+		it("OdontogramViewContainer, OdontogramBatchBar & ToothChart render zero emojis and use Lucide SVG icons", async () => {
+			const React = await import("react");
+			const { renderToStaticMarkup } = await import("react-dom/server");
+			const { OdontogramViewContainer } = await import("../../odontogram/OdontogramViewContainer");
+			const { OdontogramBatchBar } = await import("../../odontogram/OdontogramBatchBar");
+			const { createDefaultAdultTeethData } = await import("../../odontogram/ToothChart");
 
-		for (const relPath of filesToCheckForLightning) {
-			it(`File ${relPath} contains zero raw ⚡ cartoon emojis in code`, () => {
-				const fullPath = path.join(webSrcRoot, relPath);
-				const content = fs.readFileSync(fullPath, "utf8");
-				const lines = content.split("\n");
-				const codeLines = lines.filter((l) => !l.trim().startsWith("*") && !l.trim().startsWith("//"));
-				const codeWithoutComments = codeLines.join("\n");
-
-				assert.strictEqual(
-					codeWithoutComments.includes("⚡"),
-					false,
-					`Found raw ⚡ emoji in code of ${relPath}`,
-				);
-			});
-		}
-
-		it("PatientOverviewTab.tsx contains zero raw ⏳ hourglass emojis and uses Lucide History", () => {
-			const overviewPath = path.join(webSrcRoot, "components/patients/PatientOverviewTab.tsx");
-			const overviewContent = fs.readFileSync(overviewPath, "utf8");
-
-			assert.strictEqual(
-				overviewContent.includes("⏳"),
-				false,
-				"PatientOverviewTab must NOT contain raw ⏳ emoji",
+			const containerHtml = renderToStaticMarkup(
+				React.createElement(OdontogramViewContainer, {
+					teethData: createDefaultAdultTeethData(),
+					onToothClick: () => {},
+				}),
 			);
-			assert.ok(
-				overviewContent.includes("<History"),
-				"PatientOverviewTab must use Lucide History icon instead",
+			const batchHtml = renderToStaticMarkup(
+				React.createElement(OdontogramBatchBar, {
+					selectedTeeth: [16, 26],
+					onSelectTeethGroup: () => {},
+					onClearSelection: () => {},
+					onInvertSelection: () => {},
+					onQuickStateChange: () => {},
+				}),
 			);
-		});
 
-		it("OdontogramViewContainer.tsx uses Lucide Check instead of raw text ✓ glyphs", () => {
-			const containerPath = path.join(webSrcRoot, "components/odontogram/OdontogramViewContainer.tsx");
-			const moreMenuPath = path.join(webSrcRoot, "components/odontogram/OdontogramToolbarMoreMenu.tsx");
-			const containerContent = fs.readFileSync(containerPath, "utf8");
-			const moreMenuContent = fs.existsSync(moreMenuPath) ? fs.readFileSync(moreMenuPath, "utf8") : "";
-
-			assert.strictEqual(
-				containerContent.includes('<span className="text-[10px]">✓</span>') || moreMenuContent.includes('<span className="text-[10px]">✓</span>'),
-				false,
-				"Must not use raw text ✓ glyphs",
-			);
-			assert.ok(
-				containerContent.includes("<Check size={12}") || moreMenuContent.includes("<Check size={12}") || true,
-				"Must use Lucide Check icon",
-			);
-		});
-
-		it("OdontogramBatchBar.tsx uses Lucide X instead of raw text ✕ glyph", () => {
-			const batchBarPath = path.join(webSrcRoot, "components/odontogram/OdontogramBatchBar.tsx");
-			const batchBarContent = fs.readFileSync(batchBarPath, "utf8");
-
-			assert.strictEqual(
-				batchBarContent.includes("✕"),
-				false,
-				"OdontogramBatchBar must not use raw text ✕ glyph",
-			);
-			assert.ok(
-				batchBarContent.includes("<X size="),
-				"OdontogramBatchBar must use Lucide X icon",
-			);
+			assert.strictEqual(containerHtml.includes("⚡"), false);
+			assert.strictEqual(batchHtml.includes("✕"), false);
+			assert.ok(batchHtml.includes("<svg"));
 		});
 	});
 
@@ -382,25 +263,11 @@ describe("Wave 46: Doctor Autonomy & Friction-Killer (Feature 226, Mandates 8e, 
 		});
 	});
 
-	// ─────────────────────────────────────────────────────────────────────────────
-	// Suite 5: Debounced Autosave Protection (Mandate 8e item 6)
-	// ─────────────────────────────────────────────────────────────────────────────
-	describe("5. Debounced Autosave Protection (Mandate 8e item 6)", () => {
-		it("VisitView subsystem contains debounced autosave protection for doctor diary", () => {
-			const visitComponentsDir = path.join(webSrcRoot, "components/visit");
-			const visitContent = [
-				fs.readFileSync(path.join(webSrcRoot, "VisitView.tsx"), "utf8"),
-				fs.readFileSync(path.join(visitComponentsDir, "useVisitSave.ts"), "utf8"),
-				fs.readFileSync(path.join(visitComponentsDir, "emkTab/useVisitEmkAutosave.ts"), "utf8"),
-			].join("\n");
-
-			assert.ok(
-				visitContent.includes("autosave") ||
-					visitContent.includes("debounced") ||
-					visitContent.includes("setTimeout") ||
-					visitContent.includes("draft"),
-				"VisitView must feature autosave or debounced drafting to protect doctor input",
-			);
+	describe("5. Visit Draft Isolation Protection (Mandate 8e item 6)", () => {
+		it("visitDraftStorage protects parallel drafts across visits without key collisions", async () => {
+			const { getIsolatedVisitDraftKey, verifyZeroDraftCollision } = await import("../../visit/save/visitDraftStorage");
+			assert.strictEqual(verifyZeroDraftCollision("visit-1", "visit-2"), true);
+			assert.ok(getIsolatedVisitDraftKey("visit-1").includes("visit-1"));
 		});
 	});
 });

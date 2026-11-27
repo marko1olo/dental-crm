@@ -17,6 +17,7 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { clampMprSlabMm } from "../../../mprControlMath";
 import {
 	createEmptyCbctVolume,
 	calculateCrosshairDragWorldMm,
@@ -45,10 +46,15 @@ import {
 	type CbctAngleMeasurement,
 	type CbctProbeMarker,
 	slicePxToScreenPx,
+	generate16BitLut,
+	applyLutToHU,
+	huToGrayscale,
 } from "../cbctMprMath";
 import {
 	calculateAngleBetween3Points2D,
 	calculateAngleBetween3Points3D,
+	calculatePhysicalDistance3DMm,
+	formatRulerBadgeText,
 	hitTestMeasurementHandle,
 	hitTestMeasurementObject,
 } from "../cbctCaliperNerveMath";
@@ -179,26 +185,15 @@ describe("CBCT Interactive Tools Audit (Red Team Inquisitor Verification)", () =
 			assert.equal(screen2.y - screen1.y, delta.dy, "Screen Y shift must equal pan delta Y");
 		});
 
-		it("supports independent pan states across axial, coronal, sagittal, pano, and cross_section", () => {
-			const transforms: Record<"axial" | "coronal" | "sagittal" | "panoramic" | "cross_section", ViewportTransform> = {
-				axial: { zoom: 1.0, panX: 10, panY: 20 },
-				coronal: { zoom: 1.2, panX: 0, panY: 0 },
-				sagittal: { zoom: 1.0, panX: -15, panY: 5 },
-				panoramic: { zoom: 1.1, panX: 50, panY: 0 },
-				cross_section: { zoom: 2.0, panX: 0, panY: -25 },
-			};
+		it("supports independent pan transforms projected via slicePxToScreenPx across viewports", () => {
+			const ptMm: Point3D = { x: 10, y: 10, z: 10 };
+			const axialSlice = worldMmToSlicePx(ptMm, "axial", volume);
+			const coronalSlice = worldMmToSlicePx(ptMm, "coronal", volume);
+			const axialScreen = slicePxToScreenPx(axialSlice, { zoom: 1.0, panX: 40, panY: 20 });
+			const coronalScreen = slicePxToScreenPx(coronalSlice, { zoom: 1.2, panX: 0, panY: 0 });
 
-			// Mutating axial pan must not leak into other viewports
-			const nextTransforms = {
-				...transforms,
-				axial: { ...transforms.axial, panX: transforms.axial.panX + 30 },
-			};
-
-			assert.equal(nextTransforms.axial.panX, 40);
-			assert.equal(nextTransforms.coronal.panX, 0);
-			assert.equal(nextTransforms.sagittal.panX, -15);
-			assert.equal(nextTransforms.panoramic.panX, 50);
-			assert.equal(nextTransforms.cross_section.panX, 0);
+			assert.equal(axialScreen.x - axialSlice.x, 40);
+			assert.equal(coronalScreen.x, Math.round(coronalSlice.x * 1.2 * 1000) / 1000);
 		});
 	});
 
@@ -239,36 +234,19 @@ describe("CBCT Interactive Tools Audit (Red Team Inquisitor Verification)", () =
 			assert.equal(minClamped.zoom, 0.5, "Zoom factor must not drop below 0.5x");
 		});
 
-		it("calculates continuous vertical drag zoom scaling accurately", () => {
-			const startZoom = 1.5;
-			const dyUp = 50; // dragged 50px upward -> zoom in
-			const zoomFactorUp = Math.exp(dyUp * 0.01);
-			const nextZoomUp = Math.max(0.5, Math.min(5.0, Number((startZoom * zoomFactorUp).toFixed(2))));
+		it("applies continuous and discrete cursor zoom steps via applyCursorZoom", () => {
+			const zoomedIn = applyCursorZoom({ zoom: 1.5, panX: 0, panY: 0 }, { x: 100, y: 100 }, -120, 0.5, 5.0);
+			assert.ok(zoomedIn.zoom > 1.5, "Zoom in must scale above 1.5");
 
-			assert.ok(nextZoomUp > startZoom, "Dragging upward must zoom in");
-			assert.equal(nextZoomUp, 2.47);
-
-			const dyDown = -40; // dragged 40px downward -> zoom out
-			const zoomFactorDown = Math.exp(dyDown * 0.01);
-			const nextZoomDown = Math.max(0.5, Math.min(5.0, Number((startZoom * zoomFactorDown).toFixed(2))));
-
-			assert.ok(nextZoomDown < startZoom, "Dragging downward must zoom out");
-			assert.equal(nextZoomDown, 1.01);
+			const zoomedOut = applyCursorZoom(zoomedIn, { x: 100, y: 100 }, 120, 0.5, 5.0);
+			assert.ok(zoomedOut.zoom < zoomedIn.zoom, "Zoom out must scale down");
 		});
 
-		it("applies discrete zoom on click (1.25x forward, 0.8x on Alt-click)", () => {
-			const startZoom = 1.0;
-			const discreteZoomIn = Math.min(5.0, Number((startZoom * 1.25).toFixed(2)));
-			assert.equal(discreteZoomIn, 1.25);
-
-			const discreteZoomOut = Math.max(0.5, Number((discreteZoomIn * 0.8).toFixed(2)));
-			assert.equal(discreteZoomOut, 1.0);
-		});
-
-		it("resets viewport zoom and pan to DEFAULT_VIEWPORT_TRANSFORM", () => {
-			assert.equal(DEFAULT_VIEWPORT_TRANSFORM.zoom, 1.0);
-			assert.equal(DEFAULT_VIEWPORT_TRANSFORM.panX, 0);
-			assert.equal(DEFAULT_VIEWPORT_TRANSFORM.panY, 0);
+		it("resets viewport projection via slicePxToScreenPx with DEFAULT_VIEWPORT_TRANSFORM", () => {
+			const slice = { x: 50, y: 75 };
+			const screen = slicePxToScreenPx(slice, DEFAULT_VIEWPORT_TRANSFORM);
+			assert.equal(screen.x, 50);
+			assert.equal(screen.y, 75);
 		});
 	});
 
@@ -276,33 +254,18 @@ describe("CBCT Interactive Tools Audit (Red Team Inquisitor Verification)", () =
 	// 4. TOOL 4: WINDOW / LEVEL CONTRAST
 	// ─────────────────────────────────────────────────────────────────────────
 	describe("4. Window / Level Tool (Dynamic Range & Contrast)", () => {
-		it("adjusts WW horizontally and WL vertically with standard sensitivity", () => {
-			const startWW = 4400;
-			const startWL = 1300;
-			const dx = 25; // dragged right -> widen window
-			const dy = -15; // dragged up -> increase level
-
-			const newWW = Math.max(100, Math.min(10000, Math.round(startWW + dx * 8)));
-			const newWL = Math.max(-1000, Math.min(4000, Math.round(startWL - dy * 4)));
-
-			assert.equal(newWW, 4600, "WW must increase by dx * 8");
-			assert.equal(newWL, 1360, "WL must increase by -dy * 4");
+		it("generates monotonic 16-bit LUT and maps HU via generate16BitLut / applyLutToHU", () => {
+			const lut = generate16BitLut(4000, 1000, false);
+			const softGray = applyLutToHU(lut, 0);
+			const boneGray = applyLutToHU(lut, 1500);
+			assert.ok(boneGray > softGray, "Higher HU must yield brighter grayscale intensity");
 		});
 
-		it("strictly clamps Window Width between 100 HU and 10000 HU", () => {
-			const minWW = Math.max(100, Math.min(10000, Math.round(500 - 100 * 8)));
-			assert.equal(minWW, 100, "Window Width lower bound must be 100 HU");
-
-			const maxWW = Math.max(100, Math.min(10000, Math.round(9500 + 100 * 8)));
-			assert.equal(maxWW, 10000, "Window Width upper bound must be 10000 HU");
-		});
-
-		it("strictly clamps Window Level between -1000 HU and 4000 HU", () => {
-			const minWL = Math.max(-1000, Math.min(4000, Math.round(-800 - 100 * 4)));
-			assert.equal(minWL, -1000, "Window Level lower bound must be -1000 HU");
-
-			const maxWL = Math.max(-1000, Math.min(4000, Math.round(3800 + 100 * 4)));
-			assert.equal(maxWL, 4000, "Window Level upper bound must be 4000 HU");
+		it("maps extreme Window Width / Window Level bounds via huToGrayscale", () => {
+			assert.equal(huToGrayscale(-1000, 2000, 1000, false), 0);
+			assert.equal(huToGrayscale(3000, 2000, 1000, false), 255);
+			const invertedBone = huToGrayscale(2000, 2000, 1000, true);
+			assert.ok(invertedBone < 150, "Inverted LUT must darken high-HU bone");
 		});
 
 		it("verifies all CBCT Hounsfield presets comply with safety clamping bounds", () => {
@@ -373,12 +336,13 @@ describe("CBCT Interactive Tools Audit (Red Team Inquisitor Verification)", () =
 	// 6. TOOL 6: CALIBRATED MEASUREMENT RULER
 	// ─────────────────────────────────────────────────────────────────────────
 	describe("6. Ruler Tool (2-Point Distance, Handle Dragging & Deletion)", () => {
-		it("calculates exact 3D Euclidean distance in physical millimeters", () => {
+		it("calculates exact 3D Euclidean distance via calculatePhysicalDistance3DMm", () => {
 			const p1: Point3D = { x: 0, y: 0, z: 0 };
 			const p2: Point3D = { x: 3, y: 4, z: 12 }; // 3-4-12 -> sqrt(9+16+144) = sqrt(169) = 13.0 mm
 
-			const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y, p2.z - p1.z);
+			const dist = calculatePhysicalDistance3DMm(p1, p2);
 			assert.equal(Number(dist.toFixed(1)), 13.0);
+			assert.ok(formatRulerBadgeText(dist).includes("13.0"));
 		});
 
 		it("detects handle hit-testing for ruler start (handle 0) and end (handle 1)", () => {
@@ -402,7 +366,7 @@ describe("CBCT Interactive Tools Audit (Red Team Inquisitor Verification)", () =
 			assert.equal(hitEnd?.handleIndex, 1);
 		});
 
-		it("updates ruler startMm or endMm and recalculates distance during handle drag", () => {
+		it("updates ruler startMm and recalculates distance via calculatePhysicalDistance3DMm", () => {
 			const initialRuler: CbctMeasurementRuler = {
 				id: "ruler-test",
 				plane: "axial",
@@ -411,16 +375,9 @@ describe("CBCT Interactive Tools Audit (Red Team Inquisitor Verification)", () =
 				distanceMm: 10.0,
 			};
 
-			// Drag start handle (index 0) to { x: 2, y: 0, z: 0 }
 			const newStart = { x: 2, y: 0, z: 0 };
-			const newDist = Math.hypot(initialRuler.endMm.x - newStart.x, initialRuler.endMm.y - newStart.y, initialRuler.endMm.z - newStart.z);
-			const updatedRuler: CbctMeasurementRuler = {
-				...initialRuler,
-				startMm: newStart,
-				distanceMm: Number(newDist.toFixed(1)),
-			};
-
-			assert.equal(updatedRuler.distanceMm, 8.0);
+			const newDist = calculatePhysicalDistance3DMm(newStart, initialRuler.endMm);
+			assert.equal(Number(newDist.toFixed(1)), 8.0);
 		});
 
 		it("detects fast delete click on ruler [×] badge", () => {
@@ -655,34 +612,21 @@ describe("CBCT Interactive Tools Audit (Red Team Inquisitor Verification)", () =
 			assert.equal(getCbctToolCursor("ruler", false, true), "grab");
 		});
 
-		it("resets all viewport transforms and angles on 1-Click Reset View", () => {
-			let didReset = false;
-			const onResetView = () => {
-				didReset = true;
-			};
+		it("resets all viewport oblique angles via resetPlaneObliqueAngle and supports LUT inversion", () => {
+			const tilted = { axialAngleDeg: 12, coronalTiltDeg: 15, sagittalTiltDeg: -6 };
+			const resetCoronal = resetPlaneObliqueAngle(tilted, "coronal");
+			assert.equal(resetCoronal.coronalTiltDeg, 0);
+			assert.equal(resetCoronal.axialAngleDeg, 12);
 
-			onResetView();
-			assert.ok(didReset, "1-Click Reset View must execute callback");
+			const normalGray = huToGrayscale(1500, 4000, 1000, false);
+			const invertedGray = huToGrayscale(1500, 4000, 1000, true);
+			assert.notEqual(normalGray, invertedGray);
 		});
 
-		it("supports Grayscale LUT Inversion toggle", () => {
-			let invert = false;
-			const toggleInvert = () => {
-				invert = !invert;
-			};
-
-			toggleInvert();
-			assert.equal(invert, true);
-			toggleInvert();
-			assert.equal(invert, false);
-		});
-
-		it("clamps slab thickness between 1 mm and 30 mm", () => {
-			const clampSlab = (thickness: number) => Math.max(1, Math.min(30, Math.round(thickness)));
-
-			assert.equal(clampSlab(0), 1);
-			assert.equal(clampSlab(15.4), 15);
-			assert.equal(clampSlab(50), 30);
+		it("clamps slab thickness between 1 mm and 30 mm via clampMprSlabMm", () => {
+			assert.equal(clampMprSlabMm(0), 1);
+			assert.equal(clampMprSlabMm(15.4), 15);
+			assert.equal(clampMprSlabMm(50), 30);
 		});
 
 		it("detects handle hover on ruler and angle to return grab cursor", () => {

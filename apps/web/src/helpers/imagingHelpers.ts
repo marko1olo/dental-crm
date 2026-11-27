@@ -595,4 +595,4 @@ export function normalizedXrayPregnancyStatus(
 	return isOptionValue(value, xrayPregnancyStatusOptions) ? value : "unknown";
 }
 
-export { createLocalDicomWorkbenchDraft } from "../appHelpers/imagingModules/imagingDraftStorage";
+export { createLocalDicomWorkbenchDraft } from "../utils/commonHelpers/imagingDraft/draftSyncCoordinator";

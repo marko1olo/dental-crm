@@ -58,15 +58,17 @@ if (typeof window !== "undefined") {
 	window.__useVisitStore = useVisitStore;
 
 	// Сквозная реактивность одонтограммы: автоматическое обновление статуса зуба при начислении услуг
-	window.addEventListener("dente-add-services-to-invoice", (event: Event) => {
-		try {
-			if (event instanceof CustomEvent && event.detail) {
-				useVisitStore.getState().applyServicesToToothState(event.detail);
+	if (typeof window.addEventListener === "function") {
+		window.addEventListener("dente-add-services-to-invoice", (event: Event) => {
+			try {
+				if (event instanceof CustomEvent && event.detail) {
+					useVisitStore.getState().applyServicesToToothState(event.detail);
+				}
+			} catch (err) {
+				clientLogger.warn("Failed to apply services to tooth state from event", err, {
+					module: "visitStoreCore",
+				});
 			}
-		} catch (err) {
-			clientLogger.warn("Failed to apply services to tooth state from event", err, {
-				module: "visitStoreCore",
-			});
-		}
-	});
+		});
+	}
 }

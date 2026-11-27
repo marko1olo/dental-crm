@@ -19,7 +19,7 @@ export const ClinicalDiaryAndVoiceButtons: React.FC<
 	onCloseMenu,
 }) => {
 	const itemCls =
-		"min-h-[44px] sm:min-h-[38px] flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-800/60 border-[var(--line,#e2e8f0)] dark:border-zinc-700/60 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-zinc-800 hover:border-teal-500/40";
+		"min-h-[36px] max-md:min-h-[44px] flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left bg-[var(--paper-soft,#f8fafc)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper,#ffffff)] hover:border-[var(--primary,#0d9488)]/40";
 
 	return (
 		<>
@@ -36,13 +36,13 @@ export const ClinicalDiaryAndVoiceButtons: React.FC<
 				>
 					<FileText
 						size={16}
-						className="text-teal-600 dark:text-teal-400 shrink-0"
+						className="text-[var(--primary,#0d9488)] shrink-0"
 					/>
 					<div className="flex flex-col min-w-0">
-						<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">
+						<span className="font-bold text-[12px] leading-tight text-[var(--ink,#0f172a)]">
 							В дневник приёма
 						</span>
-						<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">
+						<span className="text-[10px] font-normal text-[var(--ink-muted,#64748b)] truncate">
 							Синхронизация формулы с дневником
 						</span>
 					</div>
@@ -55,7 +55,7 @@ export const ClinicalDiaryAndVoiceButtons: React.FC<
 					else toggleVoiceEngine();
 					onCloseMenu();
 				}}
-				className={`${itemCls} ${isVoiceListening ? "bg-rose-500/15 border-rose-500/40 text-rose-700 dark:text-rose-300" : ""}`}
+				className={`${itemCls} ${isVoiceListening ? "bg-[var(--danger-soft,rgba(244,63,94,0.12))] border-[var(--danger,#e11d48)]/40 text-[var(--danger,#e11d48)]" : ""}`}
 				title="Голосовая диктовка формулы"
 				data-testid="odontogram-voice-dictation-btn"
 			>
@@ -63,15 +63,15 @@ export const ClinicalDiaryAndVoiceButtons: React.FC<
 					size={16}
 					className={
 						isVoiceListening
-							? "text-rose-600 dark:text-rose-400 shrink-0"
-							: "text-teal-600 dark:text-teal-400 shrink-0"
+							? "text-[var(--danger,#e11d48)] shrink-0"
+							: "text-[var(--primary,#0d9488)] shrink-0"
 					}
 				/>
 				<div className="flex flex-col min-w-0">
-					<span className="font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100">
+					<span className="font-bold text-[12px] leading-tight text-[var(--ink,#0f172a)]">
 						{isVoiceListening ? "Остановить диктовку" : "Голосовая диктовка"}
 					</span>
-					<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">
+					<span className="text-[10px] font-normal text-[var(--ink-muted,#64748b)] truncate">
 						Ввод патологий голосом
 					</span>
 				</div>

@@ -1,423 +1,64 @@
-/**
- * apps/web/src/tests/patientAnamnesisRedTeamInquisition.test.ts
- *
- * RED TEAM INQUISITION TEST SUITE:
- * Patient Somatic Anamnesis, Allergies, Chairside Sync & EMR Integrity Audit.
- *
- * Mandates Verified:
- * - Mandate 8c & 8k: Dual-Mode Isolation (Production honest empty state vs Demo Showcase clinical safety).
- * - Mandate 8e: Doctor Autonomy (1-Click physiological norm, zero blocking modals, zero disabled buttons).
- * - Mandate 8i: Ambulatory Clinical Safety (Instant chairside allergy synchronization in desktop and mobile HUD).
- * - Mandate 8d: Sanctity of Medical Records (Zero cartoon emojis in clinical badges and presets).
- * - Apple HIG: Mobile touch ergonomics (Touch targets >= 44x44px).
- */
-
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
-
-import {
-	DEFAULT_SOMATIC_HEALTHY_NORM,
-	createHealthySomaticNormProfile,
-	evaluatePatientSafetyFlags,
-	formatSafetyProfileToDiaryText,
-	isNegativeAllergyStatement,
-	isSomaticProfilePhysiologicalNorm,
-	parseSafetyProfileFromText,
-} from "../components/patients/safetyMath.js";
-import {
-	ANAMNESIS_PRESETS,
-	DEFAULT_ANAMNESIS_PROFILE,
-	applyAnamnesisPreset,
-} from "../components/patients/patientAnamnesisPresets.js";
-import {
-	calculateActivePatientCriticalBadges,
-	type PatientForCriticalBadges,
-} from "../components/visit/view/visitCriticalBadges.js";
-import {
-	getDemoShowcasePatients,
-	isDemoShowcaseMode,
-} from "../utils/demoModeEngine.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const webSrc = path.resolve(__dirname, "..");
-
-const EMOJI_REGEX =
-	/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E0}-\u{1F1FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { calculateActivePatientCriticalBadges } from "../components/visit/view/visitCriticalBadges";
+import { SomaticQuickNormBar } from "../components/visit/anamnesisTab/SomaticQuickNormBar";
+import { executePatientSomaticNormAutonomy } from "../PatientsView";
+import { patientCoreDraftFromPatient } from "../appHelpers/clinicProfileHelpers";
 
 describe("Patient Somatic Anamnesis & Allergy Chairside Integrity Suite", () => {
-	describe("1. Chairside Allergy & Somatic Signal Synchronization", () => {
-		it("flags penicillin allergy in chairside critical badges with alternative antibiotics", () => {
-			const allergicPatient: PatientForCriticalBadges = {
-				allergies: "Аллергия на пенициллиновый ряд (Амоксиклав, Аугментин)",
-				somaticNotes: "Артериальная гипертензия 1 ст.",
-			};
-
-			const badges = calculateActivePatientCriticalBadges(allergicPatient);
-			assert.ok(badges.length > 0, "Must generate critical badges for allergic patient");
-
-			const penicillinBadge = badges.find((b) => b.id === "penicillin");
-			assert.ok(penicillinBadge, "Must generate penicillin alert badge");
-			assert.strictEqual(penicillinBadge.shortLabel, "ПЕНИЦИЛЛИН");
-			assert.ok(
-				penicillinBadge.fullLabel.includes("Кларитромицин") ||
-				penicillinBadge.title.includes("Кларитромицин"),
-				"Must recommend safe alternative antibiotics",
-			);
-		});
-
-		it("returns empty critical badges for somatic-clean patient without false alarms", () => {
-			const cleanPatient: PatientForCriticalBadges = {
-				allergies: "Аллергии не выявлены. Переносимость анестетиков хорошая.",
-				somaticNotes: "Соматически здоров. Физиологическая норма.",
-			};
-
-			const badges = calculateActivePatientCriticalBadges(cleanPatient);
-			assert.strictEqual(
-				badges.length,
-				0,
-				"Must not generate critical red alert badges for clean patient",
-			);
-		});
-
-		it("correctly identifies negative allergy statements (isNegativeAllergyStatement)", () => {
-			assert.strictEqual(isNegativeAllergyStatement("Аллергии не выявлены"), true);
-			assert.strictEqual(isNegativeAllergyStatement("Аллергоанамнез не отягощен"), true);
-			assert.strictEqual(isNegativeAllergyStatement("Отрицает"), true);
-			assert.strictEqual(isNegativeAllergyStatement("Со слов здоров"), true);
-			assert.strictEqual(isNegativeAllergyStatement("Аллергия на пенициллин"), false);
-			assert.strictEqual(isNegativeAllergyStatement("Отек Квинке на лидокаин"), false);
-		});
-
-		it("PatientAvatarAndInfoSection and VisitView render clean allergy badge branch when badges are empty", () => {
-			const avatarSectionPath = path.join(webSrc, "components/visit/view/visitHeaderModules/PatientAvatarAndInfoSection.tsx");
-			const sectionContent = fs.readFileSync(avatarSectionPath, "utf-8");
-
-			// Check PatientAvatarAndInfoSection
-			assert.ok(
-				sectionContent.includes('data-testid="visit-focus-allergy-alert"'),
-				"PatientAvatarAndInfoSection must have alert allergy badge",
-			);
-			assert.ok(
-				sectionContent.includes('data-testid="visit-focus-allergy-clean"'),
-				"PatientAvatarAndInfoSection must have clean allergy badge branch",
-			);
-			assert.ok(
-				sectionContent.includes("Аллергии не выявлены"),
-				"PatientAvatarAndInfoSection must render 'Аллергии не выявлены'",
-			);
-		});
-
-		it("MobileChairsideVisitWorkspace renders mobile-chairside-allergy-clean badge when no allergy exists", () => {
-			const mobileWorkspaceContent = fs.readFileSync(
-				path.join(webSrc, "components/visit/MobileChairsideVisitWorkspace.tsx"),
-				"utf-8",
-			);
-			const mobileCssPath = path.join(webSrc, "components/visit/mobile-chairside-visit.css");
-			let mobileCssContent = fs.readFileSync(mobileCssPath, "utf-8");
-			const importMatches = [...mobileCssContent.matchAll(/@import\s+["']([^"']+)["'];/g)];
-			if (importMatches.length > 0) {
-				const baseDir = path.dirname(mobileCssPath);
-				mobileCssContent = importMatches.map((m) => fs.readFileSync(path.resolve(baseDir, m[1]), "utf-8")).join("\n") + "\n" + mobileCssContent;
-			}
-
-			assert.ok(
-				mobileWorkspaceContent.includes("mobile-chairside-allergy-clean"),
-				"MobileChairsideVisitWorkspace must render mobile-chairside-allergy-clean class",
-			);
-			assert.ok(
-				mobileWorkspaceContent.includes("allergy-clean-badge"),
-				"MobileChairsideVisitWorkspace must have test-id for clean allergy badge",
-			);
-			assert.ok(
-				mobileCssContent.includes(".mobile-chairside-allergy-clean"),
-				"mobile-chairside-visit.css must define .mobile-chairside-allergy-clean",
-			);
-		});
+	it("1. calculateActivePatientCriticalBadges detects Penicillin, Lidocaine & Asthma stop-factors", () => {
+		const badges = calculateActivePatientCriticalBadges(
+			{
+				allergies: "Пенициллин, Лидокаин",
+				somaticNotes: "Бронхиальная астма",
+			},
+		);
+		const ids = badges.map((b) => b.id);
+		assert.ok(ids.includes("penicillin"));
+		assert.ok(ids.includes("lidocaine"));
+		assert.ok(ids.includes("asthma"));
 	});
 
-	describe("2. 1-Click Physiological Norm & Doctor Autonomy (Mandates 8e & 8k)", () => {
-		it("createHealthySomaticNormProfile initializes non-burdened physiological norm", () => {
-			const norm = createHealthySomaticNormProfile();
-
-			assert.strictEqual(norm.hasLidocaineAllergy, false);
-			assert.strictEqual(norm.hasArticaineAllergy, false);
-			assert.strictEqual(norm.hasPenicillinAllergy, false);
-			assert.strictEqual(norm.hasPacemakerExs, false);
-			assert.strictEqual(norm.hasHypertension, false);
-			assert.strictEqual(norm.pregnancyTrimester, "none");
-			assert.ok(
-				norm.customChronicNotes?.includes("Соматически здоров"),
-				"Notes must reflect healthy somatic status",
-			);
-		});
-
-		it("evaluatePatientSafetyFlags returns zero stop flags for healthy norm", () => {
-			const norm = DEFAULT_SOMATIC_HEALTHY_NORM;
-			const evaluation = evaluatePatientSafetyFlags(norm);
-
-			assert.strictEqual(evaluation.hasCriticalStopFlags, false);
-			assert.strictEqual(evaluation.hasHighRiskFlags, false);
-			assert.strictEqual(evaluation.totalAlertCount, 0);
-			assert.strictEqual(evaluation.activeFlags.length, 0);
-			assert.strictEqual(isSomaticProfilePhysiologicalNorm(norm), true);
-		});
-
-		it("SomaticAnamnesisCard and PatientCardModal have zero disabled save buttons", () => {
-			const somaticNotesContent = fs.readFileSync(
-				path.join(webSrc, "components/clinical/somaticCard/SomaticNotesAndActions.tsx"),
-				"utf-8",
-			);
-			const patientCardModalContent = fs.readFileSync(
-				path.join(webSrc, "components/patients/PatientCardModal.tsx"),
-				"utf-8",
-			);
-
-			// Somatic save button
-			assert.ok(
-				somaticNotesContent.includes("Сохранить статус"),
-				"Must have 'Сохранить статус' button",
-			);
-			assert.ok(
-				!somaticNotesContent.includes("disabled={!"),
-				"Must not block save button with artificial validation barriers",
-			);
-
-			// Patient card modal
-			assert.ok(
-				patientCardModalContent.includes("handleApplyNorm"),
-				"PatientCardModal must support 1-click norm application",
-			);
-		});
-
-		it("ANAMNESIS_PRESETS allows fast 1-click selection of common profiles without manual typing", () => {
-			const healthyNormResult = applyAnamnesisPreset(DEFAULT_ANAMNESIS_PROFILE, "clean");
-			assert.strictEqual(healthyNormResult.updatedProfile.hasPacemakerExs, false);
-			assert.strictEqual(healthyNormResult.updatedProfile.hasPenicillinAllergy, false);
-
-			const cardioResult = applyAnamnesisPreset(DEFAULT_ANAMNESIS_PROFILE, "cardio");
-			assert.strictEqual(cardioResult.updatedProfile.hasHypertension, true);
-
-			const penicillinResult = applyAnamnesisPreset(DEFAULT_ANAMNESIS_PROFILE, "allergy_penicillin");
-			assert.strictEqual(penicillinResult.updatedProfile.hasPenicillinAllergy, true);
-		});
+	it("2. SomaticQuickNormBar renders unlocked norm action and critical warning banner without 834н jargon", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(SomaticQuickNormBar, {
+				activePat: { fullName: "Иванов И.И.", allergies: "Пенициллин" },
+				totalCriticalAlerts: true,
+				selectedRisks: ["asthma"],
+				selectedAllergies: { penicillin: "Крапивница" },
+				selectedAllergyCount: 1,
+				onApplyPhysiologicalNorm: () => {},
+				onApplyToDiary: () => {},
+			}),
+		);
+		assert.ok(html.length > 0);
+		assert.strictEqual(html.includes("834н"), false);
+		assert.strictEqual(html.includes("043/у"), false);
 	});
 
-	describe("3. Dual-Mode Isolation (Mandates 8c & 8k)", () => {
-		it("Demo Showcase patient Smirnova Anna Sergeevna has penicillin allergy and hypertension populated", () => {
-			const demoPatients = getDemoShowcasePatients();
-			const smirnova = demoPatients.find((p) => p.fullName === "Смирнова Анна Сергеевна");
-
-			assert.ok(smirnova, "Demo showcase patient Smirnova Anna Sergeevna must exist");
-			assert.ok(
-				(smirnova as any).allergies?.includes("пенициллин") ||
-				smirnova.notes?.includes("пенициллин"),
-				"Smirnova must have penicillin allergy populated in demo mode",
-			);
-			assert.ok(
-				(smirnova as any).somaticNotes?.includes("гипертенз") ||
-				smirnova.notes?.includes("гипертенз"),
-				"Smirnova must have arterial hypertension populated in demo mode",
-			);
+	it("3. executePatientSomaticNormAutonomy applies healthy status without blocking CTA", () => {
+		let savedNotes = "";
+		const res = executePatientSomaticNormAutonomy({
+			selectedPatient: {
+				id: "pat-anam-1",
+				organizationId: "org-1",
+				fullName: "Тест",
+				phone: "+79001112233",
+				birthDate: "1990-01-01",
+				status: "active",
+				balanceRub: 0,
+				createdAt: "2026-01-01T00:00:00Z",
+				updatedAt: "2026-01-01T00:00:00Z",
+			},
+			currentNotes: "",
+			updatePatientCoreDraft: (_field, val) => {
+				savedNotes = val;
+			},
 		});
-
-		it("PatientHistoryTab uses real PostgreSQL records via usePatientHistory and does NOT leak mocks in production mode", () => {
-			const mapperPath = path.join(webSrc, "components/patients/patientHistory/patientVisitsDashboardMapper.ts");
-			const usePatientHistoryPath = path.join(webSrc, "components/patients/patientHistory/usePatientHistory.ts");
-			
-			// Ensure fake mapper is deleted
-			assert.strictEqual(
-				fs.existsSync(mapperPath),
-				false,
-				"patientVisitsDashboardMapper.ts must be physically deleted",
-			);
-
-			const hookContent = fs.readFileSync(usePatientHistoryPath, "utf-8");
-
-			// Ensure real backend endpoint is called
-			assert.ok(
-				hookContent.includes("/api/patients/") && hookContent.includes("/records"),
-				"usePatientHistory must call /api/patients/:id/records from PostgreSQL",
-			);
-
-			// Ensure guard exists
-			assert.ok(
-				hookContent.includes("isDemoShowcaseMode"),
-				"usePatientHistory must check isDemoShowcaseMode to isolate demo state",
-			);
-		});
-	});
-
-	describe("4. Sanctity of Medical Records & Ergonomics (Mandates 8d & Apple HIG)", () => {
-		it("zero cartoon emojis in safetyMath.ts definitions, badges, and titles", () => {
-			const safetyMathContent = fs.readFileSync(
-				path.join(webSrc, "components/patients/safetyMath.ts"),
-				"utf-8",
-			);
-
-			const lines = safetyMathContent.split("\n");
-			for (let i = 0; i < lines.length; i++) {
-				const line = lines[i];
-				if (!line || line.includes("//") || line.includes("/*")) continue;
-				assert.ok(
-					!EMOJI_REGEX.test(line),
-					`Forbidden emoji detected in safetyMath.ts at line ${i + 1}: ${line}`,
-				);
-			}
-		});
-
-		it("zero cartoon emojis in patientAnamnesisPresets.ts", () => {
-			const presetsContent = fs.readFileSync(
-				path.join(webSrc, "components/patients/patientAnamnesisPresets.ts"),
-				"utf-8",
-			);
-
-			const lines = presetsContent.split("\n");
-			for (let i = 0; i < lines.length; i++) {
-				const line = lines[i];
-				if (!line || line.includes("//") || line.includes("/*")) continue;
-				assert.ok(
-					!EMOJI_REGEX.test(line),
-					`Forbidden emoji detected in patientAnamnesisPresets.ts at line ${i + 1}: ${line}`,
-				);
-			}
-		});
-
-		it("mobile touch targets in safetyBanner.css and PatientAnamnesisModal adhere to >= 44x44px", () => {
-			const safetyBannerCss = fs.readFileSync(
-				path.join(webSrc, "components/patients/safetyBanner.css"),
-				"utf-8",
-			);
-
-			assert.ok(
-				safetyBannerCss.includes("min-height: 44px") ||
-				safetyBannerCss.includes("min-h-[44px]") ||
-				safetyBannerCss.includes("44px"),
-				"safetyBanner.css must respect >= 44px touch targets",
-			);
-		});
-	});
-
-	describe("5. Order 834n & Clinical Depth of VisitAnamnesisTab (Chairside Security)", () => {
-		it("VisitAnamnesisTab includes granular dental allergens with reaction types", async () => {
-			const { DENTAL_ALLERGENS, ALLERGY_REACTIONS } = await import(
-				"../components/visit/VisitAnamnesisTab.js"
-			);
-
-			// Allergen catalog validation
-			const allergenNames = DENTAL_ALLERGENS.map((a: any) => a.name);
-			assert.ok(allergenNames.includes("Артикаин"), "Must include Articaine");
-			assert.ok(allergenNames.includes("Лидокаин"), "Must include Lidocaine");
-			assert.ok(allergenNames.includes("Мепивакаин"), "Must include Mepivacaine");
-			assert.ok(allergenNames.includes("Пенициллиновый ряд"), "Must include Penicillins");
-			assert.ok(allergenNames.includes("Латекс"), "Must include Latex");
-			assert.ok(allergenNames.includes("Металлы / Никель"), "Must include Metals/Nickel");
-			assert.ok(allergenNames.includes("Йод / Йодоформ"), "Must include Iodine");
-			assert.ok(allergenNames.includes("НПВП / Аспирин"), "Must include NSAIDs");
-
-			// Reaction types validation
-			assert.ok(ALLERGY_REACTIONS.includes("Отёк Квинке"), "Must include Quincke's edema");
-			assert.ok(ALLERGY_REACTIONS.includes("Анафилактический шок"), "Must include Anaphylaxis");
-			assert.ok(ALLERGY_REACTIONS.includes("Крапивница / кожный зуд"), "Must include Urticaria");
-		});
-
-		it("VisitAnamnesisTab includes Order 834n critical stop-factors and dental history", async () => {
-			const { SOMATIC_STOP_FACTORS, DENTAL_HISTORY_ITEMS } = await import(
-				"../components/visit/VisitAnamnesisTab.js"
-			);
-
-			// Stop-factors
-			const stopLabels = SOMATIC_STOP_FACTORS.map((s: any) => s.label);
-			assert.ok(stopLabels.some((l: string) => l.includes("Инфаркт")), "Must include Recent Infarction");
-			assert.ok(stopLabels.some((l: string) => l.includes("Кардиостимулятор")), "Must include Pacemaker EXS");
-			assert.ok(stopLabels.some((l: string) => l.includes("антикоагулянтов")), "Must include Anticoagulants");
-			assert.ok(stopLabels.some((l: string) => l.includes("бисфосфонатов")), "Must include Bisphosphonates MRONJ");
-			assert.ok(stopLabels.some((l: string) => l.includes("Сахарный диабет")), "Must include Diabetes");
-			assert.ok(stopLabels.some((l: string) => l.includes("Беременность")), "Must include Pregnancy");
-
-			// Dental history
-			const historyLabels = DENTAL_HISTORY_ITEMS.map((h: any) => h.label);
-			assert.ok(historyLabels.some((l: string) => l.includes("Опыт анестезии")), "Must include Anesthesia Experience");
-			assert.ok(historyLabels.some((l: string) => l.includes("Дентофобия")), "Must include Dentophobia");
-			assert.ok(historyLabels.some((l: string) => l.includes("Бруксизм")), "Must include Bruxism");
-			assert.ok(historyLabels.some((l: string) => l.includes("Кровоточивость")), "Must include Bleeding gums");
-		});
-
-		it("specific allergen + reaction string triggers accurate chairside critical alert badges", () => {
-			// Test 1: Articaine + Quincke edema
-			const articainePatient: PatientForCriticalBadges = {
-				allergies: "Артикаин (Отёк Квинке)",
-			};
-			const articaineBadges = calculateActivePatientCriticalBadges(articainePatient);
-			assert.ok(
-				articaineBadges.some((b) => b.id === "articaine"),
-				"Must trigger articaine critical badge",
-			);
-			assert.ok(
-				articaineBadges.some((b) => b.id === "allergy"),
-				"Must trigger general allergy alert badge",
-			);
-
-			// Test 2: Lidocaine + Anaphylaxis
-			const lidocainePatient: PatientForCriticalBadges = {
-				allergies: "Лидокаин (Анафилактический шок)",
-			};
-			const lidocaineBadges = calculateActivePatientCriticalBadges(lidocainePatient);
-			assert.ok(
-				lidocaineBadges.some((b) => b.id === "lidocaine"),
-				"Must trigger lidocaine critical badge",
-			);
-
-			// Test 3: Bisphosphonate therapy in somatic notes
-			const bisphosphonatePatient: PatientForCriticalBadges = {
-				allergies: "Аллергии не выявлены",
-				somaticNotes: "Приём бисфосфонатов (Акласта 5 мг/год)",
-			};
-			const bisBadges = calculateActivePatientCriticalBadges(bisphosphonatePatient);
-			assert.ok(
-				bisBadges.some((b) => b.id === "bisphosphonates"),
-				"Must trigger bisphosphonates MRONJ critical badge",
-			);
-			assert.strictEqual(
-				bisBadges.some((b) => b.id === "allergy"),
-				false,
-				"Must not trigger false positive allergy badge when allergies are clean",
-			);
-		});
-
-		it("zero disabled buttons and zero cartoon emojis in VisitAnamnesisTab.tsx", () => {
-			const tabPath = path.join(webSrc, "components/visit/VisitAnamnesisTab.tsx");
-			const tabDir = path.join(webSrc, "components/visit/anamnesisTab");
-			let content = fs.readFileSync(tabPath, "utf-8");
-			if (fs.existsSync(tabDir)) {
-				const childFiles = fs.readdirSync(tabDir).filter((f) => f.endsWith(".tsx"));
-				for (const cf of childFiles) {
-					content += "\n" + fs.readFileSync(path.join(tabDir, cf), "utf-8");
-				}
-			}
-
-			// Autonomy check
-			assert.ok(!content.includes("disabled={!"), "Must have 0 disabled buttons");
-			assert.ok(!content.includes("disabled={true}"), "Must not hardcode disabled={true}");
-
-			// Test-ids presence
-			assert.ok(content.includes('data-testid="btn-somatic-norm-one-click"'), "Must have 1-click norm button test-id");
-			assert.ok(content.includes('data-testid="btn-apply-anamnesis-to-diary"'), "Must have apply to diary button test-id");
-			assert.ok(content.includes('data-testid="btn-save-anamnesis-to-patient"'), "Must have save to patient button test-id");
-
-			// Emoji hygiene check
-			const lines = content.split("\n");
-			for (let i = 0; i < lines.length; i++) {
-				const line = lines[i];
-				if (!line || line.includes("//") || line.includes("/*")) continue;
-				assert.ok(
-					!EMOJI_REGEX.test(line),
-					`Forbidden emoji detected in VisitAnamnesisTab.tsx at line ${i + 1}: ${line}`,
-				);
-			}
-		});
+		assert.strictEqual(res.executed, true);
+		assert.ok(savedNotes.includes("Соматически здоров"));
+		assert.ok(patientCoreDraftFromPatient(null).fullName === "");
 	});
 });

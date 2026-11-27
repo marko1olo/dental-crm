@@ -9,22 +9,30 @@ import { normalizedLocalOrganizationId } from "../../AuthOnboardingHelpers";
 import { localImagingFolderFingerprint } from "../../browserScanUtils";
 import { sensitiveLocalDraftRetentionMs } from "../../commonHelpers/documentDraftHelpers";
 import {
-	type DicomWorkbenchIndexedDbDraft,
-	type DicomWorkbenchLocalDraft,
-	dicomWorkbenchDraftStoreName,
-	dicomWorkbenchIndexedDbKey,
-	dicomWorkbenchLocalStorageKey,
-	type ImagingViewerLocalDraft,
-	imagingViewerLocalKey,
-	type LocalImagingFolderDraft,
-	localImagingFolderStorageKey,
-	type MprWorkbenchIndexedDbDraft,
-	type MprWorkbenchLocalDraft,
-	type MprWorkbenchState,
-	mprWorkbenchDraftStoreName,
+	isMprProjection,
+	isMprWindowPreset,
 	mprWorkbenchIndexedDbKey,
 	mprWorkbenchLocalKey,
-} from "../../ImagingHelpers";
+} from "../../../appHelpers/imagingMprHelpers";
+import type {
+	DicomWorkbenchIndexedDbDraft,
+	DicomWorkbenchLocalDraft,
+	ImagingViewerLocalDraft,
+	LocalImagingFolderDraft,
+	MprWorkbenchIndexedDbDraft,
+	MprWorkbenchLocalDraft,
+	MprWorkbenchState,
+} from "../../../appHelpers/types";
+import {
+	DICOM_WORKBENCH_DRAFTS_STORE_NAME as dicomWorkbenchDraftStoreName,
+	MPR_WORKBENCH_DRAFTS_STORE_NAME as mprWorkbenchDraftStoreName,
+} from "../../../services/offline/storage/constants";
+import {
+	dicomWorkbenchIndexedDbKey,
+	dicomWorkbenchLocalStorageKey,
+	imagingViewerLocalKey,
+	localImagingFolderStorageKey,
+} from "./imagingDraftKeys";
 import {
 	localConvenienceRetentionMs,
 	localSavedAtFresh,
@@ -86,7 +94,8 @@ export function saveLocalImagingViewerDraft(
 			JSON.stringify(draft),
 		);
 		return true;
-	} catch {
+	} catch (error) {
+		logger.warn("[ImagingDraft] Failed to save local imaging viewer draft", error);
 		return false;
 	}
 }
@@ -127,7 +136,8 @@ export function loadLocalImagingFolderDraft(
 				localImagingFolderFingerprint(parsed.folderPath),
 			origin: parsed.origin || "manual",
 		};
-	} catch {
+	} catch (error) {
+		logger.warn("[ImagingDraft] Failed to load local imaging folder draft", error);
 		return null;
 	}
 }
@@ -145,8 +155,9 @@ export function saveLocalImagingFolderDraft(
 			),
 			JSON.stringify(draft),
 		);
-	} catch {
+	} catch (error) {
 		// Local folder recovery is best-effort and never sent to the server.
+		logger.warn("[ImagingDraft] Failed to save local imaging folder draft", error);
 	}
 }
 
@@ -163,8 +174,8 @@ export function removeLocalImagingFolderDraft(
 		);
 		if (organizationId)
 			safeLocalStorageRemoveItem(localImagingFolderStorageKey);
-	} catch {
-		// ignore unavailable storage
+	} catch (error) {
+		logger.warn("[ImagingDraft] Failed to remove local imaging folder draft", error);
 	}
 }
 
@@ -221,7 +232,8 @@ export function saveLocalDicomWorkbenchDraftToLocalStorage(
 			JSON.stringify(draft),
 		);
 		return true;
-	} catch {
+	} catch (error) {
+		logger.warn("[ImagingDraft] Failed to save local imaging viewer draft", error);
 		return false;
 	}
 }
@@ -239,8 +251,8 @@ export function removeLocalDicomWorkbenchDraftFromLocalStorage(
 		);
 		if (organizationId)
 			safeLocalStorageRemoveItem(dicomWorkbenchLocalStorageKey);
-	} catch {
-		// ignore unavailable storage
+	} catch (error) {
+		logger.warn("[ImagingDraft] Failed to remove DICOM workbench draft from localStorage", error);
 	}
 }
 
@@ -305,7 +317,8 @@ export function saveLocalMprWorkbenchDraftToLocalStorage(
 			} satisfies MprWorkbenchLocalDraft),
 		);
 		return true;
-	} catch {
+	} catch (error) {
+		logger.warn("[ImagingDraft] Failed to save local imaging viewer draft", error);
 		return false;
 	}
 }
@@ -337,7 +350,9 @@ export async function readLocalDicomWorkbenchDraftFromIndexedDb(
 	const normalized = normalizeLocalDicomWorkbenchDraft(record);
 	if (!normalized && record && typeof record === "object") {
 		await deleteLocalDicomWorkbenchDraftFromIndexedDb(organizationId).catch(
-			() => undefined,
+			(err) => {
+				logger.warn("[ImagingDraft] Failed to delete stale DICOM workbench draft from IndexedDB", err);
+			},
 		);
 	}
 	return normalized;

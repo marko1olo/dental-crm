@@ -17,14 +17,18 @@ import {
 } from "../../browserScanUtils";
 import { sensitiveLocalDraftRetentionMs } from "../../commonHelpers/documentDraftHelpers";
 import {
-	type DicomWorkbenchLocalDraft,
+	loadImageFromDataUrl,
+	readFileAsDataUrl,
+} from "../../../appHelpers/imagingModules/imagingViewerHelpers";
+import {
 	isMprProjection,
 	isMprWindowPreset,
-	loadImageFromDataUrl,
-	type MprWorkbenchLocalDraft,
-	type MprWorkbenchState,
-	readFileAsDataUrl,
-} from "../../ImagingHelpers";
+} from "../../../appHelpers/imagingMprHelpers";
+import type {
+	DicomWorkbenchLocalDraft,
+	MprWorkbenchLocalDraft,
+	MprWorkbenchState,
+} from "../../../appHelpers/types";
 import { localSavedAtFresh } from "../../localStorageHelpers";
 import {
 	telegramPublicUrlSensitivePathSegments,

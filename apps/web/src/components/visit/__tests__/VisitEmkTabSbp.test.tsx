@@ -1,105 +1,96 @@
 /**
  * VisitEmkTabSbp.test.tsx
- * Unit & structural tests for SBP QR payment modal and raw checkmark/emoji elimination
- * under Mandate 8d (UI Deadly Sin #7) and Apple HIG / DENTE Ergonomics.
+ * Live SSR tests for SBP QR payment modal, button order (8am), integer kopecks, and vector icons.
  */
 
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { VisitEmkModals } from "../emkTab/VisitEmkModals";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+function renderSbpModal(totalNetKop = 1250000) {
+	return renderToStaticMarkup(
+		<VisitEmkModals
+			isSbpQrModalOpen={true}
+			setIsSbpQrModalOpen={() => {}}
+			completionResult={{
+				visitId: "visit-1",
+				invoiceId: "inv-1",
+				receiptNumber: "00042",
+				totalNetRub: totalNetKop / 100,
+				totalNetKop,
+				sbpQrPayload: "https://qr.nspk.ru/AD100000000000000000000000000001",
+			}}
+			activePatient={{
+				id: "pat-1",
+				organizationId: "org-1",
+				fullName: "Иванова Мария",
+				phone: "+7 (900) 123-45-67",
+				birthDate: "1990-01-01",
+				status: "active",
+				balanceRub: 0,
+				createdAt: "2026-01-01T00:00:00.000Z",
+				updatedAt: "2026-01-01T00:00:00.000Z",
+			}}
+			activeDoctor={null}
+			isStarProtocolsOpen={false}
+			setIsStarProtocolsOpen={() => {}}
+			isSoapTemplatesModalOpen={false}
+			setIsSoapTemplatesModalOpen={() => {}}
+			isConsentModalOpen={false}
+			setIsConsentModalOpen={() => {}}
+			isPrintModalOpen={false}
+			setIsPrintModalOpen={() => {}}
+			visitNoteForm={{
+				complaints: "",
+				anamnesis: "",
+				statusLocalis: "",
+				diagnosisIcd10: "",
+				treatmentDescription: "",
+			}}
+			updateVisitNoteField={() => {}}
+			isSignedVisit={false}
+			dashboard={null}
+			onApplyCatalogPatch={() => {}}
+		/>,
+	);
+}
 
-describe("Mandate 8d Greed #7 — Elimination of raw checkmarks & emojis in SBP modal (VisitEmkTab)", () => {
-	const emkTabPath = path.resolve(__dirname, "../VisitEmkTab.tsx");
-	const modalsPath = path.resolve(__dirname, "../emkTab/VisitEmkModals.tsx");
-	const sourceCode =
-		fs.readFileSync(emkTabPath, "utf8") +
-		"\n" +
-		(fs.existsSync(modalsPath) ? fs.readFileSync(modalsPath, "utf8") : "");
+describe("Mandate 8d/8am — VisitEmkModals SBP QR layout, CTA order & vector icons", () => {
+	it("1. renders btn-confirm-sbp-paid with Lucide SVG icon, >= 44px height and --primary token", () => {
+		const html = renderSbpModal();
+		const btnIdx = html.indexOf('data-testid="btn-confirm-sbp-paid"');
+		assert.ok(btnIdx > -1, "btn-confirm-sbp-paid must render");
 
-	it("1. guarantees btn-confirm-sbp-paid uses Lucide Check vector icon instead of raw <span>✓</span>", () => {
-		// Strict ban on raw checkmark span in SBP confirm button
-		assert.strictEqual(
-			sourceCode.includes("<span>✓</span>"),
-			false,
-			"VisitEmkTab.tsx must NOT contain raw '<span>✓</span>' inside SBP modal button",
-		);
+		const btnSlice = html.slice(Math.max(0, btnIdx - 250), btnIdx + 500);
+		assert.ok(btnSlice.includes("<svg"), "btn-confirm-sbp-paid must contain vector Lucide icon");
+		assert.ok(btnSlice.includes("min-h-[48px]"), "btn-confirm-sbp-paid must comply with >= 44px touch target");
+		assert.ok(btnSlice.includes("bg-[var(--primary)]"), "Primary CTA must use var(--primary)");
+		assert.ok(btnSlice.includes("Подтвердить оплату в кассе"));
+	});
 
-		// Button must contain vector Check icon
-		const sbpButtonMatch = sourceCode.match(
-			/data-testid="btn-confirm-sbp-paid"[\s\S]*?>([\s\S]*?)<\/button>/,
-		);
+	it("2. enforces Mandate 8am footer order: 'Закрыть' placed LEFT of Primary CTA btn-confirm-sbp-paid", () => {
+		const html = renderSbpModal();
+		const closeTextIdx = html.indexOf(">Закрыть</button>");
+		const confirmBtnIdx = html.indexOf('data-testid="btn-confirm-sbp-paid"');
+		assert.ok(closeTextIdx > -1, "Close button must render");
+		assert.ok(confirmBtnIdx > -1, "Confirm SBP button must render");
 		assert.ok(
-			sbpButtonMatch,
-			"btn-confirm-sbp-paid button must exist in VisitEmkTab.tsx",
-		);
-
-		const buttonContent = sbpButtonMatch[0];
-		assert.ok(
-			buttonContent.includes("<Check") || sourceCode.includes('<Check size={16} className="shrink-0" />'),
-			"btn-confirm-sbp-paid must render vector <Check /> Lucide icon",
-		);
-		assert.ok(
-			buttonContent.includes("Подтвердить оплату"),
-			"btn-confirm-sbp-paid must render text 'Подтвердить оплату'",
+			closeTextIdx < confirmBtnIdx,
+			"Cancel/Close button MUST appear BEFORE Primary CTA btn-confirm-sbp-paid",
 		);
 	});
 
-	it("2. guarantees SBP confirmation button complies with touch-target ergonomics (>= 44px, min-h-[48px])", () => {
-		const sbpButtonTagMatch = sourceCode.match(
-			/<button[^>]*data-testid="btn-confirm-sbp-paid"[^>]*>|<button[^>]*class(?:Name)?="[^"]*min-h-\[48px\][^"]*"[^>]*data-testid="btn-confirm-sbp-paid"/,
-		);
-		assert.ok(
-			sbpButtonTagMatch || sourceCode.includes("min-h-[48px]"),
-			"btn-confirm-sbp-paid must have min-h-[48px] for touch ergonomics (>= 44px)",
-		);
-
-		// Check classes for high contrast and ergonomics
-		assert.ok(
-			sourceCode.includes('data-testid="btn-confirm-sbp-paid"'),
-			'data-testid="btn-confirm-sbp-paid" must be present',
-		);
-	});
-
-	it("3. guarantees toolbar tooltips and badges do not contain raw checkmarks (✓, ✔)", () => {
-		// Strict ban on raw checkmark in tooltips or badges
-		assert.strictEqual(
-			sourceCode.includes('title="Отметка выполнения ([✓] )"'),
-			false,
-			"Toolbar button must not use raw checkmark in title tooltip",
-		);
-		assert.strictEqual(
-			sourceCode.includes("[✓]") || sourceCode.includes("[✔]") || sourceCode.includes("<span>✓</span>"),
-			false,
-			"VisitEmkTab and modals must not contain raw checkmark spans or brackets",
-		);
-	});
-
-	it("4. guarantees SBP QR modal follows Anti-Matryoshka law (modal depth = 1) and WCAG contrast", () => {
-		// SBP QR modal container must have semantic dialog role and proper styling
-		assert.ok(
-			sourceCode.includes('aria-labelledby="sbp-qr-modal-title"'),
-			"SBP QR modal must have proper aria labeling",
-		);
-		assert.ok(
-			sourceCode.includes('data-testid="btn-confirm-sbp-paid"'),
-			"SBP confirm button must have testid",
-		);
-
-		// Zero cartoon emojis in SBP modal section
-		const sbpModalSectionMatch = sourceCode.match(
-			/\{isSbpQrModalOpen\s*&&\s*completionResult[\s\S]*?role="dialog"[\s\S]*?data-testid="btn-confirm-sbp-paid"[\s\S]*?<\/div>\s*\)\s*\}/,
-		);
-		assert.ok(sbpModalSectionMatch, "SBP modal JSX section must be matched");
-		const modalCode = sbpModalSectionMatch[0];
-		assert.ok(!modalCode.includes("✓"), "SBP modal must have 0 raw ✓ symbols");
-		assert.ok(!modalCode.includes("✔"), "SBP modal must have 0 raw ✔ symbols");
-		assert.ok(!modalCode.includes("🔥"), "SBP modal must have 0 cartoon emojis");
-		assert.ok(!modalCode.includes("✨"), "SBP modal must have 0 cartoon emojis");
-		assert.ok(!modalCode.includes("🎉"), "SBP modal must have 0 cartoon emojis");
+	it("3. guarantees zero raw checkmarks, zero cartoon emojis, and accessible dialog attributes", () => {
+		const html = renderSbpModal(950000);
+		assert.ok(html.includes('role="dialog"'));
+		assert.ok(html.includes('aria-labelledby="sbp-qr-modal-title"'));
+		assert.ok(html.includes('data-testid="sbp-qr-svg-container"'));
+		assert.ok(html.includes("9") && html.includes("500"), "Must format amount from totalNetKop");
+		assert.strictEqual(html.includes("✓"), false);
+		assert.strictEqual(html.includes("✔"), false);
+		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+		assert.strictEqual(emojiRegex.test(html), false, "Must render zero cartoon emojis");
 	});
 });

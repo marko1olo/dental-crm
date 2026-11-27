@@ -21,6 +21,7 @@ export interface ReadyInClinicLabOrder {
 	readonly clinicPhone?: string | undefined;
 	readonly bookingUrl?: string | undefined;
 	readonly priceRub?: number | undefined;
+	readonly patientPriceKopecks?: number | undefined;
 	readonly clinicSharePct?: number | undefined;
 	readonly doctorSharePct?: number | undefined;
 	readonly isPartialDelivery?: boolean | undefined;

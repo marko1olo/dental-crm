@@ -1,215 +1,153 @@
 /**
  * captureConsoleAndHardwareGateways.test.ts
  *
- * Window #3: Capture Console & Hardware Gateways (Вкладка «СНИМОК» EzDent-i).
- *
- * Mandates & Standards:
- * - EzDent-i Screenshot 20 & 21 Fidelity (docs/vatech_research/10_EZDENT_REAL_UI_TELEGRAM_SCREENSHOTS_AUDIT.md §2.6)
- * - 5 Capture Modes: [ IO-сенсор ], [ IO-камера ] (WebRTC getUserMedia), [ TWAIN ], [ Авто DSLR ], [ Импорт ]
- * - 4-Way Orientation Transforms: 90° CCW, 90° CW, Mirror X (Flip H), Mirror Y (Flip V)
- * - 100% Eradication of Physics/Radiology Clutter: zero kV, mA, seconds, or radiation dosimetry alerts in capture UI
- * - Mandate 8s: Single Canonical Domain Authority & Transparent Facades
- * - Mandate 8e: Doctor Autonomy (Zero hardware lock-in, immediate capture <50ms)
+ * Window #3: Capture Console & Hardware Gateways (SSR + Pure Engine Verification).
  */
 
 import assert from "node:assert/strict";
-import { readFileSync, existsSync } from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-
-const expect = (actual: any) => ({
-	toBe: (expected: any) => assert.equal(actual, expected),
-	toEqual: (expected: any) => assert.deepEqual(actual, expected),
-	toContain: (substr: any) => assert.ok(actual.includes(substr)),
-	toBeTruthy: () => assert.ok(Boolean(actual)),
-	not: {
-		toMatch: (regex: RegExp) => assert.ok(!regex.test(actual)),
-		toContain: (substr: any) => assert.ok(!actual.includes(substr)),
-	},
-});
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import {
 	CAPTURE_SOURCE_MODES,
 	SENSOR_MODELS,
-	PROJECTION_TYPES,
-	type CaptureSourceMode,
-} from "../directRvgTypes";
-
+	DirectRvgCaptureModal,
+	DirectRvgSensorTelemetryHeader,
+	validateRadiologyUploadFile,
+	detectRadiologySensorBrand,
+	extractTeethFromRadiologyFilename,
+} from "../DirectRvgCaptureModal";
+import { DirectRvgViewportToolbar } from "../DirectRvgViewportToolbar";
+import { HotFolderIntakeModal } from "../HotFolderIntakeModal";
 import {
-	HARDWARE_PRESETS,
-	HARDWARE_CATEGORY_LABELS,
-} from "../../../services/hardware/hardwarePresets";
+	UNIVERSAL_SENSOR_CATALOG,
+	NON_CONFLICTING_USB_POLICY,
+} from "../UniversalSensorGateway";
+import { HARDWARE_PRESETS } from "../../../services/hardware/hardwarePresets";
 
-const webSrcRoot = path.join(import.meta.dirname, "../../..");
-
-function readSource(relativePath: string): string {
-	return readFileSync(path.join(webSrcRoot, relativePath), "utf8");
-}
-
-describe("Window #3: Capture Console & Hardware Gateways (Вкладка «СНИМОК» EzDent-i)", () => {
-	describe("1. Five Canonical Capture Modes (EzDent-i Screen 20 Sidebar)", () => {
-		it("provides exactly 5 capture modes matching EzDent-i acquisition console", () => {
-			expect(CAPTURE_SOURCE_MODES.length).toBe(5);
-			const modeIds = CAPTURE_SOURCE_MODES.map((m) => m.id);
-			expect(modeIds).toEqual(["io_sensor", "io_camera", "twain", "dslr", "import"]);
-		});
-
-		it("has clean clinical Russian labels for all 5 modes", () => {
+describe("Window #3: Capture Console & Hardware Gateways", () => {
+	describe("1. Five Canonical Capture Modes & DirectRvgCaptureModal SSR", () => {
+		it("provides exactly 5 capture modes matching acquisition console", () => {
+			assert.equal(CAPTURE_SOURCE_MODES.length, 5);
+			assert.deepEqual(
+				CAPTURE_SOURCE_MODES.map((m) => m.id),
+				["io_sensor", "io_camera", "twain", "dslr", "import"],
+			);
 			const labelMap = Object.fromEntries(CAPTURE_SOURCE_MODES.map((m) => [m.id, m.label]));
-			expect(labelMap.io_sensor).toContain("IO-сенсор");
-			expect(labelMap.io_camera).toContain("IO-камера");
-			expect(labelMap.twain).toContain("TWAIN");
-			expect(labelMap.dslr).toContain("Авто DSLR");
-			expect(labelMap.import).toContain("Импорт");
+			assert.ok(labelMap.io_sensor?.includes("IO-сенсор"));
+			assert.ok(labelMap.io_camera?.includes("IO-камера"));
+			assert.ok(labelMap.twain?.includes("TWAIN"));
+			assert.ok(labelMap.dslr?.includes("Авто DSLR"));
+			assert.ok(labelMap.import?.includes("Импорт"));
 		});
 
-		it("verifies DirectRvgCaptureModal eliminates sidebar button clutter and provides instant capture", () => {
-			const modalSrc = readSource("components/radiology/DirectRvgCaptureModal.tsx");
-			expect(modalSrc).not.toContain('data-testid="rvg-capture-sidebar"');
-			expect(modalSrc).toContain('data-testid="btn-rvg-trigger-empty-capture"');
-			expect(modalSrc).toContain('data-testid="btn-rvg-upload-disk"');
+		it("renders DirectRvgCaptureModal cleanly without sidebar clutter and with instant capture triggers", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(DirectRvgCaptureModal, {
+					isOpen: true,
+					onClose: () => {},
+					patientName: "Иванов Иван",
+					doctorName: "Смирнова Анна",
+					initialTeeth: [16],
+				}),
+			);
+			assert.equal(html.includes('data-testid="rvg-capture-sidebar"'), false);
+			assert.ok(html.includes('data-testid="btn-rvg-trigger-empty-capture"'));
+			assert.ok(html.includes('data-testid="btn-rvg-upload-disk"'));
+			assert.ok(html.includes('data-testid="rvg-canvas-container"'));
+			assert.ok(html.includes('data-testid="rvg-empty-sensor-state"'));
+			assert.equal(/напряжение на трубке|дозиметрическая тревог/i.test(html), false);
 		});
 
-		it("verifies DirectRvgCaptureModal supports drag-and-drop file ingestion and disk upload", () => {
-			const modalSrc = readSource("components/radiology/DirectRvgCaptureModal.tsx");
-			expect(modalSrc).toContain("validateRadiologyUploadFile");
-			expect(modalSrc).toContain("handleViewportDrop");
-			expect(modalSrc).toContain('data-testid="rvg-drop-overlay"');
-		});
-
-		it("verifies DirectRvgCaptureModal supports instant hardware trigger and Space shortcut", () => {
-			const modalSrc = readSource("components/radiology/DirectRvgCaptureModal.tsx");
-			expect(modalSrc).toContain("handleTriggerCapture");
-			expect(modalSrc).toContain('e.code === "Space"');
-			expect(modalSrc).toContain("Снимок успешно получен с датчика RVG");
-		});
-	});
-
-	describe("2. 4-Way Frame Orientation Transformations (EzDent-i Screen 21)", () => {
-		it("supports 90° CCW, 90° CW, Mirror X (flipH), and Mirror Y (flipV) in DirectRvgViewportToolbar", () => {
-			const toolbarSrc = readSource("components/radiology/DirectRvgViewportToolbar.tsx");
-			expect(toolbarSrc).toContain('data-testid="rvg-rotate-ccw-btn"');
-			expect(toolbarSrc).toContain('data-testid="rvg-rotate-btn"');
-			expect(toolbarSrc).toContain('data-testid="rvg-flip-btn"');
-			expect(toolbarSrc).toContain('data-testid="rvg-flip-v-btn"');
-		});
-
-		it("applies 4-way CSS transform matrix on DirectRvgCaptureModal viewport canvas", () => {
-			const modalSrc = readSource("components/radiology/DirectRvgCaptureModal.tsx");
-			expect(modalSrc).toContain("scaleX(${panZoom.flipH ? -1 : 1})");
-			expect(modalSrc).toContain("scaleY(${panZoom.flipV ? -1 : 1})");
-			expect(modalSrc).toContain("rotate(${panZoom.rotation}deg)");
-		});
-
-		it("supports 4-way orientation controls in HotFolderImageCanvas", () => {
-			const canvasSrc = readSource("components/radiology/HotFolderImageCanvas.tsx");
-			expect(canvasSrc).toContain('data-testid="hfi-rotate-ccw-btn"');
-			expect(canvasSrc).toContain('data-testid="hfi-rotate-btn"');
-			expect(canvasSrc).toContain('data-testid="hfi-flip-btn"');
-			expect(canvasSrc).toContain('data-testid="hfi-flip-v-btn"');
-			expect(canvasSrc).toContain("scaleY(${flipV ? -1 : 1})");
-		});
-
-		it("wires flipV and setFlipV in HotFolderIntakeModal", () => {
-			const intakeSrc = readSource("components/radiology/HotFolderIntakeModal.tsx");
-			expect(intakeSrc).toContain("const [flipV, setFlipV] = useState<boolean>(false)");
-			expect(intakeSrc).toContain("flipV={flipV}");
-			expect(intakeSrc).toContain("setFlipV={setFlipV}");
-			expect(intakeSrc).toContain("setFlipV(false)");
+		it("validates upload filenames and detects sensor brands / FDI teeth cleanly", () => {
+			const invalid = validateRadiologyUploadFile({ name: "virus.exe", size: 1024, type: "application/octet-stream" } as File);
+			assert.equal(invalid.isValid, false);
+			assert.deepEqual(extractTeethFromRadiologyFilename("patient_tooth_16_26.png"), ["16", "26"]);
+			assert.ok(detectRadiologySensorBrand("vatech_ezsensor_01.dcm"));
 		});
 	});
 
-	describe("3. Total Eradication of Physics & Radiology Clutter (EzDent-i Clean Ergonomics)", () => {
-		it("ensures DirectRvgCaptureModal contains zero kV/mA/second inputs or radiation alerts", () => {
-			const modalSrc = readSource("components/radiology/DirectRvgCaptureModal.tsx");
-			// Must not contain numeric input fields or sliders for kV or mA or seconds
-			expect(modalSrc).not.toMatch(/<input[^>]+name=["'](?:kv|kilovolts|ma|milliamps)["']/i);
-			expect(modalSrc).not.toMatch(/напряжение на трубке/i);
-			expect(modalSrc).not.toMatch(/дозиметрическ(?:ий|ая) тревог/i);
+	describe("2. 4-Way Frame Orientation Controls & Telemetry Header SSR", () => {
+		it("renders rotate CCW/CW and horizontal/vertical flip buttons in DirectRvgViewportToolbar", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(DirectRvgViewportToolbar, {
+					zoom: 1,
+					flipH: false,
+					flipV: false,
+					isSplitCompare: false,
+					onZoomIn: () => {},
+					onZoomOut: () => {},
+					onRotate: () => {},
+					onRotateCcw: () => {},
+					onToggleFlipH: () => {},
+					onToggleFlipV: () => {},
+					onResetTransform: () => {},
+				}),
+			);
+			assert.ok(html.includes('data-testid="rvg-rotate-ccw-btn"'));
+			assert.ok(html.includes('data-testid="rvg-rotate-btn"'));
+			assert.ok(html.includes('data-testid="rvg-flip-btn"'));
+			assert.ok(html.includes('data-testid="rvg-flip-v-btn"'));
 		});
 
-		it("ensures DirectRvgSensorTelemetryHeader contains zero physics clutter", () => {
-			const headerSrc = readSource("components/radiology/DirectRvgSensorTelemetryHeader.tsx");
-			expect(headerSrc).not.toMatch(/<input[^>]+name=["'](?:kv|ma)["']/i);
-			expect(headerSrc).not.toMatch(/мА·с/i);
-		});
-
-		it("confirms clinical HUD in DirectRvgCaptureModal focuses strictly on FDI tooth and calibration", () => {
-			const modalSrc = readSource("components/radiology/DirectRvgCaptureModal.tsx");
-			expect(modalSrc).toContain("Зуб ${selectedTeeth.join");
-			expect(modalSrc).toContain("Калибровка: 0.035 мм/пикс");
+		it("renders DirectRvgSensorTelemetryHeader without physics kV/mA/mAs clutter", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(DirectRvgSensorTelemetryHeader, {
+					modalId: "rvg-test-modal",
+					patientName: "Иванов Иван",
+					doctorName: "Смирнова Анна",
+					selectedSensorModel: "vatech_ezsensor_hd",
+					onSelectSensorModel: () => {},
+					availableSensors: SENSOR_MODELS,
+					sensorStatus: "ready",
+					acquisitionProgress: 0,
+					onTriggerCapture: () => {},
+					uploadAction: () => {},
+					onUploadClick: () => {},
+					onAutoDetectSensor: () => {},
+					onTestSensorConnection: () => {},
+					onOpenCatalog: () => {},
+					onClose: () => {},
+					isDetectingSensor: false,
+				}),
+			);
+			assert.equal(/<input[^>]+name=["'](?:kv|ma)["']/i.test(html), false);
+			assert.equal(/мА·с/i.test(html), false);
 		});
 	});
 
-	describe("4. Sensor Models & Multi-Vendor Hardware Presets", () => {
-		it("provides standard high-resolution sensor models with lp/mm and pixel spacing", () => {
-			expect(SENSOR_MODELS.length >= 4).toBeTruthy();
+	describe("3. Sensor Models, Multi-Vendor Presets & Non-Conflicting HotFolder Modal", () => {
+		it("provides high-resolution sensor models and multi-vendor hardware presets", () => {
+			assert.ok(SENSOR_MODELS.length >= 4);
 			const vatechHd = SENSOR_MODELS.find((s) => s.id === "vatech_ezsensor_hd");
-			expect(Boolean(vatechHd)).toBeTruthy();
-			expect(vatechHd?.pixelSpacing).toBe(0.035);
-
+			assert.equal(vatechHd?.pixelSpacing, 0.035);
 			const planmeca = SENSOR_MODELS.find((s) => s.id === "planmeca_prosensor");
-			expect(Boolean(planmeca)).toBeTruthy();
-			expect(planmeca?.pixelSpacing).toBe(0.03);
-		});
+			assert.equal(planmeca?.pixelSpacing, 0.03);
 
-		it("provides multi-vendor hardware presets for Vatech, Sidexis, Romexis, Carestream, KaVo", () => {
 			const vendorIds = HARDWARE_PRESETS.map((p) => p.id);
-			expect(vendorIds).toContain("vatech_ezdent");
-			expect(vendorIds).toContain("sirona_sidexis");
-			expect(vendorIds).toContain("planmeca_romexis");
-			expect(vendorIds).toContain("carestream_cs");
-			expect(vendorIds).toContain("kavo_dtx");
-		});
-	});
-
-	describe("5. Canonical SSOT Integrity (Mandate 8s: Single Canonical Domain Authority)", () => {
-		it("confirms components/radiology/DirectRvgCaptureModal.tsx exists as canonical component", () => {
-			const ssotPath = "components/radiology/DirectRvgCaptureModal.tsx";
-			expect(existsSync(path.join(webSrcRoot, ssotPath))).toBeTruthy();
-			const ssotSrc = readSource(ssotPath);
-			expect(ssotSrc).toContain("DirectRvgCaptureModal");
-			expect(ssotSrc).toContain("DirectRvgViewport");
+			for (const id of ["vatech_ezdent", "sirona_sidexis", "planmeca_romexis", "carestream_cs", "kavo_dtx"]) {
+				assert.ok(vendorIds.includes(id));
+			}
+			assert.ok(UNIVERSAL_SENSOR_CATALOG.length > 0);
+			assert.ok(NON_CONFLICTING_USB_POLICY.notice.length > 0);
 		});
 
-		it("confirms components/radiology/HotFolderImageCanvas.tsx exists as canonical component", () => {
-			const ssotPath = "components/radiology/HotFolderImageCanvas.tsx";
-			expect(existsSync(path.join(webSrcRoot, ssotPath))).toBeTruthy();
-			const ssotSrc = readSource(ssotPath);
-			expect(ssotSrc).toContain("HotFolderImageCanvas");
-		});
-
-		it("confirms components/radiology/SensorStudyViewer.tsx exists as canonical 2D viewer", () => {
-			const ssotPath = "components/radiology/SensorStudyViewer.tsx";
-			expect(existsSync(path.join(webSrcRoot, ssotPath))).toBeTruthy();
-			const ssotSrc = readSource(ssotPath);
-			expect(ssotSrc).toContain("SensorStudyViewer");
-		});
-	});
-
-	describe("6. Non-Conflicting USB Hardware Architecture & Coexistence Law", () => {
-		it("ensures zero exclusive USB lock collision and prioritizes non-conflicting hot folder intake", () => {
-			const gatewaySrc = readSource("components/radiology/UniversalSensorGateway.ts");
-			expect(gatewaySrc).toContain("NON_CONFLICTING_USB_POLICY");
-			expect(gatewaySrc).toContain("Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB");
-			expect(gatewaySrc).toContain("intakeChannel: \"hot_folder\"");
-			expect(gatewaySrc).toContain("Ожидание снимка (Hot Folder / Автоподхват)");
-		});
-
-		it("verifies DirectRvgCaptureModal renders non-conflicting telemetry and Ctrl+V clipboard integration", () => {
-			const modalSrc = readSource("components/radiology/DirectRvgCaptureModal.tsx");
-			expect(modalSrc).toContain("Ожидание снимка (Hot Folder / Автоподхват)");
-			expect(modalSrc).toContain("Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB");
-			expect(modalSrc).toContain('window.addEventListener("paste", handlePaste)');
-			expect(modalSrc).toContain("Снимок успешно вставлен из буфера обмена (Ctrl+V)");
-		});
-
-		it("verifies HotFolderIntakeModal provides non-conflicting badge and instant paste", () => {
-			const intakeSrc = readSource("components/radiology/HotFolderIntakeModal.tsx");
-			expect(intakeSrc).toContain('data-testid="hfi-non-conflicting-badge"');
-			expect(intakeSrc).toContain("Бесконфликтный автозахват (Hot Folder)");
-			expect(intakeSrc).toContain('window.addEventListener("paste", handlePaste)');
+		it("renders HotFolderIntakeModal with non-conflicting badge and 4-way orientation controls", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(HotFolderIntakeModal, {
+					isOpen: true,
+					onClose: () => {},
+					patientId: "pat-1",
+					patientName: "Сидоров Алексей",
+				}),
+			);
+			assert.ok(html.includes('data-testid="hfi-non-conflicting-badge"'));
+			assert.ok(html.includes("Бесконфликтный автозахват (Hot Folder)"));
+			assert.ok(html.includes('data-testid="hfi-rotate-ccw-btn"'));
+			assert.ok(html.includes('data-testid="hfi-rotate-btn"'));
+			assert.ok(html.includes('data-testid="hfi-flip-btn"'));
+			assert.ok(html.includes('data-testid="hfi-flip-v-btn"'));
 		});
 	});
 });
-

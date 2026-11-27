@@ -70,15 +70,15 @@ export function generateInformedConsent1051nHtml(
 	const clinicAddress = options.clinicAddress || "";
 	const clinicPhone = options.clinicPhone || "";
 	const clinicContactLine = [clinicAddress, clinicPhone ? `Тел: ${clinicPhone}` : ""].filter(Boolean).join(" • ");
-	const patient = options.patientFullName || "—";
-	const birthDate = options.patientBirthDate || "—";
-	const passport = options.patientPassport || "_________________________";
-	const address = options.patientAddress || "__________________________________________________";
-	const doctor = options.doctorFullName || "—";
-	const specialty = options.doctorSpecialty || "Врач-стоматолог";
-	const date = options.consentDate || new Date().toLocaleDateString("ru-RU");
-	const diagnosis = options.diagnosisIcd ? ` по диагнозу: ${options.diagnosisIcd}` : "";
-	const teeth = options.toothNumbers ? ` в области зубов: ${options.toothNumbers}` : "";
+	const patient = escapeHtml(options.patientFullName || "—");
+	const birthDate = escapeHtml(options.patientBirthDate || "—");
+	const passport = escapeHtml(options.patientPassport || "_________________________");
+	const address = escapeHtml(options.patientAddress || "__________________________________________________");
+	const doctor = escapeHtml(options.doctorFullName || "—");
+	const specialty = escapeHtml(options.doctorSpecialty || "Врач-стоматолог");
+	const date = escapeHtml(options.consentDate || new Date().toLocaleDateString("ru-RU"));
+	const diagnosis = options.diagnosisIcd ? ` по диагнозу: ${escapeHtml(options.diagnosisIcd)}` : "";
+	const teeth = options.toothNumbers ? ` в области зубов: ${escapeHtml(options.toothNumbers)}` : "";
 
 	const isClosedOrSigned = Boolean(
 		options.isSigned ||
@@ -88,9 +88,10 @@ export function generateInformedConsent1051nHtml(
 		options.status === "completed" ||
 		options.status === "issued",
 	);
-	const effectiveWatermark =
+	const effectiveWatermark = escapeHtml(
 		options.watermarkText ||
-		(isClosedOrSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+		(isClosedOrSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК"),
+	);
 	const stampColor = isClosedOrSigned ? "#059669" : "#64748b";
 
 	return `<div class="informed-consent-a4-sheet" style="position: relative; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0f172a; background: #ffffff; padding: 24px; max-width: 72ch; margin: 0 auto; line-height: 1.5; font-size: 12px;">
@@ -143,7 +144,7 @@ export function generateInformedConsent1051nHtml(
 
 	<div style="text-align: justify; font-size: 11px; color: #1e293b; max-width: 68ch; margin: 0 auto; page-break-inside: avoid; break-inside: avoid;">
 		<p style="margin: 0 0 8px 0;">
-			<strong>1.</strong> Я, вышеуказанный(ая) пациент(ка) (или законный представитель), даю информированное добровольное согласие на проведение стоматологического медицинского вмешательства${teeth}${diagnosis} врачу ${doctor} в клинике «${clinic}».
+			<strong>1.</strong> Я, вышеуказанный(ая) пациент(ка) (или законный представитель), даю информированное добровольное согласие на проведение стоматологического медицинского вмешательства${teeth}${diagnosis} врачу ${doctor} в клинике «${escapeHtml(clinic)}».
 		</p>
 		<p style="margin: 0 0 8px 0;">
 			<strong>2.</strong> Мне в доступной форме разъяснены цели, методы оказания медицинской помощи, связанный с ними риск, возможные варианты медицинских вмешательств, их последствия, в том числе вероятность развития осложнений, а также предполагаемые результаты оказания медицинской помощи.

@@ -37,16 +37,16 @@ export function isMobileApp(): boolean {
  */
 export function isDesktopApp(): boolean {
 	if (typeof window === "undefined") return false;
-	const win = window as unknown as {
-		denteDesktopNative?: { isDesktop?: boolean };
+	const win: Window & {
+		denteDesktopNative?: { isDesktop?: boolean | undefined } | undefined;
 		electron?: unknown;
-		process?: { type?: string; versions?: { electron?: string } };
-		chrome?: { webview?: unknown };
+		process?: { type?: string | undefined; versions?: { electron?: string | undefined } | undefined } | undefined;
+		chrome?: { webview?: unknown } | undefined;
 		__TAURI__?: unknown;
 		__TAURI_INTERNALS__?: unknown;
-		__DENTE_DESKTOP__?: boolean;
-		__WEBVIEW2__?: boolean;
-	};
+		__DENTE_DESKTOP__?: boolean | undefined;
+		__WEBVIEW2__?: boolean | undefined;
+	} = window;
 	if (Boolean(win.denteDesktopNative?.isDesktop)) return true;
 	if (win.electron !== undefined || win.process?.versions?.electron !== undefined) return true;
 	if (win.chrome?.webview !== undefined || win.__WEBVIEW2__ === true || win.__DENTE_DESKTOP__ === true) {
@@ -64,7 +64,8 @@ export function isDesktopApp(): boolean {
  */
 export function isPwaApp(): boolean {
 	if (typeof window === "undefined") return false;
-	if ((window as unknown as { __DENTE_PWA__?: boolean }).__DENTE_PWA__ === true) return true;
+	const pwaWin: Window & { __DENTE_PWA__?: boolean } = window;
+	if (pwaWin.__DENTE_PWA__ === true) return true;
 	try {
 		if (
 			window.matchMedia &&
@@ -77,7 +78,8 @@ export function isPwaApp(): boolean {
 	} catch {
 		// Ignore matchMedia errors in non-browser / test environments
 	}
-	const nav = typeof navigator !== "undefined" ? (navigator as unknown as { standalone?: boolean }) : undefined;
+	const nav: (Navigator & { standalone?: boolean }) | undefined =
+		typeof navigator !== "undefined" ? navigator : undefined;
 	if (nav?.standalone === true) return true;
 	if (
 		typeof document !== "undefined" &&

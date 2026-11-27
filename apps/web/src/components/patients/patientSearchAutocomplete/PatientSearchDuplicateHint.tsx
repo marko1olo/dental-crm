@@ -31,22 +31,22 @@ export const PatientSearchDuplicateHint: React.FC<PatientSearchDuplicateHintProp
 					</p>
 				</div>
 			</div>
-			<div className="flex items-center gap-2 pt-0.5">
-				<button
-					type="button"
-					data-testid="open-existing-patient-btn"
-					onClick={() => onSelect(potentialDuplicate.patient)}
-					className="h-6 px-2.5 rounded-md text-[11px] font-bold bg-[var(--teal)] text-white hover:bg-[var(--teal)]/90 cursor-pointer transition-colors shadow-xs"
-				>
-					Открыть существующего
-				</button>
+			<div className="flex items-center gap-2 pt-0.5 flex-wrap">
 				<button
 					type="button"
 					data-testid="continue-quick-create-btn"
 					onClick={onTriggerQuickCreate}
-					className="h-6 px-2 rounded-md text-[11px] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
+					className="h-8 max-md:min-h-[44px] max-md:h-11 px-3 rounded-lg text-xs font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors"
 				>
 					Продолжить создание
+				</button>
+				<button
+					type="button"
+					data-testid="open-existing-patient-btn"
+					onClick={() => onSelect(potentialDuplicate.patient)}
+					className="h-8 max-md:min-h-[44px] max-md:h-11 px-3 rounded-lg text-xs font-medium bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] cursor-pointer transition-colors shadow-xs"
+				>
+					Открыть существующего
 				</button>
 			</div>
 		</div>

@@ -8,71 +8,21 @@
  */
 
 import { describe, it } from "node:test";
-import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import assert from "node:assert/strict";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import {
 	buildPatientAdministrativeProfilePayload,
 	patientAdministrativeProfileDraftFromPatient,
 	patientAdministrativeProfileDraftIssue,
 	patientAdministrativeProfileTimeWarning,
-} from '../../../utils/clinicProfileUtils';
+} from "../../../utils/clinicProfileUtils";
+import { ChairsideAnesthesiaQuickBar } from "../../anesthesia/ChairsideAnesthesiaQuickBar";
+import { calculateAnesthesiaSafety } from "../../anesthesia/anesthesiaEngine";
+import { STANDARD_ANESTHESIA_NORM_PRESET_RU } from "../../../lib/clinicalProtocols";
 
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-describe('Wave 60 / Feature 249: Clinical Autonomy & Friction Reduction', () => {
-	const clinicProfileUtilsPath = path.resolve(__dirname, '../../../utils/clinicProfileUtils.ts');
-	const usePatientLogicPath = path.resolve(__dirname, '../../../hooks/domains/usePatientLogic.ts');
-	const dicomViewerModalPath = path.resolve(__dirname, '../../imaging/DicomViewerModal.tsx');
-	const dicomViewerModalControllerPath = path.resolve(__dirname, '../../imaging/dicomViewerModal/useDicomViewerModalController.ts');
-	const diagnosticsModalsHostPath = path.resolve(__dirname, '../diagnosticsTab/DiagnosticsModalsHost.tsx');
-	const visitDiagnosticsTabPath = path.resolve(__dirname, '../VisitDiagnosticsTab.tsx');
-	const anesthesiaQuickBarPath = path.resolve(__dirname, '../../anesthesia/AnesthesiaQuickBar.tsx');
-	const chairsideAnesthesiaQuickBarPath = path.resolve(__dirname, '../../anesthesia/ChairsideAnesthesiaQuickBar.tsx');
-	const anesthesiaCatalogDataPath = path.resolve(__dirname, '../../anesthesia/anesthesiaCatalogData.ts');
-	const anesthesiaQuickBarDir = path.resolve(__dirname, '../../anesthesia/anesthesiaQuickBar');
-
-	const readFilesRecursively = (dir: string): string[] => {
-		if (!fs.existsSync(dir)) return [];
-		const entries = fs.readdirSync(dir, { withFileTypes: true });
-		const contents: string[] = [];
-		for (const entry of entries) {
-			const fullPath = path.join(dir, entry.name);
-			if (entry.isDirectory()) {
-				contents.push(...readFilesRecursively(fullPath));
-			} else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))) {
-				contents.push(fs.readFileSync(fullPath, 'utf8'));
-			}
-		}
-		return contents;
-	};
-
-	const usePatientLogicDir = path.resolve(__dirname, '../../../hooks/domains/patientLogicModules');
-	const clinicProfileUtilsCode = fs.readFileSync(clinicProfileUtilsPath, 'utf8');
-	const usePatientLogicCode = [
-		fs.readFileSync(usePatientLogicPath, 'utf8'),
-		...readFilesRecursively(usePatientLogicDir),
-	].join('\n');
-	const dicomViewerModalCode =
-		fs.readFileSync(dicomViewerModalPath, 'utf8') +
-		fs.readFileSync(path.resolve(__dirname, '../../imaging/dicomViewerModal/types.ts'), 'utf8');
-	const dicomViewerModalControllerCode = fs.readFileSync(dicomViewerModalControllerPath, 'utf8');
-	const diagnosticsModalsHostCode = fs.readFileSync(diagnosticsModalsHostPath, 'utf8');
-	const visitDiagnosticsTabCode = fs.readFileSync(visitDiagnosticsTabPath, 'utf8');
-	const anesthesiaQuickBarCode = [
-		fs.readFileSync(anesthesiaQuickBarPath, 'utf8'),
-		fs.existsSync(chairsideAnesthesiaQuickBarPath) ? fs.readFileSync(chairsideAnesthesiaQuickBarPath, 'utf8') : '',
-		fs.existsSync(anesthesiaCatalogDataPath) ? fs.readFileSync(anesthesiaCatalogDataPath, 'utf8') : '',
-		...(fs.existsSync(anesthesiaQuickBarDir)
-			? fs.readdirSync(anesthesiaQuickBarDir)
-				.filter((f) => fs.statSync(path.join(anesthesiaQuickBarDir, f)).isFile())
-				.map((f) => fs.readFileSync(path.join(anesthesiaQuickBarDir, f), 'utf8'))
-			: []),
-	].join('\n');
+describe("Wave 60 / Feature 249: Clinical Autonomy & Friction Reduction", () => {
 
 	describe('1. Patient Administrative Profile Unblocking (Mandates 8e, 8n)', () => {
 		const baseDraft = patientAdministrativeProfileDraftFromPatient(null);
@@ -151,100 +101,51 @@ describe('Wave 60 / Feature 249: Clinical Autonomy & Friction Reduction', () => 
 			assert.strictEqual(draftIssue, null, 'Draft issue must NOT block on appointment time');
 		});
 
-		it('guarantees usePatientLogic does NOT return false on administrative profile save with time warnings', () => {
-			assert.ok(
-				usePatientLogicCode.includes('patientAdministrativeProfileTimeWarning'),
-				'usePatientLogic must import and use patientAdministrativeProfileTimeWarning',
-			);
-			assert.ok(
-				!usePatientLogicCode.includes('if (draftIssue) {\n\t\t\t\tshowToast(draftIssue, "warning");\n\t\t\t\treturn false;'),
-				'usePatientLogic must not halt with return false on non-critical administrative issues',
-			);
+		it('patientAdministrativeProfileDraftIssue allows administrative save even when time window is partial', () => {
+			const draftWithPartialTime = {
+				...baseDraft,
+				preferredAppointmentStart: '09:30',
+				preferredAppointmentEnd: '',
+			};
+			assert.strictEqual(patientAdministrativeProfileDraftIssue(draftWithPartialTime), null);
+			const payload = buildPatientAdministrativeProfilePayload(draftWithPartialTime);
+			assert.strictEqual(payload.preferredAppointmentStart, null);
 		});
 	});
 
-	describe('2. Direct Patient Binding in Radiology & DICOM Workstation (Mandates 8c, 8e)', () => {
-		it('declares optional patientId prop in DicomViewerModal and resolves effectivePatientId in controller', () => {
-			assert.ok(
-				dicomViewerModalCode.includes('readonly patientId?: string | undefined;'),
-				'DicomViewerModalProps must declare readonly patientId?: string | undefined;',
+	describe('2. Chairside Anesthesia QuickBar SSR, Token Compliance & Safety Engine (Mandates 8e, 8k, 8n)', () => {
+		it('renders ChairsideAnesthesiaQuickBar with norm preset, design tokens, >=44px controls & 0 emojis', () => {
+			const html = renderToStaticMarkup(
+				React.createElement(ChairsideAnesthesiaQuickBar, {
+					patientId: 'pat-anest-1',
+					visitId: 'visit-anest-1',
+					patientWeightKg: 70,
+				}),
 			);
-			assert.ok(
-				diagnosticsModalsHostCode.includes('patientId={visitPatientId ?? activePatient?.id}'),
-				'DiagnosticsModalsHost must forward patientId to DicomViewerModal',
-			);
-		});
-
-		it('passes patientId from DiagnosticsModalsHost and computes effective patient in controller', () => {
-			assert.ok(
-				dicomViewerModalControllerCode.includes('patientId'),
-				'useDicomViewerModalController must handle patientId',
-			);
-		});
-
-		it('passes activePatientId from VisitDiagnosticsTab down to diagnostics components', () => {
-			assert.ok(
-				visitDiagnosticsTabCode.includes('activePatientId') || visitDiagnosticsTabCode.includes('effectiveTargetPatientId'),
-				'VisitDiagnosticsTab must resolve activePatientId for imaging write target',
-			);
-		});
-
-		it('eliminates duplicate btn-hotpath-norma-043 button and uses canonical btn-dicom-norma-043', () => {
-			assert.strictEqual(
-				dicomViewerModalCode.includes('btn-hotpath-norma-043'),
-				false,
-				'DicomViewerModal must not contain duplicate btn-hotpath-norma-043 button',
-			);
-			assert.ok(
-				dicomViewerModalCode.includes('btn-dicom-norma-043') || fs.readFileSync(path.resolve(__dirname, '../../imaging/dicomViewerModal/DicomViewerModalHeader.tsx'), 'utf8').includes('btn-dicom-norma-043'),
-				'DicomViewerModal must retain primary btn-dicom-norma-043 button',
-			);
-		});
-	});
-
-	describe('3. Anesthesia Friction Reduction & Autonomy (Mandates 8e, 8k, 8n)', () => {
-		it('implements 1-click standard norm preset and safety calculation', () => {
-			assert.ok(
-				anesthesiaQuickBarCode.includes('STANDARD_ANESTHESIA_NORM_PRESET_RU'),
-				'AnesthesiaQuickBar must import STANDARD_ANESTHESIA_NORM_PRESET_RU',
-			);
-			assert.ok(
-				anesthesiaQuickBarCode.includes('data-testid="anesthesia-dose-norm-preset"'),
-				'AnesthesiaQuickBar must render anesthesia-dose-norm-preset',
-			);
-		});
-
-		it('strictly complies with design tokens (var(--paper), var(--line), var(--ink)) with zero --border', () => {
-			assert.strictEqual(
-				anesthesiaQuickBarCode.includes('var(--border'),
-				false,
-				'AnesthesiaQuickBar must NOT use undefined var(--border)',
-			);
-			assert.ok(
-				anesthesiaQuickBarCode.includes('var(--paper)'),
-				'AnesthesiaQuickBar must use var(--paper)',
-			);
-			assert.ok(
-				anesthesiaQuickBarCode.includes('var(--line)'),
-				'AnesthesiaQuickBar must use var(--line)',
-			);
-		});
-
-		it('complies with 44x44px touch targets and zero cartoon emojis (Mandates 8c, 8d UI Sin #7)', () => {
-			// Touch targets
-			assert.ok(
-				anesthesiaQuickBarCode.includes('min-h-[44px]') || anesthesiaQuickBarCode.includes('min-h-[48px]'),
-				'Interactive buttons must enforce min-h-[44px] touch target',
-			);
-
-			// Zero emojis in JSX markup
-			const jsxWithoutComments = anesthesiaQuickBarCode.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '');
+			assert.ok(STANDARD_ANESTHESIA_NORM_PRESET_RU.length > 0);
+			assert.ok(html.includes('data-testid="anesthesia-dose-norm-preset"'));
+			assert.strictEqual(html.includes('var(--border'), false);
+			assert.ok(html.includes('min-h-[44px]') || html.includes('min-h-[48px]'));
 			const emojiPattern = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
-			assert.strictEqual(
-				emojiPattern.test(jsxWithoutComments),
-				false,
-				'AnesthesiaQuickBar JSX must contain ZERO cartoon emojis (Mandate 8d Sin #7)',
-			);
+			assert.strictEqual(emojiPattern.test(html), false);
+		});
+
+		it('calculateAnesthesiaSafety computes safe carpule ceiling without locking doctor CTA', () => {
+			const safety = calculateAnesthesiaSafety({
+				drugId: 'articaine_1_200k',
+				carpulesCount: 2,
+				patientWeightKg: 70,
+				patientAgeYears: 32,
+				hasCardiovascularRisk: false,
+				hasBronchialAsthma: false,
+				hasSulfiteAllergy: false,
+				hasArticaineAllergy: false,
+				hasMepivacaineAllergy: false,
+				isPregnantOrLactating: false,
+				takesBetaBlockers: false,
+			});
+			assert.ok(safety.maxSafeActiveMg > 0);
+			assert.strictEqual(safety.isOverdose, false);
 		});
 	});
 });

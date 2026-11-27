@@ -32,7 +32,7 @@ import {
 	xrayPregnancyStatusOptions,
 	xrayPriorityOptions,
 	xrayStudyTypeOptions,
-} from "../../ImagingHelpers";
+} from "../../../appHelpers/imagingModules/imagingReferralHelpers";
 import {
 	type DenteTelegramPortalSection,
 	denteTelegramHandoffTargets,

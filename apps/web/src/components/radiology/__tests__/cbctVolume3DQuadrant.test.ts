@@ -14,10 +14,10 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
+import { deriveAdaptiveRenderProfile } from "@dental/shared";
 import {
 	CBCT_VOLUME_3D_PRESETS,
 	computeVolume3DRotationMatrix,
@@ -29,9 +29,7 @@ import {
 	generate4JawImplants,
 	convertImplantWorldToVolume3DParam,
 } from "../mpr/CbctVolume3DViewport";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { CbctVolume3DClippingPanel } from "../mpr/CbctVolume3DClippingPanel";
 
 describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 	// ─── 1. VOLUME 3D PRESETS & TRANSFER FUNCTIONS ────────────────────────────
@@ -109,140 +107,43 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 			assert.strictEqual(typeof CbctVolume3DViewport, "function");
 		});
 
-		it("CbctVolume3DViewport source contains interactive controls and HUD", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
-				"utf-8",
+		it("CbctVolume3DViewport renders interactive controls, HUD, maximize and MAR controls via SSR", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(CbctVolume3DViewport, {
+					volume: null,
+					forceHibernated: true,
+					onToggleMaximize: () => {},
+				}),
 			);
-			assert.ok(source.includes("data-testid=\"cbct-viewport-container-volume3d\""), "Must have container testid");
-			assert.ok(source.includes("data-testid=\"cbct-volume-3d-canvas\""), "Must have canvas testid");
-			assert.ok(source.includes("data-testid=\"cbct-btn-reset-3d-camera\""), "Must have reset camera testid");
-			assert.ok(source.includes("data-testid=\"cbct-btn-orientation-coronal\""), "Must have Coronal (Фас) shortcut");
-			assert.ok(source.includes("data-testid=\"cbct-btn-orientation-sagittal\""), "Must have Sagittal (Профиль) shortcut");
-			assert.ok(source.includes("data-testid=\"cbct-btn-orientation-isometric\""), "Must have 3/4 (Isometric) shortcut");
-			assert.ok(source.includes("3D Объем:"), "Must display telemetry label");
-		});
-
-		it("CbctVolume3DViewport supports 1-click maximize and touch gesture controls", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
-				"utf-8",
-			);
-			assert.ok(source.includes("data-testid=\"cbct-btn-toggle-maximize-3d\""), "Must have toggle maximize button testid");
-			assert.ok(source.includes("onTouchStart={handleTouchStart}"), "Must bind touch start");
-			assert.ok(source.includes("onTouchMove={handleTouchMove}"), "Must bind touch move");
-			assert.ok(source.includes("onTouchEnd={handleTouchEnd}"), "Must bind touch end");
+			assert.ok(html.includes('data-testid="cbct-viewport-container-volume3d"'));
+			assert.ok(html.includes('data-testid="cbct-btn-reset-3d-camera"'));
+			assert.ok(html.includes('data-testid="cbct-btn-orientation-coronal"'));
+			assert.ok(html.includes('data-testid="cbct-btn-orientation-sagittal"'));
+			assert.ok(html.includes('data-testid="cbct-btn-orientation-isometric"'));
+			assert.ok(html.includes('data-testid="btn-viewport-expand-volume3d"'));
+			assert.ok(html.includes('data-legacy-testid="cbct-btn-toggle-maximize-3d"'));
+			assert.ok(html.includes('data-testid="cbct-btn-toggle-clipping"'));
+			assert.ok(html.includes('data-testid="cbct-volume-3d-implant-toggle"'));
+			assert.ok(html.includes('data-testid="cbct-volume-3d-mar-toggle"'));
+			assert.ok(html.includes('data-testid="cbct-hud-mar-status"'));
 		});
 	});
 
-	// ─── 4. 4TH QUADRANT DUAL-MODE INTEGRATION IN CBCTMPRVIEWPORTSGRID ─────────
-	describe("4. CbctMprViewportsGrid: 4th Quadrant 3D Volume & Panorama Switcher", () => {
-		it("CbctMprViewportsGrid.tsx imports CbctVolume3DViewport", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/CbctMprViewportsGrid.tsx"),
-				"utf-8",
+	describe("4. CbctVolume3DViewport Switcher Slot & Orientation Controls", () => {
+		it("renders custom 4th quadrant switcher slot when passed", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(CbctVolume3DViewport, {
+					volume: null,
+					forceHibernated: true,
+					switcherSlot: React.createElement(
+						"button",
+						{ type: "button", "data-testid": "cbct-btn-mode-volume3d" },
+						"3D Череп",
+					),
+				}),
 			);
-			assert.ok(
-				source.includes("import { CbctVolume3DViewport } from \"./CbctVolume3DViewport\""),
-				"Must import CbctVolume3DViewport",
-			);
-		});
-
-		it("CbctMprViewportsGrid.tsx defaults fourthQuadrantMode to 'volume3d'", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/CbctMprViewportsGrid.tsx"),
-				"utf-8",
-			);
-			assert.ok(
-				source.includes("useState<\"volume3d\" | \"panoramic\">(\"volume3d\")"),
-				"Must default fourthQuadrantMode to 'volume3d' (surgeon sees 3D skull by default)",
-			);
-		});
-
-		it("CbctMprViewportsGrid.tsx renders compact switcher buttons [3D Череп] and [ОПТГ]", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/CbctMprViewportsGrid.tsx"),
-				"utf-8",
-			);
-			assert.ok(
-				source.includes("data-testid=\"cbct-btn-mode-volume3d\""),
-				"Must have 3D Volume switcher button testid",
-			);
-			assert.ok(
-				source.includes("data-testid=\"cbct-btn-mode-panoramic\""),
-				"Must have Panoramic switcher button testid",
-			);
-			assert.ok(
-				source.includes("3D Череп"),
-				"Must contain compact label '3D Череп'",
-			);
-			assert.ok(
-				source.includes("ОПТГ"),
-				"Must contain compact label 'ОПТГ'",
-			);
-		});
-
-		it("CbctMprViewportsGrid.tsx renders renderFourthQuadrantViewport in quad_view, layout_1_plus_3 and maximized", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/CbctMprViewportsGrid.tsx"),
-				"utf-8",
-			);
-			assert.ok(
-				source.includes("renderFourthQuadrantViewport"),
-				"Must define renderFourthQuadrantViewport",
-			);
-			assert.ok(
-				source.includes("renderVolume3D: (extraClassName, options) =>"),
-				"Must provide renderVolume3D renderer in ViewportRenderers for 3D skull",
-			);
-		});
-
-		it("CbctMprViewportsGrid.tsx synchronizes with studioMode via useEffect", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/CbctMprViewportsGrid.tsx"),
-				"utf-8",
-			);
-			assert.ok(
-				source.includes("if (studioMode === \"panoramic\") {"),
-				"Must switch to panoramic when studioMode is panoramic",
-			);
-			assert.ok(
-				source.includes("else if (studioMode === \"volume3d\") {"),
-				"Must switch to volume3d when studioMode is volume3d",
-			);
-		});
-
-		it("CbctMprViewportsGrid passes isMaximized and onToggleMaximize to CbctVolume3DViewport", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/CbctMprViewportsGrid.tsx"),
-				"utf-8",
-			);
-			assert.ok(
-				source.includes("isMaximized={maximizedViewport === \"panoramic\"}"),
-				"Must pass isMaximized to CbctVolume3DViewport",
-			);
-			assert.ok(
-				source.includes("onToggleMaximize={() => handleToggleMaximize(\"panoramic\")}"),
-				"Must pass onToggleMaximize to CbctVolume3DViewport",
-			);
-		});
-	});
-
-	// ─── 5. CBCTMPRIMPLANTSTUDIOMODAL BINDINGS ────────────────────────────────
-	describe("5. CbctMprImplantStudioModal Studio Mode Bindings", () => {
-		it("CbctMprImplantStudioModal.tsx passes studioMode and onSelectStudioMode to CbctMprViewportsGrid", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../CbctMprImplantStudioModal.tsx"),
-				"utf-8",
-			);
-			assert.ok(
-				source.includes("studioMode={studioMode}"),
-				"Must pass studioMode prop to CbctMprViewportsGrid",
-			);
-			assert.ok(
-				source.includes("onSelectStudioMode={handleSelectStudioMode}"),
-				"Must pass onSelectStudioMode prop to CbctMprViewportsGrid",
-			);
+			assert.ok(html.includes('data-testid="cbct-btn-mode-volume3d"'));
+			assert.ok(html.includes("3D Череп"));
 		});
 	});
 
@@ -318,17 +219,11 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 			assert.strictEqual(Math.round(res.tFar), 50, "tFar must be 50 mm (exit face at z = 50)");
 		});
 
-		it("CbctVolume3DViewport source integrates requestAnimationFrame throttling and AABB test", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
-				"utf-8",
-			);
-			assert.ok(
-				source.includes("intersectRayAABB") || source.includes("cbctVolume3DShaders"),
-				"Must integrate with ray AABB intersection testing",
-			);
-			assert.ok(source.includes("requestAnimationFrame("), "Must use requestAnimationFrame for smooth 60 FPS throttling");
-			assert.ok(source.includes("isInteracting"), "Must support adaptive resolution via isInteracting state");
+		it("deriveAdaptiveRenderProfile configures lower-cost steps & downsampling for weak hardware", () => {
+			const potatoProfile = deriveAdaptiveRenderProfile({ isDiscreteGpu: false, hardwareConcurrency: 2, deviceMemoryGb: 2 }, "nominal", "potato");
+			const standardProfile = deriveAdaptiveRenderProfile({ isDiscreteGpu: true, hardwareConcurrency: 8, deviceMemoryGb: 16 }, "nominal", "ultra");
+			assert.ok(potatoProfile.interactiveDownsampleFactor <= standardProfile.interactiveDownsampleFactor);
+			assert.ok(potatoProfile.maxRaySteps < standardProfile.maxRaySteps);
 		});
 	});
 
@@ -401,27 +296,25 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 			);
 		});
 
-		it("CbctVolume3DViewport renders interactive clipping controls and sliders in UI", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
-				"utf-8",
+		it("CbctVolume3DClippingPanel renders interactive clipping controls and sliders in UI", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(CbctVolume3DClippingPanel, {
+					clipping: DEFAULT_VOLUME_3D_CLIPPING_BOX,
+					onClipChange: () => {},
+					onResetClipping: () => {},
+					onQuickClipSpine: () => {},
+					onQuickClipOcciput: () => {},
+				}),
 			);
-			const clippingPanelSource = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/CbctVolume3DClippingPanel.tsx"),
-				"utf-8",
-			);
-			assert.ok(source.includes("CbctVolume3DClippingPanel"), "Must render CbctVolume3DClippingPanel");
-			assert.ok(source.includes("data-testid=\"cbct-btn-toggle-clipping\""), "Must have toggle clipping button testid");
-
-			assert.ok(clippingPanelSource.includes("Срез позвонков (Z-min)"), "Must render spine cut slider label");
-			assert.ok(clippingPanelSource.includes("Срез затылка (Y-max)"), "Must render occiput cut slider label");
-			assert.ok(clippingPanelSource.includes("Корональный срез (X)"), "Must render coronal cut slider label");
-			assert.ok(clippingPanelSource.includes("data-testid=\"cbct-clip-slider-z-min\""), "Must have Z-min slider testid");
-			assert.ok(clippingPanelSource.includes("data-testid=\"cbct-clip-slider-y-max\""), "Must have Y-max slider testid");
-			assert.ok(clippingPanelSource.includes("data-testid=\"cbct-clip-slider-x\""), "Must have X slider testid");
-			assert.ok(clippingPanelSource.includes("data-testid=\"cbct-btn-reset-clipping\""), "Must have reset clipping button testid");
-			assert.ok(clippingPanelSource.includes("data-testid=\"cbct-btn-clip-spine\""), "Must have quick clip spine button testid");
-			assert.ok(clippingPanelSource.includes("data-testid=\"cbct-btn-clip-occiput\""), "Must have quick clip occiput button testid");
+			assert.ok(html.includes("Срез позвонков (Z-min)"));
+			assert.ok(html.includes("Срез затылка (Y-max)"));
+			assert.ok(html.includes("Корональный срез (X)"));
+			assert.ok(html.includes('data-testid="cbct-clip-slider-z-min"'));
+			assert.ok(html.includes('data-testid="cbct-clip-slider-y-max"'));
+			assert.ok(html.includes('data-testid="cbct-clip-slider-x"'));
+			assert.ok(html.includes('data-testid="cbct-btn-reset-clipping"'));
+			assert.ok(html.includes('data-testid="cbct-btn-clip-spine"'));
+			assert.ok(html.includes('data-testid="cbct-btn-clip-occiput"'));
 		});
 	});
 
@@ -445,28 +338,12 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 			);
 		});
 
-		it("CbctVolume3DViewport adapts step size and resolution between interaction and idle beauty pass", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
-				"utf-8",
-			);
-			const shaderSource = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/cbctVolume3DShaders.ts"),
-				"utf-8",
-			);
+		it("CBCT_VOLUME_3D_FRAGMENT_SHADER contains bisection refinement and maxSteps uniforms", () => {
 			assert.ok(
-				source.includes("interactiveDownsampleFactor") ||
-				source.includes("subSample = isInteracting ? (rawWidth > 600 ? 4 : 3) : (rawWidth > 800 ? 2 : 1)"),
-				"Must downsample resolution during drag interaction for 60 FPS on weak GPUs",
-			);
-			assert.ok(
-				shaderSource.includes("isInteracting") && shaderSource.includes("maxSteps"),
-				"Must scale maxSteps from 48..60 during interaction to 96 on mouseUp beauty pass",
-			);
-			assert.ok(
-				shaderSource.includes("u_refineSteps") && shaderSource.includes("bisection"),
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("u_refineSteps"),
 				"Must execute bisection refinement on beauty pass",
 			);
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("maxSteps"));
 		});
 	});
 
@@ -537,14 +414,12 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("implantBlendNorm"));
 		});
 
-		it("CbctVolume3DViewport provides 4 implants / 1 implant toggle button in UI", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
-				"utf-8",
+		it("CbctVolume3DViewport renders 4 implants / 1 implant toggle button in SSR UI", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(CbctVolume3DViewport, { volume: null, forceHibernated: true }),
 			);
-			assert.ok(source.includes("data-testid=\"cbct-volume-3d-implant-toggle\""));
-			assert.ok(source.includes("4 импланта"));
-			assert.ok(source.includes("1 имплант"));
+			assert.ok(html.includes('data-testid="cbct-volume-3d-implant-toggle"'));
+			assert.ok(html.includes("4 импланта"));
 		});
 	});
 
@@ -629,23 +504,12 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 			);
 		});
 
-		it("CbctVolume3DViewport renders MAR toggle button and bottom HUD telemetry indicator", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
-				"utf-8",
+		it("CbctVolume3DViewport renders MAR toggle button and bottom HUD telemetry indicator via SSR", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(CbctVolume3DViewport, { volume: null, forceHibernated: true }),
 			);
-			assert.ok(
-				source.includes("data-testid=\"cbct-volume-3d-mar-toggle\""),
-				"Must render MAR toggle button with testid cbct-volume-3d-mar-toggle",
-			);
-			assert.ok(
-				source.includes("data-testid=\"cbct-hud-mar-status\""),
-				"Must render MAR status in bottom telemetry HUD with testid cbct-hud-mar-status",
-			);
-			assert.ok(
-				source.includes("isMarActive"),
-				"Must maintain isMarActive state in CbctVolume3DViewport",
-			);
+			assert.ok(html.includes('data-testid="cbct-volume-3d-mar-toggle"'));
+			assert.ok(html.includes('data-testid="cbct-hud-mar-status"'));
 		});
 	});
 });

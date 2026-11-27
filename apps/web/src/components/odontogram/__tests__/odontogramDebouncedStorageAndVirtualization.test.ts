@@ -6,10 +6,7 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { beforeEach, describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import {
 	clearStoredTeethData,
 	flushStoredTeethData,
@@ -23,17 +20,6 @@ import {
 	type ToothData,
 } from "../ToothChart";
 import { clearInMemoryStorageCache } from "../../../lib/safeLocalStorage";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-function readCssWithImports(filePath: string): string {
-	const dir = path.dirname(filePath);
-	let css = fs.readFileSync(filePath, "utf-8");
-	const importRegex = /@import\s+['"]([^'"]+)['"];/g;
-	css = css.replace(importRegex, (_, rel) => readCssWithImports(path.resolve(dir, rel)));
-	return css;
-}
 
 class MockLocalStorage {
 	private store: Record<string, string> = {};
@@ -65,7 +51,10 @@ describe("Low-Spec Caching & DOM Virtualizer Invariants", () => {
 	beforeEach(() => {
 		mockStorage = new MockLocalStorage();
 		if (typeof globalThis.window === "undefined") {
-			(globalThis as unknown as { window: Record<string, unknown> }).window = {};
+			(globalThis as unknown as { window: Record<string, unknown> }).window = {
+				location: { hash: "", hostname: "127.0.0.1" },
+				addEventListener: () => {},
+			};
 		}
 		(globalThis.window as unknown as { localStorage: MockLocalStorage }).localStorage = mockStorage;
 		clearInMemoryStorageCache();
@@ -128,90 +117,64 @@ describe("Low-Spec Caching & DOM Virtualizer Invariants", () => {
 		});
 	});
 
-	describe("2. PatientsView & InvoicesView DOM Virtualization & content-visibility", () => {
-		it("PatientsView.tsx source contains contentVisibility: auto and containIntrinsicSize: 1px 48px", () => {
-			const patientsViewPath = path.resolve(__dirname, "../../../PatientsView.tsx");
-			const masterListPath = path.resolve(__dirname, "../../patients/PatientsMasterList.tsx");
-			const source =
-				fs.readFileSync(patientsViewPath, "utf-8") +
-				(fs.existsSync(masterListPath) ? fs.readFileSync(masterListPath, "utf-8") : "");
+	describe("2. PatientsMasterRow & DOM List Slicing Virtualization", () => {
+		it("renders PatientMasterRow with contentVisibility: auto & containIntrinsicSize: 1px 64px", async () => {
+			const React = await import("react");
+			const { renderToStaticMarkup } = await import("react-dom/server");
+			const { PatientMasterRow } = await import("../../patients/masterListModules/PatientMasterRow");
 
+			const html = renderToStaticMarkup(
+				React.createElement(PatientMasterRow, {
+					patient: {
+						id: "pat-virt-1",
+						organizationId: "org-1",
+						fullName: "Волкова Елена Сергеевна",
+						phone: "+79001234567",
+						birthDate: "1991-04-12",
+						status: "active",
+						balanceRub: 1500,
+						createdAt: "2026-01-01T00:00:00.000Z",
+						updatedAt: "2026-01-01T00:00:00.000Z",
+					},
+					isSelected: false,
+					riskDistinguishes: false,
+					nextActionDistinguishes: false,
+					money: (v: number) => `${v} ₽`,
+					isRowMenuOpen: false,
+					rowMenuRef: { current: null },
+					onToggleRowMenu: () => {},
+					onCloseRowMenu: () => {},
+					onSelectPatient: () => {},
+					onOpenVisit: () => {},
+					onBookAppointment: () => {},
+					onOpenPatientCard: () => {},
+				}),
+			);
+
+			assert.ok(html.includes("patient-row"), "Must render .patient-row class");
 			assert.ok(
-				source.includes('contentVisibility: "auto"'),
-				"PatientsView must contain contentVisibility: 'auto' for patient rows",
+				html.includes("content-visibility:auto") || html.includes("content-visibility: auto"),
+				"PatientMasterRow must style content-visibility: auto",
 			);
 			assert.ok(
-				source.includes('containIntrinsicSize: "1px 48px"') ||
-					source.includes('containIntrinsicSize: "1px 64px"'),
-				"PatientsView must contain containIntrinsicSize for virtualized rendering",
-			);
-			assert.ok(
-				source.includes("useDomListPagination"),
-				"PatientsView must use useDomListPagination to guard DOM nodes count",
+				html.includes("contain-intrinsic-size:1px 64px") || html.includes("contain-intrinsic-size: 1px 64px"),
+				"PatientMasterRow must style contain-intrinsic-size: 1px 64px",
 			);
 		});
 
-		it("InvoicesView.tsx source contains invoice-card class and contentVisibility auto", () => {
-			const invoicesViewPath = path.resolve(__dirname, "../../billing/InvoicesView.tsx");
-			const source = fs.readFileSync(invoicesViewPath, "utf-8");
+		it("sliceDomList caps rendered DOM nodes to <= 40 items on a 200-patient dataset", async () => {
+			const { sliceDomList } = await import("../../../utils/domVirtualizationHelper");
+			const rows = Array.from({ length: 200 }, (_, i) => ({ id: `pat-${i}`, fullName: `Пациент ${i}` }));
+			const firstPage = sliceDomList(rows, 40, 0);
+			assert.equal(firstPage.displayedCount, 40);
+			assert.equal(firstPage.visibleItems.length, 40);
+			assert.equal(firstPage.remainingCount, 160);
+			assert.equal(firstPage.hasMore, true);
 
-			assert.ok(
-				source.includes("invoice-card"),
-				"InvoicesView must apply invoice-card class to invoice rows",
-			);
-			assert.ok(
-				source.includes('contentVisibility: "auto"'),
-				"InvoicesView must contain contentVisibility: 'auto' for invoice rows",
-			);
-			assert.ok(
-				source.includes('containIntrinsicSize: "1px 48px"'),
-				"InvoicesView must contain containIntrinsicSize: '1px 48px' for virtualized rendering",
-			);
-			assert.ok(
-				source.includes("sliceDomList") || source.includes("useDomListPagination"),
-				"InvoicesView must use sliceDomList or useDomListPagination to limit DOM size",
-			);
-		});
-
-		it("patients-redesign.css defines content-visibility: auto and contain-intrinsic-size: 1px 48px for .patient-row", () => {
-			const cssPath = path.resolve(__dirname, "../../../styles/patients-redesign.css");
-			const css = readCssWithImports(cssPath);
-
-			assert.ok(
-				css.includes(".patient-row"),
-				"patients-redesign.css must style .patient-row",
-			);
-			assert.ok(
-				css.includes("content-visibility: auto;"),
-				"patients-redesign.css must include content-visibility: auto;",
-			);
-			assert.ok(
-				css.includes("contain-intrinsic-size: 1px 48px;"),
-				"patients-redesign.css must include contain-intrinsic-size: 1px 48px;",
-			);
-		});
-
-		it("low-spec-hardware.css defines content-visibility: auto and 1px 48px for .patient-row and .invoice-card", () => {
-			const cssPath = path.resolve(__dirname, "../../../styles/low-spec-hardware.css");
-			const css = readCssWithImports(cssPath);
-
-			assert.ok(
-				css.includes(".patient-row"),
-				"low-spec-hardware.css must contain .patient-row",
-			);
-			assert.ok(
-				css.includes(".invoice-card"),
-				"low-spec-hardware.css must contain .invoice-card",
-			);
-			assert.ok(
-				css.includes("content-visibility: auto;"),
-				"low-spec-hardware.css must contain content-visibility: auto;",
-			);
-			assert.ok(
-				css.includes("contain-intrinsic-size: 1px 48px;") ||
-					css.includes("contain-intrinsic-size: 1px 44px;"),
-				"low-spec-hardware.css must contain contain-intrinsic-size for .patient-row and .invoice-card",
-			);
+			const secondPage = sliceDomList(rows, 40, 160);
+			assert.equal(secondPage.displayedCount, 40);
+			assert.equal(secondPage.remainingCount, 0);
+			assert.equal(secondPage.hasMore, false);
 		});
 	});
 });

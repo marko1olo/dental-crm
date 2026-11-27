@@ -19,7 +19,7 @@ export const DisplayModesSelection: React.FC<DisplayModesSelectionProps> = ({
 			<button
 				type="button"
 				onClick={() => setIsFastExtractMode((prev) => !prev)}
-				className={`min-h-[44px] sm:min-h-[38px] flex items-center justify-between px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer select-none text-left ${
+				className={`min-h-[36px] max-md:min-h-[44px] flex items-center justify-between px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer select-none text-left ${
 					isFastExtractMode
 						? "bg-[var(--teal-soft,rgba(13,148,136,0.12))] border-[var(--teal,#0d9488)] shadow-2xs"
 						: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
@@ -52,7 +52,7 @@ export const DisplayModesSelection: React.FC<DisplayModesSelectionProps> = ({
 
 			{onToggleMultiSelect && (
 				<label
-					className={`flex items-center justify-between min-h-[44px] sm:min-h-[38px] cursor-pointer select-none px-2.5 py-1.5 rounded-lg border transition-colors ${
+					className={`flex items-center justify-between min-h-[36px] max-md:min-h-[44px] cursor-pointer select-none px-2.5 py-1.5 rounded-lg border transition-colors ${
 						isMultiSelectMode
 							? "bg-[var(--teal-soft,rgba(13,148,136,0.12))] border-[var(--teal,#0d9488)]"
 							: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"

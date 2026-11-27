@@ -28,6 +28,50 @@ export interface UseGlobalVoiceListenerParams {
 	readonly pediatricMode?: boolean | undefined;
 }
 
+export function dispatchVoiceTeethUpdatesBatch(
+	teethUpdates: DentalVoiceIntent["teethUpdates"],
+	onQuickStateChange?: UseGlobalVoiceListenerParams["onQuickStateChange"],
+	pediatricMode?: boolean,
+	onNotifySuccess?: (summary: string) => void,
+): number {
+	if (!onQuickStateChange || teethUpdates.length === 0) return 0;
+	const batchedGroups = new Map<
+		string,
+		{
+			teeth: number[];
+			state: DentalVoiceIntent["teethUpdates"][number]["state"];
+			surfaces: DentalVoiceIntent["teethUpdates"][number]["surfaces"];
+		}
+	>();
+	for (const t of teethUpdates) {
+		const surfacesKey = t.surfaces ? [...t.surfaces].sort().join(",") : "";
+		const groupKey = `${t.state}::${surfacesKey}`;
+		const existing = batchedGroups.get(groupKey);
+		if (existing) {
+			existing.teeth.push(t.toothNumber);
+		} else {
+			batchedGroups.set(groupKey, {
+				teeth: [t.toothNumber],
+				state: t.state,
+				surfaces: t.surfaces,
+			});
+		}
+	}
+	for (const group of batchedGroups.values()) {
+		onQuickStateChange(group.teeth, group.state, group.surfaces);
+	}
+	const summary = teethUpdates
+		.map((t) => `Зуб ${t.toothNumber}: ${t.state}`)
+		.join(", ");
+	if (onNotifySuccess) {
+		onNotifySuccess(summary);
+	} else {
+		void SoundFeedbackService.getInstance().playActionSuccess();
+		showToast(`Голос: ${summary}`, "success");
+	}
+	return batchedGroups.size;
+}
+
 export function useGlobalVoiceListener({
 	setIsVoiceListening,
 	setVoiceInterimText,
@@ -49,16 +93,11 @@ export function useGlobalVoiceListener({
 				);
 			}
 
-			if (onQuickStateChange && intent.teethUpdates.length > 0) {
-				for (const t of intent.teethUpdates) {
-					onQuickStateChange([t.toothNumber], t.state, t.surfaces);
-				}
-				void SoundFeedbackService.getInstance().playActionSuccess();
-				const summary = intent.teethUpdates
-					.map((t) => `Зуб ${t.toothNumber}: ${t.state}`)
-					.join(", ");
-				showToast(`Голос: ${summary}`, "success");
-			}
+			dispatchVoiceTeethUpdatesBatch(
+				intent.teethUpdates,
+				onQuickStateChange,
+				pediatricMode,
+			);
 
 			if (
 				intent.type === "perio_measurement" ||

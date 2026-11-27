@@ -85,7 +85,8 @@ export async function acquireScreenWakeLock(): Promise<boolean> {
 	}
 
 	// 2. HTML5 Screen Wake Lock API (iPadOS Safari 16.4+ / Chrome Android)
-	const nav = typeof navigator !== "undefined" ? (navigator as unknown as NavigatorWithWakeLock) : undefined;
+	const nav: (Navigator & NavigatorWithWakeLock) | undefined =
+		typeof navigator !== "undefined" ? navigator : undefined;
 	if (nav?.wakeLock && typeof nav.wakeLock.request === "function") {
 		try {
 			if (!activeWakeLockSentinel) {
@@ -181,13 +182,13 @@ export function getSafeAreaInsets(): { top: number; bottom: number; left: number
 		return { top: 0, bottom: 0, left: 0, right: 0 };
 	}
 
-	const win = window as unknown as {
+	const win: Window & {
 		denteMobileNative?: {
-			isMobileApp?: boolean;
-			getSafeAreaInsets?: () => { top: number; bottom: number; left: number; right: number };
-		};
-		denteSafeArea?: { top: number; bottom: number; left: number; right: number };
-	};
+			isMobileApp?: boolean | undefined;
+			getSafeAreaInsets?: (() => { top: number; bottom: number; left: number; right: number }) | undefined;
+		} | undefined;
+		denteSafeArea?: { top: number; bottom: number; left: number; right: number } | undefined;
+	} = window;
 
 	if (win.denteSafeArea && typeof win.denteSafeArea.top === "number") {
 		return {
@@ -202,8 +203,8 @@ export function getSafeAreaInsets(): { top: number; bottom: number; left: number
 		try {
 			const res = win.denteMobileNative.getSafeAreaInsets();
 			if (res && typeof res.top === "number") return res;
-		} catch {
-			// fallback
+		} catch (err) {
+			logger.debug("[mobileBridge] native getSafeAreaInsets fallback failed:", err);
 		}
 	}
 

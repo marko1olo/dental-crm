@@ -1,4 +1,4 @@
-import { generateQrCodeSvg } from "@dental/shared";
+import { generateQrCodeSvg, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { Check, X, Zap } from "lucide-react";
 import React from "react";
 import { InformedConsentModal } from "../../documents/DocumentsStudioModal";
@@ -28,7 +28,10 @@ export function VisitEmkModals({
 	dashboard,
 	onApplyCatalogPatch,
 }: VisitEmkModalsProps) {
-	const totalNetRub = completionResult?.totalNetRub ?? 0;
+	const totalNetKopecks =
+		completionResult?.totalNetKop ??
+		rublesToKopecks(completionResult?.totalNetRub ?? 0);
+	const totalNetRub = kopecksToRubles(totalNetKopecks);
 	const receiptNumber = completionResult?.receiptNumber ?? "00001";
 	const patientName = activePatient?.fullName ?? "Пациент";
 	const doctorFullName =
@@ -82,7 +85,10 @@ export function VisitEmkModals({
 							</div>
 
 							<div
-								className="flex items-center justify-center p-3 bg-white rounded-2xl border-2 border-slate-200 shadow-inner w-56 h-56 mx-auto"
+								className={`flex items-center justify-center p-3 rounded-2xl border-2 border-[var(--line)] shadow-inner w-56 h-56 mx-auto ${
+									sbpQrSvg ? "bg-white" : "bg-[var(--paper-soft)]"
+								}`}
+								data-preserve-white={sbpQrSvg ? "true" : undefined}
 								data-testid="sbp-qr-svg-container"
 							>
 								{sbpQrSvg ? (
@@ -94,10 +100,10 @@ export function VisitEmkModals({
 										/>
 									</div>
 								) : (
-									<div className="text-xs text-slate-500 font-medium p-4 flex flex-col items-center justify-center gap-1">
-										<Zap className="w-6 h-6 text-teal-600 mb-1" />
+									<div className="text-xs text-[var(--ink-muted)] font-medium p-4 flex flex-col items-center justify-center gap-1">
+										<Zap className="w-6 h-6 text-[var(--primary)] mb-1" />
 										<span>QR-код формируется платёжным шлюзом</span>
-										<span className="text-[10px] text-slate-400">Перейдите в кассу для чекаута</span>
+										<span className="text-[10px] text-[var(--ink-muted)]">Перейдите в кассу для чекаута</span>
 									</div>
 								)}
 							</div>
@@ -116,6 +122,13 @@ export function VisitEmkModals({
 						<div className="pt-3 border-t border-[var(--line)] flex gap-2">
 							<button
 								type="button"
+								onClick={() => setIsSbpQrModalOpen(false)}
+								className="min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] transition-colors cursor-pointer"
+							>
+								Закрыть
+							</button>
+							<button
+								type="button"
 								onClick={() => {
 									setIsSbpQrModalOpen(false);
 									if (typeof window !== "undefined") {
@@ -123,6 +136,7 @@ export function VisitEmkModals({
 											new CustomEvent("dente:open-cashbox", {
 												detail: {
 													mode: "checkout",
+													amountKopecks: totalNetKopecks,
 													amountRub: totalNetRub,
 													patientId: activePatient?.id,
 													patientName: patientName,
@@ -133,18 +147,11 @@ export function VisitEmkModals({
 									}
 									showToast("Переход в кассовую студию для чекаута", "info", 3000);
 								}}
-								className="flex-1 min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-extrabold bg-[var(--ok-fg)] hover:opacity-90 text-white transition-all cursor-pointer flex items-center justify-center gap-1.5"
+								className="flex-1 min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-semibold bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
 								data-testid="btn-confirm-sbp-paid"
 							>
 								<Check size={16} className="shrink-0" />
 								<span>Подтвердить оплату в кассе</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => setIsSbpQrModalOpen(false)}
-								className="min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] transition-colors cursor-pointer"
-							>
-								Закрыть
 							</button>
 						</div>
 					</div>

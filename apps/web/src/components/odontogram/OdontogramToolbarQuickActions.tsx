@@ -460,7 +460,7 @@ export const OdontogramToolbarQuickActions: React.FC<OdontogramToolbarQuickActio
 						className="shrink-0 text-[var(--muted,#64748b)]"
 					/>
 				</summary>
-				<div className="absolute right-0 top-full mt-1.5 z-40 w-72 p-2 rounded-xl shadow-xl bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-col gap-2">
+				<div className="absolute right-0 top-full mt-1.5 z-40 w-72 p-2 rounded-xl shadow-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] flex flex-col gap-2">
 					{props.onQuickStateChange && (
 						<QuickActionsBatchOps
 							pediatricMode={props.pediatricMode}

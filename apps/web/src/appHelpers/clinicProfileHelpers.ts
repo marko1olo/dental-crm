@@ -7,7 +7,6 @@ import type {
 	PatientCoreSaveState,
 	StaffScheduleDraft,
 	StaffScheduleSaveState,
-	ClinicalToothSurface,
 } from "./types.js";
 import {
 	CANONICAL_TOOTH_STATUS_ALIASES,
@@ -107,44 +106,10 @@ export {
 	viewFromHash,
 } from "../utils/routeUtils";
 
-export const clinicalToothSurfaceAliases: Record<string, ClinicalToothSurface> =
-	{
-		o: "occlusal",
-		окклюзионная: "occlusal",
-		окклюзионно: "occlusal",
-		жевательная: "occlusal",
-		жевательно: "occlusal",
-		m: "mesial",
-		медиальная: "mesial",
-		мезиальная: "mesial",
-		медиально: "mesial",
-		мезиально: "mesial",
-		d: "distal",
-		дистальная: "distal",
-		дистально: "distal",
-		b: "buccal",
-		щечная: "buccal",
-		щечно: "buccal",
-		вестибулярная: "buccal",
-		l: "lingual",
-		язычная: "lingual",
-		язычно: "lingual",
-		p: "palatal",
-		небная: "palatal",
-		небно: "palatal",
-		i: "incisal",
-		режущий: "incisal",
-		"режущий край": "incisal",
-		корень: "root",
-		корневая: "root",
-		root: "root",
-		имплантация: "implant_site",
-		"зона имплантации": "implant_site",
-		"implant site": "implant_site",
-		"не применимо": "not_applicable",
-		нет: "not_applicable",
-		"-": "not_applicable",
-	};
+export {
+	clinicalToothSurfaceAliases,
+	type ClinicalToothSurface,
+} from "../constants/clinicalConstants";
 
 export const clinicalToothStatusAliases: Record<string, CanonicalToothState> = {
 	...CANONICAL_TOOTH_STATUS_ALIASES,

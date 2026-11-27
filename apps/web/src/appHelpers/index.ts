@@ -17,6 +17,7 @@ export * from "../utils/browserScanUtils.js";
 
 // Explicit re-exports to resolve TS2308 ambiguities between domain modules
 export type {
+	ClinicalToothSurface,
 	DocumentIssueSignatureDraft,
 	DocumentPayloadDraftEntry,
 	DocumentPayloadDraftStore,

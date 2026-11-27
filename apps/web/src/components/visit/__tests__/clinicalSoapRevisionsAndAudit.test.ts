@@ -1,5 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { CANONICAL_LAB_MATERIALS } from "../../lab/dentalLabCatalogData";
+import { appendClinicalText } from "../emk";
 import {
 	generateSoapFromOdontogramFinding,
 	generatePhotoProtocolAttachmentsStatement,
@@ -9,10 +11,13 @@ import {
 } from "../../../lib/clinicalProtocols";
 
 describe("Clinical SOAP Revisions, Audit & Print Protocols (clinicalSoapRevisionsAndAudit)", () => {
-	describe("1. Crown Materials Contrast & Medical Card Print Invariants", () => {
-		it("verifies high-contrast restorative material color definitions", () => {
-			const materials = ["gold", "pfm_crown", "ceramic_emax", "zirconia", "composite", "amalgam"] as const;
-			assert.equal(materials.length, 6);
+	describe("1. Restorative Material Catalog & Medical Card Print Invariants", () => {
+		it("verifies restorative material definitions in CANONICAL_LAB_MATERIALS", () => {
+			assert.ok(CANONICAL_LAB_MATERIALS.length >= 6);
+			for (const mat of CANONICAL_LAB_MATERIALS) {
+				assert.ok(mat.id && mat.titleRu);
+				assert.ok(mat.baseLabCostKopecks >= 0);
+			}
 		});
 
 		it("verifies outpatient record protocol text format for printed medical document", () => {
@@ -178,59 +183,26 @@ describe("Clinical SOAP Revisions, Audit & Print Protocols (clinicalSoapRevision
 		});
 	});
 
-	describe("6. 1-Click Dental Prescriptions & Statutory Licensing", () => {
-		it("verifies essential dental prescription drugs for 1-click dispensing", () => {
-			const amoxiclav = {
-				tradeNameRu: "Амоксиклав (Амоксициллин + Клавулановая кислота)",
-				latinRp: "Rp.: Amoxicillini 875 mg + Acidi clavulanici 125 mg",
-				dosageRu: "875 мг + 125 мг (1000 мг)",
-				signaRu: "S. Внутрь по 1 таблетке 2 раза в день 5 дней",
-			};
-			const nimesil = {
-				tradeNameRu: "Нимесил (Нимесулид)",
-				latinRp: "Rp.: Nimesulidi 100 mg",
-				dosageRu: "100 мг",
-				signaRu: "S. Внутрь по 1 пакетику 2 раза в день после еды при боли",
-			};
-			const chlorhexidine = {
-				tradeNameRu: "Хлоргексидин 0.05%",
-				latinRp: "Rp.: Sol. Chlorhexidini bigluconatis 0.05% - 100 ml",
-				dosageRu: "0.05%",
-				signaRu: "S. Ротовые ванночки 3 раза в день 5 дней",
-			};
-
-			assert.ok(amoxiclav.latinRp.includes("Amoxicillini"));
-			assert.ok(amoxiclav.latinRp.includes("Acidi clavulanici"));
-			assert.ok(amoxiclav.dosageRu.includes("1000 мг"));
-
-			assert.ok(nimesil.latinRp.includes("Nimesulidi 100 mg"));
-			assert.ok(nimesil.signaRu.includes("при боли"));
-
-			assert.ok(chlorhexidine.latinRp.includes("Chlorhexidini bigluconatis 0.05%"));
-			assert.ok(chlorhexidine.signaRu.includes("Ротовые ванночки"));
+	describe("6. Informed Consent HTML Security & Append Protocol Audit (Mandate 8e)", () => {
+		it("appendClinicalText cleanly merges protocol amendments without overwriting existing clinical entries", () => {
+			const existing = "Лечение кариеса зуба 16";
+			const merged = appendClinicalText(existing, "Исправленному верить: ред. 2");
+			assert.ok(merged.includes(existing));
+			assert.ok(merged.includes("Исправленному верить: ред. 2"));
+			assert.equal(appendClinicalText("", "Первичная запись"), "Первичная запись");
 		});
 
-		it("verifies statutory prescription header with clinic license ЛО41-01137-77/00368421", () => {
-			const license = "ЛО41-01137-77/00368421";
-			assert.ok(/^ЛО\d{2}-\d{5}-\d{2}\/\d{8}$/.test(license));
-		});
-	});
-
-	describe("7. Protocol Revisions & 'Исправленному верить' Audit Invariants (Mandate 8e)", () => {
-		it("allows doctor to amend signed record without bureaucratic 24h lockout or admin pin", () => {
-			const originalVisit = {
-				id: "vis-1",
-				status: "signed",
-				revision: 1,
-				doctorSummary: "Лечение кариеса зуба 16",
-			};
-
-			const amendedRevision = originalVisit.revision + 1;
-			const amendStamp = `Исправленному верить: ред. ${amendedRevision}`;
-			const amendedSummary = `${originalVisit.doctorSummary} (${amendStamp})`;
-
-			assert.equal(amendedRevision, 2);
-			assert.ok(amendedSummary.includes("Исправленному верить: ред. 2"));
+		it("escapes HTML special characters in generateInformedConsent1051nHtml", () => {
+			const html = generateInformedConsent1051nHtml({
+				patientFullName: 'Тест <script>alert("xss")</script>',
+				patientBirthDate: "01.01.1990",
+				doctorFullName: "Врач Тест",
+				doctorSpecialty: "Терапевт",
+				diagnosisIcd: "K02.1",
+				toothNumbers: "16",
+			});
+			assert.equal(html.includes("<script>"), false, "Must escape XSS payloads in consent HTML");
+			assert.ok(html.includes("informed-consent-a4-sheet"));
 		});
 	});
 });

@@ -72,7 +72,7 @@ export function PatientSearchDropdown({
 						data-testid="patient-search-quick-create-btn"
 						onClick={onTriggerQuickCreate}
 						onMouseEnter={() => onHighlight(searchResults.length)}
-						className={`w-full min-h-[32px] h-8 px-3 py-1 rounded-lg text-xs font-bold flex items-center justify-between gap-2 transition-all cursor-pointer select-none border ${
+						className={`w-full min-h-[36px] h-9 max-md:min-h-[44px] max-md:h-11 px-3 py-1 rounded-lg text-xs font-bold flex items-center justify-between gap-2 transition-all cursor-pointer select-none border ${
 							highlightedIndex === searchResults.length
 								? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
 								: "bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30"

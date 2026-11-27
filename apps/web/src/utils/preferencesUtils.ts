@@ -134,11 +134,11 @@ export const defaultUiPreferences: UiPreferences = {
 	smartImportMode: "auto",
 	imagingKindFilter: "all",
 	dicomWebEndpointUrl:
-		typeof window !== "undefined"
+		typeof window !== "undefined" && window.location?.hostname
 			? `http://${window.location.hostname}:8042/dicom-web`
 			: "http://127.0.0.1:8042/dicom-web",
 	ohifBaseUrl:
-		typeof window !== "undefined"
+		typeof window !== "undefined" && window.location?.hostname
 			? `http://${window.location.hostname}:3000`
 			: "http://127.0.0.1:3000",
 	telegramBotConfigId: "",

@@ -6,79 +6,59 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 import { OdontogramToolbarMoreMenu } from "../OdontogramToolbarMoreMenu";
 import { OdontogramToolbar } from "../OdontogramToolbar";
 import { OdontogramToolbarQuickActions } from "../OdontogramToolbarQuickActions";
 import { OdontogramStampPalette } from "../OdontogramStampPalette";
 
-function getMoreMenuAllSources(): string {
-	const dir = path.resolve(__dirname, "../../../../src/components/odontogram");
-	const files = [
-		"OdontogramToolbarMoreMenu.tsx",
-		"MoreMenuClinicalModules.tsx",
-		"MoreMenuAiAnalysisModules.tsx",
-		"MoreMenuDisplayModes.tsx",
-		"ClinicalDiaryAndVoiceButtons.tsx",
-		"ClinicalPlanningButtons.tsx",
-		"ClinicalExamButtons.tsx",
-		"AiAnalysisImagingButtons.tsx",
-		"AiAnalysisMenuButtons.tsx",
-		"DisplayModesToggles.tsx",
-		"DisplayModesSelection.tsx",
-	];
-	return files
-		.map((f) => {
-			const p = path.join(dir, f);
-			return fs.existsSync(p) ? fs.readFileSync(p, "utf-8") : "";
-		})
-		.join("\n");
-}
-
-describe("1. OdontogramToolbarMoreMenu: Typography Uniformity & WCAG AAA Contrast", () => {
-	it("guarantees unified typography across all items in Section 1 and Section 2", () => {
-		const content = getMoreMenuAllSources();
-
-		// Strict Title font class
-		const titleClass = 'font-bold text-[12px] leading-tight text-slate-900 dark:text-slate-100';
-		// Strict Subtitle font class
-		const subtitleClass = 'text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate';
-
-		// Verify title class occurrences
-		assert.ok(
-			content.includes(titleClass),
-			`Must contain uniform title class: ${titleClass}`,
+describe("1. OdontogramToolbarMoreMenu: Typography Uniformity & Token Contrast", () => {
+	it("renders token-based typography and avoids hardcoded zinc/slate dark overrides", () => {
+		const html = renderToString(
+			<OdontogramToolbarMoreMenu
+				isMoreMenuOpen={true}
+				setIsMoreMenuOpen={() => {}}
+				activeStampTool={null}
+				setActiveStampTool={() => {}}
+				isFastExtractMode={false}
+				setIsFastExtractMode={() => {}}
+				isMultiSelectMode={false}
+				onToggleMultiSelect={() => {}}
+				isPerioOpen={false}
+				onTogglePerio={() => {}}
+				isOrthoCephOpen={false}
+				setIsOrthoCephOpen={() => {}}
+				isSmartOpgOpen={false}
+				setIsSmartOpgOpen={() => {}}
+				handleMarkIntactDentition={() => {}}
+				handleMarkWisdomTeethMissing={() => {}}
+				setIsPlanWizardOpen={() => {}}
+				toggleVoiceEngine={() => {}}
+				isVoiceListening={false}
+				setContextDrawerTooth={() => {}}
+				onOpenPediatricModal={() => {}}
+				onLoadRadiologyAiReport={() => {}}
+				onSyncAllToDiary={() => {}}
+				showWisdomTeeth={true}
+				setShowWisdomTeeth={() => {}}
+				activeMode="anatomical_svg"
+				showPulpAndCanals={false}
+				setShowPulpAndCanals={() => {}}
+				isPediatricEffective={false}
+			/>,
 		);
 
-		// Verify subtitle class occurrences
-		assert.ok(
-			content.includes(subtitleClass),
-			`Must contain uniform subtitle class: ${subtitleClass}`,
-		);
-
-		// Zero faded opacity-80 or opacity-85 on text
-		assert.strictEqual(
-			content.includes("opacity-80 truncate"),
-			false,
-			"Must NOT contain washed out opacity-80 on subtitles",
-		);
-		assert.strictEqual(
-			content.includes("opacity-85"),
-			false,
-			"Must NOT contain washed out opacity-85 on subtitles",
-		);
+		assert.ok(html.includes('data-testid="odontogram-more-menu-popover"'), "Must render popover container");
+		assert.ok(html.includes("text-[var(--ink,#0f172a)]"), "Must use --ink text token");
+		assert.strictEqual(html.includes("dark:bg-zinc-900"), false, "Must NOT hardcode dark:bg-zinc-900");
+		assert.strictEqual(html.includes("opacity-80 truncate"), false, "Must NOT contain washed out opacity-80 on subtitles");
+		assert.strictEqual(html.includes("opacity-85"), false, "Must NOT contain washed out opacity-85 on subtitles");
 	});
 
-	it("renders all 12 items in More Menu with correct data-testids and classes", () => {
+	it("renders all 12 items in More Menu with correct data-testids and labels", () => {
 		const html = renderToString(
 			<OdontogramToolbarMoreMenu
 				isMoreMenuOpen={true}
@@ -144,9 +124,12 @@ describe("1. OdontogramToolbarMoreMenu: Typography Uniformity & WCAG AAA Contras
 		assert.ok(html.includes('data-testid="btn-more-menu-radiology-ai"'), "Must render btn-more-menu-radiology-ai");
 		assert.ok(html.includes("Радиологический ИИ-отчёт"), "Must render Radiology AI title");
 
-		// 9. Wisdom Teeth
-		assert.ok(html.includes('data-testid="btn-odontogram-wisdom-missing"'), "Must render btn-odontogram-wisdom-missing");
-		assert.ok(html.includes("Зубы мудрости (8-ки)"), "Must render Wisdom teeth title");
+		// 9. Wisdom Teeth visibility toggle
+		assert.ok(
+			html.includes('data-testid="btn-odontogram-wisdom-visibility"'),
+			"Must render btn-odontogram-wisdom-visibility",
+		);
+		assert.ok(html.includes("Показ зубов мудрости (8-ки)"), "Must render Wisdom visibility title");
 
 		// 10. Pulp and Canals
 		assert.ok(html.includes('data-testid="btn-odontogram-pulp-canals"'), "Must render btn-odontogram-pulp-canals");
@@ -162,45 +145,46 @@ describe("1. OdontogramToolbarMoreMenu: Typography Uniformity & WCAG AAA Contras
 	});
 });
 
-describe("2. OdontogramToolbarMoreMenu: Source AST & Callback Bindings Verification", () => {
-	it("verifies all 12 button click handlers are properly wired in OdontogramToolbarMoreMenu.tsx", () => {
-		const content = getMoreMenuAllSources();
+describe("2. OdontogramToolbarMoreMenu: Interactive Callback Structure via Rendered Markup", () => {
+	it("renders all interactive module buttons and multi-select checkbox with expected attributes", () => {
+		const html = renderToString(
+			<OdontogramToolbarMoreMenu
+				isMoreMenuOpen={true}
+				setIsMoreMenuOpen={() => {}}
+				activeStampTool={null}
+				setActiveStampTool={() => {}}
+				isFastExtractMode={false}
+				setIsFastExtractMode={() => {}}
+				isMultiSelectMode={true}
+				onToggleMultiSelect={() => {}}
+				isPerioOpen={true}
+				onTogglePerio={() => {}}
+				isOrthoCephOpen={false}
+				setIsOrthoCephOpen={() => {}}
+				isSmartOpgOpen={false}
+				setIsSmartOpgOpen={() => {}}
+				handleMarkIntactDentition={() => {}}
+				handleMarkWisdomTeethMissing={() => {}}
+				setIsPlanWizardOpen={() => {}}
+				toggleVoiceEngine={() => {}}
+				isVoiceListening={true}
+				setContextDrawerTooth={() => {}}
+				onOpenPediatricModal={() => {}}
+				onLoadRadiologyAiReport={() => {}}
+				onSyncAllToDiary={() => {}}
+				showWisdomTeeth={false}
+				setShowWisdomTeeth={() => {}}
+				activeMode="anatomical_svg"
+				showPulpAndCanals={true}
+				setShowPulpAndCanals={() => {}}
+				isPediatricEffective={false}
+			/>,
+		);
 
-		// 1. Smart OPG -> setIsSmartOpgOpen(true) & setIsMoreMenuOpen(false)
-		assert.ok(content.includes("setIsSmartOpgOpen(true)"), "Smart OPG calls setIsSmartOpgOpen(true)");
-
-		// 2. Print A4 -> triggerOdontogramPrint & setIsMoreMenuOpen(false)
-		assert.ok(content.includes("triggerOdontogramPrint"), "Print A4 calls triggerOdontogramPrint()");
-
-		// 3. Plan Wizard -> setIsPlanWizardOpen(true) & setIsMoreMenuOpen(false)
-		assert.ok(content.includes("setIsPlanWizardOpen(true)"), "Plan wizard calls setIsPlanWizardOpen(true)");
-
-		// 4. Perio -> onTogglePerio() & setIsMoreMenuOpen(false)
-		assert.ok(content.includes("onTogglePerio"), "Perio calls onTogglePerio()");
-
-		// 5. Ortho Ceph -> setIsOrthoCephOpen((prev) => !prev) & setIsMoreMenuOpen(false)
-		assert.ok(content.includes("setIsOrthoCephOpen((prev) => !prev)"), "Ortho ceph toggles setIsOrthoCephOpen");
-
-		// 6. Tooth Card -> setContextDrawerTooth(targetTooth) & setIsMoreMenuOpen(false)
-		assert.ok(content.includes("setContextDrawerTooth(targetTooth)"), "Tooth card calls setContextDrawerTooth");
-
-		// 7. Pediatric -> onOpenPediatricModal() & setIsMoreMenuOpen(false)
-		assert.ok(content.includes("onOpenPediatricModal()"), "Pediatric calls onOpenPediatricModal()");
-
-		// 8. Radiology AI -> handleRadiologyReport / onLoadRadiologyAiReport & setIsMoreMenuOpen(false)
-		assert.ok(content.includes("handleRadiologyReport()") || content.includes("onLoadRadiologyAiReport()"), "Radiology AI calls report loader");
-
-		// 9. Wisdom -> setShowWisdomTeeth((prev) => !prev)
-		assert.ok(content.includes("setShowWisdomTeeth((prev) => !prev)"), "Wisdom calls setShowWisdomTeeth");
-
-		// 10. Pulp -> setShowPulpAndCanals((prev) => !prev)
-		assert.ok(content.includes("setShowPulpAndCanals((prev) => !prev)"), "Pulp calls setShowPulpAndCanals");
-
-		// 11. Fast extract -> setIsFastExtractMode((prev) => !prev)
-		assert.ok(content.includes("setIsFastExtractMode((prev) => !prev)"), "Fast extract toggles setIsFastExtractMode");
-
-		// 12. Multi-select -> onToggleMultiSelect(e.target.checked)
-		assert.ok(content.includes("onToggleMultiSelect(e.target.checked)"), "Multi-select checkbox calls onToggleMultiSelect");
+		assert.ok(html.includes("Остановить диктовку"), "Voice listening active state renders stop prompt");
+		assert.ok(html.includes("ВЫКЛ"), "Hidden wisdom teeth state renders OFF indicator");
+		assert.ok(html.includes("checked"), "Multi-select active checkbox renders checked");
+		assert.ok(html.includes('data-testid="btn-hotpath-sync-all-to-diary"'), "Diary sync button renders");
 	});
 });
 

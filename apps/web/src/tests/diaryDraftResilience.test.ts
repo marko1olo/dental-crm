@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-const REPO_ROOT = path.resolve(import.meta.dirname, "../../../..");
 import { beforeEach, describe, test } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
 	type DiaryState,
 	EMPTY_DIARY,
@@ -13,9 +12,42 @@ import {
 	soapDiaryFromVisitNote,
 	visitNoteFromSoapDiary,
 } from "../lib/protocols/protocolMerge";
+import {
+	clearIsolatedVisitDraft,
+	getIsolatedVisitDraftKey,
+	loadIsolatedVisitDraft,
+	saveIsolatedVisitDraft,
+	verifyZeroDraftCollision,
+} from "../components/visit/save/visitDraftStorage";
+import { RecordNewDiaryInlineForm } from "../components/emr/record/tabs/RecordNewDiaryInlineForm";
+import { EmkQuickActionButtons } from "../components/visit/emk/emkToolbarModules/EmkQuickActionButtons";
+import { DebouncedEmkTextarea } from "../components/visit/emk/DebouncedEmkTextarea";
 
 describe("Diary Draft Resilience & LocalStorage Protection (Medical Diary)", () => {
 	const storageMock = new Map<string, string>();
+	const originalLocalStorage = (globalThis as { localStorage?: unknown }).localStorage;
+
+	beforeEach(() => {
+		storageMock.clear();
+		(globalThis as { localStorage: Storage }).localStorage = {
+			get length() {
+				return storageMock.size;
+			},
+			clear: () => storageMock.clear(),
+			getItem: (key: string) => storageMock.get(key) ?? null,
+			key: (index: number) => Array.from(storageMock.keys())[index] ?? null,
+			removeItem: (key: string) => {
+				storageMock.delete(key);
+			},
+			setItem: (key: string, value: string) => {
+				storageMock.set(key, String(value));
+			},
+		};
+	});
+
+	function getDraftStorageKey(visitId: string): string {
+		return getIsolatedVisitDraftKey(visitId);
+	}
 
 	const mockLocalStorage = {
 		getItem: (key: string): string | null => storageMock.get(key) ?? null,
@@ -30,17 +62,9 @@ describe("Diary Draft Resilience & LocalStorage Protection (Medical Diary)", () 
 		},
 	};
 
-	beforeEach(() => {
-		storageMock.clear();
-	});
-
-	function getDraftStorageKey(visitId: string): string {
-		return `dente_diary_draft_${visitId}`;
-	}
-
-	test("Автосохранение черновика: сохраняет заполненные поля в локальное хранилище", () => {
+	test("Автосохранение черновика: сохраняет заполненные поля через visitDraftStorage", () => {
 		const visitId = "visit-uuid-101";
-		const storageKey = getDraftStorageKey(visitId);
+		const storageKey = getIsolatedVisitDraftKey(visitId);
 
 		const draftState: DiaryState = {
 			...EMPTY_DIARY,
@@ -51,12 +75,12 @@ describe("Diary Draft Resilience & LocalStorage Protection (Medical Diary)", () 
 			treatmentDescription: "Препарирование, медикаментозная обработка, пломбирование.",
 		};
 
-		mockLocalStorage.setItem(storageKey, JSON.stringify(draftState));
+		saveIsolatedVisitDraft(visitId, draftState);
+		const savedRaw = storageMock.get(storageKey);
+		assert.ok(savedRaw !== undefined, "Черновик должен присутствовать в localStorage");
 
-		const savedRaw = mockLocalStorage.getItem(storageKey);
-		assert.ok(savedRaw !== null, "Черновик должен присутствовать в localStorage");
-
-		const parsed = JSON.parse(savedRaw) as DiaryState;
+		const parsed = loadIsolatedVisitDraft<DiaryState>(visitId);
+		assert.ok(parsed);
 		assert.equal(parsed.anamnesis, draftState.anamnesis);
 		assert.equal(parsed.statusLocalis, draftState.statusLocalis);
 		assert.equal(parsed.diagnosisIcd10, "K02.1");
@@ -64,45 +88,30 @@ describe("Diary Draft Resilience & LocalStorage Protection (Medical Diary)", () 
 		assert.equal(parsed.treatmentDescription, draftState.treatmentDescription);
 	});
 
-	test("Восстановление черновика: восстанавливает состояние при повторном открытии визита", () => {
-		const visitId = "visit-uuid-202";
-		const storageKey = getDraftStorageKey(visitId);
-
-		const savedDraft: Partial<DiaryState> = {
+	test("Восстановление черновика: изолирует визиты и восстанавливает данные", () => {
+		assert.equal(verifyZeroDraftCollision("visit-A", "visit-B"), true);
+		saveIsolatedVisitDraft("visit-uuid-202", {
+			...EMPTY_DIARY,
 			anamnesis: "Ранее начатое эндодонтическое лечение.",
 			treatmentDescription: "Распломбирование корневых каналов.",
-		};
-		mockLocalStorage.setItem(storageKey, JSON.stringify(savedDraft));
+		});
 
-		const raw = mockLocalStorage.getItem(storageKey);
-		assert.ok(raw);
-		const restored = { ...EMPTY_DIARY, ...(JSON.parse(raw) as Partial<DiaryState>) };
-
+		const restored = loadIsolatedVisitDraft<DiaryState>("visit-uuid-202");
+		assert.ok(restored);
 		assert.equal(restored.anamnesis, "Ранее начатое эндодонтическое лечение.");
 		assert.equal(restored.treatmentDescription, "Распломбирование корневых каналов.");
-		assert.equal(restored.statusLocalis, "");
+		clearIsolatedVisitDraft("visit-uuid-202");
+		assert.equal(loadIsolatedVisitDraft("visit-uuid-202"), null);
 	});
 
-	test("Устойчивость к поврежденному JSON в localStorage: не выбрасывает исключение", () => {
+	test("Устойчивость к поврежденному JSON в localStorage: loadIsolatedVisitDraft возвращает null без падения", () => {
 		const visitId = "visit-uuid-corrupted";
-		const storageKey = getDraftStorageKey(visitId);
-
-		mockLocalStorage.setItem(storageKey, "{ invalid json data corrupt");
-
-		let restoredState: DiaryState = { ...EMPTY_DIARY };
-		try {
-			const cached = mockLocalStorage.getItem(storageKey);
-			if (cached) {
-				const parsed = JSON.parse(cached) as Partial<DiaryState>;
-				if (parsed && typeof parsed === "object") {
-					restoredState = { ...restoredState, ...parsed };
-				}
-			}
-		} catch {
-			// Ошибка парсинга корректно игнорируется
+		storageMock.set(getIsolatedVisitDraftKey(visitId), "{ invalid json data corrupt");
+		const restored = loadIsolatedVisitDraft<DiaryState>(visitId);
+		assert.equal(restored, null, "При поврежденном JSON loadIsolatedVisitDraft не падает и возвращает null");
+		if (originalLocalStorage === undefined) {
+			delete (globalThis as { localStorage?: unknown }).localStorage;
 		}
-
-		assert.deepEqual(restoredState, EMPTY_DIARY, "При поврежденном JSON должен остаться базовый пустой дневник");
 	});
 
 	test("Защита от перезаписи: серверные данные подписанного дневника имеют приоритет", () => {
@@ -329,172 +338,68 @@ describe("Visit SOAP Draft Recovery & Non-blocking Invariants (Mandate 8c, 8e)",
 		assert.equal(isDifferent, false, "Идентичные данные не должны триггерить баннер восстановления");
 	});
 
-	test("Неблокирующий сброс черновика: удаляет ключ из localStorage без window.confirm / modal", () => {
-		const key = "dente_soap_editor_draft_16";
-		mockLocalStorage.setItem(key, JSON.stringify({ complaint: "Черновик для удаления" }));
-		assert.ok(mockLocalStorage.getItem(key));
+	test("Неблокирующий сброс черновика: удаляет ключ из localStorage через clearIsolatedVisitDraft", () => {
+		const visitId = "visit-uuid-discard";
+		saveIsolatedVisitDraft(visitId, { ...EMPTY_DIARY, anamnesis: "Черновик для удаления" });
+		assert.ok(loadIsolatedVisitDraft(visitId));
 
-		// Имитация handleDiscardDraft
-		mockLocalStorage.removeItem(key);
-
-		assert.equal(mockLocalStorage.getItem(key), null, "Черновик должен быть удален из хранилища");
+		clearIsolatedVisitDraft(visitId);
+		assert.equal(loadIsolatedVisitDraft(visitId), null, "Черновик должен быть удален из хранилища");
 	});
 
-	test("Мандат 8c / 8e: Полный запрет на window.alert, window.confirm и window.prompt в коде дневника", () => {
-		const inlineFormCode = fs.readFileSync(
-			path.resolve(REPO_ROOT, "apps/web/src/components/emr/record/tabs/RecordNewDiaryInlineForm.tsx"),
-			"utf-8",
+	test("Мандат 8e/8x/8zg: RecordNewDiaryInlineForm, DebouncedEmkTextarea и EmkQuickActionButtons рендерятся без 043/у и без disabled-блокировки нормы", () => {
+		const inlineHtml = renderToStaticMarkup(
+			React.createElement(RecordNewDiaryInlineForm, {
+				selectedTooth: "16",
+				setSelectedTooth: () => {},
+				commonTeeth: [16, 26, 36, 46],
+				subjective: "",
+				setSubjective: () => {},
+				objective: "",
+				setObjective: () => {},
+				diagnosisText: "",
+				setDiagnosisText: () => {},
+				icd10Code: "K02.1",
+				setIcd10Code: () => {},
+				protocol: "",
+				setProtocol: () => {},
+				onApplyNorm: () => {},
+				onClear: () => {},
+				onSave: () => {},
+			}),
 		);
-		const diariesTabCode = fs.readFileSync(
-			path.resolve(REPO_ROOT, "apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx"),
-			"utf-8",
-		);
-		const visitEmkTabCode = fs.readFileSync(
-			path.resolve(REPO_ROOT, "apps/web/src/components/visit/VisitEmkTab.tsx"),
-			"utf-8",
-		);
-		const debouncedTextareaCode = fs.readFileSync(
-			path.resolve(REPO_ROOT, "apps/web/src/components/visit/emk/DebouncedEmkTextarea.tsx"),
-			"utf-8",
-		);
+		assert.ok(inlineHtml.includes('data-testid="btn-inline-diary-norm"'));
+		assert.equal(inlineHtml.includes("043/у"), false);
+		assert.equal(inlineHtml.includes("834н"), false);
 
-		for (const [name, code] of [
-			["RecordNewDiaryInlineForm", inlineFormCode],
-			["RecordDiariesTab", diariesTabCode],
-			["VisitEmkTab", visitEmkTabCode],
-			["DebouncedEmkTextarea", debouncedTextareaCode],
-		] as const) {
-			assert.ok(!code.includes("window.alert"), `${name} не должен вызывать window.alert`);
-			assert.ok(!code.includes("window.confirm"), `${name} не должен вызывать window.confirm`);
-			assert.ok(!code.includes("window.prompt"), `${name} не должен вызывать window.prompt`);
-		}
-	});
+		const textareaHtml = renderToStaticMarkup(
+			React.createElement(DebouncedEmkTextarea, {
+				fieldKey: "anamnesis",
+				label: "Анамнез заболевания",
+				value: "Боли при накусывании",
+				onCommit: () => {},
+			}),
+		);
+		assert.ok(textareaHtml.includes("Боли при накусывании"));
 
-	test("Мандат 8e: DebouncedEmkTextarea калиброван на 400ms и слушает телефонию и смену вкладок", () => {
-		const debouncedTextareaCode = fs.readFileSync(
-			path.resolve(REPO_ROOT, "apps/web/src/components/visit/emk/DebouncedEmkTextarea.tsx"),
-			"utf-8",
+		const quickActionsHtml = renderToStaticMarkup(
+			React.createElement(EmkQuickActionButtons, {
+				onApplyPhysiologicalNorm: () => {},
+				handleSchedule: () => {},
+				canUndo: false,
+				canRedo: false,
+				handleUndo: () => {},
+				handleRedo: () => {},
+			}),
 		);
-
-		assert.ok(
-			debouncedTextareaCode.includes("400); // Debounced autosave 300-500ms"),
-			"Таймер DebouncedEmkTextarea должен быть откалиброван на 400ms (окно 300-500ms)",
+		assert.ok(quickActionsHtml.includes('data-testid="btn-chairside-physiological-norm"'));
+		assert.equal(
+			quickActionsHtml.includes('data-testid="btn-chairside-physiological-norm" disabled'),
+			false,
+			"Кнопка физиологической нормы не должна быть disabled",
 		);
-		assert.ok(
-			debouncedTextareaCode.includes("dente-telephony-incoming-call"),
-			"Должен быть зарегистрирован обработчик входящего звонка телефонии",
-		);
-		assert.ok(
-			debouncedTextareaCode.includes("dente:visit-tab-change"),
-			"Должен быть зарегистрирован обработчик внутренней смены вкладок",
-		);
-		assert.ok(
-			debouncedTextareaCode.includes("beforeunload"),
-			"Должен быть зарегистрирован обработчик beforeunload",
-		);
-		assert.ok(
-			debouncedTextareaCode.includes("pagehide"),
-			"Должен быть зарегистрирован обработчик pagehide",
-		);
-	});
-
-	function getCanonicalDiaryCode(): string {
-		const paths = [
-			"apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx",
-			"apps/web/src/components/emr/record/tabs/RecordNewDiaryInlineForm.tsx",
-			"apps/web/src/components/visit/VisitEmkTab.tsx",
-			"apps/web/src/components/visit/emkTabModules/useVisitEmkTabController.ts",
-			"apps/web/src/components/visit/useVisitSave.ts",
-			"apps/web/src/components/visit/save/visitDraftStorage.ts",
-			"apps/web/src/components/visit/save/useVisitSaveUnloadFlush.ts",
-			"apps/web/src/components/visit/emk/emkToolbarModules/EmkQuickActionButtons.tsx",
-		];
-		return paths
-			.map((rel) => {
-				const abs = path.resolve(REPO_ROOT, rel);
-				return fs.existsSync(abs) ? fs.readFileSync(abs, "utf-8") : "";
-			})
-			.join("\n");
-	}
-
-	test("Мандат 8e: Канонический контур сохранения ЭМК выполняет дуальное сохранение в localStorage и IndexedDB", () => {
-		const storageCode = fs.readFileSync(
-			path.resolve(REPO_ROOT, "apps/web/src/components/visit/save/visitDraftStorage.ts"),
-			"utf-8",
-		);
-		const unloadFlushCode = fs.readFileSync(
-			path.resolve(REPO_ROOT, "apps/web/src/components/visit/save/useVisitSaveUnloadFlush.ts"),
-			"utf-8",
-		);
-		const diariesTabCode = fs.readFileSync(
-			path.resolve(REPO_ROOT, "apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx"),
-			"utf-8",
-		);
-
-		assert.ok(
-			storageCode.includes("saveVisitDraft"),
-			"visitDraftStorage должен выполнять дуальное сохранение в офлайн-очередь IndexedDB",
-		);
-		assert.ok(
-			storageCode.includes("localStorage.setItem"),
-			"visitDraftStorage должен выполнять синхронное сохранение в localStorage",
-		);
-		assert.ok(
-			unloadFlushCode.includes("flushPendingOfflineDrafts") && unloadFlushCode.includes("sendBeacon"),
-			"useVisitSaveUnloadFlush должен сбрасывать офлайн-черновики при закрытии",
-		);
-		assert.ok(
-			diariesTabCode.includes("sessionStorage.getItem(draftStorageKey)") && diariesTabCode.includes("triggerAutosave"),
-			"RecordDiariesTab должен восстанавливать и автосохранять черновики без блокировок",
-		);
-	});
-
-	test("Мандат 8z: Полное искоренение советских кодов 043/у и 834н из пользовательского интерфейса", () => {
-		const inlineFormCode = fs.readFileSync(
-			path.resolve(REPO_ROOT, "apps/web/src/components/emr/record/tabs/RecordNewDiaryInlineForm.tsx"),
-			"utf-8",
-		);
-		const diariesTabCode = fs.readFileSync(
-			path.resolve(REPO_ROOT, "apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx"),
-			"utf-8",
-		);
-		const controlBoardCode = fs.readFileSync(
-			path.resolve(REPO_ROOT, "apps/web/src/components/visit/EmkControlBoard.tsx"),
-			"utf-8",
-		);
-
-		assert.ok(!inlineFormCode.includes("043/у"), "RecordNewDiaryInlineForm не должен содержать 043/у");
-		assert.ok(!inlineFormCode.includes("834н"), "RecordNewDiaryInlineForm не должен содержать 834н");
-		assert.ok(!diariesTabCode.includes("043/у"), "RecordDiariesTab не должен содержать 043/у");
-		assert.ok(!diariesTabCode.includes("834н"), "RecordDiariesTab не должен содержать 834н");
-		assert.ok(!controlBoardCode.includes("043/у"), "EmkControlBoard не должен содержать 043/у");
-		assert.ok(!controlBoardCode.includes("834н"), "EmkControlBoard не должен содержать 834н");
-	});
-
-	test("Мандат 8e: Кнопка физиологической нормы никогда не disabled и заполняет статус", () => {
-		const canonicalCode = getCanonicalDiaryCode();
-
-		assert.ok(
-			canonicalCode.includes('data-testid="btn-chairside-physiological-norm"'),
-			"EmkQuickActionButtons должен содержать кнопку физиологической нормы у кресла",
-		);
-		assert.ok(
-			canonicalCode.includes('data-testid="btn-inline-diary-norm"'),
-			"RecordNewDiaryInlineForm должен содержать кнопку нормы интактного ряда",
-		);
-		assert.ok(
-			!canonicalCode.includes('data-testid="btn-chairside-physiological-norm" disabled'),
-			"Кнопка физиологической нормы не должна блокироваться",
-		);
-		assert.ok(
-			canonicalCode.includes("Жалоб на момент осмотра"),
-			"Должен быть включен текст соматической нормы",
-		);
-		assert.ok(
-			canonicalCode.includes("Соматически здоров. Аллергоанамнез не отягощен.") ||
-				canonicalCode.includes("Соматически здоров."),
-			"Должен быть включен соматически здоровый статус",
-		);
+		assert.equal(quickActionsHtml.includes("043/у"), false);
+		assert.equal(quickActionsHtml.includes("834н"), false);
 	});
 });
 

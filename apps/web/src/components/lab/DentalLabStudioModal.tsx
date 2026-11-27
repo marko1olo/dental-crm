@@ -173,6 +173,27 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<DentalLabOrderEntry | null>(null);
 	const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
+	const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const showTimedFeedback = useCallback((message: string, durationMs = 2500) => {
+		if (feedbackTimerRef.current !== null) {
+			clearTimeout(feedbackTimerRef.current);
+		}
+		setFeedbackToast(message);
+		feedbackTimerRef.current = setTimeout(() => {
+			setFeedbackToast(null);
+			feedbackTimerRef.current = null;
+		}, durationMs);
+	}, []);
+
+	useEffect(() => {
+		return () => {
+			if (feedbackTimerRef.current !== null) {
+				clearTimeout(feedbackTimerRef.current);
+				feedbackTimerRef.current = null;
+			}
+		};
+	}, []);
 
 	const targetOrderTeeth = useMemo(() => parseOrderTeeth(targetOrder), [targetOrder]);
 	const initialToothNum = Number(initialToothFdi || currentToothNumber) || (isDemoShowcaseMode() ? 16 : 0);
@@ -326,9 +347,13 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	useEffect(() => {
 		if (!isOpen || typeof window === "undefined") return;
 		let isCancelled = false;
+		const abortController = new AbortController();
 		async function loadLiveOrders() {
 			try {
-				const res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders`, { headers: denteClinicalReadHeaders() });
+				const res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders`, {
+					headers: denteClinicalReadHeaders(),
+					signal: abortController.signal,
+				});
 				if (!res.ok) return;
 				const data = await res.json();
 				const payload = data?.data ?? data;
@@ -363,11 +388,15 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 					}
 				}
 			} catch (err) {
+				if (err instanceof Error && err.name === "AbortError") return;
 				clientLogger.error("[DentalLabStudioModal] Failed to load live lab orders", err, { module: "DentalLab" });
 			}
 		}
 		void loadLiveOrders();
-		return () => { isCancelled = true; };
+		return () => {
+			isCancelled = true;
+			abortController.abort();
+		};
 	}, [isOpen, effectivePatientName, effectiveDoctorName, calculatedDueDate]);
 
 	const toggleTooth = useCallback((tooth: number) => {
@@ -510,33 +539,47 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 			};
 			const res = await fetch(endpoint, reqOpts);
 			if (res.ok) {
-				const responseData = await res.json().catch(() => null);
+				interface LabOrderSaveResponse {
+					data?: { id?: string; [key: string]: unknown };
+					order?: { id?: string };
+					id?: string;
+					[key: string]: unknown;
+				}
+				let responseData: LabOrderSaveResponse | null = null;
+				try {
+					responseData = (await res.json()) as LabOrderSaveResponse;
+				} catch (parseErr) {
+					clientLogger.warn("[DentalLabStudioModal] Не удалось разобрать JSON ответа сохранения наряда", parseErr, { module: "DentalLab" });
+				}
 				const resPayload = responseData?.data ?? responseData;
 				const realId = resPayload?.id || responseData?.order?.id || responseData?.id;
 				const effectiveSavedId = String(realId || newEntry.id);
 				if (realId) setOrders((prev) => prev.map((ord) => (ord.orderNumber === newEntry.orderNumber ? { ...ord, id: String(realId) } : ord)));
 				if (typeof window !== "undefined") {
-					const eventDetail = { ...resPayload, id: effectiveSavedId };
+					const eventDetail = { ...(resPayload && typeof resPayload === "object" ? resPayload : {}), id: effectiveSavedId };
 					// Единая каноническая шина событий ЗТЛ (Мандат 8zq / SSOT)
 					window.dispatchEvent(new CustomEvent(isEditMode ? "dente:lab:order-status-changed" : "dente:lab:order-created", { detail: eventDetail }));
 				}
-				setFeedbackToast(`Заказ-наряд ${newEntry.orderNumber} успешно ${isEditMode ? "обновлен" : "создан"} и сохранен в базе данных`);
+				showTimedFeedback(`Заказ-наряд ${newEntry.orderNumber} успешно ${isEditMode ? "обновлен" : "создан"} и сохранен в базе данных`, 3500);
 			} else {
-				const errBody = await res.json().catch(() => ({}));
-				const errMsg = (errBody as { message?: string; error?: string })?.message || (errBody as { message?: string; error?: string })?.error || `Ошибка ${isEditMode ? "обновления" : "создания"} наряда ${newEntry.orderNumber} на сервере`;
-				setFeedbackToast(errMsg);
+				let errBody: { message?: string; error?: string } = {};
+				try {
+					errBody = (await res.json()) as { message?: string; error?: string };
+				} catch (parseErr) {
+					clientLogger.warn("[DentalLabStudioModal] Не удалось разобрать JSON ошибки сохранения наряда", { status: res.status, error: parseErr }, { module: "DentalLab" });
+				}
+				const errMsg = errBody?.message || errBody?.error || `Ошибка ${isEditMode ? "обновления" : "создания"} наряда ${newEntry.orderNumber} на сервере (HTTP ${res.status})`;
+				showTimedFeedback(errMsg, 3500);
 				showToast(errMsg, "error");
 			}
 		} catch (err) {
 			clientLogger.error("[DentalLabStudioModal] Failed to save lab order", err, { module: "DentalLab" });
 			const errMsg = `Сетевая ошибка при отправке наряда ${newEntry.orderNumber}`;
-			setFeedbackToast(errMsg);
+			showTimedFeedback(errMsg, 3500);
 			showToast(errMsg, "error");
-		} finally {
-			setTimeout(() => setFeedbackToast(null), 3500);
 		}
 	}, [selectedTeeth, targetOrder, orders.length, currentPatientName, effectiveDoctorName, currentPatientId, effectiveDoctorId, selectedMaterialId,
-		selectedShade, totalLabCostKopecks, totalPatientPriceKopecks, selectedLab, effectiveDueDate, notes, isUrgent, isWarrantyRework, activePatient, onOrderCreated, onOrderSaved, onSaveOrder]);
+		selectedShade, totalLabCostKopecks, totalPatientPriceKopecks, selectedLab, effectiveDueDate, notes, isUrgent, isWarrantyRework, activePatient, onOrderCreated, onOrderSaved, onSaveOrder, showTimedFeedback]);
 
 	const handleAdvanceStage = useCallback(async (orderId: string) => {
 		const previousOrders = orders;
@@ -546,8 +589,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		const nextIdx = Math.min(CANONICAL_LAB_STAGES.length - 1, (curIdx >= 0 ? curIdx : 0) + 1);
 		const nextStage = CANONICAL_LAB_STAGES[nextIdx]?.id ?? "seated";
 		setOrders((prev) => prev.map((ord) => (ord.id === orderId ? { ...ord, stage: nextStage } : ord)));
-		setFeedbackToast(`Статус обновлен: ${CANONICAL_LAB_STAGES[nextIdx]?.labelRu ?? "Зафиксировано"}`);
-		setTimeout(() => setFeedbackToast(null), 2500);
+		showTimedFeedback(`Статус обновлен: ${CANONICAL_LAB_STAGES[nextIdx]?.labelRu ?? "Зафиксировано"}`, 2500);
 		if (typeof window !== "undefined") {
 			const evtDetail = { orderId, stage: nextStage, status: STAGE_TO_DB_STATUS[nextStage] || "in_progress" };
 			window.dispatchEvent(new CustomEvent("dente:lab:order-status-changed", { detail: evtDetail }));
@@ -568,13 +610,13 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 			setOrders(previousOrders);
 			showToast("Сетевая ошибка при смене этапа наряда", "error");
 		}
-	}, [orders]);
+	}, [orders, showTimedFeedback]);
 
 	const handleMarkInClinic = useCallback(async (orderId: string) => {
 		const previousOrders = orders;
 		const foundOrder = orders.find((ord) => ord.id === orderId);
 		setOrders((prev) => prev.map((ord) => (ord.id === orderId ? { ...ord, stage: "in_clinic" } : ord)));
-		setFeedbackToast("Заказ отмечен: готов в клинике"); setTimeout(() => setFeedbackToast(null), 2500);
+		showTimedFeedback("Заказ отмечен: готов в клинике", 2500);
 		if (typeof window !== "undefined") {
 			const evtDetail = { orderId, stage: "in_clinic", status: "received" };
 			window.dispatchEvent(new CustomEvent("dente:lab:order-status-changed", { detail: evtDetail }));
@@ -584,7 +626,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				id: foundOrder.id, orderNumber: String(foundOrder.orderNumber ?? ""), patientName: foundOrder.patientName,
 				patientPhone: foundOrder.patientPhone, doctorName: foundOrder.doctorName, doctorId: foundOrder.doctorId,
 				toothFdi: Array.isArray(foundOrder.teeth) ? foundOrder.teeth.join(", ") : "", material: getMaterialMeta(foundOrder.materialId).titleRu,
-				colorVita: foundOrder.shadeCode, priceRub: kopecksToRubles(foundOrder.patientPriceKopecks), isWarrantyRework: Boolean(foundOrder.isWarrantyRework || foundOrder.isWarranty),
+				colorVita: foundOrder.shadeCode, patientPriceKopecks: foundOrder.patientPriceKopecks, priceRub: kopecksToRubles(foundOrder.patientPriceKopecks), isWarrantyRework: Boolean(foundOrder.isWarrantyRework || foundOrder.isWarranty),
 			});
 			setIsReadyInClinicOpen(true);
 		}
@@ -604,27 +646,27 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 			setOrders(previousOrders);
 			showToast("Сетевая ошибка при обновлении статуса наряда", "error");
 		}
-	}, [orders]);
+	}, [orders, showTimedFeedback]);
 
 	// Честное открытие шторки уведомления пациента (WhatsApp/SMS и запись на примерку)
 	const handleCallPatient = useCallback((order: DentalLabOrderEntry) => {
 		setReadyInClinicOrder({
 			id: order.id, orderNumber: String(order.orderNumber ?? ""), patientName: order.patientName, patientPhone: order.patientPhone,
 			doctorName: order.doctorName, doctorId: order.doctorId, toothFdi: Array.isArray(order.teeth) ? order.teeth.join(", ") : "",
-			material: getMaterialMeta(order.materialId).titleRu, colorVita: order.shadeCode, priceRub: kopecksToRubles(order.patientPriceKopecks),
+			material: getMaterialMeta(order.materialId).titleRu, colorVita: order.shadeCode, patientPriceKopecks: order.patientPriceKopecks, priceRub: kopecksToRubles(order.patientPriceKopecks),
 			isWarrantyRework: Boolean(order.isWarrantyRework || order.isWarranty),
 		});
 		setIsReadyInClinicOpen(true);
 		if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("dente-open-patient-card", { detail: { patientName: order.patientName } }));
-		setFeedbackToast(`Открыто уведомление пациента: ${order.patientName}`); setTimeout(() => setFeedbackToast(null), 2500);
-	}, []);
+		showTimedFeedback(`Открыто уведомление пациента: ${order.patientName}`, 2500);
+	}, [showTimedFeedback]);
 
 	const handleView3DScan = useCallback((order: DentalLabOrderEntry) => { setScanViewerOrder(order); setIs3DViewerOpen(true); }, []);
 	const handleOpenNewOrder3DScan = useCallback(() => { setScanViewerOrder(null); setIs3DViewerOpen(true); }, []);
 
-	const handlePrintOrder = useCallback((order: DentalLabOrderEntry) => { setSelectedOrderForPrint(order); setActiveMainTab("print_blank"); setFeedbackToast(`Печать заказ-наряда: ${order.orderNumber}`); setTimeout(() => setFeedbackToast(null), 2500); }, []);
-	const handlePrintA5Blank = useCallback(() => { setActiveMainTab("print_blank"); setFeedbackToast("Формирование бланка наряда А5 для лаборатории"); if (typeof window !== "undefined") window.print?.(); setTimeout(() => setFeedbackToast(null), 2500); }, []);
-	const handleCourierBlank = useCallback(() => { setActiveMainTab("print_blank"); setFeedbackToast("Накладная курьеру для передачи в лабораторию"); if (typeof window !== "undefined") window.print?.(); setTimeout(() => setFeedbackToast(null), 2500); }, []);
+	const handlePrintOrder = useCallback((order: DentalLabOrderEntry) => { setSelectedOrderForPrint(order); setActiveMainTab("print_blank"); showTimedFeedback(`Печать заказ-наряда: ${order.orderNumber}`, 2500); }, [showTimedFeedback]);
+	const handlePrintA5Blank = useCallback(() => { setActiveMainTab("print_blank"); showTimedFeedback("Формирование бланка наряда А5 для лаборатории", 2500); if (typeof window !== "undefined") window.print?.(); }, [showTimedFeedback]);
+	const handleCourierBlank = useCallback(() => { setActiveMainTab("print_blank"); showTimedFeedback("Накладная курьеру для передачи в лабораторию", 2500); if (typeof window !== "undefined") window.print?.(); }, [showTimedFeedback]);
 
 	const filteredOrders = useMemo(() => {
 		return orders.filter((ord) => {

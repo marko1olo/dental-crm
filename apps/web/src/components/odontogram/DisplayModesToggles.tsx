@@ -22,13 +22,13 @@ export const DisplayModesToggles: React.FC<DisplayModesTogglesProps> = ({
 			<button
 				type="button"
 				onClick={() => setShowWisdomTeeth((prev) => !prev)}
-				className={`min-h-[44px] sm:min-h-[38px] flex items-center justify-between px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer select-none text-left ${
+				className={`min-h-[36px] max-md:min-h-[44px] flex items-center justify-between px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer select-none text-left ${
 					showWisdomTeeth
 						? "bg-[var(--teal-soft,rgba(13,148,136,0.12))] border-[var(--teal,#0d9488)]/40 shadow-2xs"
 						: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 				}`}
-				title="Показать или скрыть зубы мудрости (18, 28, 38, 48)"
-				data-testid="btn-odontogram-wisdom-missing"
+				title="Скрыть или показать третьи моляры (18, 28, 38, 48) на схеме"
+				data-testid="btn-odontogram-wisdom-visibility"
 			>
 				<span className="flex items-center gap-2.5 min-w-0">
 					{showWisdomTeeth ? (
@@ -44,10 +44,10 @@ export const DisplayModesToggles: React.FC<DisplayModesTogglesProps> = ({
 					)}
 					<div className="flex flex-col text-left min-w-0">
 						<span className="font-bold text-[12px] leading-tight text-[var(--ink,#0f172a)]">
-							Зубы мудрости (8-ки)
+							Показ зубов мудрости (8-ки)
 						</span>
 						<span className="text-[10px] font-normal text-[var(--ink-muted,#64748b)] truncate">
-							Третьи моляры (18, 28, 38, 48)
+							Отображение 18, 28, 38, 48 на схеме
 						</span>
 					</div>
 				</span>
@@ -60,7 +60,7 @@ export const DisplayModesToggles: React.FC<DisplayModesTogglesProps> = ({
 				<button
 					type="button"
 					onClick={() => setShowPulpAndCanals((prev) => !prev)}
-					className={`min-h-[44px] sm:min-h-[38px] flex items-center justify-between px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer select-none text-left ${
+					className={`min-h-[36px] max-md:min-h-[44px] flex items-center justify-between px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer select-none text-left ${
 						showPulpAndCanals
 							? "bg-[var(--teal-soft,rgba(13,148,136,0.12))] border-[var(--teal,#0d9488)]/40 shadow-2xs"
 							: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"

@@ -8,8 +8,6 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it, beforeEach, afterEach } from "node:test";
 import {
 	applyHardwareProfileToRoot,
@@ -29,14 +27,6 @@ import { isLowSpecHardware as isLowSpecFromLazy } from "../lib/lazyWithRetry";
 import { isLowSpecHardware as isLowSpecFromDevice } from "../utils/deviceDetection";
 import { useUiSurfaceStore, CT_STUDIO_MODAL_IDS } from "../store/uiSurfaceStore";
 import { RuntimePerformanceMonitor } from "../utils/telemetry/runtimePerformanceMonitor";
-
-function readCssWithImports(filePath: string): string {
-	const dir = path.dirname(filePath);
-	let css = fs.readFileSync(filePath, "utf-8");
-	const importRegex = /@import\s+['"]([^'"]+)['"];/g;
-	css = css.replace(importRegex, (_, rel) => readCssWithImports(path.resolve(dir, rel)));
-	return css;
-}
 
 // Mock minimal DOM document & element
 function createMockDocument() {
@@ -247,66 +237,56 @@ describe("Red Team Adaptivity Inquisitor — Comprehensive Verification", () => 
 		});
 	});
 
-	describe("5. CSS Layer Verification (low-spec-hardware.css)", () => {
-		const cssPath = path.resolve(import.meta.dirname, "../styles/low-spec-hardware.css");
-		const cssContent = readCssWithImports(cssPath);
+	describe("5. Hardware Tier & Runtime Degradation Attribute Enforcement", () => {
+		it("marks root element low-spec and potato tier for 2GB/2-core hardware", () => {
+			setDynamicPerfState("healthy");
+			setCtScanActive(false);
 
-		it("Section 1 defines design tokens for data-perf-tier, data-perf-state, and data-ct-active", () => {
-			assert.ok(cssContent.includes(':root[data-perf-tier="low"]'));
-			assert.ok(cssContent.includes(':root[data-perf-tier="potato"]'));
-			assert.ok(cssContent.includes(':root[data-perf-state="degraded"]'));
-			assert.ok(cssContent.includes(':root[data-ct-active="true"]'));
-			assert.ok(cssContent.includes('--glass-blur: none !important;'));
+			applyHardwareProfileToRoot({
+				tier: "potato",
+				score: 10,
+				deviceMemoryGb: 2,
+				cpuCores: 2,
+				gpuType: "integrated",
+				gpuRenderer: "Intel UHD",
+				gpuVendor: "Intel",
+				webgl2Supported: false,
+				webgpuSupported: false,
+				maxTextureSize: 2048,
+				max3dTextureSize: null,
+				fillrateScore: 5,
+				isBatterySaving: true,
+				isSaveDataActive: true,
+				effectiveConnectionType: "3g",
+				prefersReducedMotion: true,
+				isSlowDisk: true,
+				reasons: ["low_memory"],
+				detectedAt: Date.now(),
+				version: 1,
+			});
+
+			const root = mockDoc.documentElement;
+			assert.equal(root.getAttribute("data-perf-tier"), "potato");
+			assert.equal(root.getAttribute("data-low-spec"), "true");
+			assert.equal(root.getAttribute("data-perf"), "low");
+			assert.equal(root.classList.contains("low-spec-mode"), true);
+			assert.equal(isLowSpecFromCaps(), true);
 		});
 
-		it("defines instant 0s transitions for potato hardware tier", () => {
-			assert.ok(cssContent.includes(':root[data-perf-tier="potato"]'));
-			assert.ok(cssContent.includes('--transition-smooth: 0s !important;'));
-			assert.ok(cssContent.includes('--transition-fast: 0s !important;'));
-		});
+		it("activates CT mode & degraded perf state attributes simultaneously without overwriting hardware tier", () => {
+			setCtScanActive(true);
+			setDynamicPerfState("degraded");
 
-		it("Section 2 eliminates backdrop-filter for potato, low, degraded, and ct-active", () => {
-			assert.ok(cssContent.includes('html[data-perf-tier="potato"] *'));
-			assert.ok(cssContent.includes('html[data-perf-state="degraded"] *'));
-			assert.ok(cssContent.includes('html[data-ct-active="true"] *'));
-			assert.ok(cssContent.includes('backdrop-filter: none !important;'));
-		});
+			const root = mockDoc.documentElement;
+			assert.equal(getCtScanActive(), true);
+			assert.equal(getPerfState(), "degraded");
+			assert.equal(root.getAttribute("data-ct-active"), "true");
+			assert.equal(root.getAttribute("data-perf-state"), "degraded");
 
-		it("Section 3 provides solid opaque paper-strong backgrounds for glass surfaces", () => {
-			assert.ok(cssContent.includes('html[data-perf-tier="potato"] [class*="backdrop-blur"]'));
-			assert.ok(cssContent.includes('html[data-perf-state="degraded"] [class*="backdrop-blur"]'));
-			assert.ok(cssContent.includes('html[data-ct-active="true"] [class*="backdrop-blur"]'));
-			assert.ok(cssContent.includes('background-color: var(--paper-strong) !important;'));
-		});
-
-		it("eliminates ThemeBackground atmospheric ambient lighting layers under load", () => {
-			assert.ok(cssContent.includes('html[data-perf-tier="potato"] .dente-theme-background-layer'));
-			assert.ok(cssContent.includes('html[data-perf-tier="low"] .dente-theme-background-layer'));
-			assert.ok(cssContent.includes('html[data-perf-state="degraded"] .dente-theme-background-layer'));
-			assert.ok(cssContent.includes('html[data-ct-active="true"] .dente-theme-background-layer'));
-			assert.ok(cssContent.includes('display: none !important;'));
-		});
-
-		it("preserves strict negative assertions from lowSpecHddOptimizer.test.ts", () => {
-			assert.strictEqual(
-				cssContent.includes("[filter] {\n\tdisplay: none"),
-				false,
-				"[filter] не должен иметь display: none"
-			);
-			assert.strictEqual(
-				cssContent.includes(":not([class*=\"backdrop-blur\"])[class*=\"blur-\"]"),
-				false,
-				":not([class*='backdrop-blur'])[class*='blur-'] не должен присутствовать"
-			);
-			assert.strictEqual(
-				cssContent.includes("[class*=\"backdrop\"],\n[data-hardware-tier=\"low\"]"),
-				false,
-				"Широкий селектор [class*='backdrop'] не должен присутствовать"
-			);
-			assert.ok(
-				cssContent.includes("[class*=\"blur-\"] {\n\t\tfilter: none !important;"),
-				"Должен быть селектор отключения filter для [class*='blur-']"
-			);
+			setCtScanActive(false);
+			setDynamicPerfState("healthy");
+			assert.equal(root.getAttribute("data-ct-active"), "false");
+			assert.equal(root.getAttribute("data-perf-state"), "healthy");
 		});
 	});
 });

@@ -121,9 +121,10 @@
 	}
 	.odontogram-toolbar__btn,
 	.odontogram-tools-trigger-btn {
-		min-height: 36px;
-		height: 36px;
-		padding: 0 10px;
+		min-height: 44px;
+		height: 44px;
+		max-height: none;
+		padding: 0 12px;
 	}
 }
 @media (max-width: 768px) {

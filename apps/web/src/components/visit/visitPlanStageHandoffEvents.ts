@@ -1,4 +1,5 @@
-import type { PlanStageItem } from "./visitPlanStageHandoff";
+import { kopecksToRubles } from "@dental/shared";
+import { resolvePlanStageItemKopecks, type PlanStageItem } from "./visitPlanStageHandoff";
 
 export interface StageHandoffPayload {
 	readonly title: string;
@@ -44,12 +45,11 @@ export function dispatchOpenLabOrderForStage(
 			.filter((t: unknown): t is number | string => t !== undefined && t !== null && t !== "");
 		const uniqueTeeth = Array.from(new Set(teeth));
 		const teethStr = uniqueTeeth.join(", ");
-		const totalPriceRub = stageItems.reduce<number>((acc: number, it: PlanStageItem) => {
-			const price = Number(it.unitPriceRub ?? it.price ?? it.priceRub ?? 0);
-			const qty = Number(it.quantity || 1);
-			const discount = Number(it.discountRub ?? it.discount ?? 0);
-			return acc + Math.max(0, price * qty - discount);
-		}, 0);
+		const totalPriceKopecks = stageItems.reduce<number>(
+			(acc: number, it: PlanStageItem) => acc + resolvePlanStageItemKopecks(it).netTotalKopecks,
+			0,
+		);
+		const totalPriceRub = kopecksToRubles(totalPriceKopecks);
 
 		const detailPayload = {
 			treatmentPlanId,
@@ -60,6 +60,7 @@ export function dispatchOpenLabOrderForStage(
 			selectedTeeth: uniqueTeeth,
 			toothNumber: uniqueTeeth[0],
 			toothFdi: teethStr || (uniqueTeeth[0] ? String(uniqueTeeth[0]) : undefined),
+			priceKopecks: totalPriceKopecks > 0 ? totalPriceKopecks : undefined,
 			priceRub: totalPriceRub > 0 ? totalPriceRub : undefined,
 			patientId: patient?.id,
 			patientName: patient?.fullName || patient?.name,

@@ -1,5 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
 	isPrimaryTooth,
 	getPrimaryToothResorptionVisual,
@@ -13,6 +15,7 @@ import {
 	getPediatricProcedurePreset,
 	ALL_PRIMARY_TEETH,
 } from "@dental/shared";
+import { PediatricTeethChart } from "../components/pediatric/PediatricTeethChart";
 import { dispatchPediatricSoapProtocol } from "../components/pediatric/pediatricSoapBridge";
 import {
 	TOP_TEETH,
@@ -25,6 +28,7 @@ import {
 	getQuadrantForTooth,
 	getNextFocusedTooth,
 	getToothStateFromHotkey,
+	type ToothData,
 } from "../components/odontogram/ToothChart";
 import { calculateDmft } from "../components/odontogram/clinical/dmftIndices";
 import { calculateActivePatientCriticalBadges } from "../components/visit/view/visitCriticalBadges";
@@ -257,7 +261,7 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 
 	describe("7. Pediatric kpu / DMFT Statistics", () => {
 		it("computes pediatric kpu index for primary teeth", () => {
-			const sampleTeeth: any[] = [
+			const sampleTeeth: ToothData[] = [
 				{ toothNumber: 51, state: "Caries" },
 				{ toothNumber: 52, state: "Filled" },
 				{ toothNumber: 53, state: "Healthy" },
@@ -273,8 +277,8 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 		});
 	});
 
-	describe("8. Pediatric 1-Click Physiological Norm Presets (Mandates 8e, 8k, 8n)", () => {
-		it("generates 1-click primary dentition norm with 20 intact teeth (51–85) and 0% resorption", () => {
+	describe("8. Pediatric Physiological Norm Presets (Mandates 8e, 8k, 8n)", () => {
+		it("generates primary dentition norm with 20 intact teeth (51–85) and 0% resorption", () => {
 			const norm = calculatePediatricPhysiologicalNorm("primary");
 			assert.equal(norm.diagnosisIcd10, "Z01.2");
 			assert.equal(norm.order804nCode, "B01.064.003");
@@ -286,14 +290,14 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 				assert.equal(norm.resorptionStages[tooth], 0, `Tooth ${tooth} should have 0% resorption`);
 			}
 
-			// Formal 043/u text structure
+			// Clinical diary text structure
 			assert.match(norm.diaryText, /Временный прикус/);
 			assert.match(norm.diaryText, /Все 20 временных зубов/);
 			assert.match(norm.statusLocalis, /бледно-розовая/);
 			assert.match(norm.treatmentDescription, /гигиена полости рта/i);
 		});
 
-		it("generates 1-click early mixed dentition norm (11..42 exchanged + 16, 26, 36, 46 erupted)", () => {
+		it("generates early mixed dentition norm (11..42 exchanged + 16, 26, 36, 46 erupted)", () => {
 			const norm = calculatePediatricPhysiologicalNorm("early_mixed");
 			assert.equal(norm.diagnosisIcd10, "Z01.2");
 
@@ -320,8 +324,8 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 		});
 	});
 
-	describe("9. Order 804n Clinical Procedure Presets (Saforide, Fissurit FX, Pulpotec)", () => {
-		it("generates Order 804n A16.07.057 Saforide 38% silvering preset", () => {
+	describe("9. Clinical Procedure Presets (Saforide, Fissurit FX, Pulpotec)", () => {
+		it("generates Saforide 38% silvering preset", () => {
 			const preset = getPediatricProcedurePreset("saforide");
 			assert.equal(preset.id, "saforide");
 			assert.equal(preset.serviceCode804n, "A16.07.057");
@@ -333,7 +337,7 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 			assert.match(preset.treatmentDescription, /серебрение/);
 		});
 
-		it("generates Order 804n A16.07.050 Fissurit FX non-invasive fissure sealing preset", () => {
+		it("generates Fissurit FX non-invasive fissure sealing preset", () => {
 			const preset = getPediatricProcedurePreset("fissurit");
 			assert.equal(preset.id, "fissurit");
 			assert.equal(preset.serviceCode804n, "A16.07.050");
@@ -346,7 +350,7 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 			assert.match(preset.treatmentDescription, /герметизация фиссур/);
 		});
 
-		it("generates Order 804n A16.07.009 Pulpotec vital pulpotomy preset", () => {
+		it("generates Pulpotec vital pulpotomy preset", () => {
 			const preset = getPediatricProcedurePreset("pulpotec");
 			assert.equal(preset.id, "pulpotec");
 			assert.equal(preset.serviceCode804n, "A16.07.009");
@@ -359,14 +363,18 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 		});
 	});
 
-	describe("10. Direct SOAP Protocol Event Generation for Form 043/u", () => {
+	describe("10. Direct SOAP Protocol Event Generation for Medical Diary", () => {
 		it("safely executes dispatchPediatricSoapProtocol without errors", () => {
 			let eventFired = false;
-			let eventDetail: any = null;
+			let eventDetail: {
+				soap?: { diagnosisIcd10?: string };
+				mode?: string;
+				immediate?: boolean;
+			} | null = null;
 
-			const mockHandler = (e: any) => {
+			const mockHandler = (e: Event) => {
 				eventFired = true;
-				eventDetail = e.detail;
+				eventDetail = (e as CustomEvent<typeof eventDetail>).detail;
 			};
 
 			if (typeof window !== "undefined") {
@@ -434,7 +442,7 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 		});
 	});
 
-	describe("12. Pediatric Tooth Surfaces & PostgreSQL Persistence Schema Compliance", () => {
+	describe("12. PediatricTeethChart Live SSR Rendering & Resorption Binding", () => {
 		it("validates primary teeth FDI codes against valid 51..85 set", () => {
 			const allPrimary = [
 				51, 52, 53, 54, 55,
@@ -447,16 +455,20 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 			}
 		});
 
-		it("formats multi-surface pediatric caries for PostgreSQL jsonb surfaces field", () => {
-			const tooth54Record = {
-				tooth_number: 54,
-				state: "Caries",
-				surfaces: ["O", "M", "D"],
-				resorption_stage: 25,
-			};
-			assert.equal(tooth54Record.tooth_number, 54);
-			assert.deepEqual(tooth54Record.surfaces, ["O", "M", "D"]);
-			assert.equal(tooth54Record.resorption_stage, 25);
+		it("renders PediatricTeethChart with active tooth 54 surfaces and 25% resorption stage", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(PediatricTeethChart, {
+					activeTooth: 54,
+					mode: "primary",
+					toothFindings: { 54: "caries" },
+					toothSurfaces: { 54: ["O", "M", "D"] },
+					resorptionStages: { 54: 25 },
+				}),
+			);
+			const resorptionVisual = getPrimaryToothResorptionVisual(54, 25);
+			assert.ok(html.includes("54"), "Tooth 54 must render in PediatricTeethChart");
+			assert.ok(html.includes("51") && html.includes("85"), "Primary arch teeth must render");
+			assert.equal(resorptionVisual.rootOpacity < 1, true);
 		});
 	});
 });

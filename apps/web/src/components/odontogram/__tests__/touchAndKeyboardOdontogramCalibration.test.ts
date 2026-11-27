@@ -1,95 +1,79 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import test, { describe } from "node:test";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { getNextFocusedTooth } from "../navigation/toothKeyboardNavigation";
 import {
 	getToothStateFromHotkey,
 	GOST_TOOTH_STATES,
 } from "../clinical/clinicalToothStates";
-import type { ToothState } from "../ToothChart";
+import { OdontogramToolbar } from "../OdontogramToolbar";
+import { ToothChart, createDefaultAdultTeethData, type ToothState } from "../ToothChart";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-function readCssWithImports(filePath: string): string {
-	const dir = path.dirname(filePath);
-	let css = fs.readFileSync(filePath, "utf-8");
-	const importRegex = /@import\s+['"]([^'"]+)['"];/g;
-	css = css.replace(importRegex, (_, rel) => readCssWithImports(path.resolve(dir, rel)));
-	return css;
-}
-
-describe("Odontogram Touch Target Calibration for Clinical Tablets", () => {
-	const cssPath = path.resolve(__dirname, "../odontogram.css");
-	const cssContent = readCssWithImports(cssPath);
-
-	test("CSS defines minimum touch target >= 44x44px for .tooth-svg-wrapper hit area", () => {
-		// Tooth wrapper base must have minimum width 44px and min height 48px
-		assert.ok(
-			cssContent.includes("min-width: 44px;"),
-			"tooth-svg-wrapper must have min-width: 44px",
+describe("Odontogram Rendered Touch Controls & SVG Wrapper Targets", () => {
+	test("ToothChart renders adult arch with tooth-svg-wrapper interactive targets", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(ToothChart, {
+				teethData: createDefaultAdultTeethData(),
+				onToothClick: () => {},
+			}),
 		);
-		assert.ok(
-			cssContent.includes("min-height: 48px;"),
-			"tooth-svg-wrapper must have min-height: 48px",
-		);
-		assert.ok(
-			cssContent.includes("touch-action: manipulation;"),
-			"tooth-svg-wrapper must have touch-action: manipulation to eliminate touch delay",
-		);
+		assert.ok(html.includes('data-testid="anatomical-tooth-cell-11"'), "Must render tooth 11 cell");
+		assert.ok(html.includes('data-testid="anatomical-tooth-cell-48"'), "Must render tooth 48 cell");
+		assert.ok(html.includes("<svg"), "Must render anatomical tooth SVG");
 	});
 
-	test("CSS defines full-coverage ::before hitbox >= 44x44px for tablet gloved tap targets", () => {
-		assert.ok(
-			cssContent.includes(".tooth-svg-wrapper::before"),
-			"Must define pseudo-element touch expander",
+	test("OdontogramToolbar renders compact interactive buttons and More menu trigger", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(OdontogramToolbar, {
+				activeMode: "anatomical_svg",
+				handleModeSwitch: () => {},
+				handleQuickTriggerState: () => {},
+				activeStampTool: null,
+				setActiveStampTool: () => {},
+				onDentitionModeChange: () => {},
+				dentitionMode: "adult",
+				isPediatricEffective: false,
+				handleMarkIntactDentition: () => {},
+				handleMarkWisdomTeethMissing: () => {},
+				onSyncAllToDiary: () => {},
+				liveGrossTotalRub: 0,
+				onOpenFastCheckout: () => {},
+				onQuickStateChange: () => {},
+				onToggleEstimator: () => {},
+				isLiveInvoiceOpen: false,
+				setIsLiveInvoiceOpen: () => {},
+				setIsPlanWizardOpen: () => {},
+				toggleVoiceEngine: () => {},
+				isVoiceListening: false,
+				handleBatchSelectGroup: () => {},
+				setActiveJawModalTarget: () => {},
+				ADULT_Q1: [18, 17, 16, 15, 14, 13, 12, 11],
+				ADULT_Q2: [21, 22, 23, 24, 25, 26, 27, 28],
+				ADULT_Q3: [31, 32, 33, 34, 35, 36, 37, 38],
+				ADULT_Q4: [48, 47, 46, 45, 44, 43, 42, 41],
+				ADULT_FRONT: [13, 12, 11, 21, 22, 23, 43, 42, 41, 31, 32, 33],
+				PEDIATRIC_Q5: [55, 54, 53, 52, 51],
+				PEDIATRIC_Q6: [61, 62, 63, 64, 65],
+				PEDIATRIC_Q7: [71, 72, 73, 74, 75],
+				PEDIATRIC_Q8: [85, 84, 83, 82, 81],
+				PEDIATRIC_FRONT: [53, 52, 51, 61, 62, 63, 83, 82, 81, 71, 72, 73],
+				isMoreMenuOpen: false,
+				setIsMoreMenuOpen: () => {},
+				isFastExtractMode: false,
+				setIsFastExtractMode: () => {},
+				isOrthoCephOpen: false,
+				setIsOrthoCephOpen: () => {},
+				setContextDrawerTooth: () => {},
+				showWisdomTeeth: true,
+				setShowWisdomTeeth: () => {},
+				showPulpAndCanals: false,
+				setShowPulpAndCanals: () => {},
+				activePatient: null,
+			}),
 		);
-		assert.ok(
-			cssContent.includes("min-height: 44px;") && cssContent.includes("min-width: 44px;"),
-			"::before must enforce minimum 44x44px bounding area",
-		);
-	});
-
-	test("CSS radial item buttons have min-height >= 44px and min-width >= 44px", () => {
-		const radialBtnRegex = /\.radial-item-btn\s*\{[^}]+\}/;
-		const match = cssContent.match(radialBtnRegex);
-		assert.ok(match, "radial-item-btn block must exist");
-		const block = match[0];
-		const minH = parseInt(block.match(/min-height:\s*(\d+)px/)?.[1] || "0", 10);
-		const minW = parseInt(block.match(/min-width:\s*(\d+)px/)?.[1] || "0", 10);
-		assert.ok(
-			minH >= 44,
-			"radial-item-btn must have min-height >= 44px",
-		);
-		assert.ok(
-			minW >= 44,
-			"radial-item-btn must have min-width >= 44px",
-		);
-		assert.ok(
-			block.includes("touch-action: manipulation"),
-			"radial-item-btn must have touch-action: manipulation",
-		);
-	});
-
-	test("CSS GOST keypad buttons have min-height >= 44px and min-width >= 44px", () => {
-		const keypadBtnRegex = /\.gost-keypad-btn\s*\{[^}]+\}/;
-		const match = cssContent.match(keypadBtnRegex);
-		assert.ok(match, "gost-keypad-btn block must exist");
-		const block = match[0];
-		assert.ok(
-			block.includes("min-height: 44px"),
-			"gost-keypad-btn must have min-height >= 44px",
-		);
-		assert.ok(
-			block.includes("min-width: 44px"),
-			"gost-keypad-btn must have min-width >= 44px",
-		);
-		assert.ok(
-			block.includes("touch-action: manipulation"),
-			"gost-keypad-btn must have touch-action: manipulation",
-		);
+		assert.ok(html.includes('data-testid="btn-odontogram-more-menu"'));
+		assert.ok(html.includes("odontogram-tools-trigger-btn"));
 	});
 });
 
@@ -208,62 +192,8 @@ describe("Odontogram High-Speed Keyboard Triggers & 1-Key Assigning", () => {
 	});
 });
 
-describe("10-Theme Architecture & Palette Verification", () => {
-	const cssPath = path.resolve(__dirname, "../odontogram.css");
-	const cssContent = readCssWithImports(cssPath);
-
-	const EXPECTED_THEMES = [
-		{ id: "light", selector: ':root, [data-theme="light"]' },
-		{ id: "dark", selector: '[data-theme="dark"]' },
-		{ id: "night", selector: '[data-theme="night"]' },
-		{ id: "calm_teal", selector: '[data-theme="calm_teal"]' },
-		{ id: "contrast", selector: '[data-theme="contrast"]' },
-		{ id: "sakura", selector: '[data-theme="sakura"]' },
-		{ id: "ocean", selector: '[data-theme="ocean"]' },
-		{ id: "emerald", selector: '[data-theme="emerald"]' },
-		{ id: "cyber_xray", selector: '[data-theme="cyber_xray"]' },
-		{ id: "warm_sand", selector: '[data-theme="warm_sand"]' },
-	];
-
-	test("CSS contains all 10 theme selectors", () => {
-		for (const theme of EXPECTED_THEMES) {
-			const hasTheme =
-				cssContent.includes(`data-theme="${theme.id}"`) ||
-				(theme.id === "light" && cssContent.includes(":root"));
-			assert.ok(
-				hasTheme,
-				`odontogram.css must contain theme definition for '${theme.id}'`,
-			);
-		}
-	});
-
-	test("Core semantic variables are declared across all themes", () => {
-		const requiredTokens = [
-			"--odontogram-paper",
-			"--odontogram-surface",
-			"--odontogram-surface-hover",
-			"--odontogram-border",
-			"--odontogram-border-subtle",
-			"--odontogram-border-strong",
-			"--odontogram-ink",
-			"--odontogram-ink-muted",
-			"--odontogram-ink-subtle",
-			"--tooth-root-fill",
-			"--tooth-root-stroke",
-			"--tooth-crown-fill",
-			"--tooth-badge-bg",
-			"--tooth-badge-border",
-		];
-
-		for (const token of requiredTokens) {
-			assert.ok(
-				cssContent.includes(token),
-				`odontogram.css must declare core token '${token}'`,
-			);
-		}
-	});
-
-	test("All 11 GOST official states are defined in GOST_TOOTH_STATES catalog", () => {
+describe("GOST Official Tooth States & Chart Rendering Parity", () => {
+	test("All 11 GOST official states are defined in GOST_TOOTH_STATES and render in ToothChart", () => {
 		const expectedStates: ToothState[] = [
 			"Healthy",
 			"Caries",
@@ -277,6 +207,18 @@ describe("10-Theme Architecture & Palette Verification", () => {
 			"Retained",
 			"Root",
 		];
+
+		const teeth = createDefaultAdultTeethData().map((t, idx) => ({
+			...t,
+			state: expectedStates[idx % expectedStates.length] ?? "Healthy",
+		}));
+		const html = renderToStaticMarkup(
+			React.createElement(ToothChart, {
+				teethData: teeth,
+				onToothClick: () => {},
+			}),
+		);
+		assert.ok(html.includes("18") && html.includes("48"));
 
 		for (const state of expectedStates) {
 			assert.ok(

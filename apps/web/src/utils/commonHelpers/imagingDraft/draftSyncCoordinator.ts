@@ -2,13 +2,13 @@ import type { DicomViewerWorkbenchManifestResponse } from "@dental/shared";
 import { showToast } from "../../../components/GlobalToast";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { safeLocalStorageRemoveItem } from "../../../lib/safeLocalStorage";
-import {
-	type DicomWorkbenchLocalDraft,
-	dicomWorkbenchSeriesKey,
-	type MprWorkbenchLocalDraft,
-	type MprWorkbenchState,
-	mprWorkbenchLocalKey,
-} from "../../ImagingHelpers";
+import { mprWorkbenchLocalKey } from "../../../appHelpers/imagingMprHelpers";
+import type {
+	DicomWorkbenchLocalDraft,
+	MprWorkbenchLocalDraft,
+	MprWorkbenchState,
+} from "../../../appHelpers/types";
+import { dicomWorkbenchSeriesKey } from "./imagingDraftKeys";
 import { logger } from "../../logger";
 import { speechChunkIndexedDbAvailable } from "../../../helpers/speechHelpers";
 import {
@@ -80,7 +80,8 @@ export async function loadLocalDicomWorkbenchDraft(
 	try {
 		await migrateLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
 		return await readLocalDicomWorkbenchDraftFromIndexedDb(organizationId);
-	} catch {
+	} catch (error) {
+		logger.warn("[DicomDraft] IndexedDB unavailable, falling back to localStorage", error);
 		return loadLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
 	}
 }
@@ -96,8 +97,9 @@ export async function saveLocalDicomWorkbenchDraft(
 			await saveLocalDicomWorkbenchDraftToIndexedDb(draft, organizationId);
 			removeLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
 			return true;
-		} catch {
+		} catch (error) {
 			// Keep local CT workbench recovery available on restricted browsers.
+			logger.warn("[DicomDraft] Failed to save to IDB, falling back to localStorage", error);
 		}
 	}
 	return saveLocalDicomWorkbenchDraftToLocalStorage(draft, organizationId);
@@ -177,7 +179,8 @@ export async function loadLocalMprWorkbenchDraft(
 			seriesKey,
 			organizationId,
 		);
-	} catch {
+	} catch (error) {
+		logger.warn("[MprDraft] IndexedDB unavailable, falling back to localStorage", error);
 		return loadLocalMprWorkbenchDraftFromLocalStorage(
 			seriesKey,
 			organizationId,
@@ -207,8 +210,9 @@ export async function saveLocalMprWorkbenchDraft(
 					safeLocalStorageRemoveItem(mprWorkbenchLocalKey(seriesKey));
 			}
 			return true;
-		} catch {
+		} catch (error) {
 			// Keep MPR recovery available on restricted browsers.
+			logger.warn("[MprDraft] Failed to save to IDB, falling back to localStorage", error);
 		}
 	}
 	return saveLocalMprWorkbenchDraftToLocalStorage(

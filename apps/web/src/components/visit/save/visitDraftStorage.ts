@@ -1,5 +1,7 @@
 import type { VisitNoteForm } from "../../../AppHelpers";
+import { logger } from "../../../utils/logger";
 import {
+	deleteVisitDraft,
 	loadVisitDraftSync,
 	saveVisitDraft,
 } from "../../../services/offline/offlineStorage";
@@ -27,8 +29,8 @@ export function loadIsolatedVisitDraft<T = VisitNoteForm>(visitId: string): T | 
 				return (parsed?.data ?? parsed) as T;
 			}
 		}
-	} catch {
-		// Non-blocking parse error fallback
+	} catch (err) {
+		logger.debug("[visitDraftStorage] Failed to load isolated visit draft", err);
 	}
 	return null;
 }
@@ -51,19 +53,20 @@ export function saveIsolatedVisitDraft<T = VisitNoteForm>(
 				}),
 			);
 		}
-	} catch {
-		// Ignore storage quota errors
+	} catch (err) {
+		logger.warn("[visitDraftStorage] Failed to persist isolated visit draft", err);
 	}
 }
 
 export function clearIsolatedVisitDraft(visitId: string): void {
 	if (!visitId || visitId === "no-active-visit") return;
 	try {
+		void deleteVisitDraft(visitId);
 		if (typeof localStorage !== "undefined") {
 			localStorage.removeItem(getIsolatedVisitDraftKey(visitId));
 		}
-	} catch {
-		// Non-blocking
+	} catch (err) {
+		logger.debug("[visitDraftStorage] Failed to clear isolated visit draft", err);
 	}
 }
 

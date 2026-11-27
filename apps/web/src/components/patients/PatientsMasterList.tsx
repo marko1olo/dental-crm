@@ -30,7 +30,6 @@ export interface PatientsMasterListProps {
 	readonly query: string;
 }
 
-// Virtualization: contentVisibility: "auto" containIntrinsicSize: "1px 64px" (useDomListPagination)
 export function PatientsMasterList({
 	patients, selectedPatientId, onSelectPatient, patientInsightById,
 	patientInsightRiskLabels, featureSalience, money, pagination,

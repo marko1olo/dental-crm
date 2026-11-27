@@ -17,13 +17,13 @@ export function isDesktopApp(): boolean {
 	if (Boolean(window.denteDesktopNative?.isDesktop)) return true;
 
 	// 2. Electron window object or process
-	const win = window as unknown as {
+	const win: Window & {
 		electron?: unknown;
 		process?: { type?: string; versions?: { electron?: string } };
 		chrome?: { webview?: unknown };
 		__DENTE_DESKTOP__?: boolean;
 		__WEBVIEW2__?: boolean;
-	};
+	} = window;
 	if (win.electron !== undefined || win.process?.versions?.electron !== undefined) {
 		return true;
 	}
@@ -34,10 +34,10 @@ export function isDesktopApp(): boolean {
 	}
 
 	// 4. Tauri window object
-	const tauriWin = window as unknown as {
+	const tauriWin: Window & {
 		__TAURI__?: unknown;
 		__TAURI_INTERNALS__?: unknown;
-	};
+	} = window;
 	if (tauriWin.__TAURI__ !== undefined || tauriWin.__TAURI_INTERNALS__ !== undefined) {
 		return true;
 	}
@@ -62,7 +62,8 @@ export function isPwaApp(): boolean {
 	if (typeof window === "undefined") return false;
 
 	// 1. Explicit PWA flag
-	if ((window as unknown as { __DENTE_PWA__?: boolean }).__DENTE_PWA__ === true) {
+	const pwaWin: Window & { __DENTE_PWA__?: boolean } = window;
+	if (pwaWin.__DENTE_PWA__ === true) {
 		return true;
 	}
 
@@ -81,7 +82,8 @@ export function isPwaApp(): boolean {
 	}
 
 	// 3. iOS Safari standalone home-screen mode
-	const nav = typeof navigator !== "undefined" ? (navigator as unknown as { standalone?: boolean }) : undefined;
+	const nav: (Navigator & { standalone?: boolean }) | undefined =
+		typeof navigator !== "undefined" ? navigator : undefined;
 	if (nav?.standalone === true) {
 		return true;
 	}

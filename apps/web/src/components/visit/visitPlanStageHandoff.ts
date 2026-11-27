@@ -9,7 +9,7 @@
  * invoice and medical diary (Mandates 8e, 8i, 8n).
  */
 
-import { kopecksToRubles } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 
 export interface PlanStageItem {
 	id?: string | undefined;
@@ -25,10 +25,12 @@ export interface PlanStageItem {
 	serviceCode?: string | undefined;
 	quantity?: number | undefined;
 	unitPriceRub?: number | undefined;
+	unitPriceKopecks?: number | undefined;
 	price?: number | undefined;
 	priceRub?: number | undefined;
 	priceKopecks?: number | undefined;
 	discountRub?: number | undefined;
+	discountKopecks?: number | undefined;
 	discount?: number | undefined;
 	discountPercent?: number | undefined;
 	phase?: number | undefined;
@@ -55,6 +57,7 @@ export interface PlanStageOption {
 	title: string;
 	subtitle?: string | undefined;
 	items: PlanStageItem[];
+	totalPriceKopecks: number;
 	totalPriceRub: number;
 	servicesCount: number;
 	isCurrentTarget?: boolean | undefined;
@@ -115,7 +118,7 @@ export function extractAppointmentStageInfo(appointment: AppointmentStageLike | 
 		};
 	}
 
-	const treatmentPlanId: string | null =
+	let treatmentPlanId: string | null =
 		(typeof appointment.treatmentPlanId === "string" ? appointment.treatmentPlanId : null) ||
 		(typeof appointment.planId === "string" ? appointment.planId : null);
 
@@ -147,7 +150,10 @@ export function extractAppointmentStageInfo(appointment: AppointmentStageLike | 
 		if (!treatmentPlanId) {
 			const planMatch = comment.match(/\[План лечения:\s*([^\]|]+)/i);
 			if (planMatch && planMatch[1]) {
-				// treatmentPlanId from comment
+				const parsedPlanId = planMatch[1].trim();
+				if (parsedPlanId) {
+					treatmentPlanId = parsedPlanId;
+				}
 			}
 		}
 
@@ -227,6 +233,27 @@ export function getStandardStageTitle(stageNumber: number): string {
 	}
 }
 
+export function resolvePlanStageItemKopecks(it: PlanStageItem): {
+	unitPriceKopecks: number;
+	discountKopecks: number;
+	netTotalKopecks: number;
+	quantity: number;
+} {
+	const quantity = Math.max(1, Math.round(Number(it.quantity || 1)));
+	const unitPriceKopecks =
+		typeof it.unitPriceKopecks === "number" && Number.isFinite(it.unitPriceKopecks)
+			? Math.round(it.unitPriceKopecks)
+			: typeof it.priceKopecks === "number" && Number.isFinite(it.priceKopecks)
+				? Math.round(it.priceKopecks)
+				: rublesToKopecks(Number(it.unitPriceRub ?? it.price ?? it.priceRub ?? 0));
+	const discountKopecks =
+		typeof it.discountKopecks === "number" && Number.isFinite(it.discountKopecks)
+			? Math.round(it.discountKopecks)
+			: rublesToKopecks(Number(it.discountRub ?? it.discount ?? 0));
+	const netTotalKopecks = Math.max(0, unitPriceKopecks * quantity - discountKopecks);
+	return { unitPriceKopecks, discountKopecks, netTotalKopecks, quantity };
+}
+
 /**
  * Groups and categorizes treatment plan items by stage.
  * Incorporates target stage information from the active appointment.
@@ -238,6 +265,7 @@ export function groupTreatmentPlanByStages(
 	stages: PlanStageOption[];
 	allPlanItems: PlanStageItem[];
 	hasMultipleStages: boolean;
+	totalPlanPriceKopecks: number;
 	totalPlanPriceRub: number;
 } {
 	let allPlanItems: PlanStageItem[] = [];
@@ -259,15 +287,15 @@ export function groupTreatmentPlanByStages(
 			stages: [],
 			allPlanItems: [],
 			hasMultipleStages: false,
+			totalPlanPriceKopecks: 0,
 			totalPlanPriceRub: 0,
 		};
 	}
-	const totalPlanPriceRub = allPlanItems.reduce((sum, it) => {
-		const price = Number(it.unitPriceRub ?? it.price ?? it.priceRub ?? 0);
-		const qty = Number(it.quantity || 1);
-		const discount = Number(it.discountRub ?? it.discount ?? 0);
-		return sum + Math.max(0, price * qty - discount);
-	}, 0);
+	const totalPlanPriceKopecks = allPlanItems.reduce(
+		(sum, it) => sum + resolvePlanStageItemKopecks(it).netTotalKopecks,
+		0,
+	);
+	const totalPlanPriceRub = kopecksToRubles(totalPlanPriceKopecks);
 
 	// Collect unique phase numbers from items
 	const phasesSet = new Set<number>();
@@ -304,13 +332,12 @@ export function groupTreatmentPlanByStages(
 			phaseItems = targetStageInfo.services;
 		}
 
-		// Calculate total for phase
-		const totalPriceRub = phaseItems.reduce((sum, it) => {
-			const price = Number(it.unitPriceRub ?? it.price ?? it.priceRub ?? 0);
-			const qty = Number(it.quantity || 1);
-			const discount = Number(it.discountRub ?? it.discount ?? 0);
-			return sum + Math.max(0, price * qty - discount);
-		}, 0);
+		// Calculate total for phase in integer kopecks
+		const totalPriceKopecks = phaseItems.reduce(
+			(sum, it) => sum + resolvePlanStageItemKopecks(it).netTotalKopecks,
+			0,
+		);
+		const totalPriceRub = kopecksToRubles(totalPriceKopecks);
 
 		const isCurrentTarget = Boolean(targetStageInfo?.stageNumber === phaseNum);
 
@@ -342,6 +369,7 @@ export function groupTreatmentPlanByStages(
 			stageNumber: phaseNum,
 			title,
 			items: phaseItems,
+			totalPriceKopecks,
 			totalPriceRub,
 			servicesCount: phaseItems.length,
 			isCurrentTarget,
@@ -354,6 +382,7 @@ export function groupTreatmentPlanByStages(
 		stages,
 		allPlanItems,
 		hasMultipleStages,
+		totalPlanPriceKopecks,
 		totalPlanPriceRub,
 	};
 }
@@ -364,13 +393,15 @@ export interface FormattedStageBillingItem {
 	toothNumber?: number | undefined;
 	toothCode?: string | undefined;
 	quantity: number;
+	unitPriceKopecks: number;
 	unitPriceRub: number;
+	discountKopecks: number;
 	discountRub: number;
 	discountPercent?: number | undefined;
 }
 
 /**
- * Transforms stage item to canonical 804n billing item detail
+ * Transforms stage item to canonical billing item detail
  */
 export function formatStageItemForBilling(it: PlanStageItem): FormattedStageBillingItem {
 	const toothNum =
@@ -382,9 +413,15 @@ export function formatStageItemForBilling(it: PlanStageItem): FormattedStageBill
 					? Number.parseInt(it.toothCode, 10)
 					: undefined;
 	const toothCandidate = toothNum !== undefined ? String(toothNum) : (it.toothCode ? String(it.toothCode) : undefined);
-	const priceVal = Number(it.unitPriceRub ?? it.price ?? it.priceRub ?? (typeof it.priceKopecks === "number" ? kopecksToRubles(it.priceKopecks) : 0));
-	const discountVal = Number(it.discountRub ?? it.discount ?? 0);
-	const discountPercent = Number(it.discountPercent ?? (priceVal > 0 && discountVal > 0 ? Math.round((discountVal / priceVal) * 100) : 0));
+	const { unitPriceKopecks, discountKopecks, quantity } = resolvePlanStageItemKopecks(it);
+	const priceVal = kopecksToRubles(unitPriceKopecks);
+	const discountVal = kopecksToRubles(discountKopecks);
+	const discountPercent = Number(
+		it.discountPercent ??
+			(unitPriceKopecks > 0 && discountKopecks > 0
+				? Math.round((discountKopecks / (unitPriceKopecks * quantity)) * 100)
+				: 0),
+	);
 
 	const codeCandidate = it.code804n || it.priceId || it.serviceCode;
 	const titleCandidate = it.name || it.title || it.nameRu || it.medicalTitleRu || it.patientFriendlyTitleRu;
@@ -394,8 +431,10 @@ export function formatStageItemForBilling(it: PlanStageItem): FormattedStageBill
 		title: typeof titleCandidate === "string" ? titleCandidate : "Услуга плана лечения",
 		...(toothNum !== undefined ? { toothNumber: toothNum } : {}),
 		...(toothCandidate ? { toothCode: toothCandidate } : {}),
-		quantity: Number(it.quantity || 1),
+		quantity,
+		unitPriceKopecks,
 		unitPriceRub: priceVal,
+		discountKopecks,
 		discountRub: discountVal,
 		...(discountPercent > 0 ? { discountPercent } : {}),
 	};

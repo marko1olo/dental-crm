@@ -2,17 +2,15 @@
  * apps/web/src/components/odontogram/__tests__/odontogramPersistentAutonomyWave63.test.tsx
  *
  * WAVE 63 (FEATURE 252) TEST SUITE:
- * «одонтограмма_автономия::двухслойное_хранилище_защита_от_потери_данных_пакетные_пресеты_санации_и_1_клик_синхронизация_с_дневником_043у»
- * Clinical Parity Test Suite (Mandates 8c, 8d, 8e, 8k, 8n)
+ * Odontogram Persistent Autonomy, Batch Voice Mutations, MoreMenu Portal & Storage
+ * Clinical Parity Test Suite (Mandates 8c, 8d, 8e, 8k, 8n, 8ar, 8as)
  *
  * Invariants Verified:
- * 1. Two-tier localStorage caching and hydration during offline/server failures (loadStoredTeethData, saveStoredTeethData, getOdontogramStorageKey).
+ * 1. Two-tier localStorage caching and hydration during offline/server failures.
  * 2. Zero-rollback protection: network/server failures NEVER revert doctor markings.
- * 3. Global event dispatch "dente-odontogram-update" with patientId and updated states.
- * 4. 1-click batch presets: "btn-hotpath-all-healthy" and "btn-odontogram-all-healthy" (intact dentition).
- * 5. 1-click batch preset: "btn-odontogram-wisdom-missing" (wisdom teeth adentia 18, 28, 38, 48).
- * 6. 1-click Form 043/u diary synchronization: "btn-hotpath-sync-all-to-diary" with "dente-apply-soap-protocol" CustomEvent.
- * 7. 7 Deadly Sins & Mandate 8e: Zero emojis, zero unjustified disabled buttons, touch targets >= 44px.
+ * 3. Batch actions via real ToothChart.executeWisdomMissingAction & useGlobalVoiceListener.dispatchVoiceTeethUpdatesBatch.
+ * 4. Rendered OdontogramToolbarMoreMenu & ClinicalDiaryAndVoiceButtons via renderToString (token contrast, >=44px mobile).
+ * 5. Diary protocol generation via real generateSoapFromOdontogramStates.
  */
 
 import React from "react";
@@ -28,10 +26,14 @@ import {
 } from "../odontogramStorage";
 import {
 	createDefaultAdultTeethData,
-	ALL_ADULT_TEETH_NUMBERS,
+	executeWisdomMissingAction,
 	type ToothData,
+	type ToothState,
 } from "../ToothChart";
 import { OdontogramViewContainer } from "../OdontogramViewContainer";
+import { OdontogramToolbarMoreMenu } from "../OdontogramToolbarMoreMenu";
+import { ClinicalDiaryAndVoiceButtons } from "../ClinicalDiaryAndVoiceButtons";
+import { dispatchVoiceTeethUpdatesBatch } from "../useGlobalVoiceListener";
 import { generateSoapFromOdontogramStates } from "../../../lib/clinicalProtocols";
 
 // In-memory localStorage mock for node test runner
@@ -168,9 +170,8 @@ describe("WAVE 63 (FEATURE 252): Odontogram Persistent Autonomy & 1-Click Clinic
 		});
 	});
 
-	describe("3. UI 1-Click Batch Presets in OdontogramViewContainer (Mandates 8e, 8k, 8n)", () => {
-		it("renders 'Ещё...' dropdown containing batch presets section with exact testids", () => {
-			// Test rendered HTML from OdontogramViewContainer
+	describe("3. Batch Presets, Voice Batching & Portal More Menu (Mandates 8e, 8k, 8n, 8ar)", () => {
+		it("renders More menu trigger in OdontogramViewContainer", () => {
 			const html = renderToString(
 				<OdontogramViewContainer
 					teethData={createDefaultAdultTeethData()}
@@ -178,51 +179,116 @@ describe("WAVE 63 (FEATURE 252): Odontogram Persistent Autonomy & 1-Click Clinic
 				/>,
 			);
 
-			// Verify trigger button exists
 			assert.ok(
 				html.includes('data-testid="btn-odontogram-more-menu"'),
-				"Trigger for 'Ещё...' menu must exist in DOM",
+				"Trigger for More menu must exist in DOM",
 			);
 		});
 
-		it("intact dentition callback marks all 32 teeth as Healthy", () => {
-			let changedTeeth: number[] = [];
-			let changedState: string = "";
+		it("ToothChart.executeWisdomMissingAction marks all 4 wisdom teeth in a single batch call", () => {
+			const calls: Array<{ targets: number[]; state: ToothState }> = [];
+			const applied = executeWisdomMissingAction({
+				pediatricMode: false,
+				teethData: createDefaultAdultTeethData(),
+				onQuickStateChange: (targets, state) => {
+					calls.push({ targets, state });
+				},
+			});
 
-			const handleQuickChange = (targets: number[], state: string) => {
-				changedTeeth = targets;
-				changedState = state;
-			};
-
-			const allAdult = [...ALL_ADULT_TEETH_NUMBERS];
-			handleQuickChange(allAdult, "Healthy");
-
-			assert.strictEqual(changedTeeth.length, 32);
-			assert.strictEqual(changedState, "Healthy");
-			for (const num of ALL_ADULT_TEETH_NUMBERS) {
-				assert.ok(changedTeeth.includes(num), `Tooth ${num} must be in sanitation list`);
-			}
+			assert.strictEqual(applied, true);
+			assert.strictEqual(calls.length, 1, "Must issue a single batch call, not 4 per-tooth calls");
+			assert.deepStrictEqual(calls[0]?.targets, [18, 28, 38, 48]);
+			assert.strictEqual(calls[0]?.state, "Missing");
 		});
 
-		it("wisdom teeth missing callback marks exactly [18, 28, 38, 48] as Missing", () => {
-			let changedTeeth: number[] = [];
-			let changedState: string = "";
+		it("dispatchVoiceTeethUpdatesBatch aggregates matching state/surfaces into one batch array", () => {
+			const calls: Array<{
+				targets: number[];
+				state: ToothState;
+				surfaces: readonly string[] | undefined;
+			}> = [];
+			const summaries: string[] = [];
 
-			const handleQuickChange = (targets: number[], state: string) => {
-				changedTeeth = targets;
-				changedState = state;
-			};
+			const groupCount = dispatchVoiceTeethUpdatesBatch(
+				[
+					{ toothNumber: 16, state: "Caries", surfaces: ["O", "M"] },
+					{ toothNumber: 26, state: "Caries", surfaces: ["M", "O"] },
+					{ toothNumber: 36, state: "Pulpitis", surfaces: [] },
+				],
+				(targets, state, surfaces) => {
+					calls.push({ targets, state, surfaces });
+				},
+				false,
+				(summary) => summaries.push(summary),
+			);
 
-			const wisdomTeeth = [18, 28, 38, 48];
-			handleQuickChange(wisdomTeeth, "Missing");
+			assert.strictEqual(groupCount, 2);
+			assert.strictEqual(calls.length, 2, "Identical state+surfaces must coalesce into 1 batch call");
+			assert.deepStrictEqual(calls[0]?.targets, [16, 26]);
+			assert.strictEqual(calls[0]?.state, "Caries");
+			assert.deepStrictEqual(calls[1]?.targets, [36]);
+			assert.strictEqual(calls[1]?.state, "Pulpitis");
+			assert.strictEqual(summaries.length, 1);
+		});
 
-			assert.deepStrictEqual(changedTeeth, [18, 28, 38, 48]);
-			assert.strictEqual(changedState, "Missing");
+		it("renders OdontogramToolbarMoreMenu & ClinicalDiaryAndVoiceButtons with token classes and >=44px mobile rules", () => {
+			const menuHtml = renderToString(
+				<OdontogramToolbarMoreMenu
+					isMoreMenuOpen={true}
+					setIsMoreMenuOpen={() => {}}
+					activeStampTool={null}
+					setActiveStampTool={() => {}}
+					isFastExtractMode={false}
+					setIsFastExtractMode={() => {}}
+					isMultiSelectMode={false}
+					onToggleMultiSelect={() => {}}
+					isPerioOpen={false}
+					onTogglePerio={() => {}}
+					isOrthoCephOpen={false}
+					setIsOrthoCephOpen={() => {}}
+					isSmartOpgOpen={false}
+					setIsSmartOpgOpen={() => {}}
+					handleMarkIntactDentition={() => {}}
+					handleMarkWisdomTeethMissing={() => {}}
+					setIsPlanWizardOpen={() => {}}
+					toggleVoiceEngine={() => {}}
+					isVoiceListening={false}
+					setContextDrawerTooth={() => {}}
+					onOpenPediatricModal={() => {}}
+					onLoadRadiologyAiReport={() => {}}
+					onSyncAllToDiary={() => {}}
+					showWisdomTeeth={true}
+					setShowWisdomTeeth={() => {}}
+					activeMode="anatomical_svg"
+					showPulpAndCanals={false}
+					setShowPulpAndCanals={() => {}}
+					isPediatricEffective={false}
+				/>,
+			);
+
+			assert.ok(menuHtml.includes('data-testid="odontogram-more-menu-popover"'));
+			assert.ok(menuHtml.includes('data-testid="btn-odontogram-wisdom-visibility"'));
+			assert.strictEqual(menuHtml.includes("dark:bg-zinc-900"), false);
+
+			const buttonsHtml = renderToString(
+				<ClinicalDiaryAndVoiceButtons
+					onSyncAllToDiary={() => {}}
+					toggleVoiceEngine={() => {}}
+					isVoiceListening={false}
+					onCloseMenu={() => {}}
+				/>,
+			);
+			assert.ok(buttonsHtml.includes("min-h-[36px] max-md:min-h-[44px]"));
+			assert.ok(buttonsHtml.includes("В дневник приёма"));
+			assert.strictEqual(buttonsHtml.includes("dark:bg-zinc-800/60"), false);
+			const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+			assert.strictEqual(emojiRegex.test(menuHtml), false);
+			assert.strictEqual(emojiRegex.test(buttonsHtml), false);
 		});
 	});
 
-	describe("4. 1-Click Form 043/u Diary Protocol Synchronization (Mandate 8c: Hot Path)", () => {
-		it("aggregates multiple pathological findings into Form 043/u SOAP protocol", () => {
+	describe("4. Clinical Diary Protocol Synchronization", () => {
+		it("aggregates multiple pathological findings into clinical SOAP protocol", () => {
 			const findings = [
 				{ toothNumber: 16, state: "Caries", surfaces: ["M", "O"] },
 				{ toothNumber: 36, state: "Pulpitis" },
@@ -233,81 +299,6 @@ describe("WAVE 63 (FEATURE 252): Odontogram Persistent Autonomy & 1-Click Clinic
 			assert.ok(soap.statusLocalis.includes("16"), "Must mention tooth 16");
 			assert.ok(soap.statusLocalis.includes("36"), "Must mention tooth 36");
 			assert.ok(soap.diagnosisIcd10, "ICD-10 code must be generated");
-		});
-
-		it("dispatches 'dente-apply-soap-protocol' event with mode 'smart_append' and immediate=true", () => {
-			let capturedDetail: unknown = null;
-			const handler = (e: Event) => {
-				capturedDetail = (e as CustomEvent).detail;
-			};
-
-			if (typeof globalThis.window.addEventListener === "function") {
-				globalThis.window.addEventListener("dente-apply-soap-protocol", handler);
-			}
-
-			const soap = {
-				anamnesis: "Жалоб нет",
-				statusLocalis: "Зубная формула интактна",
-				diagnosisIcd10: "Z01.2",
-				treatmentDescription: "Санация полости рта",
-			};
-
-			const event = new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					soap,
-					mode: "smart_append",
-					immediate: true,
-				},
-			});
-
-			globalThis.window.dispatchEvent?.(event);
-
-			if (capturedDetail) {
-				assert.deepStrictEqual(capturedDetail, {
-					soap,
-					mode: "smart_append",
-					immediate: true,
-				});
-			}
-		});
-	});
-
-	describe("5. 7 Deadly Sins & Ergonomic Invariants (Mandate 8d, 8e)", () => {
-		it("guarantees 0 cartoon emojis in batch presets and diary sync labels", () => {
-			const presetLabels = [
-				"Физиологическая норма (зубные ряды интактны)",
-				"Адентия 8-ок (18, 28, 38, 48)",
-				"Санация (Все здоровы)",
-				"В дневник приёма",
-				"Отметка сохранена локально на диск (офлайн). Данные в безопасности и синхронизируются при связи",
-				"Зубная формула загружена из локального хранилища (офлайн)",
-			];
-
-			const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-
-			for (const label of presetLabels) {
-				assert.strictEqual(
-					emojiRegex.test(label),
-					false,
-					`Label '${label}' must NOT contain cartoon emojis (Sin 7: Medical Record Sanctity)`,
-				);
-			}
-		});
-
-		it("guarantees minimum touch target size min-h-[44px] sm:min-h-[32px] on all action buttons", () => {
-			// Check that classes specify min-h-[44px] sm:min-h-[32px]
-			const buttonClasses = [
-				"min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold",
-				"min-h-[44px] sm:min-h-[32px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600",
-				"min-h-[44px] sm:min-h-[32px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600",
-			];
-
-			for (const cls of buttonClasses) {
-				assert.ok(
-					cls.includes("min-h-[44px] sm:min-h-[32px]"),
-					`Button class '${cls}' must enforce min-h-[44px] sm:min-h-[32px] touch target (Mandate 8e / Glove Ergonomics)`,
-				);
-			}
 		});
 	});
 });

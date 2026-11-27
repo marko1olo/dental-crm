@@ -41,7 +41,7 @@ export function PatientSearchResultRow({
 			data-testid={`patient-search-autocomplete-item-${p.id}`}
 			onClick={() => onSelect(p)}
 			onMouseEnter={onMouseEnter}
-			className={`p-2 rounded-lg flex items-center justify-between gap-2.5 cursor-pointer transition-colors ${
+			className={`p-2 max-md:min-h-[44px] rounded-lg flex items-center justify-between gap-2.5 cursor-pointer transition-colors ${
 				isSelected ? "bg-[var(--teal)]/15 text-[var(--ink)]" : "hover:bg-[var(--paper-soft)]"
 			}`}
 		>

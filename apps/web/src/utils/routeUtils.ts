@@ -207,7 +207,7 @@ export const settingsTabs = [
 export type SettingsTab = (typeof settingsTabs)[number]["id"];
 
 export function viewFromHash(customHash?: string): AppView {
-	const raw = customHash !== undefined ? customHash : (typeof window !== "undefined" ? window.location.hash : "");
+	const raw = customHash !== undefined ? customHash : (typeof window !== "undefined" ? (window.location?.hash ?? "") : "");
 	const hash = (raw.replace(/^#\/?/, "").split("?")[0] ?? "");
 	const parts = hash.split("/").filter(Boolean);
 	const view = parts[0]?.toLowerCase() ?? "";
