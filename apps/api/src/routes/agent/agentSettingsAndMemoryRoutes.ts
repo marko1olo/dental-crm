@@ -6,12 +6,8 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
-import { getRequestIdentity } from "../../security/identity.js";
-import {
-	requireClinicalMutationContext,
-	requireClinicalReadContext,
-} from "../../security/tenantContext.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineTenantMutation, defineTenantQuery } from "../../core/routeFactories.js";
+import { requireClinicalMutationContext } from "../../security/tenantContext.js";
 import {
 	maskApiKey,
 	validateSsrfSafeAiBaseUrl,
@@ -149,31 +145,25 @@ export async function registerAgentSettingsAndMemoryRoutes(
 	);
 
 	// ─── GET /api/agent/memory ──────────────────────────────────────────────────
-	server.get(
-		"/api/agent/memory",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const context = await requireClinicalReadContext(
-				request,
-				reply,
-				"agent get memory",
-			);
-			if (!context) return;
-
+	defineTenantQuery(server, {
+		path: "/api/agent/memory",
+		permission: "agent.read",
+		authOptions: {
+			allowClinicTokenWithoutStaff: false,
+		},
+		query: async ({ tx, principal, request, reply }) => {
 			try {
-				const identity = getRequestIdentity(request);
-				const record = await withTenantCtx(context.organizationId, async (tx) =>
-					getDoctorPreferencesFromDb(
-						context.organizationId,
-						identity.userId || null,
-						tx,
-					),
+				const record = await getDoctorPreferencesFromDb(
+					principal.organizationId,
+					principal.userId || null,
+					tx,
 				);
 				const prefs = (record?.preferences || {}) as Record<string, unknown>;
 				const memoryFacts = Array.isArray(prefs.copilotMemoryFacts)
 					? prefs.copilotMemoryFacts
 					: [];
 
-				return reply.code(200).send({ memoryFacts });
+				return { memoryFacts };
 			} catch (err) {
 				request.log.error({ err }, "[agentSettingsAndMemoryRoutes] Failed to read memory facts from DB");
 				return reply.code(500).send({
@@ -182,26 +172,25 @@ export async function registerAgentSettingsAndMemoryRoutes(
 				});
 			}
 		},
-	);
+	});
 
 	// ─── PUT /api/agent/memory ──────────────────────────────────────────────────
-	server.put(
-		"/api/agent/memory",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const context = await requireClinicalMutationContext(
-				request,
-				reply,
-				"agent save memory",
-			);
-			if (!context) return;
+	const memoryBodySchema = z
+		.object({
+			memoryFacts: z.array(memoryFactItemSchema),
+		})
+		.strict();
 
-			const bodySchema = z
-				.object({
-					memoryFacts: z.array(memoryFactItemSchema),
-				})
-				.strict();
-
-			const parseResult = bodySchema.safeParse(request.body ?? {});
+	defineTenantMutation(server, {
+		method: "PUT",
+		path: "/api/agent/memory",
+		permission: "agent.write",
+		authOptions: {
+			allowClinicTokenWithoutStaff: false,
+		},
+		idempotency: "required_header",
+		execute: async ({ tx, principal, request, reply }) => {
+			const parseResult = memoryBodySchema.safeParse(request.body ?? {});
 			if (!parseResult.success) {
 				return reply.code(400).send({
 					error: "ValidationError",
@@ -211,27 +200,24 @@ export async function registerAgentSettingsAndMemoryRoutes(
 			}
 
 			try {
-				const identity = getRequestIdentity(request);
-				await withTenantCtx(context.organizationId, async (tx) => {
-					const current = await getDoctorPreferencesFromDb(
-						context.organizationId,
-						identity.userId || null,
-						tx,
-					);
-					const existingPrefs = (current?.preferences || {}) as Record<string, unknown>;
-					const nextPrefs = {
-						...existingPrefs,
-						copilotMemoryFacts: parseResult.data.memoryFacts,
-					};
+				const current = await getDoctorPreferencesFromDb(
+					principal.organizationId,
+					principal.userId || null,
+					tx,
+				);
+				const existingPrefs = (current?.preferences || {}) as Record<string, unknown>;
+				const nextPrefs = {
+					...existingPrefs,
+					copilotMemoryFacts: parseResult.data.memoryFacts,
+				};
 
-					await saveDoctorPreferencesInDb(
-						context.organizationId,
-						identity.userId || null,
-						nextPrefs,
-						current?.specialty || "therapist",
-						tx,
-					);
-				});
+				await saveDoctorPreferencesInDb(
+					principal.organizationId,
+					principal.userId || null,
+					nextPrefs,
+					current?.specialty || "therapist",
+					tx,
+				);
 			} catch (err) {
 				request.log.error({ err }, "[agentSettingsAndMemoryRoutes] Failed to persist memory facts to DB");
 				return reply.code(500).send({
@@ -240,62 +226,55 @@ export async function registerAgentSettingsAndMemoryRoutes(
 				});
 			}
 
-			return reply.code(200).send({
+			return {
 				success: true,
 				memoryFacts: parseResult.data.memoryFacts,
-			});
+			};
 		},
-	);
+	});
 
 	// ─── GET /api/agent/settings ────────────────────────────────────────────────
-	server.get(
-		"/api/agent/settings",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const context = await requireClinicalReadContext(
-				request,
-				reply,
-				"agent get settings",
-			);
-			if (!context) return;
-
-			const identity = getRequestIdentity(request);
-			const record = await withTenantCtx(context.organizationId, async (tx) =>
-				getDoctorPreferencesFromDb(
-					context.organizationId,
-					identity.userId || null,
-					tx,
-				),
+	defineTenantQuery(server, {
+		path: "/api/agent/settings",
+		permission: "agent.read",
+		authOptions: {
+			allowClinicTokenWithoutStaff: false,
+		},
+		query: async ({ tx, principal }) => {
+			const record = await getDoctorPreferencesFromDb(
+				principal.organizationId,
+				principal.userId || null,
+				tx,
 			);
 			const prefs = (record?.preferences || {}) as Record<string, unknown>;
 			const settings = sanitizeCopilotSettingsForClient(prefs.copilotSettings);
 
-			return reply.code(200).send({
+			return {
 				ok: true,
 				settings,
 				specialty: record?.specialty || "therapist",
-			});
+			};
 		},
-	);
+	});
 
 	// ─── PUT /api/agent/settings ────────────────────────────────────────────────
-	server.put(
-		"/api/agent/settings",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const context = await requireClinicalMutationContext(
-				request,
-				reply,
-				"agent save settings",
-			);
-			if (!context) return;
+	const settingsBodySchema = z
+		.object({
+			settings: copilotSettingsPatchSchema,
+			specialty: z.string().optional(),
+		})
+		.strict();
 
-			const bodySchema = z
-				.object({
-					settings: copilotSettingsPatchSchema,
-					specialty: z.string().optional(),
-				})
-				.strict();
-
-			const parseResult = bodySchema.safeParse(request.body ?? {});
+	defineTenantMutation(server, {
+		method: "PUT",
+		path: "/api/agent/settings",
+		permission: "agent.write",
+		authOptions: {
+			allowClinicTokenWithoutStaff: false,
+		},
+		idempotency: "required_header",
+		execute: async ({ tx, principal, request, reply }) => {
+			const parseResult = settingsBodySchema.safeParse(request.body ?? {});
 			if (!parseResult.success) {
 				return reply.code(400).send({
 					error: "ValidationError",
@@ -316,50 +295,47 @@ export async function registerAgentSettingsAndMemoryRoutes(
 				}
 			}
 
-			const identity = getRequestIdentity(request);
-			const saved = await withTenantCtx(context.organizationId, async (tx) => {
-				const current = await getDoctorPreferencesFromDb(
-					context.organizationId,
-					identity.userId || null,
-					tx,
-				);
-				const existingPrefs = (current?.preferences || {}) as Record<string, unknown>;
-				const currentSettings = (existingPrefs.copilotSettings && typeof existingPrefs.copilotSettings === "object")
-					? (existingPrefs.copilotSettings as Record<string, unknown>)
-					: {};
-				const nextCopilotSettings: Record<string, unknown> = {
-					...currentSettings,
-					...incomingRest,
-				};
-				if (typeof incomingByokApiKey === "string") {
-					const trimmedKey = incomingByokApiKey.trim();
-					if (trimmedKey.length > 0) {
-						nextCopilotSettings.byokApiKey = trimmedKey;
-						nextCopilotSettings.apiKeyMasked = maskApiKey(trimmedKey);
-					} else {
-						delete nextCopilotSettings.byokApiKey;
-						delete nextCopilotSettings.apiKeyMasked;
-					}
+			const current = await getDoctorPreferencesFromDb(
+				principal.organizationId,
+				principal.userId || null,
+				tx,
+			);
+			const existingPrefs = (current?.preferences || {}) as Record<string, unknown>;
+			const currentSettings = (existingPrefs.copilotSettings && typeof existingPrefs.copilotSettings === "object")
+				? (existingPrefs.copilotSettings as Record<string, unknown>)
+				: {};
+			const nextCopilotSettings: Record<string, unknown> = {
+				...currentSettings,
+				...incomingRest,
+			};
+			if (typeof incomingByokApiKey === "string") {
+				const trimmedKey = incomingByokApiKey.trim();
+				if (trimmedKey.length > 0) {
+					nextCopilotSettings.byokApiKey = trimmedKey;
+					nextCopilotSettings.apiKeyMasked = maskApiKey(trimmedKey);
+				} else {
+					delete nextCopilotSettings.byokApiKey;
+					delete nextCopilotSettings.apiKeyMasked;
 				}
-				const nextPrefs = {
-					...existingPrefs,
-					copilotSettings: nextCopilotSettings,
-				};
+			}
+			const nextPrefs = {
+				...existingPrefs,
+				copilotSettings: nextCopilotSettings,
+			};
 
-				return saveDoctorPreferencesInDb(
-					context.organizationId,
-					identity.userId || null,
-					nextPrefs,
-					parseResult.data.specialty || current?.specialty || "therapist",
-					tx,
-				);
-			});
+			const saved = await saveDoctorPreferencesInDb(
+				principal.organizationId,
+				principal.userId || null,
+				nextPrefs,
+				parseResult.data.specialty || current?.specialty || "therapist",
+				tx,
+			);
 
 			const savedPrefs = (saved.preferences || {}) as Record<string, unknown>;
-			return reply.code(200).send({
+			return {
 				ok: true,
 				settings: sanitizeCopilotSettingsForClient(savedPrefs.copilotSettings),
-			});
+			};
 		},
-	);
+	});
 };

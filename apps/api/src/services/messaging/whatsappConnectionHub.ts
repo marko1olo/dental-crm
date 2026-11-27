@@ -9,7 +9,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { isDemoShowcaseMode } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { denteWhatsappBotConfigs } from "../../db/schema.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
@@ -367,7 +367,7 @@ export class WhatsappConnectionHubService {
 			? accessToken
 			: OmnichannelTokenVault.encrypt(accessToken, organizationId);
 
-		return withTenantCtx(organizationId, async (tx) => {
+		return withTenantWriteCtx(organizationId, async (tx) => {
 			const [existing] = await tx
 				.select({ id: denteWhatsappBotConfigs.id })
 				.from(denteWhatsappBotConfigs)
@@ -504,7 +504,7 @@ export class WhatsappConnectionHubService {
 	 * Получение статуса WABA Cloud для организации.
 	 */
 	static async getWabaStatus(organizationId: string, serverOrigin = "http://127.0.0.1:3000"): Promise<WabaStatusResult> {
-		const config = await withTenantCtx(organizationId, async (tx) => {
+		const config = await withTenantReadCtx(organizationId, async (tx) => {
 			const [row] = await tx
 				.select()
 				.from(denteWhatsappBotConfigs)

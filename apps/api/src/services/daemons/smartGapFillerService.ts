@@ -9,7 +9,8 @@
  */
 
 import { and, eq, isNull, or, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import type { TenantDb } from "../../db/client.js";
+import { withSuperuserBypass, withTenantReadCtx } from "../../db/rls.js";
 import {
 	appointmentWaitlists,
 	appointments,
@@ -63,20 +64,34 @@ export async function triggerSmartGapFiller(
 		const effectiveTimeZone = options?.timezone || "Europe/Samara";
 
 		// 1. Fetch details of the cancelled appointment
-		const [appt] = await db
-			.select({
-				id: appointments.id,
-				organizationId: appointments.organizationId,
-				patientId: appointments.patientId,
-				doctorUserId: appointments.doctorUserId,
-				startsAt: appointments.startsAt,
-				endsAt: appointments.endsAt,
-				doctorFullName: users.fullName,
-			})
-			.from(appointments)
-			.leftJoin(users, eq(appointments.doctorUserId, users.id))
-			.where(eq(appointments.id, cancelledAppointmentId))
-			.limit(1);
+		const selectAppointment = async (tx: TenantDb) => {
+			const [row] = await tx
+				.select({
+					id: appointments.id,
+					organizationId: appointments.organizationId,
+					patientId: appointments.patientId,
+					doctorUserId: appointments.doctorUserId,
+					startsAt: appointments.startsAt,
+					endsAt: appointments.endsAt,
+					doctorFullName: users.fullName,
+				})
+				.from(appointments)
+				.leftJoin(users, eq(appointments.doctorUserId, users.id))
+				.where(
+					options?.organizationId
+						? and(
+								eq(appointments.id, cancelledAppointmentId),
+								eq(appointments.organizationId, options.organizationId),
+							)
+						: eq(appointments.id, cancelledAppointmentId),
+				)
+				.limit(1);
+			return row ?? null;
+		};
+
+		const appt = options?.organizationId
+			? await withTenantReadCtx(options.organizationId, selectAppointment)
+			: await withSuperuserBypass(selectAppointment);
 
 		if (!appt) {
 			return null;
@@ -93,33 +108,57 @@ export async function triggerSmartGapFiller(
 
 		const candidates: GapFillerCandidate[] = [];
 
-		// 2. Scan appointment waitlist for the organization
-		const waitlistEntries = await db
-			.select({
-				waitlistId: appointmentWaitlists.id,
-				patientId: appointmentWaitlists.patientId,
-				priorityLevel: appointmentWaitlists.priorityLevel,
-				preferredDoctorId: appointmentWaitlists.preferredDoctorId,
-				preferredTimeRanges: appointmentWaitlists.preferredTimeRanges,
-				patientFullName: patients.fullName,
-				patientPhone: patients.phone,
-			})
-			.from(appointmentWaitlists)
-			.leftJoin(patients, eq(appointmentWaitlists.patientId, patients.id))
-			.where(
-				and(
-					eq(appointmentWaitlists.organizationId, appt.organizationId),
-					or(
-						eq(appointmentWaitlists.status, "waiting"),
-						eq(appointmentWaitlists.status, "active"),
-					),
-					or(
-						isNull(appointmentWaitlists.preferredDoctorId),
-						appt.doctorUserId ? eq(appointmentWaitlists.preferredDoctorId, appt.doctorUserId) : sql`true`,
-					),
-				),
-			)
-			.limit(10);
+		// 2. Scan appointment waitlist and approved treatment plans inside single read TX
+		const { waitlistEntries, planPatients } = await withTenantReadCtx(
+			appt.organizationId,
+			async (tx) => {
+				const waitlistRows = await tx
+					.select({
+						waitlistId: appointmentWaitlists.id,
+						patientId: appointmentWaitlists.patientId,
+						priorityLevel: appointmentWaitlists.priorityLevel,
+						preferredDoctorId: appointmentWaitlists.preferredDoctorId,
+						preferredTimeRanges: appointmentWaitlists.preferredTimeRanges,
+						patientFullName: patients.fullName,
+						patientPhone: patients.phone,
+					})
+					.from(appointmentWaitlists)
+					.leftJoin(patients, eq(appointmentWaitlists.patientId, patients.id))
+					.where(
+						and(
+							eq(appointmentWaitlists.organizationId, appt.organizationId),
+							or(
+								eq(appointmentWaitlists.status, "waiting"),
+								eq(appointmentWaitlists.status, "active"),
+							),
+							or(
+								isNull(appointmentWaitlists.preferredDoctorId),
+								appt.doctorUserId ? eq(appointmentWaitlists.preferredDoctorId, appt.doctorUserId) : sql`true`,
+							),
+						),
+					)
+					.limit(10);
+
+				const planRows = await tx
+					.select({
+						patientId: treatmentPlans.patientId,
+						planId: treatmentPlans.id,
+						patientFullName: patients.fullName,
+						patientPhone: patients.phone,
+					})
+					.from(treatmentPlans)
+					.leftJoin(patients, eq(treatmentPlans.patientId, patients.id))
+					.where(
+						and(
+							eq(treatmentPlans.organizationId, appt.organizationId),
+							eq(treatmentPlans.status, "Approved"),
+						),
+					)
+					.limit(10);
+
+				return { waitlistEntries: waitlistRows, planPatients: planRows };
+			},
+		);
 
 		const localSlot = utcToLocalWallTime(appt.startsAt, effectiveTimeZone);
 		const slotStartMinute = localSlot.hours * 60 + localSlot.minutes;
@@ -200,23 +239,6 @@ export async function triggerSmartGapFiller(
 
 		// 3. Complement with patients having approved treatment plans
 		if (candidates.length < maxCandidates) {
-			const planPatients = await db
-				.select({
-					patientId: treatmentPlans.patientId,
-					planId: treatmentPlans.id,
-					patientFullName: patients.fullName,
-					patientPhone: patients.phone,
-				})
-				.from(treatmentPlans)
-				.leftJoin(patients, eq(treatmentPlans.patientId, patients.id))
-				.where(
-					and(
-						eq(treatmentPlans.organizationId, appt.organizationId),
-						eq(treatmentPlans.status, "Approved"),
-					),
-				)
-				.limit(10);
-
 			for (const p of planPatients) {
 				if (!p.patientId || candidates.some((c) => c.patientId === p.patientId)) {
 					continue;

@@ -1,9 +1,7 @@
 import { and, asc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import type { z } from "zod";
-import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { defineTenantMutation } from "../../../core/routeFactories.js";
+import { withTenantWriteCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	inventoryItems,
 	inventorySupplierInvoices,
@@ -26,6 +24,11 @@ import {
 } from "@dental/shared";
 import { acceptanceWaybillBodySchema } from "../types.js";
 
+const INVENTORY_WRITE_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+} as const;
+
 // =========================================================================
 // ACCEPTANCE WAYBILLS & SUPPLIER BATCH RECEIPT (Мандаты 8e, 8k, 8n, 8s)
 // =========================================================================
@@ -40,6 +43,7 @@ export const handleAcceptanceWaybillRequest = async (
 	rawBody: unknown,
 	request: FastifyRequest,
 	reply: FastifyReply,
+	executor?: TenantDb,
 ) => {
 	const parsed = acceptanceWaybillBodySchema.safeParse(rawBody);
 	if (!parsed.success) {
@@ -69,7 +73,7 @@ export const handleAcceptanceWaybillRequest = async (
 			: null);
 
 	try {
-		const result = await withTenantCtx(targetOrgId, async (tx) => {
+		const runAccept = async (tx: TenantDb) => {
 			// Дедупликация по номеру накладной и поставщику (идемпотентность HTTP обеспечивается idempotencyPlugin)
 			let existingInvoice: Array<typeof inventorySupplierInvoices.$inferSelect> = [];
 			if (data.waybillNumber && data.supplierName) {
@@ -446,7 +450,8 @@ export const handleAcceptanceWaybillRequest = async (
 			};
 
 			return responsePayload;
-		});
+		};
+		const result = executor ? await runAccept(executor) : await withTenantWriteCtx(targetOrgId, runAccept);
 
 		return reply.status(201).send(result);
 	} catch (error) {
@@ -465,41 +470,36 @@ export const handleAcceptanceWaybillRequest = async (
 export const registerSupplierInvoiceReceiptExecution = (
 	server: FastifyInstance,
 ): void => {
-	const handlePostWaybill = async (
-		request: FastifyRequest<{
-			Params?: { organizationId?: string };
-			Body: z.infer<typeof acceptanceWaybillBodySchema> & {
-				organizationId?: string;
-			};
-		}>,
-		reply: FastifyReply,
-	) => {
-		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"inventory acceptance waybill",
-		);
-		if (!resolvedOrgId) return;
+	const registerPostWaybill = (path: string) => {
+		defineTenantMutation(server, {
+			method: "POST",
+			path,
+			permission: "inventory.write",
+			authOptions: INVENTORY_WRITE_AUTH,
+			idempotency: "optional_header",
+			handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+				const params = request.params as { organizationId?: string } | undefined;
+				const body = (request.body as { organizationId?: string } | undefined) ?? {};
+				const targetOrgId = params?.organizationId || body.organizationId || resolvedOrgId;
+				if (targetOrgId !== resolvedOrgId) {
+					return reply.code(403).send({ error: "Forbidden" });
+				}
 
-		const body = (request.body as { organizationId?: string } | undefined) ?? {};
-		const targetOrgId =
-			request.params?.organizationId || body.organizationId || resolvedOrgId;
-		if (targetOrgId !== resolvedOrgId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
-
-		return handleAcceptanceWaybillRequest(
-			targetOrgId,
-			request.body,
-			request,
-			reply,
-		);
+				return handleAcceptanceWaybillRequest(
+					targetOrgId,
+					request.body,
+					request,
+					reply,
+					tx,
+				);
+			},
+		});
 	};
 
-	server.post("/:organizationId/acceptance-waybill", handlePostWaybill);
-	server.post("/acceptance-waybill", handlePostWaybill);
-	server.post("/:organizationId/waybills", handlePostWaybill);
-	server.post("/waybills", handlePostWaybill);
-	server.post("/:organizationId/invoices", handlePostWaybill);
-	server.post("/invoices", handlePostWaybill);
+	registerPostWaybill("/:organizationId/acceptance-waybill");
+	registerPostWaybill("/acceptance-waybill");
+	registerPostWaybill("/:organizationId/waybills");
+	registerPostWaybill("/waybills");
+	registerPostWaybill("/:organizationId/invoices");
+	registerPostWaybill("/invoices");
 };

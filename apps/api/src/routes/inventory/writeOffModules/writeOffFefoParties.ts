@@ -6,13 +6,24 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { z } from "zod";
 import { isValidUuid } from "@dental/shared";
-import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { defineTenantMutation } from "../../../core/routeFactories.js";
+import { withTenantWriteCtx, type TenantDb } from "../../../db/rls.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { inventoryDeductBatchBodySchema, type inventoryDeductItemSchema } from "../types.js";
 import { executeFefoBatchDeduction } from "./writeOffFefoExecution.js";
 
-export async function handleDeductRequest(organizationId: string, rawBody: unknown, request: FastifyRequest, reply: FastifyReply) {
+const INVENTORY_WRITE_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+} as const;
+
+export async function handleDeductRequest(
+	organizationId: string,
+	rawBody: unknown,
+	request: FastifyRequest,
+	reply: FastifyReply,
+	executor?: TenantDb,
+) {
 	const bodyIdemKey =
 		rawBody && typeof rawBody === "object" && "idempotencyKey" in rawBody
 			? (rawBody as { idempotencyKey?: unknown }).idempotencyKey
@@ -50,9 +61,9 @@ export async function handleDeductRequest(organizationId: string, rawBody: unkno
 	const effectiveUserId = identity.userId ?? request.user?.id ?? null;
 
 	try {
-		const results = await withTenantCtx(organizationId, async (tx) =>
-			executeFefoBatchDeduction(tx, { organizationId, items: itemsList, commonReason, visitId, allowOverdraftDefault, effectiveUserId })
-		);
+		const runDeduct = async (tx: TenantDb) =>
+			executeFefoBatchDeduction(tx, { organizationId, items: itemsList, commonReason, visitId, allowOverdraftDefault, effectiveUserId });
+		const results = executor ? await runDeduct(executor) : await withTenantWriteCtx(organizationId, runDeduct);
 		const hasOverdraft = results.some((r) => r.isOverdraft);
 		return reply.status(200).send({
 			success: true,
@@ -75,12 +86,19 @@ export async function handleDeductRequest(organizationId: string, rawBody: unkno
 
 export async function registerFefoPartiesRoutes(server: FastifyInstance): Promise<void> {
 	const registerDeduct = (path: string) => {
-		server.post<{ Params?: { organizationId?: string }; Body?: { organizationId?: string } }>(path, async (request, reply) => {
-			const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "inventory deduct");
-			if (!resolvedOrgId) return;
-			const targetOrgId = request.params?.organizationId || request.body?.organizationId || resolvedOrgId;
-			if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
-			return handleDeductRequest(targetOrgId, request.body, request, reply);
+		defineTenantMutation(server, {
+			method: "POST",
+			path,
+			permission: "inventory.write",
+			authOptions: INVENTORY_WRITE_AUTH,
+			idempotency: "optional_header",
+			handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+				const params = request.params as { organizationId?: string } | undefined;
+				const body = request.body as { organizationId?: string } | undefined;
+				const targetOrgId = params?.organizationId || body?.organizationId || resolvedOrgId;
+				if (targetOrgId !== resolvedOrgId) return reply.code(403).send({ error: "Forbidden" });
+				return handleDeductRequest(targetOrgId, request.body, request, reply, tx);
+			},
 		});
 	};
 

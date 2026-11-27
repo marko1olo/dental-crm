@@ -15,7 +15,8 @@ import {
 	type TaxDeductionRelationship,
 } from "@dental/shared";
 import type { TenantDb } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { definePublicRoute } from "../../core/routeFactories.js";
+import { withTenantCtx, withTenantReadCtx } from "../../db/rls.js";
 import {
 	generatedDocuments,
 	organizations,
@@ -66,14 +67,7 @@ function sendTaxPayerRequisitesError(reply: FastifyReply, err: unknown): boolean
 export async function registerPortalTaxCertRoutes(server: FastifyInstance): Promise<void> {
 	// 11. FNS Order 824@ (КНД 1151156) Tax Deduction Certificate Preview & Verification
 	const handleTaxCertificatePreview = async (
-		request: FastifyRequest<{
-			Querystring: {
-				year?: string;
-				payerInn?: string;
-				payerFullName?: string;
-				relationship?: string;
-			};
-		}>,
+		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
 		const auth = extractPortalPatient(request);
@@ -94,7 +88,7 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 
 		const targetYear = queryParsed.data.year ? Number.parseInt(queryParsed.data.year, 10) : new Date().getFullYear();
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
+		return withTenantReadCtx(auth.organizationId, async (tx) => {
 			try {
 				const data = await buildTaxCertificatePayload(
 					tx,
@@ -122,25 +116,15 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 		});
 	};
 
-	server.get<{
-		Querystring: {
-			year?: string;
-			payerInn?: string;
-			payerFullName?: string;
-			relationship?: string;
-		};
-	}>("/tax-certificate/preview", handleTaxCertificatePreview);
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/tax-certificate/preview",
+		handler: async ({ request, reply }) => handleTaxCertificatePreview(request, reply),
+	});
 
 	// Канонический медицинский эндпоинт скачивания справки для налогового вычета
 	const handleTaxCertificateExport = async (
-		request: FastifyRequest<{
-			Querystring: {
-				year?: string;
-				payerInn?: string;
-				payerFullName?: string;
-				relationship?: string;
-			};
-		}>,
+		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
 		const auth = extractPortalPatient(request);
@@ -161,7 +145,7 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 
 		const targetYear = queryParsed.data.year ? Number.parseInt(queryParsed.data.year, 10) : new Date().getFullYear();
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
+		return withTenantReadCtx(auth.organizationId, async (tx) => {
 			try {
 				const data = await buildTaxCertificatePayload(
 					tx,
@@ -188,34 +172,21 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 		});
 	};
 
-	server.get<{
-		Querystring: {
-			year?: string;
-			payerInn?: string;
-			payerFullName?: string;
-			relationship?: string;
-		};
-	}>("/tax-certificate/download", handleTaxCertificateExport);
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/tax-certificate/download",
+		handler: async ({ request, reply }) => handleTaxCertificateExport(request, reply),
+	});
 
-	server.get<{
-		Querystring: {
-			year?: string;
-			payerInn?: string;
-			payerFullName?: string;
-			relationship?: string;
-		};
-	}>("/tax-certificate/html", handleTaxCertificateExport);
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/tax-certificate/html",
+		handler: async ({ request, reply }) => handleTaxCertificateExport(request, reply),
+	});
 
 	// Канонический медицинский эндпоинт генерации и скачивания PDF справки для ЛК Налогоплательщика (ФНС)
 	const handleTaxCertificatePdf = async (
-		request: FastifyRequest<{
-			Querystring: {
-				year?: string;
-				payerInn?: string;
-				payerFullName?: string;
-				relationship?: string;
-			};
-		}>,
+		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
 		const auth = extractPortalPatient(request);
@@ -238,7 +209,7 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 
 		let data: Awaited<ReturnType<typeof buildTaxCertificatePayload>> = null;
 		try {
-			data = await withTenantCtx(auth.organizationId, async (tx) => {
+			data = await withTenantReadCtx(auth.organizationId, async (tx) => {
 				return buildTaxCertificatePayload(
 					tx,
 					auth.patientId,
@@ -273,24 +244,18 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 			.send(result.pdf);
 	};
 
-	server.get<{
-		Querystring: {
-			year?: string;
-			payerInn?: string;
-			payerFullName?: string;
-			relationship?: string;
-		};
-	}>("/tax-certificate/pdf", handleTaxCertificatePdf);
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/tax-certificate/pdf",
+		handler: async ({ request, reply }) => handleTaxCertificatePdf(request, reply),
+	});
 
 	// Алиас для обратной совместимости
-	server.get<{
-		Querystring: {
-			year?: string;
-			payerInn?: string;
-			payerFullName?: string;
-			relationship?: string;
-		};
-	}>("/tax-certificate/knd-1151156", handleTaxCertificatePreview);
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/tax-certificate/knd-1151156",
+		handler: async ({ request, reply }) => handleTaxCertificatePreview(request, reply),
+	});
 
 	// 13. Clinical Extract HTML Export (Чистый клинический стандарт без советского канцелярита)
 	const handleClinicalExtractHtml = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -300,7 +265,7 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 			return { error: "Unauthorized" };
 		}
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
+		return withTenantReadCtx(auth.organizationId, async (tx) => {
 			const html = await renderClinicalExtractHtml(tx, auth.patientId, auth.organizationId);
 			if (!html) {
 				reply.status(404);
@@ -312,13 +277,19 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 		});
 	};
 
-	// Канонический медицинский роут
-	server.get("/clinical-extract/html", handleClinicalExtractHtml);
-	server.get("/clinical-extract/download", handleClinicalExtractHtml);
-	server.get("/medical-card/html", handleClinicalExtractHtml);
-	// Алиасы для обратной совместимости
-	server.get("/form-043/html", handleClinicalExtractHtml);
-	server.get("/extract-043/html", handleClinicalExtractHtml);
+	for (const path of [
+		"/clinical-extract/html",
+		"/clinical-extract/download",
+		"/medical-card/html",
+		"/form-043/html",
+		"/extract-043/html",
+	]) {
+		definePublicRoute(server, {
+			method: "GET",
+			path,
+			handler: async ({ request, reply }) => handleClinicalExtractHtml(request, reply),
+		});
+	}
 }
 
 async function buildTaxCertificatePayload(

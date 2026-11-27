@@ -4,7 +4,8 @@ import { fileURLToPath } from "node:url";
 import { CLINICAL_TOOTH_DEFECTS } from "@dental/shared";
 import { sql } from "drizzle-orm";
 import { loadAdditionalServerEnv } from "../../env/loadServerEnv.js";
-import { pool, db } from "../client.js";
+import { pool } from "../client.js";
+import { withSuperuserBypass } from "../rls.js";
 import {
 	clinicalTeethCatalog,
 	toothDefectsCatalog,
@@ -152,10 +153,11 @@ export async function seedClinicalCore(): Promise<{
 	templateCategoriesCount: number;
 	templatesCount: number;
 }> {
-	// 1. Сидинг 55 зубов/челюстей
-	for (const tooth of CLINICAL_TEETH_55) {
-		await db
-			.insert(clinicalTeethCatalog)
+	return withSuperuserBypass(async (tx) => {
+		// 1. Сидинг 55 зубов/челюстей
+		for (const tooth of CLINICAL_TEETH_55) {
+			await tx
+				.insert(clinicalTeethCatalog)
 			.values({
 				id: tooth.id,
 				code: tooth.code,
@@ -203,7 +205,7 @@ export async function seedClinicalCore(): Promise<{
 			}));
 
 	for (const defect of rawDefects) {
-		await db
+		await tx
 			.insert(toothDefectsCatalog)
 			.values({
 				id: defect.id,
@@ -261,7 +263,7 @@ export async function seedClinicalCore(): Promise<{
 			};
 		});
 
-		await db
+		await tx
 			.insert(mkbCategories)
 			.values(values)
 			.onConflictDoUpdate({
@@ -327,7 +329,7 @@ export async function seedClinicalCore(): Promise<{
 
 	for (const cat of rawCategories) {
 		const specialty = SPECIALTY_MAP[cat.id] || "therapy";
-		await db
+		await tx
 			.insert(outpatientTemplateCategories)
 			.values({
 				id: cat.id,
@@ -413,7 +415,7 @@ export async function seedClinicalCore(): Promise<{
 			};
 		});
 
-		await db
+		await tx
 			.insert(outpatientTemplates)
 			.values(values)
 			.onConflictDoUpdate({
@@ -428,13 +430,14 @@ export async function seedClinicalCore(): Promise<{
 			});
 	}
 
-	return {
-		teethCount: CLINICAL_TEETH_55.length,
-		defectsCount: rawDefects.length,
-		mkbCount: rawMkb.length,
-		templateCategoriesCount: rawCategories.length,
-		templatesCount: rawTemplates.length,
-	};
+		return {
+			teethCount: CLINICAL_TEETH_55.length,
+			defectsCount: rawDefects.length,
+			mkbCount: rawMkb.length,
+			templateCategoriesCount: rawCategories.length,
+			templatesCount: rawTemplates.length,
+		};
+	});
 }
 
 // Прямой запуск скрипта

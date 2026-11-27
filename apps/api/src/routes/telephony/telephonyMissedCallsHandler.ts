@@ -1,8 +1,7 @@
 import { and, desc, eq, or } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess, requireResolvedOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { communicationEvents } from "../../db/schema.js";
 
 export async function handleListMissedCalls(
@@ -29,7 +28,7 @@ export async function handleListMissedCalls(
 	const offset = (page - 1) * limit;
 	const onlyOpen = request.query.onlyOpen !== false;
 
-	const missedCalls = await withTenantCtx(orgId, async () => {
+	const missedCalls = await withTenantReadCtx(orgId, async (tx) => {
 		const conditions = [
 			eq(communicationEvents.organizationId, orgId),
 			eq(communicationEvents.channel, "phone"),
@@ -43,7 +42,7 @@ export async function handleListMissedCalls(
 				conditions.push(openStatusCondition);
 			}
 		}
-		return db
+		return tx
 			.select()
 			.from(communicationEvents)
 			.where(and(...conditions))

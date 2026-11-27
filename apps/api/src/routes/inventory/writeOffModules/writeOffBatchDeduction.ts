@@ -6,8 +6,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { generateUuidV7 } from "@dental/shared";
 import { z } from "zod";
-import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { defineTenantMutation, defineTenantQuery } from "../../../core/routeFactories.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import {
 	TreatmentConsumablesService,
@@ -138,9 +137,18 @@ function readHeaderIdempotencyKey(req: FastifyRequest): string | undefined {
 	return typeof str === "string" && str.trim() ? str.trim() : undefined;
 }
 
-async function checkOrg(req: FastifyRequest, rep: FastifyReply, tag: string): Promise<string | null> {
-	const resolved = await requireResolvedStaffOrAdminOrganizationId(req, rep, tag);
-	if (!resolved) return null;
+const INVENTORY_READ_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+	allowUnverifiedHeaderRead: true,
+} as const;
+
+const INVENTORY_WRITE_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+} as const;
+
+function resolveScopedOrgId(req: FastifyRequest, rep: FastifyReply, resolved: string): string | null {
 	const parsedParams = orgParamsSchema.safeParse(req.params ?? {});
 	if (!parsedParams.success) {
 		sendValidationError(rep, parsedParams.error.issues);
@@ -148,51 +156,61 @@ async function checkOrg(req: FastifyRequest, rep: FastifyReply, tag: string): Pr
 	}
 	const org = parsedParams.data.organizationId;
 	const target = org === "current" || !org ? resolved : org;
-	if (resolved !== target) { rep.code(403).send({ error: "Forbidden" }); return null; }
+	if (resolved !== target) {
+		rep.code(403).send({ error: "Forbidden" });
+		return null;
+	}
 	return target;
 }
 
 export async function registerBatchDeductionRoutes(server: FastifyInstance): Promise<void> {
 	// Списание расходников за смену и по технологическим картам услуг (BOM)
-	const handleShiftDeduct = async (request: FastifyRequest, reply: FastifyReply) => {
-		const targetOrgId = await checkOrg(request, reply, "inventory shift batch deduct");
-		if (!targetOrgId) return;
-		const parsedBody = shiftBatchDeductBodySchema.safeParse(request.body ?? {});
-		if (!parsedBody.success) return sendValidationError(reply, parsedBody.error.issues);
-		const body = parsedBody.data;
-		const effectiveUserId = getRequestIdentity(request).userId ?? request.user?.id ?? null;
+	const registerShiftDeduct = (p: string) => {
+		defineTenantMutation(server, {
+			method: "POST",
+			path: p,
+			permission: "inventory.write",
+			authOptions: INVENTORY_WRITE_AUTH,
+			idempotency: "optional_header",
+			handler: async ({ tx, organizationId: resolved, request, reply }) => {
+				const targetOrgId = resolveScopedOrgId(request, reply, resolved);
+				if (!targetOrgId) return;
+				const parsedBody = shiftBatchDeductBodySchema.safeParse(request.body ?? {});
+				if (!parsedBody.success) return sendValidationError(reply, parsedBody.error.issues);
+				const body = parsedBody.data;
+				const effectiveUserId = getRequestIdentity(request).userId ?? request.user?.id ?? null;
 
-		const headerIdemKey = readHeaderIdempotencyKey(request);
-		const bodyIdemKey = typeof body.idempotencyKey === "string" && body.idempotencyKey.trim()
-			? body.idempotencyKey.trim()
-			: undefined;
-		const idemKey = headerIdemKey ?? bodyIdemKey;
-		const effectiveMutationId = idemKey || body.clientMutationId || undefined;
+				const headerIdemKey = readHeaderIdempotencyKey(request);
+				const bodyIdemKey = typeof body.idempotencyKey === "string" && body.idempotencyKey.trim()
+					? body.idempotencyKey.trim()
+					: undefined;
+				const idemKey = headerIdemKey ?? bodyIdemKey;
+				const effectiveMutationId = idemKey || body.clientMutationId || undefined;
 
-		return withTenantCtx(targetOrgId, async (tx) => {
-			if (Array.isArray(body.services) && body.services.length > 0) {
-				return TreatmentConsumablesService.executeAutoBomWriteoff(tx, {
+				if (Array.isArray(body.services) && body.services.length > 0) {
+					return TreatmentConsumablesService.executeAutoBomWriteoff(tx, {
+						organizationId: targetOrgId,
+						visitId: body.visitId || effectiveMutationId || generateUuidV7(),
+						services: body.services.map((item) => ({
+							serviceId: item.serviceId,
+							...(item.quantity !== undefined ? { quantity: item.quantity } : {}),
+						})),
+						userId: effectiveUserId,
+						notes: body.notes,
+						allowOverdraft: true,
+						clientMutationId: effectiveMutationId,
+					});
+				}
+				return TreatmentConsumablesService.executeShiftBatchDeduction(tx, {
 					organizationId: targetOrgId,
-					visitId: body.visitId || effectiveMutationId || generateUuidV7(),
-					services: body.services.map((item) => ({
-						serviceId: item.serviceId,
-						...(item.quantity !== undefined ? { quantity: item.quantity } : {}),
-					})),
+					date: body.date,
 					userId: effectiveUserId,
-					notes: body.notes,
-					allowOverdraft: true,
+					items: body.items,
+					notes: body.notes ?? undefined,
+					idempotencyKey: idemKey,
 					clientMutationId: effectiveMutationId,
 				});
-			}
-			return TreatmentConsumablesService.executeShiftBatchDeduction(tx, {
-				organizationId: targetOrgId,
-				date: body.date,
-				userId: effectiveUserId,
-				items: body.items,
-				notes: body.notes ?? undefined,
-				idempotencyKey: idemKey,
-				clientMutationId: effectiveMutationId,
-			});
+			},
 		});
 	};
 	[
@@ -202,204 +220,292 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 		"/shift-deduct",
 		"/:organizationId/batch-writeoff",
 		"/batch-writeoff",
-	].forEach((p) => server.post(p, handleShiftDeduct));
+	].forEach(registerShiftDeduct);
 
 	// Сводка списания расходников за смену для ConsumablesBatchWriteoffModal
-	const handleShiftSummary = async (request: FastifyRequest, reply: FastifyReply) => {
-		const targetOrgId = await checkOrg(request, reply, "inventory shift summary");
-		if (!targetOrgId) return;
-		const parsedQuery = shiftSummaryQuerySchema.safeParse(request.query ?? {});
-		if (!parsedQuery.success) return sendValidationError(reply, parsedQuery.error.issues);
-		return withTenantCtx(targetOrgId, async (tx) =>
-			TreatmentConsumablesService.getShiftConsumablesSummary(tx, targetOrgId, parsedQuery.data.date)
-		);
+	const registerShiftSummary = (p: string) => {
+		defineTenantQuery(server, {
+			path: p,
+			permission: "inventory.read",
+			authOptions: INVENTORY_READ_AUTH,
+			handler: async ({ tx, organizationId: resolved, request, reply }) => {
+				const targetOrgId = resolveScopedOrgId(request, reply, resolved);
+				if (!targetOrgId) return;
+				const parsedQuery = shiftSummaryQuerySchema.safeParse(request.query ?? {});
+				if (!parsedQuery.success) return sendValidationError(reply, parsedQuery.error.issues);
+				return TreatmentConsumablesService.getShiftConsumablesSummary(
+					tx,
+					targetOrgId,
+					parsedQuery.data.date,
+				);
+			},
+		});
 	};
+	registerShiftSummary("/:organizationId/shift-summary");
+	registerShiftSummary("/shift-summary");
 
-	server.get("/:organizationId/shift-summary", handleShiftSummary);
-	server.get("/shift-summary", handleShiftSummary);
-
-	// 1-клик протоколы процедур
-	server.post("/:organizationId/quick-writeoff-standard-kit", async (req, rep) => {
-		const org = await checkOrg(req, rep, "standard kit"); if (!org) return;
-		const parsed = standardKitBodySchema.safeParse(req.body ?? {});
-		if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
-		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		const idempotencyKey = readHeaderIdempotencyKey(req);
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffStandardKit(tx, {
-			organizationId: org,
-			userId: uid,
-			visitId: parsed.data.visitId,
-			notes: parsed.data.notes,
-			idempotencyKey,
-		}));
+	// Протоколы процедур
+	defineTenantMutation(server, {
+		method: "POST",
+		path: "/:organizationId/quick-writeoff-standard-kit",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId: resolved, request: req, reply: rep }) => {
+			const org = resolveScopedOrgId(req, rep, resolved); if (!org) return;
+			const parsed = standardKitBodySchema.safeParse(req.body ?? {});
+			if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
+			const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
+			const idempotencyKey = readHeaderIdempotencyKey(req);
+			return TreatmentConsumablesService.quickWriteoffStandardKit(tx, {
+				organizationId: org,
+				userId: uid,
+				visitId: parsed.data.visitId,
+				notes: parsed.data.notes,
+				idempotencyKey,
+			});
+		},
 	});
 
-	const handleSteril = async (req: FastifyRequest, rep: FastifyReply) => {
-		const org = await checkOrg(req, rep, "steril kit"); if (!org) return;
-		const parsed = sterilizationKitBodySchema.safeParse(req.body ?? {});
-		if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
-		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		const idempotencyKey = readHeaderIdempotencyKey(req);
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffSterilizationKit(tx, {
-			organizationId: org,
-			count: parsed.data.count ?? 1,
-			userId: uid,
-			visitId: parsed.data.visitId,
-			notes: parsed.data.notes,
-			idempotencyKey,
-		}));
+	const registerSteril = (p: string) => {
+		defineTenantMutation(server, {
+			method: "POST",
+			path: p,
+			permission: "inventory.write",
+			authOptions: INVENTORY_WRITE_AUTH,
+			idempotency: "optional_header",
+			handler: async ({ tx, organizationId: resolved, request: req, reply: rep }) => {
+				const org = resolveScopedOrgId(req, rep, resolved); if (!org) return;
+				const parsed = sterilizationKitBodySchema.safeParse(req.body ?? {});
+				if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
+				const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
+				const idempotencyKey = readHeaderIdempotencyKey(req);
+				return TreatmentConsumablesService.quickWriteoffSterilizationKit(tx, {
+					organizationId: org,
+					count: parsed.data.count ?? 1,
+					userId: uid,
+					visitId: parsed.data.visitId,
+					notes: parsed.data.notes,
+					idempotencyKey,
+				});
+			},
+		});
 	};
-	server.post("/:organizationId/quick-writeoff-sterilization-kit", handleSteril);
-	server.post("/quick-writeoff-sterilization-kit", handleSteril);
+	registerSteril("/:organizationId/quick-writeoff-sterilization-kit");
+	registerSteril("/quick-writeoff-sterilization-kit");
 
-	const handleCarp = async (req: FastifyRequest, rep: FastifyReply) => {
-		const org = await checkOrg(req, rep, "carpules"); if (!org) return;
-		const parsed = carpulesBodySchema.safeParse(req.body ?? {});
-		if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
-		const b = parsed.data;
-		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		const idempotencyKey = readHeaderIdempotencyKey(req);
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffCarpules(tx, {
-			organizationId: org,
-			carpulesCount: b.carpulesCount ?? b.count ?? 1,
-			needlesCount: b.needlesCount,
-			drugName: b.drugName ?? b.drugId,
-			needleName: b.needleName,
-			userId: uid,
-			visitId: b.visitId,
-			notes: b.notes,
-			idempotencyKey,
-		}));
+	const registerCarp = (p: string) => {
+		defineTenantMutation(server, {
+			method: "POST",
+			path: p,
+			permission: "inventory.write",
+			authOptions: INVENTORY_WRITE_AUTH,
+			idempotency: "optional_header",
+			handler: async ({ tx, organizationId: resolved, request: req, reply: rep }) => {
+				const org = resolveScopedOrgId(req, rep, resolved); if (!org) return;
+				const parsed = carpulesBodySchema.safeParse(req.body ?? {});
+				if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
+				const b = parsed.data;
+				const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
+				const idempotencyKey = readHeaderIdempotencyKey(req);
+				return TreatmentConsumablesService.quickWriteoffCarpules(tx, {
+					organizationId: org,
+					carpulesCount: b.carpulesCount ?? b.count ?? 1,
+					needlesCount: b.needlesCount,
+					drugName: b.drugName ?? b.drugId,
+					needleName: b.needleName,
+					userId: uid,
+					visitId: b.visitId,
+					notes: b.notes,
+					idempotencyKey,
+				});
+			},
+		});
 	};
-	server.post("/:organizationId/quick-writeoff-carpules", handleCarp);
-	server.post("/quick-writeoff-carpules", handleCarp);
+	registerCarp("/:organizationId/quick-writeoff-carpules");
+	registerCarp("/quick-writeoff-carpules");
 
-	server.post("/:organizationId/quick-writeoff-shift-bundle", async (req, rep) => {
-		const org = await checkOrg(req, rep, "shift bundle"); if (!org) return;
-		const parsed = shiftBundleBodySchema.safeParse(req.body ?? {});
-		if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
-		const b = parsed.data;
-		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		const idempotencyKey = readHeaderIdempotencyKey(req);
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffShiftBundle(tx, {
-			organizationId: org,
-			bundleType: b.bundleType || "therapy",
-			userId: uid,
-			visitId: b.visitId,
-			notes: b.notes,
-			idempotencyKey,
-		}));
+	defineTenantMutation(server, {
+		method: "POST",
+		path: "/:organizationId/quick-writeoff-shift-bundle",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId: resolved, request: req, reply: rep }) => {
+			const org = resolveScopedOrgId(req, rep, resolved); if (!org) return;
+			const parsed = shiftBundleBodySchema.safeParse(req.body ?? {});
+			if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
+			const b = parsed.data;
+			const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
+			const idempotencyKey = readHeaderIdempotencyKey(req);
+			return TreatmentConsumablesService.quickWriteoffShiftBundle(tx, {
+				organizationId: org,
+				bundleType: b.bundleType || "therapy",
+				userId: uid,
+				visitId: b.visitId,
+				notes: b.notes,
+				idempotencyKey,
+			});
+		},
 	});
 
-	server.post("/:organizationId/quick-writeoff-visit-bundle", async (req, rep) => {
-		const org = await checkOrg(req, rep, "visit bundle"); if (!org) return;
-		const parsed = visitBundleBodySchema.safeParse(req.body ?? {});
-		if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
-		const b = parsed.data;
-		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		const idempotencyKey = readHeaderIdempotencyKey(req);
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
-			organizationId: org,
-			visitType: b.visitType || "therapy",
-			userId: uid,
-			visitId: b.visitId,
-			notes: b.notes,
-			idempotencyKey,
-		}));
+	defineTenantMutation(server, {
+		method: "POST",
+		path: "/:organizationId/quick-writeoff-visit-bundle",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId: resolved, request: req, reply: rep }) => {
+			const org = resolveScopedOrgId(req, rep, resolved); if (!org) return;
+			const parsed = visitBundleBodySchema.safeParse(req.body ?? {});
+			if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
+			const b = parsed.data;
+			const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
+			const idempotencyKey = readHeaderIdempotencyKey(req);
+			return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+				organizationId: org,
+				visitType: b.visitType || "therapy",
+				userId: uid,
+				visitId: b.visitId,
+				notes: b.notes,
+				idempotencyKey,
+			});
+		},
 	});
 
-	server.post("/:organizationId/quick-writeoff-orthopedic", async (req, rep) => {
-		const org = await checkOrg(req, rep, "orthopedic"); if (!org) return;
-		const parsed = orthopedicProtocolBodySchema.safeParse(req.body ?? {});
-		if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
-		const b = parsed.data;
-		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		const idempotencyKey = readHeaderIdempotencyKey(req);
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffOrthopedicProtocol(tx, {
-			organizationId: org,
-			protocolId: b.protocolId || "ortho_prep_zirconia_emax",
-			userId: uid,
-			toothNumber: b.toothNumber,
-			visitId: b.visitId,
-			notes: b.notes,
-			idempotencyKey,
-		}));
+	defineTenantMutation(server, {
+		method: "POST",
+		path: "/:organizationId/quick-writeoff-orthopedic",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId: resolved, request: req, reply: rep }) => {
+			const org = resolveScopedOrgId(req, rep, resolved); if (!org) return;
+			const parsed = orthopedicProtocolBodySchema.safeParse(req.body ?? {});
+			if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
+			const b = parsed.data;
+			const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
+			const idempotencyKey = readHeaderIdempotencyKey(req);
+			return TreatmentConsumablesService.quickWriteoffOrthopedicProtocol(tx, {
+				organizationId: org,
+				protocolId: b.protocolId || "ortho_prep_zirconia_emax",
+				userId: uid,
+				toothNumber: b.toothNumber,
+				visitId: b.visitId,
+				notes: b.notes,
+				idempotencyKey,
+			});
+		},
 	});
 
-	const handleSurg = async (req: FastifyRequest, rep: FastifyReply) => {
-		const org = await checkOrg(req, rep, "surgery"); if (!org) return;
-		const parsed = surgeryBodySchema.safeParse(req.body ?? {});
-		if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
-		const b = parsed.data;
-		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		const idempotencyKey = readHeaderIdempotencyKey(req);
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffSurgery(tx, {
-			organizationId: org,
-			userId: uid,
-			category: b.category || "extraction",
-			operationTitle: b.operationTitle,
-			toothNumber: b.toothNumber,
-			visitId: b.visitId,
-			notes: b.notes,
-			idempotencyKey,
-		}));
+	const registerSurg = (p: string) => {
+		defineTenantMutation(server, {
+			method: "POST",
+			path: p,
+			permission: "inventory.write",
+			authOptions: INVENTORY_WRITE_AUTH,
+			idempotency: "optional_header",
+			handler: async ({ tx, organizationId: resolved, request: req, reply: rep }) => {
+				const org = resolveScopedOrgId(req, rep, resolved); if (!org) return;
+				const parsed = surgeryBodySchema.safeParse(req.body ?? {});
+				if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
+				const b = parsed.data;
+				const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
+				const idempotencyKey = readHeaderIdempotencyKey(req);
+				return TreatmentConsumablesService.quickWriteoffSurgery(tx, {
+					organizationId: org,
+					userId: uid,
+					category: b.category || "extraction",
+					operationTitle: b.operationTitle,
+					toothNumber: b.toothNumber,
+					visitId: b.visitId,
+					notes: b.notes,
+					idempotencyKey,
+				});
+			},
+		});
 	};
-	server.post("/:organizationId/quick-writeoff-surgery", handleSurg);
-	server.post("/quick-writeoff-surgery", handleSurg);
+	registerSurg("/:organizationId/quick-writeoff-surgery");
+	registerSurg("/quick-writeoff-surgery");
 
-	const handleHygiene = async (req: FastifyRequest, rep: FastifyReply) => {
-		const org = await checkOrg(req, rep, "hygiene"); if (!org) return;
-		const parsed = hygieneBodySchema.safeParse(req.body ?? {});
-		if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
-		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		const idempotencyKey = readHeaderIdempotencyKey(req);
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
-			organizationId: org,
-			visitType: "hygiene",
-			userId: uid,
-			visitId: parsed.data.visitId,
-			notes: parsed.data.notes,
-			idempotencyKey,
-		}));
+	const registerHygiene = (p: string) => {
+		defineTenantMutation(server, {
+			method: "POST",
+			path: p,
+			permission: "inventory.write",
+			authOptions: INVENTORY_WRITE_AUTH,
+			idempotency: "optional_header",
+			handler: async ({ tx, organizationId: resolved, request: req, reply: rep }) => {
+				const org = resolveScopedOrgId(req, rep, resolved); if (!org) return;
+				const parsed = hygieneBodySchema.safeParse(req.body ?? {});
+				if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
+				const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
+				const idempotencyKey = readHeaderIdempotencyKey(req);
+				return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+					organizationId: org,
+					visitType: "hygiene",
+					userId: uid,
+					visitId: parsed.data.visitId,
+					notes: parsed.data.notes,
+					idempotencyKey,
+				});
+			},
+		});
 	};
-	server.post("/:organizationId/quick-writeoff-hygiene", handleHygiene);
-	server.post("/quick-writeoff-hygiene", handleHygiene);
+	registerHygiene("/:organizationId/quick-writeoff-hygiene");
+	registerHygiene("/quick-writeoff-hygiene");
 
-	server.post("/:organizationId/quick-writeoff-package", async (req, rep) => {
-		const org = await checkOrg(req, rep, "package"); if (!org) return;
-		const parsed = quickPackageBodySchema.safeParse(req.body ?? {});
-		if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
-		const b = parsed.data;
-		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		const idempotencyKey = readHeaderIdempotencyKey(req);
-		return withTenantCtx(org, (tx) => executeQuickPackageWriteOff(tx, {
-			organizationId: org,
-			effectiveUserId: uid,
-			packageId: b.packageId,
-			quantityMultiplier: b.quantityMultiplier,
-			visitId: b.visitId,
-			notes: b.notes,
-			idempotencyKey,
-		}));
+	defineTenantMutation(server, {
+		method: "POST",
+		path: "/:organizationId/quick-writeoff-package",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId: resolved, request: req, reply: rep }) => {
+			const org = resolveScopedOrgId(req, rep, resolved); if (!org) return;
+			const parsed = quickPackageBodySchema.safeParse(req.body ?? {});
+			if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
+			const b = parsed.data;
+			const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
+			const idempotencyKey = readHeaderIdempotencyKey(req);
+			return executeQuickPackageWriteOff(tx, {
+				organizationId: org,
+				effectiveUserId: uid,
+				packageId: b.packageId,
+				quantityMultiplier: b.quantityMultiplier,
+				visitId: b.visitId,
+				notes: b.notes,
+				idempotencyKey,
+			});
+		},
 	});
 
-	const handleAntishock = async (req: FastifyRequest, rep: FastifyReply) => {
-		const org = await checkOrg(req, rep, "antishock"); if (!org) return;
-		const parsed = antishockBodySchema.safeParse(req.body ?? {});
-		if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
-		const b = parsed.data;
-		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
-		const idempotencyKey = readHeaderIdempotencyKey(req);
-		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffEmergencyAntishock(tx, {
-			organizationId: org,
-			userId: uid,
-			visitId: b.visitId,
-			patientName: b.patientName,
-			doctorName: b.doctorName,
-			notes: b.notes,
-			idempotencyKey,
-		}));
+	const registerAntishock = (p: string) => {
+		defineTenantMutation(server, {
+			method: "POST",
+			path: p,
+			permission: "inventory.write",
+			authOptions: INVENTORY_WRITE_AUTH,
+			idempotency: "optional_header",
+			handler: async ({ tx, organizationId: resolved, request: req, reply: rep }) => {
+				const org = resolveScopedOrgId(req, rep, resolved); if (!org) return;
+				const parsed = antishockBodySchema.safeParse(req.body ?? {});
+				if (!parsed.success) return sendValidationError(rep, parsed.error.issues);
+				const b = parsed.data;
+				const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
+				const idempotencyKey = readHeaderIdempotencyKey(req);
+				return TreatmentConsumablesService.quickWriteoffEmergencyAntishock(tx, {
+					organizationId: org,
+					userId: uid,
+					visitId: b.visitId,
+					patientName: b.patientName,
+					doctorName: b.doctorName,
+					notes: b.notes,
+					idempotencyKey,
+				});
+			},
+		});
 	};
-	server.post("/:organizationId/quick-writeoff-emergency-antishock", handleAntishock);
-	server.post("/quick-writeoff-emergency-antishock", handleAntishock);
+	registerAntishock("/:organizationId/quick-writeoff-emergency-antishock");
+	registerAntishock("/quick-writeoff-emergency-antishock");
 }

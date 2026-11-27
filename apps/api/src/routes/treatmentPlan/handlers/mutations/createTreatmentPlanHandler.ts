@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { basisPointsFromPercent, kopecksToRubles, rublesToKopecks, percentageOfKopecks, toExactKopecks } from "@dental/shared";
-import { withSavepoint, withTenantCtx } from "../../../../db/rls.js";
+import { withSavepoint, withTenantWriteCtx, type TenantDb } from "../../../../db/rls.js";
 import {
 	auditEvents,
 	patients,
@@ -21,6 +21,7 @@ export async function handleCreateTreatmentPlan(
 	request: FastifyRequest,
 	reply: FastifyReply,
 	organizationId: string,
+	tx?: TenantDb,
 ) {
 	const rawIdempotencyKey =
 		(request.headers?.["idempotency-key"] as string | undefined) ??
@@ -110,8 +111,8 @@ export async function handleCreateTreatmentPlan(
 	}
 	const calculatedTotalRub = kopecksToRubles(totalKopecks);
 
-	const result = await withTenantCtx(organizationId, async (tx) => {
-		const [patient] = await tx
+	const runCreate = async (executor: TenantDb) => {
+		const [patient] = await executor
 			.select({ id: patients.id, fullName: patients.fullName })
 			.from(patients)
 			.where(and(eq(patients.id, data.patientId), eq(patients.organizationId, organizationId)))
@@ -120,7 +121,7 @@ export async function handleCreateTreatmentPlan(
 		if (!patient) {
 			return null;
 		}
-		const [newPlan] = await tx
+		const [newPlan] = await executor
 			.insert(treatmentPlans)
 			.values({
 				...(data.id ? { id: data.id } : {}),
@@ -173,7 +174,7 @@ export async function handleCreateTreatmentPlan(
 				completionPercentage: st.completionPercentage,
 			}));
 
-			const createdStagesRows = await tx
+			const createdStagesRows = await executor
 				.insert(treatmentPlanStages)
 				.values(stagesToInsert)
 				.returning();
@@ -219,7 +220,7 @@ export async function handleCreateTreatmentPlan(
 			}
 
 			if (itemsToInsert.length > 0) {
-				const createdItemsRows = await tx
+				const createdItemsRows = await executor
 					.insert(treatmentPlanItemsNew)
 					.values(itemsToInsert)
 					.returning();
@@ -254,7 +255,7 @@ export async function handleCreateTreatmentPlan(
 		}
 
 		if (allItemsFlat.length > 0) {
-			await syncUpsertPlanLedgerItems(tx, {
+			await syncUpsertPlanLedgerItems(executor, {
 				organizationId,
 				patientId: data.patientId,
 				savedPlanId: newPlan.id,
@@ -265,7 +266,7 @@ export async function handleCreateTreatmentPlan(
 		}
 
 		try {
-			await withSavepoint(tx, async (spTx) => {
+			await withSavepoint(executor, async (spTx) => {
 				await spTx.insert(auditEvents).values({
 					organizationId,
 					actorUserId: null,
@@ -287,7 +288,9 @@ export async function handleCreateTreatmentPlan(
 		};
 
 		return responsePayload;
-	});
+	};
+
+	const result = tx ? await runCreate(tx) : await withTenantWriteCtx(organizationId, runCreate);
 
 	if (!result) {
 		return reply.code(404).send({

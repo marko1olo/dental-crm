@@ -1,6 +1,7 @@
 import { and, desc, eq, gt, lt, ne, notInArray, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { withTenantCtx } from "../../db/rls.js";
+import { definePublicRoute } from "../../core/routeFactories.js";
+import { withTenantCtx, withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	appointments,
 	chairs,
@@ -20,134 +21,138 @@ import {
 	bookAppointmentBodySchema,
 	cancelAppointmentBodySchema,
 	rescheduleAppointmentBodySchema,
-	type BookAppointmentBody,
 	type CancelAppointmentBody,
 } from "./types.js";
 import { isValidUuid } from "@dental/shared";
 
 export async function registerPortalAppointmentsRoutes(server: FastifyInstance): Promise<void> {
 	// 17. Get Patient Appointments (Protected)
-	server.get("/appointments", async (request, reply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized" };
-		}
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/appointments",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized" };
+			}
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
-			const list = await tx
-				.select({
-					id: appointments.id,
-					doctorUserId: appointments.doctorUserId,
-					chairId: appointments.chairId,
-					startsAt: appointments.startsAt,
-					endsAt: appointments.endsAt,
-					status: appointments.status,
-					reason: appointments.reason,
-					comment: appointments.comment,
-				})
-				.from(appointments)
-				.where(
-					and(
-						eq(appointments.patientId, auth.patientId),
-						eq(appointments.organizationId, auth.organizationId),
-					),
-				)
-				.orderBy(desc(appointments.startsAt));
+			return withTenantReadCtx(auth.organizationId, async (tx) => {
+				const list = await tx
+					.select({
+						id: appointments.id,
+						doctorUserId: appointments.doctorUserId,
+						chairId: appointments.chairId,
+						startsAt: appointments.startsAt,
+						endsAt: appointments.endsAt,
+						status: appointments.status,
+						reason: appointments.reason,
+						comment: appointments.comment,
+					})
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.patientId, auth.patientId),
+							eq(appointments.organizationId, auth.organizationId),
+						),
+					)
+					.orderBy(desc(appointments.startsAt));
 
-			return { success: true, appointments: list };
-		});
+				return { success: true, appointments: list };
+			});
+		},
 	});
 
 	// 18. Book Appointment with Strict Pessimistic Double-Booking Concurrency Lock (Protected)
-	server.post<{
-		Body: BookAppointmentBody;
-	}>("/appointments", async (request, reply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized" };
-		}
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/appointments",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized" };
+			}
 
-		const rawIdempotencyKey =
-			(request.headers["idempotency-key"] as string | undefined) ||
-			(request.headers["x-idempotency-key"] as string | undefined);
-		const idempotencyKey = rawIdempotencyKey?.trim();
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
-			};
-		}
+			const rawIdempotencyKey =
+				(request.headers["idempotency-key"] as string | undefined) ||
+				(request.headers["x-idempotency-key"] as string | undefined);
+			const idempotencyKey = rawIdempotencyKey?.trim();
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				reply.status(400);
+				return {
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+				};
+			}
 
-		const parsedBody = bookAppointmentBodySchema.safeParse(request.body ?? {});
-		if (!parsedBody.success) {
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Некорректные параметры записи на приём.",
-				details: parsedBody.error.format(),
-			};
-		}
+			const parsedBody = bookAppointmentBodySchema.safeParse(request.body ?? {});
+			if (!parsedBody.success) {
+				reply.status(400);
+				return {
+					error: "ValidationError",
+					message: "Некорректные параметры записи на приём.",
+					details: parsedBody.error.format(),
+				};
+			}
 
-		const doctorId = parsedBody.data.doctorId?.trim() ?? "";
-		const startsAtStr = parsedBody.data.startsAt?.trim() ?? "";
-		const endsAtStr = parsedBody.data.endsAt?.trim() ?? "";
-		const reason =
-			parsedBody.data.reason?.trim() || "Запись через личный кабинет";
-		const comment = parsedBody.data.comment?.trim() || undefined;
+			const doctorId = parsedBody.data.doctorId?.trim() ?? "";
+			const startsAtStr = parsedBody.data.startsAt?.trim() ?? "";
+			const endsAtStr = parsedBody.data.endsAt?.trim() ?? "";
+			const reason =
+				parsedBody.data.reason?.trim() || "Запись через личный кабинет";
+			const comment = parsedBody.data.comment?.trim() || undefined;
 
-		if (!doctorId || !startsAtStr || !endsAtStr) {
-			reply.status(400);
-			return {
-				error: "MissingRequiredFields",
-				message: "Укажите врача, время начала и окончания приёма.",
-			};
-		}
+			if (!doctorId || !startsAtStr || !endsAtStr) {
+				reply.status(400);
+				return {
+					error: "MissingRequiredFields",
+					message: "Укажите врача, время начала и окончания приёма.",
+				};
+			}
 
-		if (!isValidUuid(doctorId)) {
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Идентификатор врача должен быть валидным UUID.",
-			};
-		}
+			if (!isValidUuid(doctorId)) {
+				reply.status(400);
+				return {
+					error: "ValidationError",
+					message: "Идентификатор врача должен быть валидным UUID.",
+				};
+			}
 
-		const startDate = new Date(startsAtStr);
-		const endDate = new Date(endsAtStr);
-		if (
-			Number.isNaN(startDate.getTime()) ||
-			Number.isNaN(endDate.getTime()) ||
-			endDate <= startDate
-		) {
-			reply.status(400);
-			return {
-				error: "InvalidAppointmentTime",
-				message: "Некорректное время приёма.",
-			};
-		}
+			const startDate = new Date(startsAtStr);
+			const endDate = new Date(endsAtStr);
+			if (
+				Number.isNaN(startDate.getTime()) ||
+				Number.isNaN(endDate.getTime()) ||
+				endDate <= startDate
+			) {
+				reply.status(400);
+				return {
+					error: "InvalidAppointmentTime",
+					message: "Некорректное время приёма.",
+				};
+			}
 
-		// SEV-2: Запрет бронирования в прошлое
-		if (startDate.getTime() <= Date.now()) {
-			reply.status(400);
-			return {
-				error: "InvalidAppointmentTime",
-				message: "Нельзя записаться на прошедшее время.",
-			};
-		}
+			// SEV-2: Запрет бронирования в прошлое
+			if (startDate.getTime() <= Date.now()) {
+				reply.status(400);
+				return {
+					error: "InvalidAppointmentTime",
+					message: "Нельзя записаться на прошедшее время.",
+				};
+			}
 
-		// SEV-2: Защита от абсурдной длительности приёма
-		const durationMs = endDate.getTime() - startDate.getTime();
-		if (durationMs < 15 * 60 * 1000 || durationMs > 8 * 60 * 60 * 1000) {
-			reply.status(400);
-			return {
-				error: "InvalidAppointmentTime",
-				message: "Длительность приёма должна составлять от 15 минут до 8 часов.",
-			};
-		}
+			// SEV-2: Защита от абсурдной длительности приёма
+			const durationMs = endDate.getTime() - startDate.getTime();
+			if (durationMs < 15 * 60 * 1000 || durationMs > 8 * 60 * 60 * 1000) {
+				reply.status(400);
+				return {
+					error: "InvalidAppointmentTime",
+					message: "Длительность приёма должна составлять от 15 минут до 8 часов.",
+				};
+			}
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
+			return withTenantWriteCtx(auth.organizationId, async (tx) => {
 			// 1. Проверка рабочего графика клиники и врача (Мандат 8a, 8k: исключить запись в 3 ночи)
 				const [orgRow] = await tx
 					.select({
@@ -359,41 +364,42 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 				}
 				return { success: true, appointment: created };
 			});
+		},
 	});
 
 	// 19. Cancel Patient Appointment (Protected)
-	server.patch<{
-		Params: { id: string };
-		Body: CancelAppointmentBody;
-	}>("/appointments/:id/cancel", async (request, reply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized" };
-		}
+	definePublicRoute(server, {
+		method: "PATCH",
+		path: "/appointments/:id/cancel",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized" };
+			}
 
-		const appointmentId = request.params.id?.trim();
-		if (!appointmentId || !isValidUuid(appointmentId)) {
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Идентификатор записи на приём должен быть валидным UUID.",
-			};
-		}
-		const parsedBody = cancelAppointmentBodySchema.safeParse(request.body ?? {});
-		if (!parsedBody.success) {
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Некорректные параметры отмены записи.",
-				details: parsedBody.error.format(),
-			};
-		}
-		const cancelReason =
-			parsedBody.data.reason?.trim() || "Отменено пациентом через личный кабинет";
+			const appointmentId = (request.params as { id?: string } | undefined)?.id?.trim();
+			if (!appointmentId || !isValidUuid(appointmentId)) {
+				reply.status(400);
+				return {
+					error: "ValidationError",
+					message: "Идентификатор записи на приём должен быть валидным UUID.",
+				};
+			}
+			const parsedBody = cancelAppointmentBodySchema.safeParse(request.body ?? {});
+			if (!parsedBody.success) {
+				reply.status(400);
+				return {
+					error: "ValidationError",
+					message: "Некорректные параметры отмены записи.",
+					details: parsedBody.error.format(),
+				};
+			}
+			const cancelReason =
+				parsedBody.data.reason?.trim() || "Отменено пациентом через личный кабинет";
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
-			const [appRow] = await tx
+			return withTenantWriteCtx(auth.organizationId, async (tx) => {
+				const [appRow] = await tx
 					.select()
 					.from(appointments)
 					.where(
@@ -444,78 +450,75 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 
 				return { success: true, appointment: updated };
 			});
+		},
 	});
 
 	// 19.1 Reschedule Patient Appointment (Protected)
-	server.patch<{
-		Params: { id: string };
-		Body: {
-			startsAt: string;
-			endsAt?: string;
-			reason?: string;
-		};
-	}>("/appointments/:id/reschedule", async (request, reply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized" };
-		}
+	definePublicRoute(server, {
+		method: "PATCH",
+		path: "/appointments/:id/reschedule",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized" };
+			}
 
-		const appointmentId = request.params.id?.trim();
-		if (!appointmentId || !isValidUuid(appointmentId)) {
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Идентификатор записи на приём должен быть валидным UUID.",
-			};
-		}
+			const appointmentId = (request.params as { id?: string } | undefined)?.id?.trim();
+			if (!appointmentId || !isValidUuid(appointmentId)) {
+				reply.status(400);
+				return {
+					error: "ValidationError",
+					message: "Идентификатор записи на приём должен быть валидным UUID.",
+				};
+			}
 
-		const parsedBody = rescheduleAppointmentBodySchema.safeParse(
-			request.body ?? {},
-		);
-		if (!parsedBody.success) {
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Некорректные параметры переноса записи.",
-				details: parsedBody.error.format(),
-			};
-		}
+			const parsedBody = rescheduleAppointmentBodySchema.safeParse(
+				request.body ?? {},
+			);
+			if (!parsedBody.success) {
+				reply.status(400);
+				return {
+					error: "ValidationError",
+					message: "Некорректные параметры переноса записи.",
+					details: parsedBody.error.format(),
+				};
+			}
 
-		const startsAtStr = parsedBody.data.startsAt?.trim() ?? "";
-		if (!startsAtStr) {
-			reply.status(400);
-			return {
-				error: "MissingRequiredFields",
-				message: "Укажите новое время начала приёма.",
-			};
-		}
+			const startsAtStr = parsedBody.data.startsAt?.trim() ?? "";
+			if (!startsAtStr) {
+				reply.status(400);
+				return {
+					error: "MissingRequiredFields",
+					message: "Укажите новое время начала приёма.",
+				};
+			}
 
-		const startDate = new Date(startsAtStr);
-		const endsAtStr = parsedBody.data.endsAt?.trim() ?? "";
-		const endDate = endsAtStr ? new Date(endsAtStr) : new Date(startDate.getTime() + 30 * 60 * 1000);
+			const startDate = new Date(startsAtStr);
+			const endsAtStr = parsedBody.data.endsAt?.trim() ?? "";
+			const endDate = endsAtStr ? new Date(endsAtStr) : new Date(startDate.getTime() + 30 * 60 * 1000);
 
-		if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate <= startDate) {
-			reply.status(400);
-			return {
-				error: "InvalidAppointmentTime",
-				message: "Некорректное время приёма.",
-			};
-		}
+			if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate <= startDate) {
+				reply.status(400);
+				return {
+					error: "InvalidAppointmentTime",
+					message: "Некорректное время приёма.",
+				};
+			}
 
-		if (startDate.getTime() <= Date.now()) {
-			reply.status(400);
-			return {
-				error: "InvalidAppointmentTime",
-				message: "Нельзя перенести запись на прошедшее время.",
-			};
-		}
+			if (startDate.getTime() <= Date.now()) {
+				reply.status(400);
+				return {
+					error: "InvalidAppointmentTime",
+					message: "Нельзя перенести запись на прошедшее время.",
+				};
+			}
 
-		const rescheduleReason =
-			parsedBody.data.reason?.trim() || "Перенос пациентом через личный кабинет";
+			const rescheduleReason =
+				parsedBody.data.reason?.trim() || "Перенос пациентом через личный кабинет";
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
-			const [appRow] = await tx
+			return withTenantWriteCtx(auth.organizationId, async (tx) => {
+				const [appRow] = await tx
 					.select()
 					.from(appointments)
 					.where(
@@ -754,34 +757,39 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 
 				return { success: true, appointment: updated };
 			});
+		},
 	});
 
 	// 20. Get Clinic Doctors for Online Booking (Protected)
-	server.get("/doctors", async (request, reply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized" };
-		}
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/doctors",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized" };
+			}
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
-			const list = await tx
-				.select({
-					id: users.id,
-					fullName: users.fullName,
-					specialties: users.specialties,
-				})
-				.from(users)
-				.where(
-					and(
-						eq(users.organizationId, auth.organizationId),
-						eq(users.role, "doctor"),
-						eq(users.isActive, true),
-					),
-				)
-				.limit(100);
+			return withTenantReadCtx(auth.organizationId, async (tx) => {
+				const list = await tx
+					.select({
+						id: users.id,
+						fullName: users.fullName,
+						specialties: users.specialties,
+					})
+					.from(users)
+					.where(
+						and(
+							eq(users.organizationId, auth.organizationId),
+							eq(users.role, "doctor"),
+							eq(users.isActive, true),
+						),
+					)
+					.limit(100);
 
-			return { success: true, doctors: list };
-		});
+				return { success: true, doctors: list };
+			});
+		},
 	});
 }

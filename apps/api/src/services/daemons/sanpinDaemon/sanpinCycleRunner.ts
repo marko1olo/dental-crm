@@ -11,7 +11,8 @@ import {
 	type SterilizationPackagingType,
 } from "@dental/shared";
 import { desc, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import type { TenantDb } from "../../../db/client.js";
+import { withSuperuserBypass, withTenantReadCtx } from "../../../db/rls.js";
 import { sterilizationLogs, users } from "../../../db/schema.js";
 import {
 	PACKAGING_TYPE_RU_MAP,
@@ -149,35 +150,40 @@ export async function runSanpinSterilizationAudit(options?: SanpinSterilizationA
 		const warningWindowDays = options?.warningWindowDays ?? 3;
 
 		// Retrieve sterilization logs
-		const records = await db
-			.select({
-				id: sterilizationLogs.id,
-				organizationId: sterilizationLogs.organizationId,
-				deviceName: sterilizationLogs.deviceName,
-				autoclaveId: sterilizationLogs.autoclaveId,
-				cycleNumber: sterilizationLogs.cycleNumber,
-				packagingType: sterilizationLogs.packagingType,
-				expiresAt: sterilizationLogs.expiresAt,
-				itemsDescription: sterilizationLogs.itemsDescription,
-				operatorId: sterilizationLogs.operatorId,
-				barcode: sterilizationLogs.barcode,
-				status: sterilizationLogs.status,
-				passedIndicator: sterilizationLogs.passedIndicator,
-				timestamp: sterilizationLogs.timestamp,
-				createdAt: sterilizationLogs.createdAt,
-				operatorName: users.fullName,
-			})
-			.from(sterilizationLogs)
-			.leftJoin(users, eq(users.id, sterilizationLogs.operatorId))
-			.where(
-				options?.organizationId
-					? eq(sterilizationLogs.organizationId, options.organizationId)
-					: undefined,
-			)
-			.orderBy(
-				desc(sterilizationLogs.timestamp),
-				desc(sterilizationLogs.createdAt),
-			);
+		const fetchRecords = async (tx: TenantDb) =>
+			tx
+				.select({
+					id: sterilizationLogs.id,
+					organizationId: sterilizationLogs.organizationId,
+					deviceName: sterilizationLogs.deviceName,
+					autoclaveId: sterilizationLogs.autoclaveId,
+					cycleNumber: sterilizationLogs.cycleNumber,
+					packagingType: sterilizationLogs.packagingType,
+					expiresAt: sterilizationLogs.expiresAt,
+					itemsDescription: sterilizationLogs.itemsDescription,
+					operatorId: sterilizationLogs.operatorId,
+					barcode: sterilizationLogs.barcode,
+					status: sterilizationLogs.status,
+					passedIndicator: sterilizationLogs.passedIndicator,
+					timestamp: sterilizationLogs.timestamp,
+					createdAt: sterilizationLogs.createdAt,
+					operatorName: users.fullName,
+				})
+				.from(sterilizationLogs)
+				.leftJoin(users, eq(users.id, sterilizationLogs.operatorId))
+				.where(
+					options?.organizationId
+						? eq(sterilizationLogs.organizationId, options.organizationId)
+						: undefined,
+				)
+				.orderBy(
+					desc(sterilizationLogs.timestamp),
+					desc(sterilizationLogs.createdAt),
+				);
+
+		const records = options?.organizationId
+			? await withTenantReadCtx(options.organizationId, fetchRecords)
+			: await withSuperuserBypass(fetchRecords);
 
 		const alerts: SanpinSterilizationAlertItem[] = [];
 

@@ -8,6 +8,7 @@
  */
 
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { describe, it, before, after } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
@@ -51,7 +52,7 @@ describe("Agent Memory Contract & Schema Resilience", () => {
 		await server.register(registerAgentRoutes);
 		await server.ready();
 
-		token = signToken({ organizationId: orgId, role: "clinic", userId }, authTokenSecret(), 3600);
+		token = signToken({ organizationId: orgId, role: "doctor", userId }, authTokenSecret(), 3600);
 	});
 
 	after(async () => {
@@ -77,6 +78,7 @@ describe("Agent Memory Contract & Schema Resilience", () => {
 			headers: {
 				[CLINIC_TOKEN_HEADER]: token,
 				"content-type": "application/json",
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				memoryFacts: ["Пациент предпочитает седацию", "Аллергия на пенициллиновый ряд"],
@@ -110,6 +112,7 @@ describe("Agent Memory Contract & Schema Resilience", () => {
 			headers: {
 				[CLINIC_TOKEN_HEADER]: token,
 				"content-type": "application/json",
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				memoryFacts: facts,
@@ -171,6 +174,7 @@ describe("Agent Memory Contract & Schema Resilience", () => {
 			headers: {
 				[CLINIC_TOKEN_HEADER]: token,
 				"content-type": "application/json",
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				memoryFacts: ["Valid fact"],
@@ -178,6 +182,29 @@ describe("Agent Memory Contract & Schema Resilience", () => {
 			},
 		});
 		assert.strictEqual(strictUnknownRes.statusCode, 400);
+
+		const missingIdemRes = await server.inject({
+			method: "PUT",
+			url: "/api/agent/memory",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: token,
+				"content-type": "application/json",
+			},
+			payload: {
+				memoryFacts: ["Valid fact"],
+			},
+		});
+		assert.strictEqual(missingIdemRes.statusCode, 400);
+
+		const clinicOnlyToken = signToken({ organizationId: orgId }, authTokenSecret(), 3600);
+		const noStaffRes = await server.inject({
+			method: "GET",
+			url: "/api/agent/memory",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicOnlyToken,
+			},
+		});
+		assert.strictEqual(noStaffRes.statusCode, 401);
 
 		const { validateSsrfSafeAiBaseUrl } = await import("../../ai/agentRouterClient.js");
 		const prevNodeEnv = process.env.NODE_ENV;

@@ -2,9 +2,9 @@ import { isValidUuid, kopecksToRubles, resolveCostKopecks } from "@dental/shared
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
-import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
+import { defineTenantMutation } from "../../core/routeFactories.js";
+import type { TenantDb } from "../../db/rls.js";
+import { inventoryItems } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
 	fefoStockService,
@@ -13,7 +13,14 @@ import {
 import { InsufficientStockError } from "../../services/treatmentConsumablesService.js";
 import { inventoryStockBodySchema } from "./types.js";
 
+const INVENTORY_WRITE_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+} as const;
+
 async function handleStockAdjustment(
+	tx: TenantDb,
+	resolvedOrgId: string,
 	request: FastifyRequest<{
 		Params: { organizationId?: string; itemId: string };
 		Body: { adjustment: number };
@@ -21,13 +28,6 @@ async function handleStockAdjustment(
 	reply: FastifyReply,
 	explicitOrgId?: string,
 ) {
-	const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-		request,
-		reply,
-		"inventory adjust stock",
-	);
-	if (!resolvedOrgId) return;
-
 	const organizationId = explicitOrgId ?? request.params.organizationId ?? resolvedOrgId;
 	if (!isValidUuid(organizationId) || !isValidUuid(request.params.itemId)) {
 		return reply.status(400).send({
@@ -59,7 +59,7 @@ async function handleStockAdjustment(
 	}
 
 	// Read-modify-write on stock must be atomic: lock row FOR UPDATE
-	const result = await withTenantCtx(organizationId, async (tx) => {
+	const runAdjust = async () => {
 		const [item] = await tx
 			.select()
 			.from(inventoryItems)
@@ -77,10 +77,6 @@ async function handleStockAdjustment(
 		const currentStock = Number(item.stockQuantity ?? 0);
 		const actualAdjustment = adjustment;
 
-		// Мандат 8s & 8e: если это приход товара (actualAdjustment > 0),
-		// проводим его через партионный учет FEFO (receiveBatch),
-		// чтобы физически создать запись в stock_batches и ликвидировать
-		// накопленный технический дефицит/овердрафт, если остаток был отрицательным.
 		if (actualAdjustment > 0) {
 			const userContext = request.user;
 			const identity = getRequestIdentity(request);
@@ -143,11 +139,8 @@ async function handleStockAdjustment(
 			parsedStock.data.isClinicalOperation === true ||
 				parsedStock.data.visitId,
 		);
-		// Мандат 8n & Soft Negative Stock: овердрафт разрешен всегда
-		// во всех списаниях склада, чтобы никогда не блокировать работу врача у кресла (Мандат 8e).
 		const isAllowedOverdraft = true;
 
-		// Списание со склада (actualAdjustment < 0) — автоматический FEFO партионный учет
 		if (actualAdjustment < 0) {
 			const requiredQty = Math.abs(actualAdjustment);
 			const userContext = request.user;
@@ -172,7 +165,6 @@ async function handleStockAdjustment(
 				});
 			} catch (err) {
 				if (err instanceof InsufficientStockError) {
-					// Fallback: при ошибке жесткого остатка проводим мягкий овердрафт
 					const fallbackStock = Number((currentStock - requiredQty).toFixed(4));
 					await tx
 						.update(inventoryItems)
@@ -222,7 +214,8 @@ async function handleStockAdjustment(
 		const finalUpdated = updated ?? item;
 		const isNegative = Number(finalUpdated.stockQuantity ?? 0) < 0;
 		return { updated: finalUpdated, isOverdraft: isNegative, isNegativeStock: isNegative };
-	});
+	};
+	const result = await runAdjust();
 
 	if ("notFound" in result)
 		return reply.status(404).send({
@@ -265,17 +258,12 @@ const batchStockAdjustBodySchema = z
 	.strict();
 
 async function handleBatchStockAdjustment(
+	tx: TenantDb,
+	resolvedOrgId: string,
 	request: FastifyRequest,
 	reply: FastifyReply,
 	explicitOrgId?: string,
 ) {
-	const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-		request,
-		reply,
-		"inventory batch adjust stock",
-	);
-	if (!resolvedOrgId) return;
-
 	const params = request.params as { organizationId?: string } | undefined;
 	const rawOrgId = explicitOrgId ?? params?.organizationId;
 	const organizationId = !rawOrgId || rawOrgId === "current" ? resolvedOrgId : rawOrgId;
@@ -321,123 +309,147 @@ async function handleBatchStockAdjustment(
 	}
 
 	const sortedIds = Array.from(aggregated.keys()).sort();
-	const result = await withTenantCtx(organizationId, async (tx) => {
-		const locked = await tx
-			.select()
-			.from(inventoryItems)
-			.where(
-				and(
-					eq(inventoryItems.organizationId, organizationId),
-					inArray(inventoryItems.id, sortedIds),
-				),
-			)
-			.orderBy(asc(inventoryItems.id))
-			.for("update");
+	const locked = await tx
+		.select()
+		.from(inventoryItems)
+		.where(
+			and(
+				eq(inventoryItems.organizationId, organizationId),
+				inArray(inventoryItems.id, sortedIds),
+			),
+		)
+		.orderBy(asc(inventoryItems.id))
+		.for("update");
 
-		const lockedById = new Map(locked.map((row) => [row.id, row]));
-		const updatedItems: Array<Record<string, unknown>> = [];
-		const missingIds: string[] = [];
+	const lockedById = new Map(locked.map((row) => [row.id, row]));
+	const updatedItems: Array<Record<string, unknown>> = [];
+	const missingIds: string[] = [];
 
-		for (const itemId of sortedIds) {
-			const adj = aggregated.get(itemId);
-			const item = lockedById.get(itemId);
-			if (!item) {
-				missingIds.push(itemId);
-				continue;
-			}
-			if (!adj || adj.adjustment === 0) continue;
+	for (const itemId of sortedIds) {
+		const adj = aggregated.get(itemId);
+		const item = lockedById.get(itemId);
+		if (!item) {
+			missingIds.push(itemId);
+			continue;
+		}
+		if (!adj || adj.adjustment === 0) continue;
 
-			if (adj.adjustment > 0) {
-				const itemCostKop = resolveCostKopecks(
-					item.unitCostKopecks,
-					item.unitCostRub,
-					item.pricePerUnitKopecks,
-					item.pricePerUnit,
-				);
-				const purchasePrice =
-					adj.purchasePricePerUnit != null
-						? adj.purchasePricePerUnit
-						: itemCostKop > 0n
-							? kopecksToRubles(Number(itemCostKop))
-							: undefined;
-				await fefoStockService.receiveBatch(tx, {
-					organizationId,
-					inventoryItemId: item.id,
-					batchNumber:
-						adj.batchNumber ||
-						item.lotNumber ||
-						`INV-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
-					expirationDate: adj.expirationDate || item.expirationDate || getDefaultExpirationDate(),
-					quantity: adj.adjustment,
-					purchasePricePerUnit: purchasePrice,
-					barcode: item.barcode || undefined,
-					userId: effectiveUserId,
-					notes: reason,
-				});
-			} else {
-				await fefoStockService.deductFefo(tx, {
-					organizationId,
-					inventoryItemId: item.id,
-					requiredQty: Math.abs(adj.adjustment),
-					userId: effectiveUserId,
-					allowOverdraft: true,
-					transactionType: "write_off",
-					notes: reason,
-				});
-			}
-
-			const [refreshed] = await tx
-				.select()
-				.from(inventoryItems)
-				.where(and(eq(inventoryItems.id, item.id), eq(inventoryItems.organizationId, organizationId)))
-				.limit(1);
-			if (refreshed) {
-				updatedItems.push({
-					...refreshed,
-					unitCostKopecks: refreshed.unitCostKopecks != null ? Number(refreshed.unitCostKopecks) : 0,
-					pricePerUnitKopecks:
-						refreshed.pricePerUnitKopecks != null ? Number(refreshed.pricePerUnitKopecks) : 0,
-				});
-			}
+		if (adj.adjustment > 0) {
+			const itemCostKop = resolveCostKopecks(
+				item.unitCostKopecks,
+				item.unitCostRub,
+				item.pricePerUnitKopecks,
+				item.pricePerUnit,
+			);
+			const purchasePrice =
+				adj.purchasePricePerUnit != null
+					? adj.purchasePricePerUnit
+					: itemCostKop > 0n
+						? kopecksToRubles(Number(itemCostKop))
+						: undefined;
+			await fefoStockService.receiveBatch(tx, {
+				organizationId,
+				inventoryItemId: item.id,
+				batchNumber:
+					adj.batchNumber ||
+					item.lotNumber ||
+					`INV-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
+				expirationDate: adj.expirationDate || item.expirationDate || getDefaultExpirationDate(),
+				quantity: adj.adjustment,
+				purchasePricePerUnit: purchasePrice,
+				barcode: item.barcode || undefined,
+				userId: effectiveUserId,
+				notes: reason,
+			});
+		} else {
+			await fefoStockService.deductFefo(tx, {
+				organizationId,
+				inventoryItemId: item.id,
+				requiredQty: Math.abs(adj.adjustment),
+				userId: effectiveUserId,
+				allowOverdraft: true,
+				transactionType: "write_off",
+				notes: reason,
+			});
 		}
 
-		return { updatedItems, missingIds };
-	});
+		const [refreshed] = await tx
+			.select()
+			.from(inventoryItems)
+			.where(and(eq(inventoryItems.id, item.id), eq(inventoryItems.organizationId, organizationId)))
+			.limit(1);
+		if (refreshed) {
+			updatedItems.push({
+				...refreshed,
+				unitCostKopecks: refreshed.unitCostKopecks != null ? Number(refreshed.unitCostKopecks) : 0,
+				pricePerUnitKopecks:
+					refreshed.pricePerUnitKopecks != null ? Number(refreshed.pricePerUnitKopecks) : 0,
+			});
+		}
+	}
 
 	return reply.status(200).send({
 		success: true,
-		adjustedCount: result.updatedItems.length,
-		missingIds: result.missingIds,
-		items: result.updatedItems,
+		adjustedCount: updatedItems.length,
+		missingIds,
+		items: updatedItems,
 	});
 }
 
 export const stockLedgerRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
-	server.post<{
-		Params: { organizationId: string };
-	}>("/:organizationId/stock/batch-adjust", async (request, reply) => {
-		return handleBatchStockAdjustment(request, reply, request.params.organizationId);
+	defineTenantMutation(server, {
+		method: "POST",
+		path: "/:organizationId/stock/batch-adjust",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId, request, reply }) => {
+			const params = request.params as { organizationId: string };
+			return handleBatchStockAdjustment(tx, organizationId, request, reply, params.organizationId);
+		},
 	});
 
-	server.post("/stock/batch-adjust", async (request, reply) => {
-		return handleBatchStockAdjustment(request, reply);
+	defineTenantMutation(server, {
+		method: "POST",
+		path: "/stock/batch-adjust",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId, request, reply }) =>
+			handleBatchStockAdjustment(tx, organizationId, request, reply),
 	});
 
 	// PATCH adjust stock quantity (staff/admin only)
-	server.patch<{
-		Params: { organizationId: string; itemId: string };
-		Body: { adjustment: number };
-	}>("/:organizationId/:itemId/stock", async (request, reply) => {
-		return handleStockAdjustment(request, reply, request.params.organizationId);
+	defineTenantMutation(server, {
+		method: "PATCH",
+		path: "/:organizationId/:itemId/stock",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId, request, reply }) => {
+			const typedReq = request as FastifyRequest<{
+				Params: { organizationId?: string; itemId: string };
+				Body: { adjustment: number };
+			}>;
+			return handleStockAdjustment(tx, organizationId, typedReq, reply, typedReq.params.organizationId);
+		},
 	});
 
 	// Dual-Route Parity: unparameterized route using session / token organizationId (Mandate 8n)
-	server.patch<{
-		Params: { itemId: string };
-		Body: { adjustment: number };
-	}>("/:itemId/stock", async (request, reply) => {
-		return handleStockAdjustment(request, reply);
+	defineTenantMutation(server, {
+		method: "PATCH",
+		path: "/:itemId/stock",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId, request, reply }) => {
+			const typedReq = request as FastifyRequest<{
+				Params: { organizationId?: string; itemId: string };
+				Body: { adjustment: number };
+			}>;
+			return handleStockAdjustment(tx, organizationId, typedReq, reply);
+		},
 	});
 };

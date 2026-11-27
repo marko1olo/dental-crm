@@ -6,63 +6,59 @@
  * - GET /lookup
  */
 
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 import { requireClinicalReadContext } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { CallerLookupService } from "../../services/telephony/callerLookupService.js";
 
 export const telephonyCallerLookupRoutes: FastifyPluginAsync = async (server) => {
-	const handleLookupCaller = async (
-		request: FastifyRequest<{
-			Params: { organizationId?: string };
-			Querystring: { phone?: string; patientId?: string; organizationId?: string };
-		}>,
-		reply: FastifyReply,
-	) => {
-		const context = await requireClinicalReadContext(request, reply, "lookup caller");
-		if (!context) return;
-		const resolvedOrgId = context.organizationId;
+	const registerLookupRoute = (path: string) => {
+		defineStreamRoute(server, {
+			method: "GET",
+			path,
+			permission: "public",
+			handler: async ({ request, reply }) => {
+				const context = await requireClinicalReadContext(request, reply, "lookup caller");
+				if (!context) return;
+				const resolvedOrgId = context.organizationId;
 
-		if (request.params.organizationId && request.params.organizationId !== resolvedOrgId) {
-			return reply.status(403).send({
-				error: "OrganizationMismatch",
-				message: "Несовпадение идентификатора организации",
-			});
-		}
+				const params = (request.params ?? {}) as { organizationId?: string };
+				const query = (request.query ?? {}) as {
+					phone?: string;
+					patientId?: string;
+					organizationId?: string;
+				};
 
-		const phone = request.query.phone;
-		const patientId = request.query.patientId;
+				if (params.organizationId && params.organizationId !== resolvedOrgId) {
+					return reply.status(403).send({
+						error: "OrganizationMismatch",
+						message: "Несовпадение идентификатора организации",
+					});
+				}
 
-		const result = await withTenantCtx(resolvedOrgId, async () => {
-			return CallerLookupService.lookupCaller({
-				organizationId: resolvedOrgId,
-				phone,
-				patientId,
-				logger: request.log,
-			});
+				const phone = query.phone;
+				const patientId = query.patientId;
+
+				const result = await withTenantReadCtx(resolvedOrgId, async (tx) => {
+					return CallerLookupService.lookupCaller({
+						organizationId: resolvedOrgId,
+						phone,
+						patientId,
+						tx,
+						logger: request.log,
+					});
+				});
+
+				return reply.send(result);
+			},
 		});
-
-		return reply.send(result);
 	};
 
-	server.get<{
-		Params: { organizationId: string };
-		Querystring: { phone?: string; patientId?: string };
-	}>("/:organizationId/lookup", handleLookupCaller);
-
-	server.get<{
-		Params: { organizationId?: string };
-		Querystring: { phone?: string; patientId?: string; organizationId?: string };
-	}>("/lookup", handleLookupCaller);
+	registerLookupRoute("/:organizationId/lookup");
+	registerLookupRoute("/lookup");
 
 	// Backward-compatibility aliases for CTI screen pop specifications
-	server.get<{
-		Params: { organizationId: string };
-		Querystring: { phone?: string; patientId?: string };
-	}>("/:organizationId/lookup-caller", handleLookupCaller);
-
-	server.get<{
-		Params: { organizationId?: string };
-		Querystring: { phone?: string; patientId?: string; organizationId?: string };
-	}>("/lookup-caller", handleLookupCaller);
+	registerLookupRoute("/:organizationId/lookup-caller");
+	registerLookupRoute("/lookup-caller");
 };

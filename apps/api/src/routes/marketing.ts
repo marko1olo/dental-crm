@@ -616,17 +616,35 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 	 * GET /api/marketing/patient-field-requirements
 	 * Настройки обязательности полей карточки пациента (Фича №35)
 	 */
-	app.get("/api/marketing/patient-field-requirements", handleGetPatientFieldRequirements);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/marketing/patient-field-requirements",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleGetPatientFieldRequirements(request, reply),
+	});
 
 	/**
 	 * PUT /api/marketing/patient-field-requirements
 	 * Обновление настроек обязательности полей карточки пациента (Фича №35)
 	 */
-	app.put("/api/marketing/patient-field-requirements", handlePutPatientFieldRequirements);
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/marketing/patient-field-requirements",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handlePutPatientFieldRequirements(request, reply),
+	});
 
 	/**
 	 * GET /api/marketing/reports
 	 * Маркетинговые сводные отчеты (ROMI, CAC, воронка и распределение по каналам).
 	 */
-	app.get("/api/marketing/reports", handleGetMarketingReports);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/marketing/reports",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleGetMarketingReports(request, reply),
+	});
 }

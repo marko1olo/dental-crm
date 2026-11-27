@@ -26,11 +26,7 @@ function resolveRuleUnitCost(row: {
 	};
 }
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
-import {
-	requireResolvedOrganizationId,
-	requireResolvedStaffOrAdminOrganizationId,
-} from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineTenantMutation, defineTenantQuery } from "../../core/routeFactories.js";
 import {
 	inventoryItems,
 	procedureMaterialRules,
@@ -41,42 +37,46 @@ import {
 import { seedDefaultProcedureMaterialRules } from "../../services/inventory/bomSeeds/index.js";
 import { inventoryRuleBodySchema } from "./types.js";
 
+const INVENTORY_READ_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+	allowUnverifiedHeaderRead: true,
+} as const;
+
+const INVENTORY_WRITE_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+} as const;
+
 export const procedureRuleRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
 	// GET all procedure tech cards with their items for the organization (Canonical SSOT BOM)
-	server.get<{
-		Params: { organizationId: string };
-		Querystring: { serviceId?: string };
-	}>("/:organizationId/tech-cards", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"inventory tech cards read",
-		);
-		if (!resolvedOrgId) return;
+	defineTenantQuery(server, {
+		path: "/:organizationId/tech-cards",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId } = request.params as { organizationId: string };
+			if (!isValidUuid(organizationId)) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
 
-		const { organizationId } = request.params;
-		if (!isValidUuid(organizationId)) {
-			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
-		}
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
+			const { serviceId } = request.query as { serviceId?: string };
+			if (serviceId && !isValidUuid(serviceId)) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID услуги (serviceId)" });
+			}
+			const conditions = [
+				eq(procedureTechCards.organizationId, organizationId),
+				eq(procedureTechCards.status, "active"),
+			];
+			if (serviceId) {
+				conditions.push(eq(procedureTechCards.serviceId, serviceId));
+			}
 
-		const { serviceId } = request.query;
-		if (serviceId && !isValidUuid(serviceId)) {
-			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID услуги (serviceId)" });
-		}
-		const conditions = [
-			eq(procedureTechCards.organizationId, organizationId),
-			eq(procedureTechCards.status, "active"),
-		];
-		if (serviceId) {
-			conditions.push(eq(procedureTechCards.serviceId, serviceId));
-		}
-
-		return await withTenantCtx(organizationId, async (tx) => {
 			const cards = await tx
 				.select({
 					id: procedureTechCards.id,
@@ -88,7 +88,8 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 					createdAt: procedureTechCards.createdAt,
 				})
 				.from(procedureTechCards)
-				.where(and(...conditions));
+				.where(and(...conditions))
+				.limit(1000);
 
 			const cardIds = cards.map((c) => c.id);
 			const items =
@@ -109,6 +110,7 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 								eq(procedureTechCardItems.inventoryItemId, inventoryItems.id),
 							)
 							.where(inArray(procedureTechCardItems.techCardId, cardIds))
+							.limit(5000)
 					: [];
 
 			const itemsByCardId = new Map<string, typeof items>();
@@ -126,44 +128,37 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 					items: cardItems,
 				};
 			});
-		});
+		},
 	});
 
 	// GET all procedure material rules for the organization (or optionally filtered by service)
-	server.get<{
-		Params: { organizationId: string };
-		Querystring: { serviceId?: string };
-	}>("/:organizationId/rules", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"inventory rules read all",
-		);
-		if (!resolvedOrgId) return;
+	defineTenantQuery(server, {
+		path: "/:organizationId/rules",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId } = request.params as { organizationId: string };
+			if (!isValidUuid(organizationId)) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
 
-		const { organizationId } = request.params;
-		if (!isValidUuid(organizationId)) {
-			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
-		}
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
+			const { serviceId } = request.query as { serviceId?: string };
+			if (serviceId && !isValidUuid(serviceId)) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID услуги (serviceId)" });
+			}
 
-		const { serviceId } = request.query;
-		if (serviceId && !isValidUuid(serviceId)) {
-			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID услуги (serviceId)" });
-		}
+			const conditions = [
+				eq(procedureMaterialRules.organizationId, organizationId),
+				eq(inventoryItems.organizationId, organizationId),
+				eq(serviceCatalogItems.organizationId, organizationId),
+			];
+			if (serviceId) {
+				conditions.push(eq(procedureMaterialRules.serviceId, serviceId));
+			}
 
-		const conditions = [
-			eq(procedureMaterialRules.organizationId, organizationId),
-			eq(inventoryItems.organizationId, organizationId),
-			eq(serviceCatalogItems.organizationId, organizationId),
-		];
-		if (serviceId) {
-			conditions.push(eq(procedureMaterialRules.serviceId, serviceId));
-		}
-
-		return await withTenantCtx(organizationId, async (tx) => {
 			const rules = await tx
 				.select({
 					id: procedureMaterialRules.id,
@@ -194,7 +189,8 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 					inventoryItems,
 					eq(procedureMaterialRules.inventoryItemId, inventoryItems.id),
 				)
-				.where(and(...conditions));
+				.where(and(...conditions))
+				.limit(2000);
 
 			return rules.map(({ pricePerUnitKopecks, ...rule }) => ({
 				...rule,
@@ -204,46 +200,38 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 					unitCostRub: rule.unitCostRub,
 				}),
 			}));
-		});
+		},
 	});
 
 	// POST seed default Order 804n clinical BOM rules
-	server.post<{ Params: { organizationId: string } }>(
-		"/:organizationId/rules/seed-defaults",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"inventory rules seed defaults",
-			);
-			if (!resolvedOrgId) return;
-
-			const { organizationId } = request.params;
+	defineTenantMutation(server, {
+		method: "POST",
+		path: "/:organizationId/rules/seed-defaults",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId } = request.params as { organizationId: string };
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
-			const result = await seedDefaultProcedureMaterialRules(organizationId);
+			const result = await seedDefaultProcedureMaterialRules(organizationId, tx);
 			return {
 				success: true,
 				...result,
 				message: `Добавлено ${result.createdRulesCount} технологических карт списания (${result.createdServicesCount} услуг, ${result.createdItemsCount} расходников). Всего активных правил: ${result.totalRulesCount}.`,
 			};
 		},
-	);
+	});
 
 	// GET all procedure material rules for a specific service (authenticated)
-	server.get<{ Params: { organizationId: string; serviceId: string } }>(
-		"/:organizationId/rules/:serviceId",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"inventory rules read",
-			);
-			if (!resolvedOrgId) return;
-
-			const { organizationId, serviceId } = request.params;
+	defineTenantQuery(server, {
+		path: "/:organizationId/rules/:serviceId",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId, serviceId } = request.params as { organizationId: string; serviceId: string };
 			if (!isValidUuid(organizationId) || !isValidUuid(serviceId)) {
 				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации или услуги" });
 			}
@@ -251,89 +239,80 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
-			return await withTenantCtx(organizationId, async (tx) => {
-				// The service must belong to this org, otherwise another clinic's
-				// material rules (and item names/stock) would leak through the join.
-				const [service] = await tx
-					.select({ id: serviceCatalogItems.id })
-					.from(serviceCatalogItems)
-					.where(
-						and(
-							eq(serviceCatalogItems.id, serviceId),
-							eq(serviceCatalogItems.organizationId, organizationId),
-						),
-					)
-					.limit(1);
-				if (!service)
-					return reply.status(404).send({ error: "Service not found" });
+			// The service must belong to this org, otherwise another clinic's
+			// material rules (and item names/stock) would leak through the join.
+			const [service] = await tx
+				.select({ id: serviceCatalogItems.id })
+				.from(serviceCatalogItems)
+				.where(
+					and(
+						eq(serviceCatalogItems.id, serviceId),
+						eq(serviceCatalogItems.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			if (!service) {
+				return reply.status(404).send({ error: "Service not found" });
+			}
 
-				const rules = await tx
-					.select({
-						id: procedureMaterialRules.id,
-						serviceId: procedureMaterialRules.serviceId,
-						inventoryItemId: procedureMaterialRules.inventoryItemId,
-						quantityToDeduct: procedureMaterialRules.quantityToDeduct,
-						requiredQty: procedureMaterialRules.requiredQty,
-						createdAt: procedureMaterialRules.createdAt,
-						itemName: inventoryItems.name,
-						unit: inventoryItems.unit,
-						unitCostKopecks: inventoryItems.unitCostKopecks,
-						pricePerUnitKopecks: inventoryItems.pricePerUnitKopecks,
-						unitCostRub: inventoryItems.unitCostRub,
-						stockQuantity: inventoryItems.stockQuantity,
-					})
-					.from(procedureMaterialRules)
-					.innerJoin(
-						inventoryItems,
-						eq(procedureMaterialRules.inventoryItemId, inventoryItems.id),
-					)
-					.where(
-						and(
-							eq(procedureMaterialRules.serviceId, serviceId),
-							eq(inventoryItems.organizationId, organizationId),
-						),
-					);
+			const rules = await tx
+				.select({
+					id: procedureMaterialRules.id,
+					serviceId: procedureMaterialRules.serviceId,
+					inventoryItemId: procedureMaterialRules.inventoryItemId,
+					quantityToDeduct: procedureMaterialRules.quantityToDeduct,
+					requiredQty: procedureMaterialRules.requiredQty,
+					createdAt: procedureMaterialRules.createdAt,
+					itemName: inventoryItems.name,
+					unit: inventoryItems.unit,
+					unitCostKopecks: inventoryItems.unitCostKopecks,
+					pricePerUnitKopecks: inventoryItems.pricePerUnitKopecks,
+					unitCostRub: inventoryItems.unitCostRub,
+					stockQuantity: inventoryItems.stockQuantity,
+				})
+				.from(procedureMaterialRules)
+				.innerJoin(
+					inventoryItems,
+					eq(procedureMaterialRules.inventoryItemId, inventoryItems.id),
+				)
+				.where(
+					and(
+						eq(procedureMaterialRules.serviceId, serviceId),
+						eq(inventoryItems.organizationId, organizationId),
+					),
+				)
+				.limit(500);
 
-				return rules.map(({ pricePerUnitKopecks, ...rule }) => ({
-					...rule,
-					...resolveRuleUnitCost({
-						unitCostKopecks: rule.unitCostKopecks,
-						pricePerUnitKopecks,
-						unitCostRub: rule.unitCostRub,
-					}),
-				}));
-			});
+			return rules.map(({ pricePerUnitKopecks, ...rule }) => ({
+				...rule,
+				...resolveRuleUnitCost({
+					unitCostKopecks: rule.unitCostKopecks,
+					pricePerUnitKopecks,
+					unitCostRub: rule.unitCostRub,
+				}),
+			}));
 		},
-	);
+	});
 
 	// POST create or update a procedure material rule (staff/admin only)
-	server.post<{
-		Params: { organizationId: string };
-		Body: {
-			serviceId: string;
-			inventoryItemId: string;
-			quantityToDeduct: number;
-		};
-	}>("/:organizationId/rules", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"inventory rules create",
-		);
-		if (!resolvedOrgId) return;
+	defineTenantMutation(server, {
+		method: "POST",
+		path: "/:organizationId/rules",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId } = request.params as { organizationId: string };
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
 
-		const { organizationId } = request.params;
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
+			const parsedRule = inventoryRuleBodySchema.safeParse(request.body);
+			if (!parsedRule.success) {
+				return reply.status(400).send({ error: "Missing required fields" });
+			}
+			const { serviceId, inventoryItemId, quantityToDeduct } = parsedRule.data;
 
-		const parsedRule = inventoryRuleBodySchema.safeParse(request.body);
-		if (!parsedRule.success) {
-			return reply.status(400).send({ error: "Missing required fields" });
-		}
-		const { serviceId, inventoryItemId, quantityToDeduct } = parsedRule.data;
-
-		return await withTenantCtx(organizationId, async (tx) => {
 			// Both the service and the inventory item must belong to this org — else a
 			// caller could wire another clinic's item into their own service rule.
 			const [service] = await tx
@@ -483,29 +462,25 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 				});
 			}
 			return newRule;
-		});
+		},
 	});
 
 	// DELETE a procedure material rule (admin only)
-	server.delete<{
-		Params: { organizationId: string; ruleId: string };
-	}>("/:organizationId/rules/:ruleId", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"inventory rules delete",
-		);
-		if (!resolvedOrgId) return;
+	defineTenantMutation(server, {
+		method: "DELETE",
+		path: "/:organizationId/rules/:ruleId",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "exempt_idempotent_put_or_delete",
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId, ruleId } = request.params as { organizationId: string; ruleId: string };
+			if (!isValidUuid(organizationId) || !isValidUuid(ruleId)) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации или правила" });
+			}
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
 
-		const { organizationId, ruleId } = request.params;
-		if (!isValidUuid(organizationId) || !isValidUuid(ruleId)) {
-			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации или правила" });
-		}
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
-
-		return await withTenantCtx(organizationId, async (tx) => {
 			// Confirm the rule belongs to a service owned by this org before deleting
 			const [rule] = await tx
 				.select({
@@ -564,29 +539,25 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 				return reply.status(404).send({ error: "Rule not found" });
 			}
 			return { success: true };
-		});
+		},
 	});
 
 	// DELETE all rules for a service
-	server.delete<{
-		Params: { organizationId: string; serviceId: string };
-	}>("/:organizationId/rules/service/:serviceId", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"inventory rules delete by service",
-		);
-		if (!resolvedOrgId) return;
+	defineTenantMutation(server, {
+		method: "DELETE",
+		path: "/:organizationId/rules/service/:serviceId",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "exempt_idempotent_put_or_delete",
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId, serviceId } = request.params as { organizationId: string; serviceId: string };
+			if (!isValidUuid(organizationId) || !isValidUuid(serviceId)) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации или услуги" });
+			}
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
 
-		const { organizationId, serviceId } = request.params;
-		if (!isValidUuid(organizationId) || !isValidUuid(serviceId)) {
-			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации или услуги" });
-		}
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
-
-		return await withTenantCtx(organizationId, async (tx) => {
 			const [techCard] = await tx
 				.select({ id: procedureTechCards.id })
 				.from(procedureTechCards)
@@ -615,6 +586,6 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 				.returning({ id: procedureMaterialRules.id });
 
 			return { success: true, count: deleted.length };
-		});
+		},
 	});
 };

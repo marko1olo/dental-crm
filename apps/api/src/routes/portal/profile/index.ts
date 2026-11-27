@@ -5,7 +5,8 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { eq } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
+import { definePublicRoute } from "../../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
 import { clinics, organizations } from "../../../db/schema.js";
 import { extractPortalPatient } from "../portalAuthStore.js";
 import { healthQuestionnaireBodySchema, type HealthQuestionnaireBody } from "../types.js";
@@ -27,18 +28,18 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 		const auth = verifyPortalProfileRequest(request, reply);
 		if (!auth) return;
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
-			const sanitizedPatient = await fetchSanitizedPatient(auth.patientId, auth.organizationId);
+		return withTenantReadCtx(auth.organizationId, async (tx) => {
+			const sanitizedPatient = await fetchSanitizedPatient(auth.patientId, auth.organizationId, tx);
 			if (!sanitizedPatient) {
 				reply.status(404);
 				return { error: "Not found" };
 			}
 
-			const medicalRecords = await fetchPatientMedicalRecords(auth.patientId, auth.organizationId);
+			const medicalRecords = await fetchPatientMedicalRecords(auth.patientId, auth.organizationId, tx);
 			const { appointments: enrichedAppointments, doctors: clinicDoctors } =
-				await fetchPatientAppointmentsAndDoctors(auth.patientId, auth.organizationId);
+				await fetchPatientAppointmentsAndDoctors(auth.patientId, auth.organizationId, tx);
 			const { familyGroup: familyGroupData, familyMembers: familyMembersList } =
-				await fetchPatientFamilyData(auth.patientId, auth.organizationId, sanitizedPatient.familyGroupId);
+				await fetchPatientFamilyData(auth.patientId, auth.organizationId, sanitizedPatient.familyGroupId, tx);
 
 			const [org] = await tx
 				.select({
@@ -87,56 +88,70 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 		});
 	};
 
-	server.get("/me", handleGetPortalMe);
-	server.get("/profile", handleGetPortalMe);
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/me",
+		handler: async ({ request, reply }) => handleGetPortalMe(request, reply),
+	});
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/profile",
+		handler: async ({ request, reply }) => handleGetPortalMe(request, reply),
+	});
 
 	// 7. Get Somatic Health Questionnaire & Clinical Risk Factor Alerts (Protected)
-	server.get("/health-questionnaire", async (request, reply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized" };
-		}
-
-		return withTenantCtx(auth.organizationId, async () => {
-			const data = await fetchSomaticHealthQuestionnaire(auth.patientId, auth.organizationId);
-			if (!data) {
-				reply.status(404);
-				return { error: "Not found" };
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/health-questionnaire",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized" };
 			}
-			return data;
-		});
+
+			return withTenantReadCtx(auth.organizationId, async (tx) => {
+				const data = await fetchSomaticHealthQuestionnaire(auth.patientId, auth.organizationId, tx);
+				if (!data) {
+					reply.status(404);
+					return { error: "Not found" };
+				}
+				return data;
+			});
+		},
 	});
 
 	// 8. Submit/Update Somatic Health Questionnaire (Protected)
-	server.post<{
-		Body: HealthQuestionnaireBody;
-	}>("/health-questionnaire", async (request, reply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized" };
-		}
-
-		const parsed = healthQuestionnaireBodySchema.safeParse(request.body ?? {});
-		if (!parsed.success) {
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Некорректные данные анкеты здоровья.",
-				details: parsed.error.format(),
-			};
-		}
-
-		const body = parsed.data;
-		return withTenantCtx(auth.organizationId, async () => {
-			const result = await saveSomaticHealthQuestionnaire(auth.patientId, auth.organizationId, body);
-			if (!result) {
-				reply.status(404);
-				return { error: "PatientNotFound" };
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/health-questionnaire",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized" };
 			}
-			return result;
-		});
+
+			const parsed = healthQuestionnaireBodySchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
+				reply.status(400);
+				return {
+					error: "ValidationError",
+					message: "Некорректные данные анкеты здоровья.",
+					details: parsed.error.format(),
+				};
+			}
+
+			const body = parsed.data as HealthQuestionnaireBody;
+			return withTenantWriteCtx(auth.organizationId, async (tx) => {
+				const result = await saveSomaticHealthQuestionnaire(auth.patientId, auth.organizationId, body, tx);
+				if (!result) {
+					reply.status(404);
+					return { error: "PatientNotFound" };
+				}
+				return result;
+			});
+		},
 	});
 }
 

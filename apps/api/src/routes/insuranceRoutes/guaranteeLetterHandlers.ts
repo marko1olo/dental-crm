@@ -21,8 +21,7 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 }
 
 export {
-	handleListGuaranteeLetters,
-	handleGetGuaranteeLetterById,
+	registerGuaranteeLetterQueryRoutes,
 } from "./guaranteeLetterModules/guaranteeLetterQueryHandlers.js";
 
 export {

@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import { denteTelegramBotConfigs } from "../../../db/schema.js";
 import type {
 	ApplyPresetToInstanceParams,
@@ -38,17 +38,19 @@ export class TelegramPresetApplierService {
 		const botConfigId = params.botConfigId || "default";
 
 		// Сохранение конфигурации в БД клиники с обязательным составным фильтром
-		await db
-			.update(denteTelegramBotConfigs)
-			.set({
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(denteTelegramBotConfigs.organizationId, params.organizationId),
-					eq(denteTelegramBotConfigs.botConfigId, botConfigId),
-				),
-			);
+		await withTenantWriteCtx(params.organizationId, async (tx) => {
+			await tx
+				.update(denteTelegramBotConfigs)
+				.set({
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(denteTelegramBotConfigs.organizationId, params.organizationId),
+						eq(denteTelegramBotConfigs.botConfigId, botConfigId),
+					),
+				);
+		});
 
 		return {
 			ok: true,

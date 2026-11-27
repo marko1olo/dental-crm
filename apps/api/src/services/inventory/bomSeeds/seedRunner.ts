@@ -5,7 +5,7 @@
 
 import { rublesToKopecks } from "@dental/shared";
 import { eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantWriteCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	inventoryItems,
 	procedureMaterialRules,
@@ -17,106 +17,111 @@ import type { SeedDefaultBomResult } from "./types.js";
 
 export async function seedDefaultProcedureMaterialRules(
 	organizationId: string,
+	executor?: TenantDb,
 ): Promise<SeedDefaultBomResult> {
-	let createdServicesCount = 0;
-	let createdItemsCount = 0;
-	let createdRulesCount = 0;
+	const run = async (tx: TenantDb) => {
+		let createdServicesCount = 0;
+		let createdItemsCount = 0;
+		let createdRulesCount = 0;
 
-	const { serviceMap, itemMap, ruleSet } = await loadSeedMaps(organizationId);
+		const { serviceMap, itemMap, ruleSet } = await loadSeedMaps(organizationId, tx);
 
-	for (const proto of DEFAULT_SERVICE_BOM_SEEDS) {
-		let service = serviceMap.get(proto.serviceCode);
+		for (const proto of DEFAULT_SERVICE_BOM_SEEDS) {
+			let service = serviceMap.get(proto.serviceCode);
 
-		if (!service) {
-			const [newService] = await db
-				.insert(serviceCatalogItems)
-				.values({
-					organizationId,
-					code: proto.serviceCode,
-					title: proto.serviceTitle,
-					category: proto.serviceCategory,
-					specialty: proto.specialty,
-					basePriceRub: proto.basePriceRub,
-					priceRub: proto.basePriceRub,
-					durationMinutes: proto.durationMinutes,
-					taxDeductible: true,
-					order804nCode: proto.serviceCode,
-					isActive: true,
-				})
-				.returning();
-
-			if (newService) {
-				service = newService;
-				serviceMap.set(proto.serviceCode, newService);
-				createdServicesCount++;
-			}
-		}
-
-		if (!service) continue;
-
-		for (const mat of proto.materials) {
-			const matKey = mat.name.toLowerCase().trim();
-			let item = itemMap.get(matKey);
-
-			if (!item) {
-				const [newItem] = await db
-					.insert(inventoryItems)
+			if (!service) {
+				const [newService] = await tx
+					.insert(serviceCatalogItems)
 					.values({
 						organizationId,
-						name: mat.name,
-						category: mat.category,
-						unit: mat.unit,
-						unitCostRub: String(mat.defaultUnitCostRub),
-						unitCostKopecks: BigInt(rublesToKopecks(mat.defaultUnitCostRub)),
-						pricePerUnitKopecks: BigInt(rublesToKopecks(mat.defaultUnitCostRub)),
-						stockQuantity: String(mat.defaultStockQty),
-						currentQty: String(mat.defaultStockQty),
-						criticalThreshold: String(mat.criticalThreshold),
+						code: proto.serviceCode,
+						title: proto.serviceTitle,
+						category: proto.serviceCategory,
+						specialty: proto.specialty,
+						basePriceRub: proto.basePriceRub,
+						priceRub: proto.basePriceRub,
+						durationMinutes: proto.durationMinutes,
+						taxDeductible: true,
+						order804nCode: proto.serviceCode,
+						isActive: true,
 					})
 					.returning();
 
-				if (newItem) {
-					item = newItem;
-					itemMap.set(matKey, newItem);
-					createdItemsCount++;
+				if (newService) {
+					service = newService;
+					serviceMap.set(proto.serviceCode, newService);
+					createdServicesCount++;
 				}
 			}
 
-			if (!item) continue;
+			if (!service) continue;
 
-			const ruleKey = `${service.id}:${item.id}`;
-			if (!ruleSet.has(ruleKey)) {
-				const [newRule] = await db
-					.insert(procedureMaterialRules)
-					.values({
-						organizationId,
-						serviceId: service.id,
-						inventoryItemId: item.id,
-						serviceCode: proto.serviceCode,
-						materialItemId: item.id,
-						materialName: item.name,
-						quantityToDeduct: String(mat.quantityToDeduct),
-						requiredQty: String(mat.quantityToDeduct),
-					})
-					.returning();
+			for (const mat of proto.materials) {
+				const matKey = mat.name.toLowerCase().trim();
+				let item = itemMap.get(matKey);
 
-				if (newRule) {
-					ruleSet.add(ruleKey);
-					createdRulesCount++;
+				if (!item) {
+					const [newItem] = await tx
+						.insert(inventoryItems)
+						.values({
+							organizationId,
+							name: mat.name,
+							category: mat.category,
+							unit: mat.unit,
+							unitCostRub: String(mat.defaultUnitCostRub),
+							unitCostKopecks: BigInt(rublesToKopecks(mat.defaultUnitCostRub)),
+							pricePerUnitKopecks: BigInt(rublesToKopecks(mat.defaultUnitCostRub)),
+							stockQuantity: String(mat.defaultStockQty),
+							currentQty: String(mat.defaultStockQty),
+							criticalThreshold: String(mat.criticalThreshold),
+						})
+						.returning();
+
+					if (newItem) {
+						item = newItem;
+						itemMap.set(matKey, newItem);
+						createdItemsCount++;
+					}
+				}
+
+				if (!item) continue;
+
+				const ruleKey = `${service.id}:${item.id}`;
+				if (!ruleSet.has(ruleKey)) {
+					const [newRule] = await tx
+						.insert(procedureMaterialRules)
+						.values({
+							organizationId,
+							serviceId: service.id,
+							inventoryItemId: item.id,
+							serviceCode: proto.serviceCode,
+							materialItemId: item.id,
+							materialName: item.name,
+							quantityToDeduct: String(mat.quantityToDeduct),
+							requiredQty: String(mat.quantityToDeduct),
+						})
+						.returning();
+
+					if (newRule) {
+						ruleSet.add(ruleKey);
+						createdRulesCount++;
+					}
 				}
 			}
 		}
-	}
 
-	const totalRules = await db
-		.select()
-		.from(procedureMaterialRules)
-		.where(eq(procedureMaterialRules.organizationId, organizationId));
+		const totalRules = await tx
+			.select()
+			.from(procedureMaterialRules)
+			.where(eq(procedureMaterialRules.organizationId, organizationId));
 
-	return {
-		createdServicesCount,
-		createdItemsCount,
-		createdRulesCount,
-		totalRulesCount: totalRules.length,
+		return {
+			createdServicesCount,
+			createdItemsCount,
+			createdRulesCount,
+			totalRulesCount: totalRules.length,
+		};
 	};
+
+	return executor ? await run(executor) : await withTenantWriteCtx(organizationId, run);
 }

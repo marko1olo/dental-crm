@@ -1,21 +1,31 @@
 import type { FastifyInstance } from "fastify";
 import { kopecksToRubles, resolveCostKopecks } from "@dental/shared";
-import { requireResolvedOrganizationId } from "../../../accessGuard.js";
+import { defineTenantQuery } from "../../../core/routeFactories.js";
 import {
 	inventoryQuery,
 	serializeInventoryItem,
 	type SerializedInventoryItem,
 } from "../../../db/inventoryQuery.js";
 import type { inventoryItems } from "../../../db/schema.js";
+import {
+	formatDateIsoInTimeZone,
+	resolveClinicTimeZone,
+} from "../../payrollModules/payrollTypesAndQueries.js";
 import { ReorderSuggestionService } from "../../../services/reorderSuggestionService.js";
+
+const INVENTORY_READ_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowUnverifiedHeaderRead: true,
+} as const;
 
 export const calculateAlertsFromItems = (
 	items: Array<typeof inventoryItems.$inferSelect>,
+	timeZone: string = "Europe/Moscow",
 ) => {
 	const now = new Date();
-	const todayStr = now.toISOString().slice(0, 10);
+	const todayStr = formatDateIsoInTimeZone(now, timeZone);
 	const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-	const in30DaysStr = in30Days.toISOString().slice(0, 10);
+	const in30DaysStr = formatDateIsoInTimeZone(in30Days, timeZone);
 
 	const lowStockItems: SerializedInventoryItem[] = [];
 	const outOfStockItems: SerializedInventoryItem[] = [];
@@ -76,17 +86,12 @@ export const calculateAlertsFromItems = (
 
 export const registerItemCatalogQueries = (server: FastifyInstance): void => {
 	// GET all inventory items for an organization (authenticated, Dual-Route Parity & "current" support)
-	server.get<{ Params: { organizationId?: string } }>(
-		"/:organizationId",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"inventory read",
-			);
-			if (!resolvedOrgId) return;
-
-			const { organizationId } = request.params;
+	defineTenantQuery(server, {
+		path: "/:organizationId",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId } = request.params as { organizationId?: string };
 			const effectiveOrgId =
 				!organizationId || organizationId === "current" || organizationId === "items"
 					? resolvedOrgId
@@ -95,23 +100,18 @@ export const registerItemCatalogQueries = (server: FastifyInstance): void => {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
-			const items = await inventoryQuery.getInventoryItems(effectiveOrgId);
+			const items = await inventoryQuery.getInventoryItems(effectiveOrgId, tx);
 			return items.map(serializeInventoryItem);
 		},
-	);
+	});
 
 	// GET /:organizationId/items — alias for inventory read
-	server.get<{ Params: { organizationId: string } }>(
-		"/:organizationId/items",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"inventory read items",
-			);
-			if (!resolvedOrgId) return;
-
-			const { organizationId } = request.params;
+	defineTenantQuery(server, {
+		path: "/:organizationId/items",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId } = request.params as { organizationId: string };
 			const effectiveOrgId =
 				organizationId === "current" || organizationId === "items"
 					? resolvedOrgId
@@ -120,94 +120,75 @@ export const registerItemCatalogQueries = (server: FastifyInstance): void => {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
-			const items = await inventoryQuery.getInventoryItems(effectiveOrgId);
+			const items = await inventoryQuery.getInventoryItems(effectiveOrgId, tx);
 			return reply.send(items.map(serializeInventoryItem));
 		},
-	);
+	});
 
 	// GET /items — автоопределение orgId из сессии (Zero Dead-Ends SSOT)
-	server.get("/items", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"inventory read items",
-		);
-		if (!resolvedOrgId) return;
-
-		const items = await inventoryQuery.getInventoryItems(resolvedOrgId);
-		return reply.send(items.map(serializeInventoryItem));
+	defineTenantQuery(server, {
+		path: "/items",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId, reply }) => {
+			const items = await inventoryQuery.getInventoryItems(resolvedOrgId, tx);
+			return reply.send(items.map(serializeInventoryItem));
+		},
 	});
 
 	// GET /:organizationId/stock — алиас реестра остатков для складского модуля
-	server.get<{ Params: { organizationId: string } }>(
-		"/:organizationId/stock",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"inventory read stock",
-			);
-			if (!resolvedOrgId) return;
-
-			const { organizationId } = request.params;
+	defineTenantQuery(server, {
+		path: "/:organizationId/stock",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId } = request.params as { organizationId: string };
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
-			const items = await inventoryQuery.getInventoryItems(organizationId);
+			const items = await inventoryQuery.getInventoryItems(organizationId, tx);
 			return items.map(serializeInventoryItem);
 		},
-	);
+	});
 
 	// GET /stock — автоопределение orgId
-	server.get("/stock", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"inventory read stock",
-		);
-		if (!resolvedOrgId) return;
-
-		const items = await inventoryQuery.getInventoryItems(resolvedOrgId);
-		return items.map(serializeInventoryItem);
+	defineTenantQuery(server, {
+		path: "/stock",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId }) => {
+			const items = await inventoryQuery.getInventoryItems(resolvedOrgId, tx);
+			return items.map(serializeInventoryItem);
+		},
 	});
 
 	// GET /reorder-suggestions — Предиктивные рекомендации к закупкам (DentalPin Reorder Point)
-	server.get<{ Querystring: { onlyNeedingReorder?: string | boolean } }>(
-		"/reorder-suggestions",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"inventory reorder suggestions read",
-			);
-			if (!resolvedOrgId) return;
-
+	defineTenantQuery(server, {
+		path: "/reorder-suggestions",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const query = request.query as { onlyNeedingReorder?: string | boolean };
 			const onlyNeedingReorder =
-				request.query.onlyNeedingReorder === "true" ||
-				request.query.onlyNeedingReorder === true;
+				query.onlyNeedingReorder === "true" ||
+				query.onlyNeedingReorder === true;
 
 			const suggestions = await ReorderSuggestionService.getSuggestions(
 				resolvedOrgId,
-				{ onlyNeedingReorder },
+				{ onlyNeedingReorder, tx },
 			);
 			return reply.status(200).send(suggestions);
 		},
-	);
-
+	});
 
 	// GET /:organizationId/alerts — сводка по дефициту и срокам годности материалов
-	server.get<{ Params: { organizationId: string } }>(
-		"/:organizationId/alerts",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"inventory alerts read",
-			);
-			if (!resolvedOrgId) return;
-
-			const { organizationId } = request.params;
+	defineTenantQuery(server, {
+		path: "/:organizationId/alerts",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId } = request.params as { organizationId: string };
 			const effectiveOrgId =
 				organizationId === "current" || organizationId === "alerts"
 					? resolvedOrgId
@@ -216,21 +197,25 @@ export const registerItemCatalogQueries = (server: FastifyInstance): void => {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
-			const items = await inventoryQuery.getInventoryItems(effectiveOrgId);
-			return calculateAlertsFromItems(items);
+			const [items, timeZone] = await Promise.all([
+				inventoryQuery.getInventoryItems(effectiveOrgId, tx),
+				resolveClinicTimeZone(tx, effectiveOrgId),
+			]);
+			return calculateAlertsFromItems(items, timeZone);
 		},
-	);
+	});
 
 	// GET /alerts — сводка по дефициту с автоопределением orgId
-	server.get("/alerts", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"inventory alerts read",
-		);
-		if (!resolvedOrgId) return;
-
-		const items = await inventoryQuery.getInventoryItems(resolvedOrgId);
-		return calculateAlertsFromItems(items);
+	defineTenantQuery(server, {
+		path: "/alerts",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId }) => {
+			const [items, timeZone] = await Promise.all([
+				inventoryQuery.getInventoryItems(resolvedOrgId, tx),
+				resolveClinicTimeZone(tx, resolvedOrgId),
+			]);
+			return calculateAlertsFromItems(items, timeZone);
+		},
 	});
 };

@@ -191,7 +191,7 @@ describe("Chairside Photo QR Bridge API (Fastify / PostgreSQL 18, Mandate 8e / P
 		assert.ok(json.photo.url.startsWith("/api/attachments/"));
 	});
 
-	it("7b. POST /api/photo-bridge/upload/:token rejects dangerous non-image file extensions (400)", async () => {
+	it("7b. POST /api/photo-bridge/upload/:token rejects dangerous non-image file extensions (415)", async () => {
 		const res = await app.inject({
 			method: "POST",
 			url: `/api/photo-bridge/upload/${createdToken}`,
@@ -202,7 +202,74 @@ describe("Chairside Photo QR Bridge API (Fastify / PostgreSQL 18, Mandate 8e / P
 				imageBase64: "data:text/html;base64,PGgxPkhlbGxvPC9oMT4=",
 			},
 		});
-		assert.equal(res.statusCode, 400);
+		assert.equal(res.statusCode, 415);
+	});
+
+	it("7c. POST /api/photo-bridge/upload/:token supports slotId-before-file multipart & Idempotency-Key deduplication", async () => {
+		const boundary = "----SlotBeforeFileBoundary99";
+		const dummyImageData = Buffer.from("RIFF....WEBPVP8 ...slot-before-file-bytes...");
+		const payload = Buffer.concat([
+			Buffer.from(`--${boundary}\r\n`),
+			Buffer.from('Content-Disposition: form-data; name="slotId"\r\n\r\n'),
+			Buffer.from("lower_occlusal\r\n"),
+			Buffer.from(`--${boundary}\r\n`),
+			Buffer.from('Content-Disposition: form-data; name="file"; filename="lower.webp"\r\n'),
+			Buffer.from("Content-Type: image/webp\r\n\r\n"),
+			dummyImageData,
+			Buffer.from(`\r\n--${boundary}--\r\n`),
+		]);
+		const idemKey = "018f4b20-1234-7abc-8def-111122223333";
+
+		const firstRes = await app.inject({
+			method: "POST",
+			url: `/api/photo-bridge/upload/${createdToken}`,
+			headers: {
+				"content-type": `multipart/form-data; boundary=${boundary}`,
+				"idempotency-key": idemKey,
+			},
+			payload,
+		});
+		assert.equal(firstRes.statusCode, 201, firstRes.body);
+		const firstJson = JSON.parse(firstRes.body);
+		assert.equal(firstJson.photo.slotId, "lower_occlusal");
+
+		const replayRes = await app.inject({
+			method: "POST",
+			url: `/api/photo-bridge/upload/${createdToken}`,
+			headers: {
+				"content-type": `multipart/form-data; boundary=${boundary}`,
+				"idempotency-key": idemKey,
+			},
+			payload,
+		});
+		assert.equal(replayRes.statusCode, 201);
+		assert.equal(replayRes.headers["idempotency-replayed"], "true");
+		const replayJson = JSON.parse(replayRes.body);
+		assert.equal(replayJson.photo.id, firstJson.photo.id);
+	});
+
+	it("7d. POST /api/photo-bridge/upload/:token rejects oversized multipart payload with 413", async () => {
+		const boundary = "----OversizeBoundary99";
+		const oversizeChunk = Buffer.alloc(25 * 1024 * 1024 + 4096, 0x41);
+		oversizeChunk.write("RIFF", 0);
+		oversizeChunk.write("WEBP", 8);
+		const payload = Buffer.concat([
+			Buffer.from(`--${boundary}\r\n`),
+			Buffer.from('Content-Disposition: form-data; name="file"; filename="huge.webp"\r\n'),
+			Buffer.from("Content-Type: image/webp\r\n\r\n"),
+			oversizeChunk,
+			Buffer.from(`\r\n--${boundary}--\r\n`),
+		]);
+
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/photo-bridge/upload/${createdToken}`,
+			headers: {
+				"content-type": `multipart/form-data; boundary=${boundary}`,
+			},
+			payload,
+		});
+		assert.equal(res.statusCode, 413);
 	});
 
 	it("8. GET /api/photo-bridge/poll/:token requires clinic auth & blocks cross-tenant access, then delivers photos", async () => {
@@ -228,9 +295,10 @@ describe("Chairside Photo QR Bridge API (Fastify / PostgreSQL 18, Mandate 8e / P
 		assert.equal(res.statusCode, 200);
 		const json = JSON.parse(res.body);
 		assert.equal(json.success, true);
-		assert.equal(json.count, 2);
+		assert.equal(json.count, 3);
 		assert.equal(json.photos[0].slotId, "frontal_smile");
 		assert.equal(json.photos[1].slotId, "upper_occlusal");
+		assert.equal(json.photos[2].slotId, "lower_occlusal");
 	});
 
 	it("9. DELETE /api/photo-bridge/session/:token blocks unauthorized/cross-tenant deletion and terminates cleanly for owner", async () => {

@@ -17,12 +17,11 @@ import {
 	rubToKopecks,
 	rublesToKopecks,
 } from "@dental/shared";
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
+import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
+import { defineTenantMutation, defineTenantQuery } from "../core/routeFactories.js";
 import { recordAuditEventInDb } from "../db/auditQuery.js";
-import { withTenantCtx } from "../db/rls.js";
 import {
 	cashBoxes,
 	cashBoxShifts,
@@ -35,7 +34,11 @@ import {
 	ensureOrganizationCashBoxes,
 	ensureOrganizationExpenseReasons,
 } from "../db/seeds/seed_cash_and_reasons.js";
-import { ADMIN_ROLES, requireStaffIdentity } from "../security/identity.js";
+import {
+	formatDateIsoInTimeZone,
+	resolveClinicTimeZone,
+} from "./payrollModules/payrollTypesAndQueries.js";
+import { ADMIN_ROLES } from "../security/identity.js";
 
 function resolveSafeKop(
 	kopecksVal: number | bigint | null | undefined,
@@ -75,6 +78,7 @@ const summaryQuerySchema = z
 	.object({
 		organizationId: z.string().optional(),
 		month: z.string().optional(), // YYYY-MM
+		revenueKopecks: z.coerce.number().int().min(0).optional(),
 		revenueRub: z.coerce.number().min(0).optional(),
 	})
 	.strict();
@@ -120,9 +124,14 @@ interface ExpenseMetadata {
 	createdBy?: string | null | undefined;
 }
 
-function rowToExpenseRecord(row: typeof cashOperations.$inferSelect): ExpenseRecord {
+function rowToExpenseRecord(
+	row: typeof cashOperations.$inferSelect,
+	clinicTimeZone: string,
+): ExpenseRecord {
 	const meta = (row.metadata as ExpenseMetadata | null) || {};
-	const dateStr = meta.expenseDate || (row.createdAt ? row.createdAt.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
+	const dateStr =
+		meta.expenseDate ||
+		formatDateIsoInTimeZone(row.createdAt ?? new Date(), clinicTimeZone);
 	const category = meta.category || mapReasonCodeToCategory(row.reasonCode);
 	const createdIso = row.createdAt ? row.createdAt.toISOString() : new Date().toISOString();
 
@@ -144,436 +153,468 @@ function rowToExpenseRecord(row: typeof cashOperations.$inferSelect): ExpenseRec
 	};
 }
 
+const EXPENSE_AUTH_OPTIONS = {
+	requireStaffToken: true,
+	allowAdminSecretBypass: true,
+} as const;
+
 export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 	// 1. GET /api/v1/expenses & /api/expenses
-	const handleListExpenses = async (request: FastifyRequest, reply: FastifyReply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"expenses list",
-		);
-		if (!organizationId) return;
+	const registerListExpenses = (path: string) => {
+		defineTenantQuery(server, {
+			path,
+			permission: "finance.read",
+			authOptions: EXPENSE_AUTH_OPTIONS,
+			query: async ({ tx, principal, request, reply }) => {
+				const organizationId = principal.organizationId;
+				const parsed = listExpensesQuerySchema.safeParse(request.query);
+				if (!parsed.success) {
+					return reply.status(400).send({
+						error: "InvalidQuery",
+						message: "Некорректные параметры фильтрации расходов.",
+					});
+				}
 
-		const parsed = listExpensesQuerySchema.safeParse(request.query);
-		if (!parsed.success) {
-			reply.status(400);
-			return { error: "InvalidQuery", message: "Некорректные параметры фильтрации расходов." };
-		}
+				const { startDate, endDate, category } = parsed.data;
+				const clinicTz = await resolveClinicTimeZone(tx, organizationId);
 
-		const { startDate, endDate, category } = parsed.data;
+				const conditions = [
+					eq(cashOperations.organizationId, organizationId),
+					eq(cashOperations.operationType, "expense"),
+				];
 
-		const records = await withTenantCtx(organizationId, async (tx) => {
-			const conditions = [
-				eq(cashOperations.organizationId, organizationId),
-				eq(cashOperations.operationType, "expense"),
-			];
+				if (startDate) {
+					conditions.push(
+						sql`COALESCE(${cashOperations.metadata}->>'expenseDate', to_char(${cashOperations.createdAt} AT TIME ZONE ${clinicTz}, 'YYYY-MM-DD')) >= ${startDate}`,
+					);
+				}
+				if (endDate) {
+					conditions.push(
+						sql`COALESCE(${cashOperations.metadata}->>'expenseDate', to_char(${cashOperations.createdAt} AT TIME ZONE ${clinicTz}, 'YYYY-MM-DD')) <= ${endDate}`,
+					);
+				}
 
-			if (startDate) {
-				conditions.push(
-					sql`COALESCE(${cashOperations.metadata}->>'expenseDate', SUBSTRING(${cashOperations.createdAt}::text, 1, 10)) >= ${startDate}`
-				);
-			}
-			if (endDate) {
-				conditions.push(
-					sql`COALESCE(${cashOperations.metadata}->>'expenseDate', SUBSTRING(${cashOperations.createdAt}::text, 1, 10)) <= ${endDate}`
-				);
-			}
+				const rows = await tx
+					.select()
+					.from(cashOperations)
+					.where(and(...conditions))
+					.orderBy(desc(cashOperations.createdAt));
 
-			const rows = await tx
-				.select()
-				.from(cashOperations)
-				.where(and(...conditions))
-				.orderBy(desc(cashOperations.createdAt));
+				let filtered = rows.map((r) => rowToExpenseRecord(r, clinicTz));
+				if (category) {
+					filtered = filtered.filter((e) => e.category === category);
+				}
 
-			return rows.map(rowToExpenseRecord);
+				return { data: filtered, total: filtered.length };
+			},
 		});
-
-		let filtered = records;
-		if (category) {
-			filtered = filtered.filter((e) => e.category === category);
-		}
-
-		return { data: filtered, total: filtered.length };
 	};
 
-	server.get("/api/v1/expenses", handleListExpenses);
-	server.get("/api/expenses", handleListExpenses);
+	registerListExpenses("/api/v1/expenses");
+	registerListExpenses("/api/expenses");
 
 	// 2. POST /api/v1/expenses & /api/expenses
-	const handleCreateExpense = async (request: FastifyRequest, reply: FastifyReply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"expenses create",
-		);
-		if (!organizationId) return;
+	const registerCreateExpense = (path: string) => {
+		defineTenantMutation(server, {
+			method: "POST",
+			path,
+			permission: "finance.write",
+			authOptions: EXPENSE_AUTH_OPTIONS,
+			idempotency: "optional_header",
+			execute: async ({ tx, principal, request, reply }) => {
+				const organizationId = principal.organizationId;
+				const parsed = createExpenseBodySchema.safeParse(request.body);
+				if (!parsed.success) {
+					request.log.error({ issues: parsed.error.issues, body: request.body }, "Expense validation failed");
+					return reply.status(400).send({
+						error: "ValidationError",
+						message: "Некорректные данные для создания расхода.",
+						details: parsed.error.issues,
+					});
+				}
 
-		const parsed = createExpenseBodySchema.safeParse(request.body);
-		if (!parsed.success) {
-			request.log.error({ issues: parsed.error.issues, body: request.body }, "Expense validation failed");
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Некорректные данные для создания расхода.",
-				details: parsed.error.issues,
-			};
-		}
+				const data = parsed.data;
+				const amountRub = kopecksToRubles(data.amountKopecks);
+				const reasonCode = mapCategoryToReasonCode(data.category);
+				const clinicTz = await resolveClinicTimeZone(tx, organizationId);
 
-		const data = parsed.data;
-		const amountRub = kopecksToRubles(data.amountKopecks);
-		const reasonCode = mapCategoryToReasonCode(data.category);
+				await ensureOrganizationCashBoxes(tx, organizationId);
+				await ensureOrganizationExpenseReasons(tx, organizationId);
 
-		const newRecord = await withTenantCtx(organizationId, async (tx) => {
-			await ensureOrganizationCashBoxes(tx, organizationId);
-			await ensureOrganizationExpenseReasons(tx, organizationId);
+				const [reason] = await tx
+					.select()
+					.from(cashExpenseReasons)
+					.where(and(eq(cashExpenseReasons.organizationId, organizationId), eq(cashExpenseReasons.code, reasonCode)))
+					.limit(1);
 
-			// Находим статью расхода
-			const [reason] = await tx
-				.select()
-				.from(cashExpenseReasons)
-				.where(and(eq(cashExpenseReasons.organizationId, organizationId), eq(cashExpenseReasons.code, reasonCode)))
-				.limit(1);
-
-			// Определяем кассу (по способу оплаты: наличные -> main, иначе account/expenses)
-			const targetType = data.paymentMethod === "cash" || data.paymentMethod === "cash_register" ? "main" : "account";
-			let [targetBox] = await tx
-				.select()
-				.from(cashBoxes)
-				.where(and(eq(cashBoxes.organizationId, organizationId), eq(cashBoxes.type, targetType)))
-				.for("update")
-				.limit(1);
-
-			if (!targetBox) {
-				const [fallback] = await tx
+				// Детерминированный порядок блокировок: cashBoxes -> cashBoxShifts (ORDER BY id ASC FOR UPDATE)
+				const targetType = data.paymentMethod === "cash" || data.paymentMethod === "cash_register" ? "main" : "account";
+				let [targetBox] = await tx
 					.select()
 					.from(cashBoxes)
-					.where(eq(cashBoxes.organizationId, organizationId))
+					.where(and(eq(cashBoxes.organizationId, organizationId), eq(cashBoxes.type, targetType)))
+					.orderBy(asc(cashBoxes.id))
 					.for("update")
 					.limit(1);
-				targetBox = fallback;
-			}
 
-			if (!targetBox) {
-				return { kind: "no_cash_box" as const };
-			}
-
-			const balanceBeforeKop = resolveSafeKop(targetBox.balanceKopecks, targetBox.balanceRub);
-			const balanceBefore = kopecksToRub(balanceBeforeKop);
-			const expenseKop = data.amountKopecks;
-			const balanceAfterKop = balanceBeforeKop - expenseKop;
-			const balanceAfter = kopecksToRub(balanceAfterKop);
-
-			const [activeShift] = await tx
-				.select()
-				.from(cashBoxShifts)
-				.where(
-					and(
-						eq(cashBoxShifts.organizationId, organizationId),
-						eq(cashBoxShifts.cashBoxId, targetBox.id),
-						eq(cashBoxShifts.status, "open"),
-					),
-				)
-				.for("update")
-				.limit(1);
-
-			await tx
-				.update(cashBoxes)
-				.set({
-					balanceRub: balanceAfter,
-					balanceKopecks: balanceAfterKop,
-					updatedAt: new Date(),
-				})
-				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, organizationId)));
-
-			if (activeShift) {
-				const prevExpenseKop = resolveSafeKop(
-					activeShift.expenseTotalKopecks,
-					activeShift.expenseTotalRub,
-				);
-				const nextExpenseKop = prevExpenseKop + expenseKop;
-				await tx
-					.update(cashBoxShifts)
-					.set({
-						expenseTotalRub: kopecksToRub(nextExpenseKop),
-						expenseTotalKopecks: nextExpenseKop,
-						updatedAt: new Date(),
-					})
-					.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, organizationId)));
-			}
-
-			const metadata: ExpenseMetadata = {
-				category: data.category,
-				clinicId: data.clinicId,
-				vendorName: data.vendorName,
-				periodicity: data.periodicity,
-				paymentMethod: data.paymentMethod,
-				receiptUrl: data.receiptUrl,
-				expenseDate: data.expenseDate,
-				createdBy: data.createdBy,
-			};
-
-			const [operation] = await tx
-				.insert(cashOperations)
-				.values({
-					organizationId,
-					cashBoxId: targetBox.id,
-					shiftId: activeShift?.id ?? null,
-					operationType: "expense",
-					amountRub,
-					amountKopecks: expenseKop,
-					balanceBeforeRub: balanceBefore,
-					balanceBeforeKopecks: BigInt(balanceBeforeKop),
-					balanceAfterRub: balanceAfter,
-					balanceAfterKopecks: BigInt(balanceAfterKop),
-					reasonId: reason?.id ?? null,
-					reasonCode: reason?.code ?? reasonCode,
-					reasonText: data.description ?? reason?.name ?? data.category,
-					operatorId: data.createdBy ?? null,
-					kkmReceiptUrl: data.receiptUrl ?? null,
-					metadata,
-				})
-				.returning();
-
-			if (!operation) {
-				throw new Error("Не удалось записать расходную операцию в кассу.");
-			}
-			return rowToExpenseRecord(operation);
-		});
-
-		if ("kind" in newRecord && newRecord.kind === "no_cash_box") {
-			reply.status(400);
-			return {
-				error: "NoCashBox",
-				message: "Кассовые счета организации не найдены для списания расхода.",
-			};
-		}
-
-		reply.status(201);
-		return { success: true, data: newRecord };
-	};
-
-	server.post("/api/v1/expenses", handleCreateExpense);
-	server.post("/api/expenses", handleCreateExpense);
-
-	// 3. GET /api/v1/expenses/summary & /api/expenses/summary
-	const handleExpensesSummary = async (request: FastifyRequest, reply: FastifyReply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"expenses summary",
-		);
-		if (!organizationId) return;
-
-		const parsed = summaryQuerySchema.safeParse(request.query);
-		if (!parsed.success) {
-			reply.status(400);
-			return { error: "InvalidQuery", message: "Некорректные параметры отчёта." };
-		}
-
-		const { month, revenueRub } = parsed.data;
-
-		const { records, autoRevenueRub } = await withTenantCtx(organizationId, async (tx) => {
-			const rows = await tx
-				.select()
-				.from(cashOperations)
-				.where(
-					and(
-						eq(cashOperations.organizationId, organizationId),
-						eq(cashOperations.operationType, "expense"),
-					),
-				)
-				.orderBy(desc(cashOperations.createdAt));
-
-			let monthRevenue = 0;
-			if ((revenueRub === undefined || revenueRub === 0) && month) {
-				const [yearStr, monthStr] = month.split("-");
-				const y = Number(yearStr);
-				const m = Number(monthStr);
-				if (Number.isFinite(y) && Number.isFinite(m) && m >= 1 && m <= 12) {
-					const monthStart = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0));
-					const monthEnd = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
-					const paidPayments = await tx
-						.select({
-							amountKopecks: payments.amountKopecks,
-							amountRub: payments.amountRub,
-						})
-						.from(payments)
-						.where(
-							and(
-								eq(payments.organizationId, organizationId),
-								eq(payments.status, "paid"),
-								gte(payments.paidAt, monthStart),
-								lte(payments.paidAt, monthEnd),
-							),
-						);
-					const monthRevenueKop = paidPayments.reduce(
-						(acc, p) => acc + resolveSafeKop(p.amountKopecks, p.amountRub),
-						0,
-					);
-					monthRevenue = kopecksToRub(monthRevenueKop);
+				if (!targetBox) {
+					const [fallback] = await tx
+						.select()
+						.from(cashBoxes)
+						.where(eq(cashBoxes.organizationId, organizationId))
+						.orderBy(asc(cashBoxes.id))
+						.for("update")
+						.limit(1);
+					targetBox = fallback;
 				}
-			}
 
-			return {
-				records: rows.map(rowToExpenseRecord),
-				autoRevenueRub: monthRevenue,
-			};
-		});
+				if (!targetBox) {
+					return reply.status(400).send({
+						error: "NoCashBox",
+						message: "Кассовые счета организации не найдены для списания расхода.",
+					});
+				}
 
-		let filtered = records;
-		if (month) {
-			filtered = filtered.filter((e) => e.expenseDate.startsWith(month));
-		}
+				const balanceBeforeKop = resolveSafeKop(targetBox.balanceKopecks, targetBox.balanceRub);
+				const balanceBefore = kopecksToRub(balanceBeforeKop);
+				const expenseKop = data.amountKopecks;
+				const balanceAfterKop = balanceBeforeKop - expenseKop;
+				const balanceAfter = kopecksToRub(balanceAfterKop);
 
-		const effectiveRevenueRub = (revenueRub !== undefined && revenueRub > 0)
-			? revenueRub
-			: autoRevenueRub;
-
-		const summary = calculateMonthlyExpensesSummary(filtered);
-		const profit = calculateNetProfitAndMargin(effectiveRevenueRub, summary.totalExpensesRub);
-
-		return {
-			data: {
-				summary,
-				profit,
-			},
-		};
-	};
-
-	server.get("/api/v1/expenses/summary", handleExpensesSummary);
-	server.get("/api/expenses/summary", handleExpensesSummary);
-
-	// 4. DELETE /api/v1/expenses/:id & /api/expenses/:id
-	// Мандат безопасности [SEC-06]: удаление расхода разрешено строго ролям owner / admin / administrator
-	// и сопровождается обязательной фиксацией в журнале аудита audit_events.
-	// door-validation: none — удаление расхода по URL-параметру :id без тела запроса
-	const handleDeleteExpense = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-		const identity = await requireStaffIdentity(request, reply, ADMIN_ROLES);
-		if (!identity || !identity.organizationId) return;
-		const organizationId = identity.organizationId;
-
-		const paramsParsed = z.object({ id: z.string().uuid() }).safeParse(request.params);
-		if (!paramsParsed.success) {
-			reply.status(400);
-			return { error: "ValidationError", message: "Некорректный идентификатор расхода (ожидается UUID)." };
-		}
-		const { id } = paramsParsed.data;
-
-		const deletedOp = await withTenantCtx(organizationId, async (tx) => {
-			const [op] = await tx
-				.select()
-				.from(cashOperations)
-				.where(
-					and(
-						eq(cashOperations.id, id),
-						eq(cashOperations.organizationId, organizationId),
-						eq(cashOperations.operationType, "expense"),
-					),
-				)
-				.for("update")
-				.limit(1);
-
-			if (!op) return null;
-
-			// Возвращаем средства обратно на кассовый счет под блокировкой
-			const [box] = await tx
-				.select()
-				.from(cashBoxes)
-				.where(and(eq(cashBoxes.id, op.cashBoxId), eq(cashBoxes.organizationId, organizationId)))
-				.for("update")
-				.limit(1);
-
-			const refundKop = resolveSafeKop(op.amountKopecks, op.amountRub);
-
-			if (box) {
-				const restoredKop = resolveSafeKop(box.balanceKopecks, box.balanceRub) + refundKop;
-				const restoredBalance = kopecksToRub(restoredKop);
-				await tx
-					.update(cashBoxes)
-					.set({
-						balanceRub: restoredBalance,
-						balanceKopecks: restoredKop,
-						updatedAt: new Date(),
-					})
-					.where(and(eq(cashBoxes.id, box.id), eq(cashBoxes.organizationId, organizationId)));
-			}
-
-			if (op.shiftId) {
-				const [shiftRow] = await tx
+				const [activeShift] = await tx
 					.select()
 					.from(cashBoxShifts)
 					.where(
 						and(
-							eq(cashBoxShifts.id, op.shiftId),
 							eq(cashBoxShifts.organizationId, organizationId),
+							eq(cashBoxShifts.cashBoxId, targetBox.id),
 							eq(cashBoxShifts.status, "open"),
 						),
 					)
+					.orderBy(asc(cashBoxShifts.id))
 					.for("update")
 					.limit(1);
-				if (shiftRow) {
-					const curExpKop = resolveSafeKop(
-						shiftRow.expenseTotalKopecks,
-						shiftRow.expenseTotalRub,
+
+				await tx
+					.update(cashBoxes)
+					.set({
+						balanceRub: balanceAfter,
+						balanceKopecks: balanceAfterKop,
+						updatedAt: new Date(),
+					})
+					.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, organizationId)));
+
+				if (activeShift) {
+					const prevExpenseKop = resolveSafeKop(
+						activeShift.expenseTotalKopecks,
+						activeShift.expenseTotalRub,
 					);
-					const nextExpKop = Math.max(0, curExpKop - refundKop);
+					const nextExpenseKop = prevExpenseKop + expenseKop;
 					await tx
 						.update(cashBoxShifts)
 						.set({
-							expenseTotalRub: kopecksToRub(nextExpKop),
-							expenseTotalKopecks: nextExpKop,
+							expenseTotalRub: kopecksToRub(nextExpenseKop),
+							expenseTotalKopecks: nextExpenseKop,
 							updatedAt: new Date(),
 						})
-						.where(and(eq(cashBoxShifts.id, shiftRow.id), eq(cashBoxShifts.organizationId, organizationId)));
+						.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, organizationId)));
 				}
-			}
 
-			await tx
-				.delete(cashOperations)
-				.where(and(eq(cashOperations.id, id), eq(cashOperations.organizationId, organizationId)));
+				const metadata: ExpenseMetadata = {
+					category: data.category,
+					clinicId: data.clinicId,
+					vendorName: data.vendorName,
+					periodicity: data.periodicity,
+					paymentMethod: data.paymentMethod,
+					receiptUrl: data.receiptUrl,
+					expenseDate: data.expenseDate,
+					createdBy: data.createdBy,
+				};
 
-			return op;
+				const [operation] = await tx
+					.insert(cashOperations)
+					.values({
+						organizationId,
+						cashBoxId: targetBox.id,
+						shiftId: activeShift?.id ?? null,
+						operationType: "expense",
+						amountRub,
+						amountKopecks: expenseKop,
+						balanceBeforeRub: balanceBefore,
+						balanceBeforeKopecks: BigInt(balanceBeforeKop),
+						balanceAfterRub: balanceAfter,
+						balanceAfterKopecks: BigInt(balanceAfterKop),
+						reasonId: reason?.id ?? null,
+						reasonCode: reason?.code ?? reasonCode,
+						reasonText: data.description ?? reason?.name ?? data.category,
+						operatorId: data.createdBy ?? null,
+						kkmReceiptUrl: data.receiptUrl ?? null,
+						metadata,
+					})
+					.returning();
+
+				if (!operation) {
+					throw new Error("Не удалось записать расходную операцию в кассу.");
+				}
+
+				reply.status(201);
+				return { success: true, data: rowToExpenseRecord(operation, clinicTz) };
+			},
 		});
+	};
 
-		if (!deletedOp) {
-			reply.status(404);
-			return { error: "NotFound", message: "Расходная операция не найдена." };
-		}
+	registerCreateExpense("/api/v1/expenses");
+	registerCreateExpense("/api/expenses");
 
-		let actorUserId: string | null = null;
-		const identityUserId =
-			typeof identity.userId === "string" ? identity.userId : null;
-		if (
-			identityUserId &&
-			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-				identityUserId,
-			)
-		) {
-			const [existingUser] = await withTenantCtx(organizationId, async (tx) => {
-				return tx
-					.select({ id: users.id })
-					.from(users)
-					.where(eq(users.id, identityUserId))
+	// 3. GET /api/v1/expenses/summary & /api/expenses/summary
+	const registerExpensesSummary = (path: string) => {
+		defineTenantQuery(server, {
+			path,
+			permission: "finance.read",
+			authOptions: EXPENSE_AUTH_OPTIONS,
+			query: async ({ tx, principal, request, reply }) => {
+				const organizationId = principal.organizationId;
+				const parsed = summaryQuerySchema.safeParse(request.query);
+				if (!parsed.success) {
+					return reply.status(400).send({
+						error: "InvalidQuery",
+						message: "Некорректные параметры отчёта.",
+					});
+				}
+
+				const { month, revenueKopecks, revenueRub } = parsed.data;
+				const requestedRevenueKop =
+					revenueKopecks !== undefined && revenueKopecks > 0
+						? revenueKopecks
+						: revenueRub !== undefined && revenueRub > 0
+							? rublesToKopecks(revenueRub)
+							: 0;
+
+				const [clinicTz, rows] = await Promise.all([
+					resolveClinicTimeZone(tx, organizationId),
+					tx
+						.select()
+						.from(cashOperations)
+						.where(
+							and(
+								eq(cashOperations.organizationId, organizationId),
+								eq(cashOperations.operationType, "expense"),
+							),
+						)
+						.orderBy(desc(cashOperations.createdAt)),
+				]);
+
+				let monthRevenueKop = 0;
+				if (requestedRevenueKop === 0 && month) {
+					const [yearStr, monthStr] = month.split("-");
+					const y = Number(yearStr);
+					const m = Number(monthStr);
+					if (Number.isFinite(y) && Number.isFinite(m) && m >= 1 && m <= 12) {
+						const monthStart = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0));
+						const monthEnd = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
+						const paidPayments = await tx
+							.select({
+								amountKopecks: payments.amountKopecks,
+								amountRub: payments.amountRub,
+							})
+							.from(payments)
+							.where(
+								and(
+									eq(payments.organizationId, organizationId),
+									eq(payments.status, "paid"),
+									gte(payments.paidAt, monthStart),
+									lte(payments.paidAt, monthEnd),
+								),
+							);
+						monthRevenueKop = paidPayments.reduce(
+							(acc, p) => acc + resolveSafeKop(p.amountKopecks, p.amountRub),
+							0,
+						);
+					}
+				}
+
+				const records = rows.map((r) => rowToExpenseRecord(r, clinicTz));
+				let filtered = records;
+				if (month) {
+					filtered = filtered.filter((e) => e.expenseDate.startsWith(month));
+				}
+
+				const effectiveRevenueKop = requestedRevenueKop > 0 ? requestedRevenueKop : monthRevenueKop;
+				const summary = calculateMonthlyExpensesSummary(filtered);
+				const profit = calculateNetProfitAndMargin(
+					kopecksToRub(effectiveRevenueKop),
+					summary.totalExpensesRub,
+				);
+
+				return {
+					data: {
+						summary,
+						profit,
+					},
+				};
+			},
+		});
+	};
+
+	registerExpensesSummary("/api/v1/expenses/summary");
+	registerExpensesSummary("/api/expenses/summary");
+
+	// 4. DELETE /api/v1/expenses/:id & /api/expenses/:id
+	// Мандат безопасности [SEC-06]: удаление расхода разрешено строго ролям owner / admin / administrator
+	// и сопровождается обязательной фиксацией в журнале аудита audit_events в единой транзакции.
+	const registerDeleteExpense = (path: string) => {
+		defineTenantMutation(server, {
+			method: "DELETE",
+			path,
+			permission: "finance.write",
+			authOptions: EXPENSE_AUTH_OPTIONS,
+			idempotency: "optional_header",
+			execute: async ({ tx, principal, request, reply }) => {
+				if (
+					principal.authMode !== "admin_secret" &&
+					!(ADMIN_ROLES as readonly (string | null | undefined)[]).includes(principal.role)
+				) {
+					return reply.status(403).send({
+						error: "PermissionDenied",
+						permission: "finance.expenses.delete",
+						role: principal.role,
+						message: "Удаление расходных операций разрешено только руководству или администратору клиники.",
+					});
+				}
+
+				const organizationId = principal.organizationId;
+				const paramsParsed = z.object({ id: z.string().uuid() }).safeParse(request.params);
+				if (!paramsParsed.success) {
+					return reply.status(400).send({
+						error: "ValidationError",
+						message: "Некорректный идентификатор расхода (ожидается UUID).",
+					});
+				}
+				const { id } = paramsParsed.data;
+
+				const [op] = await tx
+					.select()
+					.from(cashOperations)
+					.where(
+						and(
+							eq(cashOperations.id, id),
+							eq(cashOperations.organizationId, organizationId),
+							eq(cashOperations.operationType, "expense"),
+						),
+					)
+					.orderBy(asc(cashOperations.id))
+					.for("update")
 					.limit(1);
-			});
-			if (existingUser) {
-				actorUserId = existingUser.id;
-			}
-		}
 
-		await recordAuditEventInDb(organizationId, {
-			entityType: "cash_operation",
-			entityId: id,
-			action: "delete_expense",
-			actorUserId,
-			reason: `Аннулирование расходной операции на сумму ${deletedOp.amountRub} руб. (${deletedOp.reasonText || "без описания"})`,
+				if (!op) {
+					return reply.status(404).send({
+						error: "NotFound",
+						message: "Расходная операция не найдена.",
+					});
+				}
+
+				// Детерминированный порядок блокировок: cashBoxes -> cashBoxShifts
+				const [box] = await tx
+					.select()
+					.from(cashBoxes)
+					.where(and(eq(cashBoxes.id, op.cashBoxId), eq(cashBoxes.organizationId, organizationId)))
+					.orderBy(asc(cashBoxes.id))
+					.for("update")
+					.limit(1);
+
+				const refundKop = resolveSafeKop(op.amountKopecks, op.amountRub);
+
+				if (box) {
+					const restoredKop = resolveSafeKop(box.balanceKopecks, box.balanceRub) + refundKop;
+					const restoredBalance = kopecksToRub(restoredKop);
+					await tx
+						.update(cashBoxes)
+						.set({
+							balanceRub: restoredBalance,
+							balanceKopecks: restoredKop,
+							updatedAt: new Date(),
+						})
+						.where(and(eq(cashBoxes.id, box.id), eq(cashBoxes.organizationId, organizationId)));
+				}
+
+				if (op.shiftId) {
+					const [shiftRow] = await tx
+						.select()
+						.from(cashBoxShifts)
+						.where(
+							and(
+								eq(cashBoxShifts.id, op.shiftId),
+								eq(cashBoxShifts.organizationId, organizationId),
+								eq(cashBoxShifts.status, "open"),
+							),
+						)
+						.orderBy(asc(cashBoxShifts.id))
+						.for("update")
+						.limit(1);
+					if (shiftRow) {
+						const curExpKop = resolveSafeKop(
+							shiftRow.expenseTotalKopecks,
+							shiftRow.expenseTotalRub,
+						);
+						const nextExpKop = Math.max(0, curExpKop - refundKop);
+						await tx
+							.update(cashBoxShifts)
+							.set({
+								expenseTotalRub: kopecksToRub(nextExpKop),
+								expenseTotalKopecks: nextExpKop,
+								updatedAt: new Date(),
+							})
+							.where(and(eq(cashBoxShifts.id, shiftRow.id), eq(cashBoxShifts.organizationId, organizationId)));
+					}
+				}
+
+				await tx
+					.delete(cashOperations)
+					.where(and(eq(cashOperations.id, id), eq(cashOperations.organizationId, organizationId)));
+
+				let actorUserId: string | null = null;
+				const identityUserId =
+					typeof principal.userId === "string" ? principal.userId : null;
+				if (
+					identityUserId &&
+					/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+						identityUserId,
+					)
+				) {
+					const [existingUser] = await tx
+						.select({ id: users.id })
+						.from(users)
+						.where(
+							and(
+								eq(users.id, identityUserId),
+								eq(users.organizationId, organizationId),
+							),
+						)
+						.limit(1);
+					if (existingUser) {
+						actorUserId = existingUser.id;
+					}
+				}
+
+				await recordAuditEventInDb(
+					organizationId,
+					{
+						entityType: "cash_operation",
+						entityId: id,
+						action: "delete_expense",
+						actorUserId,
+						reason: `Аннулирование расходной операции на сумму ${op.amountRub} руб. (${op.reasonText || "без описания"})`,
+					},
+					tx,
+				);
+
+				return { success: true };
+			},
 		});
-
-		return { success: true };
 	};
 
 	// door-validation: none — удаление расхода по URL-параметру :id без тела запроса
-	server.delete("/api/v1/expenses/:id", handleDeleteExpense);
+	registerDeleteExpense("/api/v1/expenses/:id");
 	// door-validation: none — удаление расхода по URL-параметру :id без тела запроса
-	server.delete("/api/expenses/:id", handleDeleteExpense);
+	registerDeleteExpense("/api/expenses/:id");
 };

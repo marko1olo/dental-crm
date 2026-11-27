@@ -11,7 +11,7 @@ import {
 } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import { getServiceCatalogForOrganization } from "../../../db/pricelistQuery.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import {
@@ -39,15 +39,18 @@ export async function handleGenerateInvoiceFromPlan(request: FastifyRequest, rep
 	}
 	const data = parsed.data;
 
-	const compliance = await verifyGenerateInvoiceCompliance({ db, orgId, data, request, reply });
-	if (!compliance) return;
-	const { patient, approvedPlanIds, isAdminOverrideVerified, adminStaffName } = compliance;
-
-	const catalogRows = await getServiceCatalogForOrganization(orgId);
+	const preloaded = await withTenantReadCtx(orgId, async (tx) => {
+		const compliance = await verifyGenerateInvoiceCompliance({ db: tx, orgId, data, request, reply });
+		if (!compliance) return null;
+		const catalogRows = await getServiceCatalogForOrganization(orgId);
+		const targetPlanId = data.planId || compliance.approvedPlanIds[0];
+		const targetData = await fetchTargetPlanAndFreezeToken({ db: tx, orgId, targetPlanId });
+		return { compliance, catalogRows, ...targetData };
+	});
+	if (!preloaded) return;
+	const { compliance, catalogRows, targetPlan, freezeToken, targetPlanDbItems } = preloaded;
+	const { patient, isAdminOverrideVerified, adminStaffName } = compliance;
 	const catalogLookup = mapCatalogRowsToLookup(catalogRows);
-
-	const targetPlanId = data.planId || approvedPlanIds[0];
-	const { targetPlan, freezeToken, targetPlanDbItems } = await fetchTargetPlanAndFreezeToken({ db, orgId, targetPlanId });
 
 	const planCreatedAtIso = data.planCreatedAtIso || targetPlan?.createdAt?.toISOString() || new Date().toISOString();
 	const freezePolicyCandidate = freezeToken && "policyKind" in freezeToken

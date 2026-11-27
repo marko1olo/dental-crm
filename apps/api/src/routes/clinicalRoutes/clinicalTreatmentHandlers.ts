@@ -313,8 +313,8 @@ export async function registerClinicalTreatmentRoutes(app: FastifyInstance) {
 				const { getCustomCrmTaskTypesFromDb } = await import(
 					"../../db/customCrmTaskTypesQuery.js"
 				);
-				const taskTypes = await withTenantReadCtx(orgId, () =>
-					getCustomCrmTaskTypesFromDb(orgId),
+				const taskTypes = await withTenantReadCtx(orgId, (tx) =>
+					getCustomCrmTaskTypesFromDb(orgId, tx),
 				);
 				return reply.status(200).send(taskTypes);
 			} catch (error: unknown) {

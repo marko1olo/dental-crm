@@ -1,7 +1,7 @@
 import { randomInt } from "node:crypto";
 import { and, desc, eq, gte, isNull } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { type TenantDb, withTenantCtx } from "../../../db/rls.js";
+import { type TenantDb, withTenantWriteCtx } from "../../../db/rls.js";
 import { communicationOutbox } from "../../../db/schema.js";
 import { portalOtpCodes } from "../../../db/schema/auth.js";
 import { hashCredential, verifyCredential } from "../../../utils/cryptoHelper.js";
@@ -14,6 +14,7 @@ export async function handleOtpRequest(
 	reply: FastifyReply,
 	organizationId?: string,
 	patientId?: string,
+	executor?: TenantDb,
 ) {
 	const generatedCode = randomInt(100000, 999999).toString();
 	const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
@@ -24,7 +25,7 @@ export async function handleOtpRequest(
 			const codeHash = await hashCredential(generatedCode);
 			const now = new Date();
 
-			await withTenantCtx(organizationId, async (tx) => {
+			const runOtpWrite = async (tx: TenantDb) => {
 				// Погасить старые неиспользованные коды пациента
 				await tx
 					.update(portalOtpCodes)
@@ -60,7 +61,12 @@ export async function handleOtpRequest(
 						dedupeKey: `pep:otp:${planId}:${Date.now()}`,
 					});
 				}
-			});
+			};
+			if (executor) {
+				await runOtpWrite(executor);
+			} else {
+				await withTenantWriteCtx(organizationId, runOtpWrite);
+			}
 		} catch (dbErr) {
 			request.log.error({ err: dbErr }, "[PEP-SMS] Ошибка записи OTP кода в portal_otp_codes");
 			return reply.code(503).send({
@@ -140,7 +146,7 @@ export async function verifyOtpCode(
 
 		const isMatched = executor
 			? await runVerify(executor)
-			: await withTenantCtx(organizationId, runVerify);
+			: await withTenantWriteCtx(organizationId, runVerify);
 
 		if (isMatched) {
 			activeOtpCache.delete(planId);

@@ -5,19 +5,26 @@ import os from "node:os";
 import path from "node:path";
 import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import multipart from "@fastify/multipart";
 import { and, eq } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { isDemoShowcaseMode, requireResolvedOrganizationId } from "../accessGuard.js";
-import { definePublicRoute, defineStreamRoute } from "../core/routeFactories.js";
+import {
+	definePublicRoute,
+	defineStreamRoute,
+	defineTenantMutation,
+} from "../core/routeFactories.js";
 import { BoundedTtlMap } from "../lib/boundedTtlMap.js";
 import { onTenantTxCommit, withSuperuserBypass, withTenantReadCtx, withTenantWriteCtx } from "../db/rls.js";
 import { patients, attachments, systemBackgroundJobs, visits } from "../db/schema.js";
 import { safeLogError } from "../observability/logger.js";
+import { extractIdempotencyKey } from "../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { UPLOADS_DIR, validateUploadMagicBytes } from "./fileModules/common.js";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PHOTO_BRIDGE_QUEUE = "photo_bridge_session";
+const MAX_PHOTO_UPLOAD_BYTES = 25 * 1024 * 1024;
 
 export interface PhotoBridgeUploadedItem {
 	id: string;
@@ -27,6 +34,7 @@ export interface PhotoBridgeUploadedItem {
 	mimeType: string;
 	sizeBytes: number;
 	uploadedAt: string;
+	idempotencyKey?: string | undefined;
 }
 
 export interface PhotoBridgeSessionSlot {
@@ -67,129 +75,6 @@ function getPatientInitials(fullName: string | null | undefined): string {
 	return `${first} ${second.charAt(0)}. ${third.charAt(0)}.`;
 }
 
-function stripMultipartWrapperFromBuffer(
-	buffer: Buffer,
-	contentType?: string,
-): {
-	data: Buffer;
-	filename?: string | undefined;
-	mimeType?: string | undefined;
-	slotId?: string | undefined;
-} {
-	const boundaryMatch = contentType?.match(/boundary=(?:"([^"]+)"|([^;\s]+))/i);
-	const boundaryStr = boundaryMatch?.[1] ?? boundaryMatch?.[2];
-
-	if (boundaryStr) {
-		const delimiter = Buffer.from(`--${boundaryStr}`);
-		const parts: Buffer[] = [];
-		let searchStart = 0;
-		while (true) {
-			const idx = buffer.indexOf(delimiter, searchStart);
-			if (idx === -1) break;
-			if (searchStart > 0) {
-				parts.push(buffer.subarray(searchStart, idx));
-			}
-			searchStart = idx + delimiter.length;
-			if (
-				buffer.subarray(searchStart, searchStart + 2).equals(Buffer.from("--"))
-			) {
-				break;
-			}
-			if (buffer[searchStart] === 0x0d && buffer[searchStart + 1] === 0x0a) {
-				searchStart += 2;
-			} else if (buffer[searchStart] === 0x0a) {
-				searchStart += 1;
-			}
-		}
-
-		let extractedSlotId: string | undefined;
-		let fileResult:
-			| {
-					data: Buffer;
-					filename?: string | undefined;
-					mimeType?: string | undefined;
-			  }
-			| undefined;
-
-		for (const rawPart of parts) {
-			const sepCrLf = rawPart.indexOf("\r\n\r\n");
-			const sepLf = rawPart.indexOf("\n\n");
-			const sepIdx = sepCrLf !== -1 ? sepCrLf : sepLf;
-			const sepLen = sepCrLf !== -1 ? 4 : 2;
-			if (sepIdx === -1) continue;
-
-			const headerText = rawPart.subarray(0, sepIdx).toString("utf8");
-			let bodySlice = rawPart.subarray(sepIdx + sepLen);
-			if (
-				bodySlice.length >= 2 &&
-				bodySlice[bodySlice.length - 2] === 0x0d &&
-				bodySlice[bodySlice.length - 1] === 0x0a
-			) {
-				bodySlice = bodySlice.subarray(0, bodySlice.length - 2);
-			} else if (
-				bodySlice.length >= 1 &&
-				bodySlice[bodySlice.length - 1] === 0x0a
-			) {
-				bodySlice = bodySlice.subarray(0, bodySlice.length - 1);
-			}
-
-			const matchFile = headerText.match(/filename="([^"]+)"/i);
-			if (matchFile) {
-				const matchMime = headerText.match(/Content-Type:\s*([^\r\n]+)/i);
-				fileResult = {
-					data: bodySlice,
-					filename: matchFile[1],
-					...(matchMime?.[1] ? { mimeType: matchMime[1].trim() } : {}),
-				};
-			} else if (/name="slotId"/i.test(headerText)) {
-				const val = bodySlice.toString("utf8").trim().slice(0, 64);
-				if (val) extractedSlotId = val;
-			}
-		}
-
-		if (fileResult) {
-			return {
-				...fileResult,
-				...(extractedSlotId ? { slotId: extractedSlotId } : {}),
-			};
-		}
-	}
-
-	const headerEndCrLf = buffer.indexOf("\r\n\r\n");
-	const headerEndLf = buffer.indexOf("\n\n");
-	let startOffset = 0;
-	let filename: string | undefined;
-	let mimeType: string | undefined;
-
-	if (headerEndCrLf !== -1 && headerEndCrLf < 4096) {
-		const headerText = buffer.subarray(0, headerEndCrLf).toString("utf8");
-		const matchFile = headerText.match(/filename="([^"]+)"/);
-		if (matchFile) filename = matchFile[1];
-		const matchMime = headerText.match(/Content-Type:\s*([^\r\n]+)/i);
-		if (matchMime) mimeType = matchMime[1]?.trim();
-		startOffset = headerEndCrLf + 4;
-	} else if (headerEndLf !== -1 && headerEndLf < 4096) {
-		const headerText = buffer.subarray(0, headerEndLf).toString("utf8");
-		const matchFile = headerText.match(/filename="([^"]+)"/);
-		if (matchFile) filename = matchFile[1];
-		const matchMime = headerText.match(/Content-Type:\s*([^\r\n]+)/i);
-		if (matchMime) mimeType = matchMime[1]?.trim();
-		startOffset = headerEndLf + 2;
-	}
-
-	let endOffset = buffer.length;
-	const lastBoundary = buffer.lastIndexOf("\r\n--");
-	if (lastBoundary !== -1 && lastBoundary > startOffset) {
-		endOffset = lastBoundary;
-	}
-
-	return {
-		data: buffer.subarray(startOffset, endOffset),
-		...(filename ? { filename } : {}),
-		...(mimeType ? { mimeType } : {}),
-	};
-}
-
 const photoBridgeUploadedItemSchema = z.object({
 	id: z.string(),
 	slotId: z.string(),
@@ -198,6 +83,7 @@ const photoBridgeUploadedItemSchema = z.object({
 	mimeType: z.string(),
 	sizeBytes: z.number(),
 	uploadedAt: z.string(),
+	idempotencyKey: z.string().optional(),
 });
 
 const photoBridgeSessionSchema = z.object({
@@ -351,15 +237,19 @@ const MIME_TO_EXTENSION: Record<string, string> = {
 	"image/heif": ".heif",
 };
 
-interface FastifyMultipartFilePart {
-	file: AsyncIterable<Buffer>;
+interface MultipartPart {
+	type: "field" | "file";
+	fieldname: string;
+	value?: unknown;
+	file: NodeJS.ReadableStream & { truncated?: boolean };
 	filename?: string;
 	mimetype?: string;
-	fields?: Record<string, { value?: string }>;
 }
 
 interface FastifyWithMultipart {
-	file?: () => Promise<FastifyMultipartFilePart | undefined>;
+	parts?: (opts?: {
+		limits?: { fileSize?: number; fieldSize?: number; files?: number; fields?: number };
+	}) => AsyncIterableIterator<MultipartPart>;
 }
 
 export function registerPhotoBridgeRoutes(app: FastifyInstance) {
@@ -372,7 +262,20 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		clearInterval(cleanupTimer);
 	});
 
-	// Добавляем потоковую поддержку бинарных тел запросов без буферизации в RAM
+	// Если @fastify/multipart ещё не зарегистрирован (например, в изолированных тестах),
+	// подключаем потоковый multipart-парсер вместо ручного разбора boundary.
+	if (!app.hasContentTypeParser("multipart/form-data")) {
+		app.register(multipart, {
+			limits: {
+				files: 1,
+				fields: 20,
+				fieldSize: 64 * 1024,
+				fileSize: MAX_PHOTO_UPLOAD_BYTES,
+			},
+		});
+	}
+
+	// Добавляем потоковую поддержку raw-бинарных тел изображений без буферизации в RAM
 	const binaryTypes = [
 		"image/jpeg",
 		"image/png",
@@ -380,7 +283,6 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		"image/heic",
 		"image/heif",
 		"application/octet-stream",
-		"multipart/form-data",
 	];
 	for (const ct of binaryTypes) {
 		try {
@@ -610,158 +512,104 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			}
 		};
 
+		const idempotencyKey = extractIdempotencyKey(request);
+
 		const isStreamLike = (val: unknown): val is NodeJS.ReadableStream =>
 			val !== null && typeof val === "object" && "pipe" in val && typeof (val as { pipe: unknown }).pipe === "function";
 
-		const streamToTempFile = async (source: NodeJS.ReadableStream, stripMultipart: boolean) => {
+		const streamToTempFile = async (source: NodeJS.ReadableStream) => {
 			const candidateTemp = path.join(os.tmpdir(), `dente-photo-${crypto.randomUUID()}.bin`);
 			tempFilePath = candidateTemp;
 			const hash = crypto.createHash("sha256");
 			const headChunks: Buffer[] = [];
 			let headCaptured = 0;
 			let bytesCount = 0;
-			let headersStripped = !stripMultipart;
-			let headerBuffer = Buffer.alloc(0);
 
 			const transformer = new Transform({
 				transform(rawChunk, _enc, cb) {
-					let chunk = Buffer.isBuffer(rawChunk) ? rawChunk : Buffer.from(rawChunk);
-					if (!headersStripped) {
-						if (headerBuffer.length + chunk.length > MAX_PART_HEADER_BYTES) {
-							return cb(new Error("Заголовки multipart-загрузки фото превысили лимит 64 КБ."));
-						}
-						headerBuffer = Buffer.concat([headerBuffer, chunk]);
-						const endCrLf = headerBuffer.indexOf("\r\n\r\n");
-						const endLf = headerBuffer.indexOf("\n\n");
-						const headerEnd = endCrLf !== -1 ? endCrLf : endLf;
-						const delimLen = endCrLf !== -1 ? 4 : 2;
-						if (headerEnd === -1) {
-							return cb();
-						}
-						const headerText = headerBuffer.subarray(0, headerEnd).toString("utf8");
-						const fnameMatch = headerText.match(/filename="([^"]+)"/i);
-						if (fnameMatch?.[1]) filename = path.basename(fnameMatch[1]);
-						const ctypeMatch = headerText.match(/content-type:\s*([^\r\n;]+)/i);
-						if (ctypeMatch?.[1]) mimeType = ctypeMatch[1].trim();
-						headersStripped = true;
-						chunk = headerBuffer.subarray(headerEnd + delimLen);
-						headerBuffer = Buffer.alloc(0);
-						if (chunk.length === 0) return cb();
-					}
-
+					const chunk = Buffer.isBuffer(rawChunk) ? rawChunk : Buffer.from(rawChunk);
 					bytesCount += chunk.length;
 					if (bytesCount > MAX_PHOTO_UPLOAD_BYTES) {
-						return cb(new Error("Размер фотографии превышает допустимый лимит 25 МБ."));
+						const err = new Error("Размер фотографии превышает допустимый лимит 25 МБ.") as Error & {
+							statusCode?: number;
+							code?: string;
+						};
+						err.statusCode = 413;
+						err.code = "FST_REQ_FILE_TOO_LARGE";
+						return cb(err);
 					}
-					if (!stripMultipart) {
-						hash.update(chunk);
-						if (headCaptured < 512) {
-							const slice = chunk.subarray(0, 512 - headCaptured);
-							headChunks.push(slice);
-							headCaptured += slice.length;
-						}
+					hash.update(chunk);
+					if (headCaptured < 512) {
+						const slice = chunk.subarray(0, 512 - headCaptured);
+						headChunks.push(slice);
+						headCaptured += slice.length;
 					}
 					cb(null, chunk);
 				},
 			});
 
 			await pipeline(source, transformer, createWriteStream(candidateTemp));
-
-			if (stripMultipart) {
-				const st = await fs.stat(candidateTemp);
-				if (st.size > 4) {
-					const tailSize = Math.min(st.size, 1024);
-					const tailBuf = Buffer.alloc(tailSize);
-					const fh = await fs.open(candidateTemp, "r+");
-					try {
-						await fh.read(tailBuf, 0, tailSize, st.size - tailSize);
-						let lastBoundary = tailBuf.lastIndexOf("\r\n--");
-						if (lastBoundary === -1) lastBoundary = tailBuf.lastIndexOf("\n--");
-						if (lastBoundary !== -1) {
-							await fh.truncate(st.size - (tailSize - lastBoundary));
-						}
-					} finally {
-						await fh.close();
-					}
-				}
-				const finalSt = await fs.stat(candidateTemp);
-				uploadedSizeBytes = finalSt.size;
-				const headLen = Math.min(finalSt.size, 512);
-				const readFh = await fs.open(candidateTemp, "r");
-				try {
-					const hBuf = Buffer.alloc(headLen);
-					if (headLen > 0) await readFh.read(hBuf, 0, headLen, 0);
-					magicHeader = hBuf;
-					const fileHash = crypto.createHash("sha256");
-					const streamBuf = Buffer.alloc(64 * 1024);
-					let pos = 0;
-					while (pos < finalSt.size) {
-						const { bytesRead } = await readFh.read(streamBuf, 0, streamBuf.length, pos);
-						if (bytesRead <= 0) break;
-						fileHash.update(streamBuf.subarray(0, bytesRead));
-						pos += bytesRead;
-					}
-					sha256 = fileHash.digest("hex");
-				} finally {
-					await readFh.close();
-				}
-			} else {
-				uploadedSizeBytes = bytesCount;
-				sha256 = hash.digest("hex");
-				magicHeader = Buffer.concat(headChunks);
-			}
+			uploadedSizeBytes = bytesCount;
+			sha256 = hash.digest("hex");
+			magicHeader = Buffer.concat(headChunks);
 		};
 
 		try {
-			// 1. Попытка через стандартный multipart stream (потоково на диск без Buffer[])
-			const reqWithMultipart = request as FastifyRequest & FastifyWithMultipart;
-			if (typeof reqWithMultipart.file === "function") {
-				try {
-					const part = await reqWithMultipart.file();
-					if (part) {
+			const contentType = String(request.headers["content-type"] || "");
+			const isMultipartRequest = contentType.toLowerCase().includes("multipart/form-data");
+
+			// 1. Потоковый @fastify/multipart (поддерживает порядок field `slotId` до/после `file` и лимит 25 МБ)
+			if (isMultipartRequest) {
+				const reqWithMultipart = request as FastifyRequest & FastifyWithMultipart;
+				if (typeof reqWithMultipart.parts !== "function") {
+					return reply.code(415).send({
+						error: "UnsupportedMediaType",
+						message: "Потоковый multipart-парсер не инициализирован.",
+					});
+				}
+				let fileFound = false;
+				for await (const part of reqWithMultipart.parts({
+					limits: {
+						files: 1,
+						fields: 20,
+						fieldSize: 64 * 1024,
+						fileSize: MAX_PHOTO_UPLOAD_BYTES,
+					},
+				})) {
+					if (part.type === "field") {
+						if (part.fieldname === "slotId" && typeof part.value === "string") {
+							const parsedSlot = part.value.trim().slice(0, 64);
+							if (parsedSlot && !querySlotId && !headerSlotId) {
+								slotId = parsedSlot;
+							}
+						}
+					} else if (part.type === "file") {
+						if (fileFound) {
+							part.file.resume();
+							continue;
+						}
+						fileFound = true;
 						filename = part.filename || filename;
 						mimeType = part.mimetype || mimeType;
-						const fields = part.fields;
-						if (fields?.slotId?.value) slotId = fields.slotId.value;
-						await streamToTempFile(part.file, false);
+						await streamToTempFile(part.file);
+						if (part.file.truncated) {
+							await cleanupTempFile();
+							return reply.code(413).send({
+								error: "PayloadTooLarge",
+								message: "Размер фотографии превышает допустимый лимит 25 МБ.",
+							});
+						}
 					}
-				} catch (err) {
-					await cleanupTempFile();
-					const msg = err instanceof Error ? err.message : String(err);
-					if (msg.includes("лимит 25 МБ")) {
-						return reply.code(413).send({ error: "PayloadTooLarge", message: msg });
-					}
-					request.log.warn(
-						{ err: safeLogError(err) },
-						"[photo-bridge] Multipart stream parse failed, trying fallback body parser",
-					);
 				}
-			}
-
-			// 2. Потоковый body (из обновлённого addContentTypeParser) или Buffer
-			if (!tempFilePath && isStreamLike(request.body)) {
-				const contentType = String(request.headers["content-type"] || "");
-				const isMultipart = contentType.includes("multipart/form-data");
-				if (!isMultipart) {
-					mimeType = contentType.split(";")[0]?.trim() || mimeType;
-				}
-				await streamToTempFile(request.body, isMultipart);
-			} else if (!tempFilePath && Buffer.isBuffer(request.body)) {
-				const contentType = request.headers["content-type"] || "";
-				if (contentType.includes("multipart/form-data")) {
-					const stripped = stripMultipartWrapperFromBuffer(request.body, contentType);
-					fileBuffer = stripped.data;
-					if (stripped.filename) filename = stripped.filename;
-					if (stripped.mimeType) mimeType = stripped.mimeType;
-					if (stripped.slotId && !querySlotId && !headerSlotId) slotId = stripped.slotId;
-				} else {
-					fileBuffer = request.body;
-					mimeType = contentType.split(";")[0]?.trim() || mimeType;
-				}
-			}
-
-			// 3. Если тело пришло как JSON (dataUrl или imageBase64)
-			if (!tempFilePath && !fileBuffer && request.body && typeof request.body === "object" && !Buffer.isBuffer(request.body)) {
+			} else if (isStreamLike(request.body)) {
+				// 2. Потоковый raw binary body (image/* или application/octet-stream)
+				mimeType = contentType.split(";")[0]?.trim() || mimeType;
+				await streamToTempFile(request.body);
+			} else if (Buffer.isBuffer(request.body)) {
+				fileBuffer = request.body;
+				mimeType = contentType.split(";")[0]?.trim() || mimeType;
+			} else if (request.body && typeof request.body === "object") {
+				// 3. JSON (dataUrl или imageBase64)
 				const jsonParsed = jsonPhotoPayloadSchema.safeParse(request.body);
 				if (!jsonParsed.success) {
 					return reply.code(400).send({
@@ -790,8 +638,21 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			}
 		} catch (uploadErr) {
 			await cleanupTempFile();
+			const errCode =
+				uploadErr && typeof uploadErr === "object" && "code" in uploadErr
+					? String((uploadErr as { code?: unknown }).code)
+					: "";
+			const errStatus =
+				uploadErr && typeof uploadErr === "object" && "statusCode" in uploadErr
+					? Number((uploadErr as { statusCode?: unknown }).statusCode)
+					: 0;
 			const msg = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);
-			if (msg.includes("лимит 25 МБ") || msg.includes("лимит 64 КБ")) {
+			if (
+				errStatus === 413 ||
+				errCode === "FST_REQ_FILE_TOO_LARGE" ||
+				msg.includes("лимит 25 МБ") ||
+				msg.includes("лимит 64 КБ")
+			) {
 				return reply.code(413).send({ error: "PayloadTooLarge", message: msg });
 			}
 			return reply.code(400).send({
@@ -825,14 +686,14 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		const mappedMimeExt = MIME_TO_EXTENSION[normalizedMime];
 		if (requestedExt && !ALLOWED_IMAGE_EXTENSIONS.has(requestedExt)) {
 			await cleanupTempFile();
-			return reply.code(400).send({
+			return reply.code(415).send({
 				error: "UnsupportedImageExtension",
 				message: "Допускаются только изображения форматов WebP, JPEG, PNG, HEIC или HEIF.",
 			});
 		}
 		if (!mappedMimeExt && normalizedMime !== "application/octet-stream") {
 			await cleanupTempFile();
-			return reply.code(400).send({
+			return reply.code(415).send({
 				error: "UnsupportedImageMimeType",
 				message: "Неподдерживаемый MIME-тип файла. Отправьте изображение.",
 			});
@@ -880,6 +741,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		// Создаём запись в attachments в PostgreSQL 18 под RLS-контекстом клиники
 		let attachment: typeof attachments.$inferSelect | undefined;
 		let persistedPhotoItem: PhotoBridgeUploadedItem | undefined;
+		let replayedPhotoItem: PhotoBridgeUploadedItem | undefined;
 		try {
 			const txResult = await withTenantWriteCtx(session.organizationId, async (tx) => {
 				const [lockedJob] = await tx
@@ -906,6 +768,15 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 					return { expired: true as const };
 				}
 
+				if (idempotencyKey) {
+					const existingByKey = currentSession.photos.find(
+						(item) => item.idempotencyKey === idempotencyKey,
+					);
+					if (existingByKey) {
+						return { expired: false as const, replayed: existingByKey };
+					}
+				}
+
 				const [row] = await tx
 					.insert(attachments)
 					.values({
@@ -928,6 +799,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 					mimeType: row.mimeType,
 					sizeBytes: uploadedSizeBytes,
 					uploadedAt: new Date().toISOString(),
+					...(idempotencyKey ? { idempotencyKey } : {}),
 				};
 				const updatedSession: PhotoBridgeSession = {
 					...currentSession,
@@ -958,8 +830,15 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 					message: "Время сессии истекло. Обновите QR-код на экране монитора врача.",
 				});
 			}
-			attachment = txResult?.row;
-			persistedPhotoItem = txResult?.nextPhoto;
+			if (txResult && "replayed" in txResult && txResult.replayed) {
+				await fs.rm(storagePath, { force: true }).catch((rmErr) => {
+					request.log.debug({ err: safeLogError(rmErr) }, "[photo-bridge] Failed to remove duplicate idempotent file");
+				});
+				replayedPhotoItem = txResult.replayed;
+			} else if (txResult && "row" in txResult) {
+				attachment = txResult.row;
+				persistedPhotoItem = txResult.nextPhoto;
+			}
 		} catch (dbErr) {
 			await fs.rm(storagePath, { force: true }).catch((rmErr) => {
 				request.log.warn({ err: safeLogError(rmErr) }, "[photo-bridge] Failed to remove orphan photo file after DB error");
@@ -968,6 +847,17 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			return reply.code(500).send({
 				error: "AttachmentSaveFailed",
 				message: "Не удалось сохранить снимок на сервере.",
+			});
+		}
+
+		if (replayedPhotoItem) {
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+				reply.header("idempotency-replayed", "true");
+			}
+			return reply.code(201).send({
+				success: true,
+				photo: replayedPhotoItem,
 			});
 		}
 
@@ -981,6 +871,9 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		}
 
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 		return reply.code(201).send({
 			success: true,
 			photo: persistedPhotoItem,
@@ -1038,32 +931,33 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 	 * Завершение сессии при закрытии модалки врачом
 	 * DELETE /api/photo-bridge/session/:token
 	 */
-	defineStreamRoute(app, {
+	defineTenantMutation(app, {
 		method: "DELETE",
 		path: "/api/photo-bridge/session/:token",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-		const orgId = await requireResolvedOrganizationId(request, reply, "photo bridge delete");
-		if (!orgId) return;
+		permission: { customCheck: () => true },
+		authOptions: {
+			allowClinicTokenWithoutStaff: true,
+		},
+		idempotency: "exempt_idempotent_put_or_delete",
+		handler: async ({ tx, organizationId, request, reply }) => {
+			const paramParse = tokenParamSchema.safeParse(request.params);
+			if (!paramParse.success) {
+				reply.code(400);
+				return {
+					error: "ValidationError",
+					message: "Некорректный формат токена QR-сессии.",
+				};
+			}
+			const { token } = paramParse.data;
+			const existing = await loadPhotoBridgeSession(token, request.log);
+			if (existing && existing.organizationId !== organizationId) {
+				reply.code(403);
+				return {
+					error: "Forbidden",
+					message: "Завершение QR-сессии другой клиники запрещено.",
+				};
+			}
 
-		const paramParse = tokenParamSchema.safeParse(request.params);
-		if (!paramParse.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный формат токена QR-сессии.",
-			});
-		}
-		const { token } = paramParse.data;
-		const existing = await loadPhotoBridgeSession(token, request.log);
-		if (existing && existing.organizationId !== orgId) {
-			return reply.code(403).send({
-				error: "Forbidden",
-				message: "Завершение QR-сессии другой клиники запрещено.",
-			});
-		}
-
-		let deleted = false;
-		const removeFn = async (tx: Parameters<Parameters<typeof withTenantWriteCtx>[1]>[0]) => {
 			const removedRows = await tx
 				.delete(systemBackgroundJobs)
 				.where(
@@ -1073,22 +967,15 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 					),
 				)
 				.returning({ id: systemBackgroundJobs.id });
-			deleted = removedRows.length > 0 || sessionsMap.has(token);
+			const deleted = removedRows.length > 0 || sessionsMap.has(token);
 			onTenantTxCommit(() => {
 				sessionsMap.delete(token);
 			});
-		};
-		if (UUID_REGEX.test(orgId)) {
-			await withTenantWriteCtx(orgId, removeFn);
-		} else {
-			await withSuperuserBypass(removeFn);
-			sessionsMap.delete(token);
-		}
 
-		return reply.send({
-			success: true,
-			deleted,
-		});
+			return {
+				success: true,
+				deleted,
+			};
 		},
 	});
 }

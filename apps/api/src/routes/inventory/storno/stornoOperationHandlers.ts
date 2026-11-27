@@ -5,10 +5,11 @@
 
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { type TenantDb, withTenantCtx } from "../../../db/rls.js";
+import { type TenantDb, withTenantWriteCtx } from "../../../db/rls.js";
 import { inventoryItems, inventoryTransactions } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { inventoryStornoBodySchema, toValidUuid } from "../types.js";
+import { isValidUuid } from "@dental/shared";
 import {
 	resolveServiceStornoMaterials,
 	type StornoMaterialTarget,
@@ -207,7 +208,22 @@ export async function handleStornoRequest(
 	rawBody: unknown,
 	request: FastifyRequest,
 	reply: FastifyReply,
+	executor?: TenantDb,
 ) {
+	const rawIdemHeader = request.headers["idempotency-key"];
+	const headerIdemStr = Array.isArray(rawIdemHeader) ? rawIdemHeader[0] : rawIdemHeader;
+	let idempotencyKey: string | undefined;
+	if (headerIdemStr !== undefined) {
+		const trimmed = headerIdemStr.trim();
+		if (!trimmed || !isValidUuid(trimmed)) {
+			return reply.status(400).send({
+				error: "InvalidIdempotencyKey",
+				message: "Idempotency-Key должен содержать валидный UUID",
+			});
+		}
+		idempotencyKey = trimmed;
+	}
+
 	const parsed = inventoryStornoBodySchema.safeParse(rawBody ?? {});
 	if (!parsed.success) {
 		return reply.status(400).send({
@@ -221,42 +237,37 @@ export async function handleStornoRequest(
 	const safeVisitId = toValidUuid(data.visitId);
 	const identity = getRequestIdentity(request);
 	const effectiveUserId = identity.userId ?? request.user?.id ?? null;
-	const rawIdemHeader = request.headers["idempotency-key"];
-	const idempotencyKey =
-		typeof rawIdemHeader === "string" && rawIdemHeader.trim().length > 0
-			? rawIdemHeader.trim()
-			: undefined;
 
 	try {
-		const { restoredItems: stornoResult, alreadyProcessed } = await withTenantCtx(
-			organizationId,
-			async (tx) => {
-				const initialMaterials: StornoMaterialTarget[] = [];
-				for (const it of data.items ?? data.materials ?? []) {
-					initialMaterials.push({
-						inventoryItemId: it.inventoryItemId || it.id,
-						name: it.name,
-						quantity: it.quantity,
-						serviceTitle: "Ручное сторно",
-					});
-				}
-				for (const srv of data.services ?? (data.service ? [data.service] : [])) {
-					const resolved = await resolveServiceStornoMaterials(srv, organizationId, tx);
-					initialMaterials.push(...resolved);
-				}
-
-				return executeStornoMaterialsTx(tx, {
-					organizationId,
-					safeVisitId,
-					visitLabel: data.visitId ?? undefined,
-					effectiveUserId,
-					reason: data.reason,
-					notes: data.notes,
-					idempotencyKey,
-					initialMaterials,
+		const runStorno = async (tx: TenantDb) => {
+			const initialMaterials: StornoMaterialTarget[] = [];
+			for (const it of data.items ?? data.materials ?? []) {
+				initialMaterials.push({
+					inventoryItemId: it.inventoryItemId || it.id,
+					name: it.name,
+					quantity: it.quantity,
+					serviceTitle: "Ручное сторно",
 				});
-			},
-		);
+			}
+			for (const srv of data.services ?? (data.service ? [data.service] : [])) {
+				const resolved = await resolveServiceStornoMaterials(srv, organizationId, tx);
+				initialMaterials.push(...resolved);
+			}
+
+			return executeStornoMaterialsTx(tx, {
+				organizationId,
+				safeVisitId,
+				visitLabel: data.visitId ?? undefined,
+				effectiveUserId,
+				reason: data.reason,
+				notes: data.notes,
+				idempotencyKey,
+				initialMaterials,
+			});
+		};
+		const { restoredItems: stornoResult, alreadyProcessed } = executor
+			? await runStorno(executor)
+			: await withTenantWriteCtx(organizationId, runStorno);
 
 		return reply.status(200).send({
 			success: true,

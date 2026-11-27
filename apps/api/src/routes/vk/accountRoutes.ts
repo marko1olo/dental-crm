@@ -1,7 +1,8 @@
 import { and, desc, eq } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { denteVkUserAccounts } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { OmnichannelTokenVault } from "../../services/bots/OmnichannelTokenVault.js";
@@ -13,51 +14,57 @@ export function registerVkAccountRoutes(server: FastifyInstance): void {
 	 * GET /api/vk/account/status
 	 * Получение статуса подключенного личного аккаунта ВКонтакте.
 	 */
-	server.get("/api/vk/account/status", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply, "vk account status");
-		if (!orgId) return;
+	defineStreamRoute(server, {
+		method: "GET",
+		path: "/api/vk/account/status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedOrganizationId(request, reply, "vk account status");
+			if (!orgId) return;
 
-		const account = await withTenantCtx(orgId, async (tx) => {
-			const accounts = await tx
-				.select()
-				.from(denteVkUserAccounts)
-				.where(eq(denteVkUserAccounts.organizationId, orgId))
-				.orderBy(desc(denteVkUserAccounts.createdAt))
-				.limit(1);
-			return accounts[0] || null;
-		});
-
-		if (!account || !account.isActive || account.status === "disconnected") {
-			return reply.send({
-				connected: false,
-				account: null,
+			const account = await withTenantReadCtx(orgId, async (tx) => {
+				const accounts = await tx
+					.select()
+					.from(denteVkUserAccounts)
+					.where(eq(denteVkUserAccounts.organizationId, orgId))
+					.orderBy(desc(denteVkUserAccounts.createdAt))
+					.limit(1);
+				return accounts[0] || null;
 			});
-		}
 
-		return reply.send({
-			connected: true,
-			account: {
-				id: account.id,
-				vkUserId: account.vkUserId,
-				firstName: account.firstName,
-				lastName: account.lastName,
-				screenName: account.screenName,
-				photoUrl: account.photoUrl,
-				status: account.status,
-				isActive: account.isActive,
-				lastSyncAt: account.lastSyncAt ? account.lastSyncAt.toISOString() : null,
-			},
-		});
+			if (!account || !account.isActive || account.status === "disconnected") {
+				return reply.send({
+					connected: false,
+					account: null,
+				});
+			}
+
+			return reply.send({
+				connected: true,
+				account: {
+					id: account.id,
+					vkUserId: account.vkUserId,
+					firstName: account.firstName,
+					lastName: account.lastName,
+					screenName: account.screenName,
+					photoUrl: account.photoUrl,
+					status: account.status,
+					isActive: account.isActive,
+					lastSyncAt: account.lastSyncAt ? account.lastSyncAt.toISOString() : null,
+				},
+			});
+		},
 	});
 
 	/**
 	 * POST /api/vk/account/connect
 	 * Подключение личной страницы врача / администратора ВКонтакте.
 	 */
-	server.post(
-		"/api/vk/account/connect",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/api/vk/account/connect",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = await requireResolvedOrganizationId(request, reply, "vk account connect");
 			if (!orgId) return;
 
@@ -92,7 +99,7 @@ export function registerVkAccountRoutes(server: FastifyInstance): void {
 			const encryptedToken = OmnichannelTokenVault.encrypt(accessToken, orgId);
 			const vkIdStr = String(profile.id);
 
-			await withTenantCtx(orgId, async (tx) => {
+			await withTenantWriteCtx(orgId, async (tx) => {
 				const [existing] = await tx
 					.select({ id: denteVkUserAccounts.id })
 					.from(denteVkUserAccounts)
@@ -156,27 +163,32 @@ export function registerVkAccountRoutes(server: FastifyInstance): void {
 				},
 			});
 		},
-	);
+	});
 
 	/**
 	 * POST /api/vk/account/disconnect
 	 * Отключение личной страницы ВКонтакте.
 	 */
-	server.post("/api/vk/account/disconnect", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply, "vk account disconnect");
-		if (!orgId) return;
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/api/vk/account/disconnect",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedOrganizationId(request, reply, "vk account disconnect");
+			if (!orgId) return;
 
-		await withTenantCtx(orgId, async (tx) => {
-			await tx
-				.update(denteVkUserAccounts)
-				.set({
-					status: "disconnected",
-					isActive: false,
-					updatedAt: new Date(),
-				})
-				.where(eq(denteVkUserAccounts.organizationId, orgId));
-		});
+			await withTenantWriteCtx(orgId, async (tx) => {
+				await tx
+					.update(denteVkUserAccounts)
+					.set({
+						status: "disconnected",
+						isActive: false,
+						updatedAt: new Date(),
+					})
+					.where(eq(denteVkUserAccounts.organizationId, orgId));
+			});
 
-		return reply.send({ ok: true });
+			return reply.send({ ok: true });
+		},
 	});
 }

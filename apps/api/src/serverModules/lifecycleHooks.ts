@@ -121,40 +121,8 @@ export function registerLifecycleHooks(app: FastifyInstance): void {
 		}
 	});
 
-	// Глобальная изоляция арендаторов: если у запроса есть tenantId (выставлен в onRequest выше),
-	// автоматически оборачиваем весь обработчик маршрута в withTenantCtx.
-	app.addHook("onRoute", (routeOptions) => {
-		if (
-			routeOptions.config?.tenantTxSelfManaged === true ||
-			("websocket" in routeOptions && routeOptions.websocket === true) ||
-			"wsHandler" in routeOptions
-		) {
-			return;
-		}
-		const originalHandler = routeOptions.handler;
-		if (originalHandler) {
-			routeOptions.handler = async function (request, reply) {
-				const tenantId = request.tenantId;
-				let res: unknown;
-				if (typeof tenantId === "string" && tenantId.length > 0) {
-					// Динамический импорт, чтобы избежать циклических зависимостей при старте
-					const { withTenantCtx } = await import("../db/rls.js");
-					res = await withTenantCtx(tenantId, async () => {
-						return originalHandler.call(this, request, reply);
-					});
-				} else {
-					res = await originalHandler.call(this, request, reply);
-				}
-				if (
-					res === undefined &&
-					reply._sendInitiated
-				) {
-					return reply;
-				}
-				return res;
-			};
-		}
-	});
+	// Все маршруты в apps/api/src/routes/** переведены на типизированные фабрики
+	// routeFactories.ts (READ ONLY / READ WRITE / Stream / Public / Webhook); глобальный onRoute отключён.
 
 	app.setErrorHandler((error, request, reply) => {
 		if (reply.sent) {

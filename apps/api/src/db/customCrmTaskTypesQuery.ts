@@ -1,10 +1,22 @@
 import { eq } from "drizzle-orm";
-import { db } from "./client.js";
+import type { TenantDb } from "./client.js";
+import { withTenantReadCtx } from "./rls.js";
 import { customCrmTaskTypes } from "./schema.js";
 
-export async function getCustomCrmTaskTypesFromDb(orgId: string) {
-	return db
-		.select()
-		.from(customCrmTaskTypes)
-		.where(eq(customCrmTaskTypes.organizationId, orgId));
+export async function getCustomCrmTaskTypesFromDb(
+	orgId: string,
+	tx?: TenantDb,
+) {
+	if (tx) {
+		return tx
+			.select()
+			.from(customCrmTaskTypes)
+			.where(eq(customCrmTaskTypes.organizationId, orgId));
+	}
+	return withTenantReadCtx(orgId, (tenantTx) =>
+		tenantTx
+			.select()
+			.from(customCrmTaskTypes)
+			.where(eq(customCrmTaskTypes.organizationId, orgId)),
+	);
 }

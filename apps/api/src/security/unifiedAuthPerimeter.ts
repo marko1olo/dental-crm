@@ -112,6 +112,15 @@ function hasDemoShowcaseHeaders(request: FastifyRequest): boolean {
 	);
 }
 
+function hasExplicitValidAdminSecret(request: FastifyRequest): boolean {
+	const adminSecret = configuredClinicalAccessSecret();
+	if (!adminSecret) return false;
+	const provided =
+		readSingleHeader(request, "x-dente-admin-secret") ??
+		readSingleHeader(request, "x-admin-secret");
+	return timingSafeSecretEqual(provided, adminSecret);
+}
+
 function hasValidAdminSecret(request: FastifyRequest): boolean {
 	const adminSecret = configuredClinicalAccessSecret();
 	if (!adminSecret) {
@@ -248,7 +257,12 @@ export async function requireVerifiedPrincipal(
 			});
 			return null;
 		}
-		if (identity.userId || identity.verified || (options?.allowAdminSecretBypass === true && hasValidAdminSecret(request))) {
+		if (
+			identity.userId ||
+			identity.verified ||
+			(options?.allowAdminSecretBypass === true &&
+				hasExplicitValidAdminSecret(request))
+		) {
 			reply.code(403).send(
 				options?.missingOrgPayload ?? {
 					error: "OrgRequired",
@@ -305,7 +319,13 @@ export async function requireVerifiedPrincipal(
 	}
 
 	// Нет личного staffToken: проверяем admin secret или clinicToken
-	if (options?.allowAdminSecretBypass === true && hasValidAdminSecret(request)) {
+	if (
+		options?.allowAdminSecretBypass === true &&
+		(hasExplicitValidAdminSecret(request) ||
+			(options.requireStaffToken !== true &&
+				options.allowClinicTokenWithoutStaff !== false &&
+				hasValidAdminSecret(request)))
+	) {
 		const adminPrincipal: VerifiedPrincipal = {
 			organizationId: identity.organizationId,
 			userId: null,

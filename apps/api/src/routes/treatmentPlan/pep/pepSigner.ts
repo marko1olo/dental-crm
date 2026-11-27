@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx } from "../../../db/rls.js";
+import { onTenantTxCommit, withTenantWriteCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	auditEvents,
 	patients,
@@ -11,6 +11,7 @@ import {
 	treatmentPlans,
 } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
+import { extractIdempotencyKey } from "../../../utils/httpIdempotency.js";
 import { LEDGER_ID_PREFIX_LENGTH } from "../../odontogram/types.js";
 import { cancelRejectedPlanTierLedgerItems } from "../handlers/mutations/planLedgerSync.js";
 import {
@@ -25,7 +26,19 @@ export async function handleSignTreatmentPlanPep(
 	request: FastifyRequest<{ Params: { id: string } }>,
 	reply: FastifyReply,
 	organizationId: string,
+	tx?: TenantDb,
 ) {
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey) {
+		if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const planId = request.params.id?.trim();
 	if (!planId || !isValidUuid(planId)) {
 		return reply.code(400).send({
@@ -45,8 +58,8 @@ export async function handleSignTreatmentPlanPep(
 	const data = parsed.data;
 
 	if (data.action === "request_code") {
-		const initialData = await withTenantCtx(organizationId, async (tx) => {
-			const [planRow] = await tx
+		const loadInitial = async (executor: TenantDb) => {
+			const [planRow] = await executor
 				.select()
 				.from(treatmentPlans)
 				.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
@@ -54,28 +67,29 @@ export async function handleSignTreatmentPlanPep(
 
 			if (!planRow) return null;
 
-			const [patientRow] = await tx
+			const [patientRow] = await executor
 				.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
 				.from(patients)
 				.where(and(eq(patients.id, planRow.patientId), eq(patients.organizationId, organizationId)))
 				.limit(1);
 
 			return { plan: planRow, patient: patientRow ?? null };
-		});
+		};
+		const initialData = tx ? await loadInitial(tx) : await withTenantWriteCtx(organizationId, loadInitial);
 
 		if (!initialData) {
 			return reply.code(404).send({ error: "TreatmentPlanNotFound", message: "План лечения не найден." });
 		}
 
 		const targetPhone = data.phone || initialData.patient?.phone || "";
-		return handleOtpRequest(planId, targetPhone, request, reply, organizationId, initialData.plan.patientId);
+		return handleOtpRequest(planId, targetPhone, request, reply, organizationId, initialData.plan.patientId, tx);
 	}
 
 	const ledgerPrefix = planId.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
 	const pepMethodKey = data.method === "sms" ? "pep_sms" : data.method === "qr_touch" ? "pep_qr_touch" : "paper_physical";
 
-	const txResult = await withTenantCtx(organizationId, async (tx) => {
-		const [planToLock] = await tx
+	const runSign = async (executor: TenantDb) => {
+		const [planToLock] = await executor
 			.select()
 			.from(treatmentPlans)
 			.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
@@ -87,19 +101,19 @@ export async function handleSignTreatmentPlanPep(
 		}
 
 		if (data.method === "sms") {
-			const otpValid = await verifyOtpCode(planId, data.code, organizationId, planToLock.patientId, tx);
+			const otpValid = await verifyOtpCode(planId, data.code, organizationId, planToLock.patientId, executor);
 			if (!otpValid) {
 				return { kind: "invalid_code" as const };
 			}
 		}
 
 		const [[patientRow], loadedItems, loadedStages] = await Promise.all([
-			tx
+			executor
 				.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
 				.from(patients)
 				.where(and(eq(patients.id, planToLock.patientId), eq(patients.organizationId, organizationId)))
 				.limit(1),
-			tx
+			executor
 				.select()
 				.from(treatmentPlanItemsNew)
 				.where(
@@ -108,7 +122,7 @@ export async function handleSignTreatmentPlanPep(
 						eq(treatmentPlanItemsNew.organizationId, organizationId),
 					),
 				),
-			tx
+			executor
 				.select()
 				.from(treatmentPlanStages)
 				.where(
@@ -170,7 +184,7 @@ export async function handleSignTreatmentPlanPep(
 			verified: true,
 		};
 
-		const [updated] = await tx
+		const [updated] = await executor
 			.update(treatmentPlans)
 			.set({
 				patientSignature: JSON.stringify(pepRecord),
@@ -183,7 +197,7 @@ export async function handleSignTreatmentPlanPep(
 
 		let invoice: CreatedInvoiceSummary | null = null;
 		if (updated) {
-			await tx
+			await executor
 				.update(treatmentItems)
 				.set({ status: "approved", treatmentPlanId: planId })
 				.where(
@@ -198,14 +212,14 @@ export async function handleSignTreatmentPlanPep(
 					),
 				);
 
-			await cancelRejectedPlanTierLedgerItems(tx, {
+			await cancelRejectedPlanTierLedgerItems(executor, {
 				organizationId,
 				patientId: planToLock.patientId,
 				approvedPlanId: planId,
 				planGroupId: planToLock.planGroupId,
 			});
 
-			invoice = await createInvoiceForApprovedPlan(tx, {
+			invoice = await createInvoiceForApprovedPlan(executor, {
 				organizationId,
 				patientId: planToLock.patientId,
 				planId,
@@ -222,7 +236,7 @@ export async function handleSignTreatmentPlanPep(
 				totalPriceKopecks: updated.totalPriceKopecks != null ? BigInt(updated.totalPriceKopecks) : (planToLock.totalPriceKopecks != null ? BigInt(planToLock.totalPriceKopecks) : null),
 			});
 
-			await tx.insert(auditEvents).values({
+			await executor.insert(auditEvents).values({
 				organizationId,
 				actorUserId: null,
 				entityType: "treatment_plan",
@@ -232,15 +246,43 @@ export async function handleSignTreatmentPlanPep(
 			});
 		}
 
+		const targetPatientId = planToLock.patientId;
+		onTenantTxCommit(() => {
+			activeOtpCache.delete(planId);
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "TREATMENT_PLAN_PEP_SIGNED",
+				payload: { planId, patientId: targetPatientId, signature: pepRecord },
+			});
+			if (invoice) {
+				try {
+					wsBroker.broadcastToOrganization(organizationId, {
+						type: "INVOICE_CREATED",
+						payload: {
+							invoiceId: invoice.id,
+							invoiceNumber: invoice.invoiceNumber,
+							patientId: targetPatientId,
+							patientName: invoice.patientName,
+							totalAmountRub: invoice.totalAmountRub,
+							status: "draft",
+						},
+					});
+				} catch (wsErr) {
+					request.log.warn({ err: wsErr }, "WebSocket broadcast failed for INVOICE_CREATED from plan PEP signing");
+				}
+			}
+		});
+
 		return {
 			kind: "ok" as const,
 			signedPlan: updated,
 			createdInvoice: invoice,
-			patientId: planToLock.patientId,
+			patientId: targetPatientId,
 			pepRecord,
 			documentHash,
 		};
-	});
+	};
+
+	const txResult = tx ? await runSign(tx) : await withTenantWriteCtx(organizationId, runSign);
 
 	if (txResult.kind === "not_found") {
 		return reply.code(404).send({ error: "TreatmentPlanNotFound", message: "План лечения не найден." });
@@ -252,31 +294,7 @@ export async function handleSignTreatmentPlanPep(
 		});
 	}
 
-	const { signedPlan, createdInvoice, patientId, pepRecord, documentHash } = txResult;
-
-	activeOtpCache.delete(planId);
-	wsBroker.broadcastToOrganization(organizationId, {
-		type: "TREATMENT_PLAN_PEP_SIGNED",
-		payload: { planId, patientId, signature: pepRecord },
-	});
-
-	if (createdInvoice) {
-		try {
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "INVOICE_CREATED",
-				payload: {
-					invoiceId: createdInvoice.id,
-					invoiceNumber: createdInvoice.invoiceNumber,
-					patientId,
-					patientName: createdInvoice.patientName,
-					totalAmountRub: createdInvoice.totalAmountRub,
-					status: "draft",
-				},
-			});
-		} catch (wsErr) {
-			request.log.warn({ err: wsErr }, "WebSocket broadcast failed for INVOICE_CREATED from plan PEP signing");
-		}
-	}
+	const { signedPlan, createdInvoice, pepRecord, documentHash } = txResult;
 
 	return reply.code(200).send({
 		success: true,

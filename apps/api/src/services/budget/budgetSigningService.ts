@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import { kopecksToNumericString, kopecksToRubles, rublesToKopecks } from "@dental/shared";
-import { withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	auditEvents,
 	organizations,
@@ -31,12 +31,14 @@ export interface CompleteBudgetSigningInput {
 	clientIpHash: string;
 	userAgent: string;
 	log: FastifyBaseLogger;
+	idempotencyKey?: string | undefined;
 }
 
 export interface CompleteBudgetSigningResult {
 	signedAt: Date;
 	signerName: string;
 	documentHash: string;
+	replayed?: boolean | undefined;
 }
 
 export async function completeBudgetSigning({
@@ -46,11 +48,11 @@ export async function completeBudgetSigning({
 	clientIpHash,
 	userAgent,
 	log,
+	idempotencyKey,
 }: CompleteBudgetSigningInput): Promise<CompleteBudgetSigningResult> {
 	const signedAt = new Date();
 	const signer = (parsedSignData.signerName || budget.patientFirstName || "Пациент").trim();
 
-	// Формируем неизменяемый документный хеш
 	const primaryNetKopecks =
 		budget.netTotalKopecks != null &&
 		(Number(budget.netTotalKopecks) !== 0 || Number(budget.netTotalRub || 0) === 0)
@@ -78,6 +80,7 @@ export async function completeBudgetSigning({
 		userAgent,
 		signedAtIso: signedAt.toISOString(),
 		documentHash,
+		...(idempotencyKey ? { idempotencyKey } : {}),
 	};
 
 	const normalizedSelectedTier =
@@ -87,8 +90,29 @@ export async function completeBudgetSigning({
 
 	let approvedPlanId = budget.planId;
 
-	// Единая неделимая ACID-транзакция Postgres (tx)
-	await withTenantCtx(budget.organizationId, async (tx) => {
+	// Единая неделимая ACID-транзакция Postgres (tx) с FOR UPDATE против TOCTOU-гонок
+	const txOutcome = await withTenantWriteCtx(budget.organizationId, async (tx) => {
+		const [lockedBudget] = await tx
+			.select()
+			.from(portalBudgetTokens)
+			.where(
+				and(
+					eq(portalBudgetTokens.token, budget.token),
+					eq(portalBudgetTokens.organizationId, budget.organizationId),
+				),
+			)
+			.for("update")
+			.limit(1);
+
+		if (lockedBudget?.status === "accepted") {
+			return {
+				signedAt: lockedBudget.signedAt ?? signedAt,
+				signerName: lockedBudget.signerName ?? signer,
+				documentHash: lockedBudget.documentHash ?? documentHash,
+				replayed: true,
+			};
+		}
+
 		// 1. Фиксация подписи в portal_budget_tokens
 		await tx
 			.update(portalBudgetTokens)
@@ -267,27 +291,31 @@ export async function completeBudgetSigning({
 				reason: `Дистанционное согласование сметы пациентом ${signer} (IP hash: ${clientIpHash.slice(0, 8)}...)`,
 			});
 		}
-	});
 
-	// Вебсокет-оповещение для координаторов и врачей (только после успешного коммита транзакции)
-	wsBroker.broadcastToOrganization(budget.organizationId, {
-		type: "TREATMENT_PLAN_BUDGET_SIGNED",
-		payload: {
-			token: budget.token,
-			planId: approvedPlanId,
-			patientId: budget.patientId,
-			selectedTierId: normalizedSelectedTier ?? null,
-			signedAt: signedAt.toISOString(),
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(budget.organizationId, {
+				type: "TREATMENT_PLAN_BUDGET_SIGNED",
+				payload: {
+					token: budget.token,
+					planId: approvedPlanId,
+					patientId: budget.patientId,
+					selectedTierId: normalizedSelectedTier ?? null,
+					signedAt: signedAt.toISOString(),
+					signerName: signer,
+					documentHash,
+				},
+			});
+		});
+
+		return {
+			signedAt,
 			signerName: signer,
 			documentHash,
-		},
+			replayed: false,
+		};
 	});
 
-	return {
-		signedAt,
-		signerName: signer,
-		documentHash,
-	};
+	return txOutcome;
 }
 
 /**

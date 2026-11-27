@@ -1244,7 +1244,7 @@ export function auditDoors(rootDir, prng, sampleCount = 5) {
 				: codeOnlyBody;
 
 			const hasTrustedOrgGuard =
-				/\b(withTenantCtx|requireResolvedOrganizationId|requireResolvedStaffOrAdminOrganizationId|requireOrganizationId|requireClinicalReadContext|requireClinicalMutationContext|requireStaffIdentity|requireClinicOrganizationId|requireTelegramControlPlaneAccess|verifyClinicMedflexSignature|verifyProdoctorovWebhookAuth|requireAuthenticatedUser|requireExecutiveAccess|requireNonDoctorAccess|requireScheduleMutationAccess|requireClinicalMutationAccess|requireClinicalReadAccess|requireCatalogMutationAccess|requireSettingsMutationAccess|getImagingOrganizationId|requireDicomWebSettingsAccess)\b/.test(
+				/\b(withTenantCtx|withTenantReadCtx|withTenantWriteCtx|requireResolvedOrganizationId|requireResolvedStaffOrAdminOrganizationId|requireOrganizationId|requireClinicalReadContext|requireClinicalMutationContext|requireStaffIdentity|requireClinicOrganizationId|requireTelegramControlPlaneAccess|verifyClinicMedflexSignature|verifyProdoctorovWebhookAuth|requireAuthenticatedUser|requireExecutiveAccess|requireNonDoctorAccess|requireScheduleMutationAccess|requireScheduleMutationContext|requireClinicalMutationAccess|requireClinicalReadAccess|requireCatalogMutationAccess|requireSettingsMutationAccess|getImagingOrganizationId|requireDicomWebSettingsAccess)\b/.test(
 					fullCheckBody,
 				) || /\bgetRequestIdentity\b[\s\S]{0,600}\bverified\b/.test(fullCheckBody);
 

@@ -1,8 +1,7 @@
 import { and, eq } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { kopecksToRubles, resolveCostKopecks, rublesToKopecks } from "@dental/shared";
-import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx, type TenantDb } from "../../../db/rls.js";
 import { inventoryItems } from "../../../db/schema.js";
 import {
 	INVALID_DATE,
@@ -19,6 +18,7 @@ export const handleCreateInventoryItem = async (
 	rawBody: unknown,
 	_request: FastifyRequest,
 	reply: FastifyReply,
+	executor?: TenantDb,
 ) => {
 	const parsedBody = inventoryCreateBodySchema.safeParse(rawBody ?? {});
 	if (!parsedBody.success) {
@@ -88,7 +88,7 @@ export const handleCreateInventoryItem = async (
 	const notesStr = notes?.trim() || null;
 	const multStr = String(packageMultiplier ?? 1);
 
-	const created = await withTenantCtx(organizationId, async (tx) => {
+	const runCreate = async (tx: TenantDb) => {
 		const newItem = await tx
 			.insert(inventoryItems)
 			.values({
@@ -113,7 +113,8 @@ export const handleCreateInventoryItem = async (
 			})
 			.returning();
 		return newItem[0];
-	});
+	};
+	const created = executor ? await runCreate(executor) : await withTenantWriteCtx(organizationId, runCreate);
 
 	if (!created)
 		return reply.status(500).send({
@@ -141,6 +142,7 @@ export const handleUpdateInventoryItem = async (
 	itemId: string,
 	rawBody: unknown,
 	reply: FastifyReply,
+	executor?: TenantDb,
 ) => {
 	const parsedUpdate = inventoryUpdateBodySchema.safeParse(rawBody ?? {});
 	if (!parsedUpdate.success) {
@@ -205,7 +207,7 @@ export const handleUpdateInventoryItem = async (
 	const critStr = String(Math.max(0, criticalThreshold));
 	const costStr = hasCostInput ? String(kopecksToRubles(effectiveCostKopecks)) : "0";
 
-	const updated = await withTenantCtx(organizationId, async (tx) => {
+	const runUpdate = async (tx: TenantDb) => {
 		const [existing] = await tx
 			.select({ id: inventoryItems.id })
 			.from(inventoryItems)
@@ -265,7 +267,8 @@ export const handleUpdateInventoryItem = async (
 			)
 			.returning();
 		return res;
-	});
+	};
+	const updated = executor ? await runUpdate(executor) : await withTenantWriteCtx(organizationId, runUpdate);
 
 	if (updated === null) {
 		return reply.status(404).send({ error: "Item not found" });
@@ -297,6 +300,7 @@ export const handlePatchInventoryItem = async (
 	itemId: string,
 	rawBody: unknown,
 	reply: FastifyReply,
+	executor?: TenantDb,
 ) => {
 	const parsedPatch = inventoryUpdateBodySchema.safeParse(rawBody ?? {});
 	if (!parsedPatch.success) {
@@ -392,7 +396,7 @@ export const handlePatchInventoryItem = async (
 		patchData.expirationDate = expiration;
 	}
 
-	const updated = await withTenantCtx(organizationId, async (tx) => {
+	const runPatch = async (tx: TenantDb) => {
 		const [existing] = await tx
 			.select()
 			.from(inventoryItems)
@@ -416,7 +420,8 @@ export const handlePatchInventoryItem = async (
 			)
 			.returning();
 		return res;
-	});
+	};
+	const updated = executor ? await runPatch(executor) : await withTenantWriteCtx(organizationId, runPatch);
 
 	if (updated === null) {
 		return reply.status(404).send({ error: "Item not found" });
@@ -447,12 +452,13 @@ export const handleDeleteInventoryItem = async (
 	organizationId: string,
 	itemId: string,
 	reply: FastifyReply,
+	executor?: TenantDb,
 ) => {
 	if (!itemId || !UUID_PATTERN.test(itemId.trim())) {
 		return reply.status(404).send({ error: "Item not found" });
 	}
 
-	const deleted = await withTenantCtx(organizationId, async (tx) => {
+	const runDelete = async (tx: TenantDb) => {
 		const [existing] = await tx
 			.select({ id: inventoryItems.id })
 			.from(inventoryItems)
@@ -475,7 +481,8 @@ export const handleDeleteInventoryItem = async (
 			)
 			.returning({ id: inventoryItems.id });
 		return res;
-	});
+	};
+	const deleted = executor ? await runDelete(executor) : await withTenantWriteCtx(organizationId, runDelete);
 
 	if (deleted === null || !deleted) {
 		return reply.status(404).send({ error: "Item not found" });

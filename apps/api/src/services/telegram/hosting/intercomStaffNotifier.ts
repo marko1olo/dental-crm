@@ -4,7 +4,7 @@ import {
 	type IntercomPresetKey,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import { recordIntercomAck } from "../../../db/staffChatQuery.js";
 import {
 	denteTelegramBotConfigs,
@@ -46,48 +46,56 @@ export class TelegramIntercomStaffNotifier {
 			? TelegramTokenCrypto.resolveOperationalToken(params.botTokenOverride, params.organizationId)
 			: process.env.DENTE_TELEGRAM_BOT_TOKEN;
 
-		if (!botToken) {
-			const [config] = await db
-				.select({
-					tokenSecretRef: denteTelegramBotConfigs.tokenSecretRef,
-					mode: denteTelegramBotConfigs.mode,
-				})
-				.from(denteTelegramBotConfigs)
-				.where(
-					and(
-						eq(denteTelegramBotConfigs.organizationId, params.organizationId),
-						eq(denteTelegramBotConfigs.isActive, true),
-					),
-				)
-				.limit(1);
+		const { configTokenRef, staffLinks } = await withTenantReadCtx(
+			params.organizationId,
+			async (tx) => {
+				let loadedTokenRef: string | null = null;
+				if (!botToken) {
+					const [config] = await tx
+						.select({
+							tokenSecretRef: denteTelegramBotConfigs.tokenSecretRef,
+							mode: denteTelegramBotConfigs.mode,
+						})
+						.from(denteTelegramBotConfigs)
+						.where(
+							and(
+								eq(denteTelegramBotConfigs.organizationId, params.organizationId),
+								eq(denteTelegramBotConfigs.isActive, true),
+							),
+						)
+						.limit(1);
+					loadedTokenRef = config?.tokenSecretRef ?? null;
+				}
 
-			if (config?.tokenSecretRef) {
-				botToken = TelegramTokenCrypto.resolveOperationalToken(
-					config.tokenSecretRef,
-					params.organizationId,
-				);
-			}
+				const links = await tx
+					.select({
+						id: denteTelegramChatLinks.id,
+						subjectId: denteTelegramChatLinks.subjectId,
+						chatTransportRef: denteTelegramChatLinks.chatTransportRef,
+					})
+					.from(denteTelegramChatLinks)
+					.where(
+						and(
+							eq(denteTelegramChatLinks.organizationId, params.organizationId),
+							eq(denteTelegramChatLinks.subjectType, "staff"),
+							eq(denteTelegramChatLinks.status, "active"),
+						),
+					);
+
+				return { configTokenRef: loadedTokenRef, staffLinks: links };
+			},
+		);
+
+		if (!botToken && configTokenRef) {
+			botToken = TelegramTokenCrypto.resolveOperationalToken(
+				configTokenRef,
+				params.organizationId,
+			);
 		}
 
 		if (!botToken) {
 			return { notifiedCount: 0, errors: ["Telegram бот не настроен для клиники."] };
 		}
-
-		// 2. Ищем всех активных сотрудников со связкой Telegram
-		const staffLinks = await db
-			.select({
-				id: denteTelegramChatLinks.id,
-				subjectId: denteTelegramChatLinks.subjectId,
-				chatTransportRef: denteTelegramChatLinks.chatTransportRef,
-			})
-			.from(denteTelegramChatLinks)
-			.where(
-				and(
-					eq(denteTelegramChatLinks.organizationId, params.organizationId),
-					eq(denteTelegramChatLinks.subjectType, "staff"),
-					eq(denteTelegramChatLinks.status, "active"),
-				),
-			);
 
 		if (staffLinks.length === 0) {
 			return { notifiedCount: 0, errors: [] };
@@ -213,45 +221,56 @@ export class TelegramIntercomStaffNotifier {
 		}
 
 		// 1. Находим сотрудника клиники по chatFingerprint
-		const [chatLink] = await db
-			.select({
-				subjectId: denteTelegramChatLinks.subjectId,
-			})
-			.from(denteTelegramChatLinks)
-			.where(
-				and(
-					eq(denteTelegramChatLinks.organizationId, params.organizationId),
-					eq(denteTelegramChatLinks.chatFingerprint, params.chatFingerprint),
-					eq(denteTelegramChatLinks.subjectType, "staff"),
-					eq(denteTelegramChatLinks.status, "active"),
-				),
-			)
-			.limit(1);
+		const { staffId, staffName, staffRole } = await withTenantReadCtx(
+			params.organizationId,
+			async (tx) => {
+				const [chatLink] = await tx
+					.select({
+						subjectId: denteTelegramChatLinks.subjectId,
+					})
+					.from(denteTelegramChatLinks)
+					.where(
+						and(
+							eq(denteTelegramChatLinks.organizationId, params.organizationId),
+							eq(denteTelegramChatLinks.chatFingerprint, params.chatFingerprint),
+							eq(denteTelegramChatLinks.subjectType, "staff"),
+							eq(denteTelegramChatLinks.status, "active"),
+						),
+					)
+					.limit(1);
 
-		let staffId = chatLink?.subjectId || "anonymous";
-		let staffName = "Сотрудник";
-		let staffRole = "staff";
+				const resolvedStaffId = chatLink?.subjectId || "anonymous";
+				let resolvedStaffName = "Сотрудник";
+				let resolvedStaffRole = "staff";
 
-		if (chatLink?.subjectId) {
-			const [userRow] = await db
-				.select({
-					fullName: users.fullName,
-					role: users.role,
-				})
-				.from(users)
-				.where(
-					and(
-						eq(users.organizationId, params.organizationId),
-						eq(users.id, chatLink.subjectId),
-					),
-				)
-				.limit(1);
+				if (chatLink?.subjectId) {
+					const [userRow] = await tx
+						.select({
+							fullName: users.fullName,
+							role: users.role,
+						})
+						.from(users)
+						.where(
+							and(
+								eq(users.organizationId, params.organizationId),
+								eq(users.id, chatLink.subjectId),
+							),
+						)
+						.limit(1);
 
-			if (userRow) {
-				staffName = userRow.fullName;
-				staffRole = userRow.role;
-			}
-		}
+					if (userRow) {
+						resolvedStaffName = userRow.fullName;
+						resolvedStaffRole = userRow.role;
+					}
+				}
+
+				return {
+					staffId: resolvedStaffId,
+					staffName: resolvedStaffName,
+					staffRole: resolvedStaffRole,
+				};
+			},
+		);
 
 		// 2. Записываем подтверждение в staff_chat_messages
 		const updated = await recordIntercomAck({

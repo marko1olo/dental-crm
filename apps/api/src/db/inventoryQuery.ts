@@ -12,13 +12,12 @@ import {
 	normalizeDateToIso,
 	type ReceiveBatchInput,
 } from "../services/inventory/fefoStockService.js";
-import { db } from "./client.js";
-import { withTenantCtx } from "./rls.js";
+import { formatDateIsoInTimeZone, resolveClinicTimeZone } from "../routes/payrollModules/payrollTypesAndQueries.js";
+import { withTenantReadCtx } from "./rls.js";
 import {
 	inventoryItems,
 	inventoryTransactions,
 	stockBatches,
-	warehouses,
 } from "./schema/inventory.js";
 
 export interface GoodsReceiptInvoiceItemInput {
@@ -93,7 +92,7 @@ export const inventoryQuery = {
 	 */
 	async getInventoryItems(
 		organizationId: string,
-		executor: DbTransaction = db,
+		executor?: DbTransaction,
 		options?: { limit?: number | undefined; offset?: number | undefined },
 	): Promise<Array<typeof inventoryItems.$inferSelect>> {
 		const safeLimit = Math.min(Math.max(1, options?.limit ?? 2000), 5000);
@@ -106,7 +105,7 @@ export const inventoryQuery = {
 				.orderBy(asc(inventoryItems.name))
 				.limit(safeLimit)
 				.offset(safeOffset);
-		return executor === db ? withTenantCtx(organizationId, run) : run(executor);
+		return executor ? run(executor) : withTenantReadCtx(organizationId, run);
 	},
 
 	/**
@@ -115,7 +114,7 @@ export const inventoryQuery = {
 	async getInventoryItemById(
 		organizationId: string,
 		itemId: string,
-		executor: DbTransaction = db,
+		executor?: DbTransaction,
 	): Promise<typeof inventoryItems.$inferSelect | null> {
 		const run = async (exec: DbTransaction) => {
 			const [item] = await exec
@@ -130,7 +129,7 @@ export const inventoryQuery = {
 				.limit(1);
 			return item ?? null;
 		};
-		return executor === db ? withTenantCtx(organizationId, run) : run(executor);
+		return executor ? run(executor) : withTenantReadCtx(organizationId, run);
 	},
 
 	/**
@@ -139,7 +138,7 @@ export const inventoryQuery = {
 	async getStockBatches(
 		organizationId: string,
 		options: StockBatchesQueryOptions = {},
-		executor: DbTransaction = db,
+		executor?: DbTransaction,
 	) {
 		const run = async (exec: DbTransaction) => {
 			const conditions = [eq(stockBatches.organizationId, organizationId)];
@@ -193,7 +192,7 @@ export const inventoryQuery = {
 
 			return query;
 		};
-		return executor === db ? withTenantCtx(organizationId, run) : run(executor);
+		return executor ? run(executor) : withTenantReadCtx(organizationId, run);
 	},
 
 	/**
@@ -202,14 +201,15 @@ export const inventoryQuery = {
 	async getExpiringBatches(
 		organizationId: string,
 		daysAhead = 30,
-		executor: DbTransaction = db,
+		executor?: DbTransaction,
 	) {
 		const now = new Date();
 		const targetDate = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
-		const targetIso = targetDate.toISOString().slice(0, 10);
 
-		const run = async (exec: DbTransaction) =>
-			exec
+		const run = async (exec: DbTransaction) => {
+			const timeZone = await resolveClinicTimeZone(exec, organizationId);
+			const targetIso = formatDateIsoInTimeZone(targetDate, timeZone);
+			return exec
 				.select({
 					id: stockBatches.id,
 					inventoryItemId: stockBatches.inventoryItemId,
@@ -235,7 +235,8 @@ export const inventoryQuery = {
 					),
 				)
 				.orderBy(asc(stockBatches.expirationDate));
-		return executor === db ? withTenantCtx(organizationId, run) : run(executor);
+		};
+		return executor ? run(executor) : withTenantReadCtx(organizationId, run);
 	},
 
 	/**
@@ -245,7 +246,7 @@ export const inventoryQuery = {
 	async getStockBalancesByItemIds(
 		organizationId: string,
 		itemIds: string[],
-		executor: DbTransaction = db,
+		executor?: DbTransaction,
 	): Promise<
 		Map<
 			string,
@@ -291,7 +292,7 @@ export const inventoryQuery = {
 				)
 				.groupBy(stockBatches.inventoryItemId);
 
-		const rows = executor === db ? await withTenantCtx(organizationId, run) : await run(executor);
+		const rows = executor ? await run(executor) : await withTenantReadCtx(organizationId, run);
 
 		for (const r of rows) {
 			resultMap.set(r.inventoryItemId, {
@@ -338,8 +339,10 @@ export const inventoryQuery = {
 			throw new Error("Приходная накладная должна содержать хотя бы одну позицию.");
 		}
 
+		const normalizedInvoiceDate = normalizeDateToIso(rawInvoiceDate);
 		const invoiceDate =
-			normalizeDateToIso(rawInvoiceDate) || new Date().toISOString().slice(0, 10);
+			normalizedInvoiceDate ||
+			formatDateIsoInTimeZone(new Date(), await resolveClinicTimeZone(tx, organizationId));
 		const createdBatches: Array<typeof stockBatches.$inferSelect> = [];
 		let totalQuantity = 0;
 		let totalCostKopecks = 0;
@@ -516,7 +519,7 @@ export const inventoryQuery = {
 	async getInventoryTransactions(
 		organizationId: string,
 		options: { itemId?: string; limit?: number; offset?: number } = {},
-		executor: DbTransaction = db,
+		executor?: DbTransaction,
 	) {
 		const run = async (exec: DbTransaction) => {
 			const conditions = [
@@ -547,6 +550,6 @@ export const inventoryQuery = {
 
 			return query;
 		};
-		return executor === db ? withTenantCtx(organizationId, run) : run(executor);
+		return executor ? run(executor) : withTenantReadCtx(organizationId, run);
 	},
 };

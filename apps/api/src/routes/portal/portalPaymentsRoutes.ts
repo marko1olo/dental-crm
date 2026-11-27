@@ -2,7 +2,8 @@ import { createHash } from "node:crypto";
 import { kopecksToRubles, parseKopecks, rublesToKopecks, sumKopecks } from "@dental/shared";
 import { and, desc, eq, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
+import { definePublicRoute } from "../../core/routeFactories.js";
+import { onTenantTxCommit, withTenantCtx, withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	fiscalReceiptQueue,
 	organizations,
@@ -17,6 +18,15 @@ import { resolveSberReturnUrl } from "../sberbankRoutes/sberbankUtils.js";
 import { extractPortalPatient } from "./portalAuthStore.js";
 import { generateDeterministicQrSvg } from "./portalUtils.js";
 import {
+	buildAvailablePortalSbpBanks,
+	buildIdempotentSbpReply,
+	deriveDeterministicSbpOrderId,
+	extractBankRequisites,
+	readHeaderString,
+	resolveInvoiceTotalKopecks,
+	resolveSbpPaidKopecksNow,
+} from "./portalPaymentsHelpers.js";
+import {
 	confirmSbpBodySchema,
 	createCardOrderBodySchema,
 	createSbpQrBodySchema,
@@ -27,177 +37,37 @@ import {
 	type PaymentStatusQuery,
 } from "./types.js";
 
-function readHeaderString(value: string | string[] | undefined): string | undefined {
-	if (typeof value === "string") {
-		const trimmed = value.trim();
-		return trimmed.length > 0 ? trimmed : undefined;
-	}
-	if (Array.isArray(value) && typeof value[0] === "string") {
-		const trimmed = value[0].trim();
-		return trimmed.length > 0 ? trimmed : undefined;
-	}
-	return undefined;
-}
-
-function deriveDeterministicSbpOrderId(idempotencyKey: string): string {
-	const digest = createHash("sha256").update(idempotencyKey).digest("hex").toUpperCase().slice(0, 24);
-	return `SBPA${digest}`;
-}
-
-function readOptionalStringField(record: Record<string, unknown>, keys: readonly string[]): string | undefined {
-	for (const key of keys) {
-		const value = record[key];
-		if (typeof value === "string" && value.trim().length > 0) {
-			return value.trim();
-		}
-	}
-	return undefined;
-}
-
-function extractBankRequisites(bankDetails?: string | null): { account?: string | undefined; bic?: string | undefined } {
-	if (!bankDetails) return {};
-	try {
-		const parsed: unknown = JSON.parse(bankDetails);
-		if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-			const record: Record<string, unknown> = {};
-			for (const [k, v] of Object.entries(parsed)) {
-				record[k] = v;
-			}
-			const account = readOptionalStringField(record, [
-				"account",
-				"recipientAccount",
-				"settlementAccount",
-			]);
-			const bic = readOptionalStringField(record, ["bic", "bankBic"]);
-			return {
-				...(account ? { account } : {}),
-				...(bic ? { bic } : {}),
-			};
-		}
-	} catch {
-		// Plain text regex extraction
-	}
-	const accountMatch = bankDetails.match(/\b(40[78]\d{17})\b/);
-	const bicMatch = bankDetails.match(/\b(04\d{7})\b/);
-	return {
-		...(accountMatch?.[1] ? { account: accountMatch[1] } : {}),
-		...(bicMatch?.[1] ? { bic: bicMatch[1] } : {}),
-	};
-}
-
-type SbpAmountCheckResult =
-	| { ok: true; paidKopecksNow: number }
-	| { ok: false; error: string; message: string };
-
-function resolveSbpPaidKopecksNow(params: {
-	sberTx: typeof sberbankTransactions.$inferSelect | undefined;
-	explicitKopecks: number | undefined;
-	externalBankAmountKopecks: number | undefined;
-	remainingInvoiceKop: number;
-}): SbpAmountCheckResult {
-	const { sberTx, explicitKopecks, externalBankAmountKopecks, remainingInvoiceKop } = params;
-	if (sberTx) {
-		const sberTxKop = Number(sberTx.amountKopecks);
-		if (!Number.isSafeInteger(sberTxKop) || sberTxKop <= 0) {
-			return { ok: false, error: "InvalidAmount", message: "Некорректная сумма транзакции СБП." };
-		}
-		if (explicitKopecks !== undefined && explicitKopecks !== sberTxKop) {
-			return { ok: false, error: "AmountMismatch", message: "Сумма в запросе не совпадает с суммой транзакции СБП." };
-		}
-		if (externalBankAmountKopecks !== undefined && externalBankAmountKopecks !== sberTxKop) {
-			return { ok: false, error: "AmountMismatch", message: "Сумма подтверждения банка не совпадает с суммой транзакции СБП." };
-		}
-		if (sberTxKop > remainingInvoiceKop) {
-			return { ok: false, error: "AmountMismatch", message: "Сумма транзакции СБП превышает остаток по счёту." };
-		}
-		return { ok: true, paidKopecksNow: sberTxKop };
-	}
-	if (externalBankAmountKopecks !== undefined && explicitKopecks !== undefined && externalBankAmountKopecks !== explicitKopecks) {
-		return { ok: false, error: "AmountMismatch", message: "Сумма в запросе не совпадает с суммой подтверждения банка." };
-	}
-	const resolvedKop = externalBankAmountKopecks ?? explicitKopecks ?? remainingInvoiceKop;
-	if (!Number.isSafeInteger(resolvedKop) || resolvedKop <= 0 || resolvedKop > remainingInvoiceKop) {
-		return { ok: false, error: "AmountMismatch", message: "Сумма оплаты не соответствует остатку по счёту." };
-	}
-	return { ok: true, paidKopecksNow: resolvedKop };
-}
-
-function buildIdempotentSbpReply(params: {
-	paymentId: string;
-	invoiceId: string;
-	stageId: string;
-	status: string;
-	amountKopecks: number;
-	message: string;
-	paidAmountKopecks?: number | undefined;
-}) {
-	return {
-		success: true,
-		idempotent: true,
-		paymentId: params.paymentId,
-		invoiceId: params.invoiceId,
-		...(params.stageId ? { stageId: params.stageId } : {}),
-		status: params.status,
-		amountRub: kopecksToRubles(params.amountKopecks),
-		amountKopecks: params.amountKopecks,
-		...(params.paidAmountKopecks !== undefined
-			? { paidAmountRub: kopecksToRubles(params.paidAmountKopecks), paidAmountKopecks: params.paidAmountKopecks }
-			: {}),
-		fiscalReceipt: null,
-		message: params.message,
-	};
-}
-
-function buildAvailablePortalSbpBanks(qrId: string, sbpNspkPayloadString: string) {
-	return [
-		{ id: "sber", nameRu: "СберБанк Онлайн", schemaPrefix: `sberpay://qr/sub?qrId=${qrId}`, brandColorHex: "#21a038", popular: true },
-		{ id: "tbank", nameRu: "Т-Банк (Тинькофф)", schemaPrefix: `tinkoffbank://qr?id=${qrId}`, brandColorHex: "#ffdd2d", popular: true },
-		{ id: "alfa", nameRu: "Альфа-Банк", schemaPrefix: `alfabank://qr/pay?qrId=${qrId}`, brandColorHex: "#ef3124", popular: true },
-		{ id: "vtb", nameRu: "ВТБ Онлайн", schemaPrefix: `vtb://sbp/pay?qrId=${qrId}`, brandColorHex: "#0a2896", popular: true },
-		{ id: "sbp_generic", nameRu: "Другой банк (СБП)", schemaPrefix: sbpNspkPayloadString, brandColorHex: "#1a56db", popular: false },
-	];
-}
-
-function resolveInvoiceTotalKopecks(inv: {
-	totalPriceKopecks?: bigint | number | null | undefined;
-	totalAmountRub?: string | number | null | undefined;
-	totalRub?: string | number | null | undefined;
-}): number {
-	const kopecksVal = inv.totalPriceKopecks != null ? Number(inv.totalPriceKopecks) : 0;
-	if (kopecksVal > 0) return kopecksVal;
-	return parseKopecks(inv.totalAmountRub || inv.totalRub || "0");
-}
-
 export async function registerPortalPaymentsRoutes(server: FastifyInstance): Promise<void> {
 	// 11. Create Dynamic SBP QR Code for Stage/Invoice Payment (Protected)
-	server.post<{
-		Body: CreateSbpQrBody;
-	}>("/payments/create-sbp-qr", async (request, reply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized" };
-		}
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/payments/create-sbp-qr",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized" };
+			}
 
-		const idempotencyKey =
-			readHeaderString(request.headers["idempotency-key"]) ??
-			readHeaderString(request.headers["x-idempotency-key"]);
+			const idempotencyKey =
+				readHeaderString(request.headers["idempotency-key"]) ??
+				readHeaderString(request.headers["x-idempotency-key"]);
 
-		const parsedBody = createSbpQrBodySchema.safeParse(request.body ?? {});
-		if (!parsedBody.success) {
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Некорректные параметры создания СБП-платежа.",
-				details: parsedBody.error.format(),
-			};
-		}
+			const parsedBody = createSbpQrBodySchema.safeParse(request.body ?? {});
+			if (!parsedBody.success) {
+				reply.status(400);
+				return {
+					error: "ValidationError",
+					message: "Некорректные параметры создания СБП-платежа.",
+					details: parsedBody.error.format(),
+				};
+			}
 
-		const invoiceId = parsedBody.data.invoiceId?.trim() ?? "";
-		const stageId = parsedBody.data.stageId?.trim() ?? "";
-		const explicitAmount = parsedBody.data.amountRub;
+			const invoiceId = parsedBody.data.invoiceId?.trim() ?? "";
+			const stageId = parsedBody.data.stageId?.trim() ?? "";
+			const explicitAmount = parsedBody.data.amountRub;
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
+			return withTenantWriteCtx(auth.organizationId, async (tx) => {
 			let amountRub = explicitAmount || 0;
 			let resolvedInvoiceKopecks = 0;
 			let invoiceNumber = `СЧ-${Date.now().toString().slice(-6)}`;
@@ -364,14 +234,15 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 			};
 
 			return { success: true, sbpPayload };
-		});
+			});
+		},
 	});
 
 	// 11b. Create Online Card Payment Order via Acquiring Gateway (Protected)
-	server.post<{ Body: CreateCardOrderBody }>(
-		"/payments/create-card-order",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request, reply) => {
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/payments/create-card-order",
+		handler: async ({ request, reply }) => {
 			const auth = extractPortalPatient(request);
 			if (!auth) {
 				return reply.status(401).send({ error: "Unauthorized" });
@@ -392,7 +263,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				readHeaderString(request.headers["idempotency-key"]) ??
 				readHeaderString(request.headers["x-idempotency-key"]);
 
-			const invoiceCheck = await withTenantCtx(auth.organizationId, async (tx) => {
+			const invoiceCheck = await withTenantReadCtx(auth.organizationId, async (tx) => {
 				const [inv] = await tx
 					.select()
 					.from(patientInvoices)
@@ -466,16 +337,19 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				});
 			}
 
-			await withTenantCtx(auth.organizationId, async (tx) => {
-				await tx.insert(sberbankTransactions).values({
-					organizationId: auth.organizationId,
-					patientId: auth.patientId,
-					invoiceId: invoiceCheck.invoice.id,
-					visitId: invoiceCheck.invoice.visitId ?? null,
-					orderId,
-					amountKopecks: BigInt(invoiceCheck.amountKopecks),
-					status: "WAITING_FOR_CARD",
-				});
+			await withTenantWriteCtx(auth.organizationId, async (tx) => {
+				await tx
+					.insert(sberbankTransactions)
+					.values({
+						organizationId: auth.organizationId,
+						patientId: auth.patientId,
+						invoiceId: invoiceCheck.invoice.id,
+						visitId: invoiceCheck.invoice.visitId ?? null,
+						orderId,
+						amountKopecks: BigInt(invoiceCheck.amountKopecks),
+						status: "WAITING_FOR_CARD",
+					})
+					.onConflictDoNothing();
 			});
 
 			return reply.status(200).send({
@@ -486,14 +360,14 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				amountRub: kopecksToRubles(invoiceCheck.amountKopecks),
 			});
 		},
-	);
+	});
 
 	// 12. Confirm SBP Payment & Enqueue 54-FZ Fiscal Receipt (Protected)
-	// tenantTxSelfManaged: true so external Sberbank HTTP check never holds a PG connection open
-	server.post<{ Body: ConfirmSbpBody }>(
-		"/payments/confirm-sbp",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request, reply) => {
+	// definePublicRoute leaves PG connection unheld during external Sberbank HTTP check
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/payments/confirm-sbp",
+		handler: async ({ request, reply }) => {
 			const auth = extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
@@ -542,7 +416,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 			}
 
 			const now = new Date();
-			return withTenantCtx(auth.organizationId, async (tx) => {
+			return withTenantWriteCtx(auth.organizationId, async (tx) => {
 				// 1. Lock invoice row (FOR UPDATE)
 				const [inv] = await tx
 					.select()
@@ -824,89 +698,93 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				};
 			});
 		},
-	);
+	});
 
 	// 13. Get Payment / Invoice Status (Protected)
-	server.get<{ Querystring: PaymentStatusQuery }>("/payments/status", async (request, reply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized" };
-		}
-
-		const parsedQuery = paymentStatusQuerySchema.safeParse(request.query ?? {});
-		if (!parsedQuery.success) {
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Некорректные параметры запроса статуса оплаты.",
-				details: parsedQuery.error.format(),
-			};
-		}
-
-		const invoiceId = parsedQuery.data.invoiceId?.trim();
-		const invoiceNumber = parsedQuery.data.invoiceNumber?.trim();
-
-		return withTenantCtx(auth.organizationId, async (tx) => {
-			let inv: typeof patientInvoices.$inferSelect | undefined;
-
-			if (invoiceId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoiceId)) {
-				const [found] = await tx
-					.select()
-					.from(patientInvoices)
-					.where(and(eq(patientInvoices.id, invoiceId), eq(patientInvoices.organizationId, auth.organizationId), eq(patientInvoices.patientId, auth.patientId)))
-					.limit(1);
-				inv = found;
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/payments/status",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized" };
 			}
 
-			if (!inv && invoiceNumber) {
-				const cleanId = invoiceNumber.replace(/^СЧ-/i, "").toLowerCase();
-				const allPatientInvoices = await tx
-					.select()
-					.from(patientInvoices)
-					.where(and(eq(patientInvoices.organizationId, auth.organizationId), eq(patientInvoices.patientId, auth.patientId)));
-				inv = allPatientInvoices.find(
-					(i) => i.id.toLowerCase() === cleanId || i.id.toLowerCase().startsWith(cleanId) || `СЧ-${i.id.slice(0, 8).toUpperCase()}` === invoiceNumber,
-				);
+			const parsedQuery = paymentStatusQuerySchema.safeParse(request.query ?? {});
+			if (!parsedQuery.success) {
+				reply.status(400);
+				return {
+					error: "ValidationError",
+					message: "Некорректные параметры запроса статуса оплаты.",
+					details: parsedQuery.error.format(),
+				};
 			}
 
-			if (!inv) {
-				// Also check sberbankTransactions if invoice was registered via SBP QR
-				const orderIdLookup = invoiceId || invoiceNumber;
-				if (orderIdLookup) {
-					const [txRow] = await tx
+			const invoiceId = parsedQuery.data.invoiceId?.trim();
+			const invoiceNumber = parsedQuery.data.invoiceNumber?.trim();
+
+			return withTenantReadCtx(auth.organizationId, async (tx) => {
+				let inv: typeof patientInvoices.$inferSelect | undefined;
+
+				if (invoiceId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoiceId)) {
+					const [found] = await tx
 						.select()
-						.from(sberbankTransactions)
-						.where(and(eq(sberbankTransactions.organizationId, auth.organizationId), eq(sberbankTransactions.patientId, auth.patientId), eq(sberbankTransactions.orderId, orderIdLookup)))
+						.from(patientInvoices)
+						.where(and(eq(patientInvoices.id, invoiceId), eq(patientInvoices.organizationId, auth.organizationId), eq(patientInvoices.patientId, auth.patientId)))
 						.limit(1);
-
-					if (txRow) {
-						const isSettled = txRow.status === "SETTLED" || txRow.status === "success" || txRow.status === "paid";
-						return {
-							success: true,
-							status: isSettled ? "paid" : txRow.status.toLowerCase(),
-							isPaid: isSettled,
-							paidAmountRub: isSettled ? kopecksToRubles(txRow.amountKopecks) : 0,
-							paidAtIso: txRow.updatedAt?.toISOString() || null,
-							fiscalReceiptNumber: undefined,
-						};
-					}
+					inv = found;
 				}
 
-				reply.status(404);
-				return { error: "InvoiceNotFound", message: "Счёт на оплату не найден." };
-			}
+				if (!inv && invoiceNumber) {
+					const cleanId = invoiceNumber.replace(/^СЧ-/i, "").toLowerCase();
+					const allPatientInvoices = await tx
+						.select()
+						.from(patientInvoices)
+						.where(and(eq(patientInvoices.organizationId, auth.organizationId), eq(patientInvoices.patientId, auth.patientId)));
+					inv = allPatientInvoices.find(
+						(i) => i.id.toLowerCase() === cleanId || i.id.toLowerCase().startsWith(cleanId) || `СЧ-${i.id.slice(0, 8).toUpperCase()}` === invoiceNumber,
+					);
+				}
 
-			const isPaid = inv.status === "paid";
-			const totalAmountRub = kopecksToRubles(resolveInvoiceTotalKopecks(inv));
-			return {
-				success: true,
-				status: inv.status,
-				isPaid,
-				paidAmountRub: isPaid ? totalAmountRub : 0,
-				paidAtIso: inv.paidAt?.toISOString() || null,
-				fiscalReceiptNumber: undefined,
-			};
-		});
+				if (!inv) {
+					// Also check sberbankTransactions if invoice was registered via SBP QR
+					const orderIdLookup = invoiceId || invoiceNumber;
+					if (orderIdLookup) {
+						const [txRow] = await tx
+							.select()
+							.from(sberbankTransactions)
+							.where(and(eq(sberbankTransactions.organizationId, auth.organizationId), eq(sberbankTransactions.patientId, auth.patientId), eq(sberbankTransactions.orderId, orderIdLookup)))
+							.limit(1);
+
+						if (txRow) {
+							const isSettled = txRow.status === "SETTLED" || txRow.status === "success" || txRow.status === "paid";
+							return {
+								success: true,
+								status: isSettled ? "paid" : txRow.status.toLowerCase(),
+								isPaid: isSettled,
+								paidAmountRub: isSettled ? kopecksToRubles(txRow.amountKopecks) : 0,
+								paidAtIso: txRow.updatedAt?.toISOString() || null,
+								fiscalReceiptNumber: undefined,
+							};
+						}
+					}
+
+					reply.status(404);
+					return { error: "InvoiceNotFound", message: "Счёт на оплату не найден." };
+				}
+
+				const isPaid = inv.status === "paid";
+				const totalAmountRub = kopecksToRubles(resolveInvoiceTotalKopecks(inv));
+				return {
+					success: true,
+					status: inv.status,
+					isPaid,
+					paidAmountRub: isPaid ? totalAmountRub : 0,
+					paidAtIso: inv.paidAt?.toISOString() || null,
+					fiscalReceiptNumber: undefined,
+				};
+			});
+		},
 	});
 }

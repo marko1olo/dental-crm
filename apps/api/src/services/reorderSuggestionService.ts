@@ -16,7 +16,7 @@ import {
 	resolveCostKopecks,
 } from "@dental/shared";
 import { and, eq, gte, sql } from "drizzle-orm";
-import { withTenantCtx } from "../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../db/rls.js";
 import { inventoryItems, inventoryTransactions } from "../db/schema.js";
 
 export class ReorderSuggestionService {
@@ -29,13 +29,14 @@ export class ReorderSuggestionService {
 			onlyNeedingReorder?: boolean;
 			lookbackDays?: number;
 			coverDays?: number;
+			tx?: TenantDb;
 		} = {},
 	): Promise<ReorderSuggestionsResponse> {
 		const lookbackDays = options.lookbackDays ?? REORDER_LOOKBACK_DAYS;
 		const coverDays = options.coverDays ?? REORDER_COVER_DAYS;
 		const cutoffDate = new Date(Date.now() - lookbackDays * 86_400_000);
 
-		const { items, consumptionRows } = await withTenantCtx(organizationId, async (tx) => {
+		const loadData = async (tx: TenantDb) => {
 			// 1. Fetch active inventory items (projected columns, bounded)
 			const fetchedItems = await tx
 				.select({
@@ -83,7 +84,11 @@ export class ReorderSuggestionService {
 				);
 
 			return { items: fetchedItems, consumptionRows: fetchedConsumptionRows };
-		});
+		};
+
+		const { items, consumptionRows } = options.tx
+			? await loadData(options.tx)
+			: await withTenantReadCtx(organizationId, loadData);
 
 		if (items.length === 0) {
 			return {

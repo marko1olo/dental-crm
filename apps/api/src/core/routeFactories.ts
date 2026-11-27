@@ -6,7 +6,12 @@
  * `config: { tenantTxSelfManaged: true }` для обхода глобального хука `onRoute`.
  */
 
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type {
+	FastifyContextConfig,
+	FastifyInstance,
+	FastifyReply,
+	FastifyRequest,
+} from "fastify";
 import type { ZodTypeAny, z } from "zod";
 import type { TenantDb } from "../db/client.js";
 import { runWithStrictUnscopedDbTrap } from "../db/client.js";
@@ -44,6 +49,7 @@ export interface TenantQueryContext<
 	params: InferOrUndefined<TParams>;
 	query: InferOrUndefined<TQuery>;
 	request: FastifyRequest;
+	req: FastifyRequest;
 	reply: FastifyReply;
 }
 
@@ -52,7 +58,7 @@ export interface TenantQueryRouteSpec<
 	TQuery extends ZodTypeAny | undefined = undefined,
 	TResult = unknown,
 > {
-	method?: "GET" | "HEAD" | undefined;
+	method?: "GET" | "HEAD" | "POST" | undefined;
 	path: string;
 	permission: PermissionRequirement;
 	authOptions?: PrincipalAuthOptions | undefined;
@@ -60,7 +66,8 @@ export interface TenantQueryRouteSpec<
 	querySchema?: TQuery | undefined;
 	validationErrorCode?: string | undefined;
 	validationErrorMessage?: string | undefined;
-	handler: (ctx: TenantQueryContext<TParams, TQuery>) => Promise<TResult>;
+	handler?: ((ctx: TenantQueryContext<TParams, TQuery>) => Promise<TResult>) | undefined;
+	query?: ((ctx: TenantQueryContext<TParams, TQuery>) => Promise<TResult>) | undefined;
 }
 
 export interface TenantMutationContext<
@@ -76,6 +83,7 @@ export interface TenantMutationContext<
 	query: InferOrUndefined<TQuery>;
 	body: InferOrUndefined<TBody>;
 	request: FastifyRequest;
+	req: FastifyRequest;
 	reply: FastifyReply;
 }
 
@@ -102,9 +110,12 @@ export interface TenantMutationRouteSpec<
 	onHandlerError?:
 		| ((err: unknown, reply: FastifyReply) => boolean | Promise<boolean>)
 		| undefined;
-	handler: (
+	handler?: ((
 		ctx: TenantMutationContext<TParams, TQuery, TBody>,
-	) => Promise<TResult>;
+	) => Promise<TResult>) | undefined;
+	execute?: ((
+		ctx: TenantMutationContext<TParams, TQuery, TBody>,
+	) => Promise<TResult>) | undefined;
 }
 
 export interface StreamRouteContext<
@@ -167,6 +178,7 @@ export interface PublicRouteSpec<
 	path: string;
 	bodyLimit?: number | undefined;
 	schema?: Record<string, unknown> | undefined;
+	rateLimit?: FastifyContextConfig["rateLimit"] | undefined;
 	paramsSchema?: TParams | undefined;
 	querySchema?: TQuery | undefined;
 	bodySchema?: TBody | undefined;
@@ -304,16 +316,23 @@ export function defineTenantQuery<
 				);
 				if (!queryRes.ok) return reply;
 
+				const queryFn = spec.handler ?? spec.query;
+				if (!queryFn) {
+					throw new Error(
+						`TenantQueryRouteSpec for ${spec.path} must define either handler or query`,
+					);
+				}
 				const result = await withTenantReadCtx(
 					principal.organizationId,
 					(tx) =>
-						spec.handler({
+						queryFn({
 							tx,
 							principal,
 							organizationId: principal.organizationId,
 							params: paramsRes.data,
 							query: queryRes.data,
 							request,
+							req: request,
 							reply,
 						}),
 				);
@@ -389,6 +408,13 @@ export function defineTenantMutation<
 				const requireHeader =
 					(spec.idempotency ?? "required_header") === "required_header";
 
+				const mutationFn = spec.handler ?? spec.execute;
+				if (!mutationFn) {
+					throw new Error(
+						`TenantMutationRouteSpec for ${spec.path} must define either handler or execute`,
+					);
+				}
+
 				try {
 					await executeIdempotentMutationTx({
 						request,
@@ -396,7 +422,7 @@ export function defineTenantMutation<
 						organizationId: principal.organizationId,
 						requireHeader,
 						execute: (tx, idempotencyKey) =>
-							spec.handler({
+							mutationFn({
 								tx,
 								principal,
 								organizationId: principal.organizationId,
@@ -405,6 +431,7 @@ export function defineTenantMutation<
 								query: queryRes.data,
 								body: bodyRes.data,
 								request,
+								req: request,
 								reply,
 							}),
 					});
@@ -536,6 +563,7 @@ export function definePublicRoute<
 		config: {
 			tenantTxSelfManaged: true,
 			routeFactoryKind: "public_route",
+			...(spec.rateLimit !== undefined ? { rateLimit: spec.rateLimit } : {}),
 		} satisfies FactoryRouteConfig,
 		handler: async (request, reply) => {
 			let sendCalled = false;
@@ -573,13 +601,15 @@ export function definePublicRoute<
 				);
 				if (!bodyRes.ok) return reply;
 
-				const result = await spec.handler({
-					params: paramsRes.data,
-					query: queryRes.data,
-					body: bodyRes.data,
-					request,
-					reply,
-				});
+				const result = await runWithStrictUnscopedDbTrap(() =>
+					spec.handler({
+						params: paramsRes.data,
+						query: queryRes.data,
+						body: bodyRes.data,
+						request,
+						reply,
+					}),
+				);
 
 				return finalizeFactoryResponse(reply, result, sendCalled);
 			} finally {

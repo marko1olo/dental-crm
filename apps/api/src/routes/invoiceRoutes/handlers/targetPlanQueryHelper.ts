@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import type { db as dbType } from "../../../db/client.js";
+import type { TenantDb } from "../../../db/client.js";
 import { getActivePriceFreezeToken } from "../../../db/priceFreezeTokensQuery.js";
 import {
 	treatmentPlanItemsNew,
@@ -13,7 +13,7 @@ import type {
 
 /** Fetches target plan, active price freeze token, and plan items */
 export async function fetchTargetPlanAndFreezeToken(params: {
-	db: typeof dbType;
+	db: TenantDb;
 	orgId: string;
 	targetPlanId?: string | undefined;
 }): Promise<{

@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import type { AsteriskAmiEventPayload } from "../../services/telephony/telephonyGatewayService.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { handleAsteriskAmiEvent } from "./sip/handleAsteriskAmiEvent.js";
 import { handleSipCallTransfer } from "./sip/handleSipCallTransfer.js";
 import { handleSipCredentials } from "./sip/handleSipCredentials.js";
@@ -7,60 +7,82 @@ import { handleSipFailover, handleSipStatus } from "./sip/handleSipStatusAndFail
 
 export const telephonySipRoutes: FastifyPluginAsync = async (server) => {
 	// WebRTC SIP Credentials
-	server.post<{ Params: { organizationId: string }; Body: { extension?: string; staffFullName?: string } }>(
-		"/:organizationId/sip/credentials",
-		handleSipCredentials,
-	);
-	server.post<{ Params: { organizationId?: string }; Body: { extension?: string; staffFullName?: string } }>(
-		"/sip/credentials",
-		handleSipCredentials,
-	);
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/:organizationId/sip/credentials",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleSipCredentials(request as Parameters<typeof handleSipCredentials>[0], reply),
+	});
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/sip/credentials",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleSipCredentials(request as Parameters<typeof handleSipCredentials>[0], reply),
+	});
 
 	// Gateway Status (TCP socket probing outside PG TX)
-	server.get<{ Params: { organizationId: string } }>(
-		"/:organizationId/sip/status",
-		{ config: { tenantTxSelfManaged: true } },
-		handleSipStatus,
-	);
-	server.get<{ Params: { organizationId?: string } }>(
-		"/sip/status",
-		{ config: { tenantTxSelfManaged: true } },
-		handleSipStatus,
-	);
+	defineStreamRoute(server, {
+		method: "GET",
+		path: "/:organizationId/sip/status",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleSipStatus(request as Parameters<typeof handleSipStatus>[0], reply),
+	});
+	defineStreamRoute(server, {
+		method: "GET",
+		path: "/sip/status",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleSipStatus(request as Parameters<typeof handleSipStatus>[0], reply),
+	});
 
 	// Failover (TCP socket probing outside PG TX)
-	server.post<{ Params: { organizationId: string }; Body: { forceCloudFallback?: boolean } }>(
-		"/:organizationId/sip/failover",
-		{ config: { tenantTxSelfManaged: true } },
-		handleSipFailover,
-	);
-	server.post<{ Params: { organizationId?: string }; Body: { forceCloudFallback?: boolean } }>(
-		"/sip/failover",
-		{ config: { tenantTxSelfManaged: true } },
-		handleSipFailover,
-	);
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/:organizationId/sip/failover",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleSipFailover(request as Parameters<typeof handleSipFailover>[0], reply),
+	});
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/sip/failover",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleSipFailover(request as Parameters<typeof handleSipFailover>[0], reply),
+	});
 
 	// Asterisk AMI / ARI
-	server.post<{ Params: { organizationId?: string }; Body: AsteriskAmiEventPayload }>(
-		"/:organizationId/asterisk/ami-event",
-		{ config: { tenantTxSelfManaged: true } },
-		handleAsteriskAmiEvent,
-	);
-	server.post<{ Params: { organizationId?: string }; Body: AsteriskAmiEventPayload }>(
-		"/asterisk/ami-event",
-		{ config: { tenantTxSelfManaged: true } },
-		handleAsteriskAmiEvent,
-	);
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/:organizationId/asterisk/ami-event",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleAsteriskAmiEvent(request as Parameters<typeof handleAsteriskAmiEvent>[0], reply),
+	});
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/asterisk/ami-event",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleAsteriskAmiEvent(request as Parameters<typeof handleAsteriskAmiEvent>[0], reply),
+	});
 
 	// SIP Transfer (external PBX AMI / Cloud HTTP outside PG TX)
-	server.post<{ Params: { organizationId: string }; Body: { callId?: string; targetExtensionOrPhone?: string; transferType?: "blind" | "attended" } }>(
-		"/:organizationId/sip/transfer",
-		{ config: { tenantTxSelfManaged: true } },
-		handleSipCallTransfer,
-	);
-	server.post<{ Params: { organizationId?: string }; Body: { callId?: string; targetExtensionOrPhone?: string; transferType?: "blind" | "attended" } }>(
-		"/sip/transfer",
-		{ config: { tenantTxSelfManaged: true } },
-		handleSipCallTransfer,
-	);
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/:organizationId/sip/transfer",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleSipCallTransfer(request as Parameters<typeof handleSipCallTransfer>[0], reply),
+	});
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/sip/transfer",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleSipCallTransfer(request as Parameters<typeof handleSipCallTransfer>[0], reply),
+	});
 };

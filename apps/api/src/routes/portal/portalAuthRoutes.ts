@@ -1,8 +1,8 @@
 import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
+import { definePublicRoute } from "../../core/routeFactories.js";
+import { withSuperuserBypass, withTenantCtx, withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { organizations, patients, portalOtpCodes } from "../../db/schema.js";
 import { readSmsCredentialsFromEnv } from "../../smsTransport.js";
 import {
@@ -56,19 +56,16 @@ function getPortalOtpRateLimitKey(req: FastifyRequest, prefix: string): string {
 
 export async function registerPortalAuthRoutes(server: FastifyInstance): Promise<void> {
 	// 1. Send OTP (защищен составным лимитером по связке IP + phone_number)
-	server.post<{ Body: { phone?: unknown; organizationId?: unknown } }>(
-		"/auth/send-otp",
-		{
-			config: {
-				rateLimit: {
-					max: 5,
-					timeWindow: "1 minute",
-					hook: "preHandler",
-					keyGenerator: (req: FastifyRequest) => getPortalOtpRateLimitKey(req, "portal-otp"),
-				},
-			},
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/auth/send-otp",
+		rateLimit: {
+			max: 5,
+			timeWindow: "1 minute",
+			hook: "preHandler",
+			keyGenerator: (req: FastifyRequest) => getPortalOtpRateLimitKey(req, "portal-otp"),
 		},
-		async (request, reply) => {
+		handler: async ({ request, reply }) => {
 			const parsedBody = sendOtpBodySchema.safeParse(request.body ?? {});
 			if (!parsedBody.success) {
 				reply.status(400);
@@ -146,8 +143,6 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				const phoneSuffix = digits.length >= 10 ? digits.slice(-10) : digits;
 				const phoneEntry = otpPhoneRequestCounts.get(phoneSuffix);
 				if (phoneEntry && nowMs <= phoneEntry.resetAt && phoneEntry.count >= effectiveMaxPhone) {
-					// Не разглашаем факт блокировки номера, но защищаем баланс оператора:
-					// возвращаем нейтральный статус 202 без отправки SMS
 					reply.status(202);
 					return neutralAccepted;
 				}
@@ -178,7 +173,6 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 
 			const patient = await findUniquePatientByPhone(rawPhone, targetOrgId);
 			if (!patient) {
-				// Авторизация нового пациента: генерируем OTP и отправляем SMS/лог с кодом для первичной регистрации
 				let effectiveOrgId: string | null = null;
 				if (
 					targetOrgId &&
@@ -196,8 +190,6 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 					}
 				}
 				if (!effectiveOrgId) {
-					// Мультитенантность: запрещено привязывать нового пациента к случайной клинике через LIMIT 1!
-					// Для регистрации нового пациента в ЛК требуется явный organizationId клиники.
 					reply.status(202);
 					return neutralAccepted;
 				}
@@ -222,7 +214,7 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				const regCodeHash = await hashCredential(regCode);
 				const otpExpiresAt = new Date(now.getTime() + policy.ttlSeconds * 1000);
 
-				const [insertedRegOtp] = await withTenantCtx(effectiveOrgId, async (tx) =>
+				const [insertedRegOtp] = await withTenantWriteCtx(effectiveOrgId, async (tx) =>
 					tx
 						.insert(portalOtpCodes)
 						.values({
@@ -287,10 +279,10 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 
 			const now = new Date();
 
-			const throttledBeforeHashing = await withTenantCtx(
+			const throttledBeforeHashing = await withTenantReadCtx(
 				patient.organizationId,
-				async () =>
-					isIssuanceThrottled(patient.organizationId, patient.id, policy, now),
+				async (tx) =>
+					isIssuanceThrottled(patient.organizationId, patient.id, policy, now, tx),
 			);
 			if (throttledBeforeHashing) {
 				reply.status(202);
@@ -300,19 +292,19 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 			const code = generateNumericCode(policy.codeLength);
 			const codeHash = await hashCredential(code);
 
-			const issuance = await withTenantCtx(patient.organizationId, async (tx) => {
+			const issuance = await withTenantWriteCtx(patient.organizationId, async (tx) => {
 				if (
 					await isIssuanceThrottled(
 						patient.organizationId,
 						patient.id,
 						policy,
 						now,
+						tx,
 					)
 				) {
 					return { throttled: true as const, issuedId: null };
 				}
 
-				// Уборка старья по этому же пациенту: без неё таблица растёт вечно.
 				await tx
 					.delete(portalOtpCodes)
 					.where(
@@ -326,7 +318,6 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 						),
 					);
 
-				// Прежние действующие коды гасятся.
 				await tx
 					.update(portalOtpCodes)
 					.set({ consumedAt: now })
@@ -403,22 +394,19 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 			reply.status(202);
 			return neutralAccepted;
 		},
-	);
+	});
 
 	// 2. Verify OTP (защищен составным лимитером по связке IP + phone_number)
-	server.post<{ Body: { phone?: unknown; code?: unknown; organizationId?: unknown } }>(
-		"/auth/verify-otp",
-		{
-			config: {
-				rateLimit: {
-					max: 10,
-					timeWindow: "1 minute",
-					hook: "preHandler",
-					keyGenerator: (req: FastifyRequest) => getPortalOtpRateLimitKey(req, "portal-verify-otp"),
-				},
-			},
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/auth/verify-otp",
+		rateLimit: {
+			max: 10,
+			timeWindow: "1 minute",
+			hook: "preHandler",
+			keyGenerator: (req: FastifyRequest) => getPortalOtpRateLimitKey(req, "portal-verify-otp"),
 		},
-		async (request, reply) => {
+		handler: async ({ request, reply }) => {
 			const invalidOtp = {
 				error: "InvalidOtp",
 				message: "Неверный или истёкший код. Запросите новый код.",
@@ -452,7 +440,6 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				const phoneSuffix = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : phoneDigits;
 				const now = new Date();
 
-				// Persistent PostgreSQL 18 check first, fallback to memory
 				const pendingReg = await findPendingRegistrationOtp(phoneSuffix, targetOrgId, now);
 				const pendingKey = getPendingRegistrationOtpKey(
 					phoneSuffix,
@@ -491,7 +478,6 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				}
 				pendingRegistrationOtpStore.delete(pendingKey);
 
-				// Предотвращение дубликатов и пустышек "Пациент" при повторной или семейной верификации
 				const existingPatients = await findPatientsByPhone(rawPhone, pendingReg.organizationId);
 				const matchedExisting =
 					existingPatients.find((p) => p.isFamilyHead) ||
@@ -511,7 +497,7 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 					return { success: true, token, patientId: matchedExisting.id, isNewPatient: false };
 				}
 
-				const newPatient = await withTenantCtx(pendingReg.organizationId, async (tx) => {
+				const newPatient = await withTenantWriteCtx(pendingReg.organizationId, async (tx) => {
 					const [created] = await tx
 						.insert(patients)
 						.values({
@@ -548,7 +534,7 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 
 			const now = new Date();
 
-			const candidate = await withTenantCtx(
+			const candidate = await withTenantWriteCtx(
 				patient.organizationId,
 				async (tx) => {
 					const active = await tx
@@ -610,7 +596,7 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				return invalidOtp;
 			}
 
-			const consumed = await withTenantCtx(patient.organizationId, async (tx) =>
+			const consumed = await withTenantWriteCtx(patient.organizationId, async (tx) =>
 				tx
 					.update(portalOtpCodes)
 					.set({ consumedAt: now })
@@ -640,82 +626,85 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 
 			return { success: true, token, patientId: patient.id, isNewPatient: false };
 		},
-	);
+	});
 
 	// 2.1. Logout / Session Revocation (Protected)
-	server.post("/auth/logout", async (request, reply) => {
-		const authHeader = request.headers.authorization;
-		if (!authHeader?.startsWith("Bearer ")) {
-			reply.status(401);
-			return { error: "Unauthorized", message: "Токен авторизации не предоставлен." };
-		}
-
-		const token = authHeader.slice("Bearer ".length).trim();
-		if (!token) {
-			reply.status(401);
-			return { error: "Unauthorized", message: "Токен авторизации не предоставлен." };
-		}
-
-		if (
-			revokedPortalTokens.has(token) ||
-			revokedPortalTokenHashes.has(hashPortalToken(token))
-		) {
-			reply.status(401);
-			return { error: "SessionRevoked", message: "Сессия уже завершена." };
-		}
-
-		const payload = verifyToken(token, requireAuthTokenSecret());
-		if (
-			!payload ||
-			payload.kind !== PORTAL_TOKEN_KIND ||
-			typeof payload.sub !== "string" ||
-			typeof payload.organizationId !== "string"
-		) {
-			reply.status(401);
-			return { error: "InvalidToken", message: "Недействительный токен сессии." };
-		}
-
-		const patientId = payload.sub;
-		const organizationId = payload.organizationId;
-		const nowSeconds = Math.floor(Date.now() / 1000);
-		const nowIso = new Date().toISOString();
-
-		// Revoke active token in PostgreSQL and memory
-		await persistRevokedToken(
-			token,
-			patientId,
-			organizationId,
-			new Date(Date.now() + 30 * 24 * 3600 * 1000),
-		);
-		portalRevokedBeforeByPatient.set(patientId, nowSeconds);
-
-		// Record revocation timestamp in patient's administrative profile for audit trails
-		await withTenantCtx(organizationId, async (tx) => {
-			const [patientRow] = await tx
-				.select({ administrativeProfile: patients.administrativeProfile })
-				.from(patients)
-				.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
-				.limit(1);
-
-			if (patientRow) {
-				const currentProfile = patientRow.administrativeProfile ?? {};
-				await tx
-					.update(patients)
-					.set({
-						administrativeProfile: {
-							...currentProfile,
-							portalSessionRevokedAt: nowIso,
-						},
-						updatedAt: new Date(),
-					})
-					.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)));
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/auth/logout",
+		handler: async ({ request, reply }) => {
+			const authHeader = request.headers.authorization;
+			if (!authHeader?.startsWith("Bearer ")) {
+				reply.status(401);
+				return { error: "Unauthorized", message: "Токен авторизации не предоставлен." };
 			}
-		});
 
-		return {
-			success: true,
-			message: "Сессия успешно завершена.",
-			revokedAt: nowIso,
-		};
+			const token = authHeader.slice("Bearer ".length).trim();
+			if (!token) {
+				reply.status(401);
+				return { error: "Unauthorized", message: "Токен авторизации не предоставлен." };
+			}
+
+			if (
+				revokedPortalTokens.has(token) ||
+				revokedPortalTokenHashes.has(hashPortalToken(token))
+			) {
+				reply.status(401);
+				return { error: "SessionRevoked", message: "Сессия уже завершена." };
+			}
+
+			const payload = verifyToken(token, requireAuthTokenSecret());
+			if (
+				!payload ||
+				payload.kind !== PORTAL_TOKEN_KIND ||
+				typeof payload.sub !== "string" ||
+				typeof payload.organizationId !== "string"
+			) {
+				reply.status(401);
+				return { error: "InvalidToken", message: "Недействительный токен сессии." };
+			}
+
+			const patientId = payload.sub;
+			const organizationId = payload.organizationId;
+			const nowSeconds = Math.floor(Date.now() / 1000);
+			const nowIso = new Date().toISOString();
+
+			await withTenantWriteCtx(organizationId, async (tx) => {
+				await persistRevokedToken(
+					token,
+					patientId,
+					organizationId,
+					new Date(Date.now() + 30 * 24 * 3600 * 1000),
+					tx,
+				);
+				portalRevokedBeforeByPatient.set(patientId, nowSeconds);
+
+				const [patientRow] = await tx
+					.select({ administrativeProfile: patients.administrativeProfile })
+					.from(patients)
+					.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
+					.limit(1);
+
+				if (patientRow) {
+					const currentProfile = patientRow.administrativeProfile ?? {};
+					await tx
+						.update(patients)
+						.set({
+							administrativeProfile: {
+								...currentProfile,
+								portalSessionRevokedAt: nowIso,
+							},
+							updatedAt: new Date(),
+						})
+						.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)));
+				}
+			});
+
+			return {
+				success: true,
+				message: "Сессия успешно завершена.",
+				revokedAt: nowIso,
+			};
+		},
 	});
 }

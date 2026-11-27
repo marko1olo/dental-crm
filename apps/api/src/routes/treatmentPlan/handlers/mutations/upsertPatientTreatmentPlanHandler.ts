@@ -1,13 +1,15 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { isValidUuid } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withSavepoint, withTenantCtx } from "../../../../db/rls.js";
+import { withSavepoint, withTenantWriteCtx, type TenantDb } from "../../../../db/rls.js";
 import {
 	auditEvents,
 	treatmentPlans,
 } from "../../../../db/schema.js";
 import { debtNumericText, rublesFromKopecks } from "../../../../money/patientDebt.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
+import { extractIdempotencyKey } from "../../../../utils/httpIdempotency.js";
 import {
 	ensurePatientInOrganization,
 	numeric,
@@ -34,12 +36,26 @@ interface CustomErrorWithStatus extends Error {
 export async function handleUpsertPatientTreatmentPlan(
 	request: FastifyRequest<{ Params: { patientId: string } }>,
 	reply: FastifyReply,
+	preResolvedOrgId?: string,
+	tx?: TenantDb,
 ) {
-	const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-		request,
-		reply,
-		"treatment plan upsert",
-	);
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey) {
+		if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
+	const organizationId = preResolvedOrgId
+		?? await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"treatment plan upsert",
+		);
 	if (!organizationId) return;
 
 	const identity = getRequestIdentity(request);
@@ -83,15 +99,15 @@ export async function handleUpsertPatientTreatmentPlan(
 		const calculatedTotals = calculateTreatmentPlanTotals(patientId, input.items);
 		totalPriceKopecks = calculatedTotals.totalPriceKopecks;
 
-		upsertResult = await withTenantCtx(organizationId, async (tx) => {
-			if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+		const runUpsert = async (executor: TenantDb) => {
+			if (!(await ensurePatientInOrganization(patientId, organizationId, executor))) {
 				return { patientNotFound: true as const };
 			}
 			let savedPlanId = input.id ?? null;
 			let isRevision = false;
 
 			if (savedPlanId) {
-				const [existing] = await tx
+				const [existing] = await executor
 					.select({
 						id: treatmentPlans.id,
 						patientSignature: treatmentPlans.patientSignature,
@@ -143,7 +159,7 @@ export async function handleUpsertPatientTreatmentPlan(
 				totalPriceKopecks = effectiveDiscount.finalTotalKopecks;
 				const effectiveTotalPriceText = debtNumericText(totalPriceKopecks);
 
-				const [planUpdated] = await tx
+				const [planUpdated] = await executor
 					.update(treatmentPlans)
 					.set({
 						name: input.name,
@@ -224,7 +240,7 @@ export async function handleUpsertPatientTreatmentPlan(
 				if (isRevision) {
 					const revisedPlanId = savedPlanId;
 					try {
-						await withSavepoint(tx, async (spTx) => {
+						await withSavepoint(executor, async (spTx) => {
 							await spTx.insert(auditEvents).values({
 								organizationId,
 								actorUserId: identity.userId ?? null,
@@ -248,7 +264,7 @@ export async function handleUpsertPatientTreatmentPlan(
 				totalPriceKopecks = effectiveDiscount.finalTotalKopecks;
 				const effectiveTotalPriceText = debtNumericText(totalPriceKopecks);
 
-				const [created] = await tx
+				const [created] = await executor
 					.insert(treatmentPlans)
 					.values({
 						organizationId,
@@ -286,7 +302,7 @@ export async function handleUpsertPatientTreatmentPlan(
 				if (savedPlanId) {
 					const createdPlanId = savedPlanId;
 					try {
-						await withSavepoint(tx, async (spTx) => {
+						await withSavepoint(executor, async (spTx) => {
 							await spTx.insert(auditEvents).values({
 								organizationId,
 								actorUserId: identity.userId ?? null,
@@ -304,7 +320,7 @@ export async function handleUpsertPatientTreatmentPlan(
 
 			if (!savedPlanId) return null;
 
-			await syncUpsertPlanStagesAndItems(tx, {
+			await syncUpsertPlanStagesAndItems(executor, {
 				organizationId,
 				patientId,
 				savedPlanId,
@@ -312,7 +328,7 @@ export async function handleUpsertPatientTreatmentPlan(
 				logger: request.log,
 			});
 
-			const [rawPlan] = await tx
+			const [rawPlan] = await executor
 				.select()
 				.from(treatmentPlans)
 				.where(
@@ -337,7 +353,8 @@ export async function handleUpsertPatientTreatmentPlan(
 				savedPlanId,
 				responseBody,
 			};
-		});
+		};
+		upsertResult = tx ? await runUpsert(tx) : await withTenantWriteCtx(organizationId, runUpsert);
 	} catch (err: unknown) {
 		const customErr = err as CustomErrorWithStatus;
 		if (customErr.statusCode) {

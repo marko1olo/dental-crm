@@ -1,7 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { warrantyCertificates } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -19,207 +20,215 @@ import {
 export function registerPatientReclamationRoutes(app: FastifyInstance) {
 	/**
 	 * РЕКЛАМАЦИИ И ОСЛОЖНЕНИЯ ПО КАРТЕ. Четыре маршрута.
-	 *
-	 * ЧЕГО НЕ БЫЛО. Экран карточки (PatientReclamationsWidget, 588 строк) умел
-	 * фиксировать жалобу, назначать врача-автора работы, помечать инцидент
-	 * урегулированным и удалять запись — а сервера под ним не существовало. Живая
-	 * проверка сети (scratch/probe-failed-requests.mjs) показала на карточке
-	 * пациента 404 на GET .../reclamations. Врач нажимал «Зафиксировать в карту»,
-	 * получал отказ и не имел ни одного способа сохранить претензию. Рекламация —
-	 * основание для гарантии, возврата и переделки, то есть деньги и разбор.
-	 *
-	 * Долг был записан в tests/webCallsExistingRoutes.test.ts со словами «таблицы
-	 * есть, маршрутов нет» — неправда: не было ни таблицы, ни маршрута. Таблица
-	 * создана в drizzle/0143_patient_reclamations.sql.
-	 *
-	 * ИМЕНА ПОЛЕЙ взяты из того, что экран уже отправляет и читает. Свой контракт
-	 * поверх работающего клиента сломал бы его молча.
 	 */
-	app.get("/api/patients/:patientId/reclamations", async (request, reply) => {
-		const orgId = requireClinicOrganizationId(request, reply);
-		if (!orgId) return reply;
-		const { patientId } = request.params as { patientId?: string };
-		if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId.trim())) {
-			return sendPatientRouteValidationError(reply);
-		}
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/reclamations",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = requireClinicOrganizationId(request, reply);
+			if (!orgId) return reply;
+			const { patientId } = request.params as { patientId?: string };
+			if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId.trim())) {
+				return sendPatientRouteValidationError(reply);
+			}
 
-		try {
-			// Карта чужой клиники и карта без осложнений — разные ответы. Пустой список
-			// на несуществующей карте врач прочитает как «осложнений не было».
-			const patient = await getPatientByIdFromDb(orgId, patientId.trim());
-			if (!patient) return sendPatientNotFound(reply);
+			try {
+				const { getPatientReclamationsFromDb } = await import(
+					"../../db/patientReclamationsQuery.js"
+				);
+				const readResult = await withTenantReadCtx(orgId, async (tx) => {
+					const patient = await getPatientByIdFromDb(orgId, patientId.trim(), tx);
+					if (!patient) return { kind: "not_found" as const };
 
-			// 152-ФЗ / 323-ФЗ ст. 13: Защита рекламаций и осложнений архивированного пациента
-			if (patient.status === "archived") {
-				const identity = getRequestIdentity(request);
-				const staffRole = identity.role ?? request.user?.role ?? null;
-				const evalAccess = evaluateClinicalAccess(staffRole);
-				if (!evalAccess.hasClinicalAccess) {
+					if (patient.status === "archived") {
+						const identity = getRequestIdentity(request);
+						const staffRole = identity.role ?? request.user?.role ?? null;
+						const evalAccess = evaluateClinicalAccess(staffRole);
+						if (!evalAccess.hasClinicalAccess) {
+							return { kind: "forbidden" as const, staffRole };
+						}
+					}
+
+					const list = await getPatientReclamationsFromDb(orgId, patientId.trim(), tx);
+					return { kind: "ok" as const, list };
+				});
+
+				if (readResult.kind === "not_found") {
+					return sendPatientNotFound(reply);
+				}
+				if (readResult.kind === "forbidden") {
 					return reply.code(403).send({
 						error: "PermissionDenied",
 						permission: "patients.archived.reclamations",
-						role: staffRole,
-						message: "Отказ в доступе к рекламациям архивированного пациента (152-ФЗ / 323-ФЗ ст. 13): извлечение данных списанного в архив пациента неклиническим персоналом запрещено.",
+						role: readResult.staffRole,
+						message:
+							"Отказ в доступе к рекламациям архивированного пациента (152-ФЗ / 323-ФЗ ст. 13): извлечение данных списанного в архив пациента неклиническим персоналом запрещено.",
 					});
 				}
-			}
 
-			const { getPatientReclamationsFromDb } = await import(
-				"../../db/patientReclamationsQuery.js"
-			);
-			return reply
-				.status(200)
-				.send(await getPatientReclamationsFromDb(orgId, patientId.trim()));
-		} catch (e: unknown) {
-			// Отказ базы НЕ выдаём за пустой журнал: экран умеет показать отказ отдельно
-			// от пустоты, и эта способность держится на коде ответа.
-			request.log.error(
-				{ err: e },
-				"[Patients] Ошибка чтения рекламаций пациента",
-			);
-			return reply.code(500).send({
-				error: "PatientReclamationsUnavailable",
-				message:
-					"Не удалось прочитать рекламации и осложнения по этой карте. Не считайте, что их нет: повторите чтение перед разговором с пациентом.",
-			});
-		}
+				return reply.status(200).send(readResult.list);
+			} catch (e: unknown) {
+				request.log.error(
+					{ err: e },
+					"[Patients] Ошибка чтения рекламаций пациента",
+				);
+				return reply.code(500).send({
+					error: "PatientReclamationsUnavailable",
+					message:
+						"Не удалось прочитать рекламации и осложнения по этой карте. Не считайте, что их нет: повторите чтение перед разговором с пациентом.",
+				});
+			}
+		},
 	});
 
-	app.post("/api/patients/:patientId/reclamations", async (request, reply) => {
-		const orgId = requireClinicOrganizationId(request, reply);
-		if (!orgId) return reply;
-		const { patientId } = request.params as { patientId?: string };
-		if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId.trim())) {
-			return sendPatientRouteValidationError(reply);
-		}
-
-		const parsedBody = patientReclamationCreateBodySchema.safeParse(
-			request.body ?? {},
-		);
-		if (!parsedBody.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message:
-					"Не описана суть жалобы или осложнения — без этого запись в карте бесполезна.",
-			});
-		}
-		const body = parsedBody.data;
-		const details =
-			typeof body.complicationDetails === "string"
-				? body.complicationDetails.trim()
-				: "";
-		if (!details) {
-			// Сообщение называет то, что требуется от человека, а не имя поля запроса.
-			return reply.code(400).send({
-				error: "ValidationError",
-				message:
-					"Не описана суть жалобы или осложнения — без этого запись в карте бесполезна.",
-			});
-		}
-		let doctorId =
-			typeof body.doctorId === "string" &&
-			PATIENT_ID_UUID_PATTERN.test(body.doctorId.trim())
-				? body.doctorId.trim()
-				: null;
-		if (!doctorId) {
-			const reqId = getRequestIdentity(request);
-			if (reqId.userId && PATIENT_ID_UUID_PATTERN.test(reqId.userId)) {
-				doctorId = reqId.userId;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/:patientId/reclamations",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = requireClinicOrganizationId(request, reply);
+			if (!orgId) return reply;
+			const { patientId } = request.params as { patientId?: string };
+			if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId.trim())) {
+				return sendPatientRouteValidationError(reply);
 			}
-		}
-		if (!doctorId) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message:
-					"Не выбран врач — автор работы. Без него разобрать рекламацию будет не с кем.",
-			});
-		}
-		const proposedAction =
-			typeof body.proposedAction === "string" && body.proposedAction.trim()
-				? body.proposedAction.trim()
-				: null;
 
-		let toothNumber: number | null = null;
-		if (typeof body.toothNumber === "number" && Number.isInteger(body.toothNumber)) {
-			toothNumber = body.toothNumber;
-		} else if (typeof body.toothNumber === "string") {
-			const parsed = Number(body.toothNumber);
-			if (Number.isInteger(parsed) && parsed >= 11 && parsed <= 85) {
-				toothNumber = parsed;
+			const parsedBody = patientReclamationCreateBodySchema.safeParse(
+				request.body ?? {},
+			);
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message:
+						"Не описана суть жалобы или осложнения — без этого запись в карте бесполезна.",
+				});
 			}
-		}
+			const body = parsedBody.data;
+			const details =
+				typeof body.complicationDetails === "string"
+					? body.complicationDetails.trim()
+					: "";
+			if (!details) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message:
+						"Не описана суть жалобы или осложнения — без этого запись в карте бесполезна.",
+				});
+			}
+			let doctorId =
+				typeof body.doctorId === "string" &&
+				PATIENT_ID_UUID_PATTERN.test(body.doctorId.trim())
+					? body.doctorId.trim()
+					: null;
+			if (!doctorId) {
+				const reqId = getRequestIdentity(request);
+				if (reqId.userId && PATIENT_ID_UUID_PATTERN.test(reqId.userId)) {
+					doctorId = reqId.userId;
+				}
+			}
+			if (!doctorId) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message:
+						"Не выбран врач — автор работы. Без него разобрать рекламацию будет не с кем.",
+				});
+			}
+			const proposedAction =
+				typeof body.proposedAction === "string" && body.proposedAction.trim()
+					? body.proposedAction.trim()
+					: null;
 
-		let warrantyCertificateId =
-			typeof body.warrantyCertificateId === "string" &&
-			PATIENT_ID_UUID_PATTERN.test(body.warrantyCertificateId.trim())
-				? body.warrantyCertificateId.trim()
-				: null;
-
-		const certificateNumber =
-			typeof body.certificateNumber === "string" && body.certificateNumber.trim()
-				? body.certificateNumber.trim()
-				: null;
-
-		const defectType =
-			typeof body.defectType === "string" && body.defectType.trim()
-				? body.defectType.trim().slice(0, 64)
-				: null;
-
-		try {
-			const patient = await getPatientByIdFromDb(orgId, patientId.trim());
-			if (!patient) return sendPatientNotFound(reply);
-
-			let effectiveDetails = details;
-			if (!warrantyCertificateId && certificateNumber) {
-				const [matchedCert] = await withTenantCtx(orgId, (tx) =>
-					tx
-						.select({ id: warrantyCertificates.id })
-						.from(warrantyCertificates)
-						.where(
-							and(
-								eq(warrantyCertificates.organizationId, orgId),
-								eq(warrantyCertificates.patientId, patientId.trim()),
-								eq(warrantyCertificates.certificateNumber, certificateNumber),
-							),
-						)
-						.limit(1),
-				);
-				if (matchedCert?.id) {
-					warrantyCertificateId = matchedCert.id;
-				} else if (!effectiveDetails.includes(certificateNumber)) {
-					effectiveDetails = `${effectiveDetails} [Паспорт: ${certificateNumber}]`;
+			let toothNumber: number | null = null;
+			if (typeof body.toothNumber === "number" && Number.isInteger(body.toothNumber)) {
+				toothNumber = body.toothNumber;
+			} else if (typeof body.toothNumber === "string") {
+				const parsed = Number(body.toothNumber);
+				if (Number.isInteger(parsed) && parsed >= 11 && parsed <= 85) {
+					toothNumber = parsed;
 				}
 			}
 
-			const { createPatientReclamationInDb } = await import(
-				"../../db/patientReclamationsQuery.js"
-			);
-			const created = await createPatientReclamationInDb(
-				orgId,
-				patientId.trim(),
-				{
-					complicationDetails: effectiveDetails,
-					proposedAction,
-					doctorId,
-					toothNumber,
-					warrantyCertificateId,
-					defectType,
-				},
-			);
-			return reply.status(201).send(created);
-		} catch (e: unknown) {
-			request.log.error({ err: e }, "[Patients] Ошибка фиксации рекламации");
-			return reply.code(500).send({
-				error: "PatientReclamationCreateFailed",
-				message:
-					"Не удалось зафиксировать рекламацию. Запись могла не сохраниться — откройте журнал и проверьте перед повторным вводом.",
-			});
-		}
+			let warrantyCertificateId =
+				typeof body.warrantyCertificateId === "string" &&
+				PATIENT_ID_UUID_PATTERN.test(body.warrantyCertificateId.trim())
+					? body.warrantyCertificateId.trim()
+					: null;
+
+			const certificateNumber =
+				typeof body.certificateNumber === "string" && body.certificateNumber.trim()
+					? body.certificateNumber.trim()
+					: null;
+
+			const defectType =
+				typeof body.defectType === "string" && body.defectType.trim()
+					? body.defectType.trim().slice(0, 64)
+					: null;
+
+			try {
+				const { createPatientReclamationInDb } = await import(
+					"../../db/patientReclamationsQuery.js"
+				);
+				const createdResult = await withTenantWriteCtx(orgId, async (tx) => {
+					const patient = await getPatientByIdFromDb(orgId, patientId.trim(), tx);
+					if (!patient) return { kind: "not_found" as const };
+
+					let effectiveDetails = details;
+					if (!warrantyCertificateId && certificateNumber) {
+						const [matchedCert] = await tx
+							.select({ id: warrantyCertificates.id })
+							.from(warrantyCertificates)
+							.where(
+								and(
+									eq(warrantyCertificates.organizationId, orgId),
+									eq(warrantyCertificates.patientId, patientId.trim()),
+									eq(warrantyCertificates.certificateNumber, certificateNumber),
+								),
+							)
+							.limit(1);
+						if (matchedCert?.id) {
+							warrantyCertificateId = matchedCert.id;
+						} else if (!effectiveDetails.includes(certificateNumber)) {
+							effectiveDetails = `${effectiveDetails} [Паспорт: ${certificateNumber}]`;
+						}
+					}
+
+					const created = await createPatientReclamationInDb(
+						orgId,
+						patientId.trim(),
+						{
+							complicationDetails: effectiveDetails,
+							proposedAction,
+							doctorId,
+							toothNumber,
+							warrantyCertificateId,
+							defectType,
+						},
+						tx,
+					);
+					return { kind: "ok" as const, created };
+				});
+
+				if (createdResult.kind === "not_found") {
+					return sendPatientNotFound(reply);
+				}
+				return reply.status(201).send(createdResult.created);
+			} catch (e: unknown) {
+				request.log.error({ err: e }, "[Patients] Ошибка фиксации рекламации");
+				return reply.code(500).send({
+					error: "PatientReclamationCreateFailed",
+					message:
+						"Не удалось зафиксировать рекламацию. Запись могла не сохраниться — откройте журнал и проверьте перед повторным вводом.",
+				});
+			}
+		},
 	});
 
-	app.put(
-		"/api/patients/:patientId/reclamations/:reclamationId",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/patients/:patientId/reclamations/:reclamationId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = requireClinicOrganizationId(request, reply);
 			if (!orgId) return reply;
 			const { patientId, reclamationId } = request.params as {
@@ -264,14 +273,15 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 				const { setPatientReclamationStatusInDb } = await import(
 					"../../db/patientReclamationsQuery.js"
 				);
-				const updated = await setPatientReclamationStatusInDb(
-					orgId,
-					patientId.trim(),
-					reclamationId.trim(),
-					status,
+				const updated = await withTenantWriteCtx(orgId, (tx) =>
+					setPatientReclamationStatusInDb(
+						orgId,
+						patientId.trim(),
+						reclamationId.trim(),
+						status,
+						tx,
+					),
 				);
-				// Записи нет — 404, а не тихий успех: экран красит строку оптимистично до
-				// ответа и вернёт прежнее значение только по отказу.
 				if (!updated) {
 					return reply.code(404).send({
 						error: "PatientReclamationNotFound",
@@ -292,11 +302,13 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 				});
 			}
 		},
-	);
+	});
 
-	app.delete(
-		"/api/patients/:patientId/reclamations/:reclamationId",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "DELETE",
+		path: "/api/patients/:patientId/reclamations/:reclamationId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = requireClinicOrganizationId(request, reply);
 			if (!orgId) return reply;
 			const { patientId, reclamationId } = request.params as {
@@ -316,14 +328,14 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 				const { deletePatientReclamationFromDb } = await import(
 					"../../db/patientReclamationsQuery.js"
 				);
-				const removed = await deletePatientReclamationFromDb(
-					orgId,
-					patientId.trim(),
-					reclamationId.trim(),
+				const removed = await withTenantWriteCtx(orgId, (tx) =>
+					deletePatientReclamationFromDb(
+						orgId,
+						patientId.trim(),
+						reclamationId.trim(),
+						tx,
+					),
 				);
-				// Экран по успеху убирает строку из списка. «Удалено» без удаления вернуло бы
-				// инцидент при следующем открытии карты, и человек решил бы, что программа
-				// его обманула, — а он был бы прав.
 				if (!removed) {
 					return reply.code(404).send({
 						error: "PatientReclamationNotFound",
@@ -341,5 +353,5 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 				});
 			}
 		},
-	);
+	});
 }

@@ -9,7 +9,7 @@ import { createHash } from "node:crypto";
 import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, desc, eq, gte, isNull } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantCtx, withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
 import {
 	appointments,
 	generatedDocuments,
@@ -21,6 +21,7 @@ import {
 import { safeLogError } from "../../../observability/logger.js";
 import { verifyCredential } from "../../../utils/cryptoHelper.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
+import { resolveClinicTimeZone } from "../../payrollModules/payrollTypesAndQueries.js";
 import { checkKioskRateLimit, maskPatientName } from "./kioskRateLimiter.js";
 import {
 	type KioskAppointmentRecord,
@@ -137,7 +138,7 @@ export async function handleKioskCheckinRequest(
 	let isCheckinCodeVerified = false;
 	if (rawCheckinCode && rawCheckinCode.length >= 4 && !targetPatient.isVirtualGuest) {
 		const now = new Date();
-		const [activeOtp] = await withTenantCtx(organizationId, async (tx) => {
+		const [activeOtp] = await withTenantReadCtx(organizationId, async (tx) => {
 			return tx
 				.select({
 					id: portalOtpCodes.id,
@@ -159,7 +160,7 @@ export async function handleKioskCheckinRequest(
 			const isMatch = await verifyCredential(rawCheckinCode, activeOtp.codeHash);
 			if (isMatch) {
 				isCheckinCodeVerified = true;
-				await withTenantCtx(organizationId, async (tx) => {
+				await withTenantWriteCtx(organizationId, async (tx) => {
 					await tx
 						.update(portalOtpCodes)
 						.set({ consumedAt: now })
@@ -216,18 +217,21 @@ export async function handleKioskCheckinRequest(
 		};
 	}
 
-	// 5. Определение кабинета и врача
-	const { doctorName, cabinetName } = await getDoctorAndCabinetInfo(
-		organizationId,
-		appointment.doctorUserId,
-		appointment.chairId,
-	);
+	// 5. Определение кабинета, врача и локальной таймзоны клиники
+	const [{ doctorName, cabinetName }, clinicTimeZone] = await Promise.all([
+		getDoctorAndCabinetInfo(
+			organizationId,
+			appointment.doctorUserId,
+			appointment.chairId,
+		),
+		withTenantReadCtx(organizationId, (tx) => resolveClinicTimeZone(tx, organizationId)),
+	]);
 
 	const apptTimeStr = isEmergency
 		? `Экстренный приём прямо сейчас (${cabinetName})`
 		: isFirstTime
 			? `Первичный приём прямо сейчас (${cabinetName})`
-			: `Сегодня в ${appointment.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} (${cabinetName})`;
+			: `Сегодня в ${appointment.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", timeZone: clinicTimeZone })} (${cabinetName})`;
 
 	// 5. Генерация талона очереди (Э-xx для острой боли, П-xx для первичных, А-xx для плановых)
 	const ticketPrefix = isEmergency ? "Э" : isFirstTime ? "П" : "А";
@@ -236,18 +240,47 @@ export async function handleKioskCheckinRequest(
 
 	const isVirtualAppointment = appointment.id.startsWith("emg-") || appointment.id.startsWith("first-");
 
-	// 6. Обновление статуса визита на 'arrived' в БД только для реальных приёмов из расписания
-	if (!isVirtualAppointment) {
-		await withTenantCtx(organizationId, async (tx) => {
-			await tx
-				.update(appointments)
-				.set({ status: "arrived" })
-				.where(
-					and(
-						eq(appointments.id, appointment.id),
-						eq(appointments.organizationId, organizationId),
-					),
+	// 6. Единая транзакция прихода пациента (arrived + согласия 63-ФЗ + аллергии)
+	const shouldPersistConsents = !targetPatient.isVirtualGuest && signedConsents.length > 0;
+	const allergiesObj = somaticProfile?.allergies as Record<string, unknown> | undefined;
+	const detailsStr = typeof allergiesObj?.details === "string" ? allergiesObj.details.trim() : "";
+	const shouldPersistAllergies = Boolean(!targetPatient.isVirtualGuest && somaticProfile && allergiesObj?.hasAllergies && detailsStr);
+
+	if (!isVirtualAppointment || shouldPersistConsents || shouldPersistAllergies) {
+		await withTenantWriteCtx(organizationId, async (tx) => {
+			if (!isVirtualAppointment) {
+				await tx
+					.update(appointments)
+					.set({ status: "arrived" })
+					.where(
+						and(
+							eq(appointments.id, appointment.id),
+							eq(appointments.organizationId, organizationId),
+						),
+					);
+			}
+
+			if (shouldPersistConsents) {
+				await persistKioskConsentsTx(
+					tx,
+					organizationId,
+					targetPatient,
+					signedConsents,
+					clientIp,
+					request.headers["user-agent"] || "kiosk_tablet",
 				);
+			}
+
+			if (shouldPersistAllergies) {
+				await tx.insert(patientDrugAllergies).values({
+					organizationId,
+					patientId: targetPatient.id,
+					allergenGroup: "dental_anesthetics_or_antibiotics",
+					reactionSeverity: "high",
+					clinicalManifestations: detailsStr.slice(0, 255),
+					notes: "Самочекин терминал",
+				});
+			}
 		});
 	}
 
@@ -277,22 +310,6 @@ export async function handleKioskCheckinRequest(
 			{ err: safeLogError(wsErr), organizationId },
 			"Non-blocking kiosk WS broadcast failed",
 		);
-	}
-
-	// 7. Сохранение согласий с ПЭП аудитом (63-ФЗ)
-	if (!targetPatient.isVirtualGuest && signedConsents.length > 0) {
-		await persistKioskConsents(
-			organizationId,
-			targetPatient,
-			signedConsents,
-			clientIp,
-			request.headers["user-agent"] || "kiosk_tablet",
-		);
-	}
-
-	// 8. Сохранение аллергий из соматической анкеты
-	if (!targetPatient.isVirtualGuest && somaticProfile) {
-		await persistKioskAllergies(organizationId, targetPatient.id, somaticProfile);
 	}
 
 	// SEV-2: Ноль утечки сырого patientId в клиентский ответ терминала
@@ -351,7 +368,8 @@ function mapConsentKindToDocumentKindAndTitle(consentKind: string): {
 	};
 }
 
-async function persistKioskConsents(
+async function persistKioskConsentsTx(
+	tx: Parameters<Parameters<typeof withTenantWriteCtx>[1]>[0],
 	organizationId: string,
 	targetPatient: KioskPatientRecord,
 	signedConsents: string[],
@@ -361,143 +379,120 @@ async function persistKioskConsents(
 	const nowConsent = new Date();
 	const nowConsentIso = nowConsent.toISOString();
 
-	await withTenantCtx(organizationId, async (tx) => {
-		for (const consentKind of signedConsents) {
-			const docMeta = mapConsentKindToDocumentKindAndTitle(consentKind);
-			const integrityHash = createHash("sha256")
-				.update(`${targetPatient.id}:${consentKind}:${nowConsentIso}:${clientIp}`)
-				.digest("hex");
+	for (const consentKind of signedConsents) {
+		const docMeta = mapConsentKindToDocumentKindAndTitle(consentKind);
+		const integrityHash = createHash("sha256")
+			.update(`${targetPatient.id}:${consentKind}:${nowConsentIso}:${clientIp}`)
+			.digest("hex");
 
-			const signatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ЭЛЕКТРОННО (ПЭП 63-ФЗ)</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Терминал саморегистрации • IP: ${clientIp}</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${nowConsent.toLocaleString("ru-RU")}</text></svg>`;
+		const signatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ЭЛЕКТРОННО (ПЭП 63-ФЗ)</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Терминал саморегистрации • IP: ${clientIp}</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${nowConsent.toLocaleString("ru-RU")}</text></svg>`;
 
-			// Физическая генерация документа в таблице generated_documents
-			const [createdDoc] = await tx
-				.insert(generatedDocuments)
-				.values({
-					organizationId,
-					patientId: targetPatient.id,
-					kind: docMeta.kind,
-					status: "issued",
-					title: docMeta.title,
-					signatureSvg,
-					issuedSnapshotSha256: integrityHash,
-					issuedAt: nowConsent,
-					issuedSnapshotCreatedAt: nowConsent,
-					payloadJson: JSON.stringify({
-						consentKind,
-						signatureMethod: "touchscreen_kiosk_pep",
-						clientIp,
-						integrityHash,
-						signedAtIso: nowConsentIso,
-						deviceMeta: userAgent,
-					}),
-				})
-				.returning({ id: generatedDocuments.id });
+		// Физическая генерация документа в таблице generated_documents
+		const [createdDoc] = await tx
+			.insert(generatedDocuments)
+			.values({
+				organizationId,
+				patientId: targetPatient.id,
+				kind: docMeta.kind,
+				status: "issued",
+				title: docMeta.title,
+				signatureSvg,
+				issuedSnapshotSha256: integrityHash,
+				issuedAt: nowConsent,
+				issuedSnapshotCreatedAt: nowConsent,
+				payloadJson: JSON.stringify({
+					consentKind,
+					signatureMethod: "touchscreen_kiosk_pep",
+					clientIp,
+					integrityHash,
+					signedAtIso: nowConsentIso,
+					deviceMeta: userAgent,
+				}),
+			})
+			.returning({ id: generatedDocuments.id });
 
-			const generatedDocId = createdDoc?.id ?? null;
+		const generatedDocId = createdDoc?.id ?? null;
 
-			const existing = await tx
-				.select({ id: patientConsents.id })
-				.from(patientConsents)
-				.where(
-					and(
-						eq(patientConsents.patientId, targetPatient.id),
-						eq(patientConsents.organizationId, organizationId),
-						eq(patientConsents.kind, consentKind),
-					),
-				)
-				.limit(1);
-
-			if (existing.length > 0 && existing[0]) {
-				await tx
-					.update(patientConsents)
-					.set({ grantedAt: nowConsent, revokedAt: null, documentId: generatedDocId })
-					.where(
-						and(
-							eq(patientConsents.id, existing[0].id),
-							eq(patientConsents.organizationId, organizationId),
-						),
-					);
-			} else {
-				await tx.insert(patientConsents).values({
-					organizationId,
-					patientId: targetPatient.id,
-					kind: consentKind,
-					grantedAt: nowConsent,
-					documentId: generatedDocId,
-				});
-			}
-		}
-
-		// Обновление электронно-цифрового следа ПЭП в профиле
-		const [patientRow] = await tx
-			.select({ administrativeProfile: patients.administrativeProfile })
-			.from(patients)
+		const existing = await tx
+			.select({ id: patientConsents.id })
+			.from(patientConsents)
 			.where(
 				and(
-					eq(patients.id, targetPatient.id),
-					eq(patients.organizationId, organizationId),
+					eq(patientConsents.patientId, targetPatient.id),
+					eq(patientConsents.organizationId, organizationId),
+					eq(patientConsents.kind, consentKind),
 				),
 			)
 			.limit(1);
 
-		const currentProfile: Partial<PatientAdministrativeProfile> =
-			patientRow?.administrativeProfile ?? {};
-		const currentConsentSignatures =
-			(currentProfile.consentSignatures as Record<string, unknown> | undefined) || {};
-
-		const updatedSignatures: Record<string, unknown> = { ...currentConsentSignatures };
-		for (const consentKind of signedConsents) {
-			const integrityHash = createHash("sha256")
-				.update(`${targetPatient.id}:${consentKind}:${nowConsentIso}:${clientIp}`)
-				.digest("hex");
-
-			updatedSignatures[consentKind] = {
-				consentId: consentKind,
-				signatureMethod: "touchscreen_kiosk_pep",
-				clientIp,
-				ipAddress: clientIp,
-				integrityHash,
-				signedAtIso: nowConsentIso,
-				deviceMeta: userAgent,
-			};
-		}
-
-		await tx
-			.update(patients)
-			.set({
-				administrativeProfile: {
-					...currentProfile,
-					consentSignatures: updatedSignatures,
-				},
-				updatedAt: nowConsent,
-			})
-			.where(
-				and(
-					eq(patients.id, targetPatient.id),
-					eq(patients.organizationId, organizationId),
-				),
-			);
-	});
-}
-
-async function persistKioskAllergies(
-	organizationId: string,
-	patientId: string,
-	somaticProfile: Record<string, unknown>,
-) {
-	const allergies = somaticProfile.allergies as Record<string, unknown> | undefined;
-	const detailsStr = typeof allergies?.details === "string" ? allergies.details.trim() : "";
-	if (allergies?.hasAllergies && detailsStr) {
-		await withTenantCtx(organizationId, async (tx) => {
-			await tx.insert(patientDrugAllergies).values({
+		if (existing.length > 0 && existing[0]) {
+			await tx
+				.update(patientConsents)
+				.set({ grantedAt: nowConsent, revokedAt: null, documentId: generatedDocId })
+				.where(
+					and(
+						eq(patientConsents.id, existing[0].id),
+						eq(patientConsents.organizationId, organizationId),
+					),
+				);
+		} else {
+			await tx.insert(patientConsents).values({
 				organizationId,
-				patientId,
-				allergenGroup: "dental_anesthetics_or_antibiotics",
-				reactionSeverity: "high",
-				clinicalManifestations: detailsStr.slice(0, 255),
-				notes: "Самочекин терминал",
+				patientId: targetPatient.id,
+				kind: consentKind,
+				grantedAt: nowConsent,
+				documentId: generatedDocId,
 			});
-		});
+		}
 	}
+
+	// Обновление электронно-цифрового следа ПЭП в профиле
+	const [patientRow] = await tx
+		.select({ administrativeProfile: patients.administrativeProfile })
+		.from(patients)
+		.where(
+			and(
+				eq(patients.id, targetPatient.id),
+				eq(patients.organizationId, organizationId),
+			),
+		)
+		.limit(1);
+
+	const currentProfile: Partial<PatientAdministrativeProfile> =
+		patientRow?.administrativeProfile ?? {};
+	const currentConsentSignatures =
+		(currentProfile.consentSignatures as Record<string, unknown> | undefined) || {};
+
+	const updatedSignatures: Record<string, unknown> = { ...currentConsentSignatures };
+	for (const consentKind of signedConsents) {
+		const integrityHash = createHash("sha256")
+			.update(`${targetPatient.id}:${consentKind}:${nowConsentIso}:${clientIp}`)
+			.digest("hex");
+
+		updatedSignatures[consentKind] = {
+			consentId: consentKind,
+			signatureMethod: "touchscreen_kiosk_pep",
+			clientIp,
+			ipAddress: clientIp,
+			integrityHash,
+			signedAtIso: nowConsentIso,
+			deviceMeta: userAgent,
+		};
+	}
+
+	await tx
+		.update(patients)
+		.set({
+			administrativeProfile: {
+				...currentProfile,
+				consentSignatures: updatedSignatures,
+			},
+			updatedAt: nowConsent,
+		})
+		.where(
+			and(
+				eq(patients.id, targetPatient.id),
+				eq(patients.organizationId, organizationId),
+			),
+		);
 }

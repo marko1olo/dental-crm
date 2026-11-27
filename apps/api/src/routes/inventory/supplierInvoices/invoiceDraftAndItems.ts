@@ -1,8 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
-import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { defineTenantQuery } from "../../../core/routeFactories.js";
 import {
 	inventoryItems,
 	inventorySupplierInvoices,
@@ -10,6 +9,16 @@ import {
 	inventoryTransactions,
 	stockBatches,
 } from "../../../db/schema.js";
+import {
+	formatDateIsoInTimeZone,
+	resolveClinicTimeZone,
+} from "../../payrollModules/payrollTypesAndQueries.js";
+
+const INVENTORY_READ_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+	allowUnverifiedHeaderRead: true,
+} as const;
 
 export const registerSupplierInvoiceQueries = (server: FastifyInstance): void => {
 	// =========================================================================
@@ -17,23 +26,19 @@ export const registerSupplierInvoiceQueries = (server: FastifyInstance): void =>
 	// =========================================================================
 
 	const registerGetWaybills = (path: string) => {
-		server.get<{
-			Params?: { organizationId?: string };
-			Querystring?: { limit?: string; offset?: string; search?: string };
-		}>(path, async (request, reply) => {
-			const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"inventory get waybills",
-			);
-			if (!resolvedOrgId) return;
+		defineTenantQuery(server, {
+			path,
+			permission: "inventory.read",
+			authOptions: INVENTORY_READ_AUTH,
+			handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+				const params = request.params as { organizationId?: string } | undefined;
+				const targetOrgId = params?.organizationId || resolvedOrgId;
+				if (targetOrgId !== resolvedOrgId) {
+					return reply.code(403).send({ error: "Forbidden" });
+				}
 
-			const targetOrgId = request.params?.organizationId || resolvedOrgId;
-			if (targetOrgId !== resolvedOrgId) {
-				return reply.code(403).send({ error: "Forbidden" });
-			}
+				const timeZone = await resolveClinicTimeZone(tx, targetOrgId);
 
-			return await withTenantCtx(targetOrgId, async (tx) => {
 				// 1. Реляционные приходные накладные из SSOT-таблицы inventory_supplier_invoices
 				const relationalRows = await tx
 					.select({
@@ -214,7 +219,6 @@ export const registerSupplierInvoiceQueries = (server: FastifyInstance): void =>
 					.orderBy(sql`${inventoryTransactions.createdAt} DESC`)
 					.limit(200);
 
-				// Группируем транзакции по накладным на основе примечания (notes)
 				const waybillsMap = new Map<
 					string,
 					{
@@ -272,9 +276,10 @@ export const registerSupplierInvoiceQueries = (server: FastifyInstance): void =>
 					if (!waybillNumber) waybillNumber = "ПРХ-001";
 					if (!supplierName) supplierName = "Стоматологический поставщик";
 
-					const receiptDate = r.createdAt
-						? new Date(r.createdAt).toISOString().slice(0, 10)
-						: new Date().toISOString().slice(0, 10);
+					const receiptDate = formatDateIsoInTimeZone(
+						r.createdAt ? new Date(r.createdAt) : new Date(),
+						timeZone,
+					);
 					const groupKey = `${waybillNumber}__${supplierName}__${receiptDate}`;
 
 					if (!waybillsMap.has(groupKey)) {
@@ -322,7 +327,6 @@ export const registerSupplierInvoiceQueries = (server: FastifyInstance): void =>
 					}
 				}
 
-				// Формируем итоговые документы
 				const waybills = Array.from(waybillsMap.values()).map((wb) => {
 					let totalQuantity = 0;
 					let subtotalKopecks = 0;
@@ -367,7 +371,7 @@ export const registerSupplierInvoiceQueries = (server: FastifyInstance): void =>
 					total: waybills.length,
 					waybills,
 				});
-			});
+			},
 		});
 	};
 

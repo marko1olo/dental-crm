@@ -16,7 +16,7 @@
  * ложь из возможных на этом экране.
  */
 import { and, desc, eq } from "drizzle-orm";
-import { withTenantCtx } from "./rls.js";
+import { withTenantReadCtx, withTenantWriteCtx, type TenantDb } from "./rls.js";
 import * as schema from "./schema.js";
 
 /** Ровно те два состояния, которыми пользуется экран. */
@@ -68,9 +68,10 @@ function toReclamation(
 export async function getPatientReclamationsFromDb(
 	orgId: string,
 	patientId: string,
+	tx?: TenantDb,
 ): Promise<PatientReclamation[]> {
-	return await withTenantCtx(orgId, async (tx) => {
-		const rows = await tx
+	const run = async (executor: TenantDb) => {
+		const rows = await executor
 			.select()
 			.from(schema.patientReclamations)
 			.where(
@@ -81,7 +82,8 @@ export async function getPatientReclamationsFromDb(
 			)
 			.orderBy(desc(schema.patientReclamations.createdAt));
 		return rows.map(toReclamation);
-	});
+	};
+	return tx ? run(tx) : withTenantReadCtx(orgId, run);
 }
 
 export async function createPatientReclamationInDb(
@@ -95,10 +97,11 @@ export async function createPatientReclamationInDb(
 		warrantyCertificateId?: string | null | undefined;
 		defectType?: string | null | undefined;
 	},
+	tx?: TenantDb,
 ): Promise<PatientReclamation> {
-	return await withTenantCtx(orgId, async (tx) => {
+	const run = async (executor: TenantDb) => {
 		// Ownership assert: patient must belong to caller org (route also checks; helper is shared).
-		const [ownedPatient] = await tx
+		const [ownedPatient] = await executor
 			.select({ id: schema.patients.id })
 			.from(schema.patients)
 			.where(
@@ -114,7 +117,7 @@ export async function createPatientReclamationInDb(
 			);
 		}
 		if (input.doctorId) {
-			const [ownedDoctor] = await tx
+			const [ownedDoctor] = await executor
 				.select({ id: schema.users.id })
 				.from(schema.users)
 				.where(
@@ -130,7 +133,7 @@ export async function createPatientReclamationInDb(
 				);
 			}
 		}
-		const [row] = await tx
+		const [row] = await executor
 			.insert(schema.patientReclamations)
 			.values({
 				organizationId: orgId,
@@ -155,7 +158,8 @@ export async function createPatientReclamationInDb(
 			);
 		}
 		return toReclamation(row);
-	});
+	};
+	return tx ? run(tx) : withTenantWriteCtx(orgId, run);
 }
 
 /**
@@ -175,9 +179,10 @@ export async function setPatientReclamationStatusInDb(
 	patientId: string,
 	reclamationId: string,
 	status: ReclamationStatus,
+	tx?: TenantDb,
 ): Promise<PatientReclamation | null> {
-	return await withTenantCtx(orgId, async (tx) => {
-		const [row] = await tx
+	const run = async (executor: TenantDb) => {
+		const [row] = await executor
 			.update(schema.patientReclamations)
 			.set({
 				status,
@@ -193,7 +198,8 @@ export async function setPatientReclamationStatusInDb(
 			)
 			.returning();
 		return row ? toReclamation(row) : null;
-	});
+	};
+	return tx ? run(tx) : withTenantWriteCtx(orgId, run);
 }
 
 /**
@@ -208,9 +214,10 @@ export async function deletePatientReclamationFromDb(
 	orgId: string,
 	patientId: string,
 	reclamationId: string,
+	tx?: TenantDb,
 ): Promise<boolean> {
-	return await withTenantCtx(orgId, async (tx) => {
-		const rows = await tx
+	const run = async (executor: TenantDb) => {
+		const rows = await executor
 			.delete(schema.patientReclamations)
 			.where(
 				and(
@@ -221,5 +228,6 @@ export async function deletePatientReclamationFromDb(
 			)
 			.returning({ id: schema.patientReclamations.id });
 		return rows.length > 0;
-	});
+	};
+	return tx ? run(tx) : withTenantWriteCtx(orgId, run);
 }

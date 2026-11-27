@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { formatDateKeyInTimeZone } from "@dental/shared";
-import { onTenantTxCommit, withTenantCtx, type TenantDb } from "../../../db/rls.js";
+import { onTenantTxCommit, withTenantWriteCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	clinics,
 	crmLeads,
@@ -238,7 +238,7 @@ export async function handleBookAppointment(
 			.send({ error: "Нельзя записаться на прошедшее время" });
 	}
 
-	return withTenantCtx(organizationId, async (tenantTx) => {
+	return withTenantWriteCtx(organizationId, async (tenantTx) => {
 		const [doctor] = await tenantTx
 			.select({
 				id: users.id,

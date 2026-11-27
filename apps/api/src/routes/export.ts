@@ -324,10 +324,12 @@ export async function registerExportRoutes(app: FastifyInstance) {
 	 * GET /api/export/pricelist
 	 * Канонический экспорт прейскуранта услуг клиники.
 	 */
-	app.get(
-		"/api/export/pricelist",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/export/pricelist",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			return handleExportPricelist(request, reply);
 		},
-	);
+	});
 }

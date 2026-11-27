@@ -3,7 +3,7 @@
  * Technological Cards (BOM recipes) and material consumption norms per service/procedure.
  */
 
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -12,6 +12,37 @@ import {
 	rublesToKopecks,
 	toExactKopecks,
 } from "@dental/shared";
+import { defineTenantMutation, defineTenantQuery } from "../../../core/routeFactories.js";
+import {
+	inventoryItems,
+	procedureTechCardItems,
+	procedureTechCards,
+	serviceCatalogItems,
+	treatmentConsumables,
+} from "../../../db/schema.js";
+import { ReorderSuggestionService } from "../../../services/reorderSuggestionService.js";
+import {
+	TreatmentConsumablesService,
+	TreatmentConsumablesServiceError,
+} from "../../../services/treatmentConsumablesService.js";
+import {
+	consumableLinkCreateSchema,
+	consumableLinkUpdateSchema,
+	linkOptionsQuerySchema,
+	listLinksQuerySchema,
+	treatmentConsumableLinkCreateSchema,
+} from "./types.js";
+
+const INVENTORY_READ_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+	allowUnverifiedHeaderRead: true,
+} as const;
+
+const INVENTORY_WRITE_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+} as const;
 
 function resolveInventoryItemUnitCost(row: {
 	unitCostKopecks: bigint | null;
@@ -37,30 +68,6 @@ function resolveInventoryItemUnitCost(row: {
 		unitCostRub: kopecksToNumericString(toExactKopecks(primaryKop)),
 	};
 }
-import {
-	requireResolvedOrganizationId,
-	requireResolvedStaffOrAdminOrganizationId,
-} from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
-import {
-	inventoryItems,
-	procedureTechCardItems,
-	procedureTechCards,
-	serviceCatalogItems,
-	treatmentConsumables,
-} from "../../../db/schema.js";
-import { ReorderSuggestionService } from "../../../services/reorderSuggestionService.js";
-import {
-	TreatmentConsumablesService,
-	TreatmentConsumablesServiceError,
-} from "../../../services/treatmentConsumablesService.js";
-import {
-	consumableLinkCreateSchema,
-	consumableLinkUpdateSchema,
-	linkOptionsQuerySchema,
-	listLinksQuerySchema,
-	treatmentConsumableLinkCreateSchema,
-} from "./types.js";
 
 /**
  * Registers technological card and material consumption norm endpoints on the Fastify instance.
@@ -69,15 +76,11 @@ export async function registerTechCardNormHandlers(
 	server: FastifyInstance,
 ): Promise<void> {
 	// GET / — List consumable links for current organization (CRUD)
-	server.get("/", async (request, reply) => {
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"treatment consumables list",
-		);
-		if (!orgId) return;
-
-		const mappings = await withTenantCtx(orgId, async (tx) => {
+	defineTenantQuery(server, {
+		path: "/",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: orgId }) => {
 			const rows = await tx
 				.select({
 					id: treatmentConsumables.id,
@@ -101,36 +104,33 @@ export async function registerTechCardNormHandlers(
 					inventoryItems,
 					eq(treatmentConsumables.inventoryItemId, inventoryItems.id),
 				)
-				.where(eq(treatmentConsumables.organizationId, orgId));
+				.where(eq(treatmentConsumables.organizationId, orgId))
+				.limit(2000);
 
 			return rows.map((row) => ({
 				...row,
 				...resolveInventoryItemUnitCost(row),
 			}));
-		});
-
-		return mappings;
+		},
 	});
 
 	// POST / — Create or update consumable link for procedure (CRUD) with canonical SSOT sync
-	server.post("/", async (request, reply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"treatment consumables create",
-		);
-		if (!orgId) return;
+	defineTenantMutation(server, {
+		method: "POST",
+		path: "/",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId: orgId, request, reply }) => {
+			const parsed = treatmentConsumableLinkCreateSchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: parsed.error.errors[0]?.message ?? "Неверные параметры запроса",
+				});
+			}
 
-		const parsed = treatmentConsumableLinkCreateSchema.safeParse(request.body);
-		if (!parsed.success) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: parsed.error.errors[0]?.message ?? "Неверные параметры запроса",
-			});
-		}
-
-		const body = parsed.data;
-		return await withTenantCtx(orgId, async (tx) => {
+			const body = parsed.data;
 			const [link] = await tx
 				.insert(treatmentConsumables)
 				.values({
@@ -154,7 +154,6 @@ export async function registerTechCardNormHandlers(
 				})
 				.returning();
 
-			// Sync with canonical procedure_tech_cards and procedure_tech_card_items (Mandate 8bf & SSOT)
 			const isCodeUuid = isValidUuid(body.catalogItemCode);
 			const [service] = await tx
 				.select({ id: serviceCatalogItems.id, code: serviceCatalogItems.code, title: serviceCatalogItems.title })
@@ -247,27 +246,25 @@ export async function registerTechCardNormHandlers(
 			}
 
 			return reply.status(201).send(link);
-		});
+		},
 	});
 
 	// door-validation: none — удаление нормы расхода по URL-параметру :id без тела запроса
-	server.delete<{ Params: { id: string } }>("/:id", async (request, reply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"treatment consumables delete",
-		);
-		if (!orgId) return;
-
-		const idParsed = z.object({ id: z.string().uuid() }).safeParse(request.params);
-		if (!idParsed.success) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: "Некорректный UUID нормы расхода",
-			});
-		}
-		const { id } = idParsed.data;
-		return await withTenantCtx(orgId, async (tx) => {
+	defineTenantMutation(server, {
+		method: "DELETE",
+		path: "/:id",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "exempt_idempotent_put_or_delete",
+		handler: async ({ tx, organizationId: orgId, request, reply }) => {
+			const idParsed = z.object({ id: z.string().uuid() }).safeParse(request.params);
+			if (!idParsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный UUID нормы расхода",
+				});
+			}
+			const { id } = idParsed.data;
 			const [toDelete] = await tx
 				.select()
 				.from(treatmentConsumables)
@@ -292,7 +289,6 @@ export async function registerTechCardNormHandlers(
 					),
 				);
 
-			// Also remove from canonical procedure_tech_card_items if techCard exists (resolve serviceId/serviceCode like POST /)
 			const isCodeUuid = isValidUuid(toDelete.catalogItemCode);
 			const [service] = await tx
 				.select({ id: serviceCatalogItems.id, code: serviceCatalogItems.code })
@@ -328,347 +324,276 @@ export async function registerTechCardNormHandlers(
 					),
 				);
 
-			for (const techCard of matchedCards) {
+			const matchedCardIds = matchedCards.map((c) => c.id);
+			if (matchedCardIds.length > 0) {
 				await tx
 					.delete(procedureTechCardItems)
 					.where(
 						and(
-							eq(procedureTechCardItems.techCardId, techCard.id),
+							inArray(procedureTechCardItems.techCardId, matchedCardIds),
 							eq(procedureTechCardItems.inventoryItemId, toDelete.inventoryItemId),
 						),
 					);
 			}
 
 			return { success: true, deletedId: id };
-		});
+		},
 	});
 
-	// =========================================================================
-	// MANDATE 8s (CANONICAL AUTHORITY & ANTI-BLOAT LAW):
-	// Canonical master route: `apps/api/src/routes/inventory.ts` (GET /api/inventory/reorder-suggestions).
-	// This endpoint is maintained as a transparent alias under /api/treatment-consumables
-	// for backward compatibility without logic desynchronization.
-	// Both routes delegate execution to ReorderSuggestionService.getSuggestions.
-	// =========================================================================
 	// GET /reorder-suggestions — Predictive reorder point calculation
-	server.get<{ Querystring: { onlyNeedingReorder?: string | boolean } }>(
-		"/reorder-suggestions",
-		async (request, reply) => {
-			const orgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"inventory reorder suggestions",
-			);
-			if (!orgId) return;
-
+	defineTenantQuery(server, {
+		path: "/reorder-suggestions",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: orgId, request, reply }) => {
+			const query = request.query as { onlyNeedingReorder?: string | boolean };
 			const onlyNeedingReorder =
-				request.query.onlyNeedingReorder === "true" ||
-				request.query.onlyNeedingReorder === true;
+				query.onlyNeedingReorder === "true" ||
+				query.onlyNeedingReorder === true;
 
 			const suggestions = await ReorderSuggestionService.getSuggestions(orgId, {
 				onlyNeedingReorder,
+				tx,
 			});
 			return reply.status(200).send(suggestions);
 		},
-	);
+	});
 
 	// GET /:organizationId/links — List all consumable links
-	server.get<{
-		Params: { organizationId: string };
-		Querystring: {
-			serviceId?: string;
-			inventoryItemId?: string;
-			page?: number;
-			pageSize?: number;
-		};
-	}>("/:organizationId/links", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"treatment consumables read links",
-		);
-		if (!resolvedOrgId) return;
+	defineTenantQuery(server, {
+		path: "/:organizationId/links",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId } = request.params as { organizationId: string };
+			if (!isValidUuid(organizationId)) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
 
-		const { organizationId } = request.params;
-		if (!isValidUuid(organizationId)) {
-			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
-		}
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
+			const parsedQuery = listLinksQuerySchema.safeParse(request.query ?? {});
+			if (!parsedQuery.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: parsedQuery.error.errors[0]?.message ?? "Неверные параметры запроса",
+				});
+			}
 
-		const parsedQuery = listLinksQuerySchema.safeParse(request.query ?? {});
-		if (!parsedQuery.success) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: parsedQuery.error.errors[0]?.message ?? "Неверные параметры запроса",
-			});
-		}
-		const query = parsedQuery.data;
-
-		const result = await withTenantCtx(organizationId, async (tx) => {
 			return TreatmentConsumablesService.listLinks(
 				tx,
 				organizationId,
-				query,
+				parsedQuery.data,
 			);
-		});
-		return result;
+		},
 	});
 
 	// GET /:organizationId/links/:linkId — Get a single consumable link
-	server.get<{
-		Params: { organizationId: string; linkId: string };
-	}>("/:organizationId/links/:linkId", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"treatment consumables read single link",
-		);
-		if (!resolvedOrgId) return;
+	defineTenantQuery(server, {
+		path: "/:organizationId/links/:linkId",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId, linkId } = request.params as { organizationId: string; linkId: string };
+			if (!isValidUuid(organizationId) || !isValidUuid(linkId)) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
+			}
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
 
-		const { organizationId, linkId } = request.params;
-		if (!isValidUuid(organizationId) || !isValidUuid(linkId)) {
-			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
-		}
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
-
-		const link = await withTenantCtx(organizationId, async (tx) => {
-			return TreatmentConsumablesService.getLink(
+			const link = await TreatmentConsumablesService.getLink(
 				tx,
 				organizationId,
 				linkId,
 			);
-		});
-		if (!link) {
-			return reply.status(404).send({
-				error: "LinkNotFound",
-				message: "Связь расходного материала не найдена",
-			});
-		}
-		return link;
+			if (!link) {
+				return reply.status(404).send({
+					error: "LinkNotFound",
+					message: "Связь расходного материала не найдена",
+				});
+			}
+			return link;
+		},
 	});
 
 	// POST /:organizationId/links — Create a new consumable link
-	server.post<{
-		Params: { organizationId: string };
-		Body: {
-			serviceId: string;
-			inventoryItemId: string;
-			quantity: number;
-			note?: string | null;
-		};
-	}>("/:organizationId/links", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"treatment consumables create link",
-		);
-		if (!resolvedOrgId) return;
+	defineTenantMutation(server, {
+		method: "POST",
+		path: "/:organizationId/links",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId } = request.params as { organizationId: string };
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
 
-		const { organizationId } = request.params;
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
+			const parsedBody = consumableLinkCreateSchema.safeParse(request.body);
+			if (!parsedBody.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: parsedBody.error.errors[0]?.message ?? "Неверные параметры запроса",
+				});
+			}
 
-		const parsedBody = consumableLinkCreateSchema.safeParse(request.body);
-		if (!parsedBody.success) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: parsedBody.error.errors[0]?.message ?? "Неверные параметры запроса",
-			});
-		}
-
-		try {
-			const link = await withTenantCtx(organizationId, async (tx) => {
-				return TreatmentConsumablesService.createLink(
+			try {
+				const link = await TreatmentConsumablesService.createLink(
 					tx,
 					organizationId,
 					parsedBody.data,
 				);
-			});
-			return reply.status(201).send(link);
-		} catch (err) {
-			if (err instanceof TreatmentConsumablesServiceError) {
-				return reply.status(err.statusCode).send({
-					error: err.code,
-					message: err.message,
-				});
+				return reply.status(201).send(link);
+			} catch (err) {
+				if (err instanceof TreatmentConsumablesServiceError) {
+					return reply.status(err.statusCode).send({
+						error: err.code,
+						message: err.message,
+					});
+				}
+				throw err;
 			}
-			throw err;
-		}
+		},
 	});
 
 	// PUT /:organizationId/links/:linkId — Update a consumable link
-	server.put<{
-		Params: { organizationId: string; linkId: string };
-		Body: {
-			quantity?: number;
-			note?: string | null;
-		};
-	}>("/:organizationId/links/:linkId", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"treatment consumables update link",
-		);
-		if (!resolvedOrgId) return;
+	defineTenantMutation(server, {
+		method: "PUT",
+		path: "/:organizationId/links/:linkId",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "exempt_idempotent_put_or_delete",
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId, linkId } = request.params as { organizationId: string; linkId: string };
+			if (!isValidUuid(organizationId) || !isValidUuid(linkId)) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
+			}
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
 
-		const { organizationId, linkId } = request.params;
-		if (!isValidUuid(organizationId) || !isValidUuid(linkId)) {
-			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
-		}
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
+			const parsedBody = consumableLinkUpdateSchema.safeParse(request.body);
+			if (!parsedBody.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: parsedBody.error.errors[0]?.message ?? "Неверные параметры запроса",
+				});
+			}
 
-		const parsedBody = consumableLinkUpdateSchema.safeParse(request.body);
-		if (!parsedBody.success) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: parsedBody.error.errors[0]?.message ?? "Неверные параметры запроса",
-			});
-		}
-
-		try {
-			const link = await withTenantCtx(organizationId, async (tx) => {
-				return TreatmentConsumablesService.updateLink(
+			try {
+				return await TreatmentConsumablesService.updateLink(
 					tx,
 					organizationId,
 					linkId,
 					parsedBody.data,
 				);
-			});
-			return link;
-		} catch (err) {
-			if (err instanceof TreatmentConsumablesServiceError) {
-				return reply.status(err.statusCode).send({
-					error: err.code,
-					message: err.message,
-				});
+			} catch (err) {
+				if (err instanceof TreatmentConsumablesServiceError) {
+					return reply.status(err.statusCode).send({
+						error: err.code,
+						message: err.message,
+					});
+				}
+				throw err;
 			}
-			throw err;
-		}
+		},
 	});
 
 	// DELETE /:organizationId/links/:linkId — Delete a consumable link
-	server.delete<{
-		Params: { organizationId: string; linkId: string };
-	}>("/:organizationId/links/:linkId", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"treatment consumables delete link",
-		);
-		if (!resolvedOrgId) return;
+	defineTenantMutation(server, {
+		method: "DELETE",
+		path: "/:organizationId/links/:linkId",
+		permission: "inventory.write",
+		authOptions: INVENTORY_WRITE_AUTH,
+		idempotency: "exempt_idempotent_put_or_delete",
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId, linkId } = request.params as { organizationId: string; linkId: string };
+			if (!isValidUuid(organizationId) || !isValidUuid(linkId)) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
+			}
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
 
-		const { organizationId, linkId } = request.params;
-		if (!isValidUuid(organizationId) || !isValidUuid(linkId)) {
-			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
-		}
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
-
-		try {
-			const result = await withTenantCtx(organizationId, async (tx) => {
-				return TreatmentConsumablesService.deleteLink(
+			try {
+				return await TreatmentConsumablesService.deleteLink(
 					tx,
 					organizationId,
 					linkId,
 				);
-			});
-			return result;
-		} catch (err) {
-			if (err instanceof TreatmentConsumablesServiceError) {
-				return reply.status(err.statusCode).send({
-					error: err.code,
-					message: err.message,
-				});
+			} catch (err) {
+				if (err instanceof TreatmentConsumablesServiceError) {
+					return reply.status(err.statusCode).send({
+						error: err.code,
+						message: err.message,
+					});
+				}
+				throw err;
 			}
-			throw err;
-		}
+		},
 	});
 
 	// GET /:organizationId/service/:serviceId — Get full BOM recipe for service
-	server.get<{
-		Params: { organizationId: string; serviceId: string };
-	}>("/:organizationId/service/:serviceId", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"treatment consumables read service recipe",
-		);
-		if (!resolvedOrgId) return;
+	defineTenantQuery(server, {
+		path: "/:organizationId/service/:serviceId",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId, serviceId } = request.params as { organizationId: string; serviceId: string };
+			if (!isValidUuid(organizationId) || !isValidUuid(serviceId)) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
+			}
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
 
-		const { organizationId, serviceId } = request.params;
-		if (!isValidUuid(organizationId) || !isValidUuid(serviceId)) {
-			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
-		}
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
-
-		try {
-			const recipe = await withTenantCtx(organizationId, async (tx) => {
-				return TreatmentConsumablesService.getRecipeForService(
+			try {
+				return await TreatmentConsumablesService.getRecipeForService(
 					tx,
 					organizationId,
 					serviceId,
 				);
-			});
-			return recipe;
-		} catch (err) {
-			if (err instanceof TreatmentConsumablesServiceError) {
-				return reply.status(err.statusCode).send({
-					error: err.code,
-					message: err.message,
-				});
+			} catch (err) {
+				if (err instanceof TreatmentConsumablesServiceError) {
+					return reply.status(err.statusCode).send({
+						error: err.code,
+						message: err.message,
+					});
+				}
+				throw err;
 			}
-			throw err;
-		}
+		},
 	});
 
 	// GET /:organizationId/options — Get picker options for linking
-	server.get<{
-		Params: { organizationId: string };
-		Querystring: { q?: string; limit?: number };
-	}>("/:organizationId/options", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"treatment consumables read options",
-		);
-		if (!resolvedOrgId) return;
+	defineTenantQuery(server, {
+		path: "/:organizationId/options",
+		permission: "inventory.read",
+		authOptions: INVENTORY_READ_AUTH,
+		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const { organizationId } = request.params as { organizationId: string };
+			if (!isValidUuid(organizationId)) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
 
-		const { organizationId } = request.params;
-		if (!isValidUuid(organizationId)) {
-			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
-		}
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
-
-		const parsedQuery = linkOptionsQuerySchema.safeParse(request.query ?? {});
-		if (!parsedQuery.success) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: parsedQuery.error.errors[0]?.message ?? "Неверные параметры запроса",
-			});
-		}
-		const q = parsedQuery.data.q;
-		const limit = parsedQuery.data.limit;
-
-		const options = await withTenantCtx(organizationId, async (tx) => {
+			const parsedQuery = linkOptionsQuerySchema.safeParse(request.query ?? {});
+			if (!parsedQuery.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: parsedQuery.error.errors[0]?.message ?? "Неверные параметры запроса",
+				});
+			}
 			return TreatmentConsumablesService.getLinkOptions(
 				tx,
 				organizationId,
-				q,
-				limit,
+				parsedQuery.data.q,
+				parsedQuery.data.limit,
 			);
-		});
-		return options;
+		},
 	});
 }

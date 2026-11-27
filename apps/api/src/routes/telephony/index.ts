@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import { defineStreamRoute, defineWebhookRoute } from "../../core/routeFactories.js";
 import { telephonyOutboxService } from "../../services/telephonyOutboxService.js";
 import { telephonyRecordingStreamRoutes } from "./telephonyRecordingStreamHandler.js";
 import { telephonySipRoutes } from "./telephonySipRoutes.js";
@@ -37,82 +38,194 @@ export { telephonyOutboxService } from "../../services/telephonyOutboxService.js
 
 export const telephonyRoutes: FastifyPluginAsync = async (server) => {
 	// Webhooks (SSRF DNS validation & short TX managed inside handler)
-	server.post<{ Params: { organizationId: string } }>(
-		"/:organizationId/webhook",
-		{ config: { tenantTxSelfManaged: true } },
-		telephonyWebhookHandler,
-	);
-	server.post<{ Params: { organizationId?: string } }>(
-		"/webhook",
-		{ config: { tenantTxSelfManaged: true } },
-		telephonyWebhookHandler,
-	);
+	defineWebhookRoute(server, {
+		method: "POST",
+		path: "/:organizationId/webhook",
+		handler: async ({ request, reply }) =>
+			telephonyWebhookHandler(
+				request as Parameters<typeof telephonyWebhookHandler>[0],
+				reply,
+			),
+	});
+	defineWebhookRoute(server, {
+		method: "POST",
+		path: "/webhook",
+		handler: async ({ request, reply }) =>
+			telephonyWebhookHandler(
+				request as Parameters<typeof telephonyWebhookHandler>[0],
+				reply,
+			),
+	});
 
 	// Instant-Ack Outbox Webhook endpoints (<50ms ACK)
-	server.post<{ Params: { organizationId: string } }>("/:organizationId/webhook/async", async (req, reply) => {
-		return telephonyOutboxService.handleInstantAck(req, reply);
+	defineWebhookRoute(server, {
+		method: "POST",
+		path: "/:organizationId/webhook/async",
+		handler: async ({ request, reply }) =>
+			telephonyOutboxService.handleInstantAck(
+				request as Parameters<typeof telephonyOutboxService.handleInstantAck>[0],
+				reply,
+			),
 	});
-	server.post<{ Params: { organizationId?: string } }>("/webhook/async", async (req, reply) => {
-		return telephonyOutboxService.handleInstantAck(req, reply);
+	defineWebhookRoute(server, {
+		method: "POST",
+		path: "/webhook/async",
+		handler: async ({ request, reply }) =>
+			telephonyOutboxService.handleInstantAck(
+				request as Parameters<typeof telephonyOutboxService.handleInstantAck>[0],
+				reply,
+			),
 	});
 
 	// SMS Webhooks
-	server.post<{ Params: { organizationId: string } }>(
-		"/:organizationId/sms/webhook",
-		{ config: { tenantTxSelfManaged: true } },
-		telephonySmsHandler,
-	);
-	server.post<{ Params: { organizationId?: string } }>(
-		"/sms/webhook",
-		{ config: { tenantTxSelfManaged: true } },
-		telephonySmsHandler,
-	);
+	defineWebhookRoute(server, {
+		method: "POST",
+		path: "/:organizationId/sms/webhook",
+		handler: async ({ request, reply }) =>
+			telephonySmsHandler(
+				request as Parameters<typeof telephonySmsHandler>[0],
+				reply,
+			),
+	});
+	defineWebhookRoute(server, {
+		method: "POST",
+		path: "/sms/webhook",
+		handler: async ({ request, reply }) =>
+			telephonySmsHandler(
+				request as Parameters<typeof telephonySmsHandler>[0],
+				reply,
+			),
+	});
 
 	// Missed calls SLA
-	server.get<{ Params: { organizationId?: string }; Querystring: { page?: number; limit?: number; onlyOpen?: boolean } }>("/missed-calls", telephonyMissedCallsHandler);
-	server.get<{ Params: { organizationId: string }; Querystring: { page?: number; limit?: number; onlyOpen?: boolean } }>("/:organizationId/missed-calls", telephonyMissedCallsHandler);
+	defineStreamRoute(server, {
+		method: "GET",
+		path: "/missed-calls",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			telephonyMissedCallsHandler(
+				request as Parameters<typeof telephonyMissedCallsHandler>[0],
+				reply,
+			),
+	});
+	defineStreamRoute(server, {
+		method: "GET",
+		path: "/:organizationId/missed-calls",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			telephonyMissedCallsHandler(
+				request as Parameters<typeof telephonyMissedCallsHandler>[0],
+				reply,
+			),
+	});
 
 	// Telephony Calls List (GET /api/telephony/calls)
-	server.get("/calls", telephonyCallsListHandler);
-	server.get("/:organizationId/calls", telephonyCallsListHandler);
+	defineStreamRoute(server, {
+		method: "GET",
+		path: "/calls",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			telephonyCallsListHandler(
+				request as Parameters<typeof telephonyCallsListHandler>[0],
+				reply,
+			),
+	});
+	defineStreamRoute(server, {
+		method: "GET",
+		path: "/:organizationId/calls",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			telephonyCallsListHandler(
+				request as Parameters<typeof telephonyCallsListHandler>[0],
+				reply,
+			),
+	});
 
 	// Update Call Note (PATCH /api/telephony/calls/:id)
-	server.patch<{ Params: { id: string; organizationId?: string }; Body: { note?: string; clinicalNote?: string; message?: string; patientId?: string } }>("/calls/:id", telephonyCallUpdateHandler);
-	server.patch<{ Params: { id: string; organizationId: string }; Body: { note?: string; clinicalNote?: string; message?: string; patientId?: string } }>("/:organizationId/calls/:id", telephonyCallUpdateHandler);
+	defineStreamRoute(server, {
+		method: "PATCH",
+		path: "/calls/:id",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			telephonyCallUpdateHandler(
+				request as Parameters<typeof telephonyCallUpdateHandler>[0],
+				reply,
+			),
+	});
+	defineStreamRoute(server, {
+		method: "PATCH",
+		path: "/:organizationId/calls/:id",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			telephonyCallUpdateHandler(
+				request as Parameters<typeof telephonyCallUpdateHandler>[0],
+				reply,
+			),
+	});
 
 	// Persist / update Call Speech Transcript in uis_call_speech_transcripts
-	server.post<{ Params: { id: string; organizationId?: string } }>(
-		"/calls/:id/transcript",
-		{ config: { tenantTxSelfManaged: true } },
-		telephonyTranscriptSaveHandler,
-	);
-	server.post<{ Params: { id: string; organizationId: string } }>(
-		"/:organizationId/calls/:id/transcript",
-		{ config: { tenantTxSelfManaged: true } },
-		telephonyTranscriptSaveHandler,
-	);
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/calls/:id/transcript",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			telephonyTranscriptSaveHandler(
+				request as Parameters<typeof telephonyTranscriptSaveHandler>[0],
+				reply,
+			),
+	});
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/:organizationId/calls/:id/transcript",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			telephonyTranscriptSaveHandler(
+				request as Parameters<typeof telephonyTranscriptSaveHandler>[0],
+				reply,
+			),
+	});
 
 	// 1-Click Outbound call (external PBX HTTP/AMI dispatch runs outside PG TX)
-	server.post<{ Params: { organizationId: string }; Body: { phone: string; patientId?: string; patientName?: string } }>(
-		"/:organizationId/outbound-call",
-		{ config: { tenantTxSelfManaged: true } },
-		telephonyOutboundHandler,
-	);
-	server.post<{ Params: { organizationId?: string }; Body: { phone: string; patientId?: string; patientName?: string } }>(
-		"/outbound-call",
-		{ config: { tenantTxSelfManaged: true } },
-		telephonyOutboundHandler,
-	);
-	server.post<{ Params: { organizationId: string }; Body: { phone: string; patientId?: string; patientName?: string } }>(
-		"/:organizationId/outbound",
-		{ config: { tenantTxSelfManaged: true } },
-		telephonyOutboundHandler,
-	);
-	server.post<{ Params: { organizationId?: string }; Body: { phone: string; patientId?: string; patientName?: string } }>(
-		"/outbound",
-		{ config: { tenantTxSelfManaged: true } },
-		telephonyOutboundHandler,
-	);
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/:organizationId/outbound-call",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			telephonyOutboundHandler(
+				request as Parameters<typeof telephonyOutboundHandler>[0],
+				reply,
+			),
+	});
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/outbound-call",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			telephonyOutboundHandler(
+				request as Parameters<typeof telephonyOutboundHandler>[0],
+				reply,
+			),
+	});
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/:organizationId/outbound",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			telephonyOutboundHandler(
+				request as Parameters<typeof telephonyOutboundHandler>[0],
+				reply,
+			),
+	});
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/outbound",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			telephonyOutboundHandler(
+				request as Parameters<typeof telephonyOutboundHandler>[0],
+				reply,
+			),
+	});
 
 	await server.register(telephonyRecordingStreamRoutes);
 	await server.register(telephonySipRoutes);

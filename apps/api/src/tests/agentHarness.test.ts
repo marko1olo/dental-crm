@@ -12,6 +12,7 @@
  */
 
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { describe, it, beforeEach } from "node:test";
 import Fastify from "fastify";
 import {
@@ -550,6 +551,7 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 				[CLINIC_TOKEN_HEADER]: validClinicToken,
 				[STAFF_TOKEN_HEADER]: validStaffToken,
 				"Content-Type": "application/json",
+				"Idempotency-Key": randomUUID(),
 			},
 			payload: {
 				settings: {

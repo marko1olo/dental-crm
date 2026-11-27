@@ -4,7 +4,7 @@ import {
 	isReservationMatchingChair,
 	parseReservationInstant,
 } from "../../../db/appointmentsQueryModules/scheduleReservationLockHelpers.js";
-import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	appointments,
 	chairs,
@@ -372,7 +372,7 @@ export const handleSlotsQuery = async (
 		});
 	}
 
-	return withTenantCtx(organizationId, async (tx) => {
+	return withTenantReadCtx(organizationId, async (tx) => {
 		const result = await calculateAvailableSlots(tx, {
 			organizationId,
 			date,
@@ -403,7 +403,7 @@ export async function handleDoctorList(
 		});
 	}
 
-	return withTenantCtx(organizationId, async (tx) => {
+	return withTenantReadCtx(organizationId, async (tx) => {
 		const [organization] = await tx
 			.select({ id: organizations.id })
 			.from(organizations)

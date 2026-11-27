@@ -1,8 +1,8 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, sql } from "drizzle-orm";
 import { isValidUuid } from "@dental/shared";
-import { db } from "../../db/client.js";
-import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
+import { definePublicRoute } from "../../core/routeFactories.js";
+import { withSuperuserBypass, withTenantWriteCtx } from "../../db/rls.js";
 import { appointmentWaitlists, clinics, organizations, patientConsents, patients, users } from "../../db/schema.js";
 import {
 	defaultClinicQuerySchema,
@@ -21,7 +21,6 @@ import {
 import {
 	createCrmLeadFromPublicIntake,
 	handleBookAppointment,
-	type BookAppointmentBody,
 	type BookAppointmentRequest,
 } from "./bookingModules/publicBookingMutations.js";
 import {
@@ -36,16 +35,15 @@ export { handleSlotsQuery };
 
 export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 	// Root health/discovery endpoint
-	server.get("/", async (_request, reply) => {
-		return reply.send({ status: "ok", service: "public_booking" });
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/",
+		handler: async ({ reply }) => reply.send({ status: "ok", service: "public_booking" }),
 	});
 
 	// Rate-limited OTP send handler (SMS / Flash call)
 	const sendOtpHandler = async (
-		request: FastifyRequest<{
-			Params?: { organizationId?: string };
-			Body: { phone: string; method?: "sms" | "flash_call"; organizationId?: string };
-		}>,
+		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
 		const parsed = sendOtpSchema.safeParse(request.body);
@@ -57,9 +55,10 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		}
 
 		const clientIp = request.ip || "unknown";
+		const params = (request.params ?? {}) as { organizationId?: string };
 		const effectiveOrgId =
 			parsed.data.organizationId ||
-			request.params?.organizationId ||
+			params.organizationId ||
 			(request.query as { organizationId?: string } | undefined)?.organizationId;
 		if (!effectiveOrgId || !isValidUuid(effectiveOrgId)) {
 			return reply.status(404).send({
@@ -89,21 +88,20 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		});
 	};
 
-	server.post<{
-		Params?: { organizationId?: string };
-		Body: { phone: string; method?: "sms" | "flash_call"; organizationId?: string };
-	}>("/send-otp", sendOtpHandler);
-	server.post<{
-		Params: { organizationId: string };
-		Body: { phone: string; method?: "sms" | "flash_call"; organizationId?: string };
-	}>("/:organizationId/send-otp", sendOtpHandler);
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/send-otp",
+		handler: async ({ request, reply }) => sendOtpHandler(request, reply),
+	});
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/:organizationId/send-otp",
+		handler: async ({ request, reply }) => sendOtpHandler(request, reply),
+	});
 
 	// Rate-limited OTP verify handler
 	const verifyOtpHandler = async (
-		request: FastifyRequest<{
-			Params?: { organizationId?: string };
-			Body: { phone: string; code: string; organizationId?: string };
-		}>,
+		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
 		if (isRateLimited(request.ip ?? "unknown")) {
@@ -117,8 +115,9 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			});
 		}
 
+		const params = (request.params ?? {}) as { organizationId?: string };
 		const effectiveOrgId =
-			parsed.data.organizationId || request.params?.organizationId;
+			parsed.data.organizationId || params.organizationId;
 		if (!effectiveOrgId || !isValidUuid(effectiveOrgId)) {
 			return reply.status(404).send({
 				error: "ClinicNotFound",
@@ -146,36 +145,92 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		});
 	};
 
-	server.post<{
-		Params?: { organizationId?: string };
-		Body: { phone: string; code: string; organizationId?: string };
-	}>("/verify-otp", verifyOtpHandler);
-	server.post<{
-		Params: { organizationId: string };
-		Body: { phone: string; code: string; organizationId?: string };
-	}>("/:organizationId/verify-otp", verifyOtpHandler);
-
-
-
-
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/verify-otp",
+		handler: async ({ request, reply }) => verifyOtpHandler(request, reply),
+	});
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/:organizationId/verify-otp",
+		handler: async ({ request, reply }) => verifyOtpHandler(request, reply),
+	});
 
 	// 0a. Get default active clinic for direct booking link (/book or #/book)
-	server.get("/default-clinic", async (request, reply) => {
-		if (isRateLimited(request.ip ?? "unknown")) {
-			return reply.status(429).send({ error: "Слишком много запросов." });
-		}
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/default-clinic",
+		handler: async ({ request, reply }) => {
+			if (isRateLimited(request.ip ?? "unknown")) {
+				return reply.status(429).send({ error: "Слишком много запросов." });
+			}
 
-		const queryCheck = defaultClinicQuerySchema.safeParse(request.query ?? {});
-		if (!queryCheck.success) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: "Некорректные параметры запроса клиники.",
+			const queryCheck = defaultClinicQuerySchema.safeParse(request.query ?? {});
+			if (!queryCheck.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры запроса клиники.",
+				});
+			}
+
+			const { organizationId: targetOrgId, allowDefault } = queryCheck.data;
+
+			if (targetOrgId) {
+				const [clinicRow] = await withSuperuserBypass(async (tx) => {
+					return tx
+						.select({
+							organizationId: organizations.id,
+							name: organizations.name,
+							address: clinics.address,
+							phone: clinics.phone,
+						})
+						.from(organizations)
+						.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
+						.where(eq(organizations.id, targetOrgId))
+						.limit(1);
+				});
+
+				if (clinicRow) {
+					return reply.send(clinicRow);
+				}
+			} else if (allowDefault === "1" || allowDefault === "true") {
+				const clinicRows = await withSuperuserBypass(async (tx) => {
+					return tx
+						.select({
+							organizationId: organizations.id,
+							name: organizations.name,
+							address: clinics.address,
+							phone: clinics.phone,
+						})
+						.from(organizations)
+						.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
+						.limit(2);
+				});
+
+				if (clinicRows.length === 1 && clinicRows[0]) {
+					return reply.send(clinicRows[0]);
+				}
+			}
+
+			return reply.status(404).send({
+				error: "ClinicNotFound",
+				message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
 			});
-		}
+		},
+	});
 
-		const { organizationId: targetOrgId, allowDefault } = queryCheck.data;
-
-		if (targetOrgId) {
+	// 0a-2. Get clinic details by organizationId
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/:organizationId/clinic-info",
+		handler: async ({ request, reply }) => {
+			if (isRateLimited(request.ip ?? "unknown")) {
+				return reply.status(429).send({ error: "Слишком много запросов." });
+			}
+			const { organizationId } = (request.params ?? {}) as { organizationId: string };
+			if (!isValidUuid(organizationId)) {
+				return reply.status(404).send({ error: "ClinicNotFound", message: "Клиника не найдена." });
+			}
 			const [clinicRow] = await withSuperuserBypass(async (tx) => {
 				return tx
 					.select({
@@ -186,71 +241,19 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 					})
 					.from(organizations)
 					.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
-					.where(eq(organizations.id, targetOrgId))
+					.where(eq(organizations.id, organizationId))
 					.limit(1);
 			});
-
-			if (clinicRow) {
-				return reply.send(clinicRow);
+			if (!clinicRow) {
+				return reply.status(404).send({ error: "ClinicNotFound", message: "Клиника не найдена." });
 			}
-		} else if (allowDefault === "1" || allowDefault === "true") {
-			const clinicRows = await withSuperuserBypass(async (tx) => {
-				return tx
-					.select({
-						organizationId: organizations.id,
-						name: organizations.name,
-						address: clinics.address,
-						phone: clinics.phone,
-					})
-					.from(organizations)
-					.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
-					.limit(2);
-			});
-
-			if (clinicRows.length === 1 && clinicRows[0]) {
-				return reply.send(clinicRows[0]);
-			}
-		}
-
-		return reply.status(404).send({
-			error: "ClinicNotFound",
-			message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
-		});
-	});
-
-	// 0a-2. Get clinic details by organizationId
-	server.get("/:organizationId/clinic-info", async (request: FastifyRequest<{ Params: { organizationId: string } }>, reply) => {
-		if (isRateLimited(request.ip ?? "unknown")) {
-			return reply.status(429).send({ error: "Слишком много запросов." });
-		}
-		const { organizationId } = request.params;
-		if (!isValidUuid(organizationId)) {
-			return reply.status(404).send({ error: "ClinicNotFound", message: "Клиника не найдена." });
-		}
-		const [clinicRow] = await withSuperuserBypass(async (tx) => {
-			return tx
-				.select({
-					organizationId: organizations.id,
-					name: organizations.name,
-					address: clinics.address,
-					phone: clinics.phone,
-				})
-				.from(organizations)
-				.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
-				.where(eq(organizations.id, organizationId))
-				.limit(1);
-		});
-		if (!clinicRow) {
-			return reply.status(404).send({ error: "ClinicNotFound", message: "Клиника не найдена." });
-		}
-		return clinicRow;
+			return clinicRow;
+		},
 	});
 
 	// 0b. Direct available-slots query: GET /api/public/booking/available-slots?date=YYYY-MM-DD[&doctorId=UUID][&organizationId=UUID]
 	// Mandate 8a & 8k: Real schedule calculation between appointments in PostgreSQL 18.
-	const slotsQueryHandler = async (request: FastifyRequest<{
-		Querystring: { date: string; doctorId?: string; organizationId?: string };
-	}>, reply: FastifyReply) => {
+	const slotsQueryHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (isRateLimited(request.ip ?? "unknown")) {
 			return reply.status(429).send({ error: "Слишком много запросов." });
 		}
@@ -288,13 +291,17 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		return handleSlotsQuery(organizationId, queryParsed.data.date, queryParsed.data.doctorId, reply);
 	};
 
-	server.get<{
-		Querystring: { date: string; doctorId?: string; organizationId?: string };
-	}>("/available-slots", slotsQueryHandler);
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/available-slots",
+		handler: async ({ request, reply }) => slotsQueryHandler(request, reply),
+	});
 
-	server.get<{
-		Querystring: { date: string; doctorId?: string; organizationId?: string };
-	}>("/slots", slotsQueryHandler);
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/slots",
+		handler: async ({ request, reply }) => slotsQueryHandler(request, reply),
+	});
 
 	// 0c. Direct appointment creation endpoint: POST /api/public/booking/create or /appointments
 	const createAppointmentHandler = async (
@@ -313,40 +320,31 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		return handleBookAppointment(request, reply);
 	};
 
-	server.post<{
-		Params: { organizationId: string };
-		Body: BookAppointmentBody;
-	}>("/create", createAppointmentHandler);
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/create",
+		handler: async ({ request, reply }) =>
+			createAppointmentHandler(request as BookAppointmentRequest, reply),
+	});
 
-	server.post<{
-		Params: { organizationId: string };
-		Body: BookAppointmentBody;
-	}>("/appointments", createAppointmentHandler);
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/appointments",
+		handler: async ({ request, reply }) =>
+			createAppointmentHandler(request as BookAppointmentRequest, reply),
+	});
 
 	// door-validation: none — Delegated to handleBookAppointment with bookAppointmentSchema
-	server.post<{
-		Params: { organizationId: string };
-		Body: BookAppointmentBody;
-	}>("/book", createAppointmentHandler);
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/book",
+		handler: async ({ request, reply }) =>
+			createAppointmentHandler(request as BookAppointmentRequest, reply),
+	});
 
 	// DEF-PB-03: Public waitlist intake handler with ACID transaction & concurrency deduping
 	const publicWaitlistHandler = async (
-		request: FastifyRequest<{
-			Params?: { organizationId?: string };
-			Body: {
-				organizationId?: string;
-				patientId?: string;
-				patientName: string;
-				patientPhone: string;
-				doctorId?: string;
-				preferredDoctorId?: string;
-				date?: string;
-				comment?: string;
-				notes?: string;
-				hasAgreedToPrivacy?: boolean;
-				idempotencyKey?: string;
-			};
-		}>,
+		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
 		if (isRateLimited(request.ip ?? "unknown")) {
@@ -361,6 +359,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			});
 		}
 		const body = parsedBody.data;
+		const params = (request.params ?? {}) as { organizationId?: string };
 
 		const rawIdempotencyKey =
 			(request.headers["idempotency-key"] as string | undefined) ||
@@ -369,7 +368,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		const idempotencyKey = rawIdempotencyKey?.trim();
 
 		const organizationId =
-			request.params?.organizationId || body.organizationId;
+			params.organizationId || body.organizationId;
 		if (!organizationId || !isValidUuid(organizationId)) {
 			return reply.status(404).send({
 				error: "ClinicNotFound",
@@ -382,7 +381,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		const preferredDoctor = body.preferredDoctorId || body.doctorId || null;
 		const comment = body.comment || body.notes || "";
 
-		const waitlistResult = await withTenantCtx(organizationId, async (tx) => {
+		const waitlistResult = await withTenantWriteCtx(organizationId, async (tx) => {
 			// 1. Transaction-scoped advisory lock by phone digits to prevent concurrent double-booking races
 			const phoneDigits = cleanPhone.replace(/\D/g, "");
 			if (phoneDigits) {
@@ -544,28 +543,41 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		});
 	};
 
-	server.post("/waitlist", publicWaitlistHandler);
-	server.post("/:organizationId/waitlist", publicWaitlistHandler);
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/waitlist",
+		handler: async ({ request, reply }) => publicWaitlistHandler(request, reply),
+	});
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/:organizationId/waitlist",
+		handler: async ({ request, reply }) => publicWaitlistHandler(request, reply),
+	});
 
 	// 1a. Get doctors with organization query
-	server.get("/doctors", async (request, reply) => {
-		if (isRateLimited(request.ip ?? "unknown")) {
-			return reply.status(429).send({ error: "Слишком много запросов." });
-		}
-		const queryCheck = slotsParamSchema.safeParse(request.query ?? {});
-		if (!queryCheck.success) {
-			return reply.status(404).send({
-				error: "ClinicNotFound",
-				message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
-			});
-		}
-		return handleDoctorList(queryCheck.data.organizationId, reply);
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/doctors",
+		handler: async ({ request, reply }) => {
+			if (isRateLimited(request.ip ?? "unknown")) {
+				return reply.status(429).send({ error: "Слишком много запросов." });
+			}
+			const queryCheck = slotsParamSchema.safeParse(request.query ?? {});
+			if (!queryCheck.success) {
+				return reply.status(404).send({
+					error: "ClinicNotFound",
+					message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
+				});
+			}
+			return handleDoctorList(queryCheck.data.organizationId, reply);
+		},
 	});
 
 	// 1. Get doctors for an organization
-	server.get<{ Params: { organizationId: string } }>(
-		"/:organizationId/doctors",
-		async (request, reply) => {
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/:organizationId/doctors",
+		handler: async ({ request, reply }) => {
 			if (isRateLimited(request.ip ?? "unknown")) {
 				return reply.status(429).send({ error: "Слишком много запросов." });
 			}
@@ -578,92 +590,96 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			}
 			return handleDoctorList(paramCheck.data.organizationId, reply);
 		},
-	);
-
-	// 2a. Unified slots endpoint: GET /api/public/booking/:organizationId/slots?date=YYYY-MM-DD[&doctorId=UUID]
-	server.get<{
-		Params: { organizationId: string };
-		Querystring: { date: string; doctorId?: string };
-	}>("/:organizationId/slots", async (request, reply) => {
-		if (isRateLimited(request.ip ?? "unknown")) {
-			return reply.status(429).send({ error: "Слишком много запросов." });
-		}
-		const paramCheck = slotsParamSchema.safeParse(request.params);
-		if (!paramCheck.success) {
-			return reply.status(404).send({
-				error: "ClinicNotFound",
-				message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
-			});
-		}
-		const rawQuery = (request.query ?? {}) as Record<string, unknown>;
-		if (!rawQuery.date || typeof rawQuery.date !== "string") {
-			return reply.status(400).send({
-				error: "BookingDateMissing",
-				message: "Запрос свободного времени пришёл без даты приёма. Выберите дату в поле «Выберите дату».",
-			});
-		}
-		const queryCheck = slotsQuerySchema.safeParse(rawQuery);
-		if (!queryCheck.success) {
-			if (queryCheck.error.issues.some((i) => i.path.includes("doctorId"))) {
-				return reply.status(400).send({
-					error: "DoctorIdInvalid",
-					message: "Некорректный идентификатор врача.",
-				});
-			}
-			return reply.status(400).send({
-				error: "BookingDateInvalid",
-				message: "Некорректные параметры запроса свободного времени.",
-				details: queryCheck.error.issues,
-			});
-		}
-
-		return handleSlotsQuery(paramCheck.data.organizationId, queryCheck.data.date, queryCheck.data.doctorId, reply);
 	});
 
-	// 2b. Backward-compatible param endpoint: GET /api/public/booking/:organizationId/slots/:doctorId?date=YYYY-MM-DD
-	server.get<{
-		Params: { organizationId: string; doctorId: string };
-		Querystring: { date: string };
-	}>("/:organizationId/slots/:doctorId", async (request, reply) => {
-		if (isRateLimited(request.ip ?? "unknown")) {
-			return reply.status(429).send({ error: "Слишком много запросов." });
-		}
-		const paramCheck = doctorSlotParamsSchema.safeParse(request.params);
-		if (!paramCheck.success) {
-			if (paramCheck.error.issues.some((i) => i.path.includes("organizationId"))) {
+	// 2a. Unified slots endpoint: GET /api/public/booking/:organizationId/slots?date=YYYY-MM-DD[&doctorId=UUID]
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/:organizationId/slots",
+		handler: async ({ request, reply }) => {
+			if (isRateLimited(request.ip ?? "unknown")) {
+				return reply.status(429).send({ error: "Слишком много запросов." });
+			}
+			const paramCheck = slotsParamSchema.safeParse(request.params);
+			if (!paramCheck.success) {
 				return reply.status(404).send({
 					error: "ClinicNotFound",
 					message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
 				});
 			}
-			return reply.status(400).send({
-				error: "DoctorIdInvalid",
-				message: "Некорректный идентификатор врача.",
-			});
-		}
-		const { organizationId, doctorId } = paramCheck.data;
-		const rawQuery = (request.query ?? {}) as Record<string, unknown>;
-		if (!rawQuery.date || typeof rawQuery.date !== "string") {
-			return reply.status(400).send({
-				error: "BookingDateMissing",
-				message: "Запрос свободного времени пришёл без даты приёма. Выберите дату в поле «Выберите дату».",
-			});
-		}
-		const queryCheck = slotsQuerySchema.safeParse(rawQuery);
-		if (!queryCheck.success) {
-			return reply.status(400).send({
-				error: "BookingDateInvalid",
-				message: "Некорректные параметры запроса свободного времени.",
-				details: queryCheck.error.issues,
-			});
-		}
+			const rawQuery = (request.query ?? {}) as Record<string, unknown>;
+			if (!rawQuery.date || typeof rawQuery.date !== "string") {
+				return reply.status(400).send({
+					error: "BookingDateMissing",
+					message: "Запрос свободного времени пришёл без даты приёма. Выберите дату в поле «Выберите дату».",
+				});
+			}
+			const queryCheck = slotsQuerySchema.safeParse(rawQuery);
+			if (!queryCheck.success) {
+				if (queryCheck.error.issues.some((i) => i.path.includes("doctorId"))) {
+					return reply.status(400).send({
+						error: "DoctorIdInvalid",
+						message: "Некорректный идентификатор врача.",
+					});
+				}
+				return reply.status(400).send({
+					error: "BookingDateInvalid",
+					message: "Некорректные параметры запроса свободного времени.",
+					details: queryCheck.error.issues,
+				});
+			}
 
-		return handleSlotsQuery(organizationId, queryCheck.data.date, doctorId, reply);
+			return handleSlotsQuery(paramCheck.data.organizationId, queryCheck.data.date, queryCheck.data.doctorId, reply);
+		},
+	});
+
+	// 2b. Backward-compatible param endpoint: GET /api/public/booking/:organizationId/slots/:doctorId?date=YYYY-MM-DD
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/:organizationId/slots/:doctorId",
+		handler: async ({ request, reply }) => {
+			if (isRateLimited(request.ip ?? "unknown")) {
+				return reply.status(429).send({ error: "Слишком много запросов." });
+			}
+			const paramCheck = doctorSlotParamsSchema.safeParse(request.params);
+			if (!paramCheck.success) {
+				if (paramCheck.error.issues.some((i) => i.path.includes("organizationId"))) {
+					return reply.status(404).send({
+						error: "ClinicNotFound",
+						message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
+					});
+				}
+				return reply.status(400).send({
+					error: "DoctorIdInvalid",
+					message: "Некорректный идентификатор врача.",
+				});
+			}
+			const { organizationId, doctorId } = paramCheck.data;
+			const rawQuery = (request.query ?? {}) as Record<string, unknown>;
+			if (!rawQuery.date || typeof rawQuery.date !== "string") {
+				return reply.status(400).send({
+					error: "BookingDateMissing",
+					message: "Запрос свободного времени пришёл без даты приёма. Выберите дату в поле «Выберите дату».",
+				});
+			}
+			const queryCheck = slotsQuerySchema.safeParse(rawQuery);
+			if (!queryCheck.success) {
+				return reply.status(400).send({
+					error: "BookingDateInvalid",
+					message: "Некорректные параметры запроса свободного времени.",
+					details: queryCheck.error.issues,
+				});
+			}
+
+			return handleSlotsQuery(organizationId, queryCheck.data.date, doctorId, reply);
+		},
 	});
 
 	// 3. Book an appointment with strict working hour & collision enforcement
-	server.post<{
-		Params: { organizationId: string };
-		Body: BookAppointmentBody;
-	}>("/:organizationId/book", handleBookAppointment);
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/:organizationId/book",
+		handler: async ({ request, reply }) =>
+			handleBookAppointment(request as BookAppointmentRequest, reply),
+	});
 };

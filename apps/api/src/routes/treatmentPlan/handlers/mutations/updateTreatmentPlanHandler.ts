@@ -1,12 +1,13 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { formatKopecksToRub, formatKopecksToRubles, isValidUuid, kopecksToRubles, rublesToKopecks } from "@dental/shared";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withTenantWriteCtx, type TenantDb } from "../../../../db/rls.js";
 import {
 	auditEvents,
 	treatmentPlanItemsNew,
 	treatmentPlans,
 } from "../../../../db/schema.js";
+import { extractIdempotencyKey } from "../../../../utils/httpIdempotency.js";
 import { calculateEffectivePlanDiscount } from "../treatmentPlanTotalsCalculator.js";
 import { updateTreatmentPlanSchema } from "./schemas.js";
 
@@ -18,7 +19,19 @@ export async function handleUpdateTreatmentPlan(
 	request: FastifyRequest<{ Params: { id: string } }>,
 	reply: FastifyReply,
 	organizationId: string,
+	tx?: TenantDb,
 ) {
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey) {
+		if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const { id } = request.params;
 	if (!isValidUuid(id)) {
 		return reply.code(400).send({
@@ -37,8 +50,8 @@ export async function handleUpdateTreatmentPlan(
 
 	const data = parsed.data;
 
-	const updatedPlan = await withTenantCtx(organizationId, async (tx) => {
-		const [existing] = await tx
+	const run = async (executor: TenantDb) => {
+		const [existing] = await executor
 			.select()
 			.from(treatmentPlans)
 			.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
@@ -77,7 +90,7 @@ export async function handleUpdateTreatmentPlan(
 			data.planDiscountRub !== undefined;
 
 		if (isDiscountTouched) {
-			const items = await tx
+			const items = await executor
 				.select()
 				.from(treatmentPlanItemsNew)
 				.where(
@@ -130,14 +143,14 @@ export async function handleUpdateTreatmentPlan(
 			updatePayload.totalPrice = formatKopecksToRubles(effective.finalTotalKopecks);
 		}
 
-		const [updated] = await tx
+		const [updated] = await executor
 			.update(treatmentPlans)
 			.set(updatePayload)
 			.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
 			.returning();
 
 		if (updated) {
-			await tx.insert(auditEvents).values({
+			await executor.insert(auditEvents).values({
 				organizationId,
 				actorUserId: null,
 				entityType: "treatment_plan",
@@ -148,7 +161,9 @@ export async function handleUpdateTreatmentPlan(
 		}
 
 		return updated;
-	});
+	};
+
+	const updatedPlan = tx ? await run(tx) : await withTenantWriteCtx(organizationId, run);
 
 	if (!updatedPlan) {
 		return reply.code(404).send({

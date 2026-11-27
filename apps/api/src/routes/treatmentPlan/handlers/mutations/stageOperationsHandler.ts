@@ -1,8 +1,9 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { isValidUuid } from "@dental/shared";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withTenantWriteCtx, type TenantDb } from "../../../../db/rls.js";
 import { treatmentPlanStages, treatmentPlans } from "../../../../db/schema.js";
+import { extractIdempotencyKey } from "../../../../utils/httpIdempotency.js";
 import { updateTreatmentPlanStageSchema } from "./schemas.js";
 
 /**
@@ -13,7 +14,19 @@ export async function handleUpdateTreatmentPlanStage(
 	request: FastifyRequest<{ Params: { id: string; stageId: string } }>,
 	reply: FastifyReply,
 	organizationId: string,
+	tx?: TenantDb,
 ) {
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey) {
+		if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const { id: planId, stageId } = request.params;
 	if (!isValidUuid(planId)) {
 		return reply.code(400).send({
@@ -34,11 +47,12 @@ export async function handleUpdateTreatmentPlanStage(
 	const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stageId);
 	const stageOrderNumber = Number.parseInt(stageId, 10);
 
-	const updateResult = await withTenantCtx(organizationId, async (tx) => {
-		const [plan] = await tx
+	const run = async (executor: TenantDb) => {
+		const [plan] = await executor
 			.select({ id: treatmentPlans.id, name: treatmentPlans.name })
 			.from(treatmentPlans)
 			.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
+			.for("update")
 			.limit(1);
 
 		if (!plan) {
@@ -63,7 +77,12 @@ export async function handleUpdateTreatmentPlanStage(
 			return { kind: "stage_not_found" as const };
 		}
 
-		const [targetStage] = await tx.select().from(treatmentPlanStages).where(stageCondition).limit(1);
+		const [targetStage] = await executor
+			.select()
+			.from(treatmentPlanStages)
+			.where(stageCondition)
+			.for("update")
+			.limit(1);
 		if (!targetStage) {
 			return { kind: "stage_not_found" as const };
 		}
@@ -71,7 +90,7 @@ export async function handleUpdateTreatmentPlanStage(
 		const isCompleted = data.isCompleted ?? (data.status === "completed");
 		const completionPercentage = data.completionPercentage ?? (isCompleted ? 100 : targetStage.completionPercentage);
 
-		const [updatedStage] = await tx
+		const [updatedStage] = await executor
 			.update(treatmentPlanStages)
 			.set({
 				stageName: data.stageName ?? targetStage.stageName,
@@ -88,7 +107,9 @@ export async function handleUpdateTreatmentPlanStage(
 			.returning();
 
 		return updatedStage ? { kind: "ok" as const, stage: updatedStage } : { kind: "stage_not_found" as const };
-	});
+	};
+
+	const updateResult = tx ? await run(tx) : await withTenantWriteCtx(organizationId, run);
 
 	if (updateResult.kind === "plan_not_found") {
 		return reply.code(404).send({

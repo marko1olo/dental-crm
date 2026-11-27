@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../../../../db/rls.js";
 import { treatmentPlans } from "../../../../db/schema.js";
 import { listTreatmentPlansQuerySchema } from "./schemas.js";
 
@@ -12,6 +12,7 @@ export async function handleListTreatmentPlans(
 	request: FastifyRequest,
 	reply: FastifyReply,
 	organizationId: string,
+	tx?: TenantDb,
 ) {
 	const parsed = listTreatmentPlansQuerySchema.safeParse(request.query);
 	if (!parsed.success) {
@@ -32,8 +33,8 @@ export async function handleListTreatmentPlans(
 		conditions.push(eq(treatmentPlans.status, status));
 	}
 
-	const plans = await withTenantCtx(organizationId, async (tx) =>
-		tx
+	const run = async (executor: TenantDb) =>
+		executor
 			.select({
 				id: treatmentPlans.id,
 				organizationId: treatmentPlans.organizationId,
@@ -57,8 +58,9 @@ export async function handleListTreatmentPlans(
 			.where(and(...conditions))
 			.orderBy(desc(treatmentPlans.createdAt))
 			.limit(limit)
-			.offset(offset),
-	);
+			.offset(offset);
+
+	const plans = tx ? await run(tx) : await withTenantReadCtx(organizationId, run);
 
 	return reply.code(200).send({
 		success: true,

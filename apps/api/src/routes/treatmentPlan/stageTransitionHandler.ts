@@ -2,7 +2,7 @@ import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { isValidUuid } from "@dental/shared";
-import { withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantWriteCtx, type TenantDb } from "../../db/rls.js";
 import { auditEvents, treatmentItems, treatmentPlans } from "../../db/schema.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { cancelRejectedPlanTierLedgerItems } from "./handlers/mutations/planLedgerSync.js";
@@ -29,6 +29,7 @@ export async function handleStageTransition(
 	request: FastifyRequest<{ Params: { id: string } }>,
 	reply: FastifyReply,
 	organizationId: string,
+	tx?: TenantDb,
 ) {
 	const { id } = request.params;
 	if (!isValidUuid(id)) {
@@ -54,8 +55,8 @@ export async function handleStageTransition(
 		return (VALID_STATUSES as readonly string[]).includes(val);
 	}
 
-	const result = await withTenantCtx(organizationId, async (tx) => {
-		const [existing] = await tx
+	const run = async (executor: TenantDb) => {
+		const [existing] = await executor
 			.select()
 			.from(treatmentPlans)
 			.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
@@ -98,7 +99,6 @@ export async function handleStageTransition(
 			status: targetStatus,
 			updatedAt: now,
 		};
-		// Явное сохранение этапа воронки координатора (ликвидация самопроизвольного отката)
 		if (targetStage) {
 			updatePayload.curatorFunnelStage = targetStage;
 		}
@@ -106,7 +106,7 @@ export async function handleStageTransition(
 			updatePayload.approvedAt = now;
 		}
 
-		const [plan] = await tx
+		const [plan] = await executor
 			.update(treatmentPlans)
 			.set(updatePayload)
 			.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
@@ -119,7 +119,7 @@ export async function handleStageTransition(
 		let invoice: CreatedInvoiceSummary | null = null;
 
 		if (targetStatus === "Approved") {
-			await tx
+			await executor
 				.update(treatmentItems)
 				.set({
 					status: "approved",
@@ -137,14 +137,14 @@ export async function handleStageTransition(
 					),
 				);
 
-			await cancelRejectedPlanTierLedgerItems(tx, {
+			await cancelRejectedPlanTierLedgerItems(executor, {
 				organizationId,
 				patientId: existing.patientId,
 				approvedPlanId: id,
 				planGroupId: existing.planGroupId,
 			});
 
-			invoice = await createInvoiceForApprovedPlan(tx, {
+			invoice = await createInvoiceForApprovedPlan(executor, {
 				organizationId,
 				patientId: existing.patientId,
 				planId: id,
@@ -158,13 +158,40 @@ export async function handleStageTransition(
 			});
 		}
 
-		await tx.insert(auditEvents).values({
+		await executor.insert(auditEvents).values({
 			organizationId,
 			actorUserId: null,
 			entityType: "treatment_plan",
 			entityId: id,
 			action: "TREATMENT_PLAN_STAGE_TRANSITION",
 			reason: `План лечения «${plan.name}» перемещен в статус ${targetStatus} (этап: ${targetStage || "custom"})${reason ? `: ${reason}` : ""}`,
+		});
+
+		const patientId = existing.patientId;
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "TREATMENT_PLAN_UPDATED",
+				payload: {
+					planId: id,
+					status: targetStatus,
+					stage: targetStage,
+					updatedAt: now.toISOString(),
+				},
+			});
+
+			if (invoice) {
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "INVOICE_CREATED",
+					payload: {
+						invoiceId: invoice.id,
+						invoiceNumber: invoice.invoiceNumber,
+						patientId,
+						patientName: invoice.patientName,
+						totalAmountRub: invoice.totalAmountRub,
+						status: "draft",
+					},
+				});
+			}
 		});
 
 		const responsePayload: Record<string, unknown> = {
@@ -177,8 +204,10 @@ export async function handleStageTransition(
 			createdInvoice: invoice,
 		};
 
-		return { responsePayload, plan, invoice, targetStatus, now, patientId: existing.patientId };
-	});
+		return { responsePayload, plan };
+	};
+
+	const result = tx ? await run(tx) : await withTenantWriteCtx(organizationId, run);
 
 	if (result && "kind" in result && result.kind === "not_found") {
 		return reply.code(404).send({
@@ -194,35 +223,5 @@ export async function handleStageTransition(
 		});
 	}
 
-	const { responsePayload, invoice: createdInvoice, targetStatus, now, patientId } = result;
-
-	wsBroker.broadcastToOrganization(organizationId, {
-		type: "TREATMENT_PLAN_UPDATED",
-		payload: {
-			planId: id,
-			status: targetStatus,
-			stage: targetStage,
-			updatedAt: now.toISOString(),
-		},
-	});
-
-	if (createdInvoice) {
-		try {
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "INVOICE_CREATED",
-				payload: {
-					invoiceId: createdInvoice.id,
-					invoiceNumber: createdInvoice.invoiceNumber,
-					patientId,
-					patientName: createdInvoice.patientName,
-					totalAmountRub: createdInvoice.totalAmountRub,
-					status: "draft",
-				},
-			});
-		} catch (wsErr) {
-			request.log.warn({ err: wsErr }, "WebSocket broadcast failed for INVOICE_CREATED from plan stage transition");
-		}
-	}
-
-	return reply.code(200).send(responsePayload);
+	return reply.code(200).send(result.responsePayload);
 }

@@ -1,6 +1,6 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { db, type TenantDb } from "../../db/client.js";
-import { withTenantReadCtx } from "../../db/rls.js";
+import type { TenantDb } from "../../db/client.js";
+import { withSuperuserBypass, withTenantReadCtx } from "../../db/rls.js";
 import {
 	appointments,
 	organizations,
@@ -197,7 +197,11 @@ export async function computeChairUtilizationAll(
 
 	const targetOrgIds =
 		organizationIds ??
-		(await db.select({ id: organizations.id }).from(organizations)).map((o) => o.id);
+		(
+			await withSuperuserBypass((tx) =>
+				tx.select({ id: organizations.id }).from(organizations),
+			)
+		).map((o) => o.id);
 
 	for (const orgId of targetOrgIds) {
 		await withTenantReadCtx(orgId, (tx) => queryWithTx(tx, [orgId]));

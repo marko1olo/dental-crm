@@ -6,7 +6,7 @@
 import { and, eq, or } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { DEFAULT_804N_CONSUMABLE_LINKS } from "@dental/shared";
-import { withTenantCtx } from "../../../db/rls.js";
+import { type TenantDb, withTenantWriteCtx } from "../../../db/rls.js";
 import {
 	inventoryItems,
 	inventoryTransactions,
@@ -308,6 +308,7 @@ export async function handleOverdraftAlertRequest(
 	rawBody: unknown,
 	request: FastifyRequest,
 	reply: FastifyReply,
+	executor?: TenantDb,
 ) {
 	const parsed = inventoryOverdraftAlertBodySchema.safeParse(rawBody ?? {});
 	if (!parsed.success) {
@@ -350,9 +351,13 @@ export async function handleOverdraftAlertRequest(
 				};
 			});
 
-			await withTenantCtx(organizationId, async (tx) => {
-				await tx.insert(inventoryTransactions).values(txRecords);
-			});
+			if (executor) {
+				await executor.insert(inventoryTransactions).values(txRecords);
+			} else {
+				await withTenantWriteCtx(organizationId, async (tx) => {
+					await tx.insert(inventoryTransactions).values(txRecords);
+				});
+			}
 			recordedCount = txRecords.length;
 		}
 

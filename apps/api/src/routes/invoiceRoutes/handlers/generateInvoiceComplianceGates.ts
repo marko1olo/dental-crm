@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import type { db as dbType } from "../../../db/client.js";
+import type { TenantDb } from "../../../db/client.js";
 import { users } from "../../../db/schema/auth.js";
 import {
 	treatmentPlanItemsNew,
@@ -25,7 +25,7 @@ export interface ComplianceGateContext {
 }
 
 export async function verifyGenerateInvoiceCompliance(params: {
-	db: typeof dbType;
+	db: TenantDb;
 	orgId: string;
 	data: GenerateInvoiceFromPlanBody;
 	request: FastifyRequest;

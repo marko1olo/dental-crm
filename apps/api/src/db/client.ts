@@ -159,7 +159,8 @@ const DRIZZLE_DB_OPERATIONS = new Set<PropertyKey>([
 function handleUnscopedDbAccess(operation: string): void {
 	const isStrict =
 		strictUnscopedDbTrapStorage.getStore() === true ||
-		process.env.DENTE_STRICT_TENANT_DB_TRAP === "1";
+		process.env.DENTE_STRICT_TENANT_DB_TRAP === "1" ||
+		(!isAutomatedRun() && process.env.DENTE_STRICT_TENANT_DB_TRAP !== "0");
 	if (isStrict) {
 		throw new UnscopedTenantDbAccessError(operation);
 	}

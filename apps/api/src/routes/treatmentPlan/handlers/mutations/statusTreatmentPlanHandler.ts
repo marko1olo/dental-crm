@@ -2,13 +2,14 @@ import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { isValidUuid } from "@dental/shared";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { onTenantTxCommit, withTenantWriteCtx, type TenantDb } from "../../../../db/rls.js";
 import {
 	auditEvents,
 	treatmentItems,
 	treatmentPlans,
 } from "../../../../db/schema.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
+import { extractIdempotencyKey } from "../../../../utils/httpIdempotency.js";
 import {
 	createInvoiceForApprovedPlan,
 	type CreatedInvoiceSummary,
@@ -32,7 +33,19 @@ export async function handleApproveTreatmentPlan(
 	request: FastifyRequest<{ Params: { id: string } }>,
 	reply: FastifyReply,
 	organizationId: string,
+	tx?: TenantDb,
 ) {
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey) {
+		if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const { id } = request.params;
 	if (!isValidUuid(id)) {
 		return reply.code(400).send({
@@ -54,8 +67,8 @@ export async function handleApproveTreatmentPlan(
 		|| (parsed.data.alternativeTier && parsed.data.alternativeTier.length > 0 ? parsed.data.alternativeTier : undefined)
 		|| "optimum";
 
-	const approveResult = await withTenantCtx(organizationId, async (tx) => {
-		const [planToLock] = await tx
+	const runApprove = async (executor: TenantDb) => {
+		const [planToLock] = await executor
 			.select()
 			.from(treatmentPlans)
 			.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
@@ -67,7 +80,7 @@ export async function handleApproveTreatmentPlan(
 		}
 
 		let invoice: CreatedInvoiceSummary | null = null;
-		const [updated] = await tx
+		const [updated] = await executor
 			.update(treatmentPlans)
 			.set({
 				status: "Approved",
@@ -79,7 +92,7 @@ export async function handleApproveTreatmentPlan(
 			.returning();
 
 		if (updated) {
-			await tx
+			await executor
 				.update(treatmentItems)
 				.set({
 					status: "approved",
@@ -97,14 +110,14 @@ export async function handleApproveTreatmentPlan(
 					),
 				);
 
-			await cancelRejectedPlanTierLedgerItems(tx, {
+			await cancelRejectedPlanTierLedgerItems(executor, {
 				organizationId,
 				patientId: planToLock.patientId,
 				approvedPlanId: id,
 				planGroupId: planToLock.planGroupId,
 			});
 
-			invoice = await createInvoiceForApprovedPlan(tx, {
+			invoice = await createInvoiceForApprovedPlan(executor, {
 				organizationId,
 				patientId: planToLock.patientId,
 				planId: id,
@@ -117,7 +130,7 @@ export async function handleApproveTreatmentPlan(
 				totalPriceKopecks: updated.totalPriceKopecks != null ? BigInt(updated.totalPriceKopecks) : null,
 			});
 
-			await tx.insert(auditEvents).values({
+			await executor.insert(auditEvents).values({
 				organizationId,
 				actorUserId: null,
 				entityType: "treatment_plan",
@@ -127,8 +140,32 @@ export async function handleApproveTreatmentPlan(
 			});
 		}
 
+		if (invoice) {
+			const createdInv = invoice;
+			const targetPatientId = planToLock.patientId;
+			onTenantTxCommit(() => {
+				try {
+					wsBroker.broadcastToOrganization(organizationId, {
+						type: "INVOICE_CREATED",
+						payload: {
+							invoiceId: createdInv.id,
+							invoiceNumber: createdInv.invoiceNumber,
+							patientId: targetPatientId,
+							patientName: createdInv.patientName,
+							totalAmountRub: createdInv.totalAmountRub,
+							status: "draft",
+						},
+					});
+				} catch (wsErr) {
+					request.log.warn({ err: wsErr }, "WebSocket broadcast failed for INVOICE_CREATED from plan approval");
+				}
+			});
+		}
+
 		return { notFound: false as const, approvedPlan: updated, createdInvoice: invoice, patientId: planToLock.patientId };
-	});
+	};
+
+	const approveResult = tx ? await runApprove(tx) : await withTenantWriteCtx(organizationId, runApprove);
 
 	if (approveResult.notFound) {
 		return reply.code(404).send({
@@ -137,31 +174,13 @@ export async function handleApproveTreatmentPlan(
 		});
 	}
 
-	const { approvedPlan, createdInvoice, patientId } = approveResult;
+	const { approvedPlan, createdInvoice } = approveResult;
 
 	if (!approvedPlan) {
 		return reply.code(500).send({
 			error: "ApproveFailed",
 			message: "Не удалось утвердить план лечения",
 		});
-	}
-
-	if (createdInvoice) {
-		try {
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "INVOICE_CREATED",
-				payload: {
-					invoiceId: createdInvoice.id,
-					invoiceNumber: createdInvoice.invoiceNumber,
-					patientId,
-					patientName: createdInvoice.patientName,
-					totalAmountRub: createdInvoice.totalAmountRub,
-					status: "draft",
-				},
-			});
-		} catch (wsErr) {
-			request.log.warn({ err: wsErr }, "WebSocket broadcast failed for INVOICE_CREATED from plan approval");
-		}
 	}
 
 	return reply.code(200).send({
@@ -176,7 +195,19 @@ export async function handleUpdateTreatmentPlanStatus(
 	request: FastifyRequest<{ Params: { id: string } }>,
 	reply: FastifyReply,
 	organizationId: string,
+	tx?: TenantDb,
 ) {
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey) {
+		if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const { id } = request.params;
 	if (!isValidUuid(id)) {
 		return reply.code(400).send({
@@ -197,9 +228,9 @@ export async function handleUpdateTreatmentPlanStatus(
 	const isApproved = status.toLowerCase() === "approved";
 	const selectedTier = parsed.data.selectedTier || parsed.data.alternativeTier;
 
-	const statusResult = await withTenantCtx(organizationId, async (tx) => {
+	const runStatus = async (executor: TenantDb) => {
 		let invoice: CreatedInvoiceSummary | null = null;
-		const [planToLock] = await tx
+		const [planToLock] = await executor
 			.select()
 			.from(treatmentPlans)
 			.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
@@ -210,7 +241,7 @@ export async function handleUpdateTreatmentPlanStatus(
 			return { notFound: true as const, updatedPlan: null, createdInvoice: null };
 		}
 
-		const [updated] = await tx
+		const [updated] = await executor
 			.update(treatmentPlans)
 			.set({
 				status,
@@ -222,7 +253,7 @@ export async function handleUpdateTreatmentPlanStatus(
 			.returning();
 
 		if (updated && isApproved) {
-			await tx
+			await executor
 				.update(treatmentItems)
 				.set({
 					status: "approved",
@@ -240,14 +271,14 @@ export async function handleUpdateTreatmentPlanStatus(
 					),
 				);
 
-			await cancelRejectedPlanTierLedgerItems(tx, {
+			await cancelRejectedPlanTierLedgerItems(executor, {
 				organizationId,
 				patientId: planToLock.patientId,
 				approvedPlanId: id,
 				planGroupId: planToLock.planGroupId,
 			});
 
-			invoice = await createInvoiceForApprovedPlan(tx, {
+			invoice = await createInvoiceForApprovedPlan(executor, {
 				organizationId,
 				patientId: planToLock.patientId,
 				planId: id,
@@ -262,7 +293,7 @@ export async function handleUpdateTreatmentPlanStatus(
 		}
 
 		if (updated) {
-			await tx.insert(auditEvents).values({
+			await executor.insert(auditEvents).values({
 				organizationId,
 				actorUserId: null,
 				entityType: "treatment_plan",
@@ -272,8 +303,32 @@ export async function handleUpdateTreatmentPlanStatus(
 			});
 		}
 
+		if (invoice) {
+			const createdInv = invoice;
+			const targetPatientId = planToLock.patientId;
+			onTenantTxCommit(() => {
+				try {
+					wsBroker.broadcastToOrganization(organizationId, {
+						type: "INVOICE_CREATED",
+						payload: {
+							invoiceId: createdInv.id,
+							invoiceNumber: createdInv.invoiceNumber,
+							patientId: targetPatientId,
+							patientName: createdInv.patientName,
+							totalAmountRub: createdInv.totalAmountRub,
+							status: "draft",
+						},
+					});
+				} catch (wsErr) {
+					request.log.warn({ err: wsErr }, "WebSocket broadcast failed for INVOICE_CREATED from plan status change");
+				}
+			});
+		}
+
 		return { notFound: false as const, updatedPlan: updated, createdInvoice: invoice, patientId: planToLock.patientId };
-	});
+	};
+
+	const statusResult = tx ? await runStatus(tx) : await withTenantWriteCtx(organizationId, runStatus);
 
 	if (statusResult.notFound) {
 		return reply.code(404).send({
@@ -282,31 +337,13 @@ export async function handleUpdateTreatmentPlanStatus(
 		});
 	}
 
-	const { updatedPlan, createdInvoice, patientId } = statusResult;
+	const { updatedPlan, createdInvoice } = statusResult;
 
 	if (!updatedPlan) {
 		return reply.code(500).send({
 			error: "UpdateStatusFailed",
 			message: "Не удалось обновить статус плана лечения.",
 		});
-	}
-
-	if (createdInvoice) {
-		try {
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "INVOICE_CREATED",
-				payload: {
-					invoiceId: createdInvoice.id,
-					invoiceNumber: createdInvoice.invoiceNumber,
-					patientId,
-					patientName: createdInvoice.patientName,
-					totalAmountRub: createdInvoice.totalAmountRub,
-					status: "draft",
-				},
-			});
-		} catch (wsErr) {
-			request.log.warn({ err: wsErr }, "WebSocket broadcast failed for INVOICE_CREATED from plan status change");
-		}
 	}
 
 	return reply.code(200).send({

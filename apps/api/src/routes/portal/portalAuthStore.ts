@@ -2,9 +2,9 @@ import { createHash } from "node:crypto";
 import { and, desc, eq, gt, gte, isNull, sql } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { withSuperuserBypass, withTenantCtx, type TenantDb } from "../../db/rls.js";
+import { withSuperuserBypass, withTenantReadCtx, withTenantWriteCtx, type TenantDb } from "../../db/rls.js";
 import { organizations, patients, portalOtpCodes, portalRevokedTokens } from "../../db/schema.js";
+import { BoundedStringSet, BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import {
 	resolveChannelCredentials,
@@ -20,10 +20,22 @@ import {
 
 const logger = createApiLogger("portalAuthStore");
 
-// In-memory revocation cache for synchronous token checks, backed by PostgreSQL portal_revoked_tokens
-export const revokedPortalTokens = new Set<string>();
-export const revokedPortalTokenHashes = new Set<string>();
-export const portalRevokedBeforeByPatient = new Map<string, number>();
+const PORTAL_REVOCATION_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const PORTAL_REVOCATION_MAX_ENTRIES = 10_000;
+
+// Bounded in-memory revocation cache for synchronous token checks, backed by PostgreSQL portal_revoked_tokens
+export const revokedPortalTokens = new BoundedStringSet(
+	PORTAL_REVOCATION_MAX_ENTRIES,
+	PORTAL_REVOCATION_CACHE_TTL_MS,
+);
+export const revokedPortalTokenHashes = new BoundedStringSet(
+	PORTAL_REVOCATION_MAX_ENTRIES,
+	PORTAL_REVOCATION_CACHE_TTL_MS,
+);
+export const portalRevokedBeforeByPatient = new BoundedTtlMap<string, number>({
+	maxEntries: PORTAL_REVOCATION_MAX_ENTRIES,
+	ttlMs: PORTAL_REVOCATION_CACHE_TTL_MS,
+});
 
 export function hashPortalToken(token: string): string {
 	return createHash("sha256").update(token).digest("hex");
@@ -37,6 +49,7 @@ export async function persistRevokedToken(
 	patientId: string,
 	organizationId: string,
 	expiresAt: Date,
+	executor?: TenantDb,
 ): Promise<void> {
 	const tokenHash = hashPortalToken(token);
 	revokedPortalTokens.add(token);
@@ -45,7 +58,7 @@ export async function persistRevokedToken(
 		return;
 	}
 	try {
-		await withTenantCtx(organizationId, async (tx) => {
+		const runWrite = async (tx: TenantDb) => {
 			await tx
 				.insert(portalRevokedTokens)
 				.values({
@@ -55,13 +68,55 @@ export async function persistRevokedToken(
 					expiresAt,
 				})
 				.onConflictDoNothing();
-		});
+		};
+		if (executor) {
+			await runWrite(executor);
+		} else {
+			await withTenantWriteCtx(organizationId, runWrite);
+		}
 	} catch (err) {
 		logger.warn(
 			{ err: safeLogError(err), patientId, organizationId },
 			"Failed to persist revoked portal token to PostgreSQL",
 		);
 	}
+}
+
+/**
+ * Проверяет в БД отзыв портального токена при cache miss (или после LRU-вытеснения).
+ */
+export async function isPortalTokenRevokedInDb(
+	token: string,
+	organizationId: string,
+	executor?: TenantDb,
+): Promise<boolean> {
+	const tokenHash = hashPortalToken(token);
+	if (revokedPortalTokens.has(token) || revokedPortalTokenHashes.has(tokenHash)) {
+		return true;
+	}
+	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
+		return false;
+	}
+	const now = new Date();
+	const runCheck = async (tx: TenantDb) => {
+		const [row] = await tx
+			.select({ tokenHash: portalRevokedTokens.tokenHash })
+			.from(portalRevokedTokens)
+			.where(
+				and(
+					eq(portalRevokedTokens.tokenHash, tokenHash),
+					eq(portalRevokedTokens.organizationId, organizationId),
+					gt(portalRevokedTokens.expiresAt, now),
+				),
+			)
+			.limit(1);
+		return Boolean(row);
+	};
+	const found = executor ? await runCheck(executor) : await withTenantReadCtx(organizationId, runCheck);
+	if (found) {
+		revokedPortalTokenHashes.add(tokenHash);
+	}
+	return found;
 }
 
 /**
@@ -76,7 +131,8 @@ export async function hydrateRevokedPortalTokensFromDb(): Promise<number> {
 		tx
 			.select({ tokenHash: portalRevokedTokens.tokenHash })
 			.from(portalRevokedTokens)
-			.where(gt(portalRevokedTokens.expiresAt, now)),
+			.where(gt(portalRevokedTokens.expiresAt, now))
+			.limit(PORTAL_REVOCATION_MAX_ENTRIES),
 	);
 	for (const row of rows) {
 		revokedPortalTokenHashes.add(row.tokenHash);
@@ -94,7 +150,10 @@ export interface PendingRegistrationOtpEntry {
 	attemptCount: number;
 }
 
-export const pendingRegistrationOtpStore = new Map<string, PendingRegistrationOtpEntry>();
+export const pendingRegistrationOtpStore = new BoundedTtlMap<string, PendingRegistrationOtpEntry>({
+	maxEntries: 10_000,
+	ttlMs: 30 * 60 * 1000,
+});
 
 export function getPendingRegistrationOtpKey(
 	phoneSuffix: string,
@@ -250,13 +309,14 @@ export async function resolveStrictPortalOrganizationId(
 export async function findPatientsByPhone(
 	rawPhone: string,
 	targetOrgId?: string | undefined,
+	executor?: TenantDb,
 ): Promise<FoundPatientByPhone[]> {
 	const digits = rawPhone.replace(/\D/g, "");
 	if (digits.length < 10) return [];
 	const strictOrgId = await resolveStrictPortalOrganizationId(targetOrgId);
 	if (!strictOrgId) return [];
 	const suffix = digits.slice(-10);
-	return withTenantCtx(strictOrgId, async (tx) => {
+	const runLookup = async (tx: TenantDb) => {
 		const baseFilter = sql`regexp_replace(${patients.phone}, '\\D', '', 'g') LIKE ${`%${suffix}`}`;
 		const filter = and(eq(patients.organizationId, strictOrgId), baseFilter);
 		const rows = await tx
@@ -283,7 +343,8 @@ export async function findPatientsByPhone(
 				isFamilyHead: Boolean(adminProfile.isFamilyHead),
 			};
 		});
-	});
+	};
+	return executor ? runLookup(executor) : withTenantReadCtx(strictOrgId, runLookup);
 }
 
 /**
@@ -294,12 +355,13 @@ export async function findPatientsByPhone(
 export async function findUniquePatientByPhone(
 	rawPhone: string,
 	targetOrgId?: string | undefined,
+	executor?: TenantDb,
 ): Promise<{
 	id: string;
 	organizationId: string;
 	phone: string | null;
 } | null> {
-	const found = await findPatientsByPhone(rawPhone, targetOrgId);
+	const found = await findPatientsByPhone(rawPhone, targetOrgId, executor);
 	if (found.length === 0) return null;
 	if (found.length === 1) {
 		const single = found[0];
@@ -327,7 +389,7 @@ export async function isIssuanceThrottled(
 	tx?: TenantDb,
 ): Promise<boolean> {
 	const windowStart = new Date(now.getTime() - policy.windowSeconds * 1000);
-	const queryRecent = (client: TenantDb | typeof db) =>
+	const queryRecent = (client: TenantDb) =>
 		client
 			.select({
 				createdAt: portalOtpCodes.createdAt,
@@ -346,7 +408,7 @@ export async function isIssuanceThrottled(
 
 	const recent = tx
 		? await queryRecent(tx)
-		: await withTenantCtx(organizationId, async (tenantTx) => queryRecent(tenantTx));
+		: await withTenantReadCtx(organizationId, async (tenantTx) => queryRecent(tenantTx));
 
 	const newest = recent[0];
 	if (
@@ -372,7 +434,7 @@ export async function findPendingRegistrationOtp(
 		return undefined;
 	}
 
-	const [dbPendingReg] = await withTenantCtx(strictOrgId, async (tx) =>
+	const [dbPendingReg] = await withTenantReadCtx(strictOrgId, async (tx) =>
 		tx
 			.select()
 			.from(portalOtpCodes)
@@ -408,7 +470,7 @@ export async function setPendingRegistrationOtpAttemptOrConsumed(
 	regId: string,
 	values: { attemptCount?: number; consumedAt?: Date },
 ): Promise<void> {
-	await withTenantCtx(organizationId, async (tx) => {
+	await withTenantWriteCtx(organizationId, async (tx) => {
 		await tx
 			.update(portalOtpCodes)
 			.set(values)
@@ -423,7 +485,7 @@ export async function markPortalOtpDeliveryStatus(
 	deliveryErrorClass?: string | undefined,
 ): Promise<void> {
 	if (!otpId) return;
-	await withTenantCtx(organizationId, async (tx) => {
+	await withTenantWriteCtx(organizationId, async (tx) => {
 		await tx
 			.update(portalOtpCodes)
 			.set({
@@ -448,10 +510,7 @@ export async function dispatchPortalOtpSms(params: {
 	idempotencyKey: string;
 }) {
 	const msisdn = normalizeRussianMsisdn(params.rawPhone);
-	const credentials = await withTenantCtx(
-		params.organizationId,
-		async () => resolveChannelCredentials(params.organizationId),
-	);
+	const credentials = await resolveChannelCredentials(params.organizationId);
 	const delivery =
 		msisdn === null
 			? {

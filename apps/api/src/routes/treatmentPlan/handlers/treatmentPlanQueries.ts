@@ -2,7 +2,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { rublesToKopecks } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	patients,
 	treatmentItems,
@@ -33,24 +33,30 @@ import { calculateTreatmentPlanItemSummary } from "./treatmentPlanTotalsCalculat
 export async function handleGetTreatmentPlanById(
 	request: FastifyRequest<{ Params: { id: string } }>,
 	reply: FastifyReply,
+	preResolvedOrgId?: string,
+	tx?: TenantDb,
 ) {
-	const organizationId = await requireResolvedOrganizationId(
-		request,
-		reply,
-		"treatment plan read",
-	);
+	const organizationId =
+		preResolvedOrgId ??
+		(await requireResolvedOrganizationId(
+			request,
+			reply,
+			"treatment plan read",
+		));
 	if (!organizationId) return;
 
 	const identity = getRequestIdentity(request);
 	const staffRole = identity.role ?? request.user?.role ?? null;
-	const access = verifyPlanReadAccess(staffRole);
-	if (!access.allowed) {
-		return reply.code(403).send({
-			error: "PermissionDenied",
-			permission: "clinical.treatment_plan.read",
-			role: staffRole,
-			message: `Отказ в доступе к плану лечения: ${access.reason}`,
-		});
+	if (!preResolvedOrgId) {
+		const access = verifyPlanReadAccess(staffRole);
+		if (!access.allowed) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.treatment_plan.read",
+				role: staffRole,
+				message: `Отказ в доступе к плану лечения: ${access.reason}`,
+			});
+		}
 	}
 
 	const { id } = request.params;
@@ -58,8 +64,8 @@ export async function handleGetTreatmentPlanById(
 		return reply.code(400).send({ error: "InvalidTreatmentPlanId" });
 	}
 
-	const queryResult = await withTenantCtx(organizationId, async (tx) => {
-		const [plan] = await tx
+	const run = async (executor: TenantDb) => {
+		const [plan] = await executor
 			.select()
 			.from(treatmentPlans)
 			.where(
@@ -74,7 +80,7 @@ export async function handleGetTreatmentPlanById(
 			return null;
 		}
 
-		const [patientRow] = await tx
+		const [patientRow] = await executor
 			.select()
 			.from(patients)
 			.where(
@@ -85,7 +91,7 @@ export async function handleGetTreatmentPlanById(
 			)
 			.limit(1);
 
-		const items = await tx
+		const items = await executor
 			.select()
 			.from(treatmentPlanItemsNew)
 			.where(
@@ -108,7 +114,7 @@ export async function handleGetTreatmentPlanById(
 			{ fullName: string; specialty: string | null }
 		>();
 		if (doctorIds.length > 0) {
-			const docRows = await tx
+			const docRows = await executor
 				.select({
 					id: users.id,
 					fullName: users.fullName,
@@ -135,7 +141,7 @@ export async function handleGetTreatmentPlanById(
 			}
 		}
 
-		const ledgerRows = await tx
+		const ledgerRows = await executor
 			.select({
 				id: treatmentItems.id,
 				status: treatmentItems.status,
@@ -154,7 +160,7 @@ export async function handleGetTreatmentPlanById(
 			ledgerMap.set(lr.id.toLowerCase(), { status: lr.status, visitId: lr.visitId });
 		}
 
-		const stagesRows = await tx
+		const stagesRows = await executor
 			.select()
 			.from(treatmentPlanStages)
 			.where(
@@ -166,7 +172,9 @@ export async function handleGetTreatmentPlanById(
 			.orderBy(treatmentPlanStages.stageOrder);
 
 		return { plan, patientRow, items, doctorIds, doctorsById, ledgerMap, stagesRows };
-	});
+	};
+
+	const queryResult = tx ? await run(tx) : await withTenantReadCtx(organizationId, run);
 
 	if (!queryResult) {
 		return reply.code(404).send({ error: "TreatmentPlanNotFound" });
@@ -239,24 +247,30 @@ export async function handleGetTreatmentPlanById(
 export async function handleListPatientTreatmentPlans(
 	request: FastifyRequest<{ Params: { patientId: string } }>,
 	reply: FastifyReply,
+	preResolvedOrgId?: string,
+	tx?: TenantDb,
 ) {
-	const organizationId = await requireResolvedOrganizationId(
-		request,
-		reply,
-		"treatment plans read",
-	);
+	const organizationId =
+		preResolvedOrgId ??
+		(await requireResolvedOrganizationId(
+			request,
+			reply,
+			"treatment plans read",
+		));
 	if (!organizationId) return;
 
 	const identity = getRequestIdentity(request);
 	const staffRole = identity.role ?? request.user?.role ?? null;
-	const access = verifyPlanReadAccess(staffRole);
-	if (!access.allowed) {
-		return reply.code(403).send({
-			error: "PermissionDenied",
-			permission: "clinical.treatment_plan.read",
-			role: staffRole,
-			message: `Отказ в доступе к планам лечения: ${access.reason}`,
-		});
+	if (!preResolvedOrgId) {
+		const access = verifyPlanReadAccess(staffRole);
+		if (!access.allowed) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.treatment_plan.read",
+				role: staffRole,
+				message: `Отказ в доступе к планам лечения: ${access.reason}`,
+			});
+		}
 	}
 
 	const { patientId } = request.params;
@@ -264,12 +278,14 @@ export async function handleListPatientTreatmentPlans(
 		return reply.code(400).send({ error: "InvalidPatientId" });
 	}
 
-	const plansResult = await withTenantCtx(organizationId, async (tx) => {
-		if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+	const run = async (executor: TenantDb) => {
+		if (!(await ensurePatientInOrganization(patientId, organizationId, executor))) {
 			return null;
 		}
-		return loadTreatmentPlansForPatient(patientId, organizationId, tx);
-	});
+		return loadTreatmentPlansForPatient(patientId, organizationId, executor);
+	};
+
+	const plansResult = tx ? await run(tx) : await withTenantReadCtx(organizationId, run);
 	if (!plansResult) {
 		return reply.code(404).send({ error: "PatientNotFound" });
 	}

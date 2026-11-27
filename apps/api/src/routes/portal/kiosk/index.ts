@@ -6,6 +6,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { definePublicRoute } from "../../../core/routeFactories.js";
 import { handleKioskCheckinRequest } from "./kioskCheckinHandlers.js";
 import type { SelfCheckinBody } from "./kioskPatientLookupHandlers.js";
 
@@ -33,15 +34,36 @@ export {
 export { handleKioskCheckinRequest } from "./kioskCheckinHandlers.js";
 
 export async function registerPortalKioskRoutes(server: FastifyInstance): Promise<void> {
-	server.post<{ Body: SelfCheckinBody }>("/self-checkin", async (request, reply) => {
-		return handleKioskCheckinRequest(request, reply, false);
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/self-checkin",
+		handler: async ({ request, reply }) =>
+			handleKioskCheckinRequest(
+				request as Parameters<typeof handleKioskCheckinRequest>[0],
+				reply,
+				false,
+			),
 	});
 
-	server.post<{ Body: SelfCheckinBody }>("/kiosk/checkin", async (request, reply) => {
-		return handleKioskCheckinRequest(request, reply, false);
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/kiosk/checkin",
+		handler: async ({ request, reply }) =>
+			handleKioskCheckinRequest(
+				request as Parameters<typeof handleKioskCheckinRequest>[0],
+				reply,
+				false,
+			),
 	});
 
-	server.post<{ Body: SelfCheckinBody }>("/kiosk/emergency-checkin", async (request, reply) => {
-		return handleKioskCheckinRequest(request, reply, true);
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/kiosk/emergency-checkin",
+		handler: async ({ request, reply }) =>
+			handleKioskCheckinRequest(
+				request as Parameters<typeof handleKioskCheckinRequest>[0],
+				reply,
+				true,
+			),
 	});
 }

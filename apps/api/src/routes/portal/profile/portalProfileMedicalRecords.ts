@@ -4,8 +4,7 @@
  */
 
 import { and, desc, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantCtx, withTenantReadCtx, withTenantWriteCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	generatedDocuments,
 	imagingStudies,
@@ -24,132 +23,133 @@ import type { HealthQuestionnaireBody } from "../types.js";
 export async function fetchPatientMedicalRecords(
 	patientId: string,
 	organizationId: string,
+	executor?: TenantDb,
 ) {
-	// Врачи организации для явной DTO-проекции
-	const doctorRows = await db
-		.select({
-			id: users.id,
-			fullName: users.fullName,
-			specialties: users.specialties,
-		})
-		.from(users)
-		.where(eq(users.organizationId, organizationId));
+	const run = async (tx: TenantDb) => {
+		const doctorRows = await tx
+			.select({
+				id: users.id,
+				fullName: users.fullName,
+				specialties: users.specialties,
+			})
+			.from(users)
+			.where(eq(users.organizationId, organizationId));
 
-	const doctorMap = new Map(doctorRows.map((d) => [d.id, d]));
+		const doctorMap = new Map(doctorRows.map((d) => [d.id, d]));
 
-	// [DEF-PORTAL-02] Явная проекция DTO визитов для пациента без служебных крипто-хэшей, баркодов и ID персонала
-	const rawVisits = await db
-		.select({
-			id: visitDiaries.id,
-			visitId: visitDiaries.visitId,
-			createdAt: visitDiaries.createdAt,
-			doctorId: visitDiaries.doctorId,
-			complaint: visitDiaries.complaint,
-			diagnosisIcd10: visitDiaries.diagnosisIcd10,
-			diagnosisTooth: visitDiaries.diagnosisTooth,
-			treatmentDescription: visitDiaries.treatmentDescription,
-			statusLocalis: visitDiaries.statusLocalis,
-			content: visitDiaries.content,
-		})
-		.from(visitDiaries)
-		.where(
-			and(
-				eq(visitDiaries.patientId, patientId),
-				eq(visitDiaries.organizationId, organizationId),
-			),
-		)
-		.orderBy(desc(visitDiaries.createdAt));
+		const rawVisits = await tx
+			.select({
+				id: visitDiaries.id,
+				visitId: visitDiaries.visitId,
+				createdAt: visitDiaries.createdAt,
+				doctorId: visitDiaries.doctorId,
+				complaint: visitDiaries.complaint,
+				diagnosisIcd10: visitDiaries.diagnosisIcd10,
+				diagnosisTooth: visitDiaries.diagnosisTooth,
+				treatmentDescription: visitDiaries.treatmentDescription,
+				statusLocalis: visitDiaries.statusLocalis,
+				content: visitDiaries.content,
+			})
+			.from(visitDiaries)
+			.where(
+				and(
+					eq(visitDiaries.patientId, patientId),
+					eq(visitDiaries.organizationId, organizationId),
+				),
+			)
+			.orderBy(desc(visitDiaries.createdAt));
 
-	const visits = rawVisits.map((v) => {
-		const doc = v.doctorId ? doctorMap.get(v.doctorId) : undefined;
-		const docSpecialty = Array.isArray(doc?.specialties)
-			? doc.specialties[0]
-			: typeof doc?.specialties === "string"
-				? doc.specialties
-				: "Стоматолог";
+		const visits = rawVisits.map((v) => {
+			const doc = v.doctorId ? doctorMap.get(v.doctorId) : undefined;
+			const docSpecialty = Array.isArray(doc?.specialties)
+				? doc.specialties[0]
+				: typeof doc?.specialties === "string"
+					? doc.specialties
+					: "Стоматолог";
+			return {
+				id: v.id,
+				visitId: v.visitId,
+				visitDate: v.createdAt ? v.createdAt.toISOString() : null,
+				doctorName: doc?.fullName || "Врач клиники",
+				specialty: docSpecialty,
+				complaint: v.complaint || null,
+				diagnosisDescription: [v.diagnosisIcd10, v.diagnosisTooth ? `(зуб ${v.diagnosisTooth})` : ""]
+					.filter(Boolean)
+					.join(" ") || null,
+				patientRecommendations: v.statusLocalis || v.treatmentDescription || v.content || null,
+				treatmentDescription: v.treatmentDescription || null,
+			};
+		});
+
+		const plans = await tx
+			.select()
+			.from(treatmentPlans)
+			.where(
+				and(
+					eq(treatmentPlans.patientId, patientId),
+					eq(treatmentPlans.organizationId, organizationId),
+				),
+			);
+
+		const invoices = await tx
+			.select()
+			.from(patientInvoices)
+			.where(
+				and(
+					eq(patientInvoices.patientId, patientId),
+					eq(patientInvoices.organizationId, organizationId),
+				),
+			);
+
+		const documents = await tx
+			.select()
+			.from(generatedDocuments)
+			.where(
+				and(
+					eq(generatedDocuments.patientId, patientId),
+					eq(generatedDocuments.organizationId, organizationId),
+					eq(generatedDocuments.status, "issued"),
+				),
+			);
+
+		const scans = await tx
+			.select({
+				id: imagingStudies.id,
+				titleRu: imagingStudies.title,
+				modality: imagingStudies.kind,
+				toothCode: imagingStudies.toothCode,
+				capturedAt: imagingStudies.capturedAt,
+				aiSummary: imagingStudies.aiSummary,
+			})
+			.from(imagingStudies)
+			.where(
+				and(
+					eq(imagingStudies.patientId, patientId),
+					eq(imagingStudies.organizationId, organizationId),
+				),
+			)
+			.orderBy(desc(imagingStudies.capturedAt));
+
+		const sanitizedScans = scans.map((s) => ({
+			id: s.id,
+			titleRu: s.titleRu,
+			modality: s.modality,
+			toothCode: s.toothCode,
+			capturedAt: s.capturedAt,
+			aiSummary: s.aiSummary,
+			downloadUrl: `/api/portal/scans/${s.id}/download`,
+			viewUrl: `/api/portal/scans/${s.id}/view`,
+		}));
+
 		return {
-			id: v.id,
-			visitId: v.visitId,
-			visitDate: v.createdAt ? v.createdAt.toISOString() : null,
-			doctorName: doc?.fullName || "Врач клиники",
-			specialty: docSpecialty,
-			complaint: v.complaint || null,
-			diagnosisDescription: [v.diagnosisIcd10, v.diagnosisTooth ? `(зуб ${v.diagnosisTooth})` : ""]
-				.filter(Boolean)
-				.join(" ") || null,
-			patientRecommendations: v.statusLocalis || v.treatmentDescription || v.content || null,
-			treatmentDescription: v.treatmentDescription || null,
+			visits,
+			plans,
+			invoices,
+			documents,
+			scans: sanitizedScans,
 		};
-	});
-
-	const plans = await db
-		.select()
-		.from(treatmentPlans)
-		.where(
-			and(
-				eq(treatmentPlans.patientId, patientId),
-				eq(treatmentPlans.organizationId, organizationId),
-			),
-		);
-
-	const invoices = await db
-		.select()
-		.from(patientInvoices)
-		.where(
-			and(
-				eq(patientInvoices.patientId, patientId),
-				eq(patientInvoices.organizationId, organizationId),
-			),
-		);
-
-	const documents = await db
-		.select()
-		.from(generatedDocuments)
-		.where(
-			and(
-				eq(generatedDocuments.patientId, patientId),
-				eq(generatedDocuments.organizationId, organizationId),
-				eq(generatedDocuments.status, "issued"),
-			),
-		);
-
-	// [DEF-PORTAL-01] 152-ФЗ / 323-ФЗ: Защищенный URL скачивания без утечки физического пути хоста
-	const scans = await db
-		.select({
-			id: imagingStudies.id,
-			titleRu: imagingStudies.title,
-			modality: imagingStudies.kind,
-			toothCode: imagingStudies.toothCode,
-			capturedAt: imagingStudies.capturedAt,
-			aiSummary: imagingStudies.aiSummary,
-		})
-		.from(imagingStudies)
-		.where(
-			and(
-				eq(imagingStudies.patientId, patientId),
-				eq(imagingStudies.organizationId, organizationId),
-			),
-		)
-		.orderBy(desc(imagingStudies.capturedAt));
-
-	const sanitizedScans = scans.map((s) => ({
-		id: s.id,
-		titleRu: s.titleRu,
-		modality: s.modality,
-		toothCode: s.toothCode,
-		capturedAt: s.capturedAt,
-		aiSummary: s.aiSummary,
-		downloadUrl: `/api/portal/scans/${s.id}/download`,
-		viewUrl: `/api/portal/scans/${s.id}/view`,
-	}));
-
-	return {
-		visits,
-		plans,
-		invoices,
-		documents,
-		scans: sanitizedScans,
 	};
+	return executor ? await run(executor) : await withTenantReadCtx(organizationId, run);
 }
 
 export interface EvaluatedSomaticRiskResult {
@@ -373,33 +373,37 @@ export function evaluateSomaticHealthRisks(
 export async function fetchSomaticHealthQuestionnaire(
 	patientId: string,
 	organizationId: string,
+	executor?: TenantDb,
 ) {
-	const [patientRow] = await db
-		.select({
-			id: patients.id,
-			fullName: patients.fullName,
-			administrativeProfile: patients.administrativeProfile,
-		})
-		.from(patients)
-		.where(
-			and(
-				eq(patients.id, patientId),
-				eq(patients.organizationId, organizationId),
-			),
-		)
-		.limit(1);
+	const run = async (tx: TenantDb) => {
+		const [patientRow] = await tx
+			.select({
+				id: patients.id,
+				fullName: patients.fullName,
+				administrativeProfile: patients.administrativeProfile,
+			})
+			.from(patients)
+			.where(
+				and(
+					eq(patients.id, patientId),
+					eq(patients.organizationId, organizationId),
+				),
+			)
+			.limit(1);
 
-	if (!patientRow) return null;
+		if (!patientRow) return null;
 
-	const profile =
-		(patientRow.administrativeProfile as Record<string, unknown> | null) || {};
-	return {
-		questionnaire: profile.somaticQuestionnaire || null,
-		somaticProfile: profile.somaticRiskProfile || null,
-		alerts: profile.somaticAlerts || [],
-		riskLevel: profile.somaticRiskLevel || "low",
-		updatedAt: profile.somaticUpdatedAt || null,
+		const profile =
+			(patientRow.administrativeProfile as Record<string, unknown> | null) || {};
+		return {
+			questionnaire: profile.somaticQuestionnaire || null,
+			somaticProfile: profile.somaticRiskProfile || null,
+			alerts: profile.somaticAlerts || [],
+			riskLevel: profile.somaticRiskLevel || "low",
+			updatedAt: profile.somaticUpdatedAt || null,
+		};
 	};
+	return executor ? await run(executor) : await withTenantReadCtx(organizationId, run);
 }
 
 /**
@@ -409,12 +413,13 @@ export async function saveSomaticHealthQuestionnaire(
 	patientId: string,
 	organizationId: string,
 	body: HealthQuestionnaireBody,
+	executor?: TenantDb,
 ) {
 	const evaluated = evaluateSomaticHealthRisks(body);
 	const now = new Date();
 	const nowIso = now.toISOString();
 
-	return await withTenantCtx(organizationId, async (tx) => {
+	const runSave = async (tx: TenantDb) => {
 		const [patientRow] = await tx
 			.select()
 			.from(patients)
@@ -430,7 +435,6 @@ export async function saveSomaticHealthQuestionnaire(
 
 		const currentProfile = patientRow.administrativeProfile ?? {};
 
-		// Update administrative profile
 		await tx
 			.update(patients)
 			.set({
@@ -498,5 +502,6 @@ export async function saveSomaticHealthQuestionnaire(
 			riskLevel: evaluated.riskLevel,
 			updatedAt: nowIso,
 		};
-	});
+	};
+	return executor ? await runSave(executor) : await withTenantWriteCtx(organizationId, runSave);
 }

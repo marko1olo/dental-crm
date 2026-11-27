@@ -15,7 +15,16 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
-import { onTenantTxCommit, withSuperuserBypass, withTenantCtx } from "../db/rls.js";
+import {
+	defineStreamRoute,
+	defineWebhookRoute,
+} from "../core/routeFactories.js";
+import {
+	onTenantTxCommit,
+	withSuperuserBypass,
+	withTenantReadCtx,
+	withTenantWriteCtx,
+} from "../db/rls.js";
 import {
 	communicationEvents,
 	denteMaxBotConfigs,
@@ -166,172 +175,187 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 	 * GET /api/max/settings
 	 * Returns the MAX bot config. Raw API token never returned.
 	 */
-	app.get("/api/max/settings", async (request, reply) => {
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"max settings read",
-		);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/max/settings",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"max settings read",
+			);
+			if (!orgId) return;
 
-		const config = await withTenantCtx(orgId, async (tx) => {
-			const [row] = await tx
-				.select()
-				.from(denteMaxBotConfigs)
-				.where(eq(denteMaxBotConfigs.organizationId, orgId))
-				.limit(1);
-			return row ?? null;
-		});
-
-		if (!config) {
-			return reply.code(404).send({
-				error: "MaxConfigNotFound",
-				message: "MAX-бот не настроен для этой организации.",
+			const config = await withTenantReadCtx(orgId, async (tx) => {
+				const [row] = await tx
+					.select()
+					.from(denteMaxBotConfigs)
+					.where(eq(denteMaxBotConfigs.organizationId, orgId))
+					.limit(1);
+				return row ?? null;
 			});
-		}
 
-		return {
-			id: config.id,
-			organizationId: config.organizationId,
-			botId: config.botId ?? null,
-			hasToken: Boolean(config.tokenSecretRef),
-			webhookUrl: config.webhookUrl ?? null,
-			enabledFeatures: parseJsonSafe<string[]>(config.enabledFeaturesJson, [], request.log),
-			staffRouting: parseJsonSafe(
-				config.staffRoutingJson,
-				{
-					defaultUserId: null,
-					rules: [],
-				},
-				request.log,
-			),
-			isActive: config.isActive,
-			updatedAt: (config.updatedAt ?? new Date()).toISOString(),
-		};
+			if (!config) {
+				return reply.code(404).send({
+					error: "MaxConfigNotFound",
+					message: "MAX-бот не настроен для этой организации.",
+				});
+			}
+
+			return {
+				id: config.id,
+				organizationId: config.organizationId,
+				botId: config.botId ?? null,
+				hasToken: Boolean(config.tokenSecretRef),
+				webhookUrl: config.webhookUrl ?? null,
+				enabledFeatures: parseJsonSafe<string[]>(config.enabledFeaturesJson, [], request.log),
+				staffRouting: parseJsonSafe(
+					config.staffRoutingJson,
+					{
+						defaultUserId: null,
+						rules: [],
+					},
+					request.log,
+				),
+				isActive: config.isActive,
+				updatedAt: (config.updatedAt ?? new Date()).toISOString(),
+			};
+		},
 	});
 
 	/**
 	 * PUT /api/max/settings
 	 * Creates or updates the MAX bot config.
 	 */
-	app.put("/api/max/settings", async (request, reply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"max settings write",
-		);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/max/settings",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"max settings write",
+			);
+			if (!orgId) return;
 
-		const parsed = updateMaxConfigSchema.safeParse(request.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "MaxConfigValidationError",
-				message: "Проверьте параметры настройки MAX.",
-			});
-		}
-
-		const input = parsed.data;
-		const now = new Date();
-
-		await withTenantCtx(orgId, async (tx) => {
-			const [existing] = await tx
-				.select({ id: denteMaxBotConfigs.id })
-				.from(denteMaxBotConfigs)
-				.where(eq(denteMaxBotConfigs.organizationId, orgId))
-				.limit(1);
-
-			if (existing) {
-				const updateValues: Partial<typeof denteMaxBotConfigs.$inferInsert> = {
-					updatedAt: now,
-				};
-
-				if (input.botId !== undefined) updateValues.botId = input.botId;
-				if (input.apiToken) {
-					const encToken = OmnichannelTokenVault.isEncrypted(input.apiToken)
-						? input.apiToken
-						: OmnichannelTokenVault.encrypt(input.apiToken, orgId);
-					updateValues.maxBotToken = encToken;
-					updateValues.tokenSecretRef = encToken;
-				}
-				if (input.webhookUrl !== undefined) updateValues.webhookUrl = input.webhookUrl;
-				if (input.enabledFeatures !== undefined) {
-					updateValues.enabledFeaturesJson = JSON.stringify(input.enabledFeatures);
-				}
-				if (input.staffRouting !== undefined) {
-					updateValues.staffRoutingJson = JSON.stringify(input.staffRouting);
-				}
-				if (input.isActive !== undefined) {
-					updateValues.isActive = input.isActive;
-					updateValues.isEnabled = input.isActive;
-				}
-
-				await tx
-					.update(denteMaxBotConfigs)
-					.set(updateValues)
-					.where(eq(denteMaxBotConfigs.organizationId, orgId));
-			} else {
-				const encToken = input.apiToken
-					? OmnichannelTokenVault.isEncrypted(input.apiToken)
-						? input.apiToken
-						: OmnichannelTokenVault.encrypt(input.apiToken, orgId)
-					: null;
-
-				await tx.insert(denteMaxBotConfigs).values({
-					organizationId: orgId,
-					botId: input.botId ?? null,
-					maxBotToken: encToken,
-					tokenSecretRef: encToken,
-					webhookUrl: input.webhookUrl ?? null,
-					enabledFeaturesJson: JSON.stringify(input.enabledFeatures ?? []),
-					staffRoutingJson: JSON.stringify(
-						input.staffRouting ?? { defaultUserId: null, rules: [] },
-					),
-					isActive: input.isActive ?? false,
-					isEnabled: input.isActive ?? false,
+			const parsed = updateMaxConfigSchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "MaxConfigValidationError",
+					message: "Проверьте параметры настройки MAX.",
 				});
 			}
-		});
 
-		return reply.code(200).send({ ok: true });
+			const input = parsed.data;
+			const now = new Date();
+
+			await withTenantWriteCtx(orgId, async (tx) => {
+				const [existing] = await tx
+					.select({ id: denteMaxBotConfigs.id })
+					.from(denteMaxBotConfigs)
+					.where(eq(denteMaxBotConfigs.organizationId, orgId))
+					.limit(1);
+
+				if (existing) {
+					const updateValues: Partial<typeof denteMaxBotConfigs.$inferInsert> = {
+						updatedAt: now,
+					};
+
+					if (input.botId !== undefined) updateValues.botId = input.botId;
+					if (input.apiToken) {
+						const encToken = OmnichannelTokenVault.isEncrypted(input.apiToken)
+							? input.apiToken
+							: OmnichannelTokenVault.encrypt(input.apiToken, orgId);
+						updateValues.maxBotToken = encToken;
+						updateValues.tokenSecretRef = encToken;
+					}
+					if (input.webhookUrl !== undefined) updateValues.webhookUrl = input.webhookUrl;
+					if (input.enabledFeatures !== undefined) {
+						updateValues.enabledFeaturesJson = JSON.stringify(input.enabledFeatures);
+					}
+					if (input.staffRouting !== undefined) {
+						updateValues.staffRoutingJson = JSON.stringify(input.staffRouting);
+					}
+					if (input.isActive !== undefined) {
+						updateValues.isActive = input.isActive;
+						updateValues.isEnabled = input.isActive;
+					}
+
+					await tx
+						.update(denteMaxBotConfigs)
+						.set(updateValues)
+						.where(eq(denteMaxBotConfigs.organizationId, orgId));
+				} else {
+					const encToken = input.apiToken
+						? OmnichannelTokenVault.isEncrypted(input.apiToken)
+							? input.apiToken
+							: OmnichannelTokenVault.encrypt(input.apiToken, orgId)
+						: null;
+
+					await tx.insert(denteMaxBotConfigs).values({
+						organizationId: orgId,
+						botId: input.botId ?? null,
+						maxBotToken: encToken,
+						tokenSecretRef: encToken,
+						webhookUrl: input.webhookUrl ?? null,
+						enabledFeaturesJson: JSON.stringify(input.enabledFeatures ?? []),
+						staffRoutingJson: JSON.stringify(
+							input.staffRouting ?? { defaultUserId: null, rules: [] },
+						),
+						isActive: input.isActive ?? false,
+						isEnabled: input.isActive ?? false,
+					});
+				}
+			});
+
+			return reply.code(200).send({ ok: true });
+		},
 	});
 
 	/**
 	 * GET /api/max/status
 	 * Returns whether MAX bot config is present and active.
 	 */
-	app.get("/api/max/status", async (request, reply) => {
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"max status",
-		);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/max/status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"max status",
+			);
+			if (!orgId) return;
 
-		const config = await withTenantCtx(orgId, async (tx) => {
-			const [row] = await tx
-				.select()
-				.from(denteMaxBotConfigs)
-				.where(eq(denteMaxBotConfigs.organizationId, orgId))
-				.limit(1);
-			return row ?? null;
-		});
+			const config = await withTenantReadCtx(orgId, async (tx) => {
+				const [row] = await tx
+					.select()
+					.from(denteMaxBotConfigs)
+					.where(eq(denteMaxBotConfigs.organizationId, orgId))
+					.limit(1);
+				return row ?? null;
+			});
 
-		if (!config?.botId || (!config.tokenSecretRef && !config.maxBotToken)) {
+			if (!config?.botId || (!config.tokenSecretRef && !config.maxBotToken)) {
+				return {
+					channel: "max",
+					connected: false,
+					detail:
+						"MAX не настроен: нужны Bot ID и API Token из панели business.max.ru.",
+				};
+			}
+
 			return {
 				channel: "max",
-				connected: false,
-				detail:
-					"MAX не настроен: нужны Bot ID и API Token из панели business.max.ru.",
+				connected: config.isActive,
+				detail: config.isActive
+					? `MAX-бот ${config.botId} настроен.`
+					: "MAX-бот неактивен.",
 			};
-		}
-
-		return {
-			channel: "max",
-			connected: config.isActive,
-			detail: config.isActive
-				? `MAX-бот ${config.botId} настроен.`
-				: "MAX-бот неактивен.",
-		};
+		},
 	});
 
 	async function processMaxInboundEvent(
@@ -351,7 +375,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 
 		const chatRaw = payload.chat;
 		const chat =
-			chatRaw && typeof chatRaw === "object" && !Array.isArray(chatRaw)
+			chatRaw && typeof chatRaw !== "object" && !Array.isArray(chatRaw)
 				? (chatRaw as Record<string, unknown>)
 				: undefined;
 		const textValue = payload.text;
@@ -401,7 +425,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		if (!orgConfig) return false;
 
 		const inboundOrganizationId = orgConfig.organizationId;
-		await withTenantCtx(inboundOrganizationId, async (tx) => {
+		await withTenantWriteCtx(inboundOrganizationId, async (tx) => {
 			const { isReplay } = await persistInboundWebhookEventIfNew(tx, {
 				organizationId: inboundOrganizationId,
 				channel: "max",
@@ -426,10 +450,10 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 	 * Always responds 200 immediately.
 	 */
 	// door-validation: none — Входящий вебхук MAX Messenger с динамической сигнатурой и асинхронной обработкой событий
-	app.post(
-		"/api/max/webhook",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request, reply) => {
+	defineWebhookRoute(app, {
+		method: "POST",
+		path: "/api/max/webhook",
+		handler: async ({ request, reply }) => {
 			reply.code(200).send({ ok: true });
 
 			if (!request.body || typeof request.body !== "object") {
@@ -474,16 +498,17 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 				);
 			}
 		},
-	);
+	});
 
 	/**
 	 * POST /api/max/send
 	 * Sends an outbound VK Max message to a patient (HTTP outside PG TX).
 	 */
-	app.post(
-		"/api/max/send",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/max/send",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -501,7 +526,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 
 			const { patientId, message } = parsed.data;
 
-			const preflight = await withTenantCtx(orgId, async (tx) => {
+			const preflight = await withTenantReadCtx(orgId, async (tx) => {
 				const [patient] = await tx
 					.select()
 					.from(patients)
@@ -569,7 +594,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 				text: message,
 			});
 
-			const event = await withTenantCtx(orgId, async (tx) => {
+			const event = await withTenantWriteCtx(orgId, async (tx) => {
 				const [inserted] = await tx
 					.insert(communicationEvents)
 					.values({
@@ -609,7 +634,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 				event,
 			});
 		},
-	);
+	});
 }
 
 void patients;

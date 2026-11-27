@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { kopecksToRubles, rublesToKopecks, sumKopecks, toExactKopecks } from "@dental/shared";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../../db/rls.js";
 import {
 	appointments,
 	patients,
@@ -51,12 +51,16 @@ function classifyStage(
 	return "requires_budget";
 }
 
-export async function aggregatePipelineData(organizationId: string, filter: TreatmentPlanQuery) {
-	return withTenantCtx(organizationId, async (tx) => {
+export async function aggregatePipelineData(
+	organizationId: string,
+	filter: TreatmentPlanQuery,
+	tx?: TenantDb,
+) {
+	const run = async (executor: TenantDb) => {
 		const conditions = [eq(treatmentPlans.organizationId, organizationId)];
 		if (filter.doctorId) conditions.push(eq(treatmentPlans.doctorId, filter.doctorId));
 
-		const plans = await tx
+		const plans = await executor
 			.select({
 				id: treatmentPlans.id,
 				name: treatmentPlans.name,
@@ -107,7 +111,7 @@ export async function aggregatePipelineData(organizationId: string, filter: Trea
 		const planIds = plans.map((p) => p.id);
 
 		const [budgetTokens, apptRows, itemCountRows] = await Promise.all([
-			tx
+			executor
 				.select({
 					token: portalBudgetTokens.token,
 					planId: portalBudgetTokens.planId,
@@ -115,11 +119,11 @@ export async function aggregatePipelineData(organizationId: string, filter: Trea
 				})
 				.from(portalBudgetTokens)
 				.where(and(eq(portalBudgetTokens.organizationId, organizationId), inArray(portalBudgetTokens.planId, planIds))),
-			tx
+			executor
 				.select({ patientId: appointments.patientId, startsAt: appointments.startsAt })
 				.from(appointments)
 				.where(and(eq(appointments.organizationId, organizationId), inArray(appointments.patientId, patientIds), sql`${appointments.status} != 'cancelled'`)),
-			tx
+			executor
 				.select({
 					planId: treatmentPlanItemsNew.planId,
 					count: sql<number>`count(*)::int`,
@@ -299,5 +303,6 @@ export async function aggregatePipelineData(organizationId: string, filter: Trea
 				},
 			},
 		};
-	});
+	};
+	return tx ? run(tx) : withTenantReadCtx(organizationId, run);
 }

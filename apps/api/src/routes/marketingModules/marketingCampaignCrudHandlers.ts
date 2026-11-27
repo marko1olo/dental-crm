@@ -12,7 +12,11 @@ import {
 	patientInvoices,
 	payments,
 } from "../../db/schema.js";
-import { withTenantCtx, type TenantDb } from "../../db/rls.js";
+import {
+	withTenantReadCtx,
+	withTenantWriteCtx,
+	type TenantDb,
+} from "../../db/rls.js";
 import {
 	requireClinicalMutationAccess,
 	requireResolvedOrganizationId,
@@ -64,7 +68,7 @@ export async function fetchPatientFieldRequirementsFromDb(
 	if (tx) {
 		return run(tx);
 	}
-	return withTenantCtx(orgId, run);
+	return withTenantReadCtx(orgId, run);
 }
 
 /**
@@ -100,7 +104,7 @@ export async function updatePatientFieldRequirementsInDb(
 	if (tx) {
 		return applyUpdate(tx);
 	}
-	return withTenantCtx(orgId, async (tenantTx) => {
+	return withTenantWriteCtx(orgId, async (tenantTx) => {
 		return applyUpdate(tenantTx);
 	});
 }
@@ -191,7 +195,7 @@ export async function handleGetMarketingReports(
 	}
 
 	try {
-		const [allLeads, allPayments] = await withTenantCtx(orgId, (tx) =>
+		const [allLeads, allPayments] = await withTenantReadCtx(orgId, (tx) =>
 			Promise.all([
 				tx.select({
 					id: crmLeads.id,

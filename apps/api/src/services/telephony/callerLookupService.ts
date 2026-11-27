@@ -18,7 +18,8 @@
  */
 
 import { and, desc, eq, gt, gte, ilike, lt, or, sql, type SQL } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import type { TenantDb } from "../../db/client.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	appointments,
 	crmLeads,
@@ -117,8 +118,26 @@ export class CallerLookupService {
 		organizationId: string;
 		phone?: string | null | undefined;
 		patientId?: string | null | undefined;
+		tx?: TenantDb | undefined;
 		logger?: { warn: (obj: unknown, msg?: string) => void; error: (obj: unknown, msg?: string) => void } | undefined;
 	}): Promise<CallerLookupResult> {
+		if (params.tx) {
+			return CallerLookupService.lookupCallerWithTx(params.tx, params);
+		}
+		return withTenantReadCtx(params.organizationId, (tx) =>
+			CallerLookupService.lookupCallerWithTx(tx, params),
+		);
+	}
+
+	private static async lookupCallerWithTx(
+		tx: TenantDb,
+		params: {
+			organizationId: string;
+			phone?: string | null | undefined;
+			patientId?: string | null | undefined;
+			logger?: { warn: (obj: unknown, msg?: string) => void; error: (obj: unknown, msg?: string) => void } | undefined;
+		},
+	): Promise<CallerLookupResult> {
 		const { organizationId, phone, patientId } = params;
 
 		const defaultEmptyResult: CallerLookupResult = {
@@ -195,7 +214,7 @@ export class CallerLookupService {
 		}
 
 		// 1. Query patient with tenant isolation (support family cards when relatives share phone)
-		const matchedPatients = await db
+		const matchedPatients = await tx
 			.select()
 			.from(patients)
 			.where(
@@ -244,7 +263,7 @@ export class CallerLookupService {
 					);
 				}
 
-				const leadMatches = await db
+				const leadMatches = await tx
 					.select()
 					.from(crmLeads)
 					.where(
@@ -274,9 +293,11 @@ export class CallerLookupService {
 		// 3. Resolve Financial Balance & Debt from real ledger
 		let balanceRub = 0;
 		try {
-			const balances = await patientAccountBalancesRub(organizationId, [
-				matchedPatient.id,
-			]);
+			const balances = await patientAccountBalancesRub(
+				organizationId,
+				[matchedPatient.id],
+				tx,
+			);
 			balanceRub = balances.get(matchedPatient.id) ?? 0;
 		} catch (err) {
 			const activeLogger = params.logger || defaultStructuredLogger;
@@ -305,7 +326,7 @@ export class CallerLookupService {
 		// 4. Query Appointments (upcoming & past) and Staff (doctors)
 		const nowIso = new Date().toISOString();
 		const [patientAppts, staffUsers] = await Promise.all([
-			db
+			tx
 				.select({
 					id: appointments.id,
 					patientId: appointments.patientId,
@@ -324,7 +345,7 @@ export class CallerLookupService {
 					),
 				)
 				.orderBy(appointments.startsAt),
-			db
+			tx
 				.select({
 					id: users.id,
 					fullName: users.fullName,
@@ -386,7 +407,7 @@ export class CallerLookupService {
 		};
 
 		try {
-			const activePlans = await db
+			const activePlans = await tx
 				.select()
 				.from(treatmentPlans)
 				.where(
@@ -404,7 +425,7 @@ export class CallerLookupService {
 			if (activePlans.length > 0 && activePlans[0]) {
 				const plan = activePlans[0];
 
-				const stages = await db
+				const stages = await tx
 					.select()
 					.from(treatmentPlanStages)
 					.where(
@@ -424,7 +445,7 @@ export class CallerLookupService {
 							: toExactKopecks(0);
 
 				if (totalCostKopecks === 0) {
-					const items = await db
+					const items = await tx
 						.select({
 							priceKopecks: treatmentPlanItemsNew.priceKopecks,
 							price: treatmentPlanItemsNew.price,

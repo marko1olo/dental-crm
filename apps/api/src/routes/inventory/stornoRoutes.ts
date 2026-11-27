@@ -4,7 +4,7 @@
  */
 
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
-import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
+import { defineTenantMutation } from "../../core/routeFactories.js";
 import {
 	handleOverdraftAlertRequest,
 	handleStornoRequest,
@@ -12,159 +12,63 @@ import {
 
 export { handleOverdraftAlertRequest, handleStornoRequest } from "./storno/index.js";
 
+const INVENTORY_WRITE_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+} as const;
+
 export const stornoRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
-	// ─────────────────────────────────────────────────────────────────────────
+	const registerOverdraftRoute = (path: string) => {
+		defineTenantMutation(server, {
+			method: "POST",
+			path,
+			permission: "inventory.write",
+			authOptions: INVENTORY_WRITE_AUTH,
+			idempotency: "optional_header",
+			handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+				const params = request.params as { organizationId?: string } | undefined;
+				const body = (request.body as { organizationId?: string } | undefined) ?? {};
+				const targetOrgId = params?.organizationId || body.organizationId || resolvedOrgId;
+				if (targetOrgId !== resolvedOrgId) {
+					return reply.code(403).send({ error: "Forbidden" });
+				}
+				return handleOverdraftAlertRequest(targetOrgId, request.body, request, reply, tx);
+			},
+		});
+	};
+
+	const registerStornoRoute = (path: string) => {
+		defineTenantMutation(server, {
+			method: "POST",
+			path,
+			permission: "inventory.write",
+			authOptions: INVENTORY_WRITE_AUTH,
+			idempotency: "optional_header",
+			handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+				const params = request.params as { organizationId?: string } | undefined;
+				const body = (request.body as { organizationId?: string } | undefined) ?? {};
+				const targetOrgId = params?.organizationId || body.organizationId || resolvedOrgId;
+				if (targetOrgId !== resolvedOrgId) {
+					return reply.code(403).send({ error: "Forbidden" });
+				}
+				return handleStornoRequest(targetOrgId, request.body, request, reply, tx);
+			},
+		});
+	};
+
 	// 1. Асинхронное оповещение об овердрафте при приеме (Мандат 8n)
-	// ─────────────────────────────────────────────────────────────────────────
-	server.post<{ Params: { organizationId: string } }>(
-		"/:organizationId/overdraft-alert",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"inventory overdraft alert",
-			);
-			if (!resolvedOrgId) return;
+	registerOverdraftRoute("/:organizationId/overdraft-alert");
+	registerOverdraftRoute("/overdraft-alert");
 
-			const { organizationId } = request.params;
-			if (resolvedOrgId !== organizationId) {
-				return reply.code(403).send({ error: "Forbidden" });
-			}
-
-			return handleOverdraftAlertRequest(organizationId, request.body, request, reply);
-		},
-	);
-
-	server.post("/overdraft-alert", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"inventory overdraft alert",
-		);
-		if (!resolvedOrgId) return;
-
-		const body = (request.body as { organizationId?: string } | undefined) ?? {};
-		const targetOrgId = body.organizationId || resolvedOrgId;
-		if (targetOrgId !== resolvedOrgId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
-
-		return handleOverdraftAlertRequest(targetOrgId, request.body, request, reply);
-	});
-
-	// ─────────────────────────────────────────────────────────────────────────
 	// 2. Автоматическое сторно при отмене услуг / визита (Мандаты 8e, 8n)
-	// ─────────────────────────────────────────────────────────────────────────
-	server.post<{ Params: { organizationId: string } }>(
-		"/:organizationId/storno",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"inventory storno",
-			);
-			if (!resolvedOrgId) return;
-
-			const { organizationId } = request.params;
-			if (resolvedOrgId !== organizationId) {
-				return reply.code(403).send({ error: "Forbidden" });
-			}
-
-			return handleStornoRequest(organizationId, request.body, request, reply);
-		},
-	);
-
-	server.post("/storno", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"inventory storno",
-		);
-		if (!resolvedOrgId) return;
-
-		const body = (request.body as { organizationId?: string } | undefined) ?? {};
-		const targetOrgId = body.organizationId || resolvedOrgId;
-		if (targetOrgId !== resolvedOrgId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
-
-		return handleStornoRequest(targetOrgId, request.body, request, reply);
-	});
-
-	// Алиасы для гранулярной отмены услуг и визитов
-	server.post<{ Params: { organizationId: string } }>(
-		"/:organizationId/storno/service",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"inventory storno service",
-			);
-			if (!resolvedOrgId) return;
-
-			const { organizationId } = request.params;
-			if (resolvedOrgId !== organizationId) {
-				return reply.code(403).send({ error: "Forbidden" });
-			}
-
-			return handleStornoRequest(organizationId, request.body, request, reply);
-		},
-	);
-
-	server.post("/storno/service", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"inventory storno service",
-		);
-		if (!resolvedOrgId) return;
-
-		const body = (request.body as { organizationId?: string } | undefined) ?? {};
-		const targetOrgId = body.organizationId || resolvedOrgId;
-		if (targetOrgId !== resolvedOrgId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
-
-		return handleStornoRequest(targetOrgId, request.body, request, reply);
-	});
-
-	server.post<{ Params: { organizationId: string } }>(
-		"/:organizationId/storno/visit",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"inventory storno visit",
-			);
-			if (!resolvedOrgId) return;
-
-			const { organizationId } = request.params;
-			if (resolvedOrgId !== organizationId) {
-				return reply.code(403).send({ error: "Forbidden" });
-			}
-
-			return handleStornoRequest(organizationId, request.body, request, reply);
-		},
-	);
-
-	server.post("/storno/visit", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"inventory storno visit",
-		);
-		if (!resolvedOrgId) return;
-
-		const body = (request.body as { organizationId?: string } | undefined) ?? {};
-		const targetOrgId = body.organizationId || resolvedOrgId;
-		if (targetOrgId !== resolvedOrgId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
-
-		return handleStornoRequest(targetOrgId, request.body, request, reply);
-	});
+	registerStornoRoute("/:organizationId/storno");
+	registerStornoRoute("/storno");
+	registerStornoRoute("/:organizationId/storno/service");
+	registerStornoRoute("/storno/service");
+	registerStornoRoute("/:organizationId/storno/visit");
+	registerStornoRoute("/storno/visit");
 };
 
 export default stornoRoutes;

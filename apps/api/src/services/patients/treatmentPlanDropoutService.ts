@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { isValidUuid, kopecksToRubles, rublesToKopecks } from "@dental/shared";
-import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantWriteCtx, type TenantDb } from "../../db/rls.js";
 import { appointments } from "../../db/schema/schedule.js";
 import { patientRecalls } from "../../db/schema/patientsSchema/patientMedicalData.js";
 import { patients } from "../../db/schema/patients.js";
@@ -51,10 +51,11 @@ function resolvePlanAmountKopecks(plan: {
 export async function checkAndGenerateDropoutRecalls(
 	organizationId: string,
 	minDaysWithoutAppointment: number = 14,
+	executor?: TenantDb,
 ): Promise<DropoutPreventionResult> {
 	const now = new Date();
 
-	return await withTenantCtx(organizationId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		await tx.execute(
 			sql`SELECT pg_advisory_xact_lock(hashtext(${`dropout_recalls:${organizationId}`}))`,
 		);
@@ -255,7 +256,9 @@ export async function checkAndGenerateDropoutRecalls(
 			existingRecallsCount,
 			recalls: dropoutPlans,
 		};
-	});
+	};
+
+	return executor ? await run(executor) : await withTenantWriteCtx(organizationId, run);
 }
 
 /**
@@ -265,6 +268,7 @@ export async function createSinglePlanDropoutRecall(
 	organizationId: string,
 	planId: string,
 	curatorNotes?: string,
+	executor?: TenantDb,
 ): Promise<{ success: boolean; recallId?: string; message: string }> {
 	const trimmedPlanId = planId?.trim();
 	if (!trimmedPlanId || !isValidUuid(trimmedPlanId)) {
@@ -275,7 +279,7 @@ export async function createSinglePlanDropoutRecall(
 		return { success: false, message: "Некорректный идентификатор организации" };
 	}
 
-	return await withTenantCtx(trimmedOrgId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		const [plan] = await tx
 			.select({
 				id: treatmentPlans.id,
@@ -359,5 +363,7 @@ export async function createSinglePlanDropoutRecall(
 			...(createdRecallId ? { recallId: createdRecallId } : {}),
 			message: "Задача на звонок куратору успешно создана",
 		};
-	});
+	};
+
+	return executor ? await run(executor) : await withTenantWriteCtx(trimmedOrgId, run);
 }

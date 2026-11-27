@@ -1,11 +1,12 @@
 import { and, eq, inArray } from "drizzle-orm";
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
+import { definePublicRoute } from "../../core/routeFactories.js";
 import {
 	getDocumentById,
 	readIssuedDocumentSnapshot,
 } from "../../db/documentQuery.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	generatedDocuments,
 	patientConsents,
@@ -25,15 +26,15 @@ import {
 	approveTreatmentPlanBodySchema,
 	selectTierBodySchema,
 	signConsentBodySchema,
-	type SelectTierBody,
 } from "./types.js";
 import { isValidUuid } from "@dental/shared";
 
 export async function registerPortalDocumentsRoutes(server: FastifyInstance): Promise<void> {
 	// 4. View Document HTML (Protected)
-	server.get<{ Params: { documentId: string } }>(
-		"/documents/:documentId/html",
-		async (request, reply) => {
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/documents/:documentId/html",
+		handler: async ({ request, reply }) => {
 			const auth = extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
@@ -42,7 +43,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			const patientId = auth.patientId;
 			const organizationId = auth.organizationId;
 
-			const documentId = request.params.documentId?.trim();
+			const documentId = (request.params as { documentId?: string } | undefined)?.documentId?.trim();
 			if (!documentId || !isValidUuid(documentId)) {
 				reply.status(400);
 				return {
@@ -51,8 +52,8 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				};
 			}
 
-			const document = await withTenantCtx(organizationId, () =>
-				getDocumentById(organizationId, documentId),
+			const document = await withTenantReadCtx(organizationId, (tx) =>
+				getDocumentById(organizationId, documentId, tx),
 			);
 
 			if (
@@ -72,17 +73,20 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 
 			return reply.type("text/html; charset=utf-8").send(issuedSnapshot);
 		},
-	);
+	});
 
 	// 5. Get Statutory Consents (Protected)
-	server.get("/consents", async (request, reply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized" };
-		}
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/consents",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized" };
+			}
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
+			return withTenantReadCtx(auth.organizationId, async (tx) => {
 			const [patientRow] = await tx
 				.select({
 					id: patients.id,
@@ -139,34 +143,29 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			});
 
 			return { consents: mergedConsents };
-		});
+			});
+		},
 	});
 
 	// 6. Sign Statutory Consent via 63-FZ PEP, Paper Physical, or Vector Stroke & IP Audit
-	server.post<{
-		Params: { consentId: string };
-		Body: {
-			signatureSvg?: unknown;
-			signatureMethod?: unknown;
-			consentKind?: unknown;
-			deviceMeta?: unknown;
-			pepCode?: unknown;
-		};
-	}>("/consents/:consentId/sign", async (request, reply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized" };
-		}
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/consents/:consentId/sign",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized" };
+			}
 
-		const consentId = request.params.consentId?.trim();
-		if (!consentId) {
-			reply.status(400);
-			return {
-				error: "ConsentIdRequired",
-				message: "Идентификатор согласия обязателен.",
-			};
-		}
+			const consentId = (request.params as { consentId?: string } | undefined)?.consentId?.trim();
+			if (!consentId) {
+				reply.status(400);
+				return {
+					error: "ConsentIdRequired",
+					message: "Идентификатор согласия обязателен.",
+				};
+			}
 
 		const parsedBody = signConsentBodySchema.safeParse(request.body ?? {});
 		if (!parsedBody.success) {
@@ -259,7 +258,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			].join("|"),
 		);
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
+		return withTenantWriteCtx(auth.organizationId, async (tx) => {
 			const [patientRow] = await tx
 				.select()
 				.from(patients)
@@ -352,8 +351,8 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 					integrityHash,
 					signedAtIso,
 					deviceMeta:
-						typeof request.body?.deviceMeta === "string"
-							? request.body.deviceMeta
+						typeof parsedBody.data.deviceMeta === "string"
+							? parsedBody.data.deviceMeta
 							: request.headers["user-agent"] || "mobile_touch_device",
 				},
 			};
@@ -385,18 +384,22 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				signatureMethod,
 				signatureSvg: effectiveSignatureSvg,
 			};
-		});
+			});
+		},
 	});
 
 	// 9. Get 3-Tier Treatment Plans with Stage Breakdown (Protected)
-	server.get("/treatment-plans", async (request, reply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized" };
-		}
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/treatment-plans",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized" };
+			}
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
+			return withTenantReadCtx(auth.organizationId, async (tx) => {
 			const dbPlans = await tx
 				.select()
 				.from(treatmentPlans)
@@ -448,50 +451,53 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				planItems,
 				selectedTier,
 			);
-		});
+			});
+		},
 	});
 
 	// 10. Select 3-Tier Treatment Plan Tier (Protected)
-	server.post<{
-		Params: { planId: string };
-		Body: SelectTierBody;
-	}>("/treatment-plans/:planId/select-tier", async (request, reply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized" };
-		}
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/treatment-plans/:planId/select-tier",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized" };
+			}
 
-		const planId = request.params.planId?.trim();
-		if (!planId) {
-			reply.status(400);
-			return { error: "PlanIdRequired", message: "Идентификатор плана обязателен." };
-		}
-		if (!isValidUuid(planId)) {
-			reply.status(400);
-			return { error: "ValidationError", message: "Идентификатор плана лечения должен быть валидным UUID." };
-		}
+			const planId = (request.params as { planId?: string } | undefined)?.planId?.trim();
+			if (!planId) {
+				reply.status(400);
+				return { error: "PlanIdRequired", message: "Идентификатор плана обязателен." };
+			}
+			if (!isValidUuid(planId)) {
+				reply.status(400);
+				return { error: "ValidationError", message: "Идентификатор плана лечения должен быть валидным UUID." };
+			}
 
-		const parsedBody = selectTierBodySchema.safeParse(request.body ?? {});
-		if (!parsedBody.success) {
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Некорректные параметры выбора тарифа лечения.",
-				details: parsedBody.error.issues,
-			};
-		}
+			const parsedBody = selectTierBodySchema.safeParse(
+				request.body ?? {},
+			);
+			if (!parsedBody.success) {
+				reply.status(400);
+				return {
+					error: "ValidationError",
+					message: "Некорректные параметры выбора тарифа лечения.",
+					details: parsedBody.error.issues,
+				};
+			}
 
-		const tierId = parsedBody.data.tierId?.trim() ?? "";
-		if (tierId !== "basic" && tierId !== "standard" && tierId !== "premium") {
-			reply.status(400);
-			return {
-				error: "InvalidTier",
-				message: "Укажите корректный уровень плана (basic, standard, premium).",
-			};
-		}
+			const tierId = parsedBody.data.tierId?.trim() ?? "";
+			if (tierId !== "basic" && tierId !== "standard" && tierId !== "premium") {
+				reply.status(400);
+				return {
+					error: "InvalidTier",
+					message: "Укажите корректный уровень плана (basic, standard, premium).",
+				};
+			}
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
+			return withTenantWriteCtx(auth.organizationId, async (tx) => {
 			const [planRow] = await tx
 				.select({ id: treatmentPlans.id })
 				.from(treatmentPlans)
@@ -549,64 +555,62 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				planId,
 				selectedTier: tierId,
 			};
-		});
+			});
+		},
 	});
 
 	// 11. Approve Treatment Plan with 63-FZ PEP Audit (Protected)
-	server.post<{
-		Params: { planId: string };
-		Body: {
-			pepCode?: string;
-			selectedTier?: string;
-		};
-	}>("/treatment-plans/:planId/approve", async (request, reply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized" };
-		}
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/treatment-plans/:planId/approve",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized" };
+			}
 
-		const planId = request.params.planId?.trim();
-		if (!planId) {
-			reply.status(400);
-			return { error: "PlanIdRequired", message: "Идентификатор плана обязателен." };
-		}
-		if (!isValidUuid(planId)) {
-			reply.status(400);
-			return { error: "ValidationError", message: "Идентификатор плана лечения должен быть валидным UUID." };
-		}
+			const planId = (request.params as { planId?: string } | undefined)?.planId?.trim();
+			if (!planId) {
+				reply.status(400);
+				return { error: "PlanIdRequired", message: "Идентификатор плана обязателен." };
+			}
+			if (!isValidUuid(planId)) {
+				reply.status(400);
+				return { error: "ValidationError", message: "Идентификатор плана лечения должен быть валидным UUID." };
+			}
 
-		const parsedBody = approveTreatmentPlanBodySchema.safeParse(
-			request.body ?? {},
-		);
-		if (!parsedBody.success) {
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Некорректные параметры утверждения плана лечения.",
-				details: parsedBody.error.issues,
-			};
-		}
+			const parsedBody = approveTreatmentPlanBodySchema.safeParse(
+				request.body ?? {},
+			);
+			if (!parsedBody.success) {
+				reply.status(400);
+				return {
+					error: "ValidationError",
+					message: "Некорректные параметры утверждения плана лечения.",
+					details: parsedBody.error.issues,
+				};
+			}
 
-		const pepCode = parsedBody.data.pepCode?.trim() ?? "";
-		if (!pepCode) {
-			reply.status(400);
-			return {
-				error: "PepCodeRequired",
-				message: "Для утверждения плана лечения требуется код подтверждения из SMS (ПЭП 63-ФЗ).",
-			};
-		}
+			const pepCode = parsedBody.data.pepCode?.trim() ?? "";
+			if (!pepCode) {
+				reply.status(400);
+				return {
+					error: "PepCodeRequired",
+					message: "Для утверждения плана лечения требуется код подтверждения из SMS (ПЭП 63-ФЗ).",
+				};
+			}
 
-		const isCodeValid = await verifyOtpCode(planId, pepCode, auth.organizationId, auth.patientId);
-		if (!isCodeValid) {
-			reply.status(400);
-			return {
-				error: "InvalidPepCode",
-				message: "Неверный или истёкший код подтверждения ПЭП.",
-			};
-		}
+			const isCodeValid = await verifyOtpCode(planId, pepCode, auth.organizationId, auth.patientId);
+			if (!isCodeValid) {
+				reply.status(400);
+				return {
+					error: "InvalidPepCode",
+					message: "Неверный или истёкший код подтверждения ПЭП.",
+				};
+			}
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
+			return withTenantWriteCtx(auth.organizationId, async (tx) => {
 			const [planRow] = await tx
 				.select({ id: treatmentPlans.id })
 				.from(treatmentPlans)
@@ -701,6 +705,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				integrityHash,
 				signatureLaw: "63-FZ",
 			};
-		});
+			});
+		},
 	});
 }

@@ -11,7 +11,8 @@
  */
 
 import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import type { TenantDb } from "../../db/client.js";
+import { withSuperuserBypass, withTenantReadCtx } from "../../db/rls.js";
 import {
 	appointments,
 	patients,
@@ -61,138 +62,146 @@ export async function runWeeklyRetentionScan(options?: {
 		const sixMonthsAgo = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
 		const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-		// Get list of active patients
-		const conditions = [eq(patients.status, "active")];
-		if (options?.organizationId) {
-			conditions.push(eq(patients.organizationId, options.organizationId));
-		}
-
-		const activePatients = await db
-			.select({
-				id: patients.id,
-				organizationId: patients.organizationId,
-				fullName: patients.fullName,
-				phone: patients.phone,
-				createdAt: patients.createdAt,
-			})
-			.from(patients)
-			.where(and(...conditions))
-			.limit(200);
-
 		const orgMap = new Map<string, AbandonedTreatmentRecord[]>();
 
-		for (const p of activePatients) {
-			const orgId = p.organizationId;
-			let orgRecords = orgMap.get(orgId);
-			if (!orgRecords) {
-				orgRecords = [];
-				orgMap.set(orgId, orgRecords);
+		const runScan = async (tx: TenantDb) => {
+			// Get list of active patients
+			const conditions = [eq(patients.status, "active")];
+			if (options?.organizationId) {
+				conditions.push(eq(patients.organizationId, options.organizationId));
 			}
 
-			const patientFullName = p.fullName || "Пациент";
-
-			// 1. Check if patient has future appointments
-			const futureAppts = await db
-				.select({ id: appointments.id })
-				.from(appointments)
-				.where(
-					and(
-						eq(appointments.organizationId, orgId),
-						eq(appointments.patientId, p.id),
-						gte(appointments.startsAt, now),
-						or(
-							eq(appointments.status, "planned"),
-							eq(appointments.status, "confirmed"),
-						),
-					),
-				)
-				.limit(1);
-
-			if (futureAppts.length > 0) {
-				// Patient is actively scheduled, skip retention alarm
-				continue;
-			}
-
-			// 2. Check past completed visits for implants, endodontics, and hygiene
-			const pastVisits = await db
+			const activePatients = await tx
 				.select({
-					id: visits.id,
-					complaint: visits.complaint,
-					objectiveStatus: visits.objectiveStatus,
-					diagnosis: visits.diagnosis,
-					treatmentPlan: visits.treatmentPlan,
-					doctorSummary: visits.doctorSummary,
-					createdAt: visits.createdAt,
+					id: patients.id,
+					organizationId: patients.organizationId,
+					fullName: patients.fullName,
+					phone: patients.phone,
+					createdAt: patients.createdAt,
 				})
-				.from(visits)
-				.where(
-					and(
-						eq(visits.organizationId, orgId),
-						eq(visits.patientId, p.id),
-					),
-				)
-				.orderBy(desc(visits.createdAt))
-				.limit(5);
+				.from(patients)
+				.where(and(...conditions))
+				.limit(200);
 
-			let identified = false;
-
-			for (const v of pastVisits) {
-				const textContext = `${v.complaint || ""} ${v.diagnosis || ""} ${v.treatmentPlan || ""} ${v.doctorSummary || ""}`.toLowerCase();
-
-				// Case A: Implant placed >= 4 months ago
-				if (v.createdAt <= fourMonthsAgo && (textContext.includes("имплант") || textContext.includes("установка имплантата") || textContext.includes("a16.07.054"))) {
-					const months = Math.round((now.getTime() - v.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 30));
-					orgRecords.push({
-						patientId: p.id,
-						patientFullName,
-						patientPhone: p.phone,
-						funnelKind: "implant_without_crown",
-						funnelTitleRu: "Имплантат без постоянной коронки",
-						elapsedMonthsOrWeeks: `${months} мес. назад`,
-						estimatedLostRevenueRub: 55000,
-						recommendedActionRu: "Пригласить на установку формирователя десны / снятие слепков под постоянную коронку",
-						draftWhatsAppMessage: `Здравствуйте, ${patientFullName}! Прошло ${months} месяцев с момента установки дентального имплантата. Имплантат успешно остеоинтегрировался, и настало время завершить лечение — установить красивую постоянную коронку. Записать вас на консультацию к ортопеду?`,
-					});
-					identified = true;
-					break;
+			for (const p of activePatients) {
+				const orgId = p.organizationId;
+				let orgRecords = orgMap.get(orgId);
+				if (!orgRecords) {
+					orgRecords = [];
+					orgMap.set(orgId, orgRecords);
 				}
 
-				// Case B: Endodontics >= 2 weeks ago
-				if (!identified && v.createdAt <= twoWeeksAgo && (textContext.includes("пульпит") || textContext.includes("периодонтит") || textContext.includes("канал") || textContext.includes("временная пломба"))) {
-					const weeks = Math.round((now.getTime() - v.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 7));
-					orgRecords.push({
-						patientId: p.id,
-						patientFullName,
-						patientPhone: p.phone,
-						funnelKind: "endo_without_restoration",
-						funnelTitleRu: "Лечение каналов без постоянной пломбы",
-						elapsedMonthsOrWeeks: `${weeks} нед. назад`,
-						estimatedLostRevenueRub: 12000,
-						recommendedActionRu: "Записать на постоянную реставрацию зуба во избежание реинфекции",
-						draftWhatsAppMessage: `Здравствуйте, ${patientFullName}! Вы проходили лечение корневых каналов ${weeks} недели назад. Чтобы защитить зуб от сколов и бактерий, необходимо поставить постоянную пломбу / коронку. Когда вам удобно подойти на прием?`,
-					});
-					identified = true;
-					break;
+				const patientFullName = p.fullName || "Пациент";
+
+				// 1. Check if patient has future appointments
+				const futureAppts = await tx
+					.select({ id: appointments.id })
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.organizationId, orgId),
+							eq(appointments.patientId, p.id),
+							gte(appointments.startsAt, now),
+							or(
+								eq(appointments.status, "planned"),
+								eq(appointments.status, "confirmed"),
+							),
+						),
+					)
+					.limit(1);
+
+				if (futureAppts.length > 0) {
+					// Patient is actively scheduled, skip retention alarm
+					continue;
 				}
 
-				// Case C: Hygiene >= 6 months ago
-				if (!identified && v.createdAt <= sixMonthsAgo && (textContext.includes("гигиен") || textContext.includes("чистк") || textContext.includes("air-flow"))) {
-					const months = Math.round((now.getTime() - v.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 30));
-					orgRecords.push({
-						patientId: p.id,
-						patientFullName,
-						patientPhone: p.phone,
-						funnelKind: "hygiene_recall",
-						funnelTitleRu: "Пора на повторную профгигиену (6+ мес)",
-						elapsedMonthsOrWeeks: `${months} мес. назад`,
-						estimatedLostRevenueRub: 6500,
-						recommendedActionRu: "Напомнить о плановом гигиеническом осмотре и чистке",
-						draftWhatsAppMessage: `Здравствуйте, ${patientFullName}! Прошло ${months} месяцев с вашей последней профгигиены. Для сохранения здоровья десен и гарантии на пломбы врачи рекомендуют проходить чистку каждые 6 месяцев. Подберем удобное время?`,
-					});
-					identified = true;
-					break;
+				// 2. Check past completed visits for implants, endodontics, and hygiene
+				const pastVisits = await tx
+					.select({
+						id: visits.id,
+						complaint: visits.complaint,
+						objectiveStatus: visits.objectiveStatus,
+						diagnosis: visits.diagnosis,
+						treatmentPlan: visits.treatmentPlan,
+						doctorSummary: visits.doctorSummary,
+						createdAt: visits.createdAt,
+					})
+					.from(visits)
+					.where(
+						and(
+							eq(visits.organizationId, orgId),
+							eq(visits.patientId, p.id),
+						),
+					)
+					.orderBy(desc(visits.createdAt))
+					.limit(5);
+
+				let identified = false;
+
+				for (const v of pastVisits) {
+					const textContext = `${v.complaint || ""} ${v.diagnosis || ""} ${v.treatmentPlan || ""} ${v.doctorSummary || ""}`.toLowerCase();
+
+					// Case A: Implant placed >= 4 months ago
+					if (v.createdAt <= fourMonthsAgo && (textContext.includes("имплант") || textContext.includes("установка имплантата") || textContext.includes("a16.07.054"))) {
+						const months = Math.round((now.getTime() - v.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 30));
+						orgRecords.push({
+							patientId: p.id,
+							patientFullName,
+							patientPhone: p.phone,
+							funnelKind: "implant_without_crown",
+							funnelTitleRu: "Имплантат без постоянной коронки",
+							elapsedMonthsOrWeeks: `${months} мес. назад`,
+							estimatedLostRevenueRub: 55000,
+							recommendedActionRu: "Пригласить на установку формирователя десны / снятие слепков под постоянную коронку",
+							draftWhatsAppMessage: `Здравствуйте, ${patientFullName}! Прошло ${months} месяцев с момента установки дентального имплантата. Имплантат успешно остеоинтегрировался, и настало время завершить лечение — установить красивую постоянную коронку. Записать вас на консультацию к ортопеду?`,
+						});
+						identified = true;
+						break;
+					}
+
+					// Case B: Endodontics >= 2 weeks ago
+					if (!identified && v.createdAt <= twoWeeksAgo && (textContext.includes("пульпит") || textContext.includes("периодонтит") || textContext.includes("канал") || textContext.includes("временная пломба"))) {
+						const weeks = Math.round((now.getTime() - v.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 7));
+						orgRecords.push({
+							patientId: p.id,
+							patientFullName,
+							patientPhone: p.phone,
+							funnelKind: "endo_without_restoration",
+							funnelTitleRu: "Лечение каналов без постоянной пломбы",
+							elapsedMonthsOrWeeks: `${weeks} нед. назад`,
+							estimatedLostRevenueRub: 12000,
+							recommendedActionRu: "Записать на постоянную реставрацию зуба во избежание реинфекции",
+							draftWhatsAppMessage: `Здравствуйте, ${patientFullName}! Вы проходили лечение корневых каналов ${weeks} недели назад. Чтобы защитить зуб от сколов и бактерий, необходимо поставить постоянную пломбу / коронку. Когда вам удобно подойти на прием?`,
+						});
+						identified = true;
+						break;
+					}
+
+					// Case C: Hygiene >= 6 months ago
+					if (!identified && v.createdAt <= sixMonthsAgo && (textContext.includes("гигиен") || textContext.includes("чистк") || textContext.includes("air-flow"))) {
+						const months = Math.round((now.getTime() - v.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 30));
+						orgRecords.push({
+							patientId: p.id,
+							patientFullName,
+							patientPhone: p.phone,
+							funnelKind: "hygiene_recall",
+							funnelTitleRu: "Пора на повторную профгигиену (6+ мес)",
+							elapsedMonthsOrWeeks: `${months} мес. назад`,
+							estimatedLostRevenueRub: 6500,
+							recommendedActionRu: "Напомнить о плановом гигиеническом осмотре и чистке",
+							draftWhatsAppMessage: `Здравствуйте, ${patientFullName}! Прошло ${months} месяцев с вашей последней профгигиены. Для сохранения здоровья десен и гарантии на пломбы врачи рекомендуют проходить чистку каждые 6 месяцев. Подберем удобное время?`,
+						});
+						identified = true;
+						break;
+					}
 				}
 			}
+		};
+
+		if (options?.organizationId) {
+			await withTenantReadCtx(options.organizationId, runScan);
+		} else {
+			await withSuperuserBypass(runScan);
 		}
 
 		const summaries: WeeklyRetentionSummary[] = [];

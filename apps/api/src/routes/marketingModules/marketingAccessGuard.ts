@@ -4,7 +4,7 @@ import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { organizations } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { roleHasPermissionWithOverrides } from "../../security/permissions.js";
@@ -49,7 +49,7 @@ export async function requireMarketingReadAccess(
 		return orgId;
 	}
 
-	const { overrides, clinicMode } = await withTenantCtx(orgId, async (tx) => {
+	const { overrides, clinicMode } = await withTenantReadCtx(orgId, async (tx) => {
 		const loadedOverrides = await fetchRoleMatrixOverrides(orgId, tx);
 		let mode: string | null | undefined = null;
 		if (role === "doctor") {

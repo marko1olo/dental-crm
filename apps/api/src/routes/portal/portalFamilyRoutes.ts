@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { withTenantCtx } from "../../db/rls.js";
+import { definePublicRoute } from "../../core/routeFactories.js";
+import { withTenantCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { familyGroups, patientRelationships, patients } from "../../db/schema.js";
 import { extractPortalPatient } from "./portalAuthStore.js";
 
@@ -27,26 +28,29 @@ const updatePortalFamilyPermissionsSchema = z
 
 export async function registerPortalFamilyRoutes(server: FastifyInstance): Promise<void> {
 	// Добавление члена семьи через личный кабинет пациента
-	server.post("/family/members", async (request: FastifyRequest, reply: FastifyReply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized", message: "Требуется авторизация в личном кабинете." };
-		}
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/family/members",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized", message: "Требуется авторизация в личном кабинете." };
+			}
 
-		const bodyParse = addPortalFamilyMemberSchema.safeParse(request.body);
-		if (!bodyParse.success) {
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Некорректные параметры члена семьи.",
-				details: bodyParse.error.issues,
-			};
-		}
+			const bodyParse = addPortalFamilyMemberSchema.safeParse(request.body);
+			if (!bodyParse.success) {
+				reply.status(400);
+				return {
+					error: "ValidationError",
+					message: "Некорректные параметры члена семьи.",
+					details: bodyParse.error.issues,
+				};
+			}
 
-		const body = bodyParse.data;
+			const body = bodyParse.data;
 
-		return withTenantCtx(auth.organizationId, async (tx) => {
+			return withTenantWriteCtx(auth.organizationId, async (tx) => {
 			const [primaryPatient] = await tx
 				.select({
 					id: patients.id,
@@ -194,134 +198,139 @@ export async function registerPortalFamilyRoutes(server: FastifyInstance): Promi
 				allowSpendFamilyBalance: Boolean(body.allowSpendFamilyBalance),
 			};
 		});
-	});
+	},
+});
 
 	// Обновление прав семейного баланса через личный кабинет пациента
-	server.patch("/family/permissions", async (request: FastifyRequest, reply: FastifyReply) => {
-		const auth = extractPortalPatient(request);
-		if (!auth) {
-			reply.status(401);
-			return { error: "Unauthorized", message: "Требуется авторизация в личном кабинете." };
-		}
+	definePublicRoute(server, {
+		method: "PATCH",
+		path: "/family/permissions",
+		handler: async ({ request, reply }) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				reply.status(401);
+				return { error: "Unauthorized", message: "Требуется авторизация в личном кабинете." };
+			}
 
-		const bodyParse = updatePortalFamilyPermissionsSchema.safeParse(request.body);
-		if (!bodyParse.success) {
-			reply.status(400);
-			return {
-				error: "ValidationError",
-				message: "Некорректные параметры прав доступа.",
-				details: bodyParse.error.issues,
-			};
-		}
-
-		const body = bodyParse.data;
-
-		return withTenantCtx(auth.organizationId, async (tx) => {
-			const [callerPatient] = await tx
-				.select({
-					id: patients.id,
-					familyGroupId: patients.familyGroupId,
-				})
-				.from(patients)
-				.where(
-					and(
-						eq(patients.id, auth.patientId),
-						eq(patients.organizationId, auth.organizationId),
-					),
-				)
-				.limit(1);
-
-			if (!callerPatient?.familyGroupId) {
-				reply.status(403);
+			const bodyParse = updatePortalFamilyPermissionsSchema.safeParse(request.body);
+			if (!bodyParse.success) {
+				reply.status(400);
 				return {
-					error: "Forbidden",
-					message: "Управление правами семейного кошелька доступно только главе семьи.",
+					error: "ValidationError",
+					message: "Некорректные параметры прав доступа.",
+					details: bodyParse.error.issues,
 				};
 			}
 
-			const [fg] = await tx
-				.select({
-					id: familyGroups.id,
-					headPatientId: familyGroups.headPatientId,
-					primaryPatientId: familyGroups.primaryPatientId,
-				})
-				.from(familyGroups)
-				.where(
-					and(
-						eq(familyGroups.id, callerPatient.familyGroupId),
-						eq(familyGroups.organizationId, auth.organizationId),
-					),
-				)
-				.limit(1);
+			const body = bodyParse.data;
 
-			if (!fg) {
-				reply.status(403);
-				return {
-					error: "Forbidden",
-					message: "Только глава семейной группы может изменять права расходования семейного баланса.",
-				};
-			}
+			return withTenantWriteCtx(auth.organizationId, async (tx) => {
+				const [callerPatient] = await tx
+					.select({
+						id: patients.id,
+						familyGroupId: patients.familyGroupId,
+					})
+					.from(patients)
+					.where(
+						and(
+							eq(patients.id, auth.patientId),
+							eq(patients.organizationId, auth.organizationId),
+						),
+					)
+					.limit(1);
 
-			const isFamilyHead =
-				fg.headPatientId === auth.patientId || fg.primaryPatientId === auth.patientId;
-			if (!isFamilyHead) {
-				reply.status(403);
-				return {
-					error: "Forbidden",
-					message: "Только глава семейной группы может изменять права расходования семейного баланса.",
-				};
-			}
+				if (!callerPatient?.familyGroupId) {
+					reply.status(403);
+					return {
+						error: "Forbidden",
+						message: "Управление правами семейного кошелька доступно только главе семьи.",
+					};
+				}
 
-			const [targetMember] = await tx
-				.select({ id: patients.id })
-				.from(patients)
-				.where(
-					and(
-						eq(patients.id, body.memberId),
-						eq(patients.organizationId, auth.organizationId),
-						eq(patients.familyGroupId, callerPatient.familyGroupId),
-					),
-				)
-				.limit(1);
+				const [fg] = await tx
+					.select({
+						id: familyGroups.id,
+						headPatientId: familyGroups.headPatientId,
+						primaryPatientId: familyGroups.primaryPatientId,
+					})
+					.from(familyGroups)
+					.where(
+						and(
+							eq(familyGroups.id, callerPatient.familyGroupId),
+							eq(familyGroups.organizationId, auth.organizationId),
+						),
+					)
+					.limit(1);
 
-			if (!targetMember) {
-				reply.status(404);
-				return { error: "RelationshipNotFound", message: "Член семьи не найден в вашей семейной группе." };
-			}
+				if (!fg) {
+					reply.status(403);
+					return {
+						error: "Forbidden",
+						message: "Только глава семейной группы может изменять права расходования семейного баланса.",
+					};
+				}
 
-			const updated = await tx
-				.update(patientRelationships)
-				.set({
-					canSpendFamilyWallet: body.canSpendFamilyWallet,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(patientRelationships.organizationId, auth.organizationId),
-						or(
-							and(
-								eq(patientRelationships.patientId, auth.patientId),
-								eq(patientRelationships.relatedPatientId, body.memberId),
-							),
-							and(
-								eq(patientRelationships.patientId, body.memberId),
-								eq(patientRelationships.relatedPatientId, auth.patientId),
+				const isFamilyHead =
+					fg.headPatientId === auth.patientId || fg.primaryPatientId === auth.patientId;
+				if (!isFamilyHead) {
+					reply.status(403);
+					return {
+						error: "Forbidden",
+						message: "Только глава семейной группы может изменять права расходования семейного баланса.",
+					};
+				}
+
+				const [targetMember] = await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.id, body.memberId),
+							eq(patients.organizationId, auth.organizationId),
+							eq(patients.familyGroupId, callerPatient.familyGroupId),
+						),
+					)
+					.limit(1);
+
+				if (!targetMember) {
+					reply.status(404);
+					return { error: "RelationshipNotFound", message: "Член семьи не найден в вашей семейной группе." };
+				}
+
+				const updated = await tx
+					.update(patientRelationships)
+					.set({
+						canSpendFamilyWallet: body.canSpendFamilyWallet,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(patientRelationships.organizationId, auth.organizationId),
+							or(
+								and(
+									eq(patientRelationships.patientId, auth.patientId),
+									eq(patientRelationships.relatedPatientId, body.memberId),
+								),
+								and(
+									eq(patientRelationships.patientId, body.memberId),
+									eq(patientRelationships.relatedPatientId, auth.patientId),
+								),
 							),
 						),
-					),
-				)
-				.returning({ id: patientRelationships.id });
+					)
+					.returning({ id: patientRelationships.id });
 
-			if (!updated.length) {
-				reply.status(404);
-				return { error: "RelationshipNotFound", message: "Связь с членом семьи не найдена." };
-			}
+				if (!updated.length) {
+					reply.status(404);
+					return { error: "RelationshipNotFound", message: "Связь с членом семьи не найдена." };
+				}
 
-			return {
-				success: true,
-				memberId: body.memberId,
-				canSpendFamilyWallet: body.canSpendFamilyWallet,
-			};
-		});
+				return {
+					success: true,
+					memberId: body.memberId,
+					canSpendFamilyWallet: body.canSpendFamilyWallet,
+				};
+			});
+		},
 	});
 }

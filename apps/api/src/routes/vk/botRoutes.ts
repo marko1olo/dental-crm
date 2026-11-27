@@ -1,7 +1,8 @@
 import { and, eq } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { denteVkBotConfigs } from "../../db/schema.js";
 import { OmnichannelTokenVault } from "../../services/bots/OmnichannelTokenVault.js";
 import { VkApiClient } from "../../services/bots/VkApiClient.js";
@@ -13,68 +14,73 @@ export function registerVkBotRoutes(server: FastifyInstance): void {
 	 * GET /api/vk/bot/settings
 	 * Получение текущей конфигурации сообщества ВКонтакте (токены и секреты замаскированы).
 	 */
-	server.get("/api/vk/bot/settings", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply, "vk bot settings read");
-		if (!orgId) return;
+	defineStreamRoute(server, {
+		method: "GET",
+		path: "/api/vk/bot/settings",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedOrganizationId(request, reply, "vk bot settings read");
+			if (!orgId) return;
 
-		const config = await withTenantCtx(orgId, async (tx) => {
-			const [cfg] = await tx
-				.select()
-				.from(denteVkBotConfigs)
-				.where(eq(denteVkBotConfigs.organizationId, orgId))
-				.limit(1);
-			return cfg || null;
-		});
-
-		const reqHost = request.headers.host || "crm.dente.app";
-		const defaultWebhookUrl = VkApiClient.buildWebhookUrl(reqHost, orgId);
-
-		if (!config) {
-			return reply.send({
-				configured: false,
-				groupId: null,
-				tokenMasked: null,
-				secretKey: VkApiClient.generateSecretKey(),
-				secretKeyMasked: null,
-				confirmationCode: VkApiClient.generateConfirmationCode(),
-				confirmationCodeMasked: null,
-				webhookUrl: defaultWebhookUrl,
-				isEnabled: false,
-				isActive: false,
-				updatedAt: null,
+			const config = await withTenantReadCtx(orgId, async (tx) => {
+				const [cfg] = await tx
+					.select()
+					.from(denteVkBotConfigs)
+					.where(eq(denteVkBotConfigs.organizationId, orgId))
+					.limit(1);
+				return cfg || null;
 			});
-		}
 
-		const rawToken = config.tokenSecretRef || config.groupToken;
-		let tokenMasked: string | null = null;
-		if (rawToken) {
-			const decryptedToken = resolveDecryptedWebhookSecret(rawToken, orgId, request.log);
-			tokenMasked = OmnichannelTokenVault.maskToken(decryptedToken ?? rawToken);
-		}
+			const reqHost = request.headers.host || "crm.dente.app";
+			const defaultWebhookUrl = VkApiClient.buildWebhookUrl(reqHost, orgId);
 
-		const decryptedSecret = resolveDecryptedWebhookSecret(config.secretKey, orgId, request.log);
-		const secretKeyMasked = config.secretKey
-			? OmnichannelTokenVault.maskToken(decryptedSecret ?? config.secretKey)
-			: null;
-		const confirmationCodeMasked = config.confirmationCode
-			? OmnichannelTokenVault.maskToken(config.confirmationCode)
-			: null;
+			if (!config) {
+				return reply.send({
+					configured: false,
+					groupId: null,
+					tokenMasked: null,
+					secretKey: VkApiClient.generateSecretKey(),
+					secretKeyMasked: null,
+					confirmationCode: VkApiClient.generateConfirmationCode(),
+					confirmationCodeMasked: null,
+					webhookUrl: defaultWebhookUrl,
+					isEnabled: false,
+					isActive: false,
+					updatedAt: null,
+				});
+			}
 
-		return reply.send({
-			configured: Boolean(config.groupId && (config.groupToken || config.tokenSecretRef)),
-			groupId: config.groupId,
-			tokenMasked,
-			secretKey: null,
-			secretKeyMasked,
-			hasSecretKey: Boolean(config.secretKey),
-			confirmationCode: null,
-			confirmationCodeMasked,
-			hasConfirmationCode: Boolean(config.confirmationCode),
-			webhookUrl: config.webhookUrl || defaultWebhookUrl,
-			isEnabled: config.isEnabled,
-			isActive: config.isActive,
-			updatedAt: config.updatedAt ? config.updatedAt.toISOString() : null,
-		});
+			const rawToken = config.tokenSecretRef || config.groupToken;
+			let tokenMasked: string | null = null;
+			if (rawToken) {
+				const decryptedToken = resolveDecryptedWebhookSecret(rawToken, orgId, request.log);
+				tokenMasked = OmnichannelTokenVault.maskToken(decryptedToken ?? rawToken);
+			}
+
+			const decryptedSecret = resolveDecryptedWebhookSecret(config.secretKey, orgId, request.log);
+			const secretKeyMasked = config.secretKey
+				? OmnichannelTokenVault.maskToken(decryptedSecret ?? config.secretKey)
+				: null;
+			const confirmationCodeMasked = config.confirmationCode
+				? OmnichannelTokenVault.maskToken(config.confirmationCode)
+				: null;
+
+			return reply.send({
+				configured: Boolean(config.groupId && (config.groupToken || config.tokenSecretRef)),
+				groupId: config.groupId,
+				tokenMasked,
+				secretKey: null,
+				secretKeyMasked,
+				hasSecretKey: Boolean(config.secretKey),
+				confirmationCode: null,
+				confirmationCodeMasked,
+				hasConfirmationCode: Boolean(config.confirmationCode),
+				webhookUrl: config.webhookUrl || defaultWebhookUrl,
+				isEnabled: config.isEnabled,
+				isActive: config.isActive,
+				updatedAt: config.updatedAt ? config.updatedAt.toISOString() : null,
+			});
+		},
 	});
 
 	/**
@@ -82,10 +88,11 @@ export function registerVkBotRoutes(server: FastifyInstance): void {
 	 * Сохранение и валидация подключения сообщества ВКонтакте.
 	 * При передаче groupToken === "KEEP_EXISTING" подставляется расшифрованный токен из БД.
 	 */
-	server.post(
-		"/api/vk/bot/connect",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/api/vk/bot/connect",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = await requireResolvedOrganizationId(request, reply, "vk bot connect");
 			if (!orgId) return;
 
@@ -101,7 +108,7 @@ export function registerVkBotRoutes(server: FastifyInstance): void {
 
 			let effectiveGroupToken = groupToken;
 			if (groupToken === "KEEP_EXISTING") {
-				const existingCfg = await withTenantCtx(orgId, async (tx) => {
+				const existingCfg = await withTenantReadCtx(orgId, async (tx) => {
 					const [record] = await tx
 						.select({
 							groupToken: denteVkBotConfigs.groupToken,
@@ -147,7 +154,7 @@ export function registerVkBotRoutes(server: FastifyInstance): void {
 			const effectiveConfirmationCode =
 				confirmationCode?.trim() || VkApiClient.generateConfirmationCode();
 
-			await withTenantCtx(orgId, async (tx) => {
+			await withTenantWriteCtx(orgId, async (tx) => {
 				const [existing] = await tx
 					.select({ id: denteVkBotConfigs.id })
 					.from(denteVkBotConfigs)
@@ -200,16 +207,17 @@ export function registerVkBotRoutes(server: FastifyInstance): void {
 				tokenMasked: OmnichannelTokenVault.maskToken(effectiveGroupToken),
 			});
 		},
-	);
+	});
 
 	/**
 	 * POST /api/vk/bot/verify
 	 * Проверка статуса связи сообщества ВКонтакте.
 	 */
-	server.post(
-		"/api/vk/bot/verify",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/api/vk/bot/verify",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = await requireResolvedOrganizationId(request, reply, "vk bot verify");
 			if (!orgId) return;
 
@@ -227,7 +235,7 @@ export function registerVkBotRoutes(server: FastifyInstance): void {
 			let groupToken = parsed.data.groupToken;
 
 			if (!groupId || !groupToken || groupToken === "KEEP_EXISTING") {
-				const cfg = await withTenantCtx(orgId, async (tx) => {
+				const cfg = await withTenantReadCtx(orgId, async (tx) => {
 					const [record] = await tx
 						.select()
 						.from(denteVkBotConfigs)
@@ -270,16 +278,17 @@ export function registerVkBotRoutes(server: FastifyInstance): void {
 				});
 			}
 		},
-	);
+	});
 
 	/**
 	 * POST /api/vk/bot/test-message
 	 * Отправка тестового сообщения клиенту через сообщество ВКонтакте.
 	 */
-	server.post(
-		"/api/vk/bot/test-message",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/api/vk/bot/test-message",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = await requireResolvedOrganizationId(request, reply, "vk bot test message");
 			if (!orgId) return;
 
@@ -291,7 +300,7 @@ export function registerVkBotRoutes(server: FastifyInstance): void {
 				});
 			}
 
-			const cfg = await withTenantCtx(orgId, async (tx) => {
+			const cfg = await withTenantReadCtx(orgId, async (tx) => {
 				const [record] = await tx
 					.select()
 					.from(denteVkBotConfigs)
@@ -336,27 +345,32 @@ export function registerVkBotRoutes(server: FastifyInstance): void {
 				});
 			}
 		},
-	);
+	});
 
 	/**
 	 * POST /api/vk/bot/disconnect
 	 * Отключение сообщества ВКонтакте.
 	 */
-	server.post("/api/vk/bot/disconnect", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply, "vk bot disconnect");
-		if (!orgId) return;
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/api/vk/bot/disconnect",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedOrganizationId(request, reply, "vk bot disconnect");
+			if (!orgId) return;
 
-		await withTenantCtx(orgId, async (tx) => {
-			await tx
-				.update(denteVkBotConfigs)
-				.set({
-					isEnabled: false,
-					isActive: false,
-					updatedAt: new Date(),
-				})
-				.where(eq(denteVkBotConfigs.organizationId, orgId));
-		});
+			await withTenantWriteCtx(orgId, async (tx) => {
+				await tx
+					.update(denteVkBotConfigs)
+					.set({
+						isEnabled: false,
+						isActive: false,
+						updatedAt: new Date(),
+					})
+					.where(eq(denteVkBotConfigs.organizationId, orgId));
+			});
 
-		return reply.send({ ok: true });
+			return reply.send({ ok: true });
+		},
 	});
 }

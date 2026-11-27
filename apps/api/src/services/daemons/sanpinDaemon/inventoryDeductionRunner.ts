@@ -8,7 +8,8 @@
 
 import { kopecksToRubles } from "@dental/shared";
 import { and, desc, eq, gte, lte, or, sql } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import type { TenantDb } from "../../../db/client.js";
+import { withSuperuserBypass, withTenantReadCtx } from "../../../db/rls.js";
 import {
 	inventoryItems,
 	inventoryTransactions,
@@ -443,157 +444,163 @@ export async function runExpensiveMaterialsInventoryAudit(options?: ExpensiveMat
 			? eq(visits.organizationId, options.organizationId)
 			: undefined;
 
-		// 1. Fetch completed visits in target window
-		const visitConditions = [
-			gte(visits.createdAt, windowStart),
-			lte(visits.createdAt, now),
-		];
-		if (orgFilter) {
-			visitConditions.push(orgFilter);
-		}
-
-		const shiftVisits = await db
-			.select({
-				visitId: visits.id,
-				organizationId: visits.organizationId,
-				patientId: visits.patientId,
-				appointmentId: visits.appointmentId,
-				complaint: visits.complaint,
-				diagnosis: visits.diagnosis,
-				treatmentPlan: visits.treatmentPlan,
-				doctorSummary: visits.doctorSummary,
-				status: visits.status,
-				createdAt: visits.createdAt,
-				patientFullName: patients.fullName,
-			})
-			.from(visits)
-			.leftJoin(patients, eq(visits.patientId, patients.id))
-			.where(and(...visitConditions))
-			.orderBy(desc(visits.createdAt));
-
-		const alerts: InventoryReconciliationAlertItem[] = [];
-		let surgicalActsCount = 0;
-
-		for (const v of shiftVisits) {
-			if (!v.patientId) continue;
-			const patientFullName = v.patientFullName || "Пациент";
-
-			// 2. Fetch implant installations for this visit
-			const implantInstalls = await db
-				.select({
-					id: patientImplantInstallations.id,
-					implantBrand: patientImplantInstallations.implantBrand,
-					toothNumberFdi: patientImplantInstallations.toothNumberFdi,
-					lotNumber: patientImplantInstallations.lotNumber,
-					serialNumber: patientImplantInstallations.serialNumber,
-					boneGraftMaterial: patientImplantInstallations.boneGraftMaterial,
-					membraneUsed: patientImplantInstallations.membraneUsed,
-					installedAt: patientImplantInstallations.installedAt,
-					surgeonDoctorId: patientImplantInstallations.surgeonDoctorId,
-					doctorName: users.fullName,
-				})
-				.from(patientImplantInstallations)
-				.leftJoin(
-					users,
-					eq(patientImplantInstallations.surgeonDoctorId, users.id),
-				)
-				.where(
-					and(
-						eq(patientImplantInstallations.organizationId, v.organizationId),
-						eq(patientImplantInstallations.patientId, v.patientId),
-						or(
-							eq(patientImplantInstallations.visitId, v.visitId),
-							and(
-								gte(patientImplantInstallations.installedAt, windowStart),
-								lte(patientImplantInstallations.installedAt, now),
-							),
-						),
-					),
-				);
-
-			// 3. Fetch treatment items billed for this visit
-			const billedItems = await db
-				.select({
-					id: treatmentItems.id,
-					serviceId: treatmentItems.serviceId,
-					quantity: treatmentItems.quantity,
-					priceKopecks: treatmentItems.priceKopecks,
-					priceRub: treatmentItems.priceRub,
-					status: treatmentItems.status,
-					serviceTitle: services.title,
-					serviceCode: services.code,
-					serviceCategory: services.category,
-				})
-				.from(treatmentItems)
-				.leftJoin(services, eq(treatmentItems.serviceId, services.id))
-				.where(
-					and(
-						eq(treatmentItems.organizationId, v.organizationId),
-						eq(treatmentItems.visitId, v.visitId),
-					),
-				);
-
-			const isSurgical =
-				implantInstalls.length > 0 ||
-				billedItems.some(
-					(b) =>
-						(b.serviceCode && b.serviceCode.startsWith("A16.07")) ||
-						(b.serviceTitle && normalizeText(b.serviceTitle).includes("имплант")),
-				);
-
-			if (isSurgical) {
-				surgicalActsCount++;
+		const runAudit = async (tx: TenantDb) => {
+			// 1. Fetch completed visits in target window
+			const visitConditions = [
+				gte(visits.createdAt, windowStart),
+				lte(visits.createdAt, now),
+			];
+			if (orgFilter) {
+				visitConditions.push(orgFilter);
 			}
 
-			// 4. Fetch warehouse stock movement transactions for this visit
-			const warehouseTx = await db
+			const shiftVisits = await tx
 				.select({
-					id: inventoryTransactions.id,
-					itemId: inventoryTransactions.itemId,
-					inventoryItemId: inventoryTransactions.inventoryItemId,
-					transactionType: inventoryTransactions.transactionType,
-					qty: inventoryTransactions.qty,
-					quantityChanged: inventoryTransactions.quantityChanged,
-					unitCostKopecks: inventoryTransactions.unitCostKopecks,
-					unitCostRub: inventoryTransactions.unitCostRub,
-					notes: inventoryTransactions.notes,
-					createdAt: inventoryTransactions.createdAt,
-					itemName: inventoryItems.name,
-					sku: inventoryItems.sku,
-					category: inventoryItems.category,
+					visitId: visits.id,
+					organizationId: visits.organizationId,
+					patientId: visits.patientId,
+					appointmentId: visits.appointmentId,
+					complaint: visits.complaint,
+					diagnosis: visits.diagnosis,
+					treatmentPlan: visits.treatmentPlan,
+					doctorSummary: visits.doctorSummary,
+					status: visits.status,
+					createdAt: visits.createdAt,
+					patientFullName: patients.fullName,
 				})
-				.from(inventoryTransactions)
-				.leftJoin(
-					inventoryItems,
-					eq(
-						inventoryItems.id,
-						sql`COALESCE(${inventoryTransactions.itemId}, ${inventoryTransactions.inventoryItemId})`,
-					),
-				)
-				.where(
-					and(
-						eq(inventoryTransactions.organizationId, v.organizationId),
-						eq(inventoryTransactions.visitId, v.visitId),
-					),
-				);
+				.from(visits)
+				.leftJoin(patients, eq(visits.patientId, patients.id))
+				.where(and(...visitConditions))
+				.orderBy(desc(visits.createdAt));
 
-			const actInput: SurgicalActInput = {
-				visitId: v.visitId,
-				organizationId: v.organizationId,
-				patientId: v.patientId,
-				patientFullName,
-				doctorId: implantInstalls[0]?.surgeonDoctorId ?? null,
-				doctorName: implantInstalls[0]?.doctorName ?? "Хирург-имплантолог",
-				shiftDate: v.createdAt.toLocaleDateString("ru-RU"),
-				implantInstallations: implantInstalls,
-				billedItems,
-			};
+			const alerts: InventoryReconciliationAlertItem[] = [];
+			let surgicalActsCount = 0;
 
-			const actAlerts = reconcileSurgicalActWithInventory(actInput, warehouseTx);
-			alerts.push(...actAlerts);
-		}
+			for (const v of shiftVisits) {
+				if (!v.patientId) continue;
+				const patientFullName = v.patientFullName || "Пациент";
 
-		return { alerts, totalSurgicalActsAudited: surgicalActsCount };
+				// 2. Fetch implant installations for this visit
+				const implantInstalls = await tx
+					.select({
+						id: patientImplantInstallations.id,
+						implantBrand: patientImplantInstallations.implantBrand,
+						toothNumberFdi: patientImplantInstallations.toothNumberFdi,
+						lotNumber: patientImplantInstallations.lotNumber,
+						serialNumber: patientImplantInstallations.serialNumber,
+						boneGraftMaterial: patientImplantInstallations.boneGraftMaterial,
+						membraneUsed: patientImplantInstallations.membraneUsed,
+						installedAt: patientImplantInstallations.installedAt,
+						surgeonDoctorId: patientImplantInstallations.surgeonDoctorId,
+						doctorName: users.fullName,
+					})
+					.from(patientImplantInstallations)
+					.leftJoin(
+						users,
+						eq(patientImplantInstallations.surgeonDoctorId, users.id),
+					)
+					.where(
+						and(
+							eq(patientImplantInstallations.organizationId, v.organizationId),
+							eq(patientImplantInstallations.patientId, v.patientId),
+							or(
+								eq(patientImplantInstallations.visitId, v.visitId),
+								and(
+									gte(patientImplantInstallations.installedAt, windowStart),
+									lte(patientImplantInstallations.installedAt, now),
+								),
+							),
+						),
+					);
+
+				// 3. Fetch treatment items billed for this visit
+				const billedItems = await tx
+					.select({
+						id: treatmentItems.id,
+						serviceId: treatmentItems.serviceId,
+						quantity: treatmentItems.quantity,
+						priceKopecks: treatmentItems.priceKopecks,
+						priceRub: treatmentItems.priceRub,
+						status: treatmentItems.status,
+						serviceTitle: services.title,
+						serviceCode: services.code,
+						serviceCategory: services.category,
+					})
+					.from(treatmentItems)
+					.leftJoin(services, eq(treatmentItems.serviceId, services.id))
+					.where(
+						and(
+							eq(treatmentItems.organizationId, v.organizationId),
+							eq(treatmentItems.visitId, v.visitId),
+						),
+					);
+
+				const isSurgical =
+					implantInstalls.length > 0 ||
+					billedItems.some(
+						(b) =>
+							(b.serviceCode && b.serviceCode.startsWith("A16.07")) ||
+							(b.serviceTitle && normalizeText(b.serviceTitle).includes("имплант")),
+					);
+
+				if (isSurgical) {
+					surgicalActsCount++;
+				}
+
+				// 4. Fetch warehouse stock movement transactions for this visit
+				const warehouseTx = await tx
+					.select({
+						id: inventoryTransactions.id,
+						itemId: inventoryTransactions.itemId,
+						inventoryItemId: inventoryTransactions.inventoryItemId,
+						transactionType: inventoryTransactions.transactionType,
+						qty: inventoryTransactions.qty,
+						quantityChanged: inventoryTransactions.quantityChanged,
+						unitCostKopecks: inventoryTransactions.unitCostKopecks,
+						unitCostRub: inventoryTransactions.unitCostRub,
+						notes: inventoryTransactions.notes,
+						createdAt: inventoryTransactions.createdAt,
+						itemName: inventoryItems.name,
+						sku: inventoryItems.sku,
+						category: inventoryItems.category,
+					})
+					.from(inventoryTransactions)
+					.leftJoin(
+						inventoryItems,
+						eq(
+							inventoryItems.id,
+							sql`COALESCE(${inventoryTransactions.itemId}, ${inventoryTransactions.inventoryItemId})`,
+						),
+					)
+					.where(
+						and(
+							eq(inventoryTransactions.organizationId, v.organizationId),
+							eq(inventoryTransactions.visitId, v.visitId),
+						),
+					);
+
+				const actInput: SurgicalActInput = {
+					visitId: v.visitId,
+					organizationId: v.organizationId,
+					patientId: v.patientId,
+					patientFullName,
+					doctorId: implantInstalls[0]?.surgeonDoctorId ?? null,
+					doctorName: implantInstalls[0]?.doctorName ?? "Хирург-имплантолог",
+					shiftDate: v.createdAt.toLocaleDateString("ru-RU"),
+					implantInstallations: implantInstalls,
+					billedItems,
+				};
+
+				const actAlerts = reconcileSurgicalActWithInventory(actInput, warehouseTx);
+				alerts.push(...actAlerts);
+			}
+
+			return { alerts, totalSurgicalActsAudited: surgicalActsCount };
+		};
+
+		return options?.organizationId
+			? await withTenantReadCtx(options.organizationId, runAudit)
+			: await withSuperuserBypass(runAudit);
 	} catch (error) {
 		sanpinLogger.error("[SanpinAndInventoryDaemon:ERROR] Failed to run expensive materials inventory audit:", error);
 		throw error;

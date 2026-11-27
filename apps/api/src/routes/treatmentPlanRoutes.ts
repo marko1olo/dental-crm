@@ -1,10 +1,7 @@
 import { isValidUuid } from "@dental/shared";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 import { z } from "zod";
-import {
-	requireClinicalMutationContext,
-	requireClinicalReadContext,
-} from "../accessGuard.js";
+import { defineTenantMutation, defineTenantQuery } from "../core/routeFactories.js";
 import { treatmentPlanQuerySchema } from "./treatmentPlan/pipelineTypes.js";
 import { aggregatePipelineData } from "./treatmentPlan/pipelineDataAggregator.js";
 import { handleCreateBudgetLink } from "./treatmentPlan/budgetLinkHandler.js";
@@ -50,173 +47,270 @@ export const dropoutRecallBodySchema = z.object({
 	notes: z.string().trim().optional(),
 }).strict();
 
+const TREATMENT_PLAN_READ_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+	allowUnverifiedHeaderRead: true,
+} as const;
+
+const TREATMENT_PLAN_WRITE_PERMISSION = {
+	anyOf: ["clinical.write", "finance.write", "patients.write"] as const,
+} as const;
+
+const TREATMENT_PLAN_WRITE_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+} as const;
+
 export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	// 0a. GET /api/treatment-plans/:id — Получение плана лечения по ID со связями
-	const hasGetId = checkHasRoute(server, "GET", "/api/treatment-plans/:id");
-	if (!hasGetId) {
-		server.get("/api/treatment-plans/:id", handleGetTreatmentPlanById);
-		server.get("/api/treatment-plan/:id", handleGetTreatmentPlanById);
-		server.get("/api/v1/treatment-plans/:id", handleGetTreatmentPlanById);
-		server.get("/api/v1/treatment-plan/:id", handleGetTreatmentPlanById);
+	const getIdPaths = [
+		"/api/treatment-plans/:id",
+		"/api/treatment-plan/:id",
+		"/api/v1/treatment-plans/:id",
+		"/api/v1/treatment-plan/:id",
+	];
+	if (!checkHasRoute(server, "GET", "/api/treatment-plans/:id")) {
+		for (const path of getIdPaths) {
+			defineTenantQuery(server, {
+				path,
+				permission: "clinical.read",
+				authOptions: TREATMENT_PLAN_READ_AUTH,
+				query: async ({ req, reply, organizationId, tx }) =>
+					handleGetTreatmentPlanById(req as FastifyRequest<{ Params: { id: string } }>, reply, organizationId, tx),
+			});
+		}
 	}
 
 	// 0b. GET /api/patients/:patientId/treatment-plans — Список планов конкретного пациента
-	const hasGetPatientPlans = checkHasRoute(server, "GET", "/api/patients/:patientId/treatment-plans");
-	if (!hasGetPatientPlans) {
-		server.get("/api/patients/:patientId/treatment-plans", handleListPatientTreatmentPlans);
-		server.get("/api/treatment-plans/patient/:patientId", handleListPatientTreatmentPlans);
-		server.get("/api/v1/treatment-plans/patient/:patientId", handleListPatientTreatmentPlans);
+	const getPatientPlansPaths = [
+		"/api/patients/:patientId/treatment-plans",
+		"/api/treatment-plans/patient/:patientId",
+		"/api/v1/treatment-plans/patient/:patientId",
+	];
+	if (!checkHasRoute(server, "GET", "/api/patients/:patientId/treatment-plans")) {
+		for (const path of getPatientPlansPaths) {
+			defineTenantQuery(server, {
+				path,
+				permission: "clinical.read",
+				authOptions: TREATMENT_PLAN_READ_AUTH,
+				query: async ({ req, reply, organizationId, tx }) =>
+					handleListPatientTreatmentPlans(req as FastifyRequest<{ Params: { patientId: string } }>, reply, organizationId, tx),
+			});
+		}
 	}
 
 	// 0c. POST /api/patients/:patientId/treatment-plans — Сохранение / создание ревизии плана лечения
-	const hasPostPatientPlans = checkHasRoute(server, "POST", "/api/patients/:patientId/treatment-plans");
-	if (!hasPostPatientPlans) {
-		server.post("/api/patients/:patientId/treatment-plans", handleUpsertPatientTreatmentPlan);
+	if (!checkHasRoute(server, "POST", "/api/patients/:patientId/treatment-plans")) {
+		defineTenantMutation(server, {
+			method: "POST",
+			path: "/api/patients/:patientId/treatment-plans",
+			permission: TREATMENT_PLAN_WRITE_PERMISSION,
+			authOptions: TREATMENT_PLAN_WRITE_AUTH,
+			idempotency: "optional_header",
+			execute: async ({ req, reply, organizationId, tx }) =>
+				handleUpsertPatientTreatmentPlan(req as FastifyRequest<{ Params: { patientId: string } }>, reply, organizationId, tx),
+		});
 	}
 
 	// 0. GET /api/treatment-plans — Список планов лечения клиники
-	const listPlansHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-		const context = await requireClinicalReadContext(request, reply, "list treatment plans");
-		if (!context) return;
-		return handleListTreatmentPlans(request, reply, context.organizationId);
-	};
-	server.get("/api/treatment-plans", listPlansHandler);
-	server.get("/api/v1/treatment-plans", listPlansHandler);
+	for (const path of ["/api/treatment-plans", "/api/v1/treatment-plans"]) {
+		defineTenantQuery(server, {
+			path,
+			permission: "clinical.read",
+			authOptions: TREATMENT_PLAN_READ_AUTH,
+			query: async ({ req, reply, organizationId, tx }) =>
+				handleListTreatmentPlans(req, reply, organizationId, tx),
+		});
+	}
 
 	// 1. GET /api/v1/treatment-plans/pipeline — 5-колоночная оперативная воронка координатора
-	server.get("/api/v1/treatment-plans/pipeline", async (request, reply) => {
-		const context = await requireClinicalReadContext(request, reply, "treatment plan pipeline");
-		if (!context) return;
+	defineTenantQuery(server, {
+		path: "/api/v1/treatment-plans/pipeline",
+		permission: "clinical.read",
+		authOptions: TREATMENT_PLAN_READ_AUTH,
+		query: async ({ req, reply, organizationId, tx }) => {
+			const parsed = treatmentPlanQuerySchema.safeParse(req.query);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "InvalidQueryParams",
+					message:
+						"Некорректные параметры запроса воронки планов лечения: " +
+						parsed.error.issues.map((i) => i.message).join("; "),
+					issues: parsed.error.issues,
+				});
+			}
 
-		const parsed = treatmentPlanQuerySchema.safeParse(request.query);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "InvalidQueryParams",
-				message:
-					"Некорректные параметры запроса воронки планов лечения: " +
-					parsed.error.issues.map((i) => i.message).join("; "),
-				issues: parsed.error.issues,
-			});
-		}
-
-		const result = await aggregatePipelineData(context.organizationId, parsed.data);
-		return reply.code(200).send(result);
+			const result = await aggregatePipelineData(organizationId, parsed.data, tx);
+			return reply.code(200).send(result);
+		},
 	});
 
 	// 2. POST /api/v1/treatment-plans/:id/create-budget-link — создание ссылки на подписание сметы
-	server.post<{ Params: { id: string } }>(
-		"/api/v1/treatment-plans/:id/create-budget-link",
-		async (request, reply) => {
-			const context = await requireClinicalMutationContext(request, reply, "create budget link");
-			if (!context) return;
-			return handleCreateBudgetLink(request, reply, context.organizationId);
-		},
-	);
+	defineTenantMutation(server, {
+		method: "POST",
+		path: "/api/v1/treatment-plans/:id/create-budget-link",
+		permission: TREATMENT_PLAN_WRITE_PERMISSION,
+		authOptions: TREATMENT_PLAN_WRITE_AUTH,
+		idempotency: "optional_header",
+		execute: async ({ req, reply, organizationId, tx }) =>
+			handleCreateBudgetLink(req as FastifyRequest<{ Params: { id: string } }>, reply, organizationId, tx),
+	});
 
 	// 3. POST /api/treatment-plans — Создание плана лечения с этапами и процедурами
-	const createPlanHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-		const context = await requireClinicalMutationContext(request, reply, "create treatment plan");
-		if (!context) return;
-		return handleCreateTreatmentPlan(request, reply, context.organizationId);
-	};
-	server.post("/api/treatment-plans", createPlanHandler);
-	server.post("/api/v1/treatment-plans", createPlanHandler);
-	server.post("/api/treatment-plan", createPlanHandler);
-	server.post("/api/v1/treatment-plan", createPlanHandler);
+	for (const path of [
+		"/api/treatment-plans",
+		"/api/v1/treatment-plans",
+		"/api/treatment-plan",
+		"/api/v1/treatment-plan",
+	]) {
+		defineTenantMutation(server, {
+			method: "POST",
+			path,
+			permission: TREATMENT_PLAN_WRITE_PERMISSION,
+			authOptions: TREATMENT_PLAN_WRITE_AUTH,
+			idempotency: "optional_header",
+			execute: async ({ req, reply, organizationId, tx }) =>
+				handleCreateTreatmentPlan(req, reply, organizationId, tx),
+		});
+	}
 
 	// 4. PATCH /api/treatment-plans/:id/stages/:stageId — Обновление этапа плана лечения
-	const updateStageHandler = async (request: FastifyRequest<{ Params: { id: string; stageId: string } }>, reply: FastifyReply) => {
-		const context = await requireClinicalMutationContext(request, reply, "update treatment plan stage");
-		if (!context) return;
-		return handleUpdateTreatmentPlanStage(request, reply, context.organizationId);
-	};
-	server.patch<{ Params: { id: string; stageId: string } }>(
+	for (const path of [
 		"/api/treatment-plans/:id/stages/:stageId",
-		updateStageHandler,
-	);
-	server.patch<{ Params: { id: string; stageId: string } }>(
 		"/api/v1/treatment-plans/:id/stages/:stageId",
-		updateStageHandler,
-	);
+	]) {
+		defineTenantMutation(server, {
+			method: "PATCH",
+			path,
+			permission: TREATMENT_PLAN_WRITE_PERMISSION,
+			authOptions: TREATMENT_PLAN_WRITE_AUTH,
+			idempotency: "optional_header",
+			execute: async ({ req, reply, organizationId, tx }) =>
+				handleUpdateTreatmentPlanStage(req as FastifyRequest<{ Params: { id: string; stageId: string } }>, reply, organizationId, tx),
+		});
+	}
 
 	// 5. POST /api/treatment-plans/:id/sign-pep — Подписание плана через ПЭП (СМС / QR-код)
-	const signPepHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-		const context = await requireClinicalMutationContext(request, reply, "sign treatment plan via PEP");
-		if (!context) return;
-		return handleSignTreatmentPlanPep(request, reply, context.organizationId);
-	};
-	server.post<{ Params: { id: string } }>("/api/treatment-plans/:id/sign-pep", signPepHandler);
-	server.post<{ Params: { id: string } }>("/api/v1/treatment-plans/:id/sign-pep", signPepHandler);
+	for (const path of [
+		"/api/treatment-plans/:id/sign-pep",
+		"/api/v1/treatment-plans/:id/sign-pep",
+	]) {
+		defineTenantMutation(server, {
+			method: "POST",
+			path,
+			permission: TREATMENT_PLAN_WRITE_PERMISSION,
+			authOptions: TREATMENT_PLAN_WRITE_AUTH,
+			idempotency: "optional_header",
+			execute: async ({ req, reply, organizationId, tx }) =>
+				handleSignTreatmentPlanPep(req as FastifyRequest<{ Params: { id: string } }>, reply, organizationId, tx),
+		});
+	}
 
 	// 6. PATCH /api/treatment-plans/:id — Обновление плана лечения
-	const updatePlanHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-		const context = await requireClinicalMutationContext(request, reply, "update treatment plan");
-		if (!context) return;
-		return handleUpdateTreatmentPlan(request, reply, context.organizationId);
-	};
-	server.patch<{ Params: { id: string } }>("/api/treatment-plans/:id", updatePlanHandler);
-	server.patch<{ Params: { id: string } }>("/api/v1/treatment-plans/:id", updatePlanHandler);
+	for (const path of [
+		"/api/treatment-plans/:id",
+		"/api/v1/treatment-plans/:id",
+	]) {
+		defineTenantMutation(server, {
+			method: "PATCH",
+			path,
+			permission: TREATMENT_PLAN_WRITE_PERMISSION,
+			authOptions: TREATMENT_PLAN_WRITE_AUTH,
+			idempotency: "optional_header",
+			execute: async ({ req, reply, organizationId, tx }) =>
+				handleUpdateTreatmentPlan(req as FastifyRequest<{ Params: { id: string } }>, reply, organizationId, tx),
+		});
+	}
 
 	// 6b. PATCH /api/treatment-plans/:id/status — Обновление статуса плана лечения
-	const updatePlanStatusHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-		const context = await requireClinicalMutationContext(request, reply, "update treatment plan status");
-		if (!context) return;
-		return handleUpdateTreatmentPlanStatus(request, reply, context.organizationId);
-	};
-	server.patch<{ Params: { id: string } }>("/api/treatment-plans/:id/status", updatePlanStatusHandler);
-	server.patch<{ Params: { id: string } }>("/api/v1/treatment-plans/:id/status", updatePlanStatusHandler);
+	for (const path of [
+		"/api/treatment-plans/:id/status",
+		"/api/v1/treatment-plans/:id/status",
+	]) {
+		defineTenantMutation(server, {
+			method: "PATCH",
+			path,
+			permission: TREATMENT_PLAN_WRITE_PERMISSION,
+			authOptions: TREATMENT_PLAN_WRITE_AUTH,
+			idempotency: "optional_header",
+			execute: async ({ req, reply, organizationId, tx }) =>
+				handleUpdateTreatmentPlanStatus(req as FastifyRequest<{ Params: { id: string } }>, reply, organizationId, tx),
+		});
+	}
 
 	// 7. POST /api/treatment-plans/:id/approve — Утверждение плана лечения
-	const approvePlanHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-		const context = await requireClinicalMutationContext(request, reply, "approve treatment plan");
-		if (!context) return;
-		return handleApproveTreatmentPlan(request, reply, context.organizationId);
-	};
-	server.post<{ Params: { id: string } }>("/api/treatment-plans/:id/approve", approvePlanHandler);
-	server.post<{ Params: { id: string } }>("/api/v1/treatment-plans/:id/approve", approvePlanHandler);
+	for (const path of [
+		"/api/treatment-plans/:id/approve",
+		"/api/v1/treatment-plans/:id/approve",
+	]) {
+		defineTenantMutation(server, {
+			method: "POST",
+			path,
+			permission: TREATMENT_PLAN_WRITE_PERMISSION,
+			authOptions: TREATMENT_PLAN_WRITE_AUTH,
+			idempotency: "optional_header",
+			execute: async ({ req, reply, organizationId, tx }) =>
+				handleApproveTreatmentPlan(req as FastifyRequest<{ Params: { id: string } }>, reply, organizationId, tx),
+		});
+	}
 
 	// 8. POST /api/v1/treatment-plans/:id/transition-stage — Перемещение плана между этапами воронки
-	const stageTransitionHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-		const context = await requireClinicalMutationContext(request, reply, "transition treatment plan stage");
-		if (!context) return;
-		return handleStageTransition(request, reply, context.organizationId);
-	};
-	server.post<{ Params: { id: string } }>("/api/treatment-plans/:id/transition-stage", stageTransitionHandler);
-	server.post<{ Params: { id: string } }>("/api/v1/treatment-plans/:id/transition-stage", stageTransitionHandler);
+	for (const path of [
+		"/api/treatment-plans/:id/transition-stage",
+		"/api/v1/treatment-plans/:id/transition-stage",
+	]) {
+		defineTenantMutation(server, {
+			method: "POST",
+			path,
+			permission: TREATMENT_PLAN_WRITE_PERMISSION,
+			authOptions: TREATMENT_PLAN_WRITE_AUTH,
+			idempotency: "optional_header",
+			execute: async ({ req, reply, organizationId, tx }) =>
+				handleStageTransition(req as FastifyRequest<{ Params: { id: string } }>, reply, organizationId, tx),
+		});
+	}
 
 	// 9. POST /api/v1/treatment-plans/dropout-prevention/run — Пакетная генерация задач куратора по анти-отвалу (14–21д)
-	server.post("/api/v1/treatment-plans/dropout-prevention/run", async (request: FastifyRequest, reply: FastifyReply) => {
-		const context = await requireClinicalMutationContext(request, reply, "run treatment plan dropout prevention");
-		if (!context) return;
-		const parsed = dropoutPreventionRunBodySchema.safeParse(request.body ?? {});
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректные параметры запуска профилактики отвала.",
-				issues: parsed.error.issues,
+	defineTenantMutation(server, {
+		method: "POST",
+		path: "/api/v1/treatment-plans/dropout-prevention/run",
+		permission: TREATMENT_PLAN_WRITE_PERMISSION,
+		authOptions: TREATMENT_PLAN_WRITE_AUTH,
+		idempotency: "optional_header",
+		execute: async ({ req, reply, organizationId, tx }) => {
+			const parsed = dropoutPreventionRunBodySchema.safeParse(req.body ?? {});
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры запуска профилактики отвала.",
+					issues: parsed.error.issues,
+				});
+			}
+			const result = await checkAndGenerateDropoutRecalls(organizationId, parsed.data.minDays, tx);
+			return reply.code(200).send({
+				success: true,
+				data: result,
 			});
-		}
-		const result = await checkAndGenerateDropoutRecalls(context.organizationId, parsed.data.minDays);
-		return reply.code(200).send({
-			success: true,
-			data: result,
-		});
+		},
 	});
 
 	// 10. POST /api/v1/treatment-plans/:id/create-dropout-recall — Одиночная задача куратору по анти-отвалу
-	server.post<{ Params: { id: string } }>(
-		"/api/v1/treatment-plans/:id/create-dropout-recall",
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-			const context = await requireClinicalMutationContext(request, reply, "create dropout recall for plan");
-			if (!context) return;
-			const planId = request.params.id?.trim();
+	defineTenantMutation(server, {
+		method: "POST",
+		path: "/api/v1/treatment-plans/:id/create-dropout-recall",
+		permission: TREATMENT_PLAN_WRITE_PERMISSION,
+		authOptions: TREATMENT_PLAN_WRITE_AUTH,
+		idempotency: "optional_header",
+		execute: async ({ req, reply, organizationId, tx }) => {
+			const planId = (req.params as { id?: string }).id?.trim();
 			if (!planId || !isValidUuid(planId)) {
 				return reply.code(400).send({
 					error: "ValidationError",
 					message: "Идентификатор плана лечения должен быть валидным UUID.",
 				});
 			}
-			const parsed = dropoutRecallBodySchema.safeParse(request.body ?? {});
+			const parsed = dropoutRecallBodySchema.safeParse(req.body ?? {});
 			if (!parsed.success) {
 				return reply.code(400).send({
 					error: "ValidationError",
@@ -224,11 +318,11 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 					issues: parsed.error.issues,
 				});
 			}
-			const result = await createSinglePlanDropoutRecall(context.organizationId, planId, parsed.data.notes);
+			const result = await createSinglePlanDropoutRecall(organizationId, planId, parsed.data.notes, tx);
 			const statusCode = result.success ? 200 : 400;
 			return reply.code(statusCode).send(result);
 		},
-	);
+	});
 };
 
 export default treatmentPlanRoutes;

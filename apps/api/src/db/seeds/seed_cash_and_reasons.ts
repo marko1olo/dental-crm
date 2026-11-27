@@ -15,13 +15,13 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { loadAdditionalServerEnv } from "../../env/loadServerEnv.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
-import { db, pool } from "../client.js";
+import { pool } from "../client.js";
+import { withSuperuserBypass, withTenantWriteCtx, type TenantDb } from "../rls.js";
 import { clinics, organizations } from "../schema/auth.js";
 import {
 	cashBoxes,
 	cashExpenseReasons,
 } from "../schema/finance.js";
-import type { TenantDb } from "../rls.js";
 
 export type DbExecutor = TenantDb | Parameters<Parameters<TenantDb["transaction"]>[0]>[0];
 
@@ -201,9 +201,11 @@ const logger = createApiLogger("seedCashAndReasons");
 export async function seedCashAndReasons(targetOrgId?: string) {
 	logger.info("=== [SEED] Starting Cash Boxes & Expense Reasons Seeding ===");
 
-	const orgs = targetOrgId
-		? await db.select({ id: organizations.id, name: organizations.name }).from(organizations).where(eq(organizations.id, targetOrgId))
-		: await db.select({ id: organizations.id, name: organizations.name }).from(organizations);
+	const orgs = await withSuperuserBypass(async (tx) =>
+		targetOrgId
+			? tx.select({ id: organizations.id, name: organizations.name }).from(organizations).where(eq(organizations.id, targetOrgId))
+			: tx.select({ id: organizations.id, name: organizations.name }).from(organizations),
+	);
 
 	if (orgs.length === 0) {
 		logger.info("[SEED] No organizations found to seed cash accounts.");
@@ -213,7 +215,7 @@ export async function seedCashAndReasons(targetOrgId?: string) {
 	for (const org of orgs) {
 		logger.info({ orgId: org.id, orgName: org.name }, `[SEED] Seeding Organization: ${org.name} (${org.id})`);
 
-		await db.transaction(async (tx) => {
+		await withTenantWriteCtx(org.id, async (tx) => {
 			const boxesResult = await ensureOrganizationCashBoxes(tx, org.id);
 			logger.info(
 				{ existingCount: boxesResult.existingCount, createdCount: boxesResult.createdCount },

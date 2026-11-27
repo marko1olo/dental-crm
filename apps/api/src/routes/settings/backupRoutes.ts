@@ -5,9 +5,10 @@ import path from "node:path";
 import type { FastifyInstance } from "fastify";
 import pg from "pg";
 import { z } from "zod";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
 import { requireDatabaseUrl } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import { safeLogError } from "../../observability/logger.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
@@ -91,165 +92,175 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 	/**
 	 * Получить список реальных зашифрованных копий на диске с SHA-256 и точным размером в байтах.
 	 */
-	app.get("/api/settings/backup/list", async (request, reply) => {
-		const orgId = await requireSettingsSensitiveReadAccess(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/settings/backup/list",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsSensitiveReadAccess(request, reply);
+			if (!orgId) return;
 
-		try {
-			const dir = backupsDirectory();
-			if (!(await pathExists(dir))) {
-				return { backups: [] };
+			try {
+				const dir = backupsDirectory();
+				if (!(await pathExists(dir))) {
+					return { backups: [] };
+				}
+
+				const files = await fsPromises.readdir(dir);
+				const orgPrefix = `org_${orgId}_`;
+				const matchingFiles = files.filter(
+					(f) =>
+						f.startsWith(orgPrefix) &&
+						(f.endsWith(".sql.enc") ||
+							f.endsWith(".dente") ||
+							f.endsWith(".dentalbackup")),
+				);
+
+				const backups = (
+					await mapWithConcurrency(matchingFiles, 4, async (filename) => {
+						const fullPath = path.join(dir, filename);
+						const stat = await fsPromises.stat(fullPath);
+						let sha256 = "";
+						let format = "legacy";
+						try {
+							[sha256, format] = await Promise.all([
+								computeFileSha256Stream(fullPath),
+								readArchiveMagic(fullPath),
+							]);
+						} catch (hashErr: unknown) {
+							request.log.warn(
+								{ err: safeLogError(hashErr), filename },
+								"[backup] Failed to compute backup metadata",
+							);
+							sha256 = "";
+						}
+						return {
+							id: filename,
+							filename,
+							filePath: fullPath,
+							format,
+							sizeBytes: stat.size,
+							createdAt: stat.mtime.toISOString(),
+							sha256,
+						};
+					})
+				).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+
+				return { backups };
+			} catch (err: unknown) {
+				request.log.error(
+					{ err: safeLogError(err) },
+					"[backup] Failed to list backup directory",
+				);
+				reply.code(500);
+				return {
+					error: "BackupListFailed",
+					message:
+						err instanceof Error
+							? err.message
+							: "Ошибка получения списка резервных копий",
+				};
 			}
-
-			const files = await fsPromises.readdir(dir);
-			const orgPrefix = `org_${orgId}_`;
-			const matchingFiles = files.filter(
-				(f) =>
-					f.startsWith(orgPrefix) &&
-					(f.endsWith(".sql.enc") ||
-						f.endsWith(".dente") ||
-						f.endsWith(".dentalbackup")),
-			);
-
-			const backups = (
-				await mapWithConcurrency(matchingFiles, 4, async (filename) => {
-					const fullPath = path.join(dir, filename);
-					const stat = await fsPromises.stat(fullPath);
-					let sha256 = "";
-					let format = "legacy";
-					try {
-						[sha256, format] = await Promise.all([
-							computeFileSha256Stream(fullPath),
-							readArchiveMagic(fullPath),
-						]);
-					} catch (hashErr: unknown) {
-						request.log.warn(
-							{ err: safeLogError(hashErr), filename },
-							"[backup] Failed to compute backup metadata",
-						);
-						sha256 = "";
-					}
-					return {
-						id: filename,
-						filename,
-						filePath: fullPath,
-						format,
-						sizeBytes: stat.size,
-						createdAt: stat.mtime.toISOString(),
-						sha256,
-					};
-				})
-			).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-
-			return { backups };
-		} catch (err: unknown) {
-			request.log.error(
-				{ err: safeLogError(err) },
-				"[backup] Failed to list backup directory",
-			);
-			reply.code(500);
-			return {
-				error: "BackupListFailed",
-				message:
-					err instanceof Error
-						? err.message
-						: "Ошибка получения списка резервных копий",
-			};
-		}
+		},
 	});
 
 	/**
 	 * Запустить реальное создание зашифрованной резервной копии базы клиники (DENTETB2).
 	 */
-	app.post("/api/settings/backup/create", async (request, reply) => {
-		const orgId = await requireSettingsMutationAccess(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/settings/backup/create",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireSettingsMutationAccess(request, reply);
+			if (!orgId) return;
 
-		const bodyParsed = createBackupBodySchema.safeParse(request.body);
-		if (!bodyParsed.success) {
-			reply.code(400);
-			return {
-				error: "ValidationError",
-				message: "Лишние или некорректные параметры запроса резервного копирования.",
-			};
-		}
+			const bodyParsed = createBackupBodySchema.safeParse(request.body);
+			if (!bodyParsed.success) {
+				reply.code(400);
+				return {
+					error: "ValidationError",
+					message: "Лишние или некорректные параметры запроса резервного копирования.",
+				};
+			}
 
-		const identity = getRequestIdentity(request);
-		if (identity.userId && identity.role !== "owner") {
-			reply.code(403);
-			return {
-				error: "PermissionDenied",
-				message:
-					"Создание полной резервной копии базы данных доступно только владельцу клиники.",
-			};
-		}
+			const identity = getRequestIdentity(request);
+			if (identity.userId && identity.role !== "owner") {
+				reply.code(403);
+				return {
+					error: "PermissionDenied",
+					message:
+						"Создание полной резервной копии базы данных доступно только владельцу клиники.",
+				};
+			}
 
-		const outcome = await createTenantEncryptedBackup(orgId, {
-			sanitizeForSupport: bodyParsed.data?.sanitizeForSupport,
-		});
-		if (!outcome.success || !outcome.filePath) {
-			reply.code(500);
-			return {
-				success: false,
-				error: outcome.error || "Не удалось создать резервную копию",
-			};
-		}
+			const outcome = await createTenantEncryptedBackup(orgId, {
+				sanitizeForSupport: bodyParsed.data?.sanitizeForSupport,
+			});
+			if (!outcome.success || !outcome.filePath) {
+				reply.code(500);
+				return {
+					success: false,
+					error: outcome.error || "Не удалось создать резервную копию",
+				};
+			}
 
-		let finalPath = outcome.filePath;
-		let finalFilename = path.basename(finalPath);
-		const orgPrefix = `org_${orgId}_`;
-		if (!finalFilename.startsWith(orgPrefix)) {
-			const targetFilename = `${orgPrefix}${finalFilename}`;
-			const targetPath = path.join(path.dirname(finalPath), targetFilename);
+			let finalPath = outcome.filePath;
+			let finalFilename = path.basename(finalPath);
+			const orgPrefix = `org_${orgId}_`;
+			if (!finalFilename.startsWith(orgPrefix)) {
+				const targetFilename = `${orgPrefix}${finalFilename}`;
+				const targetPath = path.join(path.dirname(finalPath), targetFilename);
+				try {
+					await fsPromises.rename(finalPath, targetPath);
+					finalPath = targetPath;
+					finalFilename = targetFilename;
+				} catch (renameErr: unknown) {
+					request.log.warn(
+						{ err: safeLogError(renameErr), finalPath, targetPath },
+						"[backup] Failed to rename backup file with custom prefix",
+					);
+				}
+			}
+
+			const stat = await fsPromises.stat(finalPath);
+			const sha256 = await computeFileSha256Stream(finalPath);
+
 			try {
-				await fsPromises.rename(finalPath, targetPath);
-				finalPath = targetPath;
-				finalFilename = targetFilename;
-			} catch (renameErr: unknown) {
+				await withTenantWriteCtx(orgId, async (tx) =>
+					recordAuditEventInDb(
+						orgId,
+						{
+							entityType: "backup",
+							entityId: finalFilename,
+							action: "BACKUP_CREATED",
+							actorUserId: identity.userId,
+							reason: `sizeBytes=${stat.size}, sha256=${sha256.slice(0, 16)}`,
+						},
+						tx,
+					),
+				);
+			} catch (auditErr: unknown) {
 				request.log.warn(
-					{ err: safeLogError(renameErr), finalPath, targetPath },
-					"[backup] Failed to rename backup file with custom prefix",
+					{
+						err: safeLogError(auditErr),
+						organizationId: orgId,
+						filename: finalFilename,
+					},
+					"[backup] Failed to record BACKUP_CREATED audit event",
 				);
 			}
-		}
 
-		const stat = await fsPromises.stat(finalPath);
-		const sha256 = await computeFileSha256Stream(finalPath);
-
-		try {
-			await withTenantCtx(orgId, async (tx) =>
-				recordAuditEventInDb(
-					orgId,
-					{
-						entityType: "backup",
-						entityId: finalFilename,
-						action: "BACKUP_CREATED",
-						actorUserId: identity.userId,
-						reason: `sizeBytes=${stat.size}, sha256=${sha256.slice(0, 16)}`,
-					},
-					tx,
-				),
-			);
-		} catch (auditErr: unknown) {
-			request.log.warn(
-				{
-					err: safeLogError(auditErr),
-					organizationId: orgId,
-					filename: finalFilename,
-				},
-				"[backup] Failed to record BACKUP_CREATED audit event",
-			);
-		}
-
-		return {
-			success: true,
-			filePath: finalPath,
-			filename: finalFilename,
-			format: "DENTETB2",
-			sizeBytes: stat.size,
-			createdAt: stat.mtime.toISOString(),
-			sha256,
-		};
+			return {
+				success: true,
+				filePath: finalPath,
+				filename: finalFilename,
+				format: "DENTETB2",
+				sizeBytes: stat.size,
+				createdAt: stat.mtime.toISOString(),
+				sha256,
+			};
+		},
 	});
 
 	/**
@@ -331,7 +342,7 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 				});
 
 				try {
-					await withTenantCtx(orgId, async (tx) =>
+					await withTenantWriteCtx(orgId, async (tx) =>
 						recordAuditEventInDb(
 							orgId,
 							{

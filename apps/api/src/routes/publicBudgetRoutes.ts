@@ -2,7 +2,8 @@ import { timingSafeEqual } from "node:crypto";
 import { rublesToKopecks } from "@dental/shared";
 import { and, eq, isNull } from "drizzle-orm";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { withSuperuserBypass } from "../db/rls.js";
+import { definePublicRoute } from "../core/routeFactories.js";
+import { onTenantTxCommit, withSuperuserBypass, withTenantWriteCtx } from "../db/rls.js";
 import { portalBudgetTokens } from "../db/schema.js";
 import {
 	LOCKOUT_DURATION_MS,
@@ -175,14 +176,24 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 			});
 	};
 
-	server.get<{ Params: { token: string } }>(
-		"/api/v1/public/budgets/:token",
-		getBudgetHandler,
-	);
-	server.get<{ Params: { token: string } }>(
-		"/api/portal/budget/:token",
-		getBudgetHandler,
-	);
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/api/v1/public/budgets/:token",
+		handler: async ({ request, reply }) =>
+			getBudgetHandler(
+				request as FastifyRequest<{ Params: { token: string } }>,
+				reply,
+			),
+	});
+	definePublicRoute(server, {
+		method: "GET",
+		path: "/api/portal/budget/:token",
+		handler: async ({ request, reply }) =>
+			getBudgetHandler(
+				request as FastifyRequest<{ Params: { token: string } }>,
+				reply,
+			),
+	});
 
 	// 1b. POST /api/v1/public/budgets/:token/view & /api/portal/budget/:token/view — явная фиксация первого просмотра сметы
 	const markBudgetViewedHandler = async (
@@ -212,8 +223,8 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 		const viewedAt = budget.viewedAt ?? new Date();
 		const nextStatus = budget.status === "sent" ? "viewed" : budget.status;
 		if (!budget.viewedAt) {
-			const updated = await withSuperuserBypass(async (tx) =>
-				tx
+			await withTenantWriteCtx(budget.organizationId, async (tx) => {
+				const updated = await tx
 					.update(portalBudgetTokens)
 					.set({
 						viewedAt,
@@ -223,29 +234,32 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 					.where(
 						and(
 							eq(portalBudgetTokens.token, token),
+							eq(portalBudgetTokens.organizationId, budget.organizationId),
 							isNull(portalBudgetTokens.viewedAt),
 						),
 					)
-					.returning({ token: portalBudgetTokens.token }),
-			);
+					.returning({ token: portalBudgetTokens.token });
 
-			if (updated.length > 0) {
-				wsBroker.broadcastToOrganization(budget.organizationId, {
-					type: "TREATMENT_PLAN_VIEWED",
-					payload: {
-						token: budget.token,
-						planId: budget.planId,
-						patientId: budget.patientId,
-						patientFirstName: budget.patientFirstName,
-						clinicName: budget.clinicName,
-						viewedAt: viewedAt.toISOString(),
-						netTotalKopecks:
-							typeof budget.netTotalKopecks === "bigint" || typeof budget.netTotalKopecks === "number"
-								? Number(budget.netTotalKopecks)
-								: rublesToKopecks(Number(budget.netTotalRub) || 0),
-					},
-				});
-			}
+				if (updated.length > 0) {
+					onTenantTxCommit(() => {
+						wsBroker.broadcastToOrganization(budget.organizationId, {
+							type: "TREATMENT_PLAN_VIEWED",
+							payload: {
+								token: budget.token,
+								planId: budget.planId,
+								patientId: budget.patientId,
+								patientFirstName: budget.patientFirstName,
+								clinicName: budget.clinicName,
+								viewedAt: viewedAt.toISOString(),
+								netTotalKopecks:
+									typeof budget.netTotalKopecks === "bigint" || typeof budget.netTotalKopecks === "number"
+										? Number(budget.netTotalKopecks)
+										: rublesToKopecks(Number(budget.netTotalRub) || 0),
+							},
+						});
+					});
+				}
+			});
 		}
 
 		return reply.code(200).send({
@@ -257,15 +271,25 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 	};
 
 	// door-validation: none — Фиксация первого просмотра сметы использует только параметр :token в URL без тела запроса
-	server.post<{ Params: { token: string } }>(
-		"/api/v1/public/budgets/:token/view",
-		markBudgetViewedHandler,
-	);
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/api/v1/public/budgets/:token/view",
+		handler: async ({ request, reply }) =>
+			markBudgetViewedHandler(
+				request as FastifyRequest<{ Params: { token: string } }>,
+				reply,
+			),
+	});
 	// door-validation: none — Фиксация первого просмотра сметы использует только параметр :token в URL без тела запроса
-	server.post<{ Params: { token: string } }>(
-		"/api/portal/budget/:token/view",
-		markBudgetViewedHandler,
-	);
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/api/portal/budget/:token/view",
+		handler: async ({ request, reply }) =>
+			markBudgetViewedHandler(
+				request as FastifyRequest<{ Params: { token: string } }>,
+				reply,
+			),
+	});
 
 	// 2. POST /api/v1/public/budgets/:token/verify & /verify-pin — 2FA подтверждение по последним 4 цифрам телефона или PIN
 	const verifyHandler = async (
@@ -424,18 +448,33 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 		});
 	};
 
-	server.post<{ Params: { token: string } }>(
-		"/api/v1/public/budgets/:token/verify",
-		verifyHandler,
-	);
-	server.post<{ Params: { token: string } }>(
-		"/api/v1/public/budgets/:token/verify-pin",
-		verifyHandler,
-	);
-	server.post<{ Params: { token: string } }>(
-		"/api/portal/budget/:token/verify",
-		verifyHandler,
-	);
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/api/v1/public/budgets/:token/verify",
+		handler: async ({ request, reply }) =>
+			verifyHandler(
+				request as FastifyRequest<{ Params: { token: string } }>,
+				reply,
+			),
+	});
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/api/v1/public/budgets/:token/verify-pin",
+		handler: async ({ request, reply }) =>
+			verifyHandler(
+				request as FastifyRequest<{ Params: { token: string } }>,
+				reply,
+			),
+	});
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/api/portal/budget/:token/verify",
+		handler: async ({ request, reply }) =>
+			verifyHandler(
+				request as FastifyRequest<{ Params: { token: string } }>,
+				reply,
+			),
+	});
 
 	// 3. POST /api/v1/public/budgets/:token/sign & /api/portal/budget/:token/sign — сохранение цифровой подписи пациента (Canvas PNG, хеш IP, аудит)
 	const signHandler = async (
@@ -477,16 +516,6 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 				return reply.code(404).send({
 					error: "BudgetNotFound",
 					message: "Смета не найдена.",
-				});
-			}
-
-			if (budget.status === "accepted") {
-				return reply.code(200).send({
-					success: true,
-					status: "accepted",
-					signedAt: budget.signedAt ? budget.signedAt.toISOString() : null,
-					documentHash: budget.documentHash,
-					signerName: budget.signerName,
 				});
 			}
 
@@ -535,7 +564,12 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 				clientIpHash,
 				userAgent,
 				log: request.log,
+				idempotencyKey,
 			});
+
+			if (signingResult.replayed) {
+				reply.header("idempotency-replayed", "true");
+			}
 
 			return reply.code(200).send({
 				success: true,
@@ -547,12 +581,22 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 			});
 	};
 
-	server.post<{ Params: { token: string } }>(
-		"/api/v1/public/budgets/:token/sign",
-		signHandler,
-	);
-	server.post<{ Params: { token: string } }>(
-		"/api/portal/budget/:token/sign",
-		signHandler,
-	);
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/api/v1/public/budgets/:token/sign",
+		handler: async ({ request, reply }) =>
+			signHandler(
+				request as FastifyRequest<{ Params: { token: string } }>,
+				reply,
+			),
+	});
+	definePublicRoute(server, {
+		method: "POST",
+		path: "/api/portal/budget/:token/sign",
+		handler: async ({ request, reply }) =>
+			signHandler(
+				request as FastifyRequest<{ Params: { token: string } }>,
+				reply,
+			),
+	});
 };
