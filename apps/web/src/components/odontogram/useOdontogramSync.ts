@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useWebsocket } from "../../hooks/useWebsocket";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { resolveClinicWsUrl } from "../../lib/wsUrlResolver";
 import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
 import {
@@ -96,7 +97,7 @@ export function useOdontogramSync({
 	const pendingSoapFindingsRef = useRef<Array<{ toothNumber: number; state: ToothState; surfaces?: string[] | undefined }>>([]);
 
 	const { lastMessage } = useWebsocket(
-		import.meta.env?.VITE_WS_URL ?? "ws://localhost:4100/api/ws/schedule",
+		resolveClinicWsUrl("/api/ws/schedule"),
 	);
 
 	useEffect(() => {

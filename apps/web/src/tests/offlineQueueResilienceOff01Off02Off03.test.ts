@@ -167,8 +167,44 @@ describe("Red Team Offline Resilience Suite [OFF-01, OFF-02, OFF-03]", () => {
 			const flushResult = await flushPendingOdontogramMutations("pat-test-uuid-456");
 			assert.ok(flushResult.syncedCount >= 1, "Pending odontogram mutation must be flushed to server");
 			assert.ok(serverReceivedPayload, "Server must receive tooth payload");
-			assert.equal(serverReceivedPayload.patientId, "pat-test-uuid-456");
+			assert.equal("patientId" in serverReceivedPayload, false, "Batch JSON body must not include redundant patientId");
+			assert.equal("toothNumber" in serverReceivedPayload, false, "Batch JSON body must not include redundant toothNumber");
 			assert.deepEqual(serverReceivedPayload.toothNumbers, [16, 17]);
+		});
+
+		it("rejects HTTP 4xx validation errors without offline outbox enqueue and omits patientId/toothNumber on live send", async () => {
+			Object.defineProperty(globalThis, "navigator", {
+				value: { onLine: true },
+				configurable: true,
+			});
+			let sentBody: Record<string, unknown> | null = null;
+			globalThis.fetch = async (_url: RequestInfo | URL, init?: RequestInit) => {
+				sentBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+				return new Response(
+					JSON.stringify({
+						error: { message: "Unrecognized key(s) in object: 'toothNumber'" },
+					}),
+					{
+						status: 400,
+						headers: { "Content-Type": "application/json" },
+					},
+				);
+			};
+
+			const patientId = "pat-4xx-strict-check";
+			const before = await getPendingOfflineMutations({ entityType: "ODONTOGRAM_STATUS" });
+			const beforeCount = before.filter((m) => (m.payload as any)?.patientId === patientId).length;
+
+			const ok = await sendToothStatesBatch(patientId, [11, 12], "Caries", ["O"]);
+			assert.equal(ok, false, "HTTP 400 must return false");
+			assert.ok(sentBody, "Request body must be dispatched");
+			assert.equal("patientId" in sentBody, false, "Body must omit patientId");
+			assert.equal("toothNumber" in sentBody, false, "Body must omit toothNumber");
+			assert.deepEqual(sentBody.toothNumbers, [11, 12]);
+
+			const after = await getPendingOfflineMutations({ entityType: "ODONTOGRAM_STATUS" });
+			const afterCount = after.filter((m) => (m.payload as any)?.patientId === patientId).length;
+			assert.equal(afterCount, beforeCount, "Deterministic HTTP 400 MUST NOT enqueue into offline outbox");
 		});
 	});
 

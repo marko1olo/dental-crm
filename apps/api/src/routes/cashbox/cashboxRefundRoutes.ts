@@ -38,6 +38,7 @@ export async function handleCashRefund(request: FastifyRequest, reply: FastifyRe
 	const {
 		cashBoxId,
 		amountRub,
+		method,
 		reasonText,
 		operatorId,
 		invoiceId,
@@ -82,6 +83,7 @@ export async function handleCashRefund(request: FastifyRequest, reply: FastifyRe
 		cashBoxId,
 		refundKop,
 		amountRub,
+		method,
 		reasonText,
 		operatorId,
 		invoiceId,

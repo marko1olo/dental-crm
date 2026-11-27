@@ -44,6 +44,8 @@ export interface BillingInvoice {
 	createdAt: string;
 	paidAt?: string | undefined;
 	paymentMethod?: string | undefined;
+	originalPaymentId?: string | undefined;
+	cashBoxId?: string | undefined;
 	fiscalStatus?: FiscalReceiptStatusCode | undefined;
 	isOfflineQueued?: boolean | undefined;
 	notes?: string | undefined;

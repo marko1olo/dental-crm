@@ -1,5 +1,9 @@
 import { create } from "zustand";
 import { isDemoShowcaseMode } from "../lib/demoMode";
+import {
+	resolveClinicFallbackWsUrl,
+	resolveClinicWsUrl,
+} from "../lib/wsUrlResolver";
 import { logger } from "../utils/logger";
 import { getSharedTelephonyAudioStreamManager } from "./telephonyModules/telephonyAudioStreamManager";
 import { createTelephonyCallActions } from "./telephonyModules/telephonyCallActions";
@@ -100,23 +104,12 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 		})),
 }));
 
-interface TelephonyImportMeta {
-	env?: {
-		VITE_WS_URL?: string | undefined;
-		VITE_API_ORIGIN?: string | undefined;
-	} | undefined;
-}
-
 interface WindowWithTelephonyStore extends Window {
 	__denteTelephonyStore?: typeof useTelephonyStore;
 }
 
 export function resolveTelephonyWsUrl(): string {
-	const configured = (import.meta as TelephonyImportMeta).env?.VITE_WS_URL;
-	if (configured) return configured;
-	if (typeof window === "undefined") return "";
-	const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-	return `${protocol}//${window.location.host}/api/ws/telephony`;
+	return resolveClinicWsUrl("/api/ws/telephony");
 }
 
 /**
@@ -126,18 +119,7 @@ export function resolveTelephonyWsUrl(): string {
  * TELEPHONY_INCOMING_CALL не доходят до софтфона.
  */
 export function resolveTelephonyFallbackWsUrl(): string {
-	const env = (import.meta as TelephonyImportMeta).env;
-	if (env?.VITE_WS_URL) return "";
-	if (typeof window === "undefined") return "";
-	const apiOrigin = env?.VITE_API_ORIGIN || "http://127.0.0.1:4100";
-	try {
-		const parsed = new URL(apiOrigin);
-		const scheme = parsed.protocol === "https:" ? "wss:" : "ws:";
-		return `${scheme}//${parsed.host}/api/ws/telephony`;
-	} catch (err: unknown) {
-		logger.warn("[telephonyStore] Invalid VITE_API_ORIGIN, falling back to localhost WS URL:", err);
-		return "ws://127.0.0.1:4100/api/ws/telephony";
-	}
+	return resolveClinicFallbackWsUrl("/api/ws/telephony");
 }
 
 if (typeof window !== "undefined") {

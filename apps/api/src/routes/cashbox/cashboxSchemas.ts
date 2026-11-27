@@ -104,6 +104,7 @@ export const cashOperationListQuerySchema = z
 export const cashRefundBodySchema = z.object({
 	cashBoxId: z.string().uuid().optional(),
 	amountRub: positiveMoneyRubSchema,
+	method: z.enum(["cash", "card", "sbp", "advance_deposit", "bank_transfer"]).optional(),
 	reasonText: z.string().trim().max(500).optional().default("Возврат денежных средств покупателю"),
 	invoiceId: z.preprocess((val) => (typeof val === "string" && val.trim() === "" ? undefined : val), z.string().uuid("Некорректный UUID счёта.").optional()),
 	paymentId: z.preprocess((val) => (typeof val === "string" && val.trim() === "" ? undefined : val), z.string().uuid("Некорректный UUID платежа.").optional()),

@@ -5,10 +5,13 @@
 
 import type { cashBoxes, cashOperations } from "../../../db/schema.js";
 
+export type CashRefundMethod = "cash" | "card" | "sbp" | "advance_deposit" | "bank_transfer";
+
 export interface ExecuteCashRefundParams {
 	readonly cashBoxId?: string | undefined;
 	readonly refundKop: number;
 	readonly amountRub: number;
+	readonly method?: CashRefundMethod | undefined;
 	readonly reasonText?: string | undefined;
 	readonly operatorId?: string | undefined;
 	readonly invoiceId?: string | undefined;

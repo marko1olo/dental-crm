@@ -51,6 +51,7 @@ export const InvoicesSecondaryModals: React.FC<InvoicesSecondaryModalsProps> = (
 					invoiceId={refundInvoice.id} invoiceNumber={refundInvoice.number}
 					patientId={refundInvoice.patientId} patientName={refundInvoice.patientName}
 					patientPhone={refundInvoice.patientPhone || ""} doctorName={refundInvoice.doctorName}
+					cashBoxId={refundInvoice.cashBoxId} originalPaymentId={refundInvoice.originalPaymentId}
 					services={(refundInvoice.items || []).map((it) => ({
 						id: it.id, name: it.name, code: it.code || "", toothNumber: undefined,
 						priceRub: it.priceRub, quantity: it.quantity, doctorName: refundInvoice.doctorName, commissionPct: 30,

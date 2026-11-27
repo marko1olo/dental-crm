@@ -77,7 +77,7 @@ describe("одноразовый код входа в личный кабине�
 		return app.inject({
 			method: "POST",
 			url: "/api/portal/auth/send-otp",
-			payload: { phone },
+			payload: { phone, organizationId: ORG_ID },
 		});
 	}
 
@@ -85,7 +85,7 @@ describe("одноразовый код входа в личный кабине�
 		return app.inject({
 			method: "POST",
 			url: "/api/portal/auth/verify-otp",
-			payload: { phone, code },
+			payload: { phone, code, organizationId: ORG_ID },
 		});
 	}
 

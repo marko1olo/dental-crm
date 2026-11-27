@@ -69,6 +69,7 @@ export function useBookingAvailability({
 	const slotsQuery = useBookingSlotsQuery(effectiveOrgId, apiBaseUrl, selectedDate, selectedDoctorId);
 
 	return {
+		effectiveOrgId,
 		loadedDoctors,
 		doctorsLoading,
 		...slotsQuery,

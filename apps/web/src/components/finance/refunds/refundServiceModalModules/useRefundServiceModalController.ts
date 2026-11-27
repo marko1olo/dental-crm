@@ -169,6 +169,7 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 				...(isPatientUuid && patientId ? { patientId } : {}),
 				...(isCashBoxUuid && cashBoxId ? { cashBoxId } : {}),
 				amountRub: calculation.totalRefundRub,
+				method: paymentMethod,
 				reasonText: `${reasonText} [Способ возврата: ${methodLabel}]`.slice(0, 500),
 				cashierFullName: "Кассир-администратор",
 				clientMutationId,
@@ -246,7 +247,7 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 					billId: invoiceId,
 					amountKopecks: calculation.totalRefundKop,
 					reason: reasonText || "Возврат услуги",
-					paymentMethod: refundCashKopecks > 0 ? "cash" : "card",
+					paymentMethod,
 				});
 			} else {
 				const errData = (await res.json().catch(() => ({}))) as Record<string, unknown>;

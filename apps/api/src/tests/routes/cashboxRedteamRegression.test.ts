@@ -17,12 +17,14 @@ import { kopecksToRub } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
+	advanceDepositTaggings,
 	cashBoxes,
 	cashBoxShifts,
 	cashOperations,
 	dmsGuaranteeLetters,
 	fiscalReceiptQueue,
 	organizations,
+	patientInvoices,
 	patients,
 	payments,
 	users,
@@ -32,6 +34,7 @@ import { registerCashboxRoutes } from "../../routes/cashbox.js";
 import { processCashboxPayment } from "../../routes/cashbox/cashboxPaymentProcessor.js";
 import { registerExpensesRoutes } from "../../routes/expenses.js";
 import { registerFiscalReceiptRoutes } from "../../routes/fiscal/receiptRoutes/index.js";
+import { registerInvoiceRoutes } from "../../routes/invoiceRoutes/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -75,6 +78,7 @@ describe("Cashbox / Fiscal / Shifts Red Team Regressions", () => {
 		await registerCashboxRoutes(app);
 		await app.register(registerExpensesRoutes);
 		await registerFiscalReceiptRoutes(app);
+		await registerInvoiceRoutes(app);
 		await app.ready();
 
 		await purgeFixtureOrganizations([ORG_ID]);
@@ -603,6 +607,184 @@ describe("Cashbox / Fiscal / Shifts Red Team Regressions", () => {
 				}
 			}
 		}
+	});
+
+	test("7. POST /api/cashbox/refund routes method=card/sbp/advance_deposit bypassing main cash drawer and lists invoice cashBox/payment linkage", async () => {
+		const mainBeforeRows = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx.select().from(cashBoxes).where(and(eq(cashBoxes.organizationId, ORG_ID), eq(cashBoxes.type, "main"))),
+		);
+		const mainBeforeKop = Number(mainBeforeRows[0]?.balanceKopecks ?? 0);
+
+		const cashlessBeforeRows = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx.select().from(cashBoxes).where(and(eq(cashBoxes.organizationId, ORG_ID), eq(cashBoxes.type, "cashless"))),
+		);
+		assert.ok(cashlessBeforeRows[0], "cashless cashbox must exist");
+		const cashlessBeforeKop = Number(cashlessBeforeRows[0].balanceKopecks ?? 0);
+
+		// Create invoice + card payment to verify GET /api/invoices exposes originalPaymentId, paymentMethod, cashBoxId
+		const invId = randomUUID();
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx.insert(patientInvoices).values({
+				id: invId,
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				totalAmountRub: 2000,
+				totalRub: 2000,
+				totalPriceKopecks: 200000n,
+				status: "issued",
+			});
+		});
+
+		const payOutcome = await processCashboxPayment(orgIdOrThrow(), {
+			patientId: PATIENT_ID,
+			invoiceId: invId,
+			amountKopecks: 200000,
+			method: "card",
+			note: "Оплата картой для теста возврата",
+			clientMutationId: randomUUID(),
+		});
+		assert.equal(payOutcome.statusCode, 200);
+		const paidPaymentId = String((payOutcome.body.data as Record<string, unknown>).id);
+
+		const listInvRes = await app.inject({
+			method: "GET",
+			url: `/api/invoices?patientId=${PATIENT_ID}`,
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+			},
+		});
+		assert.equal(listInvRes.statusCode, 200);
+		const listInvJson = JSON.parse(listInvRes.body) as {
+			invoices: Array<{ id: string; originalPaymentId?: string; paymentMethod?: string; cashBoxId?: string }>;
+		};
+		const matchedInv = listInvJson.invoices.find((row) => row.id === invId);
+		assert.ok(matchedInv, "Created invoice must appear in GET /api/invoices");
+		assert.equal(matchedInv.originalPaymentId, paidPaymentId);
+		assert.equal(matchedInv.paymentMethod, "card");
+		assert.equal(matchedInv.cashBoxId, cashlessBeforeRows[0].id);
+
+		// A) Card refund WITHOUT cashBoxId or paymentId must target cashless box and write electronicCardKopecks
+		const cardRefundRes = await app.inject({
+			method: "POST",
+			url: "/api/cashbox/refund",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": randomUUID(),
+			},
+			payload: {
+				patientId: PATIENT_ID,
+				amountRub: 750,
+				method: "card",
+				reasonText: "Возврат на карту без явного cashBoxId",
+				clientMutationId: randomUUID(),
+			},
+		});
+		assert.equal(cardRefundRes.statusCode, 200, `Card refund failed: ${cardRefundRes.body}`);
+		const cardRefundJson = JSON.parse(cardRefundRes.body) as {
+			success: boolean;
+			cashBox: { id: string };
+			fiscalReceiptQueueId?: string;
+			refundPaymentId?: string;
+		};
+		assert.equal(cardRefundJson.success, true);
+		assert.equal(cardRefundJson.cashBox.id, cashlessBeforeRows[0].id);
+
+		const [cardReceipt] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(fiscalReceiptQueue)
+				.where(eq(fiscalReceiptQueue.id, cardRefundJson.fiscalReceiptQueueId!))
+				.limit(1),
+		);
+		const cardOfdPayments = (cardReceipt?.payloadJson as { payments?: Record<string, unknown> })?.payments;
+		assert.equal(cardOfdPayments?.cashKopecks, 0);
+		assert.equal(cardOfdPayments?.electronicCardKopecks, 75000);
+
+		// B) SBP refund WITHOUT cashBoxId/paymentId must target cashless box and write electronic/SBP OFD
+		const sbpRefundRes = await app.inject({
+			method: "POST",
+			url: "/api/cashbox/refund",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": randomUUID(),
+			},
+			payload: {
+				patientId: PATIENT_ID,
+				amountRub: 500,
+				method: "sbp",
+				reasonText: "Возврат СБП без cashBoxId",
+				clientMutationId: randomUUID(),
+			},
+		});
+		assert.equal(sbpRefundRes.statusCode, 200, `SBP refund failed: ${sbpRefundRes.body}`);
+		const sbpRefundJson = JSON.parse(sbpRefundRes.body) as {
+			cashBox: { id: string };
+			fiscalReceiptQueueId?: string;
+		};
+		assert.equal(sbpRefundJson.cashBox.id, cashlessBeforeRows[0].id);
+
+		const [sbpReceipt] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(fiscalReceiptQueue)
+				.where(eq(fiscalReceiptQueue.id, sbpRefundJson.fiscalReceiptQueueId!))
+				.limit(1),
+		);
+		const sbpOfdPayments = (sbpReceipt?.payloadJson as { payments?: Record<string, unknown> })?.payments;
+		assert.equal(sbpOfdPayments?.cashKopecks, 0);
+		assert.equal(sbpOfdPayments?.sbpKopecks, 50000);
+
+		// C) advance_deposit refund WITHOUT cashBoxId/paymentId must not touch main drawer and must insert deposit tagging
+		const depRefundRes = await app.inject({
+			method: "POST",
+			url: "/api/cashbox/refund",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": randomUUID(),
+			},
+			payload: {
+				patientId: PATIENT_ID,
+				amountRub: 400,
+				method: "advance_deposit",
+				reasonText: "Возврат на депозит пациента",
+				clientMutationId: randomUUID(),
+			},
+		});
+		assert.equal(depRefundRes.statusCode, 200, `Deposit refund failed: ${depRefundRes.body}`);
+		const depRefundJson = JSON.parse(depRefundRes.body) as {
+			fiscalReceiptQueueId?: string;
+		};
+		assert.equal(depRefundJson.fiscalReceiptQueueId, undefined);
+
+		const mainAfterRows = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx.select().from(cashBoxes).where(and(eq(cashBoxes.organizationId, ORG_ID), eq(cashBoxes.type, "main"))),
+		);
+		assert.equal(
+			Number(mainAfterRows[0]?.balanceKopecks ?? 0),
+			mainBeforeKop,
+			"Cash 'main' drawer balance must remain untouched by card/sbp/advance_deposit refunds",
+		);
+
+		const depositRows = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(advanceDepositTaggings)
+				.where(
+					and(
+						eq(advanceDepositTaggings.organizationId, ORG_ID),
+						eq(advanceDepositTaggings.patientId, PATIENT_ID),
+					),
+				),
+		);
+		assert.ok(
+			depositRows.some((d) => Number(d.depositAmountKopecks) === 40000 && d.taggedTargetType === "deposit_refund"),
+			"advance_deposit refund must create advanceDepositTaggings entry",
+		);
+		assert.ok(cashlessBeforeKop >= 0);
 	});
 });
 

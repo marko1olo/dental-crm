@@ -4,7 +4,7 @@ import type { FastifyRequest } from "fastify";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx, type TenantDb } from "../../db/rls.js";
-import { patients, portalOtpCodes, portalRevokedTokens } from "../../db/schema.js";
+import { organizations, patients, portalOtpCodes, portalRevokedTokens } from "../../db/schema.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import {
 	resolveChannelCredentials,
@@ -216,6 +216,34 @@ export interface FoundPatientByPhone {
 	isFamilyHead: boolean;
 }
 
+const PORTAL_ORG_UUID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Разрешает целевую организацию строго в рамках тенанта:
+ * - валидный UUID клиники возвращается без ослабления изоляции;
+ * - "default", не-UUID или пустое значение разрешается ТОЛЬКО если в БД ровно 1 организация.
+ */
+export async function resolveStrictPortalOrganizationId(
+	targetOrgId?: string | undefined,
+): Promise<string | null> {
+	const trimmed = targetOrgId?.trim();
+	if (trimmed && trimmed !== "default") {
+		return PORTAL_ORG_UUID_REGEX.test(trimmed) ? trimmed : null;
+	}
+
+	return withSuperuserBypass(async (tx) => {
+		const orgRows = await tx
+			.select({ id: organizations.id })
+			.from(organizations)
+			.limit(2);
+		if (orgRows.length === 1 && orgRows[0]) {
+			return orgRows[0].id;
+		}
+		return null;
+	});
+}
+
 /**
  * Находит всех пациентов, привязанных к номеру телефона (включая семейные группы).
  */
@@ -225,13 +253,12 @@ export async function findPatientsByPhone(
 ): Promise<FoundPatientByPhone[]> {
 	const digits = rawPhone.replace(/\D/g, "");
 	if (digits.length < 10) return [];
+	const strictOrgId = await resolveStrictPortalOrganizationId(targetOrgId);
+	if (!strictOrgId) return [];
 	const suffix = digits.slice(-10);
-	return withSuperuserBypass(async (tx) => {
+	return withTenantCtx(strictOrgId, async (tx) => {
 		const baseFilter = sql`regexp_replace(${patients.phone}, '\\D', '', 'g') LIKE ${`%${suffix}`}`;
-		const filter =
-			targetOrgId && targetOrgId !== "default"
-				? and(eq(patients.organizationId, targetOrgId), baseFilter)
-				: baseFilter;
+		const filter = and(eq(patients.organizationId, strictOrgId), baseFilter);
 		const rows = await tx
 			.select({
 				id: patients.id,
@@ -340,43 +367,27 @@ export async function findPendingRegistrationOtp(
 	targetOrgId: string | undefined,
 	now: Date,
 ) {
-	const validTargetOrg =
-		targetOrgId &&
-		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-			targetOrgId,
-		);
-	const [dbPendingReg] = validTargetOrg
-		? await withTenantCtx(targetOrgId, async (tx) =>
-				tx
-					.select()
-					.from(portalOtpCodes)
-					.where(
-						and(
-							eq(portalOtpCodes.organizationId, targetOrgId),
-							isNull(portalOtpCodes.patientId),
-							eq(portalOtpCodes.phone, phoneSuffix),
-							isNull(portalOtpCodes.consumedAt),
-							gt(portalOtpCodes.expiresAt, now),
-						),
-					)
-					.orderBy(desc(portalOtpCodes.createdAt))
-					.limit(1),
+	const strictOrgId = await resolveStrictPortalOrganizationId(targetOrgId);
+	if (!strictOrgId) {
+		return undefined;
+	}
+
+	const [dbPendingReg] = await withTenantCtx(strictOrgId, async (tx) =>
+		tx
+			.select()
+			.from(portalOtpCodes)
+			.where(
+				and(
+					eq(portalOtpCodes.organizationId, strictOrgId),
+					isNull(portalOtpCodes.patientId),
+					eq(portalOtpCodes.phone, phoneSuffix),
+					isNull(portalOtpCodes.consumedAt),
+					gt(portalOtpCodes.expiresAt, now),
+				),
 			)
-		: await withSuperuserBypass(async (tx) =>
-				tx
-					.select()
-					.from(portalOtpCodes)
-					.where(
-						and(
-							isNull(portalOtpCodes.patientId),
-							eq(portalOtpCodes.phone, phoneSuffix),
-							isNull(portalOtpCodes.consumedAt),
-							gt(portalOtpCodes.expiresAt, now),
-						),
-					)
-					.orderBy(desc(portalOtpCodes.createdAt))
-					.limit(1),
-			);
+			.orderBy(desc(portalOtpCodes.createdAt))
+			.limit(1),
+	);
 
 	if (dbPendingReg) {
 		return {
@@ -387,18 +398,9 @@ export async function findPendingRegistrationOtp(
 			id: dbPendingReg.id,
 		};
 	}
-	const scoped = pendingRegistrationOtpStore.get(
-		getPendingRegistrationOtpKey(phoneSuffix, targetOrgId),
+	return pendingRegistrationOtpStore.get(
+		getPendingRegistrationOtpKey(phoneSuffix, strictOrgId),
 	);
-	if (scoped) return scoped;
-	if (!targetOrgId) {
-		for (const entry of pendingRegistrationOtpStore.values()) {
-			if (entry.phoneSuffix === phoneSuffix) {
-				return entry;
-			}
-		}
-	}
-	return undefined;
 }
 
 export async function setPendingRegistrationOtpAttemptOrConsumed(

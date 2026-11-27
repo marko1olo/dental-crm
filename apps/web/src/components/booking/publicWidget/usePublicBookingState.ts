@@ -23,13 +23,13 @@ export function usePublicBookingState(props: PublicBookingWidgetProps) {
 	const cal = useBookingCalendarNavigation();
 	const form = useBookingFormState(initialPatientName, initialPatientPhone, initialComment);
 	const tg = useBookingTelegramContext(embedMode, form.patientName, form.setPatientName, form.patientPhone, form.setPatientPhone, showToast);
-	const sms = useBookingSmsState(organizationId, apiBaseUrl, form.patientPhone, requireSmsVerification, showToast);
-
 	const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(() => {
 		if (initialDoctorId) return initialDoctorId;
 		return customDoctors?.length === 1 && customDoctors[0] ? customDoctors[0].id : null;
 	});
 	const avail = useBookingAvailability({ organizationId, apiBaseUrl, selectedDate: cal.selectedDate, selectedDoctorId });
+	const effectiveOrgId = avail.effectiveOrgId ?? organizationId ?? null;
+	const sms = useBookingSmsState(effectiveOrgId, apiBaseUrl, form.patientPhone, requireSmsVerification, showToast);
 	const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(() => initialCategoryId || "therapy");
 
 	const selectedCategory: BookingCategoryOption = useMemo(() => {
@@ -117,7 +117,7 @@ export function usePublicBookingState(props: PublicBookingWidgetProps) {
 			try {
 				const refNumber = generateBookingReference();
 				const finalData = await submitWaitlistRequest({
-					organizationId,
+					organizationId: effectiveOrgId,
 					apiBaseUrl,
 					patientName: form.patientName,
 					patientPhone: form.patientPhone,
@@ -166,7 +166,7 @@ export function usePublicBookingState(props: PublicBookingWidgetProps) {
 		try {
 			const refNumber = generateBookingReference();
 			const finalData = await submitBookingRequest({
-				organizationId,
+				organizationId: effectiveOrgId,
 				apiBaseUrl,
 				patientName: form.patientName,
 				patientPhone: form.patientPhone,

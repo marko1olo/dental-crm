@@ -13,27 +13,27 @@ export const RefundModalHeader: React.FC<RefundModalHeaderProps> = ({
 	onClose,
 }) => {
 	return (
-		<div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] shrink-0">
-			<div className="flex items-center gap-3">
-				<div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30">
-					<RotateCcw className="w-5 h-5" />
+		<div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3.5 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] shrink-0">
+			<div className="flex items-center gap-3 min-w-0">
+				<div className="w-9 h-9 rounded-lg bg-[var(--primary-soft,rgba(13,148,136,0.12))] text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20 shrink-0">
+					<RotateCcw className="w-4 h-4" />
 				</div>
-				<div>
-					<h3 className="text-base font-extrabold text-[var(--ink,#0f172a)] m-0 leading-snug">
+				<div className="min-w-0">
+					<h3 className="text-base font-semibold text-[var(--ink,#0f172a)] m-0 leading-snug">
 						Оформление частичного возврата
 					</h3>
-					<p className="text-xs text-[var(--muted,#64748b)] m-0">
-						Счет: <span className="font-mono font-bold text-[var(--ink,#0f172a)]">{invoiceNumber}</span> • Пациент: {patientName}
+					<p className="text-xs text-[var(--ink-muted,#64748b)] m-0 leading-snug">
+						Счёт: <span className="font-mono font-semibold text-[var(--ink,#0f172a)]">{invoiceNumber}</span> • Пациент: {patientName}
 					</p>
 				</div>
 			</div>
 			<button
 				type="button"
 				onClick={onClose}
-				className="min-h-[44px] min-w-[44px] rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--muted,#64748b)] flex items-center justify-center transition-colors"
+				className="w-9 h-9 max-sm:min-h-[44px] max-sm:min-w-[44px] rounded-lg max-sm:rounded-xl bg-[var(--paper,#ffffff)] dark:bg-white/5 border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink-muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center shrink-0 cursor-pointer transition-colors"
 				aria-label="Закрыть"
 			>
-				<X className="w-5 h-5" />
+				<X className="w-4 h-4" />
 			</button>
 		</div>
 	);

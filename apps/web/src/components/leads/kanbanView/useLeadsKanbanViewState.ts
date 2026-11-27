@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { dateInputValuePlusDays } from "../../../AppHelpers";
 import { useWebsocket } from "../../../hooks/useWebsocket";
+import { resolveClinicWsUrl } from "../../../lib/wsUrlResolver";
 import type { Lead } from "../../../store/leadsStore";
 
 export function useLeadsKanbanViewState(
@@ -27,7 +28,7 @@ export function useLeadsKanbanViewState(
 	const [appointmentTime, setAppointmentTime] = useState("10:00");
 
 	const { lastMessage } = useWebsocket(
-		import.meta.env.VITE_WS_URL ?? "ws://localhost:4100/api/ws/schedule",
+		resolveClinicWsUrl("/api/ws/schedule"),
 	);
 	useEffect(() => {
 		if (

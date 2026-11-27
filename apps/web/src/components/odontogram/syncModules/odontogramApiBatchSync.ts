@@ -44,11 +44,37 @@ export interface ToothResorptionUpdateItem {
 	notes?: string | undefined;
 }
 
+function extractServerErrorMessage(rawBody: string): string | null {
+	if (!rawBody || !rawBody.trim()) return null;
+	try {
+		const parsed: unknown = JSON.parse(rawBody);
+		if (!parsed || typeof parsed !== "object") return null;
+		if (
+			"error" in parsed &&
+			typeof parsed.error === "object" &&
+			parsed.error !== null &&
+			"message" in parsed.error &&
+			typeof parsed.error.message === "string"
+		) {
+			const msg = parsed.error.message.trim();
+			if (msg) return msg;
+		}
+		if ("message" in parsed && typeof parsed.message === "string" && parsed.message.trim()) {
+			return parsed.message.trim();
+		}
+		if ("error" in parsed && typeof parsed.error === "string" && parsed.error.trim()) {
+			return parsed.error.trim();
+		}
+	} catch {
+		// Non-JSON error body
+	}
+	return null;
+}
+
 /**
  * Sends a batch update of tooth states to the backend API.
- * In case of network errors or server downtime, safely logs error,
- * enqueues the mutation to the offline Outbox queue (IndexedDB)
- * and displays an informational offline toast.
+ * Network/5xx errors enqueue into the offline Outbox queue (IndexedDB) with an informational toast.
+ * Deterministic 4xx client/validation errors show an actionable error toast without looping the Outbox.
  */
 export async function sendToothStatesBatch(
 	patientId: string,
@@ -71,9 +97,7 @@ export async function sendToothStatesBatch(
 
 	const options = isOptions ? (surfacesOrOptions as ToothBatchOptions) : undefined;
 
-	const payload: Record<string, unknown> = {
-		patientId,
-		toothNumber: toothNumbers[0],
+	const apiPayload: Record<string, unknown> = {
 		toothNumbers,
 		state,
 		...(surfaces && surfaces.length > 0 ? { surfaces: [...surfaces] } : {}),
@@ -83,6 +107,10 @@ export async function sendToothStatesBatch(
 		...(options?.notes ? { notes: options.notes } : {}),
 		...(options?.reason ? { reason: options.reason } : {}),
 	};
+	const offlinePayload: Record<string, unknown> = {
+		patientId,
+		...apiPayload,
+	};
 
 	// Fast offline check: if network is already down, persist directly into Outbox
 	if (typeof navigator !== "undefined" && !navigator.onLine) {
@@ -91,7 +119,7 @@ export async function sendToothStatesBatch(
 				entityType: "ODONTOGRAM_STATUS",
 				entityId: `${patientId}_tooth_${toothNumbers.join("_")}_${Date.now()}`,
 				action: "update",
-				payload,
+				payload: offlinePayload,
 			});
 			showToast(
 				"Отметка сохранена локально на диск (офлайн). Данные в безопасности и синхронизируются при связи",
@@ -111,7 +139,7 @@ export async function sendToothStatesBatch(
 				"Content-Type": "application/json",
 				"Idempotency-Key": generateUuidV7(),
 			}),
-			body: JSON.stringify(payload),
+			body: JSON.stringify(apiPayload),
 		});
 
 		if (!res.ok) {
@@ -119,12 +147,28 @@ export async function sendToothStatesBatch(
 			logger.error(
 				`[tooth states status mutation] ${res.status} ${rawBody.slice(0, 300)}`,
 			);
+			if (res.status >= 400 && res.status < 500) {
+				const serverMessage = extractServerErrorMessage(rawBody);
+				showToast(
+					serverMessage || `Не удалось сохранить отметку зубной формулы (ошибка ${res.status})`,
+					"error",
+					8000,
+					{
+						label: "Повторить",
+						ariaLabel: "Повторить сохранение отметки зубной формулы",
+						onAction: () => {
+							void sendToothStatesBatch(patientId, toothNumbers, state, surfacesOrOptions);
+						},
+					},
+				);
+				return false;
+			}
 			try {
 				await enqueueOfflineMutation({
 					entityType: "ODONTOGRAM_STATUS",
 					entityId: `${patientId}_tooth_${toothNumbers.join("_")}_${Date.now()}`,
 					action: "update",
-					payload,
+					payload: offlinePayload,
 				});
 			} catch (queueErr) {
 				logger.warn("[odontogramApiBatchSync] Failed to enqueue into offline storage:", queueErr);
@@ -145,7 +189,7 @@ export async function sendToothStatesBatch(
 				entityType: "ODONTOGRAM_STATUS",
 				entityId: `${patientId}_tooth_${toothNumbers.join("_")}_${Date.now()}`,
 				action: "update",
-				payload,
+				payload: offlinePayload,
 			});
 		} catch (queueErr) {
 			logger.warn("[odontogramApiBatchSync] Failed to enqueue into offline storage:", queueErr);
@@ -181,6 +225,13 @@ export async function flushPendingOdontogramMutations(
 				toothNumbers?: number[];
 				state: ToothState;
 				surfaces?: string[];
+				resorptionStage?: number;
+				mobility?: number;
+				mobilityDegree?: number;
+				isPrimaryPediatric?: boolean;
+				notes?: string;
+				reason?: string;
+				updates?: unknown[];
 			} | undefined;
 
 			if (!payload || !payload.patientId) {
@@ -192,11 +243,30 @@ export async function flushPendingOdontogramMutations(
 				continue;
 			}
 
+			const hasUpdates = Array.isArray(payload.updates) && payload.updates.length > 0;
 			const toothNums = payload.toothNumbers || (payload.toothNumber ? [payload.toothNumber] : []);
-			if (toothNums.length === 0) {
+			if (!hasUpdates && toothNums.length === 0) {
 				await removeOfflineMutation(mut.mutationId);
 				continue;
 			}
+
+			const flushBody = hasUpdates
+				? { updates: payload.updates }
+				: {
+						toothNumbers: toothNums,
+						state: payload.state,
+						...(payload.surfaces && payload.surfaces.length > 0 ? { surfaces: payload.surfaces } : {}),
+						...(payload.resorptionStage !== undefined ? { resorptionStage: payload.resorptionStage } : {}),
+						...(payload.mobility !== undefined
+							? {
+									mobility: payload.mobility,
+									mobilityDegree: payload.mobilityDegree ?? payload.mobility,
+								}
+							: {}),
+						...(payload.isPrimaryPediatric !== undefined ? { isPrimaryPediatric: payload.isPrimaryPediatric } : {}),
+						...(payload.notes ? { notes: payload.notes } : {}),
+						...(payload.reason ? { reason: payload.reason } : {}),
+					};
 
 			try {
 				const res = await fetch(`/api/patients/${payload.patientId}/tooth-states/batch`, {
@@ -205,18 +275,15 @@ export async function flushPendingOdontogramMutations(
 						"Content-Type": "application/json",
 						"Idempotency-Key": generateUuidV7(),
 					}),
-					body: JSON.stringify({
-						patientId: payload.patientId,
-						toothNumber: toothNums[0],
-						toothNumbers: toothNums,
-						state: payload.state,
-						...(payload.surfaces && payload.surfaces.length > 0 ? { surfaces: payload.surfaces } : {}),
-					}),
+					body: JSON.stringify(flushBody),
 				});
 
 				if (res.ok) {
 					await removeOfflineMutation(mut.mutationId);
 					syncedCount++;
+				} else if (res.status >= 400 && res.status < 500) {
+					await removeOfflineMutation(mut.mutationId);
+					failedCount++;
 				} else {
 					failedCount++;
 				}
@@ -263,8 +330,7 @@ export async function sendToothResorptionBatch(
 ): Promise<boolean> {
 	if (!patientId || updates.length === 0) return true;
 
-	const payload = {
-		patientId,
+	const apiPayload = {
 		updates: updates.map((u) => {
 			const mobility =
 				u.mobility !== undefined
@@ -287,6 +353,10 @@ export async function sendToothResorptionBatch(
 			};
 		}),
 	};
+	const offlinePayload = {
+		patientId,
+		...apiPayload,
+	};
 
 	if (typeof navigator !== "undefined" && !navigator.onLine) {
 		try {
@@ -294,7 +364,7 @@ export async function sendToothResorptionBatch(
 				entityType: "ODONTOGRAM_STATUS",
 				entityId: `${patientId}_resorption_${Date.now()}`,
 				action: "update",
-				payload,
+				payload: offlinePayload,
 			});
 			showToast(
 				"Резорбция сохранена локально (офлайн). Синхронизируется при связи",
@@ -314,18 +384,34 @@ export async function sendToothResorptionBatch(
 				"Content-Type": "application/json",
 				"Idempotency-Key": generateUuidV7(),
 			}),
-			body: JSON.stringify(payload),
+			body: JSON.stringify(apiPayload),
 		});
 
 		if (!res.ok) {
 			const rawBody = await res.text();
 			logger.error(`[tooth resorption batch] ${res.status} ${rawBody.slice(0, 300)}`);
+			if (res.status >= 400 && res.status < 500) {
+				const serverMessage = extractServerErrorMessage(rawBody);
+				showToast(
+					serverMessage || `Не удалось сохранить параметры резорбции (ошибка ${res.status})`,
+					"error",
+					8000,
+					{
+						label: "Повторить",
+						ariaLabel: "Повторить сохранение резорбции",
+						onAction: () => {
+							void sendToothResorptionBatch(patientId, updates);
+						},
+					},
+				);
+				return false;
+			}
 			try {
 				await enqueueOfflineMutation({
 					entityType: "ODONTOGRAM_STATUS",
 					entityId: `${patientId}_resorption_${Date.now()}`,
 					action: "update",
-					payload,
+					payload: offlinePayload,
 				});
 			} catch (e) {
 				logger.warn("[odontogramApiBatchSync] Offline queue failed:", e);
@@ -340,7 +426,7 @@ export async function sendToothResorptionBatch(
 				entityType: "ODONTOGRAM_STATUS",
 				entityId: `${patientId}_resorption_${Date.now()}`,
 				action: "update",
-				payload,
+				payload: offlinePayload,
 			});
 		} catch (e) {
 			logger.warn("[odontogramApiBatchSync] Offline queue failed:", e);

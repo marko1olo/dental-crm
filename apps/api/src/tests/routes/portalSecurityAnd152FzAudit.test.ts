@@ -751,4 +751,54 @@ describe("Patient Portal Security, Multi-Tenant Isolation & 152-FZ Audit", () =>
 		const nightJson = nightRes.json() as { error: string };
 		assert.equal(nightJson.error, "OutsideWorkingHours");
 	});
+
+	test("12. Multi-Tenant Isolation: rejects 'default', omitted, and invalid organizationId on OTP routes without cross-tenant leak", async (context) => {
+		if (!databaseAvailable) return context.skip("База данных недоступна");
+
+		resetPortalOtpRateLimitsForTesting();
+		const { findPatientsByPhone, findPendingRegistrationOtp } = await import(
+			"../../routes/portal/portalAuthStore.js"
+		);
+
+		// Phone shared or stored under ORG_A must NEVER be discoverable via "default", omitted, or malformed orgId in multi-org DB
+		const defaultFound = await findPatientsByPhone(SHARED_PHONE, "default");
+		assert.equal(defaultFound.length, 0, "findPatientsByPhone('default') must return empty under multi-org DB");
+
+		const omittedFound = await findPatientsByPhone(SHARED_PHONE, undefined);
+		assert.equal(omittedFound.length, 0, "findPatientsByPhone(undefined) must return empty under multi-org DB");
+
+		const invalidFound = await findPatientsByPhone(SHARED_PHONE, "not-a-uuid");
+		assert.equal(invalidFound.length, 0, "findPatientsByPhone('not-a-uuid') must return empty");
+
+		const defaultPending = await findPendingRegistrationOtp("1234567", "default", new Date());
+		assert.equal(defaultPending, undefined, "findPendingRegistrationOtp('default') must return undefined under multi-org DB");
+
+		const sendDefaultRes = await app.inject({
+			method: "POST",
+			url: "/api/portal/auth/send-otp",
+			payload: { phone: SHARED_PHONE, organizationId: "default" },
+		});
+		assert.equal(sendDefaultRes.statusCode, 202);
+
+		const sendInvalidRes = await app.inject({
+			method: "POST",
+			url: "/api/portal/auth/send-otp",
+			payload: { phone: SHARED_PHONE, organizationId: "bad-org-id" },
+		});
+		assert.equal(sendInvalidRes.statusCode, 202);
+
+		const verifyDefaultRes = await app.inject({
+			method: "POST",
+			url: "/api/portal/auth/verify-otp",
+			payload: { phone: SHARED_PHONE, code: "123456", organizationId: "default" },
+		});
+		assert.equal(verifyDefaultRes.statusCode, 401);
+		const verifyBody = verifyDefaultRes.json() as { error: string; token?: string };
+		assert.equal(verifyBody.error, "InvalidOtp");
+		assert.equal(verifyBody.token, undefined);
+
+		// Explicit ORG_B query must NOT see PATIENT_A (who shares phone or belongs to ORG_A)
+		const orgBFound = await findPatientsByPhone(SHARED_PHONE, ORG_B);
+		assert.ok(orgBFound.every((p) => p.organizationId === ORG_B), "ORG_B lookup must stay strictly in ORG_B");
+	});
 });

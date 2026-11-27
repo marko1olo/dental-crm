@@ -33,6 +33,7 @@ import {
 	thermalPaperWidthMmSchema,
 } from "@dental/shared";
 import {
+	HardwareDiscoveryService,
 	hardwareDiscoveryService,
 	probeRawTcpPrinterStatus,
 } from "../services/hardwareDiscoveryService.js";
@@ -246,7 +247,15 @@ function isSafeHotFolderPath(rawPath: string): boolean {
 	return true;
 }
 
-export async function registerHardwareRoutes(app: FastifyInstance): Promise<void> {
+export interface RegisterHardwareRoutesOptions {
+	readonly hardwareService?: HardwareDiscoveryService | undefined;
+}
+
+export async function registerHardwareRoutes(
+	app: FastifyInstance,
+	options?: RegisterHardwareRoutesOptions,
+): Promise<void> {
+	const activeHardwareService = options?.hardwareService ?? hardwareDiscoveryService;
 	/**
 	 * GET /api/hardware/devices
 	 * Discovers all connected clinic hardware: printers, scanners, and KKT devices.
@@ -303,7 +312,7 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 						.filter((n) => !Number.isNaN(n) && n > 0 && n <= 65535)
 				: undefined;
 
-			const result = await hardwareDiscoveryService.discoverDevices({
+			const result = await activeHardwareService.discoverDevices({
 				organizationId: context.organizationId,
 				probeNetworkTcp: query.probeNetwork,
 				includeOffline: query.includeOffline,
@@ -391,7 +400,7 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				});
 			}
 
-			const printResult = await hardwareDiscoveryService.sendTestPrint({
+			const printResult = await activeHardwareService.sendTestPrint({
 				deviceId: body.deviceId,
 				deviceType: body.deviceType,
 				interface: body.interface,

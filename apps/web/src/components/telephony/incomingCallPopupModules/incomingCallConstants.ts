@@ -1,6 +1,7 @@
+import { resolveClinicWsUrl } from "../../../lib/wsUrlResolver";
 import type { QuickSlotType } from "../IncomingCallQuickBooking";
 
-export const DEFAULT_TELEPHONY_WS_URL = "ws://localhost:4100/api/ws/telephony";
+export const DEFAULT_TELEPHONY_WS_URL = resolveClinicWsUrl("/api/ws/telephony");
 
 export const DEFAULT_CLINIC_BRAND_NAME = "DENTE";
 

@@ -180,6 +180,14 @@ export function useInvoicesData({
 							typeof raw.paymentMethod === "string"
 								? raw.paymentMethod
 								: undefined,
+						originalPaymentId:
+							typeof raw.originalPaymentId === "string"
+								? raw.originalPaymentId
+								: undefined,
+						cashBoxId:
+							typeof raw.cashBoxId === "string"
+								? raw.cashBoxId
+								: undefined,
 						fiscalStatus:
 							typeof raw.fiscalStatus === "string"
 								? (raw.fiscalStatus as BillingInvoice["fiscalStatus"])

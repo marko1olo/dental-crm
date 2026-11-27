@@ -68,26 +68,26 @@ export const RefundItemsSelectionTable: React.FC<RefundItemsSelectionTableProps>
 								</div>
 
 								<div className="flex-1 min-w-0">
-									<div className="flex items-center justify-between gap-2">
-										<div className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] truncate" title={srv.name}>
+									<div className="flex items-start justify-between gap-3">
+										<div className="font-semibold text-sm text-[var(--ink,#0f172a)] leading-snug min-w-0">
 											{srv.toothNumber && (
-												<span className="px-1.5 py-0.5 rounded bg-teal-500/15 text-teal-600 dark:text-teal-400 font-mono text-xs mr-1.5">
+												<span className="px-1.5 py-0.5 rounded bg-[var(--primary-soft,rgba(13,148,136,0.12))] text-[var(--primary)] font-mono text-xs mr-1.5 inline-block">
 													Зуб {srv.toothNumber}
 												</span>
 											)}
 											{srv.name}
 										</div>
-										<div className="font-extrabold text-xs sm:text-sm text-[var(--ink,#0f172a)] shrink-0">
+										<div className="dente-money font-mono tracking-tight font-semibold text-sm text-[var(--ink,#0f172a)] shrink-0 tabular-nums whitespace-nowrap">
 											{srv.priceRub.toLocaleString("ru-RU")} ₽
 										</div>
 									</div>
 
-									<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--muted,#64748b)] mt-1">
+									<div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-[var(--ink-muted,#64748b)] mt-1">
 										<span>Код: {srv.code || srv.code804n || "A16.07.002"}</span>
-										<span>•</span>
+										<span aria-hidden="true">•</span>
 										<span>Врач: {srv.doctorName || doctorName}</span>
-										<span>•</span>
-										<span className="text-amber-600 dark:text-amber-400 font-bold">
+										<span aria-hidden="true">•</span>
+										<span className="text-[var(--warning,#d97706)] font-medium">
 											Вычет з/п: -{itemClawback.toLocaleString("ru-RU")} ₽ ({srv.commissionPct ?? doctorCommissionPct}%)
 										</span>
 									</div>

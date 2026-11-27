@@ -21,6 +21,7 @@ import { clinics, doctorPreferences, organizations, users } from "../../db/schem
 import { registerSettingsRoutes } from "../../routes/settings.js";
 import { registerDoctorPreferencesRoutes } from "../../routes/doctorPreferencesRoutes.js";
 import { registerHardwareRoutes } from "../../routes/hardware.js";
+import { HardwareDiscoveryService } from "../../services/hardwareDiscoveryService.js";
 import { resetAuthSecretCacheForTests } from "../../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -199,8 +200,8 @@ describe("Settings & Branch Hardening Integration Suite", () => {
 		assert.equal(getBody.preferences.autoStampEmkOnClose, true);
 	});
 
-	it("3. POST /api/hardware/test-print dispatches print job and returns hex preview", async () => {
-		const printResponse = await app.inject({
+	it("3. POST /api/hardware/test-print fails closed with 502 without printer and dispatches bytes via DI spoolerTransport", async () => {
+		const missingPrinterResponse = await app.inject({
 			method: "POST",
 			url: "/api/hardware/test-print",
 			headers: authHeaders(ORG_ID),
@@ -208,16 +209,63 @@ describe("Settings & Branch Hardening Integration Suite", () => {
 				deviceType: "thermal_receipt",
 				interface: "system_spooler",
 				paperWidthMm: 58,
-				systemPrinterName: "Xprinter XP-58",
+				systemPrinterName: "DENTE_NONEXISTENT_SPOOLER_XP58",
 				customMessage: "DENTE CRM TEST PRINT",
 			},
 		});
 
-		assert.equal(printResponse.statusCode, 200, `Expected 200, got ${printResponse.statusCode}: ${printResponse.payload}`);
-		const printBody = JSON.parse(printResponse.payload);
-		assert.equal(printBody.success, true);
-		assert.ok(printBody.result.bytesSent > 0);
-		assert.ok(printBody.result.rawHexPreview);
+		assert.equal(
+			missingPrinterResponse.statusCode,
+			502,
+			`Expected fail-closed 502 without real printer, got ${missingPrinterResponse.statusCode}: ${missingPrinterResponse.payload}`,
+		);
+		const missingBody = JSON.parse(missingPrinterResponse.payload);
+		assert.equal(missingBody.success, false);
+		assert.equal(missingBody.result.success, false);
+
+		const dispatchedJobs: Array<{ printerName: string; bytes: Uint8Array }> = [];
+		const diApp = createTenantTestApp();
+		await registerHardwareRoutes(diApp, {
+			hardwareService: new HardwareDiscoveryService({
+				spoolerTransport: {
+					isPrinterInstalled: async (printerName) => printerName === "Xprinter XP-58",
+					sendRawBytes: async (printerName, payloadBytes) => {
+						dispatchedJobs.push({ printerName, bytes: payloadBytes });
+					},
+				},
+			}),
+		});
+		await diApp.ready();
+
+		try {
+			const printResponse = await diApp.inject({
+				method: "POST",
+				url: "/api/hardware/test-print",
+				headers: authHeaders(ORG_ID),
+				payload: {
+					deviceType: "thermal_receipt",
+					interface: "system_spooler",
+					paperWidthMm: 58,
+					systemPrinterName: "Xprinter XP-58",
+					customMessage: "DENTE CRM TEST PRINT",
+				},
+			});
+
+			assert.equal(
+				printResponse.statusCode,
+				200,
+				`Expected 200 via DI spoolerTransport, got ${printResponse.statusCode}: ${printResponse.payload}`,
+			);
+			const printBody = JSON.parse(printResponse.payload);
+			assert.equal(printBody.success, true);
+			assert.equal(dispatchedJobs.length, 1);
+			assert.equal(dispatchedJobs[0]?.printerName, "Xprinter XP-58");
+			assert.equal(printBody.result.bytesSent, dispatchedJobs[0]?.bytes.length);
+			assert.ok(printBody.result.bytesSent > 0);
+			assert.ok(printBody.result.rawHexPreview);
+		} finally {
+			await diApp.close();
+		}
 	});
 
 	it("4. Settings routes (branches & tenant-scoped backup) work under PG18 FORCE RLS without createTenantTestApp onRoute hook", async () => {

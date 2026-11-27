@@ -222,6 +222,15 @@ function isPrivateLanSubnetPrefix(rawSubnet: string): boolean {
 	return false;
 }
 
+export interface HardwareSpoolerTransport {
+	isPrinterInstalled(printerName: string): Promise<boolean> | boolean;
+	sendRawBytes(printerName: string, buffer: Uint8Array): Promise<void> | void;
+}
+
+export interface HardwareDiscoveryServiceDeps {
+	readonly spoolerTransport?: HardwareSpoolerTransport | undefined;
+}
+
 export class HardwareDiscoveryService {
 	private readonly cachedResultsByTenant = new Map<
 		string,
@@ -229,6 +238,11 @@ export class HardwareDiscoveryService {
 	>();
 	private readonly cacheTtlMs = 5000; // 5 seconds cache to avoid WMI spam
 	private readonly maxCacheEntries = 64;
+	private readonly spoolerTransport?: HardwareSpoolerTransport | undefined;
+
+	constructor(deps?: HardwareDiscoveryServiceDeps) {
+		this.spoolerTransport = deps?.spoolerTransport;
+	}
 
 	/**
 	 * Discovers all connected clinic hardware devices.
@@ -547,7 +561,33 @@ export class HardwareDiscoveryService {
 
 		// 3. System spooler dispatch or buffer generation
 		if (target.interface === "system_spooler" && target.systemPrinterName) {
-			if (process.platform === "win32") {
+			if (this.spoolerTransport) {
+				try {
+					const installed = await this.spoolerTransport.isPrinterInstalled(target.systemPrinterName);
+					if (installed) {
+						await this.spoolerTransport.sendRawBytes(target.systemPrinterName, buffer);
+						return {
+							success: true,
+							bytesSent: buffer.length,
+							timestamp,
+							message: `Отправлено в спулер печати (${target.systemPrinterName}): ${buffer.length} байт`,
+							rawHexPreview: hexPreview,
+							targetSummary,
+						};
+					}
+				} catch (err: unknown) {
+					return {
+						success: false,
+						bytesSent: 0,
+						timestamp,
+						message: `Ошибка передачи задания в спулер печати: ${err instanceof Error ? err.message : String(err)}`,
+						rawHexPreview: hexPreview,
+						targetSummary,
+						error: err instanceof Error ? err.message : String(err),
+					};
+				}
+			}
+			if (process.platform === "win32" && !this.spoolerTransport) {
 				let isInstalled = false;
 				try {
 					const checkOutput = childProcess

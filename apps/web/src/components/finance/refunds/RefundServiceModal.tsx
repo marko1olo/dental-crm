@@ -33,17 +33,18 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = (props) => 
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto"
+			className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto"
 			data-testid="refund-service-modal"
 		>
-			<div className="relative w-full max-w-2xl rounded-2xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--border,#e2e8f0)] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+			<div className="relative w-full max-w-2xl rounded-t-[24px] sm:rounded-2xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[90vh]">
+				<div className="sm:hidden w-9 h-1.5 rounded-full bg-[var(--line,#e2e8f0)] mx-auto mt-2.5 mb-0.5 shrink-0 pointer-events-none" />
 				<RefundModalHeader
 					invoiceNumber={invoiceNumber}
 					patientName={patientName}
 					onClose={onClose}
 				/>
 
-				<div className="flex-1 overflow-y-auto p-5 space-y-5">
+				<div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4 sm:space-y-5">
 					{controller.activeTab === "form" ? (
 						<>
 							<RefundItemsSelectionTable

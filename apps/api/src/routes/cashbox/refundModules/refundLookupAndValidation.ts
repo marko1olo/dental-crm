@@ -3,7 +3,7 @@
  * Stage 1: Idempotent replay check & row-locked over-refund guards for payments/invoices.
  */
 
-import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { kopecksToNumericString, rublesToKopecks } from "@dental/shared";
 import {
 	cashBoxes,
@@ -119,6 +119,7 @@ export async function checkCashRefundReplay(
 
 export interface LockedRefundTargets {
 	readonly linkedPayment: typeof payments.$inferSelect | undefined;
+	readonly inferredPayment: typeof payments.$inferSelect | undefined;
 	readonly linkedInvoice: typeof patientInvoices.$inferSelect | undefined;
 }
 
@@ -224,6 +225,7 @@ export async function lockAndValidateRefundTargets(
 	}
 
 	let linkedInvoice: typeof patientInvoices.$inferSelect | undefined;
+	let inferredPayment: typeof payments.$inferSelect | undefined;
 	const targetInvoiceId = invoiceId || linkedPayment?.documentId;
 	if (targetInvoiceId) {
 		const [inv] = await tx
@@ -245,10 +247,7 @@ export async function lockAndValidateRefundTargets(
 
 			const [paidRows, refundRows] = await Promise.all([
 				tx
-					.select({
-						amountKopecks: payments.amountKopecks,
-						amountRub: payments.amountRub,
-					})
+					.select()
 					.from(payments)
 					.where(
 						and(
@@ -257,7 +256,8 @@ export async function lockAndValidateRefundTargets(
 							eq(payments.status, "paid"),
 							or(sql`${payments.amountKopecks} > 0`, sql`${payments.amountRub} > 0`),
 						),
-					),
+					)
+					.orderBy(desc(payments.paidAt), desc(payments.createdAt)),
 				tx
 					.select({
 						amountKopecks: payments.amountKopecks,
@@ -272,6 +272,9 @@ export async function lockAndValidateRefundTargets(
 						),
 					),
 			]);
+			if (!linkedPayment && paidRows.length > 0) {
+				inferredPayment = paidRows[0];
+			}
 
 			const invoiceTotalKop = resolveInvoiceTotalKopecks(linkedInvoice);
 			let paidOnInvoiceKop = 0n;
@@ -311,6 +314,6 @@ export async function lockAndValidateRefundTargets(
 
 	return {
 		ok: true,
-		targets: { linkedPayment, linkedInvoice },
+		targets: { linkedPayment, inferredPayment, linkedInvoice },
 	};
 }

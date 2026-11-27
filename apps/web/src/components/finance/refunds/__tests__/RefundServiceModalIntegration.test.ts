@@ -194,3 +194,104 @@ test("RefundServiceModal Integration: validates cash refund tender exact parity"
 	const parsed = fiscalRefundPayloadSchema.safeParse(refundPayload);
 	assert.equal(parsed.success, true);
 });
+
+test("RefundServiceModal Integration: controller forwards method, cashBoxId, and originalPaymentId to POST /api/cashbox/refund", async () => {
+	const React = await import("react");
+	const { createRoot } = await import("react-dom/client");
+	const { setupMockDom } = await import(
+		"../../../booking/__tests__/bookingErgonomics/bookingTestDomHarness.js"
+	);
+	const { useRefundServiceModalController } = await import(
+		"../refundServiceModalModules/useRefundServiceModalController.js"
+	);
+
+	const { doc } = setupMockDom();
+	const container = doc.createElement("div");
+	doc.body.appendChild(container);
+	const root = createRoot(container as unknown as HTMLElement);
+
+	const capturedBodies: Array<Record<string, unknown>> = [];
+	const originalFetch = globalThis.fetch;
+	globalThis.fetch = async (url: RequestInfo | URL, init?: RequestInit) => {
+		if (String(url).includes("/api/cashbox/refund")) {
+			capturedBodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+			return new Response(
+				JSON.stringify({
+					success: true,
+					status: "completed",
+					fiscalReceiptQueueId: "queue-1",
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		}
+		return new Response(JSON.stringify({ success: true }), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		});
+	};
+
+	const testInvoiceId = "11111111-1111-4111-8111-111111111111";
+	const testPatientId = "22222222-2222-4222-8222-222222222222";
+	const testPaymentId = "33333333-3333-4333-8333-333333333333";
+	const testCashBoxId = "44444444-4444-4444-8444-444444444444";
+
+	let latestCtrl: ReturnType<typeof useRefundServiceModalController> | null = null;
+	function ControllerHarness() {
+		latestCtrl = useRefundServiceModalController({
+			isOpen: true,
+			onClose: () => {},
+			invoiceId: testInvoiceId,
+			invoiceNumber: "СЧ-2026-001",
+			patientId: testPatientId,
+			patientName: "Тестов Тест",
+			cashBoxId: testCashBoxId,
+			originalPaymentId: testPaymentId,
+			services: [
+				{
+					id: "svc-1",
+					name: "Лечение кариеса",
+					priceRub: 4500,
+					quantity: 1,
+				},
+			],
+		});
+		return null;
+	}
+
+	try {
+		await React.act(async () => {
+			root.render(React.createElement(ControllerHarness));
+		});
+		if (!latestCtrl) {
+			throw new Error("Controller failed to initialize");
+		}
+		const ctrl = latestCtrl as ReturnType<typeof useRefundServiceModalController>;
+
+		await React.act(async () => {
+			await ctrl.handleExecuteRefund();
+		});
+
+		assert.equal(capturedBodies.length, 1);
+		assert.equal(capturedBodies[0]?.method, "card");
+		assert.equal(capturedBodies[0]?.cashBoxId, testCashBoxId);
+		assert.equal(capturedBodies[0]?.paymentId, testPaymentId);
+		assert.equal(capturedBodies[0]?.invoiceId, testInvoiceId);
+		assert.equal(capturedBodies[0]?.amountRub, 4500);
+
+		await React.act(async () => {
+			ctrl.setPaymentMethod("advance_deposit");
+		});
+		const updatedCtrl = latestCtrl as ReturnType<typeof useRefundServiceModalController>;
+		await React.act(async () => {
+			await updatedCtrl.handleExecuteRefund();
+		});
+
+		assert.equal(capturedBodies.length, 2);
+		assert.equal(capturedBodies[1]?.method, "advance_deposit");
+	} finally {
+		await React.act(async () => {
+			root.unmount();
+		});
+		globalThis.fetch = originalFetch;
+	}
+});

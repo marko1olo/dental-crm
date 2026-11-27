@@ -100,7 +100,7 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 		let cancelled = false;
 		const targetUrl = organizationId
 			? `/api/public/booking/${organizationId}/clinic-info`
-			: "/api/public/booking/default-clinic";
+			: "/api/public/booking/default-clinic?allowDefault=1";
 
 		fetch(targetUrl)
 			.then((res) => (res.ok ? res.json() : null))
@@ -183,6 +183,10 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 			phoneInputRef.current?.focus();
 			return;
 		}
+		if (!effectiveOrgId) {
+			setAuthError("Не удалось определить клинику. Обновите страницу или выберите филиал.");
+			return;
+		}
 		setIsLoading(true);
 		setAuthError(null);
 		try {
@@ -192,7 +196,7 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
 				},
-				body: JSON.stringify({ phone: loginPhone.trim(), organizationId: effectiveOrgId || "default" }),
+				body: JSON.stringify({ phone: loginPhone.trim(), organizationId: effectiveOrgId }),
 			});
 			if (res.ok || res.status === 202) {
 				setOtpSent(true);
@@ -213,6 +217,10 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 			setAuthError("Введите код подтверждения из SMS");
 			return;
 		}
+		if (!effectiveOrgId) {
+			setAuthError("Не удалось определить клинику. Обновите страницу или выберите филиал.");
+			return;
+		}
 		setIsLoading(true);
 		setAuthError(null);
 		try {
@@ -222,7 +230,7 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
 				},
-				body: JSON.stringify({ phone: loginPhone.trim(), code: otpCode.trim(), organizationId: effectiveOrgId || "default" }),
+				body: JSON.stringify({ phone: loginPhone.trim(), code: otpCode.trim(), organizationId: effectiveOrgId }),
 			});
 			if (res.ok) {
 				const raw = await res.json();
@@ -278,18 +286,18 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 
 			<div className="w-full max-w-6xl mx-auto flex flex-col items-center z-10 px-2 sm:px-4">
 				{/* Верхний переключатель режимов: Онлайн-запись / Личный кабинет */}
-				<div className="w-full max-w-2xl mb-4 sm:mb-6 flex items-center justify-between PublicBookingWidget-glass-nav p-1 rounded-none sm:rounded-2xl shadow-sm border-x-0 border-t-0 sm:border border-[var(--line)]">
+				<div className="w-full max-w-2xl mb-4 sm:mb-6 flex items-center justify-between gap-1 PublicBookingWidget-glass-nav p-1 rounded-none sm:rounded-2xl shadow-sm border-x-0 border-t-0 sm:border border-[var(--line)]">
 					<button
 						type="button"
 						onClick={() => setActiveMode("booking")}
 						data-active={activeMode === "booking"}
-						className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+						className={`flex-1 py-2.5 px-3 sm:px-4 rounded-xl text-[11px] sm:text-sm font-semibold flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap transition-all cursor-pointer ${
 							activeMode === "booking"
 								? "bg-[var(--primary)] text-white shadow-sm"
 								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 						}`}
 					>
-						<Calendar className="w-4 h-4" />
+						<Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
 						<span>Онлайн-запись на приём</span>
 					</button>
 					<button
@@ -301,13 +309,13 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 							}
 						}}
 						data-active={activeMode === "cabinet"}
-						className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+						className={`sm:flex-1 py-2.5 px-3 sm:px-4 rounded-xl text-[11px] sm:text-sm font-semibold flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0 transition-all cursor-pointer ${
 							activeMode === "cabinet"
 								? "bg-[var(--primary)] text-white shadow-sm"
 								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 						}`}
 					>
-						<User className="w-4 h-4" />
+						<User className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
 						<span>Личный кабинет</span>
 					</button>
 				</div>

@@ -44,6 +44,7 @@ export async function executeCashRefundTransaction(
 		cashBoxId,
 		refundKop,
 		amountRub,
+		method,
 		reasonText,
 		operatorId,
 		invoiceId,
@@ -79,9 +80,16 @@ export async function executeCashRefundTransaction(
 		if (!validation.ok) {
 			return validation.failure;
 		}
-		const { linkedPayment, linkedInvoice } = validation.targets;
+		const { linkedPayment, inferredPayment, linkedInvoice } = validation.targets;
+		const effectivePayment = linkedPayment ?? inferredPayment;
 
 		await ensureOrganizationCashBoxes(tx, orgId);
+
+		const isDepositRefund =
+			method === "advance_deposit" ||
+			(!method &&
+				(effectivePayment?.method === "family_wallet" ||
+					String(effectivePayment?.method ?? "") === "deposit"));
 
 		let targetBox: typeof cashBoxes.$inferSelect | undefined;
 		if (cashBoxId) {
@@ -93,22 +101,42 @@ export async function executeCashRefundTransaction(
 				.limit(1);
 			targetBox = box;
 		} else {
-			const [box] = await tx
-				.select()
-				.from(cashBoxes)
-				.where(and(eq(cashBoxes.organizationId, orgId), eq(cashBoxes.type, "main")))
-				.for("update")
-				.limit(1);
-			targetBox = box;
+			const methodHint = method ?? (effectivePayment?.method as string | undefined);
+			const preferredBoxTypes: string[] = isDepositRefund
+				? ["main", "cashless", "account"]
+				: methodHint === "bank_transfer"
+					? ["account", "cashless", "main"]
+					: methodHint === "card" || methodHint === "sbp" || methodHint === "online"
+						? ["cashless", "account"]
+						: ["main"];
+
+			for (const boxType of preferredBoxTypes) {
+				const [box] = await tx
+					.select()
+					.from(cashBoxes)
+					.where(and(eq(cashBoxes.organizationId, orgId), eq(cashBoxes.type, boxType)))
+					.for("update")
+					.limit(1);
+				if (box) {
+					targetBox = box;
+					break;
+				}
+			}
+
+			if (!targetBox && !isDepositRefund && (methodHint === "card" || methodHint === "sbp" || methodHint === "online" || methodHint === "bank_transfer")) {
+				const [cashlessFallback] = await tx
+					.select()
+					.from(cashBoxes)
+					.where(and(eq(cashBoxes.organizationId, orgId), eq(cashBoxes.isCashless, true)))
+					.for("update")
+					.limit(1);
+				targetBox = cashlessFallback;
+			}
 		}
 
 		if (!targetBox) {
 			return { kind: "box_not_found" };
 		}
-
-		const isDepositRefund =
-			linkedPayment?.method === "family_wallet" ||
-			String(linkedPayment?.method ?? "") === "deposit";
 
 		const balanceBeforeKop =
 			targetBox.balanceKopecks !== undefined && targetBox.balanceKopecks !== null
@@ -196,7 +224,9 @@ export async function executeCashRefundTransaction(
 				operatorId: operatorId ?? null,
 				metadata: {
 					idempotencyKey: effectiveMutationId,
+					isRefund: true,
 					isDepositRefund,
+					...(method ? { refundMethod: method } : {}),
 					...(linkedPayment ? { originalPaymentId: linkedPayment.id } : {}),
 				},
 			})
@@ -214,10 +244,10 @@ export async function executeCashRefundTransaction(
 			}
 		}
 		if (!resolvedCashierName) {
-			resolvedCashierName = linkedPayment?.payerFullName || "Администратор кассы";
+			resolvedCashierName = effectivePayment?.payerFullName || "Администратор кассы";
 		}
 
-		let effectivePatientId = patientId || linkedPayment?.patientId || linkedInvoice?.patientId || null;
+		let effectivePatientId = patientId || effectivePayment?.patientId || linkedInvoice?.patientId || null;
 		let patientName = "Розничный покупатель";
 
 		if (effectivePatientId) {
@@ -397,11 +427,22 @@ export async function executeCashRefundTransaction(
 		const refundReceiptNumber = null;
 		const refundMethod = isDepositRefund
 			? "family_wallet"
-			: linkedPayment?.method === "online" || targetBox.type === "sbp"
+			: method === "sbp" || (!method && (effectivePayment?.method === "online" || targetBox.type === "sbp"))
 				? "online"
-				: targetBox.isCashless
-					? "card"
-					: linkedPayment?.method || "cash";
+				: method === "bank_transfer"
+					? "bank_transfer"
+					: method === "card"
+						? "card"
+						: method === "cash"
+							? "cash"
+							: targetBox.isCashless
+								? "card"
+								: effectivePayment?.method || "cash";
+		const isCashlessOfd =
+			targetBox.isCashless ||
+			method === "card" ||
+			method === "sbp" ||
+			method === "bank_transfer";
 
 		let refundPaymentId: string | undefined;
 		let queuedReceiptId: string | undefined;
@@ -413,8 +454,8 @@ export async function executeCashRefundTransaction(
 				.values({
 					organizationId: orgId,
 					patientId: effectivePatientId,
-					visitId: linkedPayment?.visitId || linkedInvoice?.visitId || null,
-					documentId: linkedInvoice?.id || (linkedPayment?.documentId ?? null),
+					visitId: effectivePayment?.visitId || linkedInvoice?.visitId || null,
+					documentId: linkedInvoice?.id || (effectivePayment?.documentId ?? null),
 					clientMutationId: effectiveMutationId,
 					amountRub: canonicalRefundAmounts.amountRub,
 					amountKopecks: canonicalRefundAmounts.amountKopecks,
@@ -448,10 +489,10 @@ export async function executeCashRefundTransaction(
 						customerContact: "",
 						customerName: patientName,
 						totalKopecks: refundKop,
-						cashKopecks: !targetBox.isCashless ? refundKop : 0,
+						cashKopecks: !isCashlessOfd ? refundKop : 0,
 						electronicCardKopecks:
-							targetBox.isCashless && refundMethod !== "online" ? refundKop : 0,
-						sbpKopecks: refundMethod === "online" ? refundKop : 0,
+							isCashlessOfd && refundMethod !== "online" ? refundKop : 0,
+						sbpKopecks: isCashlessOfd && refundMethod === "online" ? refundKop : 0,
 						prepaidKopecks: 0,
 						items: [
 							{
@@ -472,13 +513,13 @@ export async function executeCashRefundTransaction(
 						.values({
 							organizationId: orgId,
 							paymentId: insertedPayment.id,
-							visitId: linkedPayment?.visitId || linkedInvoice?.visitId || null,
+							visitId: effectivePayment?.visitId || linkedInvoice?.visitId || null,
 							receiptType: "income_return",
 							status: "pending_print",
 							payloadJson: {
 								...refundFfdPayload,
 								clientMutationId: effectiveMutationId,
-								originalFiscalReceiptNumber: linkedPayment?.fiscalReceiptNumber || null,
+								originalFiscalReceiptNumber: effectivePayment?.fiscalReceiptNumber || null,
 								originalPaymentId: linkedPayment?.id || null,
 								patientId: effectivePatientId,
 								patientName,

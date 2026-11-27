@@ -9,6 +9,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadContext } from "../../../accessGuard.js";
 import { withTenantReadCtx } from "../../../db/rls.js";
 import { invoiceItems, patientInvoices, payments } from "../../../db/schema/billing.js";
+import { cashBoxes, cashOperations } from "../../../db/schema/finance.js";
 import { patients } from "../../../db/schema/patients.js";
 import { invoiceListQuerySchema } from "../types.js";
 
@@ -35,7 +36,7 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 			: eq(patientInvoices.status, status)
 		: sql`TRUE`;
 
-	const { invoiceRows, rawItems, paidRows } = await withTenantReadCtx(orgId, async (tx) => {
+	const { invoiceRows, rawItems, paidRows, incomeOps, orgCashBoxes } = await withTenantReadCtx(orgId, async (tx) => {
 		const invRows = await tx
 			.select({
 				id: patientInvoices.id,
@@ -91,6 +92,8 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 							documentId: payments.documentId,
 							visitId: payments.visitId,
 							patientId: payments.patientId,
+							method: payments.method,
+							paidAt: payments.paidAt,
 							amountKopecks: payments.amountKopecks,
 							amountRub: payments.amountRub,
 						})
@@ -107,10 +110,59 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 									: inArray(payments.documentId, invoiceIds),
 							),
 						)
+						.orderBy(desc(payments.paidAt), desc(payments.createdAt))
 				: [];
 
-		return { invoiceRows: invRows, rawItems: invItems, paidRows: invPayments };
+		const opsRows =
+			invoiceIds.length > 0
+				? await tx
+						.select({
+							cashBoxId: cashOperations.cashBoxId,
+							invoiceId: cashOperations.invoiceId,
+						})
+						.from(cashOperations)
+						.where(
+							and(
+								eq(cashOperations.organizationId, orgId),
+								eq(cashOperations.operationType, "income"),
+								inArray(cashOperations.invoiceId, invoiceIds),
+							),
+						)
+						.orderBy(desc(cashOperations.createdAt))
+				: [];
+
+		const boxesRows =
+			invoiceIds.length > 0
+				? await tx
+						.select({
+							id: cashBoxes.id,
+							type: cashBoxes.type,
+						})
+						.from(cashBoxes)
+						.where(eq(cashBoxes.organizationId, orgId))
+				: [];
+
+		return {
+			invoiceRows: invRows,
+			rawItems: invItems,
+			paidRows: invPayments,
+			incomeOps: opsRows,
+			orgCashBoxes: boxesRows,
+		};
 	});
+
+	const cashBoxByType = new Map<string, string>();
+	for (const box of orgCashBoxes) {
+		if (!cashBoxByType.has(box.type)) {
+			cashBoxByType.set(box.type, box.id);
+		}
+	}
+	const cashBoxByInvoiceId = new Map<string, string>();
+	for (const op of incomeOps) {
+		if (op.invoiceId && !cashBoxByInvoiceId.has(op.invoiceId)) {
+			cashBoxByInvoiceId.set(op.invoiceId, op.cashBoxId);
+		}
+	}
 
 	const projectInvoiceItem = (item: typeof rawItems[number]) => {
 		const qty = Number(item.quantity) || 1;
@@ -147,6 +199,16 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 				p.documentId === inv.id ||
 				(inv.visitId !== null && p.visitId === inv.visitId && p.patientId === inv.patientId),
 		);
+		const primaryPayment = matchingPayments[0];
+		const inferredBoxId =
+			cashBoxByInvoiceId.get(inv.id) ||
+			(primaryPayment?.method === "card" || primaryPayment?.method === "online"
+				? cashBoxByType.get("cashless")
+				: primaryPayment?.method === "bank_transfer"
+					? cashBoxByType.get("account") || cashBoxByType.get("cashless")
+					: primaryPayment?.method === "cash"
+						? cashBoxByType.get("main")
+						: undefined);
 		const paidAmountKopecks =
 			matchingPayments.length > 0
 				? matchingPayments.reduce((sum, p) => {
@@ -178,6 +240,9 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 			patientPhone: inv.patientPhone || undefined,
 			visitId: inv.visitId,
 			organizationId: inv.organizationId,
+			originalPaymentId: primaryPayment?.id,
+			paymentMethod: primaryPayment?.method,
+			cashBoxId: inferredBoxId,
 			totalAmountRub: kopecksToRubles(totalAmountKopecks),
 			totalAmountKopecks,
 			paidAmountRub,
