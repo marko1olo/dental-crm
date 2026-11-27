@@ -8,6 +8,7 @@ export interface ClinicalCatalogSearchAndModesProps {
 	proceduresCount: number;
 	chunksCount: number;
 	diagnosesCount: number;
+	stacked?: boolean | undefined;
 }
 
 export function ClinicalCatalogSearchAndModes({
@@ -18,10 +19,15 @@ export function ClinicalCatalogSearchAndModes({
 	proceduresCount,
 	chunksCount,
 	diagnosesCount,
+	stacked = false,
 }: ClinicalCatalogSearchAndModesProps) {
 	return (
-		<div className="p-3 border-b border-[var(--glass-border)] bg-[var(--paper)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
-			<div className="dente-search-wrap flex-1">
+		<div
+			className={`p-3 border-b border-[var(--glass-border)] bg-[var(--paper)] flex flex-col ${
+				stacked ? "items-stretch" : "sm:flex-row items-stretch sm:items-center"
+			} justify-between gap-2.5 shrink-0`}
+		>
+			<div className="dente-search-wrap w-full flex-1">
 				<Search size={15} className="dente-search-icon" />
 				<input
 					type="text"

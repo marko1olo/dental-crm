@@ -14,6 +14,7 @@ import { UserCheck, Users, X } from "lucide-react";
 import type { WorkspaceOverlayStudio } from "@dental/shared";
 import { lazyWithRetry } from "../../lib/lazyWithRetry.js";
 import {
+	consumePendingStudioNavigation,
 	subscribeLegacyStudioEvents,
 	useClinicEvent,
 } from "../../lib/clinicEventBus.js";
@@ -262,26 +263,49 @@ export const WorkspaceStudioOverlayHost: React.FC = () => {
 	const activeDoctorName = useAppStore((s) => s.activeDoctorName);
 	const activeToothNumber = useVisitStore((s) => s.activeToothNumber);
 
+	const studioBackStack = useAppStore((s) => s.studioBackStack);
+
 	const handleClose = useCallback(() => {
+		const previousStudio = useAppStore.getState().popStudioBackStack();
+		if (previousStudio) {
+			setStudio(previousStudio);
+			return;
+		}
 		setStudio(null);
 		clearStudioFromBrowserUrl();
 	}, []);
 
-	useClinicEvent("studio:open", ({ studio: nextStudio }) => {
+	useClinicEvent("studio:open", ({ studio: nextStudio, pushBackStack }) => {
+		if (pushBackStack) {
+			useAppStore.getState().pushStudioBackStack(pushBackStack);
+		}
 		setStudio(nextStudio);
 	});
 
 	useClinicEvent("studio:close", () => {
-		handleClose();
+		useAppStore.getState().clearStudioBackStack();
+		setStudio(null);
+		clearStudioFromBrowserUrl();
 	});
 
 	useEffect(() => {
+		const pending = consumePendingStudioNavigation();
+		if (pending) {
+			if (pending.pushBackStack) {
+				useAppStore.getState().pushStudioBackStack(pending.pushBackStack);
+			}
+			setStudio(pending.studio);
+		}
 		const syncFromUrl = () => {
+			useAppStore.getState().clearStudioBackStack();
 			setStudio(readStudioFromLocation());
 		};
 		const unsubscribeLegacy = subscribeLegacyStudioEvents(
 			(nextStudio) => setStudio(nextStudio),
-			() => setStudio(null),
+			() => {
+				useAppStore.getState().clearStudioBackStack();
+				setStudio(null);
+			},
 		);
 		window.addEventListener("hashchange", syncFromUrl);
 		window.addEventListener("popstate", syncFromUrl);
@@ -346,7 +370,9 @@ export const WorkspaceStudioOverlayHost: React.FC = () => {
 					key={remountKey}
 					isOpen={true}
 					onClose={handleClose}
+					isOverlayHosted={true}
 					patientId={resolvedPatientId ?? null}
+					patient={resolvedPatient ?? null}
 					mode={studio.mode ?? "view"}
 					initialTab={(studio.initialTab as PatientCardTab | undefined) ?? "general"}
 				/>
@@ -388,6 +414,12 @@ export const WorkspaceStudioOverlayHost: React.FC = () => {
 					key={remountKey}
 					isOpen={true}
 					onClose={handleClose}
+					onBack={studioBackStack.length > 0 ? handleClose : undefined}
+					backLabel={
+						studioBackStack[studioBackStack.length - 1]?.kind === "patient_card"
+							? "К карточке"
+							: undefined
+					}
 					patientId={resolvedPatientId}
 					visitId={studio.visitId}
 					initialTab={(studio.initialTab as RecordTabType | undefined) ?? "overview"}
@@ -634,17 +666,24 @@ export const WorkspaceStudioOverlayHost: React.FC = () => {
 					}
 				/>
 			)}
-			{studio.kind === "consents" && (
-				<DocumentsStudioModal
-					key={remountKey}
-					isOpen={true}
-					onClose={handleClose}
-					patientId={resolvedPatientId}
-					patientName={resolvedPatientName}
-					initialTemplate={"informed_consent" as DocumentTemplateKey}
-					initialDocId={studio.docId ? normalizeConsentDocId(studio.docId) : "therapy"}
-				/>
-			)}
+			{studio.kind === "consents" && (() => {
+				const isTaxDoc = studio.docId === "tax_deduction" || Boolean(studio.docId?.startsWith("tax_deduction:"));
+				const taxTab = isTaxDoc && studio.docId?.includes(":") ? studio.docId.split(":")[1] : isTaxDoc ? "form" : undefined;
+				return (
+					<DocumentsStudioModal
+						key={remountKey}
+						isOpen={true}
+						onClose={handleClose}
+						patient={resolvedPatient}
+						patientId={resolvedPatientId}
+						patientName={resolvedPatientName}
+						patientBirthDate={resolvedPatient?.birthDate ?? undefined}
+						initialTemplate={(isTaxDoc ? "tax_deduction" : "informed_consent") as DocumentTemplateKey}
+						initialTab={taxTab}
+						initialDocId={isTaxDoc ? undefined : studio.docId ? normalizeConsentDocId(studio.docId) : "therapy"}
+					/>
+				);
+			})()}
 			{studio.kind === "ukep" && (
 				<UkepDocumentSigningModal
 					key={remountKey}

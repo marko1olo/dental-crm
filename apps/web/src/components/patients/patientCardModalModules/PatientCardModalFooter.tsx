@@ -7,12 +7,14 @@
 
 import React from "react";
 import { Calendar, Plus, Stethoscope } from "lucide-react";
+import type { PatientSectionSaveState } from "../patientCardSavePill";
 import type { UsePatientCreationFormResult } from "../patientCreation/usePatientCreationTypes";
 
 export interface PatientCardModalFooterProps {
 	readonly isCreateMode: boolean;
-	readonly isAnySubModalOpen: boolean;
 	readonly creationForm: UsePatientCreationFormResult;
+	readonly isDirty?: boolean | undefined;
+	readonly saveState?: PatientSectionSaveState | undefined;
 	readonly onClose: () => void;
 	readonly onSave: () => void;
 }
@@ -20,21 +22,42 @@ export interface PatientCardModalFooterProps {
 export const PatientCardModalFooter: React.FC<PatientCardModalFooterProps> = React.memo(
 	function PatientCardModalFooter({
 		isCreateMode,
-		isAnySubModalOpen,
 		creationForm,
+		isDirty = false,
+		saveState = "idle",
 		onClose,
 		onSave,
 	}) {
+		const statusHint = isCreateMode
+			? "Карта пациента • Быстрое оформление без лишних полей"
+			: saveState === "saving"
+				? "Сохранение изменений..."
+				: saveState === "error"
+					? "Ошибка сохранения — повторите попытку"
+					: saveState === "saved"
+						? "Все изменения сохранены"
+						: isDirty
+							? "Есть несохранённые изменения"
+							: "Медицинская карта пациента • Защита персональных данных";
+
 		return (
 			<div
-				className={`flex items-center justify-between p-3 sm:p-4 border-t border-[var(--glass-border)] bg-[var(--paper-strong)] gap-2.5 print:hidden ${
-					isAnySubModalOpen ? "hidden pointer-events-none" : ""
-				}`}
+				data-testid="patient-card-modal-footer"
+				className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 max-sm:sticky max-sm:bottom-0 max-sm:z-20 max-sm:pb-[max(12px,env(safe-area-inset-bottom))] border-t border-[var(--glass-border)] bg-[var(--paper-strong)] gap-2 print:hidden shrink-0"
 			>
-				<span className="hidden sm:inline text-xs text-[var(--muted)] whitespace-normal">
-					{isCreateMode
-						? "DENTE CRM • Создание карты пациента без обязательных бюрократических полей"
-						: "Медицинская карта пациента • Защита персональных данных"}
+				<span
+					data-testid="patient-card-save-status"
+					className={`hidden sm:inline text-xs whitespace-normal ${
+						saveState === "error"
+							? "text-[var(--danger)] font-medium"
+							: saveState === "saved"
+								? "text-[var(--success-ink)] font-medium"
+								: isDirty
+									? "text-[var(--primary)] font-medium"
+									: "text-[var(--muted)]"
+					}`}
+				>
+					{statusHint}
 				</span>
 
 				{isCreateMode ? (
@@ -90,7 +113,7 @@ export const PatientCardModalFooter: React.FC<PatientCardModalFooterProps> = Rea
 							onClick={onClose}
 							className="flex-1 sm:flex-none border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium rounded-xl sm:rounded-lg px-5 shadow-xs hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 text-xs sm:text-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[100px]"
 						>
-							Закрыть
+							{isDirty ? "Отмена" : "Закрыть"}
 						</button>
 						{/* Ровно ОДНА Primary CTA кнопка var(--primary) (Мандат 8e, Мандат 8am) */}
 						<button
@@ -100,7 +123,9 @@ export const PatientCardModalFooter: React.FC<PatientCardModalFooterProps> = Rea
 							disabled={false}
 							className="flex-1 sm:flex-none border-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 px-6 text-xs sm:text-sm font-medium rounded-xl sm:rounded-lg shadow-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[130px]"
 						>
-							<span data-testid="patient-studio-primary-cta">Сохранить</span>
+							<span data-testid="patient-studio-primary-cta">
+								{saveState === "saving" ? "Сохранение..." : "Сохранить"}
+							</span>
 						</button>
 					</div>
 				)}

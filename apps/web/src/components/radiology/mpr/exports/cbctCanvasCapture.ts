@@ -6,6 +6,7 @@
  */
 
 import type React from "react";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 
 /**
  * Compresses canvas frame to WebP/JPEG (0.85 quality) with fallback to PNG.
@@ -17,8 +18,9 @@ export function captureCompressedCanvasDataUrl(canvas: HTMLCanvasElement): strin
 		if (webpUrl && webpUrl.startsWith("data:image/webp")) {
 			return webpUrl;
 		}
-	} catch {
+	} catch (error) {
 		// Fallback if browser does not support image/webp export from canvas
+		clientLogger.warn("CBCT canvas capture: WebP export unsupported, falling back to JPEG", error);
 	}
 
 	try {
@@ -26,8 +28,9 @@ export function captureCompressedCanvasDataUrl(canvas: HTMLCanvasElement): strin
 		if (jpegUrl && jpegUrl.startsWith("data:image/jpeg")) {
 			return jpegUrl;
 		}
-	} catch {
+	} catch (error) {
 		// Fallback to standard PNG
+		clientLogger.warn("CBCT canvas capture: JPEG export failed, falling back to PNG", error);
 	}
 
 	return canvas.toDataURL("image/png");
@@ -55,8 +58,9 @@ export function captureSliceFromDOMOrRef(
 				return captureCompressedCanvasDataUrl(targetCanvas);
 			}
 		}
-	} catch {
-		// Ignore canvas capture failure in headless test environments
+	} catch (error) {
+		// Canvas capture can fail on tainted or uninitialized headless surfaces
+		clientLogger.warn("CBCT canvas capture: DOM/ref slice capture failed", error);
 	}
 
 	return null;

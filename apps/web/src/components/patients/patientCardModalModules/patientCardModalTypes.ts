@@ -77,6 +77,7 @@ export type PatientModalMode = "view" | "edit" | "create";
 export interface PatientCardModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
+	readonly isOverlayHosted?: boolean | undefined;
 	readonly mode?: PatientModalMode | undefined;
 	readonly initialMode?: "view" | "edit" | "create" | undefined;
 	readonly initialPatientId?: string | null | undefined;

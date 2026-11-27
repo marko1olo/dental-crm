@@ -25,6 +25,7 @@ import type {
 	SpeechRecordingRecoveryList,
 	SpeechRecordingStrategy,
 	StaffRole,
+	WorkspaceOverlayStudio,
 } from "@dental/shared";
 import {
 	type BrowserMigrationScanProgress,
@@ -176,6 +177,7 @@ export function getInitialModalsAndSelectionState() {
 		activeTooth: null as number | string | null,
 		activeDoctorName: null as string | null,
 		activePatientId: null as string | null,
+		studioBackStack: [] as WorkspaceOverlayStudio[],
 	};
 }
 

@@ -9,7 +9,10 @@ import { useEffect, useRef } from "react";
 import type { PrimaryWorkspaceView, WorkspaceOverlayStudio } from "@dental/shared";
 
 export interface ClinicEventMap {
-	readonly "studio:open": { readonly studio: WorkspaceOverlayStudio };
+	readonly "studio:open": {
+		readonly studio: WorkspaceOverlayStudio;
+		readonly pushBackStack?: WorkspaceOverlayStudio | undefined;
+	};
 	readonly "studio:close": { readonly kind?: WorkspaceOverlayStudio["kind"] | undefined };
 	readonly "workspace:navigate": {
 		readonly view: PrimaryWorkspaceView;
@@ -45,6 +48,35 @@ export function emitClinicEvent<K extends keyof ClinicEventMap>(
 			detail: detail ?? null,
 		}),
 	);
+}
+
+let pendingStudioNavigation: {
+	studio: WorkspaceOverlayStudio;
+	pushBackStack?: WorkspaceOverlayStudio | undefined;
+} | null = null;
+
+export function consumePendingStudioNavigation(): {
+	studio: WorkspaceOverlayStudio;
+	pushBackStack?: WorkspaceOverlayStudio | undefined;
+} | null {
+	const next = pendingStudioNavigation;
+	pendingStudioNavigation = null;
+	return next;
+}
+
+/**
+ * Плоский переход в студию (Max Modal Depth = 1) с опциональной записью в studioBackStack.
+ * Сохраняет pending-навигацию на случай, если WorkspaceStudioOverlayHost ещё монтируется (выход из aux_popout).
+ */
+export function navigateToStudio(
+	studio: WorkspaceOverlayStudio,
+	pushBackStack?: WorkspaceOverlayStudio,
+): void {
+	pendingStudioNavigation = { studio, pushBackStack };
+	emitClinicEvent("studio:open", {
+		studio,
+		...(pushBackStack !== undefined ? { pushBackStack } : {}),
+	});
 }
 
 export function useClinicEvent<K extends keyof ClinicEventMap>(

@@ -1,5 +1,6 @@
-import { kopecksToRubles } from "@dental/shared";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAppStore } from "../../../store/appStore";
 import { showToast } from "../../GlobalToast";
 import { type PatientClinicalSafetyProfile, createHealthySomaticNormProfile, evaluatePatientSafetyFlags } from "../safetyMath";
 import { mapPatientToGeneralInfo, resolveInitialSafetyProfile } from "../patientAutonomyActions";
@@ -20,6 +21,9 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 	} = props;
 
 	const targetId = initialPatientId || propPatientId;
+	const storePatient = useAppStore((s) =>
+		targetId ? s.dashboard?.patients?.find((p) => p.id === targetId) : undefined,
+	);
 	const isDemo = isDemoShowcaseMode() || (typeof process !== "undefined" && process.env?.NODE_ENV === "test");
 	const demoMatch = (isDemo && targetId) ? DEMO_PATIENT_CATALOG.find((p) => p.id === targetId) : null;
 	const fallbackDemoPatient = demoMatch ? {
@@ -27,11 +31,12 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 		fullName: demoMatch.fullName,
 		phone: demoMatch.phone,
 		birthDate: demoMatch.birthDate,
+		balanceKopecks: demoMatch.balanceKopecks,
 		patientBalanceRub: kopecksToRubles(demoMatch.balanceKopecks),
 		doctorClinicalNotes: demoMatch.notes,
 	} : (isDemo ? DEMO_SHOWCASE_MODAL_PATIENT : {});
 
-	const rawP = initP ?? initPAlias ?? fallbackDemoPatient;
+	const rawP = initP ?? initPAlias ?? storePatient ?? fallbackDemoPatient;
 	const effP = mapPatientToGeneralInfo(rawP);
 	const effS = initS ?? initSAlias ?? (isDemoShowcaseMode() ? DEMO_SHOWCASE_MODAL_SAFETY : undefined);
 
@@ -39,10 +44,14 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 	useEffect(() => { if (initialTab) setActiveTab(initialTab); }, [initialTab]);
 	const [patientData, setPatientData] = useState<PatientGeneralInfo>(() => effP);
 	const [safetyProfile, setSafetyProfile] = useState<PatientClinicalSafetyProfile>(() => resolveInitialSafetyProfile(rawP, effS));
-	const [isDiplomaModalOpen, setIsDiplomaModalOpen] = useState(false);
-	const [isDmsLetterModalOpen, setIsDmsLetterModalOpen] = useState(false);
-	const [isTaxDeductionModalOpen, setIsTaxDeductionModalOpen] = useState(false);
-	const [initialTaxTab, setInitialTaxTab] = useState<"form" | "checks" | "family" | "xml" | "registry">("form");
+	const [isDirty, setIsDirty] = useState(false);
+	const [saveState, setSaveState] = useState<PatientSectionSaveState>("idle");
+	const isDirtyRef = useRef(isDirty);
+	isDirtyRef.current = isDirty;
+	const baseRawRef = useRef(rawP);
+	baseRawRef.current = rawP;
+	const baseSafetyRef = useRef(effS);
+	baseSafetyRef.current = effS;
 
 	useEffect(() => {
 		if (isOpen && effP.id) StaffActionAuditService.logEmrOpen({ patientId: effP.id, cardId: effP.id });
@@ -56,22 +65,39 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 		return !!patientData.representativeType;
 	}, [patientData.birthDate, patientData.representativeType]);
 
+	const hydratedPatientIdRef = useRef<string | null | undefined>(effP.id ?? null);
 	useEffect(() => {
-		if (initP || initPAlias) {
-			const n = initP ?? initPAlias;
-			setPatientData(mapPatientToGeneralInfo(n));
-			setSafetyProfile(resolveInitialSafetyProfile(n, effS));
-			setIsDirty(false);
+		const next = initP ?? initPAlias ?? storePatient;
+		if (!next) return;
+		const mapped = mapPatientToGeneralInfo(next);
+		const nextId = mapped.id ?? null;
+		if (nextId === hydratedPatientIdRef.current && isDirtyRef.current) {
+			return;
 		}
-	}, [initP, initPAlias, effS]);
+		hydratedPatientIdRef.current = nextId;
+		setPatientData(mapped);
+		setSafetyProfile(resolveInitialSafetyProfile(next, effS));
+		setIsDirty(false);
+		setSaveState("idle");
+	}, [initP, initPAlias, storePatient, effS]);
 
 	useEffect(() => {
 		const handleBalanceChange = (e: Event) => {
-			const detail = (e as CustomEvent<{ patientId?: string; newBalanceRub?: number }>)?.detail;
+			const detail = (e as CustomEvent<{ patientId?: string; newBalanceKopecks?: number; newBalanceRub?: number }>)?.detail;
 			if (!detail) return;
 			if (!detail.patientId || detail.patientId === patientData.id) {
-				if (typeof detail.newBalanceRub === "number") {
-					setPatientData((prev) => ({ ...prev, patientBalanceRub: detail.newBalanceRub }));
+				const nextKopecks =
+					typeof detail.newBalanceKopecks === "number"
+						? detail.newBalanceKopecks
+						: typeof detail.newBalanceRub === "number"
+							? rublesToKopecks(detail.newBalanceRub)
+							: undefined;
+				if (typeof nextKopecks === "number") {
+					setPatientData((prev) => ({
+						...prev,
+						balanceKopecks: nextKopecks,
+						patientBalanceRub: kopecksToRubles(nextKopecks),
+					}));
 				}
 			}
 		};
@@ -80,12 +106,17 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 	}, [patientData.id]);
 
 	const safetyEvaluation = useMemo(() => evaluatePatientSafetyFlags(safetyProfile), [safetyProfile]);
-	const [isDirty, setIsDirty] = useState(false);
-	const [saveState, setSaveState] = useState<PatientSectionSaveState>("idle");
 
 	const inFlightRef = usePatientCardDraftSync({
 		isOpen, isDirty, setIsDirty, patientData, setPatientData, safetyProfile, setSafetyProfile, setSaveState, onSavePatient,
 	});
+
+	const resetLocalDraft = useCallback(() => {
+		setPatientData(mapPatientToGeneralInfo(baseRawRef.current));
+		setSafetyProfile(resolveInitialSafetyProfile(baseRawRef.current, baseSafetyRef.current));
+		setIsDirty(false);
+		setSaveState("idle");
+	}, []);
 
 	const handleUpdatePatientField = useCallback((field: keyof PatientGeneralInfo, val: PatientGeneralInfoFieldValue) => {
 		setIsDirty(true);
@@ -107,17 +138,9 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 		});
 	}, [patientData, safetyProfile, onSavePatient, onClose, inFlightRef]);
 
-	const handleOpenTaxCertificate = useCallback((tab?: "form" | "checks" | "family" | "xml" | "registry") => {
-		setInitialTaxTab(tab || "form");
-		setIsTaxDeductionModalOpen(true);
-	}, []);
-
 	return {
 		patientData, safetyProfile, setSafetyProfile, activeTab, setActiveTab,
 		isChildPatient, safetyEvaluation, isDirty, setIsDirty, saveState,
-		isDiplomaModalOpen, setIsDiplomaModalOpen, isDmsLetterModalOpen, setIsDmsLetterModalOpen,
-		isTaxDeductionModalOpen, setIsTaxDeductionModalOpen,
-		initialTaxTab, setInitialTaxTab, handleOpenTaxCertificate,
-		handleUpdatePatientField, handleApplyNorm, handlePrint, handleSave,
+		handleUpdatePatientField, handleApplyNorm, handlePrint, handleSave, resetLocalDraft,
 	};
 }

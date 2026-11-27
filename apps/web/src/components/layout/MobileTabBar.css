@@ -49,7 +49,11 @@
 	body:has(.warranty-modal-overlay) .mobile-tab-bar,
 	body:has(.warranty-modal-overlay) .dnt-bottom-nav,
 	body:has(.dms-modal-backdrop) .mobile-tab-bar,
-	body:has(.dms-modal-backdrop) .dnt-bottom-nav {
+	body:has(.dms-modal-backdrop) .dnt-bottom-nav,
+	body:has([data-testid="patient-card-modal-backdrop"]) .mobile-tab-bar,
+	body:has([data-testid="patient-card-modal-backdrop"]) .dnt-bottom-nav,
+	body:has(.emr-studio-backdrop) .mobile-tab-bar,
+	body:has(.emr-studio-backdrop) .dnt-bottom-nav {
 		display: none !important;
 	}
 

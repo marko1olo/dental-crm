@@ -3,7 +3,7 @@ import type { AppSliceCreator, ModalsAndSelectionSlice } from "./types";
 
 export const createModalsAndSelectionSlice: AppSliceCreator<
 	ModalsAndSelectionSlice
-> = (set) => {
+> = (set, get) => {
 	const initial = getInitialModalsAndSelectionState();
 	return {
 		...initial,
@@ -69,5 +69,21 @@ export const createModalsAndSelectionSlice: AppSliceCreator<
 				activePatientId:
 					typeof val === "function" ? val(state.activePatientId) : val,
 			})),
+		pushStudioBackStack: (studio) =>
+			set((state) => {
+				const top = state.studioBackStack[state.studioBackStack.length - 1];
+				if (top && top.kind === studio.kind && "patientId" in top && "patientId" in studio && top.patientId === studio.patientId) {
+					return state;
+				}
+				return { studioBackStack: [...state.studioBackStack, studio] };
+			}),
+		popStudioBackStack: () => {
+			const stack = get().studioBackStack;
+			if (stack.length === 0) return null;
+			const previous = stack[stack.length - 1] ?? null;
+			set({ studioBackStack: stack.slice(0, -1) });
+			return previous;
+		},
+		clearStudioBackStack: () => set({ studioBackStack: [] }),
 	};
 };

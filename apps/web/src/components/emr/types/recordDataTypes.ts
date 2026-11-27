@@ -201,6 +201,8 @@ export type ExtendedMedicalRecordInitialData = Partial<Omit<MedicalRecordData, "
 export interface MedicalRecordStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
+	readonly onBack?: (() => void) | undefined;
+	readonly backLabel?: string | undefined;
 	readonly initialData?: ExtendedMedicalRecordInitialData | undefined;
 	readonly onSave?: ((updated: MedicalRecordData) => void | Promise<void>) | undefined;
 	readonly readOnly?: boolean | undefined;

@@ -13,7 +13,7 @@
   display: none;
 }
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
   .emr-studio-backdrop {
     padding: 0 !important;
     align-items: stretch !important;
@@ -29,7 +29,7 @@
     height: 100% !important;
     min-height: 100% !important;
     max-height: 100% !important;
-    z-index: 10060 !important;
+    z-index: 100 !important;
     overflow: hidden !important;
   }
   :is([data-theme="dark"], .dark) .emr-studio-backdrop {

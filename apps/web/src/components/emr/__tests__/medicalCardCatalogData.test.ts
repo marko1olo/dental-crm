@@ -13,11 +13,9 @@ import { fileURLToPath } from "node:url";
 import {
 	DEFAULT_32_PERMANENT_TEETH,
 	DEFAULT_MEDICAL_CARD_DATA,
-	DEFAULT_043_DATA,
 	DEFAULT_CLINICAL_DIARY_DATA,
 	resolveClinicRequisites,
 	applyMedicalCardPhysiologicalNorm,
-	applyForm043PhysiologicalNorm,
 } from "../medicalCardCatalogData";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -35,7 +33,6 @@ describe("Medical Card & SOAP Diary SSOT (Mandates 8e, 8n, 8x, 8ap, 8am)", () =>
 	it("2. DEFAULT_MEDICAL_CARD_DATA has clean domain language without raw order codes in title", () => {
 		assert.strictEqual(DEFAULT_MEDICAL_CARD_DATA.formNumber, "Медицинская карта приёма");
 		assert.strictEqual(DEFAULT_MEDICAL_CARD_DATA.formOrderName, "Медицинская карта стоматологического пациента");
-		assert.strictEqual(DEFAULT_043_DATA, DEFAULT_MEDICAL_CARD_DATA);
 		assert.strictEqual(DEFAULT_CLINICAL_DIARY_DATA, DEFAULT_MEDICAL_CARD_DATA);
 		assert.ok(DEFAULT_MEDICAL_CARD_DATA.dentalStatus.odontogramTeeth.length === 32);
 		assert.strictEqual(DEFAULT_MEDICAL_CARD_DATA.dentalStatus.biteType, "orthognathic");
@@ -59,7 +56,7 @@ describe("Medical Card & SOAP Diary SSOT (Mandates 8e, 8n, 8x, 8ap, 8am)", () =>
 				chiefComplaint: "Острая боль в зубе 36 при накусывании",
 			},
 		};
-		const preserved = applyForm043PhysiologicalNorm(customComplaintCard);
+		const preserved = applyMedicalCardPhysiologicalNorm(customComplaintCard);
 		assert.strictEqual(preserved.anamnesis.chiefComplaint, "Острая боль в зубе 36 при накусывании");
 		assert.ok(preserved.anamnesis.concomitantSomaticDiseases.includes("Соматически здоров"));
 	});

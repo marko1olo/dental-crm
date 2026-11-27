@@ -40,7 +40,7 @@ describe("AppModalsContainer and PatientCard Decomposition Suite", () => {
 		assert.ok(facadeContent.includes("AdministrativeModalsSubcontainer"), "Facade must coordinate AdministrativeModalsSubcontainer");
 	});
 
-	it("2. PatientCardModal is canonical SSOT decomposed according to /decomposer standards", () => {
+	it("2. PatientCardModal is canonical SSOT decomposed according to /decomposer standards (flat stack, depth=1)", () => {
 		const facadePath = path.join(webSrc, "components/patients/PatientCardModal.tsx");
 		const typesPath = path.join(webSrc, "components/patients/patientCardModalModules/patientCardModalTypes.ts");
 		const subModalsPath = path.join(webSrc, "components/patients/patientCardModalModules/PatientCardModalSubModals.tsx");
@@ -48,21 +48,20 @@ describe("AppModalsContainer and PatientCard Decomposition Suite", () => {
 
 		assert.ok(fs.existsSync(facadePath), "PatientCardModal facade must exist");
 		assert.ok(fs.existsSync(typesPath), "patientCardModalTypes must exist");
-		assert.ok(fs.existsSync(subModalsPath), "PatientCardModalSubModals must exist");
+		assert.strictEqual(fs.existsSync(subModalsPath), false, "Nested PatientCardModalSubModals matryoshka must be removed");
 		assert.ok(fs.existsSync(statePath), "usePatientCardModalState must exist");
 
 		const facadeLines = fs.readFileSync(facadePath, "utf8").split("\n").length;
 		const typesLines = fs.readFileSync(typesPath, "utf8").split("\n").length;
-		const subModalsLines = fs.readFileSync(subModalsPath, "utf8").split("\n").length;
 		const stateLines = fs.readFileSync(statePath, "utf8").split("\n").length;
 
 		assert.ok(facadeLines <= 650, `PatientCardModal facade must be <= 650 lines, was ${facadeLines}`);
 		assert.ok(typesLines <= 500, `patientCardModalTypes must be <= 500 lines, was ${typesLines}`);
-		assert.ok(subModalsLines <= 500, `PatientCardModalSubModals must be <= 500 lines, was ${subModalsLines}`);
 		assert.ok(stateLines <= 500, `usePatientCardModalState must be <= 500 lines, was ${stateLines}`);
 
 		const facadeContent = fs.readFileSync(facadePath, "utf8");
-		assert.ok(facadeContent.includes("PatientCardModalSubModals"), "Facade must coordinate PatientCardModalSubModals");
+		assert.ok(!facadeContent.includes("PatientCardModalSubModals"), "PatientCardModal must use flat stack without PatientCardModalSubModals");
+		assert.ok(facadeContent.includes("navigateToStudio"), "PatientCardModal must route studios through flat navigateToStudio");
 		assert.ok(facadeContent.includes("usePatientCardModalState"), "Facade must coordinate usePatientCardModalState");
 	});
 

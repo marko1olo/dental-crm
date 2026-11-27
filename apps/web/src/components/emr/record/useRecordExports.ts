@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { MedicalRecordData } from "../types/recordDataTypes";
 import {
 	generateMedicalRecordPrintHtml,
@@ -62,10 +63,15 @@ export function useRecordExports({ formData, effectiveIsDraft, setCopiedToast }:
 	}, [formData]);
 
 	const handleCopyText = useCallback(() => {
-		navigator.clipboard.writeText(generateMedicalRecordPlainText(formData)).then(() => {
-			setCopiedToast(true);
-			setTimeout(() => setCopiedToast(false), 2500);
-		}).catch(() => {});
+		navigator.clipboard
+			.writeText(generateMedicalRecordPlainText(formData))
+			.then(() => {
+				setCopiedToast(true);
+				setTimeout(() => setCopiedToast(false), 2500);
+			})
+			.catch((error) => {
+				clientLogger.warn("EMR plain text clipboard copy failed", error);
+			});
 	}, [formData, setCopiedToast]);
 
 	return { handlePrint, handleExportXml, handleExportJson, handleCopyText };

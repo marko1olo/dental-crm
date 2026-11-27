@@ -10,8 +10,8 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
-	Printer, Check, FileText, X, Maximize2, Minimize2, Sparkles, ZoomIn, ZoomOut, RotateCcw,
-	User, HeartPulse, Activity, Calendar, Award, ShieldCheck, MoreHorizontal, Download, Copy, Loader2,
+	ArrowLeft, Printer, Check, FileText, X, Maximize2, Minimize2, Sparkles, ZoomIn, ZoomOut, RotateCcw,
+	User, HeartPulse, Activity, Calendar, Award, ShieldCheck, Loader2,
 } from "lucide-react";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
@@ -35,6 +35,7 @@ import {
 } from "../../services/offline/storage/idbDraftOps";
 import { useRecordExports } from "./record/useRecordExports";
 import { useMedicalRecordSave } from "./record/useMedicalRecordSave";
+import { RecordHeaderMoreMenu } from "./record/RecordHeaderMoreMenu";
 import { ClinicalProtocolsCatalogModal } from "../visit/clinicalCatalog/ClinicalProtocolsCatalogModal";
 import { RecordPassportTab } from "./record/tabs/RecordPassportTab";
 import { RecordAnamnesisTab } from "./record/tabs/RecordAnamnesisTab";
@@ -65,7 +66,7 @@ function mergeRecordSections(base: MedicalRecordData, overlay?: ExtendedMedicalR
 
 export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> = React.memo(
 	function MedicalRecordStudioModal({
-		isOpen, onClose, initialData, onSave, onOpenProtocolGenerator, isLocked, isDraft, status, initialTab,
+		isOpen, onClose, onBack, backLabel, initialData, onSave, onOpenProtocolGenerator, isLocked, isDraft, status, initialTab,
 		visitId, patientId, activeTooth,
 	}) {
 		const dashboard = useAppStore((s) => s.dashboard);
@@ -74,6 +75,10 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		const effectivePatientId = patientId || storeSelectedPatientId || appActivePatientId || undefined;
 		const profile = dashboard?.clinicSettings?.profile;
 		const staff = dashboard?.clinicSettings?.staff;
+		const resolvedPatient = useMemo(
+			() => (effectivePatientId ? dashboard?.patients?.find((p) => p.id === effectivePatientId) : undefined),
+			[dashboard?.patients, effectivePatientId],
+		);
 
 		const initialIsLocked = initialData?.isLocked;
 		const initialStatus = initialData?.status;
@@ -107,9 +112,21 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 					}
 				}
 			}
-			const base = mergeRecordSections(DEFAULT_MEDICAL_CARD_DATA, { clinic: resolvedClinic });
+			const patientOverlay: ExtendedMedicalRecordInitialData | undefined = resolvedPatient
+				? {
+						passport: {
+							patientFullName: resolvedPatient.fullName || DEFAULT_MEDICAL_CARD_DATA.passport.patientFullName,
+							patientBirthDate: resolvedPatient.birthDate || DEFAULT_MEDICAL_CARD_DATA.passport.patientBirthDate,
+							patientPhone: resolvedPatient.phone || DEFAULT_MEDICAL_CARD_DATA.passport.patientPhone,
+						},
+				  }
+				: undefined;
+			const base = mergeRecordSections(
+				mergeRecordSections(DEFAULT_MEDICAL_CARD_DATA, { clinic: resolvedClinic }),
+				patientOverlay,
+			);
 			return mergeRecordSections(mergeRecordSections(base, draft), initialData);
-		}, [initialData, resolvedClinic, effectivePatientId]);
+		}, [initialData, resolvedClinic, resolvedPatient, effectivePatientId]);
 
 		const [formData, setFormData] = useState<MedicalRecordData>(buildInitialFormData);
 
@@ -138,7 +155,6 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		const [zoomScale, setZoomScale] = useState<number>(1.0);
 		const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 		const [copiedToast, setCopiedToast] = useState<boolean>(false);
-		const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
 		const [isProtocolGeneratorOpen, setIsProtocolGeneratorOpen] = useState<boolean>(false);
 		const [protocolGeneratorTooth, setProtocolGeneratorTooth] = useState<string | number>(() => {
 			if (activeTooth) return activeTooth;
@@ -149,7 +165,6 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			setProtocolGeneratorTooth(tooth || activeTooth || formData.visitDiaries[0]?.toothNumber || 11);
 			setIsProtocolGeneratorOpen(true);
 		}, [activeTooth, formData.visitDiaries]);
-		const moreMenuRef = useRef<HTMLDivElement>(null);
 
 		const validation = useMemo(() => validateMedicalRecordCompleteness(formData), [formData]);
 		const dmft = useMemo(() => calculateDmftIndex(formData.dentalStatus.odontogramTeeth), [formData.dentalStatus.odontogramTeeth]);
@@ -177,16 +192,6 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			}, 600);
 			return () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); };
 		}, [formData, effectivePatientId, profile?.organizationId]);
-
-		// Закрытие выпадающего меню по клику вне
-		useEffect(() => {
-			if (!isMoreMenuOpen) return;
-			const handleClickOutside = (e: MouseEvent) => {
-				if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) setIsMoreMenuOpen(false);
-			};
-			document.addEventListener("mousedown", handleClickOutside);
-			return () => document.removeEventListener("mousedown", handleClickOutside);
-		}, [isMoreMenuOpen]);
 
 		const resetDraft = useCallback(() => setFormData(buildInitialRef.current()), []);
 
@@ -253,6 +258,11 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 					{/* 1-строчная профессиональная шапка */}
 					<header className="emr-studio-header">
 						<div className="emr-studio-title-group">
+							{onBack && (
+								<button type="button" onClick={onBack} data-testid="btn-emr-back-to-card" className="h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium inline-flex items-center gap-1.5 shrink-0 cursor-pointer">
+									<ArrowLeft className="w-3.5 h-3.5 shrink-0" /><span>{backLabel || "Назад"}</span>
+								</button>
+							)}
 							<span
 								data-testid="badge-emr-draft-status"
 								data-legacy-testid="badge-emr-draft-status"
@@ -264,6 +274,18 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 							>
 								{effectiveIsDraft ? <FileText className="w-3 h-3 text-current shrink-0" /> : <Check className="w-3 h-3 text-current shrink-0" />}
 								{effectiveIsDraft ? "Черновик (приём не закрыт)" : "Подписано врачом"}
+							</span>
+							<span
+								data-testid="badge-emr-completeness"
+								title={validation.missingFields.length > 0 ? `Рекомендации: ${validation.missingFields.map((m) => m.label).join(", ")}` : "Карта заполнена полностью"}
+								className={`px-2 py-0.5 rounded-full border text-[11px] font-medium inline-flex items-center gap-1 shrink-0 ${
+									validation.completenessScore >= 80
+										? "border-[var(--success-line)] bg-[var(--success-soft)] text-[var(--success-ink)]"
+										: "border-[var(--warning-line)] bg-[var(--warning-soft)] text-[var(--warning-ink)]"
+								}`}
+							>
+								<ShieldCheck className="w-3 h-3 text-current shrink-0" />
+								<span className="tabular-nums font-semibold">{validation.completenessScore}%</span>
 							</span>
 							<div className="min-w-0 w-full">
 								<h2 className="emr-studio-title truncate">
@@ -303,25 +325,13 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								<Printer className="w-4 h-4 shrink-0 text-current" /><span className="hidden sm:inline">Печать A4</span><span className="sm:hidden">Печать</span>
 							</button>
 
-							{/* Меню дополнительных действий */}
-							<div className="relative inline-flex items-center" ref={moreMenuRef}>
-								<button type="button" className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only" onClick={() => setIsMoreMenuOpen((v) => !v)} title="Дополнительные действия" data-testid="btn-emr-more-actions">
-									<MoreHorizontal className="w-4 h-4 text-current" />
-								</button>
-								{isMoreMenuOpen && (
-									<div className="absolute right-0 top-full mt-1 w-56 bg-[var(--paper-strong)] border border-[var(--line)] rounded-lg shadow-xl z-50 py-1 text-xs text-[var(--ink)] min-w-[210px]">
-										<button type="button" title="Экспорт в XML для электронной медкарты (Госуслуги)" className="w-full text-left px-3 py-2 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer" onClick={() => { handleExportXml(); setIsMoreMenuOpen(false); }}>
-											<Download className="w-3.5 h-3.5 text-current shrink-0" /><span>Электронная медкарта (XML)</span>
-										</button>
-										<button type="button" className="w-full text-left px-3 py-2 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer" onClick={() => { handleExportJson(); setIsMoreMenuOpen(false); }}>
-											<Download className="w-3.5 h-3.5 text-current shrink-0" /><span>Экспорт в JSON</span>
-										</button>
-										<button type="button" className="w-full text-left px-3 py-2 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer border-t border-[var(--line)]" onClick={() => { handleCopyText(); setIsMoreMenuOpen(false); }}>
-											{copiedToast ? <Check className="w-3.5 h-3.5 text-[var(--success)] shrink-0" /> : <Copy className="w-3.5 h-3.5 text-current shrink-0" />}<span>{copiedToast ? "Скопировано!" : "Копировать текст карты"}</span>
-										</button>
-									</div>
-								)}
-							</div>
+							{/* Меню дополнительных действий (createPortal против overflow-x клиппинга) */}
+							<RecordHeaderMoreMenu
+								copiedToast={copiedToast}
+								onExportXml={handleExportXml}
+								onExportJson={handleExportJson}
+								onCopyText={handleCopyText}
+							/>
 
 							{/* Ровно ОДНА Primary CTA кнопка (#0d9488, var(--teal), НИКОГДА не disabled) */}
 							<button
@@ -333,7 +343,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								title="Сохранить и подписать медицинскую карту приёма"
 							>
 								{isSaving ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> : <Check className="w-4 h-4 shrink-0" />}
-								<span className="hidden sm:inline">{isSaving ? "Сохранение в базу..." : "Сохранить и подписать карту приёма"}</span>
+								<span className="hidden sm:inline">{isSaving ? "Сохранение..." : "Сохранить и подписать"}</span>
 								<span className="sm:hidden">{isSaving ? "Сохранение..." : "Сохранить"}</span>
 							</button>
 
@@ -372,26 +382,14 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 					<div className="flex flex-1 min-h-0 overflow-hidden relative">
 						<main className="emr-studio-body flex-1 min-w-0">
 							{activeTab === "overview" && (
-								<div className="space-y-4">
-									<div className="emr-studio-completeness emr-studio-non-printable rounded-xl border border-[var(--line)]">
-										<ShieldCheck className={`w-5 h-5 shrink-0 ${validation.isComplete ? "text-[var(--success)]" : "text-[var(--warning)]"}`} />
-										<div className="text-xs font-semibold">Заполненность карты: <strong>{validation.completenessScore}%</strong></div>
-										<div className="emr-studio-progress-track">
-											<div className={`emr-studio-progress-fill ${validation.completenessScore >= 80 ? "green" : "yellow"}`} style={{ width: `${validation.completenessScore}%` }} />
-										</div>
-										{validation.missingFields.length > 0 && (
-											<span className="text-[11px] text-[var(--muted,#64748b)]">Рекомендации: {validation.missingFields.map((m) => m.label).join(", ")}</span>
-										)}
-									</div>
-									<div className="emr-studio-preview-container flex flex-col items-center">
-										<div
-											className="emr-studio-a4-sheet print-paper-sheet pro-a4-physical-sheet"
-											data-paper-sheet="true"
-											data-preserve-white="true"
-											style={{ transform: `scale(${zoomScale})`, transformOrigin: "top center" }}
-											dangerouslySetInnerHTML={{ __html: generateMedicalRecordPrintHtml(formData, { isLocked: !effectiveIsDraft, isDraft: effectiveIsDraft, status: effectiveIsDraft ? "draft" : "signed" }) }}
-										/>
-									</div>
+								<div className="emr-studio-preview-container flex flex-col items-center">
+									<div
+										className="emr-studio-a4-sheet print-paper-sheet pro-a4-physical-sheet"
+										data-paper-sheet="true"
+										data-preserve-white="true"
+										style={{ transform: `scale(${zoomScale})`, transformOrigin: "top center" }}
+										dangerouslySetInnerHTML={{ __html: generateMedicalRecordPrintHtml(formData, { isLocked: !effectiveIsDraft, isDraft: effectiveIsDraft, status: effectiveIsDraft ? "draft" : "signed" }) }}
+									/>
 								</div>
 							)}
 							{activeTab === "passport" && <RecordPassportTab formData={formData} ageText={ageText} onUpdatePassport={handleUpdatePassport} />}

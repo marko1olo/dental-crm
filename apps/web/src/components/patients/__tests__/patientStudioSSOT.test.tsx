@@ -87,7 +87,7 @@ describe("Patient Studio SSOT, 10-Second Intake & Family Wallet Suite (Mandates 
 		assert.ok(markup.includes('data-testid="patient-studio-detail-view"'));
 		assert.ok(markup.includes('data-testid="patient-studio-balance"'));
 		assert.ok(markup.includes("Иванова Елена Николаевна"));
-		assert.ok(markup.includes("15 400 ₽"));
+		assert.ok(markup.includes("15\u00a0400,00\u00a0₽"));
 
 		// Primary CTA кнопка кликабельна
 		assert.ok(markup.includes('data-testid="patient-studio-primary-cta"'));

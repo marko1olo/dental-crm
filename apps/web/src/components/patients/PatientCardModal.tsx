@@ -12,18 +12,19 @@
 
 import React, { useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
-import { rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks, type WorkspaceOverlayStudio } from "@dental/shared";
 import {
 	Activity, Camera, ChevronRight, ClipboardList, FileCheck, FileText, FlaskConical,
 	HeartPulse, History, Scan, ShieldAlert, ShieldCheck, Users, Wallet,
 } from "lucide-react";
+import { emitClinicEvent, navigateToStudio } from "../../lib/clinicEventBus";
+import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { ToothMolar } from "../icons/DentalIcons";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
 import { PerioStudioModal } from "../perio/PerioStudioModal";
-import { PatientCardFloatingSaveBar } from "./patientCardSavePill";
 import { PatientGeneralInfoTab } from "./tabs/PatientGeneralInfoTab";
 import { PatientFinanceTab } from "./tabs/PatientFinanceTab";
 import { PatientRadiologyTab } from "./tabs/PatientRadiologyTab";
@@ -35,7 +36,6 @@ import { PatientHistoryTab } from "./PatientHistoryTab";
 import { PatientFamilyAndInsuranceWidget } from "./PatientFamilyAndInsuranceWidget";
 import { PatientReclamationsHistoryTab } from "./tabs/PatientReclamationsHistoryTab";
 import { LabOrdersPanel } from "./LabOrdersPanel";
-import { PatientCardModalSubModals } from "./patientCardModalModules/PatientCardModalSubModals";
 import { PatientCardModalHeader } from "./patientCardModalModules/PatientCardModalHeader";
 import { PatientCardModalFooter } from "./patientCardModalModules/PatientCardModalFooter";
 import { PatientCardSomaticAlert } from "./patientCardModalModules/PatientCardSomaticAlert";
@@ -66,6 +66,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 	const {
 		isOpen,
 		onClose,
+		isOverlayHosted = false,
 		mode = "view",
 		initialMode,
 		disabled = false,
@@ -74,6 +75,11 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 		className = "",
 		createPatient,
 		updatePatientCoreDraft,
+		customRequirements,
+		initialBirthDate,
+		initialIsChild,
+		patientId: propPatientId,
+		initialPatientId,
 	} = props;
 
 	const effectiveInitialMode = initialMode || mode;
@@ -95,29 +101,17 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 	const {
 		patientData, safetyProfile, setSafetyProfile, activeTab, setActiveTab,
 		isChildPatient, safetyEvaluation, isDirty, setIsDirty, saveState,
-		isDiplomaModalOpen, setIsDiplomaModalOpen, isDmsLetterModalOpen, setIsDmsLetterModalOpen,
-		isTaxDeductionModalOpen, setIsTaxDeductionModalOpen,
-		initialTaxTab, handleOpenTaxCertificate,
-		handleUpdatePatientField, handleApplyNorm, handlePrint, handleSave,
+		handleUpdatePatientField, handleApplyNorm, handlePrint, handleSave, resetLocalDraft,
 	} = cardState;
 
-	const [isPhotoModalOpen, setIsPhotoModalOpen] = React.useState(false);
-	const [isMedicalRecordStudioOpen, setIsMedicalRecordStudioOpen] = React.useState(false);
 	const tabsScrollRef = useRef<HTMLDivElement | null>(null);
+	const navigatingFlatRef = useRef(false);
 
-	const isAnySubModalOpen = Boolean(
-		isMedicalRecordStudioOpen ||
-		isPhotoModalOpen ||
-		isDiplomaModalOpen ||
-		isDmsLetterModalOpen ||
-		isTaxDeductionModalOpen
-	);
-
-	// Каноническое закрытие с очисткой черновика (Мандат 8d/8zq, 8bn — Zero-Leak Draft Invariant)
-	const handleClose = React.useCallback(() => {
-		if (patientData?.id) {
+	const clearPersistedDraft = React.useCallback(() => {
+		const targetPatientId = patientData?.id || propPatientId || initialPatientId;
+		if (targetPatientId) {
 			try {
-				localStorage.removeItem(`dente_patient_card_draft_${patientData.id}`);
+				localStorage.removeItem(`dente_patient_card_draft_${targetPatientId}`);
 			} catch {
 				// Offline fallback
 			}
@@ -127,25 +121,88 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 		} catch {
 			// Ignore store error
 		}
+		resetLocalDraft();
+	}, [patientData?.id, propPatientId, initialPatientId, resetLocalDraft]);
+
+	// Каноническое закрытие с очисткой черновика (Мандат 8d/8zq, 8bn — Zero-Leak Draft Invariant)
+	const handleClose = React.useCallback(() => {
+		navigatingFlatRef.current = false;
+		clearPersistedDraft();
 		onClose();
-	}, [patientData?.id, onClose]);
+	}, [clearPersistedDraft, onClose]);
+
+	// Очистка черновика при внешнем закрытии (isOpen: true -> false) и размонтировании (кроме плоского перехода в студию)
+	const wasOpenRef = useRef(isOpen);
+	React.useEffect(() => {
+		if (wasOpenRef.current && !isOpen && !navigatingFlatRef.current) {
+			clearPersistedDraft();
+		}
+		if (isOpen) {
+			navigatingFlatRef.current = false;
+		}
+		wasOpenRef.current = isOpen;
+	}, [isOpen, clearPersistedDraft]);
+
+	React.useEffect(() => {
+		return () => {
+			if (!navigatingFlatRef.current) {
+				try {
+					usePatientStore.getState().resetDraft();
+				} catch {
+					// Ignore store error on teardown
+				}
+			}
+		};
+	}, []);
+
+	// Плоская навигация в соседнюю студию без вложенных матрёшек (Max Modal Depth = 1)
+	const openFlatStudio = React.useCallback(
+		(nextStudio: WorkspaceOverlayStudio) => {
+			const currentPatientId = patientData?.id || propPatientId || initialPatientId || undefined;
+			const returnStudio: WorkspaceOverlayStudio = {
+				kind: "patient_card",
+				...(currentPatientId ? { patientId: currentPatientId } : {}),
+				mode: activeMode,
+				initialTab: activeTab,
+			};
+			navigatingFlatRef.current = true;
+			navigateToStudio(nextStudio, returnStudio);
+			if (!isOverlayHosted) {
+				onClose();
+			}
+		},
+		[patientData?.id, propPatientId, initialPatientId, activeMode, activeTab, isOverlayHosted, onClose],
+	);
 
 	// Global Escape listener
 	React.useEffect(() => {
 		if (!isOpen) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape" && !isAnySubModalOpen) {
+			if (e.key === "Escape") {
 				handleClose();
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, isAnySubModalOpen, handleClose]);
+	}, [isOpen, handleClose]);
 
-	// Состояние для режима создания пациента
+	// Состояние для режима создания пациента (стабильные зависимости, без inline props объекта)
 	const creationOptions = useMemo(
-		() => createPatientCreationOptions(props, isOpen, onClose),
-		[isOpen, onClose, props],
+		() =>
+			createPatientCreationOptions(
+				{
+					isOpen,
+					onClose,
+					createPatient,
+					updatePatientCoreDraft,
+					customRequirements,
+					initialBirthDate,
+					initialIsChild,
+				},
+				isOpen,
+				onClose,
+			),
+		[isOpen, onClose, createPatient, updatePatientCoreDraft, customRequirements, initialBirthDate, initialIsChild],
 	);
 	const creationForm = usePatientCreationForm(creationOptions);
 	const canonicalPatient = useMemo(() => toCanonicalPatient(patientData), [patientData]);
@@ -154,7 +211,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[10050] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs select-none print:p-0 print:bg-white print:static overflow-x-clip"
+			className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs select-none print:p-0 print:bg-white print:static overflow-x-clip"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="patient-card-modal-title"
@@ -171,29 +228,41 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 				{/* Алиас контейнера для канонической студии картотеки пациентов (SSOT) */}
 				<div data-testid="patient-studio-modal" style={{ display: "contents" }}>
 					{/* Мобильный хэндл шторки (Apple HIG Bottom Sheet: 36x4px / w-9 h-1) */}
-					<div className={`sm:hidden w-9 h-1 bg-[var(--line-strong)] rounded-full mx-auto my-2 shrink-0 ${isAnySubModalOpen ? "hidden" : ""}`} aria-hidden="true" />
+					<div className="sm:hidden w-9 h-1 bg-[var(--line-strong)] rounded-full mx-auto my-2 shrink-0" aria-hidden="true" />
 
 					{/* ── ШАПКА КАРТОЧКИ ПАЦИЕНТА (Мандат 8b: декомпозированный компонент) ── */}
 					<PatientCardModalHeader
-						isCreateMode={isCreateMode} mode={mode} patientData={patientData}
-						isChildPatient={isChildPatient} isAnySubModalOpen={isAnySubModalOpen}
-						onSetActiveMode={setActiveMode} onOpenDiplomaModal={() => setIsDiplomaModalOpen(true)}
-						onOpenPhotoModal={() => setIsPhotoModalOpen(true)} onOpenTaxDeductionModal={() => setIsTaxDeductionModalOpen(true)}
-						onOpenMedicalRecordStudio={() => setIsMedicalRecordStudioOpen(true)}
+						isCreateMode={isCreateMode}
+						mode={mode}
+						patientData={patientData}
+						isChildPatient={isChildPatient}
+						isAnySubModalOpen={false}
+						onSetActiveMode={setActiveMode}
+						onOpenDiplomaModal={() => openFlatStudio({ kind: "pediatric", patientId: patientData.id ?? undefined, mode: "diploma" })}
+						onOpenPhotoModal={() => openFlatStudio({ kind: "photo_protocol", patientId: patientData.id ?? undefined, mode: "grid" })}
+						onOpenTaxDeductionModal={() =>
+							openFlatStudio({
+								kind: "consents",
+								patientId: patientData.id ?? undefined,
+								docId: "tax_deduction:form",
+							})
+						}
+						onOpenMedicalRecordStudio={() =>
+							openFlatStudio({ kind: "emr_record", patientId: patientData.id ?? undefined, initialTab: "overview" })
+						}
 						onPrintBlankContract={creationForm.handlePrintBlankContract}
-						onPrintPatientCard={handlePrint} onClose={handleClose}
+						onPrintPatientCard={handlePrint}
+						onClose={handleClose}
 					/>
 
 					{/* ── СОМАТИЧЕСКИЙ АЛЕРТ (Мандат 8y — Пассивная безопасность, sentence case) ── */}
 					{!isCreateMode && (
-						<PatientCardSomaticAlert safetyEvaluation={safetyEvaluation} isAnySubModalOpen={isAnySubModalOpen} onOpenAnamnesis={setActiveTab} />
+						<PatientCardSomaticAlert safetyEvaluation={safetyEvaluation} onOpenAnamnesis={setActiveTab} />
 					)}
 
 					{/* ── ТАБЫ НАВИГАЦИИ КАРТОЧКИ (СТРОГО 1 СТРОКА БЕЗ ПЕРЕНОСА И КЛИППИНГА) ── */}
 					{!isCreateMode && (
-						<div className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 border-b border-[var(--glass-border)] bg-[var(--paper-soft)]/60 flex-nowrap overflow-hidden print:hidden ${
-							isAnySubModalOpen ? "max-sm:hidden" : ""
-						}`}>
+						<div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 border-b border-[var(--glass-border)] bg-[var(--paper-soft)]/60 flex-nowrap overflow-hidden print:hidden">
 							<div
 								ref={tabsScrollRef}
 								role="tablist"
@@ -256,9 +325,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 					{/* ── ТЕЛО МОДАЛКИ (ОСНОВНОЙ КОНТЕНТ) ── */}
 					<div
 						data-testid={isCreateMode ? "patient-express-registration-form" : "patient-studio-detail-view"}
-						className={`p-3 sm:p-5 pb-[calc(100px+env(safe-area-inset-bottom,0px))] sm:pb-5 overflow-y-auto flex-1 ${
-							isAnySubModalOpen ? "hidden pointer-events-none opacity-0" : ""
-						}`}
+						className="p-3 sm:p-5 pb-[calc(100px+env(safe-area-inset-bottom,0px))] sm:pb-5 overflow-y-auto flex-1"
 					>
 						{isCreateMode ? (
 							<PatientCreationModalBody
@@ -270,20 +337,32 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							<TreatmentPlansTab
 								patient={patientData}
 								patientId={patientData.id ?? undefined}
-								onOpenPlanPresenter={(planId, tierId) => {
-									if (typeof window !== "undefined") {
-										const query = new URLSearchParams();
-										if (planId) query.set("id", planId);
-										if (tierId) query.set("tier", tierId);
-										const queryString = query.toString();
-										window.location.hash = queryString ? `#treatment-plan?${queryString}` : "#treatment-plan";
+								onOpenPlanPresenter={() => {
+									if (patientData.id) {
+										usePatientStore.getState().setSelectedPatientId(patientData.id);
+										useAppStore.getState().setActivePatientId(patientData.id);
 									}
+									useAppStore.getState().clearStudioBackStack();
+									emitClinicEvent("workspace:navigate", {
+										view: "treatment_plans",
+										entityId: patientData.id ?? undefined,
+									});
+									useAppStore.getState().setCurrentView("pipeline");
+									onClose();
 								}}
-								onSendToCheckout={(tierId, amountRub, amountKopecks) => {
-									if (typeof window !== "undefined") {
-										const kopecks = typeof amountKopecks === "number" && amountKopecks > 0 ? amountKopecks : rublesToKopecks(amountRub);
-										window.location.hash = `#checkout?amountKopecks=${kopecks}&amount=${amountRub}&tier=${tierId}&patientId=${patientData.id || ""}`;
-									}
+								onSendToCheckout={(_tierId, amountRub, amountKopecks) => {
+									const kopecks =
+										typeof amountKopecks === "number" && amountKopecks > 0
+											? amountKopecks
+											: rublesToKopecks(amountRub);
+									openFlatStudio({
+										kind: "cashbox",
+										mode: "checkout",
+										patientId: patientData.id ?? undefined,
+										patientName: patientData.fullName ?? undefined,
+										amountKopecks: kopecks,
+										serviceTitle: "Оплата по плану лечения",
+									});
 								}}
 								onPrintPlan={handlePrint}
 							/>
@@ -294,11 +373,26 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 						) : activeTab === "finance" ? (
 							<PatientFinanceTab
 								patient={patientData}
-								onUpdateBalance={(newBal) => handleUpdatePatientField("patientBalanceRub", newBal)}
+								onUpdateBalance={(newBalRub) => {
+									handleUpdatePatientField("balanceKopecks", rublesToKopecks(newBalRub));
+									handleUpdatePatientField("patientBalanceRub", newBalRub);
+								}}
 								onNavigateToVisit={onNavigateToVisit}
 								onNewAppointment={onNewAppointment}
-								onOpenTaxCertificate={() => handleOpenTaxCertificate("form")}
-								onOpenFamilyTaxCertificate={() => handleOpenTaxCertificate("family")}
+								onOpenTaxCertificate={() =>
+									openFlatStudio({
+										kind: "consents",
+										patientId: patientData.id ?? undefined,
+										docId: "tax_deduction:form",
+									})
+								}
+								onOpenFamilyTaxCertificate={() =>
+									openFlatStudio({
+										kind: "consents",
+										patientId: patientData.id ?? undefined,
+										docId: "tax_deduction:family",
+									})
+								}
 								disabled={disabled}
 							/>
 						) : activeTab === "documents" ? (
@@ -308,7 +402,13 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								patientId={patientData.id}
 								patientName={patientData.fullName}
 								cardNumber={patientData.cardNumber || patientData.medicalCardNumber}
-								onOpenPhotoStudio={() => setIsPhotoModalOpen(true)}
+								onOpenPhotoStudio={() =>
+									openFlatStudio({
+										kind: "photo_protocol",
+										patientId: patientData.id ?? undefined,
+										mode: "grid",
+									})
+								}
 							/>
 						) : activeTab === "perio" ? (
 							<PerioStudioModal
@@ -330,6 +430,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 									onSave={(newProfile) => { setSafetyProfile(newProfile); setIsDirty(true); }}
 									onApplyNorm={(normProfile) => { setSafetyProfile(normProfile); handleApplyNorm(); }}
 									onSyncToDiary={(diarySnippet) => {
+										emitClinicEvent("emk:insert-protocol", {
+											text: diarySnippet,
+											target: "notes",
+										});
 										if (typeof window !== "undefined") {
 											window.dispatchEvent(
 												new CustomEvent("dente-apply-soap-protocol", {
@@ -337,14 +441,6 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 														patientId: patientData.id,
 														anamnesis: diarySnippet,
 														soap: { anamnesis: diarySnippet },
-													},
-												}),
-											);
-											window.dispatchEvent(
-												new CustomEvent("dente-apply-soap-anamnesis", {
-													detail: {
-														patientId: patientData.id,
-														anamnesis: diarySnippet,
 													},
 												}),
 											);
@@ -373,7 +469,11 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							<div className="p-2 sm:p-3 space-y-4">
 								<PatientFamilyAndInsuranceWidget
 									patient={canonicalPatient}
-									patientBalance={Number(patientData.patientBalanceRub ?? 0) || 0}
+									patientBalance={
+										typeof patientData.balanceKopecks === "number"
+											? kopecksToRubles(patientData.balanceKopecks)
+											: Number(patientData.patientBalanceRub ?? 0) || 0
+									}
 									insurancePolicyNumber={patientData.omsPolicyNumber || undefined}
 									onUpdateInsurancePolicy={(p) => handleUpdatePatientField("omsPolicyNumber", p)}
 								/>
@@ -389,39 +489,29 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								activeSection="general"
 								onNavigateToVisit={onNavigateToVisit}
 								onNewAppointment={onNewAppointment}
-								onOpenDmsLetters={() => setIsDmsLetterModalOpen(true)}
-								onOpenTaxCertificate={() => handleOpenTaxCertificate("form")}
+								onOpenDmsLetters={() =>
+									openFlatStudio({ kind: "dms", patientId: patientData.id ?? undefined })
+								}
+								onOpenTaxCertificate={() =>
+									openFlatStudio({
+										kind: "consents",
+										patientId: patientData.id ?? undefined,
+										docId: "tax_deduction:form",
+									})
+								}
 							/>
 						)}
 					</div>
 
-					{/* Плавающий бар сохранения в Зоне большого пальца */}
-					{!isCreateMode && !isAnySubModalOpen && (
-						<PatientCardFloatingSaveBar isDirty={isDirty} saveState={saveState} onSave={handleSave} />
-					)}
-
-					{/* ── ФУТЕР МОДАЛКИ (ЕДИНЫЙ ДИЗАЙН-КОД: РОВНО 1 PRIMARY CTA КНОПКА) ── */}
+					{/* ── ЕДИНЫЙ ФУТЕР МОДАЛКИ (1 ЗАКРЕПЛЁННЫЙ ФУТЕР, РОВНО 1 PRIMARY CTA) ── */}
 					<PatientCardModalFooter
 						isCreateMode={isCreateMode}
-						isAnySubModalOpen={isAnySubModalOpen}
 						creationForm={creationForm}
+						isDirty={isDirty}
+						saveState={saveState}
 						onClose={handleClose}
 						onSave={handleSave}
 					/>
-
-					{/* ── САБМОДАЛКИ ── */}
-					{!isCreateMode && (
-						<PatientCardModalSubModals
-							isDiplomaModalOpen={isDiplomaModalOpen} setIsDiplomaModalOpen={setIsDiplomaModalOpen}
-							isDmsLetterModalOpen={isDmsLetterModalOpen} setIsDmsLetterModalOpen={setIsDmsLetterModalOpen}
-							isTaxDeductionModalOpen={isTaxDeductionModalOpen} setIsTaxDeductionModalOpen={setIsTaxDeductionModalOpen}
-							initialTaxTab={initialTaxTab}
-							isPhotoModalOpen={isPhotoModalOpen} setIsPhotoModalOpen={setIsPhotoModalOpen}
-							isMedicalRecordStudioOpen={isMedicalRecordStudioOpen} setIsMedicalRecordStudioOpen={setIsMedicalRecordStudioOpen}
-							patientData={patientData} onUpdatePatientField={handleUpdatePatientField}
-							onSave={handleSave}
-						/>
-					)}
 				</div>
 			</div>
 		</div>

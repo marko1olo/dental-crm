@@ -31,6 +31,7 @@ import type {
 	SpeechRecordingStrategy,
 	StaffRole,
 	UiLanguage,
+	WorkspaceOverlayStudio,
 } from "@dental/shared";
 import type { StateCreator } from "zustand";
 import type {
@@ -222,6 +223,10 @@ export interface ModalsAndSelectionSlice {
 	setActivePatientId: (
 		val: string | null | ((prev: string | null) => string | null),
 	) => void;
+	studioBackStack: WorkspaceOverlayStudio[];
+	pushStudioBackStack: (studio: WorkspaceOverlayStudio) => void;
+	popStudioBackStack: () => WorkspaceOverlayStudio | null;
+	clearStudioBackStack: () => void;
 }
 
 export interface NotificationsAndSyncSlice {

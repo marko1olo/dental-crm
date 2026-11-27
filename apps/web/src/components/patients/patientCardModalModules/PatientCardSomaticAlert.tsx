@@ -11,14 +11,12 @@ import type { PatientCardTab } from "./patientCardModalTypes";
 
 export interface PatientCardSomaticAlertProps {
 	readonly safetyEvaluation: PatientSafetyEvaluationResult;
-	readonly isAnySubModalOpen: boolean;
 	readonly onOpenAnamnesis: (tab: PatientCardTab) => void;
 }
 
 export const PatientCardSomaticAlert: React.FC<PatientCardSomaticAlertProps> = React.memo(
 	function PatientCardSomaticAlert({
 		safetyEvaluation,
-		isAnySubModalOpen,
 		onOpenAnamnesis,
 	}) {
 		if (safetyEvaluation.activeFlags.length === 0) return null;
@@ -27,14 +25,19 @@ export const PatientCardSomaticAlert: React.FC<PatientCardSomaticAlertProps> = R
 			<div
 				className={`px-3.5 sm:px-4 py-2 flex items-center justify-between gap-2.5 border-b shrink-0 flex-wrap sm:flex-nowrap print:hidden ${
 					safetyEvaluation.hasCriticalStopFlags
-						? "bg-rose-500/10 border-rose-500/20 text-rose-950 dark:text-rose-100"
-						: "bg-amber-500/10 border-amber-500/20 text-amber-950 dark:text-amber-100"
-				} ${isAnySubModalOpen ? "max-sm:hidden" : ""}`}
+						? "bg-[var(--danger-soft)] border-[var(--danger-line)] text-[var(--danger-ink)]"
+						: "bg-[var(--warning-soft)] border-[var(--warning-line)] text-[var(--warning-ink)]"
+				}`}
 				role="alert"
 				data-testid="patient-card-modal-somatic-banner"
 			>
 				<div className="flex items-center gap-2 min-w-0 flex-1">
-					<AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />
+					<AlertTriangle
+						className={`w-4 h-4 shrink-0 ${
+							safetyEvaluation.hasCriticalStopFlags ? "text-[var(--danger)]" : "text-[var(--warning)]"
+						}`}
+						aria-hidden="true"
+					/>
 					<div className="flex items-center gap-1.5 flex-wrap min-w-0">
 						<span className="text-[11px] font-bold shrink-0 tracking-wide">
 							<span className="sr-only">
@@ -50,8 +53,8 @@ export const PatientCardSomaticAlert: React.FC<PatientCardSomaticAlertProps> = R
 									key={flag.id}
 									className={`px-1.5 py-0.5 rounded-md text-[11px] font-bold border ${
 										flag.severity === "critical"
-											? "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/30"
-											: "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30"
+											? "bg-[var(--danger-soft)] text-[var(--danger-ink)] border-[var(--danger-line)]"
+											: "bg-[var(--warning-soft)] text-[var(--warning-ink)] border-[var(--warning-line)]"
 									}`}
 									title={flag.description}
 								>

@@ -3,7 +3,7 @@
  * Mandate 8b: Micro-module strictly <= 120 lines. Touch Target >= 44x44px.
  */
 
-@media (pointer: coarse), (max-width: 768px) {
+@media (max-width: 768px) {
   .emr-studio-nav {
     padding: 6px 10px;
     gap: 6px;

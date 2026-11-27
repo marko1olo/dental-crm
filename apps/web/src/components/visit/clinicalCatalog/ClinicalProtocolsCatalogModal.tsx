@@ -42,6 +42,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 					proceduresCount={state.filteredProcedures.length}
 					chunksCount={state.filteredChunks.length}
 					diagnosesCount={state.filteredDiagnoses.length}
+					stacked={embedded}
 				/>
 				{state.viewMode !== "diagnoses" && (
 					<ClinicalCatalogSpecialtyTabs
@@ -97,18 +98,24 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 		if (embedded) {
 			return (
 				<aside
-					className="bg-[var(--paper-strong)] border-l border-[var(--line)] text-[var(--ink)] w-full md:w-[440px] shrink-0 flex flex-col overflow-hidden max-md:absolute max-md:inset-0 max-md:z-30 [&>div:nth-child(2)]:!flex-col [&>div:nth-child(2)]:!items-stretch [&_.dente-search-wrap]:w-full [&_.dente-segmented-bar]:w-full [&_.dente-segmented-bar]:overflow-x-auto [&_.dente-segmented-item]:flex-1 [&_.dente-segmented-item]:justify-center [&_[data-testid='protocols-catalog-list']_.grid]:!grid-cols-1 [&_[data-testid='btn-close-protocols-catalog-modal']]:shrink-0"
+					className="shrink-0 w-full md:w-[380px] max-md:fixed max-md:inset-0 max-md:z-[120] max-md:bg-black/50 max-md:flex max-md:flex-col max-md:justify-end"
 					aria-label="Каталог клинических протоколов"
 					data-testid="clinical-protocols-catalog-drawer"
+					onClick={(e) => {
+						if (e.target === e.currentTarget) onClose();
+					}}
 				>
-					{panelBody}
+					<div className="bg-[var(--paper-strong)] border-l border-[var(--line)] text-[var(--ink)] w-full h-full flex flex-col overflow-hidden max-md:h-auto max-md:max-h-[88dvh] max-md:border-l-0 max-md:border-t max-md:rounded-t-[24px] max-md:shadow-2xl [&_.dente-search-wrap]:w-full [&_.dente-segmented-bar]:w-full [&_.dente-segmented-bar]:overflow-x-auto [&_.dente-segmented-item]:flex-1 [&_.dente-segmented-item]:justify-center [&_[data-testid='protocols-catalog-list']_.grid]:!grid-cols-1 [&_[data-testid='btn-close-protocols-catalog-modal']]:shrink-0">
+						<div className="md:hidden w-9 h-1.5 rounded-full bg-[var(--line)] mx-auto my-2.5 shrink-0" aria-hidden="true" />
+						{panelBody}
+					</div>
 				</aside>
 			);
 		}
 
 		return (
 			<div
-				className="fixed inset-0 z-[10060] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+				className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
 				role="dialog"
 				aria-modal="true"
 				aria-label="Каталог клинических протоколов и дневников приёма"
