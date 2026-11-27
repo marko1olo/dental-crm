@@ -1,137 +1,187 @@
 import assert from "node:assert/strict";
+import { after, before, describe, it } from "node:test";
+import { and, eq } from "drizzle-orm";
+import { resolveCostKopecks } from "@dental/shared";
+import { db } from "../../db/client.js";
+import {
+	inventoryItems,
+	inventoryTransactions,
+	organizations,
+	stockBatches,
+} from "../../db/schema.js";
+import { withTenantCtx } from "../../db/rls.js";
+import { fefoStockService, sortBatchesByFefo } from "./fefoStockService.js";
+import { wsBroker } from "../websocketBroker.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../../tests/support/fixtureOrganizations.js";
 
-let describe: any;
-let it: any;
-
-try {
-	// @ts-ignore
-	const v = await import("vitest");
-	describe = v.describe;
-	it = v.it;
-} catch {
-	const n = await import("node:test");
-	describe = n.describe;
-	it = n.it;
+function isDatabaseUnavailable(err: unknown): boolean {
+	const msg = err instanceof Error ? err.message : String(err);
+	return /ECONNREFUSED|connect|5432/i.test(msg);
 }
 
-import {
-	fefoStockService,
-	type FefoDeductionResult,
-	type FefoBatchUsage,
-} from "./fefoStockService.js";
+const NS = "fefo-service-honest";
+const ORG_ID = fixtureUuid(NS, 1);
+const ITEM_ID = fixtureUuid(NS, 2);
 
-describe("FEFO Stock Service & Batch Invariants", () => {
-	const orgId = "00000000-0000-0000-0000-000000000001";
-	const itemId = "item-articaine-4pct";
+describe("FEFO Stock Service, Cost Resolution & Post-Commit WS Invariants", () => {
+	let dbReady = true;
+
+	before(async () => {
+		try {
+			await purgeFixtureOrganizations([ORG_ID]);
+			await db
+				.insert(organizations)
+				.values({ id: ORG_ID, name: "FEFO Honest Test Clinic" })
+				.onConflictDoNothing();
+			await withFixtureTenant(ORG_ID, async () => {
+				await db.insert(inventoryItems).values({
+					id: ITEM_ID,
+					organizationId: ORG_ID,
+					name: "Артикаин 1:100 000",
+					category: "Анестезия",
+					unit: "карп.",
+					stockQuantity: "10",
+					currentQty: "10",
+					criticalThreshold: "2",
+					unitCostRub: "450.00",
+					unitCostKopecks: 0n,
+					pricePerUnitKopecks: 0n,
+				});
+				await db.insert(stockBatches).values([
+					{
+						id: fixtureUuid(NS, 10),
+						organizationId: ORG_ID,
+						inventoryItemId: ITEM_ID,
+						batchNumber: "LOT-2026-EARLY",
+						expirationDate: "2026-12-31",
+						initialQty: "3",
+						remainingQty: "3",
+						purchasePricePerUnit: "420.00",
+						purchasePricePerUnitKopecks: 0n,
+						status: "active",
+					},
+					{
+						id: fixtureUuid(NS, 11),
+						organizationId: ORG_ID,
+						inventoryItemId: ITEM_ID,
+						batchNumber: "LOT-2028-LATE",
+						expirationDate: "2028-06-30",
+						initialQty: "7",
+						remainingQty: "7",
+						purchasePricePerUnit: "450.00",
+						purchasePricePerUnitKopecks: 45000n,
+						status: "active",
+					},
+				]);
+			});
+		} catch (err) {
+			if (isDatabaseUnavailable(err)) {
+				dbReady = false;
+			} else {
+				throw err;
+			}
+		}
+	});
+
+	after(async () => {
+		if (!dbReady) return;
+		await purgeFixtureOrganizations([ORG_ID]);
+	});
 
 	it("sorts batches by FEFO (earliest expirationDate first)", () => {
 		const batches = [
-			{ id: "b3", expirationDate: "2027-01-01", remainingQty: "10" },
-			{ id: "b1", expirationDate: "2026-05-01", remainingQty: "5" },
-			{ id: "b2", expirationDate: "2026-10-15", remainingQty: "20" },
-			{ id: "b4", expirationDate: null, remainingQty: "15" },
+			{ id: "b3", batchNumber: "LOT-2028", expirationDate: "2028-05-01", remainingQty: "10" },
+			{ id: "b1", batchNumber: "LOT-2026", expirationDate: "2026-06-15", remainingQty: "5" },
+			{ id: "b2", batchNumber: "LOT-2027", expirationDate: "2027-01-10", remainingQty: "8" },
 		];
 
-		const sorted = [...batches].sort((a, b) => {
-			if (!a.expirationDate) return 1;
-			if (!b.expirationDate) return -1;
-			return new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime();
-		});
-
-		assert.equal(sorted[0]?.id, "b1");
-		assert.equal(sorted[1]?.id, "b2");
-		assert.equal(sorted[2]?.id, "b3");
-		assert.equal(sorted[3]?.id, "b4");
+		const sorted = sortBatchesByFefo(batches);
+		assert.deepEqual(
+			sorted.map((b) => b.id),
+			["b1", "b2", "b3"],
+		);
 	});
 
-	it("allocates quantities across multiple batches according to FEFO sequence", () => {
-		// Имитация доступных партий
-		const batches = [
-			{ id: "batch-exp-2026-06", remainingQty: 2, expirationDate: "2026-06-01" },
-			{ id: "batch-exp-2026-12", remainingQty: 10, expirationDate: "2026-12-01" },
-		];
+	it("resolveCostKopecks bypasses 0n NOT NULL DB defaults and resolves fallback rubles", () => {
+		assert.equal(resolveCostKopecks(0n, "420.50"), 42050n);
+		assert.equal(resolveCostKopecks(0n, "0", 15000n), 15000n);
+		assert.equal(resolveCostKopecks(31000n, "420.50"), 31000n);
+		assert.equal(resolveCostKopecks(0n, null, 0n, "99.90"), 9990n);
+		assert.equal(resolveCostKopecks(0n, null, 0n, null), 0n);
+	});
 
-		const requiredQty = 5;
-		let remainingNeed = requiredQty;
-		const allocated: FefoBatchUsage[] = [];
+	it("deductFefo allocates across batches in FEFO order, resolves 0n fallback cost, and fires WS post-commit", async () => {
+		if (!dbReady) return;
 
-		for (const b of batches) {
-			if (remainingNeed <= 0) break;
-			const avail = b.remainingQty;
-			if (avail <= 0) continue;
+		const broadcasts: Array<{ orgId: string; type: string }> = [];
+		const originalBroadcast = wsBroker.broadcastToOrganization.bind(wsBroker);
+		wsBroker.broadcastToOrganization = ((orgId: string, msg: { type: string }) => {
+			broadcasts.push({ orgId, type: msg.type });
+			return 0;
+		}) as typeof wsBroker.broadcastToOrganization;
 
-			const toTake = Math.min(avail, remainingNeed);
-			allocated.push({
-				batchId: b.id,
-				batchNumber: "LOT",
-				expirationDate: b.expirationDate,
-				quantityDeducted: toTake,
+		try {
+			// 1. Rolled-back transaction must NEVER broadcast WS deficit alert
+			await assert.rejects(
+				withTenantCtx(ORG_ID, async (tx) => {
+					await fefoStockService.deductFefo(tx, {
+						organizationId: ORG_ID,
+						inventoryItemId: ITEM_ID,
+						requiredQty: 15,
+						transactionType: "treatment_consumable",
+						allowOverdraft: true,
+						notes: "Rollback WS guard check",
+					});
+					assert.equal(broadcasts.length, 0, "WS broadcast must NOT fire before COMMIT");
+					throw new Error("FORCE_ROLLBACK");
+				}),
+				/FORCE_ROLLBACK/,
+			);
+			assert.equal(broadcasts.length, 0, "Rolled back transaction must never emit WS alert");
+
+			// 2. Committed overdraft deducts early batch then late batch, records 42000n cost, and emits WS post-commit
+			const res = await withTenantCtx(ORG_ID, async (tx) =>
+				fefoStockService.deductFefo(tx, {
+					organizationId: ORG_ID,
+					inventoryItemId: ITEM_ID,
+					requiredQty: 12,
+					transactionType: "treatment_consumable",
+					allowOverdraft: true,
+					notes: "Committed FEFO overdraft test",
+				}),
+			);
+
+			assert.equal(res.isOverdraft, true);
+			assert.equal(res.deficitQty, 2);
+			assert.equal(res.batchesUsed.length, 2);
+			assert.equal(res.batchesUsed[0]?.batchNumber, "LOT-2026-EARLY");
+			assert.equal(res.batchesUsed[0]?.quantityDeducted, 3);
+			assert.equal(res.batchesUsed[1]?.batchNumber, "LOT-2028-LATE");
+			assert.equal(res.batchesUsed[1]?.quantityDeducted, 7);
+			assert.ok(Array.isArray(res.transactionIds) && res.transactionIds.length >= 3);
+			assert.equal(broadcasts.length, 1, "WS alert must fire once after COMMIT");
+			assert.equal(broadcasts[0]?.type, "INVENTORY_DEFICIT_ALERT");
+
+			await withFixtureTenant(ORG_ID, async () => {
+				const txs = await db
+					.select()
+					.from(inventoryTransactions)
+					.where(
+						and(
+							eq(inventoryTransactions.organizationId, ORG_ID),
+							eq(inventoryTransactions.inventoryItemId, ITEM_ID),
+						),
+					);
+				const batchTx = txs.find((t) => t.batchId === fixtureUuid(NS, 10));
+				assert.ok(batchTx, "Batch transaction must exist");
+				assert.equal(batchTx.unitCostKopecks, 42000n, "0n batch kopecks must fall back to 420.00 rub = 42000n");
 			});
-			remainingNeed -= toTake;
+		} finally {
+			wsBroker.broadcastToOrganization = originalBroadcast;
 		}
-
-		assert.equal(allocated.length, 2);
-		assert.equal(allocated[0]?.batchId, "batch-exp-2026-06");
-		assert.equal(allocated[0]?.quantityDeducted, 2);
-		assert.equal(allocated[1]?.batchId, "batch-exp-2026-12");
-		assert.equal(allocated[1]?.quantityDeducted, 3);
-		assert.equal(remainingNeed, 0);
-	});
-
-	it("handles emergency overdraft when stock is insufficient without throwing error", () => {
-		const currentStock = 3;
-		const requiredQty = 10;
-		const allowOverdraft = true;
-
-		const deficit = requiredQty - currentStock;
-		assert.equal(deficit, 7);
-
-		const isOverdraft = deficit > 0;
-		assert.equal(isOverdraft, true);
-
-		const newStock = currentStock - requiredQty;
-		assert.equal(newStock, -7);
-
-		// Проверяем, что результат фиксирует перерасход
-		const result: FefoDeductionResult = {
-			inventoryItemId: itemId,
-			inventoryItemName: "Артикаин 4%",
-			requiredQty: requiredQty,
-			deductedQty: requiredQty,
-			batchesUsed: [
-				{
-					batchId: "batch-1",
-					batchNumber: "LOT-01",
-					expirationDate: "2026-07-01",
-					quantityDeducted: 3,
-				},
-			],
-			isOverdraft: true,
-			deficitQty: 7,
-		};
-
-		assert.equal(result.isOverdraft, true);
-		assert.equal(result.deficitQty, 7);
-		assert.equal(newStock, -7);
-		assert.equal(result.deductedQty, 10);
-	});
-
-	it("calculates BOM service multipliers correctly for clinical procedures", () => {
-		// Техкарта пломбирования 1 зуба (serviceQuantity = 3 при лечении 3 зубов/каналов)
-		const bomItems = [
-			{ inventoryItemId: "comp-a2", quantityPerService: 1 },
-			{ inventoryItemId: "bond-optibond", quantityPerService: 0.2 },
-			{ inventoryItemId: "anesthetic-carpule", quantityPerService: 1 },
-		];
-
-		const serviceQuantity = 3;
-		const calculated = bomItems.map((bi) => ({
-			inventoryItemId: bi.inventoryItemId,
-			quantityToDeduct: Number((bi.quantityPerService * serviceQuantity).toFixed(4)),
-		}));
-
-		assert.equal(calculated[0]?.quantityToDeduct, 3);
-		assert.equal(calculated[1]?.quantityToDeduct, 0.6);
-		assert.equal(calculated[2]?.quantityToDeduct, 3);
 	});
 });

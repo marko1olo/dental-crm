@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { rublesToKopecks, sumPaymentFlowBigInt } from "@dental/shared";
-import type { TenantDb } from "../../db/rls.js";
+import { withSavepoint, type TenantDb } from "../../db/rls.js";
 import {
 	installmentContracts,
 	patientInvoices,
@@ -8,6 +8,7 @@ import {
 	treatmentItems,
 } from "../../db/schema.js";
 import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+import { reverseVisitConsumablesTx } from "../inventory/storno/stornoOperationHandlers.js";
 
 /**
  * Atomically reverts completed treatment items back to "approved" inside `tx`
@@ -86,6 +87,20 @@ export async function revertTreatmentItemsOnFullRefundTx(
 						eq(treatmentItems.status, "completed"),
 					),
 				);
+
+			try {
+				await withSavepoint(tx, async (spTx) => {
+					await reverseVisitConsumablesTx(spTx, {
+						organizationId,
+						visitId,
+						userId: null,
+						reason: "full_refund",
+						notes: "Авто-сторно расходников при полном возврате оплаты визита",
+					});
+				});
+			} catch {
+				// Non-blocking savepoint: payment refund and treatment status rollback stay atomic even if inventory storno fails
+			}
 		}
 	}
 }

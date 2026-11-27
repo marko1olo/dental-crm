@@ -105,6 +105,7 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 				<ConsumablesBatchWriteoffModal
 					isOpen={isBatchActive} onClose={handleCloseBatch}
 					organizationId={organizationId} warehouseItems={items} onDeductionComplete={fetchItems}
+					getHeaders={getHeaders}
 				/>
 			)}
 
@@ -112,7 +113,13 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 				<WarehouseInventoryAuditModal
 					isOpen={externalModalsProps.isInventoryAuditOpen}
 					onClose={externalModalsProps.onCloseInventoryAudit ?? (() => {})}
-					initialDocument={auditInitialDoc} onDocumentSaved={fetchItems}
+					initialDocument={auditInitialDoc}
+					onApplyAudit={async (doc) => {
+						if (externalModalsProps.onApplyInventoryAudit) {
+							await externalModalsProps.onApplyInventoryAudit(doc);
+						}
+					}}
+					onDocumentSaved={fetchItems}
 				/>
 			)}
 

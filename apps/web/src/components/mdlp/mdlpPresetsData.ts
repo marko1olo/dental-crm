@@ -101,6 +101,12 @@ export const EMERGENCY_DISPENSE_PRESETS = [
 	},
 ];
 
+export function getEmergencyDispensePresets(
+	isDemo = isDemoShowcaseMode(),
+): readonly (typeof EMERGENCY_DISPENSE_PRESETS)[number][] {
+	return isDemo ? EMERGENCY_DISPENSE_PRESETS : [];
+}
+
 /** Пакетное формирование карпул анестетика за смену без поштучного сканирования у кресла (Мандат 8n) */
 export function createShiftCarpulesBatch(count = 10): readonly ChestnyZnakScannedItem[] {
 	const now = new Date();

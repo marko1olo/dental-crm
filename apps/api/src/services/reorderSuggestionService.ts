@@ -13,6 +13,7 @@ import {
 	type ReorderItemInput,
 	type ReorderSuggestionsResponse,
 	computeReorderSuggestions,
+	resolveCostKopecks,
 } from "@dental/shared";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { withTenantCtx } from "../db/rls.js";
@@ -35,11 +36,25 @@ export class ReorderSuggestionService {
 		const cutoffDate = new Date(Date.now() - lookbackDays * 86_400_000);
 
 		const { items, consumptionRows } = await withTenantCtx(organizationId, async (tx) => {
-			// 1. Fetch active inventory items
+			// 1. Fetch active inventory items (projected columns, bounded)
 			const fetchedItems = await tx
-				.select()
+				.select({
+					id: inventoryItems.id,
+					name: inventoryItems.name,
+					category: inventoryItems.category,
+					unit: inventoryItems.unit,
+					stockQuantity: inventoryItems.stockQuantity,
+					currentQty: inventoryItems.currentQty,
+					minQty: inventoryItems.minQty,
+					criticalThreshold: inventoryItems.criticalThreshold,
+					unitCostRub: inventoryItems.unitCostRub,
+					pricePerUnit: inventoryItems.pricePerUnit,
+					unitCostKopecks: inventoryItems.unitCostKopecks,
+					pricePerUnitKopecks: inventoryItems.pricePerUnitKopecks,
+				})
 				.from(inventoryItems)
-				.where(eq(inventoryItems.organizationId, organizationId));
+				.where(eq(inventoryItems.organizationId, organizationId))
+				.limit(2000);
 
 			if (fetchedItems.length === 0) {
 				return {
@@ -96,12 +111,13 @@ export class ReorderSuggestionService {
 			const minQty = Number(item.minQty ?? item.criticalThreshold ?? 0);
 			const usage90d = consumptionMap.get(item.id) ?? 0;
 			const unitCostRub = Number(item.unitCostRub ?? item.pricePerUnit ?? 0);
-			const unitCostKopecks =
-				item.unitCostKopecks !== null && item.unitCostKopecks !== undefined
-					? Number(item.unitCostKopecks)
-					: item.pricePerUnitKopecks !== null && item.pricePerUnitKopecks !== undefined
-						? Number(item.pricePerUnitKopecks)
-						: undefined;
+			const resolvedCostKop = resolveCostKopecks(
+				item.unitCostKopecks,
+				item.unitCostRub,
+				item.pricePerUnitKopecks,
+				item.pricePerUnit,
+			);
+			const unitCostKopecks = resolvedCostKop > 0n ? Number(resolvedCostKop) : undefined;
 
 			return {
 				inventoryItemId: item.id,

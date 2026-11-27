@@ -5,11 +5,12 @@
  */
 
 import {
+	isValidUuid,
 	processClinicalMaterialWriteoff,
 	type ClinicalConsumableNorm,
 	type ClinicalMaterialWriteoffResult,
 } from "@dental/shared";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
 	requireResolvedOrganizationId,
@@ -18,6 +19,7 @@ import {
 import { withTenantCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
+import { fefoStockService } from "../../../services/inventory/fefoStockService.js";
 import { TreatmentConsumablesService } from "../../../services/treatmentConsumablesService.js";
 import {
 	alertsQuerySchema,
@@ -307,14 +309,89 @@ export async function registerVisitWriteOffHandlers(
 		}
 
 		const result = await withTenantCtx(organizationId, async (tx) => {
-			return TreatmentConsumablesService.deductManualItems(tx, {
-				organizationId,
-				items: parsedBody.data.items,
-				visitId: parsedBody.data.visitId,
-				userId: parsedBody.data.userId ?? getRequestIdentity(request).userId,
-				notes: parsedBody.data.notes,
-				allowOverdraft: true,
-			});
+			const effectiveUserId = parsedBody.data.userId ?? getRequestIdentity(request).userId;
+			const safeVisitId =
+				parsedBody.data.visitId && isValidUuid(parsedBody.data.visitId)
+					? parsedBody.data.visitId
+					: null;
+			const qtyByItemId = new Map<string, { qty: number; reason?: string | undefined }>();
+			for (const entry of parsedBody.data.items) {
+				if (!entry.inventoryItemId || !Number.isFinite(entry.quantity) || entry.quantity <= 0) {
+					continue;
+				}
+				const prev = qtyByItemId.get(entry.inventoryItemId);
+				qtyByItemId.set(entry.inventoryItemId, {
+					qty: Number(((prev?.qty ?? 0) + entry.quantity).toFixed(4)),
+					reason: entry.reason ?? prev?.reason,
+				});
+			}
+
+			const sortedIds = Array.from(qtyByItemId.keys()).sort();
+			const lockedItems =
+				sortedIds.length > 0
+					? await tx
+							.select()
+							.from(schema.inventoryItems)
+							.where(
+								and(
+									eq(schema.inventoryItems.organizationId, organizationId),
+									inArray(schema.inventoryItems.id, sortedIds),
+								),
+							)
+							.orderBy(asc(schema.inventoryItems.id))
+							.for("update")
+					: [];
+
+			const deducted: Array<{
+				inventoryItemId: string;
+				itemName: string;
+				quantityDeducted: number;
+				isOverdraft: boolean;
+				deficitQty: number;
+				warning?: string | undefined;
+			}> = [];
+			const warnings: string[] = [];
+			let isOverdraft = false;
+			let totalDeductedQty = 0;
+
+			for (const inv of lockedItems) {
+				const target = qtyByItemId.get(inv.id);
+				if (!target || target.qty <= 0) continue;
+				const noteParts = [parsedBody.data.notes, target.reason].filter(
+					(v): v is string => typeof v === "string" && v.trim().length > 0,
+				);
+				const fefoRes = await fefoStockService.deductFefo(tx, {
+					organizationId,
+					inventoryItemId: inv.id,
+					requiredQty: target.qty,
+					visitId: safeVisitId,
+					userId: effectiveUserId,
+					allowOverdraft: true,
+					transactionType: "emergency_overdraft",
+					notes: noteParts.length > 0 ? noteParts.join(" • ") : "Экстренное списание расходников",
+				});
+				if (fefoRes.isOverdraft) isOverdraft = true;
+				if (fefoRes.warning) warnings.push(fefoRes.warning);
+				totalDeductedQty = Number((totalDeductedQty + fefoRes.deductedQty).toFixed(4));
+				deducted.push({
+					inventoryItemId: fefoRes.inventoryItemId,
+					itemName: fefoRes.inventoryItemName || inv.name,
+					quantityDeducted: fefoRes.deductedQty,
+					isOverdraft: fefoRes.isOverdraft,
+					deficitQty: fefoRes.deficitQty,
+					...(fefoRes.warning ? { warning: fefoRes.warning } : {}),
+				});
+			}
+
+			return {
+				success: true,
+				visitId: safeVisitId,
+				isOverdraft,
+				deducted,
+				warnings,
+				itemCount: deducted.length,
+				totalDeductedQty,
+			};
 		});
 		return result;
 	});

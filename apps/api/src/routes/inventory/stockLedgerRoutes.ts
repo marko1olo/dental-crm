@@ -1,6 +1,7 @@
-import { isValidUuid, kopecksToRubles } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { isValidUuid, kopecksToRubles, resolveCostKopecks } from "@dental/shared";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
@@ -93,15 +94,18 @@ async function handleStockAdjustment(
 				parsedStock.data.expirationDate ||
 				item.expirationDate ||
 				getDefaultExpirationDate();
-			const itemCostKop = item.unitCostKopecks ?? item.pricePerUnitKopecks;
+			const itemCostKop = resolveCostKopecks(
+				item.unitCostKopecks,
+				item.unitCostRub,
+				item.pricePerUnitKopecks,
+				item.pricePerUnit,
+			);
 			const purchasePrice =
 				parsedStock.data.purchasePricePerUnit != null
 					? parsedStock.data.purchasePricePerUnit
-					: itemCostKop != null
-						? kopecksToRubles(itemCostKop)
-						: item.unitCostRub != null
-							? Number(item.unitCostRub)
-							: undefined;
+					: itemCostKop > 0n
+						? kopecksToRubles(Number(itemCostKop))
+						: undefined;
 
 			const createdBatch = await fefoStockService.receiveBatch(tx, {
 				organizationId,
@@ -242,9 +246,185 @@ async function handleStockAdjustment(
 	return result.updated;
 }
 
+const batchStockAdjustBodySchema = z
+	.object({
+		reason: z.string().max(500).optional(),
+		items: z
+			.array(
+				z.object({
+					itemId: z.string().uuid(),
+					adjustment: z.number().finite().refine((v) => v !== 0, "Корректировка не должна быть равна 0"),
+					batchNumber: z.string().max(120).optional(),
+					expirationDate: z.string().max(40).optional(),
+					purchasePricePerUnit: z.number().nonnegative().optional(),
+				}),
+			)
+			.min(1)
+			.max(200),
+	})
+	.strict();
+
+async function handleBatchStockAdjustment(
+	request: FastifyRequest,
+	reply: FastifyReply,
+	explicitOrgId?: string,
+) {
+	const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+		request,
+		reply,
+		"inventory batch adjust stock",
+	);
+	if (!resolvedOrgId) return;
+
+	const params = request.params as { organizationId?: string } | undefined;
+	const rawOrgId = explicitOrgId ?? params?.organizationId;
+	const organizationId = !rawOrgId || rawOrgId === "current" ? resolvedOrgId : rawOrgId;
+	if (!isValidUuid(organizationId)) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: "Некорректный UUID организации",
+		});
+	}
+	if (resolvedOrgId !== organizationId) {
+		return reply.code(403).send({ error: "Forbidden" });
+	}
+
+	const parsed = batchStockAdjustBodySchema.safeParse(request.body);
+	if (!parsed.success) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: parsed.error.errors[0]?.message ?? "Неверные параметры пакетной корректировки остатков",
+		});
+	}
+
+	const identity = getRequestIdentity(request);
+	const effectiveUserId = identity.userId ?? request.user?.id ?? null;
+	const reason = parsed.data.reason?.trim() || "Инвентаризация и корректировка остатков";
+
+	const aggregated = new Map<
+		string,
+		{
+			adjustment: number;
+			batchNumber?: string | undefined;
+			expirationDate?: string | undefined;
+			purchasePricePerUnit?: number | undefined;
+		}
+	>();
+	for (const entry of parsed.data.items) {
+		const prev = aggregated.get(entry.itemId);
+		aggregated.set(entry.itemId, {
+			adjustment: Number(((prev?.adjustment ?? 0) + entry.adjustment).toFixed(4)),
+			batchNumber: entry.batchNumber ?? prev?.batchNumber,
+			expirationDate: entry.expirationDate ?? prev?.expirationDate,
+			purchasePricePerUnit: entry.purchasePricePerUnit ?? prev?.purchasePricePerUnit,
+		});
+	}
+
+	const sortedIds = Array.from(aggregated.keys()).sort();
+	const result = await withTenantCtx(organizationId, async (tx) => {
+		const locked = await tx
+			.select()
+			.from(inventoryItems)
+			.where(
+				and(
+					eq(inventoryItems.organizationId, organizationId),
+					inArray(inventoryItems.id, sortedIds),
+				),
+			)
+			.orderBy(asc(inventoryItems.id))
+			.for("update");
+
+		const lockedById = new Map(locked.map((row) => [row.id, row]));
+		const updatedItems: Array<Record<string, unknown>> = [];
+		const missingIds: string[] = [];
+
+		for (const itemId of sortedIds) {
+			const adj = aggregated.get(itemId);
+			const item = lockedById.get(itemId);
+			if (!item) {
+				missingIds.push(itemId);
+				continue;
+			}
+			if (!adj || adj.adjustment === 0) continue;
+
+			if (adj.adjustment > 0) {
+				const itemCostKop = resolveCostKopecks(
+					item.unitCostKopecks,
+					item.unitCostRub,
+					item.pricePerUnitKopecks,
+					item.pricePerUnit,
+				);
+				const purchasePrice =
+					adj.purchasePricePerUnit != null
+						? adj.purchasePricePerUnit
+						: itemCostKop > 0n
+							? kopecksToRubles(Number(itemCostKop))
+							: undefined;
+				await fefoStockService.receiveBatch(tx, {
+					organizationId,
+					inventoryItemId: item.id,
+					batchNumber:
+						adj.batchNumber ||
+						item.lotNumber ||
+						`INV-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
+					expirationDate: adj.expirationDate || item.expirationDate || getDefaultExpirationDate(),
+					quantity: adj.adjustment,
+					purchasePricePerUnit: purchasePrice,
+					barcode: item.barcode || undefined,
+					userId: effectiveUserId,
+					notes: reason,
+				});
+			} else {
+				await fefoStockService.deductFefo(tx, {
+					organizationId,
+					inventoryItemId: item.id,
+					requiredQty: Math.abs(adj.adjustment),
+					userId: effectiveUserId,
+					allowOverdraft: true,
+					transactionType: "write_off",
+					notes: reason,
+				});
+			}
+
+			const [refreshed] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(and(eq(inventoryItems.id, item.id), eq(inventoryItems.organizationId, organizationId)))
+				.limit(1);
+			if (refreshed) {
+				updatedItems.push({
+					...refreshed,
+					unitCostKopecks: refreshed.unitCostKopecks != null ? Number(refreshed.unitCostKopecks) : 0,
+					pricePerUnitKopecks:
+						refreshed.pricePerUnitKopecks != null ? Number(refreshed.pricePerUnitKopecks) : 0,
+				});
+			}
+		}
+
+		return { updatedItems, missingIds };
+	});
+
+	return reply.status(200).send({
+		success: true,
+		adjustedCount: result.updatedItems.length,
+		missingIds: result.missingIds,
+		items: result.updatedItems,
+	});
+}
+
 export const stockLedgerRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
+	server.post<{
+		Params: { organizationId: string };
+	}>("/:organizationId/stock/batch-adjust", async (request, reply) => {
+		return handleBatchStockAdjustment(request, reply, request.params.organizationId);
+	});
+
+	server.post("/stock/batch-adjust", async (request, reply) => {
+		return handleBatchStockAdjustment(request, reply);
+	});
+
 	// PATCH adjust stock quantity (staff/admin only)
 	server.patch<{
 		Params: { organizationId: string; itemId: string };

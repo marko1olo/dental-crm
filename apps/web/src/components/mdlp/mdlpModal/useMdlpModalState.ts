@@ -5,6 +5,7 @@ import {
 	createChestnyZnakScannedItem,
 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
+import { isDemoShowcaseMode } from "../../../utils/demoModeEngine.js";
 import { submitMdlpBarcodeScan } from "../mdlpScanningPresets.js";
 import {
 	type MdlpScanMode,
@@ -16,19 +17,28 @@ import { useMdlpXmlExport } from "./useMdlpXmlExport.js";
 import { useMdlpDisposalActions } from "./useMdlpDisposalActions.js";
 import { useMdlpHidScanner } from "./useMdlpHidScanner.js";
 
+function buildDefaultDocNum(mode: MdlpScanMode, isDemo: boolean): string {
+	if (!isDemo) return "";
+	return isAcceptanceMode(mode)
+		? "УПД-2026-0891"
+		: isSpoilageMode(mode)
+			? "АКТ-СПИСАНИЕ-0042"
+			: "АКТ-ВЫБЫТИЕ-0042";
+}
+
 export function useMdlpModalState(props: MdlpScanningModalProps) {
+	const isDemo = isDemoShowcaseMode();
 	const {
 		isOpen, initialMode = "warehouse_acceptance",
-		subjectId = "00000000123456", shipperId = "00000000654321",
+		subjectId = isDemo ? "00000000123456" : "",
+		shipperId = isDemo ? "00000000654321" : "",
 		patientId = null, visitId = null, doctorId = null, onDeferredDisposal,
 	} = props;
 
 	const scannerInputId = useId();
 	const [mode, setMode] = useState<MdlpScanMode>(initialMode);
 	const [barcodeInput, setBarcodeInput] = useState("");
-	const [docNum, setDocNum] = useState(() => (
-		isAcceptanceMode(initialMode) ? "УПД-2026-0891" : isSpoilageMode(initialMode) ? "АКТ-СПИСАНИЕ-0042" : "АКТ-ВЫБЫТИЕ-0042"
-	));
+	const [docNum, setDocNum] = useState(() => buildDefaultDocNum(initialMode, isDemo));
 	const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
 	const [scannedItems, setScannedItems] = useState<readonly ChestnyZnakScannedItem[]>([]);
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -54,7 +64,7 @@ export function useMdlpModalState(props: MdlpScanningModalProps) {
 
 	const handleModeSwitch = (newMode: MdlpScanMode) => {
 		setMode(newMode);
-		setDocNum(isAcceptanceMode(newMode) ? "УПД-2026-0891" : isSpoilageMode(newMode) ? "АКТ-СПИСАНИЕ-0042" : "АКТ-ВЫБЫТИЕ-0042");
+		setDocNum(buildDefaultDocNum(newMode, isDemoShowcaseMode()));
 		xml.setGeneratedXml(null);
 		xml.setXmlDocType(null);
 	};

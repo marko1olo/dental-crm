@@ -11,5 +11,4 @@ export * from "./fefoDeductionCore.js";
 export * from "./batchReceiving.js";
 export * from "./scrapWriteOff.js";
 export * from "./procedureBomResolver.js";
-export * from "./procedureDeduction.js";
 export * from "./fefoServiceClass.js";

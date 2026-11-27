@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { afterEach, describe, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
@@ -8,73 +8,67 @@ import {
 	EMERGENCY_DISPENSE_PRESETS,
 	SAMPLE_BARCODES,
 } from "../MdlpScanningModal.js";
+import { getEmergencyDispensePresets } from "../mdlpPresetsData.js";
+import { setRuntimeDemoMode } from "../../../utils/demoModeEngine.js";
 
-describe("MDLP / Chestny Znak Scanning Modal (Mandate 8e Invariants)", () => {
+describe("MDLP / Chestny Znak Scanning Modal (Mandate 8e & Demo Isolation Invariants)", () => {
+	afterEach(() => {
+		setRuntimeDemoMode(null);
+	});
+
 	it("createShiftCarpulesBatch generates 10 valid Articaine 1:100 000 carpules for shift", () => {
 		const batch = createShiftCarpulesBatch(10);
 		assert.strictEqual(batch.length, 10);
-		for (const item of batch) {
-			assert.strictEqual(item.gtin, "03664798000016");
-			assert.ok(item.tradeName.includes("Ультракаин") || item.tradeName.includes("Артикаин") || item.tradeName.length > 0);
-			assert.strictEqual(item.costRub, 450);
-			assert.ok(item.serialNumber.startsWith("SN"));
-		}
+		assert.strictEqual(batch[0]?.tradeName, "Ультракаин® Д-С форте");
+		assert.strictEqual(batch[0]?.costRub, 450);
+		assert.ok(batch.every((it) => Boolean(it.sgtin) && Boolean(it.gtin) && Boolean(it.rawBarcode)));
+		assert.notStrictEqual(batch[0]?.sgtin, batch[1]?.sgtin);
 	});
 
-	it("MdlpScanningModal renders static markup with nurse rules banner and 1-click actions", () => {
-		const html = renderToStaticMarkup(
-			createElement(MdlpScanningModal, {
-				isOpen: true,
-				onClose: () => {},
-				clinicName: "ООО «Денте Стоматология»",
-			}),
-		);
+	it("isolates mock doc numbers, fake org subjectId, and emergency presets when demo mode is off", () => {
+		setRuntimeDemoMode(false);
+		assert.strictEqual(getEmergencyDispensePresets().length, 0);
 
-		// Container and modal presence
-		assert.ok(html.includes("data-testid=\"mdlp-scanning-modal-container\""));
-		assert.ok(html.includes("Честный ЗНАК · ИС МДЛП"));
-		assert.ok(html.includes("СХЕМА 701 / 531"));
-
-		// Nurse rules & soft overdraft banner
-		assert.ok(html.includes("data-testid=\"mdlp-nurse-rules-banner\""));
-		assert.ok(html.includes("Быстрое списание:"));
-		assert.ok(html.includes("Мягкий овердрафт:"));
-
-		// 1-click actions: shift carpules & deferred disposal
-		assert.ok(html.includes("data-testid=\"mdlp-shift-carpules-batch-btn\""));
-		assert.ok(html.includes("Списать 10 карпул за смену (по журналу)"));
-		assert.ok(html.includes("data-testid=\"mdlp-deferred-disposal-btn\""));
-		assert.ok(html.includes("Отложенное списание МДЛП (офлайн-буфер)"));
-
-		// CRPT server status and broken-scanner bypass button
-		assert.ok(html.includes("data-testid=\"mdlp-crpt-status-strip\""));
-		assert.ok(html.includes("data-testid=\"toggle-emergency-scanner-bypass-btn\""));
-		assert.ok(html.includes("Поломка 2D-сканера? Аварийная выдача"));
-
-		// Buttons MUST NOT be disabled
-		assert.ok(html.includes("data-testid=\"mdlp-scan-submit-btn\""));
-		assert.ok(!html.includes("data-testid=\"mdlp-scan-submit-btn\" disabled"));
-		assert.ok(html.includes("data-testid=\"mdlp-clear-all-btn\""));
-		assert.ok(!html.includes("data-testid=\"mdlp-clear-all-btn\" disabled"));
-		assert.ok(html.includes("data-testid=\"mdlp-generate-xml-btn\""));
-		assert.ok(!html.includes("data-testid=\"mdlp-generate-xml-btn\" disabled"));
-
-		// Footer deferred disposal button
-		assert.ok(html.includes("data-testid=\"mdlp-footer-deferred-btn\""));
-
-		// Mandate 8am: Exactly ONE Primary CTA button "Вывести из оборота" (emerald color, never disabled)
-		assert.ok(html.includes("data-testid=\"mdlp-confirm-disposal-primary-cta\""));
-		assert.ok(html.includes("Вывести из оборота"));
-		assert.ok(!html.includes("data-testid=\"mdlp-confirm-disposal-primary-cta\" disabled"));
-	});
-
-	it("MdlpScanningModal supports human semantic modes (warehouse_acceptance, care_dispense, spoilage_disposal)", () => {
 		const html = renderToStaticMarkup(
 			createElement(MdlpScanningModal, {
 				isOpen: true,
 				onClose: () => {},
 				initialMode: "warehouse_acceptance",
-				clinicName: "ООО «Денте Стоматология»",
+			}),
+		);
+		assert.strictEqual(html.includes("УПД-2026-0891"), false, "Prod must not prefill mock UPD");
+		assert.strictEqual(html.includes("АКТ-СПИСАНИЕ-0042"), false, "Prod must not prefill mock Act");
+		assert.strictEqual(html.includes("00000000123456"), false, "Prod must not inject fake subjectId");
+	});
+
+	it("MdlpScanningModal renders static markup with nurse rules banner and quick actions", () => {
+		setRuntimeDemoMode(true);
+		const html = renderToStaticMarkup(
+			createElement(MdlpScanningModal, {
+				isOpen: true,
+				onClose: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("Маркировка препаратов · Честный Знак"));
+		assert.ok(html.includes("Приёмка и списание"));
+		assert.ok(html.includes("mdlp-nurse-rules-banner"));
+		assert.ok(html.includes("Списать 10 карпул за смену"));
+		assert.ok(html.includes("mdlp-confirm-disposal-primary-cta"));
+		assert.ok(html.includes("Вывести из оборота"));
+		assert.ok(html.includes("toggle-emergency-scanner-bypass-btn"));
+		assert.ok(html.includes("mdlp-deferred-disposal-btn"));
+		assert.strictEqual(html.includes("disabled"), false);
+		assert.ok(SAMPLE_BARCODES.length >= 5);
+	});
+
+	it("MdlpScanningModal supports human semantic modes (warehouse_acceptance, care_dispense, spoilage_disposal)", () => {
+		setRuntimeDemoMode(true);
+		const html = renderToStaticMarkup(
+			createElement(MdlpScanningModal, {
+				isOpen: true,
+				onClose: () => {},
+				initialMode: "warehouse_acceptance",
 			}),
 		);
 
@@ -96,22 +90,22 @@ describe("MDLP / Chestny Znak Scanning Modal (Mandate 8e Invariants)", () => {
 	});
 
 	it("EMERGENCY_DISPENSE_PRESETS contains anesthetics and implants for broken scanner emergency bypass", () => {
+		setRuntimeDemoMode(true);
 		assert.ok(EMERGENCY_DISPENSE_PRESETS.length >= 4);
-		const names = EMERGENCY_DISPENSE_PRESETS.map((p) => p.shortName);
-		assert.ok(names.some((n) => n.includes("Ультракаин")));
-		assert.ok(names.some((n) => n.includes("Септанест")));
-		assert.ok(names.some((n) => n.includes("Скандонест")));
-		assert.ok(names.some((n) => n.includes("Dentium")));
-		assert.ok(names.some((n) => n.includes("Хлоргексидин")));
-		assert.ok(names.some((n) => n.includes("Мирамистин")));
+		assert.ok(EMERGENCY_DISPENSE_PRESETS.some((p) => p.badge === "Имплант"));
+		assert.ok(EMERGENCY_DISPENSE_PRESETS.some((p) => p.badge === "Анестезия"));
 	});
 
 	it("MdlpScanningModal renders Scheme 444 tab and supports initialMode disposal_444", () => {
+		setRuntimeDemoMode(true);
 		const html = renderToStaticMarkup(
 			createElement(MdlpScanningModal, {
-				isOpen: true, onClose: () => {}, initialMode: "disposal_444", clinicName: "ООО «Денте Стоматология»",
+				isOpen: true,
+				onClose: () => {},
+				initialMode: "disposal_444",
 			}),
 		);
+
 		assert.ok(html.includes("data-testid=\"mdlp-tab-disposal-444\""));
 		assert.ok(html.includes("Списание по медицинской карте приёма"));
 		assert.ok(html.includes("АКТ-СПИСАНИЕ-0042"));

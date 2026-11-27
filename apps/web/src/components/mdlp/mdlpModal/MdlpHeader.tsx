@@ -63,22 +63,23 @@ export const MdlpHeader: React.FC<MdlpHeaderProps> = ({
 	return (
 		<div className="flex flex-col shrink-0">
 			{/* 1. Каноническая шапка 56px (h-14) по Мандату 8am */}
-			<header className="h-14 px-4 sm:px-6 border-b border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-3 shrink-0">
-				<div className="flex items-center gap-3 shrink-0">
+			<header className="h-14 px-4 sm:px-6 border-b border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-2 sm:gap-3 shrink-0 min-w-0">
+				<div className="flex items-center gap-2.5 min-w-0 flex-1">
 					<div
 						className="w-8 h-8 rounded-lg bg-[var(--primary)] text-white flex items-center justify-center shrink-0 shadow-xs"
 						aria-hidden="true"
 					>
 						<QrCode className="w-4 h-4" />
 					</div>
-					<div className="shrink-0 flex items-center gap-2">
-						<h2 id="mdlp-modal-title" className="text-sm sm:text-base font-semibold text-[var(--ink)] tracking-tight whitespace-nowrap">
+					<div className="min-w-0 flex items-center gap-2">
+						<h2 id="mdlp-modal-title" className="text-sm sm:text-base font-semibold text-[var(--ink)] tracking-tight truncate">
 							<span className="hidden sm:inline">Маркировка препаратов · Честный Знак</span>
 							<span className="sm:hidden">Честный Знак · МДЛП</span>
 							<span className="sr-only">Честный ЗНАК · ИС МДЛП</span>
 							<span className="sr-only">СХЕМА 701 / 531</span>
+							<span className="sr-only">Приёмка и списание</span>
 						</h2>
-						<span className="h-5 px-2 text-[11px] font-medium rounded-full hidden xl:inline-flex items-center gap-1 bg-[var(--paper-soft)] text-[var(--ink-muted)] border border-[var(--line)] whitespace-nowrap">
+						<span className="h-5 px-2 text-[11px] font-medium rounded-full hidden 2xl:inline-flex items-center gap-1 bg-[var(--paper-soft)] text-[var(--ink-muted)] border border-[var(--line)] whitespace-nowrap shrink-0">
 							Приёмка и списание
 						</span>
 					</div>
@@ -267,7 +268,7 @@ export const MdlpHeader: React.FC<MdlpHeaderProps> = ({
 						title="Групповое списание 10 карпул Артикаина 1:100 000 по журналу приёма"
 					>
 						<Zap className="w-3 h-3 text-[var(--warning-ink)] shrink-0" />
-						<span>Списать 10 карпул за смену (по журналу)</span>
+						<span>Списать 10 карпул за смену</span>
 					</button>
 
 					<button
@@ -278,7 +279,7 @@ export const MdlpHeader: React.FC<MdlpHeaderProps> = ({
 						title="Лекарство выдается врачу немедленно, пакет выбытия встает в фоновую очередь на отправку"
 					>
 						<Clock className="w-3 h-3 text-[var(--primary)] shrink-0" />
-						<span>Отложенное списание МДЛП (офлайн-буфер)</span>
+						<span>Отложенное списание</span>
 					</button>
 
 					{offlineQueue.length > 0 && (
@@ -306,7 +307,7 @@ export const MdlpHeader: React.FC<MdlpHeaderProps> = ({
 						title="Выдача медикаментов или имплантатов при поломке 2D-сканера или сбое связи"
 					>
 						<AlertTriangle className="w-3 h-3 text-[var(--warning-ink)] shrink-0" />
-						<span>Поломка 2D-сканера? Аварийная выдача</span>
+						<span>Аварийная выдача</span>
 					</button>
 				</div>
 			</div>

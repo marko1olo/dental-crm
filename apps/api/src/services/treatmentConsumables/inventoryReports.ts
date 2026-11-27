@@ -8,7 +8,7 @@ import {
 	type InventoryAlertsResponse,
 	categorizeInventoryExpiry,
 	kopecksToRubles,
-	rublesToKopecks,
+	resolveCostKopecks,
 } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import { inventoryItems } from "../../db/schema.js";
@@ -26,7 +26,8 @@ export async function getInventoryAlerts(
 		.select()
 		.from(inventoryItems)
 		.where(eq(inventoryItems.organizationId, organizationId))
-		.orderBy(inventoryItems.name);
+		.orderBy(inventoryItems.name)
+		.limit(2000);
 
 	const now = new Date();
 	const daysAhead = params.expiringWithinDays ?? 30;
@@ -41,12 +42,14 @@ export async function getInventoryAlerts(
 	for (const item of items) {
 		const stock = Number(item.stockQuantity ?? item.currentQty ?? 0);
 		const threshold = Number(item.criticalThreshold ?? item.minQty ?? 0);
-		const unitCostKopecks =
-			item.unitCostKopecks != null
-				? Number(item.unitCostKopecks)
-				: item.pricePerUnitKopecks != null
-					? Number(item.pricePerUnitKopecks)
-					: rublesToKopecks(Number(item.unitCostRub ?? item.pricePerUnit ?? 0));
+		const unitCostKopecks = Number(
+			resolveCostKopecks(
+				item.unitCostKopecks,
+				item.unitCostRub,
+				item.pricePerUnitKopecks,
+				item.pricePerUnit,
+			),
+		);
 		const cost = kopecksToRubles(unitCostKopecks);
 
 		if (Number.isFinite(stock) && stock > 0 && unitCostKopecks > 0) {

@@ -441,6 +441,7 @@ export async function fetchDoctorPayrollDataset(params: {
 			? await dbClient
 				.select({
 					visitId: inventoryTransactions.visitId,
+					transactionType: inventoryTransactions.transactionType,
 					unitCostKopecks: inventoryTransactions.unitCostKopecks,
 					unitCostRub: inventoryTransactions.unitCostRub,
 					qty: inventoryTransactions.qty,
@@ -468,6 +469,10 @@ export async function fetchDoctorPayrollDataset(params: {
 							"write_off",
 							"emergency_overdraft",
 							"shift_batch_deduction",
+							"treatment_consumable",
+							"manual_writeoff",
+							"write_off_mdlp",
+							"storno",
 						]),
 					),
 				)
@@ -483,7 +488,11 @@ export async function fetchDoctorPayrollDataset(params: {
 			const rawQty = inv.qty ?? inv.quantityChanged ?? 0;
 			const absQty = Math.abs(Number(rawQty || 0));
 			const cKop = unitCostKop > 0 && absQty > 0 ? multiplyKopecksFractional(unitCostKop, absQty) : 0;
-			matCostByVisit.set(inv.visitId, (matCostByVisit.get(inv.visitId) || 0) + cKop);
+			const signedKop = inv.transactionType === "storno" ? -cKop : cKop;
+			matCostByVisit.set(
+				inv.visitId,
+				Math.max(0, (matCostByVisit.get(inv.visitId) || 0) + signedKop),
+			);
 		}
 
 		// Детерминированное пропорциональное распределение затрат материалов по услугам визита

@@ -1,41 +1,207 @@
 /**
  * stornoOperationHandlers.ts — Безопасный возврат и аннулирование складских проводок (Мандаты 8e, 8n).
- * Автоматический возврат ТМЦ на склад при удалении услуг из визита.
+ * Автоматический возврат ТМЦ на склад при удалении услуг из визита или полном возврате оплаты.
  */
 
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { rublesToKopecks } from "@dental/shared";
-import { withTenantCtx } from "../../../db/rls.js";
-import {
-	inventoryItems,
-	inventoryTransactions,
-	stockBatches,
-} from "../../../db/schema.js";
+import { type TenantDb, withTenantCtx } from "../../../db/rls.js";
+import { inventoryItems, inventoryTransactions } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
-import { getDefaultExpirationDate } from "../../../services/inventory/fefoStockService.js";
+import { inventoryStornoBodySchema, toValidUuid } from "../types.js";
 import {
-	inventoryStornoBodySchema,
-	toValidUuid,
-} from "../types.js";
-import {
-	buildStornoJournalNote,
 	resolveServiceStornoMaterials,
 	type StornoMaterialTarget,
 } from "./stornoAuditAndJournal.js";
+import {
+	findOrCreateStornoTargetItem,
+	restoreStockAndBatchesForMaterial,
+	type RestoredStornoItem,
+	STORNO_DEDUCTION_TX_TYPES,
+} from "./stornoBatchRestoration.js";
 
-export interface RestoredStornoItem {
-	inventoryItemId: string;
-	name: string;
-	quantityRestored: number;
-	previousStock: number;
-	newStock: number;
-	overdraftCleared: boolean;
+export type { RestoredStornoItem };
+
+export interface ReverseVisitConsumablesParams {
+	organizationId: string;
+	visitId: string;
+	userId?: string | null | undefined;
+	reason?: string | undefined;
+	notes?: string | undefined;
+	idempotencyKey?: string | undefined;
 }
 
-/**
- * Обработчик запроса на сторнирование списанных материалов (Мандаты 8e, 8n).
- */
+async function executeStornoMaterialsTx(
+	tx: TenantDb,
+	params: {
+		organizationId: string;
+		safeVisitId: string | null;
+		visitLabel?: string | undefined;
+		effectiveUserId: string | null;
+		reason?: string | undefined;
+		notes?: string | undefined;
+		idempotencyKey?: string | undefined;
+		initialMaterials: StornoMaterialTarget[];
+	},
+): Promise<{ restoredItems: RestoredStornoItem[]; alreadyProcessed: boolean }> {
+	const {
+		organizationId,
+		safeVisitId,
+		visitLabel,
+		effectiveUserId,
+		reason,
+		notes,
+		idempotencyKey,
+		initialMaterials,
+	} = params;
+
+	if (idempotencyKey) {
+		const existingIdem = await tx
+			.select({ id: inventoryTransactions.id })
+			.from(inventoryTransactions)
+			.where(
+				and(
+					eq(inventoryTransactions.organizationId, organizationId),
+					eq(inventoryTransactions.transactionType, "storno"),
+					sql`(${inventoryTransactions.metadata}->>'stornoIdempotencyKey') = ${idempotencyKey}`,
+				),
+			)
+			.limit(1);
+		if (existingIdem.length > 0) {
+			return { restoredItems: [], alreadyProcessed: true };
+		}
+	}
+
+	const materialsToRestore = [...initialMaterials];
+	const preferredBatchesByItem = new Map<string, Map<string, number>>();
+
+	if (safeVisitId) {
+		const visitTxs = await tx
+			.select()
+			.from(inventoryTransactions)
+			.where(
+				and(
+					eq(inventoryTransactions.organizationId, organizationId),
+					eq(inventoryTransactions.visitId, safeVisitId),
+				),
+			)
+			.orderBy(asc(inventoryTransactions.createdAt), asc(inventoryTransactions.id));
+
+		const deductedByItem = new Map<string, number>();
+		for (const t of visitTxs) {
+			const itId = t.itemId ?? t.inventoryItemId;
+			if (!itId) continue;
+			const change = Number(t.quantityChanged ?? t.qty ?? 0);
+			if (t.transactionType === "storno") {
+				const absQty = Math.abs(change);
+				deductedByItem.set(itId, (deductedByItem.get(itId) ?? 0) - absQty);
+				if (t.batchId && absQty > 0) {
+					const batchMap = preferredBatchesByItem.get(itId);
+					if (batchMap) {
+						const remB = Number(((batchMap.get(t.batchId) ?? 0) - absQty).toFixed(4));
+						if (remB > 0) batchMap.set(t.batchId, remB);
+						else batchMap.delete(t.batchId);
+					}
+				}
+			} else if (change < 0 || STORNO_DEDUCTION_TX_TYPES.includes(t.transactionType)) {
+				const absQty = Math.abs(change);
+				deductedByItem.set(itId, (deductedByItem.get(itId) ?? 0) + absQty);
+				if (t.batchId && absQty > 0) {
+					let batchMap = preferredBatchesByItem.get(itId);
+					if (!batchMap) {
+						batchMap = new Map<string, number>();
+						preferredBatchesByItem.set(itId, batchMap);
+					}
+					batchMap.set(t.batchId, Number(((batchMap.get(t.batchId) ?? 0) + absQty).toFixed(4)));
+				}
+			}
+		}
+
+		if (materialsToRestore.length === 0) {
+			for (const [itId, netDeducted] of deductedByItem.entries()) {
+				const roundedNet = Number(netDeducted.toFixed(4));
+				if (roundedNet > 0) {
+					materialsToRestore.push({
+						inventoryItemId: itId,
+						quantity: roundedNet,
+						serviceTitle: `Отмена визита ${visitLabel ?? safeVisitId}`,
+					});
+				}
+			}
+		}
+	}
+
+	if (materialsToRestore.length === 0) {
+		return { restoredItems: [], alreadyProcessed: false };
+	}
+
+	const sortedMaterials = [...materialsToRestore].sort((a, b) =>
+		(a.inventoryItemId || a.name || "").toLowerCase().localeCompare((b.inventoryItemId || b.name || "").toLowerCase()),
+	);
+
+	const sortedItemIds = Array.from(
+		new Set(sortedMaterials.map((m) => m.inventoryItemId).filter((id): id is string => Boolean(id))),
+	).sort();
+
+	const prelockedMap = new Map<string, typeof inventoryItems.$inferSelect>();
+	if (sortedItemIds.length > 0) {
+		const prelocked = await tx
+			.select()
+			.from(inventoryItems)
+			.where(
+				and(
+					inArray(inventoryItems.id, sortedItemIds),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
+			.orderBy(asc(inventoryItems.id))
+			.for("update");
+		for (const item of prelocked) prelockedMap.set(item.id, item);
+	}
+
+	const restoredItems: RestoredStornoItem[] = [];
+	for (const material of sortedMaterials) {
+		if (!material.quantity || material.quantity <= 0) continue;
+		const targetItem = await findOrCreateStornoTargetItem(tx, organizationId, material, prelockedMap);
+		if (!targetItem) continue;
+
+		const restored = await restoreStockAndBatchesForMaterial(tx, {
+			organizationId,
+			targetItem,
+			material,
+			safeVisitId,
+			effectiveUserId,
+			reason,
+			notes,
+			idempotencyKey,
+			preferredBatchesByItem,
+			prelockedMap,
+		});
+		restoredItems.push(restored);
+	}
+
+	return { restoredItems, alreadyProcessed: false };
+}
+
+export async function reverseVisitConsumablesTx(
+	tx: TenantDb,
+	params: ReverseVisitConsumablesParams,
+): Promise<{ restoredItems: RestoredStornoItem[]; alreadyProcessed: boolean }> {
+	const safeVisitId = toValidUuid(params.visitId);
+	if (!safeVisitId) return { restoredItems: [], alreadyProcessed: false };
+
+	return executeStornoMaterialsTx(tx, {
+		organizationId: params.organizationId,
+		safeVisitId,
+		visitLabel: params.visitId,
+		effectiveUserId: params.userId ?? null,
+		reason: params.reason,
+		notes: params.notes,
+		idempotencyKey: params.idempotencyKey,
+		initialMaterials: [],
+	});
+}
+
 export async function handleStornoRequest(
 	organizationId: string,
 	rawBody: unknown,
@@ -54,323 +220,60 @@ export async function handleStornoRequest(
 	const data = parsed.data;
 	const safeVisitId = toValidUuid(data.visitId);
 	const identity = getRequestIdentity(request);
-	const userContext = request.user;
-	const effectiveUserId = identity.userId ?? userContext?.id ?? null;
+	const effectiveUserId = identity.userId ?? request.user?.id ?? null;
+	const rawIdemHeader = request.headers["idempotency-key"];
+	const idempotencyKey =
+		typeof rawIdemHeader === "string" && rawIdemHeader.trim().length > 0
+			? rawIdemHeader.trim()
+			: undefined;
 
 	try {
-		const stornoResult = await withTenantCtx(organizationId, async (tx) => {
-			const materialsToRestore: StornoMaterialTarget[] = [];
-
-			// 1. Direct items / materials passed
-			const directItems = data.items ?? data.materials ?? [];
-			for (const it of directItems) {
-				materialsToRestore.push({
-					inventoryItemId: it.inventoryItemId || it.id,
-					name: it.name,
-					quantity: it.quantity,
-					serviceTitle: "Ручное сторно",
-				});
-			}
-
-			// 2. Services passed (single or array) — резолв по BOM техкартам
-			const servicesList = data.services ?? (data.service ? [data.service] : []);
-			for (const srv of servicesList) {
-				const resolved = await resolveServiceStornoMaterials(srv, organizationId, tx);
-				materialsToRestore.push(...resolved);
-			}
-
-			// 3. Отмена всего визита по visitId (если не были переданы конкретные услуги/позиции)
-			if (materialsToRestore.length === 0 && safeVisitId) {
-				const visitTxs = await tx
-					.select()
-					.from(inventoryTransactions)
-					.where(
-						and(
-							eq(inventoryTransactions.organizationId, organizationId),
-							eq(inventoryTransactions.visitId, safeVisitId),
-						),
-					);
-
-				// Находим списания, по которым еще не было сделано сторно
-				const deductedByItem = new Map<string, number>();
-				for (const t of visitTxs) {
-					const itId = t.itemId ?? t.inventoryItemId;
-					if (!itId) continue;
-					const change = Number(t.quantityChanged ?? t.qty ?? 0);
-					if (t.transactionType === "storno") {
-						const curr = deductedByItem.get(itId) ?? 0;
-						deductedByItem.set(itId, curr - Math.abs(change));
-					} else if (
-						change < 0 ||
-						[
-							"auto_deduct",
-							"emergency_overdraft",
-							"treatment_consumable",
-						].includes(t.transactionType)
-					) {
-						const curr = deductedByItem.get(itId) ?? 0;
-						deductedByItem.set(itId, curr + Math.abs(change));
-					}
+		const { restoredItems: stornoResult, alreadyProcessed } = await withTenantCtx(
+			organizationId,
+			async (tx) => {
+				const initialMaterials: StornoMaterialTarget[] = [];
+				for (const it of data.items ?? data.materials ?? []) {
+					initialMaterials.push({
+						inventoryItemId: it.inventoryItemId || it.id,
+						name: it.name,
+						quantity: it.quantity,
+						serviceTitle: "Ручное сторно",
+					});
+				}
+				for (const srv of data.services ?? (data.service ? [data.service] : [])) {
+					const resolved = await resolveServiceStornoMaterials(srv, organizationId, tx);
+					initialMaterials.push(...resolved);
 				}
 
-				for (const [itId, netDeducted] of deductedByItem.entries()) {
-					if (netDeducted > 0) {
-						materialsToRestore.push({
-							inventoryItemId: itId,
-							quantity: netDeducted,
-							serviceTitle: `Отмена визита ${data.visitId}`,
-						});
-					}
-				}
-			}
-
-			// 4. Физическое возвращение материалов на склад (сторно)
-			const restoredItems: RestoredStornoItem[] = [];
-
-			// Deadlock-free locking (Мандаты 8e, 8n, 8v): детерминированная сортировка списка материалов для исключения дедлоков 40P01
-			const sortedMaterials = [...materialsToRestore].sort((a, b) => {
-				const keyA = (a.inventoryItemId || a.name || "").toLowerCase();
-				const keyB = (b.inventoryItemId || b.name || "").toLowerCase();
-				return keyA.localeCompare(keyB);
-			});
-
-			// Предварительная сортировка и блокировка известных inventoryItems по первичному ключу
-			const sortedItemIds = Array.from(
-				new Set(
-					sortedMaterials
-						.map((m) => m.inventoryItemId)
-						.filter((id): id is string => Boolean(id)),
-				),
-			).sort();
-
-			const prelockedMap = new Map<string, typeof inventoryItems.$inferSelect>();
-			if (sortedItemIds.length > 0) {
-				const prelocked = await tx
-					.select()
-					.from(inventoryItems)
-					.where(
-						and(
-							inArray(inventoryItems.id, sortedItemIds),
-							eq(inventoryItems.organizationId, organizationId),
-						),
-					)
-					.orderBy(asc(inventoryItems.id))
-					.for("update");
-				for (const item of prelocked) {
-					prelockedMap.set(item.id, item);
-				}
-			}
-
-			for (const m of sortedMaterials) {
-				if (!m.quantity || m.quantity <= 0) continue;
-
-				let targetItem: typeof inventoryItems.$inferSelect | undefined = m.inventoryItemId
-					? prelockedMap.get(m.inventoryItemId)
-					: undefined;
-
-				if (!targetItem && m.inventoryItemId) {
-					const [found] = await tx
-						.select()
-						.from(inventoryItems)
-						.where(
-							and(
-								eq(inventoryItems.id, m.inventoryItemId),
-								eq(inventoryItems.organizationId, organizationId),
-							),
-						)
-						.for("update");
-					targetItem = found;
-					if (targetItem) {
-						prelockedMap.set(targetItem.id, targetItem);
-					}
-				}
-
-				if (!targetItem && m.name?.trim()) {
-					const searchName = m.name.trim();
-					const [foundByName] = await tx
-						.select()
-						.from(inventoryItems)
-						.where(
-							and(
-								eq(inventoryItems.organizationId, organizationId),
-								sql`lower(${inventoryItems.name}) = lower(${searchName})`,
-							),
-						)
-						.limit(1)
-						.for("update");
-					targetItem = foundByName;
-
-					if (!targetItem) {
-						const [partial] = await tx
-							.select()
-							.from(inventoryItems)
-							.where(
-								and(
-									eq(inventoryItems.organizationId, organizationId),
-									sql`lower(${inventoryItems.name}) LIKE lower(${'%' + searchName + '%'}) OR lower(${searchName}) LIKE ('%' || lower(${inventoryItems.name}) || '%')`,
-								),
-							)
-							.limit(1)
-							.for("update");
-						targetItem = partial;
-					}
-				}
-
-				if (!targetItem) {
-					// Если карточки нет, создаем ее со сторно-остатком
-					const [created] = await tx
-						.insert(inventoryItems)
-						.values({
-							organizationId,
-							name: m.name?.trim() || "Сторнированный материал",
-							stockQuantity: String(m.quantity),
-							currentQty: String(m.quantity),
-							criticalThreshold: "0",
-							unitCostRub: "0",
-							unitCostKopecks: 0n,
-							pricePerUnitKopecks: 0n,
-						})
-						.returning();
-					targetItem = created;
-				}
-
-				if (!targetItem) continue;
-
-				const prevStock = Number(targetItem.stockQuantity ?? targetItem.currentQty ?? 0);
-				const newStock = Number((prevStock + m.quantity).toFixed(4));
-				const wasOverdraft = prevStock < 0;
-				const overdraftCleared = wasOverdraft && newStock >= 0;
-
-				await tx
-					.update(inventoryItems)
-					.set({
-						stockQuantity: String(newStock),
-						currentQty: String(newStock),
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(inventoryItems.id, targetItem.id),
-							eq(inventoryItems.organizationId, organizationId),
-						),
-					);
-
-				targetItem = {
-					...targetItem,
-					stockQuantity: String(newStock),
-					currentQty: String(newStock),
-				};
-				prelockedMap.set(targetItem.id, targetItem);
-
-				// Восстановление партионного учета FEFO (Мандаты 8e, 8n, 8v):
-				// Пополняем остаток последней партии товара либо создаем активную партию возврата
-				let restoredBatchId: string | null = null;
-				const [existingBatch] = await tx
-					.select()
-					.from(stockBatches)
-					.where(
-						and(
-							eq(stockBatches.organizationId, organizationId),
-							eq(stockBatches.inventoryItemId, targetItem.id),
-						),
-					)
-					.orderBy(desc(stockBatches.updatedAt))
-					.limit(1)
-					.for("update");
-
-				const itemUnitCostKopecks =
-					targetItem.unitCostKopecks ??
-					targetItem.pricePerUnitKopecks ??
-					BigInt(rublesToKopecks(Number(targetItem.unitCostRub ?? targetItem.pricePerUnit ?? 0)));
-
-				if (existingBatch) {
-					const currentBatchRemaining = Number(existingBatch.remainingQty ?? 0);
-					const newBatchRemaining = Number((currentBatchRemaining + m.quantity).toFixed(3));
-					await tx
-						.update(stockBatches)
-						.set({
-							remainingQty: String(newBatchRemaining),
-							status: newBatchRemaining > 0 ? "active" : existingBatch.status,
-							updatedAt: new Date(),
-						})
-						.where(
-							and(
-								eq(stockBatches.id, existingBatch.id),
-								eq(stockBatches.organizationId, organizationId),
-							),
-						);
-					restoredBatchId = existingBatch.id;
-				} else {
-					const defaultExpDate = targetItem.expirationDate || getDefaultExpirationDate();
-					const [createdBatch] = await tx
-						.insert(stockBatches)
-						.values({
-							organizationId,
-							inventoryItemId: targetItem.id,
-							batchNumber: `STORNO-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
-							expirationDate: defaultExpDate,
-							initialQty: String(m.quantity),
-							remainingQty: String(m.quantity),
-							purchasePricePerUnit: targetItem.unitCostRub ?? targetItem.pricePerUnit ?? "0",
-							purchasePricePerUnitKopecks: itemUnitCostKopecks,
-							status: "active",
-						})
-						.returning();
-					restoredBatchId = createdBatch?.id ?? null;
-				}
-
-				// Фиксируем сторно в журнале движений (положительное количество, тип "storno", ссылка на batchId)
-				await tx.insert(inventoryTransactions).values({
+				return executeStornoMaterialsTx(tx, {
 					organizationId,
-					itemId: targetItem.id,
-					inventoryItemId: targetItem.id,
-					batchId: restoredBatchId,
-					visitId: safeVisitId ?? null,
-					quantityChanged: String(m.quantity),
-					qty: String(m.quantity),
-					unitCostRub: targetItem.unitCostRub ?? targetItem.pricePerUnit ?? "0",
-					unitCostKopecks: itemUnitCostKopecks,
-					transactionType: "storno",
-					isOverdraft: false,
-					notes: buildStornoJournalNote({
-						customNote: data.notes,
-						reason: data.reason,
-						serviceTitle: m.serviceTitle,
-						quantity: m.quantity,
-						unitName: targetItem.unit ?? undefined,
-					}),
-					userId: effectiveUserId,
+					safeVisitId,
+					visitLabel: data.visitId ?? undefined,
+					effectiveUserId,
+					reason: data.reason,
+					notes: data.notes,
+					idempotencyKey,
+					initialMaterials,
 				});
-
-				restoredItems.push({
-					inventoryItemId: targetItem.id,
-					name: targetItem.name,
-					quantityRestored: m.quantity,
-					previousStock: prevStock,
-					newStock,
-					overdraftCleared,
-				});
-			}
-
-			return restoredItems;
-		});
+			},
+		);
 
 		return reply.status(200).send({
 			success: true,
+			alreadyProcessed,
 			stornoCount: stornoResult.length,
 			restoredItems: stornoResult,
-			message:
-				stornoResult.length > 0
+			message: alreadyProcessed
+				? "Повторный запрос сторно дедуплицирован по Idempotency-Key"
+				: stornoResult.length > 0
 					? `Отмена ошибочного списания: ${stornoResult.length} позиций материалов возвращены на склад`
 					: "Нет материалов для отмены списания",
 		});
-	} catch (error) {
-		request.log.error(error, "Failed to execute inventory storno");
-		const msg =
-			error instanceof Error ? error.message : "Не удалось выполнить отмену ошибочного списания материалов";
-		return reply.status(400).send({
+	} catch (err) {
+		request.log.error(err, "Storno error");
+		return reply.status(500).send({
 			error: "StornoFailed",
-			message: msg,
+			message: err instanceof Error ? err.message : "Не удалось выполнить сторно материалов",
 		});
 	}
 }

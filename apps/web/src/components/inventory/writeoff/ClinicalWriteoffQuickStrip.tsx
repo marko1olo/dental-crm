@@ -53,7 +53,7 @@ export const ClinicalWriteoffQuickStrip: React.FC<
 				<button
 					type="button"
 					onClick={onQuickCarpuleWriteoff}
-					className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--teal)]/40 text-[var(--teal)] hover:bg-[var(--teal-soft)] transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
+					className="min-h-[44px] h-11 md:min-h-[36px] md:h-9 px-3.5 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--teal)]/40 text-[var(--teal)] hover:bg-[var(--teal-soft)] transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
 					data-testid="btn-quick-carpule-writeoff"
 					title="Пакетное списание анестезии на приём (карпула + игла) без поштучного подсчета у кресла"
 				>
@@ -63,7 +63,7 @@ export const ClinicalWriteoffQuickStrip: React.FC<
 				<button
 					type="button"
 					onClick={onQuickAnesthesiaPackageWriteoff}
-					className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--teal)]/60 text-[var(--teal)] hover:bg-[var(--teal-soft)] transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
+					className="min-h-[44px] h-11 md:min-h-[36px] md:h-9 px-3.5 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--teal)]/60 text-[var(--teal)] hover:bg-[var(--teal-soft)] transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
 					data-testid="btn-quick-anesthesia-package-writeoff"
 					title="Списать полный пакет анестезии (карпула 1.7 мл + игла 30G + антисептик)"
 				>
@@ -73,7 +73,7 @@ export const ClinicalWriteoffQuickStrip: React.FC<
 				<button
 					type="button"
 					onClick={onQuickTherapyWriteoff}
-					className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
+					className="min-h-[44px] h-11 md:min-h-[36px] md:h-9 px-3.5 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
 					data-testid="btn-quick-therapy-writeoff"
 					data-cy="btn-quick-therapy-writeoff"
 					title="Пакетное списание расходников терапии (стандартный набор: анестезия + композит + расходники)"
@@ -84,7 +84,7 @@ export const ClinicalWriteoffQuickStrip: React.FC<
 				<button
 					type="button"
 					onClick={onQuickSurgeryWriteoff}
-					className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--primary)] hover:bg-[var(--primary-soft)] transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
+					className="min-h-[44px] h-11 md:min-h-[36px] md:h-9 px-3.5 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--primary)] hover:bg-[var(--primary-soft)] transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
 					data-testid="btn-quick-surgery-writeoff"
 					title="Пакетное списание расходников хирургии (анестезия + скальпель + шовный материал)"
 				>
@@ -95,11 +95,11 @@ export const ClinicalWriteoffQuickStrip: React.FC<
 					<button
 						type="button"
 						onClick={onQuickHygieneWriteoff}
-						className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--teal,#0d9488)]/40 text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)]/10 transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
+						className="min-h-[44px] h-11 md:min-h-[36px] md:h-9 px-3.5 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--teal)]/40 text-[var(--teal)] hover:bg-[var(--teal)]/10 transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
 						data-testid="btn-quick-hygiene-writeoff"
 						title="Пакетное списание расходников профгигиены (порошок Air-Flow, паста, щетки)"
 					>
-						<Sparkles size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+						<Sparkles size={16} className="text-[var(--teal)] shrink-0" />
 						<span>Пакет «Гигиена»</span>
 					</button>
 				)}

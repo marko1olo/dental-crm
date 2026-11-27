@@ -1,249 +1,139 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, test } from "node:test";
-import { fileURLToPath } from "node:url";
 import Fastify from "fastify";
-import {
-	calculateAlertsFromItems,
-	itemCatalogRoutes,
-	stornoRoutes,
-	supplierInvoiceRoutes,
-} from "../../routes/inventory.js";
+import { inventoryRoutes } from "../../routes/inventory.js";
+import { calculateAlertsFromItems } from "../../routes/inventory/itemCatalog/itemCatalogQueries.js";
+import { inventoryItems } from "../../db/schema/inventory.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 
-describe("Inventory Routes Decomposition & Sweet Spot Architecture (Mandates 8b, 8e, 8n, 8x)", () => {
-	const cwd = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
-	const itemCatalogDir = path.resolve(cwd, "apps/api/src/routes/inventory/itemCatalog");
-	const supplierInvoicesDir = path.resolve(cwd, "apps/api/src/routes/inventory/supplierInvoices");
-	const itemCatalogRouter = path.resolve(cwd, "apps/api/src/routes/inventory/itemCatalog/itemCatalogRoutes.ts");
-	const supplierInvoiceRouter = path.resolve(cwd, "apps/api/src/routes/inventory/supplierInvoices/supplierInvoiceRoutes.ts");
-
-	test("Mandate 8b / 8zi: itemCatalog monolith is split into Sweet Spot modules (< 500 lines)", () => {
-		assert.ok(fs.existsSync(itemCatalogRouter), "itemCatalogRoutes.ts must exist in itemCatalog directory");
-		const routerLines = fs.readFileSync(itemCatalogRouter, "utf-8").split("\n").length;
-		assert.ok(
-			routerLines <= 100,
-			`itemCatalogRoutes.ts router must be <= 100 lines (actual: ${routerLines})`,
-		);
-
-		assert.ok(fs.existsSync(itemCatalogDir), "itemCatalog directory must exist");
-		const catalogFiles = fs.readdirSync(itemCatalogDir).filter((f) => f.endsWith(".ts"));
-		assert.ok(catalogFiles.length >= 3, `Expected at least 3 itemCatalog modules, found ${catalogFiles.length}`);
-
-		for (const file of catalogFiles) {
-			const fullPath = path.join(itemCatalogDir, file);
-			const lineCount = fs.readFileSync(fullPath, "utf-8").split("\n").length;
-			assert.ok(
-				lineCount <= 500,
-				`File ${file} has ${lineCount} lines, exceeding the 500 lines ceiling (Sweet Spot: 200-300 lines, complex up to 500)`,
-			);
-		}
-	});
-
-	test("Mandate 8b / 8zi: supplierInvoices monolith is split into Sweet Spot modules (< 550 lines)", () => {
-		assert.ok(fs.existsSync(supplierInvoiceRouter), "supplierInvoiceRoutes.ts must exist in supplierInvoices directory");
-		const routerLines = fs.readFileSync(supplierInvoiceRouter, "utf-8").split("\n").length;
-		assert.ok(
-			routerLines <= 100,
-			`supplierInvoiceRoutes.ts router must be <= 100 lines (actual: ${routerLines})`,
-		);
-
-		assert.ok(fs.existsSync(supplierInvoicesDir), "supplierInvoices directory must exist");
-		const invoiceFiles = fs.readdirSync(supplierInvoicesDir).filter((f) => f.endsWith(".ts"));
-		assert.ok(invoiceFiles.length >= 3, `Expected at least 3 supplierInvoices modules, found ${invoiceFiles.length}`);
-
-		for (const file of invoiceFiles) {
-			const fullPath = path.join(supplierInvoicesDir, file);
-			const lineCount = fs.readFileSync(fullPath, "utf-8").split("\n").length;
-			assert.ok(
-				lineCount <= 550,
-				`File ${file} has ${lineCount} lines, exceeding the 550 lines ceiling (Sweet Spot: 200-300 lines, complex up to 550)`,
-			);
-		}
-	});
-
-	test("calculateAlertsFromItems: pure calculation logic correctly handles valuations, deficits, and shelf life", () => {
+describe("Inventory Routes Behavioral & Valuation Contracts (Mandates 8b, 8e, 8n, 8x)", () => {
+	test("calculateAlertsFromItems: resolves kopecks from unitCostRub when unitCostKopecks is 0n and categorizes expirations", () => {
 		const now = new Date();
-		const pastDate = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-		const nearDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-		const farDate = new Date(now.getTime() + 120 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+		const yesterday = new Date(now.getTime() - 2 * 86_400_000).toISOString().slice(0, 10);
+		const in10Days = new Date(now.getTime() + 10 * 86_400_000).toISOString().slice(0, 10);
+		const in365Days = new Date(now.getTime() + 365 * 86_400_000).toISOString().slice(0, 10);
 
-		const mockItems: any[] = [
-			{
-				id: "item-1",
-				name: "Боры алмазные 801-014M",
+		type ItemRow = typeof inventoryItems.$inferSelect;
+		const makeItem = (overrides: Partial<ItemRow>): ItemRow => ({
+			id: "00000000-0000-4000-8000-000000000001",
+			organizationId: "00000000-0000-4000-8000-000000000099",
+			name: "Тестовый материал",
+			category: "Композиты",
+			sku: "SKU-1",
+			barcode: null,
+			unit: "шт",
+			stockQuantity: "10",
+			currentQty: "10",
+			criticalThreshold: "5",
+			minQty: "5",
+			unitCostRub: "0",
+			unitCostKopecks: 0n,
+			pricePerUnit: "0",
+			pricePerUnitKopecks: 0n,
+			packageMultiplier: "1",
+			lotNumber: null,
+			expirationDate: in365Days,
+			notes: null,
+			isOverhead: false,
+			createdAt: now,
+			updatedAt: now,
+			...overrides,
+		});
+
+		const alerts = calculateAlertsFromItems([
+			makeItem({
+				id: "00000000-0000-4000-8000-000000000001",
+				name: "Анестетик (fallback из рублей при 0n)",
+				stockQuantity: "2",
+				criticalThreshold: "5",
+				unitCostKopecks: 0n,
+				unitCostRub: "250.50",
+				expirationDate: in10Days,
+			}),
+			makeItem({
+				id: "00000000-0000-4000-8000-000000000002",
+				name: "Просроченный гель",
 				stockQuantity: "0",
-				criticalThreshold: "5",
-				unitCostRub: "150.00",
-				expirationDate: farDate,
-			},
-			{
-				id: "item-2",
-				name: "Пломбировочный материал Filtek Z250",
-				stockQuantity: "3",
-				criticalThreshold: "10",
-				unitCostRub: "3200.50",
-				expirationDate: nearDate,
-			},
-			{
-				id: "item-3",
-				name: "Просроченный анестетик Ультракаин",
-				stockQuantity: "10",
-				criticalThreshold: "5",
-				unitCostRub: "120.00",
-				expirationDate: pastDate,
-			},
-			{
-				id: "item-4",
-				name: "Валики ватные хлопковые 500 шт",
-				stockQuantity: "50",
-				criticalThreshold: "5",
-				unitCostRub: "250.00",
-				expirationDate: farDate,
-			},
-		];
+				criticalThreshold: "2",
+				unitCostKopecks: 15000n,
+				expirationDate: yesterday,
+			}),
+			makeItem({
+				id: "00000000-0000-4000-8000-000000000003",
+				name: "Обычный композит",
+				stockQuantity: "4",
+				criticalThreshold: "2",
+				unitCostKopecks: 30000n,
+				expirationDate: in365Days,
+			}),
+		]);
 
-		const alerts = calculateAlertsFromItems(mockItems);
-
-		assert.strictEqual(alerts.summary.totalItems, 4);
-		assert.strictEqual(alerts.summary.outOfStockCount, 1);
-		assert.strictEqual(alerts.summary.lowStockCount, 1);
-		assert.strictEqual(alerts.summary.expiredCount, 1);
-		assert.strictEqual(alerts.summary.expiringSoonCount, 1);
-
-		// 0*150 + 3*3200.50 + 10*120 + 50*250 = 0 + 9601.5 + 1200 + 12500 = 23301.50
-		assert.strictEqual(alerts.summary.totalValuationRub, 23301.5);
-		assert.strictEqual(alerts.outOfStockItems[0]?.id, "item-1");
-		assert.strictEqual(alerts.lowStockItems[0]?.id, "item-2");
-		assert.strictEqual(alerts.expiredItems[0]?.id, "item-3");
-		assert.strictEqual(alerts.expiringSoonItems[0]?.id, "item-2");
+		assert.equal(alerts.lowStockItems.length, 1);
+		assert.equal(alerts.outOfStockItems.length, 1);
+		assert.equal(alerts.expiringSoonItems.length, 1);
+		assert.equal(alerts.expiredItems.length, 1);
+		// Valuation = 2 * 250.50 (50100 kop) + 4 * 300.00 (120000 kop) = 1701.00 rub
+		assert.equal(alerts.summary.totalValuationRub, 1701);
+		assert.equal(alerts.summary.totalValuationKopecks, 170100);
 	});
 
-	test("Fastify route registration and security: itemCatalogRoutes and supplierInvoiceRoutes expose full API contract", async () => {
-		const app = Fastify();
-		await app.register(itemCatalogRoutes);
-		await app.register(supplierInvoiceRoutes);
+	test("Fastify inventoryRoutes rejects unauthenticated requests and validates Zod payloads with 400", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(inventoryRoutes, { prefix: "/api/inventory" });
 		await app.ready();
 
-		// 1. GET /alerts requires authentication (returns 401 without auth)
-		const resAlerts = await app.inject({
-			method: "GET",
-			url: "/alerts",
-		});
-		assert.strictEqual(resAlerts.statusCode, 401);
-
-		// 2. GET /items requires authentication
-		const resItems = await app.inject({
-			method: "GET",
-			url: "/items",
-		});
-		assert.strictEqual(resItems.statusCode, 401);
-
-		// 3. POST /items requires authentication
-		const resPostItem = await app.inject({
-			method: "POST",
-			url: "/items",
-			payload: { name: "Тестовый материал" },
-		});
-		assert.strictEqual(resPostItem.statusCode, 401);
-
-		// 4. POST /acceptance-waybill requires authentication
-		const resPostWaybill = await app.inject({
-			method: "POST",
-			url: "/acceptance-waybill",
-			payload: { waybillNumber: "WB-001" },
-		});
-		assert.strictEqual(resPostWaybill.statusCode, 401);
-
-		// 5. GET /waybills requires authentication
-		const resWaybills = await app.inject({
-			method: "GET",
-			url: "/waybills",
-		});
-		assert.strictEqual(resWaybills.statusCode, 401);
-
-		await app.close();
-	});
-
-	test("Mandate 8b / 8zi: stornoRoutes monolith is split into Sweet Spot modules (< 400 lines) and router (< 200 lines)", () => {
-		const stornoFacade = path.resolve(cwd, "apps/api/src/routes/inventory/stornoRoutes.ts");
-		const stornoDir = path.resolve(cwd, "apps/api/src/routes/inventory/storno");
-
-		assert.ok(fs.existsSync(stornoFacade), "stornoRoutes.ts facade must exist");
-		const facadeLines = fs.readFileSync(stornoFacade, "utf-8").split("\n").length;
-		assert.ok(
-			facadeLines <= 200,
-			`stornoRoutes.ts router must be <= 200 lines (actual: ${facadeLines})`,
+		const orgId = "00000000-0000-4000-8000-000000000099";
+		const staffToken = signToken(
+			{ organizationId: orgId, userId: "00000000-0000-4000-8000-000000000088", role: "doctor" },
+			authTokenSecret(),
 		);
 
-		assert.ok(fs.existsSync(stornoDir), "storno directory must exist");
-		const stornoFiles = fs.readdirSync(stornoDir).filter((f) => f.endsWith(".ts"));
-		assert.ok(stornoFiles.length >= 2, `Expected at least 2 storno modules, found ${stornoFiles.length}`);
+		try {
+			const unauthItems = await app.inject({
+				method: "GET",
+				url: `/api/inventory/${orgId}`,
+			});
+			assert.equal(unauthItems.statusCode, 401);
 
-		for (const file of stornoFiles) {
-			const fullPath = path.join(stornoDir, file);
-			const lineCount = fs.readFileSync(fullPath, "utf-8").split("\n").length;
-			assert.ok(
-				lineCount < 400,
-				`File ${file} has ${lineCount} lines, exceeding the 400 lines ceiling (Sweet Spot: 200-350 lines)`,
-			);
+			const unauthBatch = await app.inject({
+				method: "POST",
+				url: `/api/inventory/${orgId}/stock/batch-adjust`,
+				payload: { items: [] },
+			});
+			assert.equal(unauthBatch.statusCode, 401);
+
+			const unauthStorno = await app.inject({
+				method: "POST",
+				url: `/api/inventory/${orgId}/storno`,
+				payload: { reason: "test" },
+			});
+			assert.equal(unauthStorno.statusCode, 401);
+
+			const badBatch = await app.inject({
+				method: "POST",
+				url: `/api/inventory/${orgId}/stock/batch-adjust`,
+				headers: {
+					"x-dente-staff-token": staffToken,
+					"content-type": "application/json",
+				},
+				payload: { items: [] },
+			});
+			assert.equal(badBatch.statusCode, 400);
+			assert.equal(badBatch.json().error, "ValidationError");
+
+			const badStorno = await app.inject({
+				method: "POST",
+				url: `/api/inventory/${orgId}/storno`,
+				headers: {
+					"x-dente-staff-token": staffToken,
+					"content-type": "application/json",
+				},
+				payload: { items: [{ inventoryItemId: "not-a-uuid", quantity: -5 }] },
+			});
+			assert.equal(badStorno.statusCode, 400);
+		} finally {
+			await app.close();
 		}
-	});
-
-	test("Mandate 8b / 8zi: inventory schema monolith is split into Sweet Spot modules (< 350 lines) and thin facade (< 30 lines)", () => {
-		const schemaFacade = path.resolve(cwd, "apps/api/src/db/schema/inventory.ts");
-		const schemaDir = path.resolve(cwd, "apps/api/src/db/schema/inventory");
-
-		assert.ok(fs.existsSync(schemaFacade), "schema/inventory.ts facade must exist");
-		const facadeLines = fs.readFileSync(schemaFacade, "utf-8").split("\n").length;
-		assert.ok(
-			facadeLines <= 30,
-			`schema/inventory.ts facade must be <= 30 lines (actual: ${facadeLines})`,
-		);
-
-		assert.ok(fs.existsSync(schemaDir), "schema/inventory directory must exist");
-		const schemaFiles = fs.readdirSync(schemaDir).filter((f) => f.endsWith(".ts"));
-		assert.ok(schemaFiles.length >= 3, `Expected at least 3 inventory schema modules, found ${schemaFiles.length}`);
-
-		for (const file of schemaFiles) {
-			const fullPath = path.join(schemaDir, file);
-			const lineCount = fs.readFileSync(fullPath, "utf-8").split("\n").length;
-			assert.ok(
-				lineCount < 350,
-				`Schema file ${file} has ${lineCount} lines, exceeding the 350 lines ceiling (Sweet Spot: 150-300 lines)`,
-			);
-		}
-	});
-
-	test("Fastify stornoRoutes registration and security: endpoints require resolved authentication", async () => {
-		const app = Fastify();
-		await app.register(stornoRoutes);
-		await app.ready();
-
-		// 1. POST /overdraft-alert requires auth
-		const resOverdraft = await app.inject({
-			method: "POST",
-			url: "/overdraft-alert",
-			payload: {},
-		});
-		assert.strictEqual(resOverdraft.statusCode, 401);
-
-		// 2. POST /storno requires auth
-		const resStorno = await app.inject({
-			method: "POST",
-			url: "/storno",
-			payload: {},
-		});
-		assert.strictEqual(resStorno.statusCode, 401);
-
-		// 3. POST /:orgId/storno requires auth
-		const resOrgStorno = await app.inject({
-			method: "POST",
-			url: "/11111111-1111-1111-1111-111111111111/storno",
-			payload: {},
-		});
-		assert.strictEqual(resOrgStorno.statusCode, 401);
-
-		await app.close();
 	});
 });

@@ -155,52 +155,56 @@ describe("TreatmentConsumablesService Unit Tests", () => {
 				select: () => ({
 					from: () => ({
 						where: () => ({
-							orderBy: async () => [
-								{
-									id: "item-1",
-									name: "Обычный материал",
-									category: "composite",
-									unit: "шт",
-									stockQuantity: "50",
-									currentQty: "50",
-									criticalThreshold: "10",
-									unitCostRub: "500",
-									expirationDate: "2028-01-01",
-								},
-								{
-									id: "item-2",
-									name: "Низкий остаток",
-									category: "endo",
-									unit: "г",
-									stockQuantity: "5",
-									currentQty: "5",
-									criticalThreshold: "10",
-									unitCostRub: "1000",
-									expirationDate: null,
-								},
-								{
-									id: "item-3",
-									name: "Закончился",
-									category: "ppe",
-									unit: "уп",
-									stockQuantity: "0",
-									currentQty: "0",
-									criticalThreshold: "5",
-									unitCostRub: "300",
-									expirationDate: null,
-								},
-								{
-									id: "item-4",
-									name: "Просроченный анестетик",
-									category: "anesthesia",
-									unit: "карп",
-									stockQuantity: "20",
-									currentQty: "20",
-									criticalThreshold: "5",
-									unitCostRub: "200",
-									expirationDate: "2025-01-01",
-								},
-							],
+							orderBy: () => ({
+								limit: async () => [
+									{
+										id: "item-1",
+										name: "Обычный материал",
+										category: "composite",
+										unit: "шт",
+										stockQuantity: "50",
+										currentQty: "50",
+										criticalThreshold: "10",
+										unitCostRub: "500",
+										expirationDate: "2028-01-01",
+									},
+									{
+										id: "item-2",
+										name: "Низкий остаток",
+										category: "endo",
+										unit: "г",
+										stockQuantity: "5",
+										currentQty: "5",
+										criticalThreshold: "10",
+										unitCostRub: "1000",
+										expirationDate: null,
+									},
+									{
+										id: "item-3",
+										name: "Закончился",
+										category: "ppe",
+										unit: "уп",
+										stockQuantity: "0",
+										currentQty: "0",
+										criticalThreshold: "5",
+										unitCostRub: "300",
+										expirationDate: null,
+									},
+									{
+										id: "item-4",
+										name: "Просроченный анестетик",
+										category: "anesthesia",
+										unit: "карп",
+										stockQuantity: "20",
+										currentQty: "20",
+										criticalThreshold: "5",
+										unitCostRub: "200",
+										unitCostKopecks: 0n,
+										pricePerUnitKopecks: 0n,
+										expirationDate: "2025-01-01",
+									},
+								],
+							}),
 						}),
 					}),
 				}),
@@ -218,6 +222,7 @@ describe("TreatmentConsumablesService Unit Tests", () => {
 			assert.strictEqual(alerts.lowStockItems[0]!.name, "Низкий остаток");
 			assert.strictEqual(alerts.outOfStockItems[0]!.name, "Закончился");
 			assert.strictEqual(alerts.expiredItems[0]!.name, "Просроченный анестетик");
+			assert.strictEqual(alerts.expiredItems[0]!.unitCostRub, 200);
 		});
 	});
 

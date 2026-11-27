@@ -35,10 +35,17 @@ export function useInventoryStockFetcher(
 	const fetchItems = useCallback(async () => {
 		try {
 			setIsLoading(true);
+			setLoadError(null);
 			const res = await fetch(`/api/inventory/${effectiveOrgId}`, {
 				headers: getHeaders(),
-			}).catch(() => null);
-			const data = res && res.ok ? await res.json().catch(() => []) : [];
+			});
+			if (!res.ok) {
+				const errJson = await res.json().catch(() => null);
+				throw new Error(
+					errJson?.message || errJson?.error || `Ошибка загрузки склада (${res.status})`,
+				);
+			}
+			const data = await res.json().catch(() => []);
 			const parsed = Array.isArray(data) ? data.map(inventoryItemFromServer) : [];
 			const finalItems =
 				parsed.length > 0

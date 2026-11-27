@@ -12,10 +12,7 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { after, before, describe, test } from "node:test";
-import { fileURLToPath } from "node:url";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { generateUuidV7, isValidUuid, isValidUuidV7 } from "@dental/shared";
@@ -39,10 +36,6 @@ import {
 	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, "../../../../..");
 
 const NAMESPACE = `vConsum_${Date.now()}`;
 const ORG_ID = fixtureUuid(NAMESPACE, 1);
@@ -300,34 +293,47 @@ describe("Wave 357: Visit Consumables Deduction & Soft Negative Stock Inquisitor
 		assert.equal(validBody.isOverdraft, true);
 	});
 
-	test("7. Static Red Team Gate: Zero Soviet decrees ('В смету 804н', '257/у') in surgery UI & danger guards", () => {
-		const webSrc = path.join(repoRoot, "apps/web/src");
-		const extractionBar = fs.readFileSync(
-			path.join(webSrc, "components/visit/surgery/VisitSurgeryExtractionBar.tsx"),
-			"utf-8",
-		);
-		const protocolTab = fs.readFileSync(
-			path.join(webSrc, "components/visit/surgery/VisitSurgeryProtocolTab.tsx"),
-			"utf-8",
-		);
-		const sinusBar = fs.readFileSync(
-			path.join(webSrc, "components/visit/surgery/VisitSurgerySinusGbrBar.tsx"),
-			"utf-8",
-		);
-		const dangerGuard = fs.readFileSync(
-			path.join(webSrc, "components/common/foolproofDangerGuard.ts"),
-			"utf-8",
-		);
+	test("7. Behavioral Clinical Gate: shared write-off & cost engines avoid Soviet decree jargon and reject qty <= 0", async () => {
+		const { processClinicalMaterialWriteoff, resolveCostKopecks } = await import("@dental/shared");
+		const { executeUnifiedStockDeduction } = await import("../../services/treatmentConsumables/unifiedStockDeductionEngine.js");
 
-		assert.ok(!extractionBar.includes("В смету 804н"), "VisitSurgeryExtractionBar must not contain 'В смету 804н'");
-		assert.ok(extractionBar.includes("<span>В смету</span>"), "VisitSurgeryExtractionBar must contain 'В смету'");
+		assert.equal(resolveCostKopecks(0n, "125.40"), 12540n);
+		assert.equal(resolveCostKopecks(5000n, "125.40"), 5000n);
 
-		assert.ok(!protocolTab.includes("+ В смету 804н"), "VisitSurgeryProtocolTab must not contain '+ В смету 804н'");
-		assert.ok(protocolTab.includes("<span>+ В смету</span>"), "VisitSurgeryProtocolTab must contain '+ В смету'");
+		const itemUuid = fixtureUuid("idemp-writeoff", 90);
+		const clinicalResult = processClinicalMaterialWriteoff({
+			visitId: fixtureUuid("idemp-writeoff", 91),
+			treatmentServiceId: "A16.07.002.001",
+			treatmentServiceTitle: "Пломбирование кариеса",
+			norms: [
+				{
+					inventoryItemId: itemUuid,
+					itemName: "Стеклоиономерный цемент",
+					tier: "expensive_clinical",
+					defaultQuantity: 1,
+					unit: "шт",
+					costPriceKopecks: 45000,
+					canOmit: false,
+					canAdjustQuantity: false,
+				},
+			],
+			currentStocks: { [itemUuid]: 2 },
+		});
+		const serialized = JSON.stringify(clinicalResult);
+		assert.ok(!serialized.includes("В смету 804н"), "Clinical output must not leak 804н decree");
+		assert.ok(!serialized.includes("257/у"), "Clinical output must not leak 257/у decree");
+		assert.ok(!serialized.includes("1 клик"), "Clinical output must not contain dev slang");
 
-		assert.ok(!sinusBar.includes("В смету 804н"), "VisitSurgerySinusGbrBar must not contain 'В смету 804н'");
-		assert.ok(sinusBar.includes("<span>В смету</span>"), "VisitSurgerySinusGbrBar must contain 'В смету'");
-
-		assert.ok(!dangerGuard.includes("257/у"), "foolproofDangerGuard must not contain '257/у'");
+		const emptyRes = await withFixtureTenant(ORG_ID, async (tx) =>
+			executeUnifiedStockDeduction(tx, {
+				organizationId: ORG_ID,
+				visitId: null,
+				userId: DOCTOR_ID,
+				transactionType: "manual_writeoff",
+				reasonPrefix: "Проверка невалидного количества",
+				items: [{ exactItemId: ZERO_STOCK_ITEM_ID, defaultName: "Композит", category: "Композиты", unit: "шт", defaultCost: "100", qty: 0, label: "Zero qty" }],
+			}),
+		);
+		assert.equal(emptyRes.deductedItems.length, 0, "Zero quantity must not coerce qty <= 0 to 1");
 	});
 });

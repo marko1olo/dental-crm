@@ -4,6 +4,7 @@
  */
 
 import { and, eq } from "drizzle-orm";
+import { onTenantTxCommit } from "../../../db/rls.js";
 import { inventoryItems } from "../../../db/schema/inventory.js";
 import { selectActiveBatchesForFefo, findNextActiveBatchInfo } from "../fefo/batchSelector.js";
 import type { DbTransaction, DeductFefoParams, FefoDeductionResult } from "./types.js";
@@ -27,6 +28,7 @@ export async function deductFefo(
 		allowOverdraft = true,
 		notes,
 		transactionType = "treatment_consumable",
+		metadata,
 	} = params;
 
 	if (requiredQty <= 0) {
@@ -36,6 +38,7 @@ export async function deductFefo(
 			requiredQty: 0,
 			deductedQty: 0,
 			batchesUsed: [],
+			transactionIds: [],
 			isOverdraft: false,
 			deficitQty: 0,
 		};
@@ -56,6 +59,7 @@ export async function deductFefo(
 		notes: notes ?? null,
 		defaultUnitCostRub: inv.unitCostRub,
 		defaultUnitCostKopecks: inv.unitCostKopecks,
+		metadata: metadata ?? null,
 	});
 
 	const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
@@ -73,6 +77,7 @@ export async function deductFefo(
 		transactionType,
 		userId: userId ?? null,
 		notes: notes ?? null,
+		metadata: metadata ?? null,
 	});
 
 	const transactionsToInsert: InventoryTransactionInsert[] = [...batchTransactions, ...additionalTransactions];
@@ -89,29 +94,31 @@ export async function deductFefo(
 		})
 		.where(and(eq(inventoryItems.id, inv.id), eq(inventoryItems.organizationId, organizationId)));
 
-	await flushInventoryTransactions(tx, transactionsToInsert);
+	const transactionIds = await flushInventoryTransactions(tx, transactionsToInsert);
 
 	const isNegative = newStock < 0;
 	const finalWarning = warning ?? (isNegative ? `Внимание: допущен технический перерасход (остаток ${newStock} ед.). Требуется пополнение.` : undefined);
 
 	if (isOverdraft || isNegative) {
-		try {
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "INVENTORY_DEFICIT_ALERT",
-				payload: {
-					inventoryItemId: inv.id,
-					inventoryItemName: inv.name,
-					currentStock: newStock,
-					deficitQty: deficitQty > 0 ? deficitQty : Math.abs(newStock),
-					unit: inv.unit ?? "шт",
-					visitId: visitId ?? null,
-					warning: finalWarning,
-					purchaseOrder: purchaseOrderDraft ?? null,
-				},
-			});
-		} catch {
-			// Неблокирующий алерт снабженца (Мандат 8aa)
-		}
+		onTenantTxCommit(() => {
+			try {
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "INVENTORY_DEFICIT_ALERT",
+					payload: {
+						inventoryItemId: inv.id,
+						inventoryItemName: inv.name,
+						currentStock: newStock,
+						deficitQty: deficitQty > 0 ? deficitQty : Math.abs(newStock),
+						unit: inv.unit ?? "шт",
+						visitId: visitId ?? null,
+						warning: finalWarning,
+						purchaseOrder: purchaseOrderDraft ?? null,
+					},
+				});
+			} catch {
+				// Неблокирующий алерт снабженца (Мандат 8aa)
+			}
+		});
 	}
 
 	return {
@@ -120,6 +127,7 @@ export async function deductFefo(
 		requiredQty,
 		deductedQty: requiredQty,
 		batchesUsed,
+		transactionIds,
 		isOverdraft: isOverdraft || isNegative,
 		deficitQty: deficitQty > 0 ? deficitQty : (isNegative ? Math.abs(newStock) : 0),
 		isNegativeStock: isNegative,

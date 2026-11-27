@@ -22,7 +22,6 @@ export {
 export {
 	FefoStockService,
 	deductFefo,
-	deductForProcedure,
 	fefoStockService,
 	receiveBatch,
 	writeOffExpiredOrScrap,

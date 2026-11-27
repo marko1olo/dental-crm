@@ -22,32 +22,29 @@ export function useAuditAndManagerWriteoffHandlers(
 		try {
 			const discrepancyItems = doc.items.filter((it) => it.discrepancyQuantity !== 0);
 			if (discrepancyItems.length > 0) {
-				let failedCount = 0;
-				for (const it of discrepancyItems) {
-					const res = await fetch(`/api/inventory/${organizationId}/${it.itemId}/stock`, {
-						method: "PATCH",
-						headers: getHeaders({
-							"Content-Type": "application/json",
-							"Idempotency-Key": generateUuidV7(),
-						}),
-						body: JSON.stringify({
+				const res = await fetch(`/api/inventory/${organizationId}/stock/batch-adjust`, {
+					method: "POST",
+					headers: getHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
+					body: JSON.stringify({
+						reason: `Инвентаризация ${doc.documentNumber}`,
+						items: discrepancyItems.map((it) => ({
+							itemId: it.itemId,
 							adjustment: it.discrepancyQuantity,
-							reason: `Инвентаризация ${doc.documentNumber} (${it.discrepancyQuantity > 0 ? "излишек" : "недостача"})`,
-							allowOverdraft: true,
-						}),
-					});
-					if (!res.ok) {
-						failedCount++;
-					}
+						})),
+					}),
+				});
+				if (!res.ok) {
+					const rawJson = await res.json().catch(() => null);
+					const errPayload = rawJson?.data ?? rawJson;
+					throw new Error(errPayload?.message || errPayload?.error || `Ошибка корректировки остатков (${res.status})`);
 				}
-				if (failedCount > 0) {
-					showToast(
-						`Инвентаризация проведена частично: не удалось обновить ${failedCount} из ${discrepancyItems.length} поз.`,
-						"error",
-					);
-				} else {
-					showToast(`Инвентаризация утверждена: скорректировано ${discrepancyItems.length} позиций на складе`, "info");
-				}
+				const okJson = await res.json().catch(() => null);
+				const _okPayload = okJson?.data ?? okJson;
+				void _okPayload;
+				showToast(`Инвентаризация утверждена: скорректировано ${discrepancyItems.length} позиций на складе`, "info");
 			} else {
 				showToast("Инвентаризация утверждена: расхождений по остаткам не выявлено", "info");
 			}

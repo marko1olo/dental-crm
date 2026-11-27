@@ -246,15 +246,6 @@ export function useConsumablesBatchWriteoff({
 			const activeItems = data.consumablesSummary.filter((c) => !c.isOmitted && c.qtyToDeduct > 0);
 			const omittedCount = data.consumablesSummary.filter((c) => c.isOmitted).length;
 
-			if (inventoryStore?.deductStock && activeItems.length > 0) {
-				const deductions = activeItems.map((item) => ({
-					inventoryItemId: item.itemId,
-					itemName: item.itemName,
-					quantity: item.qtyToDeduct,
-				}));
-				await inventoryStore.deductStock(organizationId || "default", deductions, { skipNetworkSync: true });
-			}
-
 			if (activeItems.length === 0 && omittedCount > 0) {
 				const omitMsg = `Все вариативные позиции (${omittedCount}) отмечены как неиспользованные (ВН). Списание не требуется.`;
 				setStatusMessage(omitMsg);
@@ -292,6 +283,14 @@ export function useConsumablesBatchWriteoff({
 
 			if (res.ok) {
 				const resData = await res.json();
+				if (inventoryStore?.deductStock && activeItems.length > 0) {
+					const deductions = activeItems.map((item) => ({
+						inventoryItemId: item.itemId,
+						itemName: item.itemName,
+						quantity: item.qtyToDeduct,
+					}));
+					await inventoryStore.deductStock(organizationId || "default", deductions, { skipNetworkSync: true });
+				}
 				const successMsg = resData.message || "Расходники смены успешно списаны";
 				setStatusMessage(successMsg);
 				showToast(successMsg, "success");

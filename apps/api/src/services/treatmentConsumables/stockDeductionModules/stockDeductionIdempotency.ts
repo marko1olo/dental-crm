@@ -64,6 +64,8 @@ export async function checkIdempotentVisitDeduction(
 				eq(inventoryTransactions.organizationId, organizationId),
 				eq(inventoryTransactions.visitId, safeVisitId),
 				inArray(inventoryTransactions.transactionType, ["auto_deduct", "emergency_overdraft"]),
+				sql`coalesce(${inventoryTransactions.metadata}->>'source', '') <> 'implant_screw'`,
+				sql`coalesce(${inventoryTransactions.notes}, '') NOT LIKE 'Имплантат %'`,
 			),
 		);
 		if (rows.length > 0) {

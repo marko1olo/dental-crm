@@ -5,7 +5,7 @@
 
 import {
 	generateSupplierPurchaseOrder,
-	rublesToKopecks,
+	resolveCostKopecks,
 	type SupplierPurchaseOrder,
 } from "@dental/shared";
 import type { InventoryTransactionInsert } from "./auditLogging.js";
@@ -28,6 +28,7 @@ export function resolveDeficitAndOverdraft(params: {
 	readonly transactionType: string;
 	readonly userId?: string | null;
 	readonly notes?: string | null;
+	readonly metadata?: Record<string, unknown> | null | undefined;
 }) {
 	const {
 		inv,
@@ -41,7 +42,10 @@ export function resolveDeficitAndOverdraft(params: {
 		transactionType,
 		userId,
 		notes,
+		metadata,
 	} = params;
+
+	const resolvedDefaultCostKopecks = resolveCostKopecks(inv.unitCostKopecks, inv.unitCostRub);
 
 	const additionalTransactions: InventoryTransactionInsert[] = [];
 	let isOverdraft = false;
@@ -66,12 +70,12 @@ export function resolveDeficitAndOverdraft(params: {
 				qty: String(-unbatchedDeduct),
 				quantityChanged: String(-unbatchedDeduct),
 				unitCostRub: inv.unitCostRub ?? null,
-				unitCostKopecks:
-					inv.unitCostKopecks ?? BigInt(rublesToKopecks(Number(inv.unitCostRub ?? 0))),
+				unitCostKopecks: resolvedDefaultCostKopecks,
 				transactionType,
 				isOverdraft: false,
 				userId: userId ?? null,
 				notes: notes ?? (visitId ? `Списание по визиту ${visitId} (остаток номенклатуры)` : null),
+				metadata: metadata ?? null,
 			});
 		}
 
@@ -93,11 +97,11 @@ export function resolveDeficitAndOverdraft(params: {
 				qty: String(-deficitQty),
 				quantityChanged: String(-deficitQty),
 				unitCostRub: inv.unitCostRub ?? null,
-				unitCostKopecks:
-					inv.unitCostKopecks ?? BigInt(rublesToKopecks(Number(inv.unitCostRub ?? 0))),
+				unitCostKopecks: resolvedDefaultCostKopecks,
 				transactionType: "emergency_overdraft",
 				isOverdraft: true,
 				userId: userId ?? null,
+				metadata: metadata ?? null,
 				notes: notes ? `${notes} (дефицит ${deficitQty} ед.)` : `Технический перерасход при оказании помощи (дефицит ${deficitQty} ед.)`,
 			});
 

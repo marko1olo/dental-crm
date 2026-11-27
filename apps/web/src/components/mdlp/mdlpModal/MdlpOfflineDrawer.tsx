@@ -28,8 +28,7 @@ export const MdlpOfflineDrawer: React.FC<MdlpOfflineDrawerProps> = ({
 					<button
 						type="button"
 						onClick={onSyncOfflineQueue}
-						className="mdlp-action-btn secondary text-xs"
-						style={{ height: 30, padding: "0 10px" }}
+						className="mdlp-action-btn secondary h-8 px-2.5 text-xs"
 						data-testid="sync-offline-queue-btn"
 					>
 						<CheckCheck className="w-3.5 h-3.5 text-emerald-400" />

@@ -36,7 +36,7 @@ describe("Red Team: Warehouse & Procedure Catalog Write-off Invariants (Part 1)"
 		);
 	});
 
-	it("2. ClinicalWriteoffModal рендерит 1-клик генератор заказа поставщику при наличии дефицита", () => {
+	it("2. ClinicalWriteoffModal рендерит генератор заказа поставщику при наличии дефицита", () => {
 		const zeroStockBatches = [
 			{
 				batchId: "batch_zero_1",

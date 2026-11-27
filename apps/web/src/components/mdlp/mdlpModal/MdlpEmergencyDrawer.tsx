@@ -1,6 +1,9 @@
 import type React from "react";
 import { ShieldCheck } from "lucide-react";
-import { EMERGENCY_DISPENSE_PRESETS } from "../mdlpPresetsData.js";
+import {
+	type EMERGENCY_DISPENSE_PRESETS,
+	getEmergencyDispensePresets,
+} from "../mdlpPresetsData.js";
 
 export interface MdlpEmergencyDrawerProps {
 	readonly show: boolean;
@@ -11,7 +14,8 @@ export const MdlpEmergencyDrawer: React.FC<MdlpEmergencyDrawerProps> = ({
 	show,
 	onEmergencyDispense,
 }) => {
-	if (!show) return null;
+	const presets = getEmergencyDispensePresets();
+	if (!show || presets.length === 0) return null;
 
 	return (
 		<div className="mdlp-emergency-bypass-box" data-testid="mdlp-emergency-scanner-bypass">
@@ -20,7 +24,7 @@ export const MdlpEmergencyDrawer: React.FC<MdlpEmergencyDrawerProps> = ({
 				<span>Аварийная выдача медикаментов и имплантатов (поломка 2D-сканера или сбой сети):</span>
 			</div>
 			<div className="mdlp-emergency-pills-row">
-				{EMERGENCY_DISPENSE_PRESETS.map((preset) => (
+				{presets.map((preset) => (
 					<button
 						key={preset.label}
 						type="button"

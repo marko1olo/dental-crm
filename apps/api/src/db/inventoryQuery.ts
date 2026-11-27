@@ -94,13 +94,18 @@ export const inventoryQuery = {
 	async getInventoryItems(
 		organizationId: string,
 		executor: DbTransaction = db,
+		options?: { limit?: number | undefined; offset?: number | undefined },
 	): Promise<Array<typeof inventoryItems.$inferSelect>> {
+		const safeLimit = Math.min(Math.max(1, options?.limit ?? 2000), 5000);
+		const safeOffset = Math.max(0, options?.offset ?? 0);
 		const run = async (exec: DbTransaction) =>
 			exec
 				.select()
 				.from(inventoryItems)
 				.where(eq(inventoryItems.organizationId, organizationId))
-				.orderBy(asc(inventoryItems.name));
+				.orderBy(asc(inventoryItems.name))
+				.limit(safeLimit)
+				.offset(safeOffset);
 		return executor === db ? withTenantCtx(organizationId, run) : run(executor);
 	},
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { isDemoShowcaseMode } from "../../utils/demoModeEngine.js";
 import { logger } from "../../utils/logger.js";
 import { showToast } from "../GlobalToast.js";
 import {
@@ -30,7 +31,7 @@ export function useInventoryRules({
 	const [activeSubTab, setActiveSubTab] = useState<InventorySubTab>("inventory");
 	const [selectedServiceId, setSelectedServiceId] = useState<string>("");
 	const [rulesList, setRulesList] = useState<ProcedureMaterialRuleViewItem[]>(() =>
-		buildCanonicalFallbackBomRules(),
+		isDemoShowcaseMode() ? buildCanonicalFallbackBomRules() : [],
 	);
 	const [isLoadingRules, setIsLoadingRules] = useState(false);
 	const [selectedInventoryItemId, setSelectedInventoryItemId] = useState<string>("");

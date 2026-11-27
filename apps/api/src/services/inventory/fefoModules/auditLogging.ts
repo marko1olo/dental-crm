@@ -3,7 +3,7 @@
  * Журнал складских транзакций (audit trail) в таблице inventory_transactions (Мандат 8b).
  */
 
-import { rublesToKopecks } from "@dental/shared";
+import { resolveCostKopecks } from "@dental/shared";
 import { inventoryTransactions } from "../../../db/schema/inventory.js";
 import type { DbTransaction } from "./types.js";
 
@@ -12,9 +12,13 @@ export type InventoryTransactionInsert = typeof inventoryTransactions.$inferInse
 export async function flushInventoryTransactions(
 	tx: DbTransaction,
 	transactions: InventoryTransactionInsert[],
-): Promise<void> {
-	if (transactions.length === 0) return;
-	await tx.insert(inventoryTransactions).values(transactions);
+): Promise<string[]> {
+	if (transactions.length === 0) return [];
+	const inserted = await tx
+		.insert(inventoryTransactions)
+		.values(transactions)
+		.returning({ id: inventoryTransactions.id });
+	return inserted.map((row) => row.id);
 }
 
 export function buildReceiptTransaction(params: {
@@ -47,8 +51,7 @@ export function buildReceiptTransaction(params: {
 			? `${notes ? `${notes} • ` : ""}Поступление (${quantity} ед., закрыт технический дефицит ${closedDeficit} ед.)`
 			: (notes ?? `Поступление партии (${quantity} ед.)`);
 
-	const resolvedCostKopecks =
-		unitCostKopecks ?? BigInt(rublesToKopecks(Number(unitCostRub ?? 0)));
+	const resolvedCostKopecks = resolveCostKopecks(unitCostKopecks, unitCostRub);
 
 	return {
 		organizationId,

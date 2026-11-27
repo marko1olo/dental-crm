@@ -53,8 +53,8 @@ export const MdlpFooterActions: React.FC<MdlpFooterActionsProps> = ({
 						type="text"
 						value={docNum}
 						onChange={(e) => onChangeDocNum(e.target.value)}
-						className="h-8 px-2 text-xs font-mono rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full sm:w-36 focus:border-[var(--primary)] outline-none min-w-0"
-						placeholder="Номер документа"
+						className="h-8 px-2 text-xs font-mono rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full sm:w-40 focus:border-[var(--primary)] outline-none min-w-0"
+						placeholder="№ документа"
 						data-testid="mdlp-doc-num-input"
 					/>
 				</div>

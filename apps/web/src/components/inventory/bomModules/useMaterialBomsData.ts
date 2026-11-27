@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
+import { isDemoShowcaseMode } from "../../../utils/demoModeEngine.js";
 import { logger } from "../../../utils/logger.js";
 import type { InventoryItem } from "../inventoryDataMappers.js";
 import {
 	buildCanonicalFallbackBomRules,
+	buildCanonicalFallbackWarehouseItems,
 	type ProcedureMaterialRuleViewItem,
 } from "./materialBomTypes.js";
 import { useMaterialBomsComputations } from "./useMaterialBomsComputations.js";
@@ -48,7 +50,10 @@ export function useMaterialBomsData({
 				}
 			}
 
-			if (loadedRules.length === 0) loadedRules = buildCanonicalFallbackBomRules();
+			const isDemo = isDemoShowcaseMode();
+			if (loadedRules.length === 0 && isDemo) {
+				loadedRules = buildCanonicalFallbackBomRules();
+			}
 			setRules(loadedRules);
 
 			if (rawItems.length > 0) {
@@ -63,26 +68,19 @@ export function useMaterialBomsData({
 						unit: String(r.unit ?? "шт."),
 					})),
 				);
+			} else if (isDemo) {
+				setWarehouseItems(buildCanonicalFallbackWarehouseItems());
 			} else {
-				const itemMap = new Map<string, InventoryItem>();
-				for (const r of loadedRules) {
-					if (!itemMap.has(r.inventoryItemId)) {
-						itemMap.set(r.inventoryItemId, {
-							id: r.inventoryItemId,
-							name: r.itemName,
-							stockQuantity: Number(r.stockQuantity) || 25,
-							criticalThreshold: Number(r.criticalThreshold) || 5,
-							unitCostRub: String(r.unitCostRub || "150"),
-							updatedAt: new Date().toISOString(),
-							unit: r.unit || "шт.",
-						});
-					}
-				}
-				setWarehouseItems(Array.from(itemMap.values()));
+				setWarehouseItems([]);
 			}
 		} catch (e) {
-			logger.warn("Использование локального SSOT каталога техкарт", e);
-			setRules(buildCanonicalFallbackBomRules());
+			logger.warn("Ошибка загрузки техкарт материалов", e);
+			if (isDemoShowcaseMode()) {
+				setRules(buildCanonicalFallbackBomRules());
+			} else {
+				setRules([]);
+				setWarehouseItems([]);
+			}
 		} finally {
 			setIsLoading(false);
 		}

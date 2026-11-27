@@ -3,7 +3,7 @@
  * Списание требуемого объема материала с активных партий stock_batches по алгоритму FEFO (Мандат 8b).
  */
 
-import { rublesToKopecks } from "@dental/shared";
+import { resolveCostKopecks } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import { stockBatches } from "../../../db/schema/inventory.js";
 import type { DbTransaction, FefoBatchUsage } from "./types.js";
@@ -23,6 +23,7 @@ export async function deductFromActiveBatches(
 		readonly notes?: string | null;
 		readonly defaultUnitCostRub?: string | null;
 		readonly defaultUnitCostKopecks?: bigint | null | undefined;
+		readonly metadata?: Record<string, unknown> | null | undefined;
 	},
 ) {
 	let needed = params.requiredQty;
@@ -64,13 +65,16 @@ export async function deductFromActiveBatches(
 			qty: String(-take),
 			quantityChanged: String(-take),
 			unitCostRub: batch.purchasePricePerUnit ?? params.defaultUnitCostRub ?? null,
-			unitCostKopecks:
-				batch.purchasePricePerUnitKopecks ??
-				params.defaultUnitCostKopecks ??
-				BigInt(rublesToKopecks(Number(batch.purchasePricePerUnit ?? params.defaultUnitCostRub ?? 0))),
+			unitCostKopecks: resolveCostKopecks(
+				batch.purchasePricePerUnitKopecks,
+				batch.purchasePricePerUnit,
+				params.defaultUnitCostKopecks,
+				params.defaultUnitCostRub,
+			),
 			transactionType: params.transactionType,
 			isOverdraft: false,
 			userId: params.userId ?? null,
+			metadata: params.metadata ?? null,
 			notes: params.notes ?? (params.visitId ? `Списание по визиту ${params.visitId} (партия ${batch.batchNumber})` : null),
 		});
 

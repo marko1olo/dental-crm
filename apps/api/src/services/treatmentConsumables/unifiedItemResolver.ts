@@ -3,20 +3,52 @@
  */
 
 import { rublesToKopecks } from "@dental/shared";
-import { eq } from "drizzle-orm";
+import { and, eq, ilike, inArray, or, type SQL } from "drizzle-orm";
 import { inventoryItems } from "../../db/schema.js";
 import type { DbExecutor } from "./types.js";
 import type { ResolvedItemTarget, UnifiedStockItemDefinition } from "./unifiedStockDeductionTypes.js";
+
+function escapeLikePattern(raw: string): string {
+	return raw.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
 
 export async function resolveOrAutoCreateItems(
 	tx: DbExecutor,
 	organizationId: string,
 	definitions: UnifiedStockItemDefinition[],
 ): Promise<ResolvedItemTarget[]> {
-	const allOrgItems = await tx
-		.select()
-		.from(inventoryItems)
-		.where(eq(inventoryItems.organizationId, organizationId));
+	const exactIds = Array.from(
+		new Set(
+			definitions
+				.map((d) => d.exactItemId)
+				.filter((id): id is string => typeof id === "string" && id.length > 0),
+		),
+	);
+	const patternConditions: SQL[] = [];
+	for (const def of definitions) {
+		for (const p of def.patterns ?? []) {
+			if (p && p.trim().length > 0) {
+				patternConditions.push(ilike(inventoryItems.name, `%${escapeLikePattern(p.trim())}%`));
+			}
+		}
+	}
+
+	const matchOrConditions: SQL[] = [];
+	if (exactIds.length > 0) {
+		matchOrConditions.push(inArray(inventoryItems.id, exactIds));
+	}
+	if (patternConditions.length > 0) {
+		matchOrConditions.push(...patternConditions);
+	}
+
+	const allOrgItems =
+		matchOrConditions.length > 0
+			? await tx
+					.select()
+					.from(inventoryItems)
+					.where(and(eq(inventoryItems.organizationId, organizationId), or(...matchOrConditions)))
+					.limit(200)
+			: [];
 
 	const resolved: ResolvedItemTarget[] = [];
 

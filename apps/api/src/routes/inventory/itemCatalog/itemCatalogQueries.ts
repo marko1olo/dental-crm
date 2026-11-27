@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, resolveCostKopecks } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import {
 	inventoryQuery,
@@ -28,12 +28,14 @@ export const calculateAlertsFromItems = (
 		const item = serializeInventoryItem(rawItem);
 		const stock = Number(item.stockQuantity ?? 0);
 		const threshold = Number(item.criticalThreshold ?? 0);
-		const costKopecks =
-			item.unitCostKopecks != null
-				? item.unitCostKopecks
-				: item.pricePerUnitKopecks != null
-					? item.pricePerUnitKopecks
-					: rublesToKopecks(Number(item.unitCostRub ?? item.pricePerUnit ?? 0));
+		const costKopecks = Number(
+			resolveCostKopecks(
+				item.unitCostKopecks,
+				item.unitCostRub,
+				item.pricePerUnitKopecks,
+				item.pricePerUnit,
+			),
+		);
 
 		if (Number.isFinite(stock) && stock > 0 && costKopecks > 0) {
 			const lineValuationKopecks = BigInt(Math.round(stock * costKopecks));

@@ -56,7 +56,10 @@ export async function executeUnifiedStockDeduction(
 		const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
 		const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
 		const deductQty = Number(target.qty);
-		const safeDeductQty = Number.isFinite(deductQty) && deductQty > 0 ? deductQty : 1;
+		if (!Number.isFinite(deductQty) || deductQty <= 0) {
+			continue;
+		}
+		const safeDeductQty = deductQty;
 		const itemLabel = target.label || inv.name;
 		const idemTag = idempotencyKey ? ` [idempotencyKey:${idempotencyKey}]` : "";
 		const txNote = notes

@@ -24,7 +24,7 @@ function toSerializableMdlpItem(row: typeof mdlpItems.$inferSelect): Record<stri
 	};
 }
 import * as net from "node:net";
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { getCryptoProCliStatus } from "../../crypto/cryptoProCliEngine.js";
 import { db } from "../../db/client.js";
 import { withSavepoint, withTenantCtx } from "../../db/rls.js";
@@ -408,7 +408,7 @@ export class MdlpDisposalService {
 							doctorName: input.doctorName,
 						});
 					}
-				} else if (process.env.NODE_ENV === "test") {
+				} else {
 					const fallbackQueue = mdlpQueueService.getQueue(orgId);
 					for (const q of fallbackQueue.items) {
 						rawItems.push({
@@ -487,8 +487,6 @@ export class MdlpDisposalService {
 				});
 			}
 
-			disposedSgtins = disposalItems.map((d) => d.sgtin);
-
 			// Generate official Schema 10560 XML & JSON payload
 			schemaDoc = generateMdlpSchema10560Payload({
 				subjectId: orgId,
@@ -503,11 +501,14 @@ export class MdlpDisposalService {
 				notes: input.reason ?? "Оказание медицинской помощи (Схема 10560)",
 			});
 
+			const failedSgtins: string[] = [];
+
 			for (const it of disposalItems) {
 				const warehouseId = input.warehouseId ?? null;
 				let inventoryItemId: string | null = null;
 				let batchId: string | null = null;
 				let inventoryTransactionId: string | null = null;
+				let stockSyncFailed = false;
 				const resolvedKopecks = resolvedKopecksBySgtin.get(it.sgtin) ?? null;
 
 				// Синхронное списание 1 единицы препарата со склада по FEFO при наличии в номенклатуре
@@ -528,7 +529,9 @@ export class MdlpDisposalService {
 									),
 								),
 							)
-							.limit(1);
+							.orderBy(asc(inventoryItems.id))
+							.limit(1)
+							.for("update");
 
 						if (inv) {
 							inventoryItemId = inv.id;
@@ -548,13 +551,20 @@ export class MdlpDisposalService {
 							if (firstBatch) {
 								batchId = firstBatch.batchId;
 							}
+							inventoryTransactionId = fefoRes.transactionIds?.[0] ?? null;
 						}
 					});
 				} catch (stockErr) {
+					stockSyncFailed = true;
 					mdlpLogger.warn(
 						stockErr,
-						`[MdlpDisposalService] Предупреждение синхронизации склада для ${it.sgtin}`,
+						`[MdlpDisposalService] Сбой синхронизации склада для ${it.sgtin} — статус disposed не установлен`,
 					);
+				}
+
+				if (stockSyncFailed) {
+					failedSgtins.push(it.sgtin);
+					continue;
 				}
 
 				const [existing] = await tx
@@ -595,7 +605,10 @@ export class MdlpDisposalService {
 						})
 						.where(eq(mdlpItems.id, existing.id))
 						.returning();
-					if (res) updatedItems.push(toSerializableMdlpItem(res));
+					if (res) {
+						updatedItems.push(toSerializableMdlpItem(res));
+						disposedSgtins.push(it.sgtin);
+					}
 				} else {
 					const [res] = await tx
 						.insert(mdlpItems)
@@ -627,8 +640,17 @@ export class MdlpDisposalService {
 							schema10560Json: schemaDoc.jsonContent,
 						})
 						.returning();
-					if (res) updatedItems.push(toSerializableMdlpItem(res));
+					if (res) {
+						updatedItems.push(toSerializableMdlpItem(res));
+						disposedSgtins.push(it.sgtin);
+					}
 				}
+			}
+
+			if (disposedSgtins.length === 0 && failedSgtins.length > 0) {
+				throw new Error(
+					`Не удалось списать маркированные препараты со склада (SGTIN: ${failedSgtins.join(", ")}). Статус МДЛП не переведён в disposed.`,
+				);
 			}
 		});
 
@@ -866,7 +888,7 @@ export class MdlpDisposalService {
 			const crptApiUrl = explicitApiUrl || "https://api.mdlp.crpt.ru/api/v1";
 			const skipLiveProbe =
 				process.env.MDLP_SKIP_LIVE_PROBE === "1" ||
-				(process.env.NODE_ENV === "test" && !explicitApiUrl && !options?.forceLiveProbe);
+				(!explicitApiUrl && options?.forceLiveProbe !== true);
 
 			if (skipLiveProbe) {
 				return {

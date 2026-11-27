@@ -238,8 +238,8 @@ export async function calculateDoctorProfitability(
 		const docMaterialsRes = await tx
 			.select({
 				doctorId: appointments.doctorUserId,
-				exactMaterialsCostKopecks: sql<number>`coalesce(sum(case when ${inventoryTransactions.unitCostKopecks} is not null then abs(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0)) * ${inventoryTransactions.unitCostKopecks} else 0 end), 0)::bigint`,
-				legacyMaterialsCostRub: sql<number>`coalesce(sum(case when ${inventoryTransactions.unitCostKopecks} is null then abs(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0)) * coalesce(${inventoryTransactions.unitCostRub}, 0) else 0 end), 0)`,
+				exactMaterialsCostKopecks: sql<number>`coalesce(sum(case when ${inventoryTransactions.unitCostKopecks} > 0 then (case when ${inventoryTransactions.transactionType} = 'storno' then -1 else 1 end) * abs(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0)) * ${inventoryTransactions.unitCostKopecks} else 0 end), 0)::bigint`,
+				legacyMaterialsCostRub: sql<number>`coalesce(sum(case when coalesce(${inventoryTransactions.unitCostKopecks}, 0) <= 0 then (case when ${inventoryTransactions.transactionType} = 'storno' then -1 else 1 end) * abs(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0)) * coalesce(${inventoryTransactions.unitCostRub}, 0) else 0 end), 0)`,
 			})
 			.from(inventoryTransactions)
 			.innerJoin(visits, and(eq(inventoryTransactions.visitId, visits.id), eq(visits.organizationId, orgId)))
@@ -247,7 +247,17 @@ export async function calculateDoctorProfitability(
 			.where(
 				and(
 					eq(inventoryTransactions.organizationId, orgId),
-					inArray(inventoryTransactions.transactionType, ["usage", "write_off"]),
+					inArray(inventoryTransactions.transactionType, [
+						"auto_deduct",
+						"usage",
+						"write_off",
+						"emergency_overdraft",
+						"shift_batch_deduction",
+						"treatment_consumable",
+						"manual_writeoff",
+						"write_off_mdlp",
+						"storno",
+					]),
 					startDate ? gte(inventoryTransactions.createdAt, startDate) : sql`true`,
 				),
 			)

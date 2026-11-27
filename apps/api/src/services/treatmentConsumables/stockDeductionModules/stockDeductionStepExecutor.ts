@@ -7,6 +7,8 @@ import {
 	convertInventoryUnit,
 	kopecksToNumericString,
 	normalizeInventoryUnit,
+	resolveCostKopecks,
+	toExactKopecks,
 } from "@dental/shared";
 import type { DbTransaction } from "../../inventory/fefo/types.js";
 import { fefoStockService } from "../../inventory/fefoStockService.js";
@@ -126,14 +128,19 @@ export async function executeFefoDeductionStep(
 		}
 	}
 
-	const resolvedUnitCostKop = inv.unitCostKopecks ?? inv.pricePerUnitKopecks;
+	const resolvedUnitCostKop = resolveCostKopecks(
+		inv.unitCostKopecks,
+		inv.unitCostRub,
+		inv.pricePerUnitKopecks,
+		inv.pricePerUnit,
+	);
 	const deduction: StockDeductionRecord = {
 		inventoryItemId: inv.id,
 		inventoryItemName: inv.name,
 		quantityChanged: String(-fefoRes.deductedQty),
 		unitCostRub:
-			resolvedUnitCostKop != null
-				? kopecksToNumericString(resolvedUnitCostKop)
+			resolvedUnitCostKop > 0n
+				? kopecksToNumericString(toExactKopecks(resolvedUnitCostKop))
 				: inv.unitCostRub,
 		lotNumber: effectiveBatch,
 		remainingStock: newStock,

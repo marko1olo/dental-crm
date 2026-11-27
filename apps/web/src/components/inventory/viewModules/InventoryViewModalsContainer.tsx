@@ -68,6 +68,7 @@ export const InventoryViewModalsContainer: React.FC<InventoryViewModalsContainer
 					warehouseItems={items} onDeductionComplete={fetchItems}
 					procedureTitle={isConsumablesDeductionOpen ? "Препарирование и пломба светового отверждения (Filtek / Estelite)" : undefined}
 					serviceCode={isConsumablesDeductionOpen ? "A16.07.002.011" : undefined}
+					getHeaders={getHeaders}
 				/>
 			)}
 

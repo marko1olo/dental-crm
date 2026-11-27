@@ -12,4 +12,3 @@ export type {
 } from "./stockDeductionModules/stockDeductionTypes.js";
 
 export { deductForVisit } from "./stockDeductionModules/visitDeductionHandler.js";
-export { deductForToothTreatment } from "./stockDeductionModules/toothDeductionHandler.js";

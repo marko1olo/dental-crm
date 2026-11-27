@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { generateUuidV7 } from "@dental/shared";
+import { isDemoShowcaseMode } from "../../../utils/demoModeEngine.js";
 import { logger } from "../../../utils/logger.js";
 import { showToast } from "../../GlobalToast.js";
 import {
@@ -45,13 +46,30 @@ export function useMaterialBomsMutations({
 					await fetchAllRules();
 					return;
 				}
+				const errBody = await res?.json().catch(() => null);
+				if (isDemoShowcaseMode()) {
+					setRules(buildCanonicalFallbackBomRules());
+					showToast("Типовые нормы расхода добавлены (демо-режим)", "info");
+					return;
+				}
+				showToast(
+					errBody?.message || "Не удалось добавить типовые нормы расхода на сервере",
+					"error",
+				);
+			} else if (isDemoShowcaseMode()) {
+				setRules(buildCanonicalFallbackBomRules());
+				showToast("Типовые нормы расхода добавлены (демо-режим)", "info");
+			} else {
+				showToast("Выберите организацию для настройки техкарт", "warning");
 			}
-			setRules(buildCanonicalFallbackBomRules());
-			showToast("Типовые нормы расхода успешно добавлены", "success");
 		} catch (e) {
-			logger.warn("Ошибка сетевого сидирования, применен канонический SSOT", e);
-			setRules(buildCanonicalFallbackBomRules());
-			showToast("Типовые нормы расхода успешно добавлены", "success");
+			logger.warn("Ошибка сетевого сидирования техкарт", e);
+			if (isDemoShowcaseMode()) {
+				setRules(buildCanonicalFallbackBomRules());
+				showToast("Типовые нормы расхода добавлены (демо-режим)", "info");
+			} else {
+				showToast("Ошибка сети при загрузке типовых норм расхода", "error");
+			}
 		} finally {
 			setIsSeeding(false);
 		}

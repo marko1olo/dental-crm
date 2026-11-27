@@ -27,7 +27,10 @@ import {
 	users,
 } from "../../db/schema.js";
 import { inventoryRoutes as warehouseRoutes } from "../../routes/inventory.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { FefoStockService } from "../../services/inventory/fefoStockService.js";
+import { TreatmentConsumablesService } from "../../services/treatmentConsumablesService.js";
+import { deductImplantScrew } from "../../routes/clinicalImplants/deductImplantScrew.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -313,23 +316,21 @@ describe("Warehouse & Tech-Card Red Team Inquisitor (Mandates 8e, 8n, 8v)", () =
 		assert.equal(body.deficit, 3);
 	});
 
-	it("4. Mandate 8v: вызов deductForProcedure с кодом 804н не падает с ошибкой синтаксиса UUID", async () => {
+	it("4. Mandate 8v: вызов deductForVisit (канонический BOM SSOT) с кодом 804н не падает с ошибкой синтаксиса UUID", async () => {
 		if (!databaseReady) return;
 
-		// Вызываем списание по технологической карте 804н пломбирования зуба
-		const result = await withFixtureTenant(ORG_ID, async (tx) => {
-			return fefoStockService.deductForProcedure(tx, {
+		const bomVisitId = fixtureUuid("wh-inquisitor", 44);
+		const result = await withTenantCtx(ORG_ID, async (tx) => {
+			return TreatmentConsumablesService.deductForVisit(tx, {
 				organizationId: ORG_ID,
-				serviceIdOrCode: "A16.07.002.001", // Строковый код Приказа 804н!
-				serviceQuantity: 1,
+				visitId: bomVisitId,
+				services: [{ serviceId: "A16.07.002.001", quantity: 1 }],
 				allowOverdraft: true,
-				notes: "Лечение кариеса 804н",
 			});
 		});
 
-		assert.ok(result, "deductForProcedure обязан успешно выполниться");
-		assert.ok(result.totalMaterials >= 1, "Должно быть списано не менее 1 материала по техкарте");
-		assert.equal(typeof result.hasOverdraft, "boolean");
+		assert.ok(result, "deductForVisit обязан успешно выполниться");
+		assert.ok(result.deductions.length >= 1, "Должно быть списано не менее 1 материала по техкарте");
 	});
 
 	it("5. FEFO Sequence: партии расходуются строго по дате окончания срока годности", async () => {
@@ -399,5 +400,100 @@ describe("Warehouse & Tech-Card Red Team Inquisitor (Mandates 8e, 8n, 8v)", () =
 		const itemsParam = resParam.json();
 		const itemsDirect = resDirect.json();
 		assert.equal(itemsParam.length, itemsDirect.length, "Количество позиций склада должно совпадать");
+	});
+
+	it("7. Implant vs Auto-BOM isolation: deductImplantScrewFromStock with visitId does not block deductForVisit auto-BOM", async () => {
+		if (!databaseReady) return;
+
+		const sharedVisitId = fixtureUuid("wh-inquisitor", 77);
+		const implantItemId = fixtureUuid("wh-inquisitor", 78);
+
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx.insert(inventoryItems).values({
+				id: implantItemId,
+				organizationId: ORG_ID,
+				name: "Имплантат Dentium Ø4.0x10",
+				category: "Имплантология",
+				unit: "шт",
+				stockQuantity: "3",
+				currentQty: "3",
+				criticalThreshold: "1",
+				unitCostRub: "12000.00",
+				unitCostKopecks: 1200000n,
+				pricePerUnitKopecks: 1200000n,
+			});
+
+			await deductImplantScrew(tx, ORG_ID, STAFF_ID, {
+				visitId: sharedVisitId,
+				patientId: fixtureUuid("wh-inquisitor", 79),
+				toothNumberFdi: 36,
+				implantBrand: "Dentium",
+				implantDiameterMm: 4.0,
+				implantLengthMm: 10,
+				finalInsertionTorqueNcm: 35,
+				inventoryItemId: implantItemId,
+			});
+		});
+
+		const bomRes = await withTenantCtx(ORG_ID, async (tx) =>
+			TreatmentConsumablesService.deductForVisit(tx, {
+				organizationId: ORG_ID,
+				visitId: sharedVisitId,
+				services: [{ serviceId: "A16.07.002.001", quantity: 1 }],
+				allowOverdraft: true,
+			}),
+		);
+
+		assert.ok(bomRes.deductions.length >= 1, "Auto-BOM must NOT be short-circuited by prior implant deduction");
+	});
+
+	it("8. Catalog PUT preserves cost when omitted, supports org='current', and /stock/batch-adjust applies atomically", async () => {
+		if (!databaseReady) return;
+
+		const createRes = await app.inject({
+			method: "POST",
+			url: `/api/warehouse/${ORG_ID}`,
+			headers: authHeaders({ "Content-Type": "application/json" }),
+			payload: {
+				name: "Шовный материал Monosyn",
+				unit: "шт",
+				stockQuantity: 10,
+				unitCostRub: 350,
+			},
+		});
+		assert.equal(createRes.statusCode, 200);
+		const created = createRes.json() as { id: string; unitCostKopecks: number | string };
+
+		const putRes = await app.inject({
+			method: "PUT",
+			url: "/api/warehouse/current/items/" + created.id,
+			headers: authHeaders({ "Content-Type": "application/json" }),
+			payload: {
+				name: "Шовный материал Monosyn 4/0",
+				criticalThreshold: 3,
+			},
+		});
+		assert.equal(putRes.statusCode, 200);
+		const updated = putRes.json() as { name: string; purchasePriceKopecks: number };
+		assert.equal(updated.name, "Шовный материал Monosyn 4/0");
+		assert.equal(updated.purchasePriceKopecks, 35000, "PUT without cost fields must preserve 350.00 rub (35000 kopecks)");
+
+		const batchRes = await app.inject({
+			method: "POST",
+			url: "/api/warehouse/current/stock/batch-adjust",
+			headers: authHeaders({ "Content-Type": "application/json" }),
+			payload: {
+				reason: "Тест пакетной инвентаризации",
+				items: [
+					{ itemId: created.id, adjustment: 4 },
+					{ itemId: created.id, adjustment: -2 },
+				],
+			},
+		});
+		assert.equal(batchRes.statusCode, 200);
+		const batchBody = batchRes.json() as { success: boolean; adjustedCount: number; items: Array<{ stockQuantity: string }> };
+		assert.equal(batchBody.success, true);
+		assert.equal(batchBody.adjustedCount, 1);
+		assert.equal(Number(batchBody.items[0]?.stockQuantity), 12);
 	});
 });

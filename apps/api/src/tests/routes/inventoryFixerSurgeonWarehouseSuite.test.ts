@@ -23,12 +23,14 @@ import {
 	procedureTechCards,
 	procedureTechCardItems,
 	serviceCatalogItems,
+	stockBatches,
 	users,
 	visits,
 } from "../../db/schema.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
+import { treatmentConsumablesRoutes } from "../../routes/inventory/consumables/index.js";
 import { registerVisitConsumablesRoutes } from "../../routes/visits/visitConsumablesRoutes.js";
-import { applyProcedureConsumablesDeduction } from "../../services/treatmentConsumables/applyProcedureConsumablesDeduction.js";
+import { TreatmentConsumablesService } from "../../services/treatmentConsumablesService.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -160,6 +162,7 @@ describe("Warehouse & Supply Fixer Surgeon Suite (Mandates 8v, 8e, 8n, 8bm)", ()
 
 		app = createTenantTestApp();
 		await app.register(inventoryRoutes, { prefix: "/api/inventory" });
+		await app.register(treatmentConsumablesRoutes, { prefix: "/api/treatment-consumables" });
 		registerVisitConsumablesRoutes(app);
 		await app.ready();
 
@@ -363,9 +366,9 @@ describe("Warehouse & Supply Fixer Surgeon Suite (Mandates 8v, 8e, 8n, 8bm)", ()
 			});
 		});
 
-		// Execute deduction via applyProcedureConsumablesDeduction
+		// Execute deduction via canonical TreatmentConsumablesService.applyDeduction
 		const refId = "ref-tier1-bom-" + Date.now();
-		const result = await applyProcedureConsumablesDeduction(ORG_ID, {
+		const result = await TreatmentConsumablesService.applyDeduction(ORG_ID, {
 			treatment_reference_id: refId,
 			doctor_id: STAFF_ID,
 			items: [
@@ -383,7 +386,7 @@ describe("Warehouse & Supply Fixer Surgeon Suite (Mandates 8v, 8e, 8n, 8bm)", ()
 		assert.equal(deductedFractional.quantityDeducted, 0.5, "2 * 0.250 must equal 0.500");
 
 		// Repeat execution with same treatment_reference_id must return cached result
-		const repeatResult = await applyProcedureConsumablesDeduction(ORG_ID, {
+		const repeatResult = await TreatmentConsumablesService.applyDeduction(ORG_ID, {
 			treatment_reference_id: refId,
 			items: [
 				{
@@ -396,5 +399,103 @@ describe("Warehouse & Supply Fixer Surgeon Suite (Mandates 8v, 8e, 8n, 8bm)", ()
 		assert.equal(repeatResult.success, true);
 		assert.equal(repeatResult.alreadyProcessed, true);
 		assert.equal(repeatResult.treatmentReferenceId, refId);
+	});
+
+	it("4. Emergency write-off routes through FEFO stock_batches and storno restores to original batchId", async () => {
+		if (!databaseReady) return;
+
+		const itemRes = await app.inject({
+			method: "POST",
+			url: `/api/inventory/${ORG_ID}`,
+			headers: authHeaders({ "Content-Type": "application/json" }),
+			payload: {
+				name: "Карпулы Ультракаин FEFO тест",
+				unit: "шт",
+				stockQuantity: 0,
+				unitCostRub: 180,
+			},
+		});
+		assert.equal(itemRes.statusCode, 200);
+		const createdItem = itemRes.json() as { id: string };
+
+		// Receive batch via stock adjust
+		const adjustInRes = await app.inject({
+			method: "PATCH",
+			url: `/api/inventory/${ORG_ID}/${createdItem.id}/stock`,
+			headers: authHeaders({ "Content-Type": "application/json" }),
+			payload: {
+				adjustment: 5,
+				batchNumber: "ORIG-BATCH-77",
+				expirationDate: "2028-11-30",
+			},
+		});
+		assert.equal(adjustInRes.statusCode, 200);
+
+		const [origBatch] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(stockBatches)
+				.where(
+					and(
+						eq(stockBatches.organizationId, ORG_ID),
+						eq(stockBatches.inventoryItemId, createdItem.id),
+					),
+				),
+		);
+		assert.ok(origBatch, "Original stock batch must be created");
+		assert.equal(Number(origBatch.remainingQty), 5);
+
+		const emergencyVisitId = fixtureUuid(NAMESPACE, 88);
+		await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.insert(visits)
+				.values({
+					id: emergencyVisitId,
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					status: "draft",
+				})
+				.onConflictDoNothing(),
+		);
+
+		const emergRes = await app.inject({
+			method: "POST",
+			url: `/api/treatment-consumables/${ORG_ID}/deduct/emergency-writeoff`,
+			headers: authHeaders({ "Content-Type": "application/json" }),
+			payload: {
+				visitId: emergencyVisitId,
+				items: [{ inventoryItemId: createdItem.id, quantity: 2 }],
+				notes: "Экстренное списание через FEFO SSOT",
+			},
+		});
+		assert.equal(emergRes.statusCode, 200);
+		const emergBody = emergRes.json() as { success: boolean; totalDeductedQty: number };
+		assert.equal(emergBody.success, true);
+		assert.equal(emergBody.totalDeductedQty, 2);
+
+		const [afterDeductBatch] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx.select().from(stockBatches).where(eq(stockBatches.id, origBatch.id)),
+		);
+		assert.equal(Number(afterDeductBatch?.remainingQty), 3, "Emergency write-off must deduct from stock_batches via FEFO");
+
+		// Storno visit must restore directly into origBatch.id
+		const stornoRes = await app.inject({
+			method: "POST",
+			url: `/api/inventory/${ORG_ID}/storno`,
+			headers: authHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": "01950000-0000-7000-8000-000000000077",
+			}),
+			payload: {
+				visitId: emergencyVisitId,
+				reason: "Ошибочное списание",
+			},
+		});
+		assert.equal(stornoRes.statusCode, 200);
+
+		const [afterStornoBatch] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx.select().from(stockBatches).where(eq(stockBatches.id, origBatch.id)),
+		);
+		assert.equal(Number(afterStornoBatch?.remainingQty), 5, "Storno must restore into original batchId");
 	});
 });

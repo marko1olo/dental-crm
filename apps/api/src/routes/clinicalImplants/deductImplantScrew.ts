@@ -174,22 +174,32 @@ export async function deductImplantScrew(
 		userId,
 		allowOverdraft: true,
 		transactionType: "auto_deduct",
+		metadata: {
+			source: "implant_screw",
+			toothNumberFdi: input.toothNumberFdi,
+			implantBrand: input.implantBrand,
+		},
 		notes: `Имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм (LOT: ${initialLotNumber}) зуба FDI #${input.toothNumberFdi}`,
 	});
 
 	const effectiveLotNumber = fefoResult.batchesUsed[0]?.batchNumber || initialLotNumber;
 
-	const [implantTx] = await tx
-		.select({ id: inventoryTransactions.id })
-		.from(inventoryTransactions)
-		.where(
-			and(
-				eq(inventoryTransactions.organizationId, orgId),
-				eq(inventoryTransactions.inventoryItemId, invItem.id),
-			),
-		)
-		.orderBy(desc(inventoryTransactions.createdAt))
-		.limit(1);
+	const resolvedTxId = fefoResult.transactionIds?.[0];
+	const implantTx = resolvedTxId
+		? { id: resolvedTxId }
+		: (
+				await tx
+					.select({ id: inventoryTransactions.id })
+					.from(inventoryTransactions)
+					.where(
+						and(
+							eq(inventoryTransactions.organizationId, orgId),
+							eq(inventoryTransactions.inventoryItemId, invItem.id),
+						),
+					)
+					.orderBy(desc(inventoryTransactions.createdAt))
+					.limit(1)
+			)[0];
 
 	return {
 		invItem,

@@ -17,7 +17,7 @@
 .mdlp-scanning-modal {
 	position: relative;
 	width: 100%;
-	max-width: 1100px;
+	max-width: min(1240px, 100%);
 	height: min(86vh, 790px);
 	display: flex;
 	flex-direction: column;

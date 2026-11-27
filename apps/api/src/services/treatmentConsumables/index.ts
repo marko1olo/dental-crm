@@ -13,7 +13,6 @@ export * from "./quickWriteoffService.js";
 export * from "./bundleWriteoffService.js";
 export * from "./surgeryWriteoffService.js";
 export * from "./emergencyAntishockWriteoffService.js";
-export * from "./manualDeduction.js";
 export * from "./shiftBatchWriteoffService.js";
 
 import {
@@ -27,10 +26,8 @@ import {
 } from "./recipeService.js";
 import { checkStockSufficiency } from "./stockAvailability.js";
 import { getInventoryAlerts } from "./inventoryReports.js";
-import {
-	deductForToothTreatment,
-	deductForVisit,
-} from "./stockDeduction.js";
+import { deductForVisit } from "./stockDeduction.js";
+import { applyCanonicalProcedureDeduction } from "./stockDeductionModules/procedureApplyDeductionHandler.js";
 import {
 	quickWriteoffCarpules,
 	quickWriteoffStandardKit,
@@ -43,16 +40,14 @@ import {
 } from "./bundleWriteoffService.js";
 import { quickWriteoffSurgery } from "./surgeryWriteoffService.js";
 import { quickWriteoffEmergencyAntishock } from "./emergencyAntishockWriteoffService.js";
-import { deductManualItems } from "./manualDeduction.js";
 import { executeAutoBomWriteoff } from "./autoBomWriteoffService.js";
 import {
 	getShiftConsumablesSummary,
 	executeShiftBatchDeduction,
 } from "./shiftBatchWriteoffService.js";
-import { applyProcedureConsumablesDeduction } from "./applyProcedureConsumablesDeduction.js";
 
 export * from "./autoBomWriteoffService.js";
-export * from "./applyProcedureConsumablesDeduction.js";
+export { applyCanonicalProcedureDeduction } from "./stockDeductionModules/procedureApplyDeductionHandler.js";
 
 export class TreatmentConsumablesService {
 	static listLinks = listLinks;
@@ -64,10 +59,8 @@ export class TreatmentConsumablesService {
 	static getLinkOptions = getLinkOptions;
 
 	static deductForVisit = deductForVisit;
-	static deductForToothTreatment = deductForToothTreatment;
-	static deductManualItems = deductManualItems;
 	static executeAutoBomWriteoff = executeAutoBomWriteoff;
-	static applyDeduction = applyProcedureConsumablesDeduction;
+	static applyDeduction = applyCanonicalProcedureDeduction;
 
 	static checkStockSufficiency = checkStockSufficiency;
 	static getInventoryAlerts = getInventoryAlerts;

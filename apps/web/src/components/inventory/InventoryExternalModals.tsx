@@ -66,6 +66,9 @@ export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = (
 	return (
 		<>
 			<InventoryClinicalModals
+				organizationId={organizationId}
+				warehouseItems={items}
+				getHeaders={getHeaders}
 				isClinicalWriteoffOpen={isClinicalWriteoffOpen}
 				onCloseClinicalWriteoff={onCloseClinicalWriteoff}
 				onConfirmClinicalWriteoff={(doc) => handlers.handleClinicalWriteoff(doc, onCloseClinicalWriteoff)}

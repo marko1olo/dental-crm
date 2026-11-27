@@ -4,6 +4,7 @@
  */
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { generateUuidV7 } from "@dental/shared";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
@@ -172,7 +173,7 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 			if (Array.isArray(body.services) && body.services.length > 0) {
 				return TreatmentConsumablesService.executeAutoBomWriteoff(tx, {
 					organizationId: targetOrgId,
-					visitId: body.visitId || "batch-service-bom",
+					visitId: body.visitId || effectiveMutationId || generateUuidV7(),
 					services: body.services.map((item) => ({
 						serviceId: item.serviceId,
 						...(item.quantity !== undefined ? { quantity: item.quantity } : {}),

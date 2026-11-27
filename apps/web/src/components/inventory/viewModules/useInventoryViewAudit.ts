@@ -17,6 +17,8 @@ export function useInventoryViewAudit(
 	const auditInitialDoc: WarehouseInventoryAuditDocument = useMemo(() => {
 		const auditDate = new Date().toISOString().slice(0, 10);
 		const isDemo = isDemoShowcaseMode();
+		const clinicNameRu = isDemo ? "ООО «ДЕНТЕ КЛИНИК»" : "";
+		const clinicInn = isDemo ? "7701987654" : "";
 		if (!items || items.length === 0) {
 			return {
 				id: `audit-${Date.now()}`, documentNumber: `АКТ-ИНВ-${new Date().toISOString().slice(0, 7).replace("-", "/")}-001`,
@@ -25,7 +27,7 @@ export function useInventoryViewAudit(
 				molFullName: "Ответственный сотрудник", molPosition: "Старшая медсестра / Администратор", status: "reconciliation" as const,
 				commission: isDemo ? DEFAULT_COMMISSION_MEMBERS : SOLO_DOCTOR_COMMISSION_MEMBERS,
 				items: isDemo ? [...DEFAULT_INVENTORY_ITEMS_PRESET] : [],
-				organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»", organizationOkpo: "", organizationInn: "7701987654",
+				organizationNameRu: clinicNameRu, organizationOkpo: "", organizationInn: clinicInn,
 			};
 		}
 		const auditItems: WarehouseAuditItemLine[] = items.map((it, idx) => computeAuditLineItem({
@@ -42,7 +44,7 @@ export function useInventoryViewAudit(
 			branchId: organizationId, branchNameRu: "Центральное отделение", warehouseNameRu: "Главный склад расходных материалов",
 			molFullName: "Ответственный сотрудник", molPosition: "Старшая медсестра / Администратор", status: "reconciliation" as const,
 			commission: isDemo ? DEFAULT_COMMISSION_MEMBERS : SOLO_DOCTOR_COMMISSION_MEMBERS, items: auditItems,
-			organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»", organizationOkpo: "", organizationInn: "7701987654",
+			organizationNameRu: clinicNameRu, organizationOkpo: "", organizationInn: clinicInn,
 		};
 	}, [items, organizationId]);
 
@@ -51,22 +53,32 @@ export function useInventoryViewAudit(
 			const discrepancyItems = doc.items.filter((it) => it.discrepancyQuantity !== 0);
 			if (discrepancyItems.length > 0) {
 				const headers = getHeaders({ "Content-Type": "application/json" });
-				for (const it of discrepancyItems) {
-					await fetch(`/api/inventory/${organizationId}/${it.itemId}/stock`, {
-						method: "PATCH", headers,
-						body: JSON.stringify({
+				const res = await fetch(`/api/inventory/${organizationId}/stock/batch-adjust`, {
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						reason: `Инвентаризация ${doc.documentNumber}`,
+						items: discrepancyItems.map((it) => ({
+							itemId: it.itemId,
 							adjustment: it.discrepancyQuantity,
-							reason: `Инвентаризация ${doc.documentNumber} (${it.discrepancyQuantity > 0 ? "излишек" : "недостача"})`,
-							allowOverdraft: true,
-						}),
-					});
+						})),
+					}),
+				});
+				if (!res.ok) {
+					const rawJson = await res.json().catch(() => null);
+					const errPayload = rawJson?.data ?? rawJson;
+					throw new Error(errPayload?.message || errPayload?.error || `Ошибка сервера (${res.status})`);
 				}
+				const okJson = await res.json().catch(() => null);
+				const _okPayload = okJson?.data ?? okJson;
+				void _okPayload;
 				showToast(`Инвентаризация утверждена: скорректировано ${discrepancyItems.length} позиций на складе`, "info");
 			} else {
 				showToast("Инвентаризация утверждена: расхождений по остаткам не выявлено", "info");
 			}
 		} catch (err) {
 			showToast(err instanceof Error ? err.message : "Не удалось провести инвентаризацию", "error");
+			throw err;
 		} finally {
 			fetchItems();
 		}

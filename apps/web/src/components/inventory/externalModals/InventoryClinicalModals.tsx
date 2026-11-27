@@ -14,6 +14,9 @@ const WarehouseInventoryAuditModal = lazy(() =>
 );
 
 export interface InventoryClinicalModalsProps {
+	readonly organizationId?: string | undefined;
+	readonly warehouseItems?: readonly unknown[] | undefined;
+	readonly getHeaders?: ((extra?: Record<string, string>) => Record<string, string>) | undefined;
 	readonly isClinicalWriteoffOpen: boolean;
 	readonly onCloseClinicalWriteoff: () => void;
 	readonly onConfirmClinicalWriteoff: (doc: ClinicalWriteoffDocument) => Promise<void>;
@@ -25,6 +28,9 @@ export interface InventoryClinicalModalsProps {
 }
 
 export const InventoryClinicalModals: React.FC<InventoryClinicalModalsProps> = ({
+	organizationId,
+	warehouseItems,
+	getHeaders,
 	isClinicalWriteoffOpen,
 	onCloseClinicalWriteoff,
 	onConfirmClinicalWriteoff,
@@ -41,6 +47,10 @@ export const InventoryClinicalModals: React.FC<InventoryClinicalModalsProps> = (
 					<ConsumablesBatchWriteoffModal
 						isOpen={isClinicalWriteoffOpen}
 						onClose={onCloseClinicalWriteoff}
+						organizationId={organizationId}
+						warehouseItems={warehouseItems}
+						getHeaders={getHeaders}
+						onDeductionComplete={onDocumentSavedInventoryAudit}
 						onConfirmWriteoff={(doc) => {
 							if (doc) return onConfirmClinicalWriteoff(doc as ClinicalWriteoffDocument);
 						}}

@@ -35,7 +35,7 @@ export async function quickWriteoffAntishockKit(
 		userId,
 		notes: fullNote || "Экстренное вскрытие аптечки антишок (Анафилаксия)",
 		idempotencyKey,
-		reasonPrefix: "Экстренная аптечка антишок (Анафилаксия) — 1 клик",
+		reasonPrefix: "Экстренная аптечка антишок (Анафилаксия)",
 		successMessageTemplate: (count, hasOverdraft) =>
 			`Экстренная аптечка антишок списана (${count} позиций${hasOverdraft ? ", мягкий овердрафт активен" : ""}). Зафиксировано в журнале.`,
 	});

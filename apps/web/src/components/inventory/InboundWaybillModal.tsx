@@ -6,7 +6,7 @@
  * Мандаты 8b (Sweet Spot 250–350L), 8e (Автономия), 8n (Оприходование), 8am (1 Primary CTA var(--teal)), 8x (Живой язык).
  */
 
-import React, { useEffect, useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, CheckCircle2, Loader2, PackagePlus, X, Zap, Box } from "lucide-react";
 import { generateUuidV7, kopecksToRubles, rublesToKopecks } from "@dental/shared";
@@ -184,7 +184,13 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 	const [newItemCost, setNewItemCost] = useState("1000");
 	const [lines, setLines] = useState<InboundInvoiceItem[]>(() => buildInitialLines(initialWaybill));
 
+	const wasOpenRef = useRef(false);
+
 	useEffect(() => {
+		const justOpened = isOpen && !wasOpenRef.current;
+		const justClosed = !isOpen && wasOpenRef.current;
+		wasOpenRef.current = isOpen;
+		if (!justOpened && !justClosed) return;
 		setInvoiceNumber(buildInitialInvoiceNumber(initialWaybill));
 		setSupplierName(buildInitialSupplierName(initialWaybill));
 		setReceiptDate(buildInitialReceiptDate(initialWaybill));
@@ -267,7 +273,16 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 		setIsAddingNewItem(false);
 	};
 
-	const totalKopecks = useMemo(() => lines.reduce((acc, l) => acc + (Number(l.quantity) || 0) * (Number(l.priceKopecks) || 0), 0), [lines]);
+	const totalKopecks = useMemo(
+		() =>
+			Math.round(
+				lines.reduce(
+					(acc, l) => acc + Math.round((Number(l.quantity) || 0) * (Number(l.priceKopecks) || 0)),
+					0,
+				),
+			),
+		[lines],
+	);
 	const totalRub = kopecksToRubles(totalKopecks);
 
 	const handlePrintWaybill = () => {

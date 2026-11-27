@@ -3,7 +3,7 @@
  * Mandate 8v / 8aa: Real per-visit dynamic calculation & BOM resolution.
  */
 
-import { kopecksToNumericString } from "@dental/shared";
+import { kopecksToNumericString, resolveCostKopecks, toExactKopecks } from "@dental/shared";
 import { and, eq, gte, inArray, lte, ne, or } from "drizzle-orm";
 import { inventoryItems, inventoryTransactions, treatmentItems, visits } from "../../../db/schema.js";
 import type { DbExecutor } from "../types.js";
@@ -143,7 +143,12 @@ export async function getShiftConsumablesSummary(
 			const currentStock = Number(matched.stockQuantity ?? matched.currentQty ?? 0);
 			const projectedStock = Number((currentStock - qtyToDeduct).toFixed(2));
 			const isOverdraft = projectedStock < 0;
-			const matchedCostKop = matched.unitCostKopecks ?? matched.pricePerUnitKopecks;
+			const matchedCostKop = resolveCostKopecks(
+				matched.unitCostKopecks,
+				matched.unitCostRub,
+				matched.pricePerUnitKopecks,
+				matched.pricePerUnit,
+			);
 			consumablesSummary.push({
 				itemId: matched.id,
 				itemName: matched.name,
@@ -155,8 +160,8 @@ export async function getShiftConsumablesSummary(
 				isOverdraft,
 				deficit: isOverdraft ? Math.abs(projectedStock) : 0,
 				defaultCostRub:
-					matchedCostKop != null
-						? kopecksToNumericString(matchedCostKop)
+					matchedCostKop > 0n
+						? kopecksToNumericString(toExactKopecks(matchedCostKop))
 						: matched.unitCostRub ?? preset.defaultCost,
 			});
 		} else {

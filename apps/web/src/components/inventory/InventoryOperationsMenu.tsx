@@ -1,5 +1,6 @@
 import { ChevronDown, PackageCheck } from "lucide-react";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { InventoryOperationsDocsGroup } from "./operationsMenu/InventoryOperationsDocsGroup.js";
 import { InventoryOperationsQuickGroup } from "./operationsMenu/InventoryOperationsQuickGroup.js";
 
@@ -49,10 +50,36 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 	onQuickWriteoffShiftBundle,
 }) => {
 	const menuRef = useRef<HTMLDivElement>(null);
+	const dropdownRef = useRef<HTMLDivElement>(null);
+	const [coords, setCoords] = useState<{ top: number; right: number }>({ top: 0, right: 16 });
+
+	useLayoutEffect(() => {
+		if (!isOpen || !menuRef.current) return;
+		const updateCoords = () => {
+			if (!menuRef.current) return;
+			const rect = menuRef.current.getBoundingClientRect();
+			setCoords({
+				top: rect.bottom + 4,
+				right: Math.max(8, window.innerWidth - rect.right),
+			});
+		};
+		updateCoords();
+		window.addEventListener("resize", updateCoords);
+		window.addEventListener("scroll", updateCoords, true);
+		return () => {
+			window.removeEventListener("resize", updateCoords);
+			window.removeEventListener("scroll", updateCoords, true);
+		};
+	}, [isOpen]);
 
 	useEffect(() => {
 		const handleOutside = (e: MouseEvent) => {
-			if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+			const target = e.target as Node;
+			if (
+				menuRef.current &&
+				!menuRef.current.contains(target) &&
+				(!dropdownRef.current || !dropdownRef.current.contains(target))
+			) {
 				onClose();
 			}
 		};
@@ -61,6 +88,37 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 		}
 		return () => document.removeEventListener("mousedown", handleOutside);
 	}, [isOpen, onClose]);
+
+	const menuDropdown = isOpen ? (
+		<div
+			ref={dropdownRef}
+			style={{ top: `${coords.top}px`, right: `${coords.right}px` }}
+			className="warehouse-ops-menu fixed bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl p-1.5 z-[120] min-w-[280px] flex flex-col gap-0.5 text-xs text-[var(--ink)]"
+			role="menu"
+		>
+			<InventoryOperationsDocsGroup
+				onClose={onClose}
+				onOpenAcceptanceWaybills={onOpenAcceptanceWaybills}
+				onOpenWarehouseManager={onOpenWarehouseManager}
+				onOpenMdlpScanning={onOpenMdlpScanning}
+				onOpenClinicalWriteoff={onOpenClinicalWriteoff}
+				onOpenInventoryAudit={onOpenInventoryAudit}
+				onOpenMdlpDisposal={onOpenMdlpDisposal}
+			/>
+
+			<div className="my-1 border-t border-[var(--line)]" />
+
+			<InventoryOperationsQuickGroup
+				onClose={onClose}
+				onOpenShiftDeductionModal={onOpenShiftDeductionModal}
+				onOpenSterilizationCycleModal={onOpenSterilizationCycleModal}
+				onQuickWriteoffStandardKit={onQuickWriteoffStandardKit}
+				onQuickWriteoffSterilizationKit={onQuickWriteoffSterilizationKit}
+				onQuickWriteoffVisitBundle={onQuickWriteoffVisitBundle}
+				onQuickWriteoffShiftBundle={onQuickWriteoffShiftBundle}
+			/>
+		</div>
+	) : null;
 
 	return (
 		<div ref={menuRef} className="shrink-0 relative inline-block">
@@ -79,34 +137,10 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 				/>
 			</button>
 
-			{isOpen && (
-				<div
-					className="warehouse-ops-menu absolute right-0 top-[calc(100%+4px)] bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl p-1.5 z-50 min-w-[280px] flex flex-col gap-0.5 text-xs text-[var(--ink)]"
-					role="menu"
-				>
-					<InventoryOperationsDocsGroup
-						onClose={onClose}
-						onOpenAcceptanceWaybills={onOpenAcceptanceWaybills}
-						onOpenWarehouseManager={onOpenWarehouseManager}
-						onOpenMdlpScanning={onOpenMdlpScanning}
-						onOpenClinicalWriteoff={onOpenClinicalWriteoff}
-						onOpenInventoryAudit={onOpenInventoryAudit}
-						onOpenMdlpDisposal={onOpenMdlpDisposal}
-					/>
-
-					<div className="my-1 border-t border-[var(--line)]" />
-
-					<InventoryOperationsQuickGroup
-						onClose={onClose}
-						onOpenShiftDeductionModal={onOpenShiftDeductionModal}
-						onOpenSterilizationCycleModal={onOpenSterilizationCycleModal}
-						onQuickWriteoffStandardKit={onQuickWriteoffStandardKit}
-						onQuickWriteoffSterilizationKit={onQuickWriteoffSterilizationKit}
-						onQuickWriteoffVisitBundle={onQuickWriteoffVisitBundle}
-						onQuickWriteoffShiftBundle={onQuickWriteoffShiftBundle}
-					/>
-				</div>
-			)}
+			{menuDropdown &&
+				(typeof document === "undefined"
+					? menuDropdown
+					: createPortal(menuDropdown, document.body))}
 		</div>
 	);
 };

@@ -15,6 +15,7 @@ import { and, eq, or } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { mdlpItems } from "../../db/schema.js";
+import { BoundedStringSet, BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { mdlpLogger } from "./logger.js";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -44,10 +45,13 @@ export interface AddToQueueResult {
  * со строгой изоляцией по organizationId.
  */
 export class MdlpQueueService {
-	// Синхронизированный кэш для синхронных вызовов
-	private readonly cacheByOrg = new Map<string, MdlpCarpuleQueueItem[]>();
+	// Ограниченный LRU+TTL кэш для синхронных вызовов без утечки памяти
+	private readonly cacheByOrg = new BoundedTtlMap<string, MdlpCarpuleQueueItem[]>({
+		maxEntries: 512,
+		ttlMs: 30 * 60_000,
+	});
 	// Организации (например, синтетические в юнит-тестах), для которых запись в БД не удалась и очередь держится только в кэше
-	private readonly unpersistedOrgs = new Set<string>();
+	private readonly unpersistedOrgs = new BoundedStringSet(512, 30 * 60_000);
 
 	private getCachedOrgQueue(orgId: string): MdlpCarpuleQueueItem[] {
 		let queue = this.cacheByOrg.get(orgId);

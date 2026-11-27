@@ -82,11 +82,12 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		if (!resolvedOrgId) return;
 
 		const { organizationId, itemId } = request.params;
-		if (resolvedOrgId !== organizationId) {
+		const targetOrgId = organizationId === "current" ? resolvedOrgId : organizationId;
+		if (resolvedOrgId !== targetOrgId) {
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		return handleUpdateInventoryItem(organizationId, itemId, request.body, reply);
+		return handleUpdateInventoryItem(targetOrgId, itemId, request.body, reply);
 	});
 
 	// PUT /:organizationId/items/:itemId alias
@@ -101,11 +102,12 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		if (!resolvedOrgId) return;
 
 		const { organizationId, itemId } = request.params;
-		if (resolvedOrgId !== organizationId) {
+		const targetOrgId = organizationId === "current" ? resolvedOrgId : organizationId;
+		if (resolvedOrgId !== targetOrgId) {
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		return handleUpdateInventoryItem(organizationId, itemId, request.body, reply);
+		return handleUpdateInventoryItem(targetOrgId, itemId, request.body, reply);
 	});
 
 	// PUT /items/:itemId — unparameterized update with session org
@@ -135,11 +137,12 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		if (!resolvedOrgId) return;
 
 		const { organizationId, itemId } = request.params;
-		if (resolvedOrgId !== organizationId) {
+		const targetOrgId = organizationId === "current" ? resolvedOrgId : organizationId;
+		if (resolvedOrgId !== targetOrgId) {
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		return handleDeleteInventoryItem(organizationId, itemId, reply);
+		return handleDeleteInventoryItem(targetOrgId, itemId, reply);
 	});
 
 	// DELETE /:organizationId/items/:itemId alias
@@ -154,11 +157,12 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		if (!resolvedOrgId) return;
 
 		const { organizationId, itemId } = request.params;
-		if (resolvedOrgId !== organizationId) {
+		const targetOrgId = organizationId === "current" ? resolvedOrgId : organizationId;
+		if (resolvedOrgId !== targetOrgId) {
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		return handleDeleteInventoryItem(organizationId, itemId, reply);
+		return handleDeleteInventoryItem(targetOrgId, itemId, reply);
 	});
 
 	// DELETE /items/:itemId — unparameterized delete with session org

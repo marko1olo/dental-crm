@@ -108,6 +108,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 		isInventoryAuditOpen,
 		onCloseInventoryAudit: () => setIsInventoryAuditOpen(false),
 		onOpenInventoryAudit: () => setIsInventoryAuditOpen(true),
+		onApplyInventoryAudit: handleApplyInventoryAudit,
 		isMdlpDisposalOpen: isMdlpScanningOpen,
 		onCloseMdlpDisposal: () => setIsMdlpScanningOpen(false),
 		isMdlpScanningOpen,

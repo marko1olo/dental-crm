@@ -143,8 +143,7 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 
 	const content = (
 		<div
-			style={{ zIndex: 100000 }}
-			className="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150"
+			className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			data-testid={isClinicalMode ? "clinical-writeoff-modal" : "consumables-batch-writeoff-modal"}
@@ -154,7 +153,7 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 			}}
 		>
 			<div
-				className="relative w-full max-w-3xl rounded-t-[24px] sm:rounded-2xl bg-[var(--paper,#ffffff)] border-t sm:border border-[var(--line,#e2e8f0)] shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] overflow-hidden text-[var(--ink,#0f172a)] pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+				className="relative w-full max-w-3xl rounded-t-[24px] sm:rounded-2xl bg-[var(--paper)] border-t sm:border border-[var(--line)] shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] overflow-hidden text-[var(--ink)] pb-[max(0.75rem,env(safe-area-inset-bottom))]"
 				data-testid="consumables-deduction-modal"
 				data-cy="clinical-writeoff-dialog"
 			>
@@ -162,21 +161,21 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 				<div className="w-9 h-1.5 rounded-full bg-neutral-400/50 dark:bg-neutral-500/50 mx-auto mt-2.5 mb-1 sm:hidden shrink-0" aria-hidden="true" />
 
 				{/* Шапка модалки */}
-				<div className="p-3.5 sm:p-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between shrink-0 bg-[var(--paper-soft,#f8fafc)]">
+				<div className="p-3.5 sm:p-4 border-b border-[var(--line)] flex items-center justify-between shrink-0 bg-[var(--paper-soft)]">
 					<div className="flex items-center gap-3">
-						<div className="w-9 h-9 rounded-xl bg-[var(--primary,#0d9488)]/15 text-[var(--primary,#0d9488)] flex items-center justify-center shrink-0">
+						<div className="w-9 h-9 rounded-xl bg-[var(--primary)]/15 text-[var(--primary)] flex items-center justify-center shrink-0">
 							<PackageCheck size={20} />
 						</div>
 						<div>
 							<div className="flex items-center gap-2">
-								<h3 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)]">
+								<h3 className="text-base sm:text-lg font-bold text-[var(--ink)]">
 									{isClinicalMode ? "Клиническое списание материалов (Расходные материалы приёма)" : "Списание расходников за смену"}
 								</h3>
-								<span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--primary,#0d9488)]/15 text-[var(--primary,#0d9488)] border border-[var(--primary,#0d9488)]/30">
+								<span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/30">
 									{isClinicalMode ? "Норма расхода (по техкартам)" : "Списание по техкартам"}
 								</span>
 							</div>
-							<p className="text-xs text-[var(--muted,#64748b)]">
+							<p className="text-xs text-[var(--muted)]">
 								{effectiveTitle
 									? `${effectiveTitle} • Расходные материалы приёма${patientName ? ` • ${patientName}` : ""}${effectiveTooth ? ` • Зуб №${effectiveTooth}` : ""}${effectiveDoctor ? ` • Врач: ${effectiveDoctor}` : ""}`
 									: patientName
@@ -190,7 +189,7 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 					<button
 						type="button"
 						onClick={onClose}
-						className="secondary-button p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] rounded-lg"
+						className="secondary-button p-2 min-h-[44px] min-w-[44px] md:min-h-[36px] md:min-w-[36px] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] rounded-lg"
 						aria-label="Закрыть"
 					>
 						<X size={18} />
@@ -200,25 +199,25 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 				{/* Тело модалки */}
 				<div className="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-3.5 overflow-x-clip">
 					{isEmptyServices ? (
-						<div data-testid="cw-empty-services" className="p-8 text-center text-sm text-[var(--muted,#64748b)] bg-[var(--paper-soft,#f8fafc)] rounded-xl border border-[var(--line,#e2e8f0)]">
+						<div data-testid="cw-empty-services" className="p-8 text-center text-sm text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">
 							В текущем приёме нет выполненных клинических услуг
 						</div>
 					) : (
 						<>
 							{/* Выполненные клинические услуги приёма при наличии */}
 							{Array.isArray(initialServices) && initialServices.length > 0 && (
-								<div className="p-3 bg-[var(--paper-soft,#f8fafc)] rounded-xl border border-[var(--line,#e2e8f0)] space-y-1.5 text-xs">
-									<div className="font-semibold text-[var(--ink,#0f172a)] flex items-center justify-between">
+								<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] space-y-1.5 text-xs">
+									<div className="font-semibold text-[var(--ink)] flex items-center justify-between">
 										<span>Выполненные клинические услуги</span>
-										{effectiveDoctor && <span className="text-[var(--muted,#64748b)]">{effectiveDoctor}</span>}
+										{effectiveDoctor && <span className="text-[var(--muted)]">{effectiveDoctor}</span>}
 									</div>
 									{initialServices.map((srv, idx) => (
-										<div key={srv.id || idx} className="flex items-center justify-between text-[var(--ink,#0f172a)]">
+										<div key={srv.id || idx} className="flex items-center justify-between text-[var(--ink)]">
 											<div className="flex items-center gap-1.5">
-												{srv.serviceCode && <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[var(--line,#e2e8f0)]/50">{srv.serviceCode}</span>}
+												{srv.serviceCode && <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[var(--line)]/50">{srv.serviceCode}</span>}
 												<span>{srv.serviceTitle || srv.serviceName || "Стоматологическая услуга"}</span>
 											</div>
-											{srv.toothNumber && <span className="font-semibold text-[var(--primary,#0d9488)]">Зуб №{srv.toothNumber}</span>}
+											{srv.toothNumber && <span className="font-semibold text-[var(--primary)]">Зуб №{srv.toothNumber}</span>}
 										</div>
 									))}
 								</div>

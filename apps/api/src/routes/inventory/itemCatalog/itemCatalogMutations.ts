@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, resolveCostKopecks, rublesToKopecks } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { inventoryItems } from "../../../db/schema.js";
@@ -122,12 +122,14 @@ export const handleCreateInventoryItem = async (
 				"Позиция склада не создана: сервер не сохранил запись. Проверьте название и повторите; если снова не выйдет — сообщите администратору клиники.",
 		});
 
-	const computedKopecks =
-		created.unitCostKopecks != null
-			? Number(created.unitCostKopecks)
-			: created.pricePerUnitKopecks != null
-				? Number(created.pricePerUnitKopecks)
-				: rublesToKopecks(Number(created.unitCostRub ?? created.pricePerUnit ?? 0));
+	const computedKopecks = Number(
+		resolveCostKopecks(
+			created.unitCostKopecks,
+			created.unitCostRub,
+			created.pricePerUnitKopecks,
+			created.pricePerUnit,
+		),
+	);
 	return {
 		...created,
 		purchasePriceKopecks: computedKopecks,
@@ -220,10 +222,14 @@ export const handleUpdateInventoryItem = async (
 			name: name.trim(),
 			criticalThreshold: critStr,
 			minQty: critStr,
-			unitCostRub: costStr,
-			pricePerUnit: costStr,
-			unitCostKopecks: BigInt(effectiveCostKopecks),
-			pricePerUnitKopecks: BigInt(effectiveCostKopecks),
+			...(hasCostInput
+				? {
+						unitCostRub: costStr,
+						pricePerUnit: costStr,
+						unitCostKopecks: BigInt(effectiveCostKopecks),
+						pricePerUnitKopecks: BigInt(effectiveCostKopecks),
+					}
+				: {}),
 			sku: sku?.trim() || null,
 			barcode: barcode?.trim() || null,
 			lotNumber: lotNumber?.trim() || null,
@@ -272,12 +278,14 @@ export const handleUpdateInventoryItem = async (
 				"Позиция склада не сохранена: сервер не записал изменения. Проверьте данные и повторите; если снова не выйдет — сообщите администратору клиники.",
 		});
 
-	const computedKopecks =
-		updated.unitCostKopecks != null
-			? Number(updated.unitCostKopecks)
-			: updated.pricePerUnitKopecks != null
-				? Number(updated.pricePerUnitKopecks)
-				: rublesToKopecks(Number(updated.unitCostRub ?? updated.pricePerUnit ?? 0));
+	const computedKopecks = Number(
+		resolveCostKopecks(
+			updated.unitCostKopecks,
+			updated.unitCostRub,
+			updated.pricePerUnitKopecks,
+			updated.pricePerUnit,
+		),
+	);
 	return {
 		...updated,
 		purchasePriceKopecks: computedKopecks,
@@ -421,12 +429,14 @@ export const handlePatchInventoryItem = async (
 		});
 	}
 
-	const computedKopecks =
-		updated.unitCostKopecks != null
-			? Number(updated.unitCostKopecks)
-			: updated.pricePerUnitKopecks != null
-				? Number(updated.pricePerUnitKopecks)
-				: rublesToKopecks(Number(updated.unitCostRub ?? updated.pricePerUnit ?? 0));
+	const computedKopecks = Number(
+		resolveCostKopecks(
+			updated.unitCostKopecks,
+			updated.unitCostRub,
+			updated.pricePerUnitKopecks,
+			updated.pricePerUnit,
+		),
+	);
 	return {
 		...updated,
 		purchasePriceKopecks: computedKopecks,

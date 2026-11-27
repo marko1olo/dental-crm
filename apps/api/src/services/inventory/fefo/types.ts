@@ -19,6 +19,7 @@ export interface FefoDeductionResult {
 	requiredQty: number;
 	deductedQty: number;
 	batchesUsed: FefoBatchUsage[];
+	transactionIds?: string[] | undefined;
 	isOverdraft: boolean;
 	deficitQty: number;
 	isNegativeStock?: boolean | undefined;
@@ -62,6 +63,7 @@ export interface DeductFefoParams {
 	allowOverdraft?: boolean | undefined;
 	notes?: string | null | undefined;
 	transactionType?: string | undefined;
+	metadata?: Record<string, unknown> | null | undefined;
 }
 
 export interface DeductForProcedureParams {

@@ -16,7 +16,6 @@ import type {
 import { deductFefo } from "./fefoDeductionCore.js";
 import { receiveBatch } from "./batchReceiving.js";
 import { writeOffExpiredOrScrap } from "./scrapWriteOff.js";
-import { deductForProcedure } from "./procedureDeduction.js";
 import { stockBatches } from "../../../db/schema/inventory.js";
 
 export class FefoStockService {
@@ -39,13 +38,6 @@ export class FefoStockService {
 		input: WriteOffScrapInput,
 	): Promise<WriteOffResult> {
 		return writeOffExpiredOrScrap(tx, input);
-	}
-
-	public deductForProcedure(
-		tx: DbTransaction,
-		params: DeductForProcedureParams,
-	): Promise<DeductForProcedureResult> {
-		return deductForProcedure(tx, params);
 	}
 }
 

@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
@@ -154,35 +154,24 @@ export const handleAcceptanceWaybillRequest = async (
 				typeof inventoryItems.$inferSelect
 			>();
 
+			const lockConditions: SQL[] = [];
 			if (requestedItemIds.length > 0) {
-				const foundById = await tx
-					.select()
-					.from(inventoryItems)
-					.where(
-						and(
-							eq(inventoryItems.organizationId, targetOrgId),
-							inArray(inventoryItems.id, requestedItemIds),
-						),
-					)
-					.for("update");
-				for (const it of foundById) {
-					preloadedById.set(it.id, it);
-					preloadedByName.set(it.name.toLowerCase().trim(), it);
-				}
+				lockConditions.push(inArray(inventoryItems.id, requestedItemIds));
+			}
+			if (requestedNames.length > 0) {
+				lockConditions.push(inArray(sql`lower(${inventoryItems.name})`, requestedNames));
 			}
 
-			if (requestedNames.length > 0) {
-				const foundByName = await tx
+			if (lockConditions.length > 0) {
+				const whereCondition =
+					lockConditions.length === 1 ? lockConditions[0] : or(...lockConditions);
+				const foundLocked = await tx
 					.select()
 					.from(inventoryItems)
-					.where(
-						and(
-							eq(inventoryItems.organizationId, targetOrgId),
-							inArray(sql`lower(${inventoryItems.name})`, requestedNames),
-						),
-					)
+					.where(and(eq(inventoryItems.organizationId, targetOrgId), whereCondition))
+					.orderBy(asc(inventoryItems.id))
 					.for("update");
-				for (const it of foundByName) {
+				for (const it of foundLocked) {
 					preloadedById.set(it.id, it);
 					preloadedByName.set(it.name.toLowerCase().trim(), it);
 				}
