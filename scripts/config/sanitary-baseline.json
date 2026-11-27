@@ -8,7 +8,7 @@
     "as-never": 0,
     "record-cast": 671,
     "type-assertion": 6802,
-    "non-null-assertion": 1455,
+    "non-null-assertion": 1450,
     "ts-suppression": 0,
     "linter-suppression": 0,
     "empty-catch": 520,
@@ -23,7 +23,7 @@
     "test-no-assertion": 0,
     "test-weak-only": 242,
     "test-tautology": 0,
-    "test-phantom-no-sut": 694,
+    "test-phantom-no-sut": 692,
     "test-skipped": 0,
     "test-only-left": 0,
     "test-size-assertion": 136,
@@ -33,7 +33,7 @@
   },
   "floors": {
     "prodFiles": 11432,
-    "testFiles": 2542,
-    "tests": 20363
+    "testFiles": 2543,
+    "tests": 20367
   }
 }

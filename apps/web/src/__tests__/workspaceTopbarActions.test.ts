@@ -187,6 +187,10 @@ function collectTopActions(): {
 const { controls } = collectTopActions();
 
 test("в строке действий шапки не осталось кнопок-значков без подписи", () => {
+	assert.ok(
+		Object.keys(workspaceTopbarLabels).length > 0,
+		"словарь подписей шапки пуст",
+	);
 	const unlabelled = controls.filter((control) => control.label === null);
 	assert.deepEqual(
 		unlabelled.map((control) => `${control.tag}.${control.className}`),
@@ -200,6 +204,10 @@ test("в строке действий шапки не осталось кноп
 });
 
 test("класс icon-button из строки действий убран вместе со значками", () => {
+	assert.ok(
+		workspaceTopbarLabels.lock.title.length > 0,
+		"кнопка блокировки должна иметь поясняющий title",
+	);
 	const iconButtons = controls.filter((control) =>
 		(control.className ?? "").split(/\s+/).includes("icon-button"),
 	);
@@ -211,6 +219,10 @@ test("класс icon-button из строки действий убран вм�
 });
 
 test("два безымянных дубля не вернулись: значок базы данных и микрофон", () => {
+	assert.ok(
+		workspaceTopbarLabels.visit.title.length > 0,
+		"кнопка приёма должна иметь поясняющий title",
+	);
 	const classes = controls.flatMap((control) =>
 		(control.className ?? "").split(/\s+/),
 	);

@@ -94,7 +94,6 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 					.values({
 						id: USER_A,
 						organizationId: ORG_A,
-						login: "wave6-owner-a",
 						fullName: "Владелец Клиники Альфа",
 						role: "owner",
 						passwordHash: "synthetic-hash-a",
@@ -120,7 +119,7 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 						id: PAYMENT_A,
 						organizationId: ORG_A,
 						patientId: PATIENT_A,
-						amountRub: "1250.00",
+						amountRub: 1250,
 						amountKopecks: 125_000n,
 						method: "card",
 						status: "paid",
@@ -128,7 +127,7 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 					})
 					.onConflictDoUpdate({
 						target: payments.id,
-						set: { amountRub: "1250.00", amountKopecks: 125_000n, status: "paid" },
+						set: { amountRub: 1250, amountKopecks: 125_000n, status: "paid" },
 					});
 			});
 
@@ -155,7 +154,6 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 					.values({
 						id: USER_B,
 						organizationId: ORG_B,
-						login: "wave6-owner-b",
 						fullName: "Владелец Клиники Бета",
 						role: "owner",
 						passwordHash: "synthetic-hash-b",
@@ -181,7 +179,7 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 						id: PAYMENT_B,
 						organizationId: ORG_B,
 						patientId: PATIENT_B,
-						amountRub: "987.00",
+						amountRub: 987,
 						amountKopecks: 98_700n,
 						method: "cash",
 						status: "paid",
@@ -189,7 +187,7 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 					})
 					.onConflictDoUpdate({
 						target: payments.id,
-						set: { amountRub: "987.00", amountKopecks: 98_700n, status: "paid" },
+						set: { amountRub: 987, amountKopecks: 98_700n, status: "paid" },
 					});
 			});
 		} catch (error) {
@@ -238,7 +236,7 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 		);
 
 		app = Fastify({ logger: false });
-		registerLifecycleHooks(app, { getAllowedCorsOrigins: () => [] });
+		registerLifecycleHooks(app);
 		app.addHook("onRoute", (routeOptions) => {
 			recordedRouteConfigs.set(
 				`${String(routeOptions.method).toUpperCase()} ${routeOptions.url}`,
