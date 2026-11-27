@@ -141,10 +141,7 @@ export {
 export const treatmentAcceptanceVariantOptions: readonly TreatmentPlanAcceptanceVariant[] =
 	["urgent", "standard", "optimal", "staged", "maintenance", "other"];
 
-export {
-	clinicalToothSurfaceAliases,
-	type ClinicalToothSurface,
-} from "../constants/clinicalConstants";
+export { clinicalToothSurfaceAliases } from "../constants/clinicalConstants";
 
 export const clinicalToothStatusAliases: Record<string, CanonicalToothState> = {
 	...CANONICAL_TOOTH_STATUS_ALIASES,
