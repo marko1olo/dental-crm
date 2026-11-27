@@ -333,8 +333,9 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 					setCatalogDefects(mapped);
 				}
 			})
-			.catch(() => {
-				/* Fallback to FALLBACK_CATALOG_DEFECTS / STAMP_OPTIONS when offline or unseeded */
+			.catch((err: unknown) => {
+				if (err instanceof DOMException && err.name === "AbortError") return;
+				logger.warn("[OdontogramStampPalette] Fallback catalog defects used:", err);
 			});
 		return () => controller.abort();
 	}, []);
@@ -451,7 +452,7 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 								className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer select-none whitespace-nowrap shrink-0 ${
 									isSelected
 										? "bg-[var(--paper)] text-[var(--primary)] shadow-xs border border-[var(--line-subtle)]"
-										: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+										: "border border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 								}`}
 							>
 								{cat.label}
@@ -536,13 +537,13 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 									className="z-[150] rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl p-2.5 space-y-2"
 								>
 									<div className="relative flex items-center">
-										<Search className="w-3.5 h-3.5 text-[var(--ink-muted)] absolute left-2.5 pointer-events-none" />
+										<Search className="w-3.5 h-3.5 text-[var(--ink-muted)] absolute left-3 pointer-events-none" />
 										<input
 											type="text"
 											value={catalogSearch}
 											onChange={(e) => setCatalogSearch(e.target.value)}
 											placeholder="Поиск патологии или аномалии..."
-											className="w-full h-9 pl-8 pr-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none"
+											className="odontogram-catalog-popover__search-input w-full h-9 pl-9 pr-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none"
 										/>
 									</div>
 									<div className="max-h-60 overflow-y-auto divide-y divide-[var(--line-subtle)]">
@@ -564,7 +565,7 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 													setIsCatalogOpen(false);
 													setCatalogSearch("");
 												}}
-												className="w-full px-2.5 py-2 text-left text-xs flex items-center justify-between gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer rounded-md"
+												className="odontogram-catalog-popover__item w-full px-2.5 py-2 text-left text-xs flex items-center justify-between gap-2 bg-transparent border-0 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer rounded-md"
 											>
 												<span className="font-medium truncate">{defect.name}</span>
 												<span className="text-[11px] font-mono text-[var(--ink-muted)] shrink-0">
