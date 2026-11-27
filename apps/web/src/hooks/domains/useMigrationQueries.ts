@@ -1,3 +1,14 @@
+import type { ChangeEvent } from "react";
+import type {
+	DocumentIngestionResponse,
+	MigrationLocalSourceDiscoveryCandidate,
+	MigrationLocalSourceDiscoveryResponse,
+	MigrationLocalSourceWorkupResponse,
+	SmartImportLegacySourceKind,
+	SmartImportPreviewResponse,
+} from "@dental/shared";
+import { useAppStore } from "../../store/appStore";
+import { useDocumentStore } from "../../store/documentStore";
 import { logger } from "../../utils/logger";
 import { fetchWithHandling } from "../../utils/networkUtils";
 
@@ -104,10 +115,97 @@ export function useMigrationQueries(options?: UseMigrationQueriesOptions) {
 			body: JSON.stringify({ candidate }),
 		});
 	};
-	const previewMigrationDiscoveryCandidate = async (_candidate: unknown) => {};
+	const previewMigrationDiscoveryCandidate = async (candidate: unknown) => {
+		const store = useAppStore.getState();
+		const c = (candidate && typeof candidate === "object" ? candidate : {}) as Partial<MigrationLocalSourceDiscoveryCandidate>;
+		const rawText = String(c.smartImportLine ?? c.sourceLabel ?? "").trim();
+		if (!rawText) return null;
+
+		store.setIsSmartImportLoading(true);
+		store.setError(null);
+		try {
+			const [workupRes, previewRes] = await Promise.all([
+				fetchWithHandling("/api/imports/smart/local-source-workup", {
+					method: "POST",
+					headers: getHeaders(true, { "content-type": "application/json" }),
+					body: JSON.stringify({ candidate }),
+				}),
+				fetchWithHandling("/api/imports/smart/preview", {
+					method: "POST",
+					headers: getHeaders(false, { "content-type": "application/json" }),
+					body: JSON.stringify({
+						sourceName: c.safeDisplayName || c.sourceLabel || "Локальный источник",
+						rawText,
+						mode: store.smartImportMode || "auto",
+					}),
+				}),
+			]);
+			if (workupRes.ok) {
+				const wJson = (await workupRes.json()) as { data?: MigrationLocalSourceWorkupResponse } | MigrationLocalSourceWorkupResponse;
+				const workup = ("data" in wJson && wJson.data ? wJson.data : wJson) as MigrationLocalSourceWorkupResponse;
+				store.setMigrationSourceWorkup(workup);
+			}
+			if (!previewRes.ok) {
+				throw new Error(`Ошибка предпросмотра источника (HTTP ${previewRes.status})`);
+			}
+			const pJson = (await previewRes.json()) as { data?: SmartImportPreviewResponse } | SmartImportPreviewResponse;
+			const preview = ("data" in pJson && pJson.data ? pJson.data : pJson) as SmartImportPreviewResponse;
+			store.setSmartImportText(rawText);
+			store.setSmartImportPreview(preview);
+			store.setSmartImportCommit(null);
+			return preview;
+		} catch (err) {
+			const message = err instanceof Error ? err.message : "Не удалось построить предпросмотр источника";
+			logger.error("previewMigrationDiscoveryCandidate error", err);
+			store.setError(message);
+			return null;
+		} finally {
+			useAppStore.getState().setIsSmartImportLoading(false);
+		}
+	};
+
 	const previewMigrationAutopilotSources = async (
-		_sourceFingerprint?: string | null,
-	) => {};
+		sourceFingerprint?: string | null,
+	) => {
+		const store = useAppStore.getState();
+		const candidates = [
+			...(store.migrationSourceDiscovery?.candidates ?? []),
+			...(store.browserMigrationDiscovery?.candidates ?? []),
+		];
+		const matched = sourceFingerprint
+			? candidates.find((c) => c.sourceFingerprint === sourceFingerprint)
+			: candidates[0];
+		if (matched) {
+			return previewMigrationDiscoveryCandidate(matched);
+		}
+		const fallbackText = store.smartImportText.trim();
+		if (!fallbackText) return null;
+		store.setIsSmartImportLoading(true);
+		try {
+			const res = await fetchWithHandling("/api/imports/smart/preview", {
+				method: "POST",
+				headers: getHeaders(false, { "content-type": "application/json" }),
+				body: JSON.stringify({
+					sourceName: "Автопилот миграции",
+					rawText: fallbackText,
+					mode: store.smartImportMode || "auto",
+				}),
+			});
+			if (!res.ok) {
+				throw new Error(`Ошибка предпросмотра автопилота (HTTP ${res.status})`);
+			}
+			const json = (await res.json()) as { data?: SmartImportPreviewResponse } | SmartImportPreviewResponse;
+			const preview = ("data" in json && json.data ? json.data : json) as SmartImportPreviewResponse;
+			store.setSmartImportPreview(preview);
+			return preview;
+		} catch (err) {
+			logger.error("previewMigrationAutopilotSources error", err);
+			store.setError(err instanceof Error ? err.message : "Ошибка предпросмотра автопилота");
+			return null;
+		} finally {
+			useAppStore.getState().setIsSmartImportLoading(false);
+		}
+	};
 	const probeMigrationDiscoveryCandidate = async (candidate: unknown) => {
 		return fetchWithHandling("/api/imports/smart/local-source-probe", {
 			method: "POST",
@@ -219,10 +317,245 @@ export function useMigrationQueries(options?: UseMigrationQueriesOptions) {
 		}
 	};
 	const handleBrowserMigrationInputChange = async (
-		_files: FileList | File[] | null | undefined,
-	) => {};
-	const ingestImportFile = async (_file: File | Blob | null | undefined) => {};
-	const addMigrationDiscoveryCandidateToSmartImport = (_candidate: unknown) => {};
+		eventOrFiles: ChangeEvent<HTMLInputElement> | FileList | File[] | null | undefined,
+	) => {
+		const rawFiles =
+			eventOrFiles &&
+			typeof eventOrFiles === "object" &&
+			"target" in eventOrFiles &&
+			eventOrFiles.target
+				? eventOrFiles.target.files
+				: eventOrFiles;
+		const fileList: File[] = rawFiles ? Array.from(rawFiles as ArrayLike<File>) : [];
+		if (fileList.length === 0) return null;
+
+		const store = useAppStore.getState();
+		const scanStartedAtMs = Date.now();
+		const scanStartedAt = new Date(scanStartedAtMs).toISOString();
+		store.setIsBrowserMigrationScanning(true);
+		store.setBrowserMigrationScanProgress({
+			rootName: "Выбранная папка браузера",
+			sourceKind: "browser_file_input",
+			phase: "scanning",
+			currentItem: "Выбранная папка браузера",
+			scannedFolders: 0,
+			scannedFiles: 0,
+			databaseFiles: 0,
+			dumpFiles: 0,
+			tableFiles: 0,
+			archiveFiles: 0,
+			dicomLikeFiles: 0,
+			imageFiles: 0,
+			modelFiles: 0,
+			totalBytes: 0,
+			warnings: [],
+			startedAt: scanStartedAt,
+			updatedAt: scanStartedAt,
+			elapsedMs: 0,
+			processedUnits: 0,
+			fileLimit: 1200,
+			folderLimit: 320,
+			magicReadLimit: 0,
+		});
+
+		try {
+			const folderGroups = new Map<string, File[]>();
+			for (const file of fileList) {
+				const relPath =
+					(file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+				const topFolder = relPath.includes("/") ? (relPath.split("/")[0] || "Выгрузка") : "Файлы";
+				const group = folderGroups.get(topFolder) ?? [];
+				group.push(file);
+				folderGroups.set(topFolder, group);
+			}
+
+			const candidates: MigrationLocalSourceDiscoveryCandidate[] = [];
+			let totalDatabaseFiles = 0;
+			let totalDumpFiles = 0;
+			let totalTableFiles = 0;
+			let totalArchiveFiles = 0;
+			let totalDicomLikeFiles = 0;
+			let totalImageFiles = 0;
+			let totalBytes = 0;
+			let groupIdx = 0;
+			for (const [folderName, files] of folderGroups.entries()) {
+				groupIdx += 1;
+				let databaseFiles = 0;
+				let dumpFiles = 0;
+				let tableFiles = 0;
+				let archiveFiles = 0;
+				let dicomLikeFiles = 0;
+				let imageFiles = 0;
+				let hasDicomDir = false;
+				let latestMs = 0;
+
+				for (const f of files) {
+					totalBytes += f.size || 0;
+					const lower = f.name.toLowerCase();
+					if (f.lastModified > latestMs) latestMs = f.lastModified;
+					if (lower === "dicomdir") hasDicomDir = true;
+					if (/\.(fdb|gdb|mdb|accdb|db|sqlite|sqlite3|mdf|ldf|bak)$/.test(lower)) databaseFiles += 1;
+					else if (/\.(sql|dump|bak)$/.test(lower)) dumpFiles += 1;
+					else if (/\.(csv|tsv|xlsx|xls|ods)$/.test(lower)) tableFiles += 1;
+					else if (/\.(zip|rar|7z|tar|gz)$/.test(lower)) archiveFiles += 1;
+					else if (/\.(dcm|dicom|ima|rvg)$/.test(lower) || lower === "dicomdir") dicomLikeFiles += 1;
+					else if (/\.(png|jpg|jpeg|webp|heic|tif|tiff|bmp)$/.test(lower)) imageFiles += 1;
+				}
+
+				totalDatabaseFiles += databaseFiles;
+				totalDumpFiles += dumpFiles;
+				totalTableFiles += tableFiles;
+				totalArchiveFiles += archiveFiles;
+				totalDicomLikeFiles += dicomLikeFiles;
+				totalImageFiles += imageFiles;
+				const matched = databaseFiles + dumpFiles + tableFiles + archiveFiles + dicomLikeFiles + imageFiles;
+				let sourceKind: SmartImportLegacySourceKind = "unknown_legacy_source";
+				if (dicomLikeFiles > 0) sourceKind = "dicom_folder";
+				else if (databaseFiles > 0) sourceKind = "mis_database";
+				else if (dumpFiles > 0) sourceKind = "sql_dump";
+				else if (tableFiles > 0) sourceKind = "spreadsheet_export";
+				else if (archiveFiles > 0) sourceKind = "archive_export";
+
+				candidates.push({
+					sourceRef: `browser-local:${folderName}`,
+					safeDisplayName: folderName,
+					sourceKind,
+					sourceLabel: folderName,
+					sourceFingerprint: `browser-${groupIdx}-${files.length}`,
+					depth: 1,
+					confidence: matched > 0 ? 0.85 : 0.4,
+					matchedFiles: matched || files.length,
+					databaseFiles,
+					dumpFiles,
+					tableFiles,
+					archiveFiles,
+					dicomLikeFiles,
+					imageFiles,
+					hasDicomDir,
+					latestModifiedAt: latestMs > 0 ? new Date(latestMs).toISOString() : null,
+					reasons: [
+						`Отобрано файлов: ${files.length}`,
+						...(tableFiles > 0 ? [`Таблицы: ${tableFiles}`] : []),
+						...(dicomLikeFiles > 0 ? [`Снимки/DICOM: ${dicomLikeFiles}`] : []),
+						...(databaseFiles > 0 ? [`Базы данных: ${databaseFiles}`] : []),
+					],
+					warnings: [],
+					smartImportLine: `${sourceKind}:${folderName} (${files.length} файлов)`,
+				});
+			}
+
+			const response: MigrationLocalSourceDiscoveryResponse = {
+				version: "dental-crm-migration-local-discovery-v1",
+				generatedAt: new Date().toISOString(),
+				roots: Array.from(folderGroups.keys()),
+				scannedFolders: folderGroups.size,
+				candidates,
+				warnings: [],
+				nextAction:
+					candidates.length > 0
+						? "Выберите найденный источник для проверки или предпросмотра."
+						: "В выбранной папке не обнаружено поддерживаемых файлов.",
+			};
+
+			const finishedAtMs = Date.now();
+			store.setBrowserMigrationDiscovery(response);
+			store.setBrowserMigrationScanProgress({
+				rootName: "Выбранная папка браузера",
+				sourceKind: "browser_file_input",
+				phase: "done",
+				currentItem: null,
+				scannedFolders: folderGroups.size,
+				scannedFiles: fileList.length,
+				databaseFiles: totalDatabaseFiles,
+				dumpFiles: totalDumpFiles,
+				tableFiles: totalTableFiles,
+				archiveFiles: totalArchiveFiles,
+				dicomLikeFiles: totalDicomLikeFiles,
+				imageFiles: totalImageFiles,
+				modelFiles: 0,
+				totalBytes,
+				warnings: [],
+				startedAt: scanStartedAt,
+				updatedAt: new Date(finishedAtMs).toISOString(),
+				elapsedMs: Math.max(1, finishedAtMs - scanStartedAtMs),
+				processedUnits: fileList.length,
+				fileLimit: 1200,
+				folderLimit: 320,
+				magicReadLimit: 0,
+			});
+			return response;
+		} finally {
+			useAppStore.getState().setIsBrowserMigrationScanning(false);
+		}
+	};
+
+	const ingestImportFile = async (file: File | Blob | null | undefined) => {
+		if (!file) return null;
+		const appStore = useAppStore.getState();
+		const docStore = useDocumentStore.getState();
+		const target = docStore.documentIngestionTarget || "patients";
+		const fileName = file instanceof File ? file.name : "import_document.txt";
+		const mimeType = file.type || null;
+
+		try {
+			const buf = await file.arrayBuffer();
+			let binary = "";
+			const bytes = new Uint8Array(buf);
+			const chunkSize = 0x8000;
+			for (let i = 0; i < bytes.length; i += chunkSize) {
+				binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+			}
+			const fileBase64 = btoa(binary);
+
+			const res = await fetchWithHandling("/api/ingestion/extract", {
+				method: "POST",
+				headers: getHeaders(true, { "content-type": "application/json" }),
+				body: JSON.stringify({
+					fileName,
+					mimeType,
+					fileBase64,
+					target,
+				}),
+			});
+			if (!res.ok) {
+				throw new Error(`Ошибка разбора файла (HTTP ${res.status})`);
+			}
+			const json = (await res.json()) as { data?: DocumentIngestionResponse } | DocumentIngestionResponse;
+			const ingestion = ("data" in json && json.data ? json.data : json) as DocumentIngestionResponse;
+			docStore.setDocumentIngestion(ingestion);
+
+			if (ingestion.extractedText) {
+				if (target === "pricelist") {
+					appStore.setPricelistText(ingestion.extractedText);
+				} else if (target === "smart_import") {
+					appStore.setSmartImportText(ingestion.extractedText);
+				} else {
+					appStore.setImportText(ingestion.extractedText);
+					appStore.setImportPreview(null);
+					appStore.setImportCommit(null);
+				}
+			}
+			return ingestion;
+		} catch (err) {
+			logger.error("ingestImportFile error", err);
+			appStore.setError(err instanceof Error ? err.message : "Не удалось разобрать загруженный файл");
+			return null;
+		}
+	};
+
+	const addMigrationDiscoveryCandidateToSmartImport = (candidate: unknown) => {
+		const store = useAppStore.getState();
+		const c = (candidate && typeof candidate === "object" ? candidate : {}) as Partial<MigrationLocalSourceDiscoveryCandidate>;
+		const line = String(
+			c.smartImportLine ||
+				(c.sourceKind && c.sourceLabel ? `${c.sourceKind}:${c.sourceLabel}` : c.sourceLabel || ""),
+		).trim();
+		if (!line) return;
+		const existing = store.smartImportText.trim();
+		store.setSmartImportText(existing ? `${existing}\n${line}` : line);
+		store.setSmartImportPreview(null);
+		store.setSmartImportCommit(null);
+	};
 	const runMigrationAutopilot = async (
 		knownDiscovery?: unknown,
 		options?: unknown,

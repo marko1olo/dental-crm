@@ -8,6 +8,7 @@ import { z } from "zod";
 import { requireClinicalReadContext } from "../../accessGuard.js";
 import { replyBadRequest } from "../routeErrors.js";
 import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
+import { requireExecutiveAccess } from "../analytics/executiveAccessGuard.js";
 import {
 	clinicTimeZone,
 	currentMonthPeriod,
@@ -255,11 +256,19 @@ export async function withTenantReportScope<T>(
 		resolved: ReportScopeContext,
 		tx: import("../../db/rls.js").TenantDb,
 	) => Promise<T>,
+	options?: { executivePnl?: boolean },
 ): Promise<T | undefined> {
-	const context = await requireClinicalReadContext(request, reply, area);
-	if (!context) return undefined;
-	if (!enforcePermissionWhenStaffKnown(request, reply, "analytics.read"))
-		return undefined;
+	let organizationId: string | null = null;
+	if (options?.executivePnl) {
+		organizationId = await requireExecutiveAccess(request, reply);
+		if (!organizationId) return undefined;
+	} else {
+		const context = await requireClinicalReadContext(request, reply, area);
+		if (!context) return undefined;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "analytics.read"))
+			return undefined;
+		organizationId = context.organizationId;
+	}
 
 	const parsed = periodQuerySchema.safeParse(request.query);
 	if (!parsed.success) {
@@ -271,8 +280,8 @@ export async function withTenantReportScope<T>(
 	}
 
 	const { withTenantReadCtx } = await import("../../db/rls.js");
-	return withTenantReadCtx(context.organizationId, async (tx) => {
-		const timeZone = await clinicTimeZone(context.organizationId, tx);
+	return withTenantReadCtx(organizationId, async (tx) => {
+		const timeZone = await clinicTimeZone(organizationId, tx);
 		const period = resolvePeriod(parsed.data, timeZone);
 		if (!period.ok) {
 			badRequest(reply, period.message);
@@ -282,7 +291,7 @@ export async function withTenantReportScope<T>(
 		return run(
 			{
 				scope: {
-					organizationId: context.organizationId,
+					organizationId,
 					from: period.from,
 					to: period.to,
 					timeZone,

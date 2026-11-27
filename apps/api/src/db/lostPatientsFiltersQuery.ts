@@ -42,7 +42,8 @@
  */
 
 import { and, asc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
-import { db } from "./client.js";
+import type { TenantDb } from "./client.js";
+import { withTenantReadCtx } from "./rls.js";
 import {
 	appointments,
 	appointmentWaitlists,
@@ -70,7 +71,13 @@ function daysBetween(from: Date, to: Date): number {
 	return Math.floor(ms / MS_PER_DAY);
 }
 
-export async function getLostPatientsFiltersFromDb(orgId: string) {
+export async function getLostPatientsFiltersFromDb(
+	orgId: string,
+	executor?: TenantDb,
+) {
+	if (!executor) {
+		return withTenantReadCtx(orgId, (tx) => getLostPatientsFiltersFromDb(orgId, tx));
+	}
 	const now = new Date();
 
 	/*
@@ -85,7 +92,7 @@ export async function getLostPatientsFiltersFromDb(orgId: string) {
 		  AND a.starts_at <= ${now}
 	)`.as("last_past_starts_at");
 
-	const lostRows = await db
+	const lostRows = await executor
 		.select({
 			id: patients.id,
 			fullName: patients.fullName,

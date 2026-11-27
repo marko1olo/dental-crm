@@ -10,8 +10,9 @@
  */
 
 import { normalizeDate, normalizePhone } from "@dental/shared";
-import { eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
+import type { TenantDb } from "../../../db/client.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
 import { auditEvents, importBatches, patients } from "../../../db/schema.js";
 import {
 	parseDelimitedTextToMatrix,
@@ -85,8 +86,9 @@ export async function importPatientsStream(params: {
 	bufferOrText: Buffer | string;
 	filename: string;
 	commit?: boolean;
+	executor?: TenantDb;
 }): Promise<PatientImportExecutionResult> {
-	const { organizationId, bufferOrText, filename, commit = false } = params;
+	const { organizationId, bufferOrText, filename, commit = false, executor } = params;
 
 	let matrix: string[][];
 	if (Buffer.isBuffer(bufferOrText)) {
@@ -129,107 +131,149 @@ export async function importPatientsStream(params: {
 
 	const dataRows = hasRecognizedHeader ? matrix.slice(1) : matrix;
 
-	// 2. Fetch existing patients for tenant deduplication
-	const existingPatients = await db
-		.select({
-			phone: patients.phone,
-			fullName: patients.fullName,
-		})
-		.from(patients)
-		.where(eq(patients.organizationId, organizationId));
-
-	const existingPhones = new Set(
-		existingPatients
-			.map((p) => (p.phone ? normalizePhone(p.phone) : null))
-			.filter(Boolean),
-	);
-	const existingNames = new Set(
-		existingPatients.map((p) => p.fullName.trim().toLowerCase()),
-	);
-
-	const items: PatientImportResultItem[] = [];
-	const toInsertPayloads: Array<{
-		organizationId: string;
-		fullName: string;
-		phone: string | null;
-		birthDate: string | null;
-		notes: string | null;
-		status: "active";
-	}> = [];
-
+	// Собираем только ключи батча, чтобы не выгружать всю картотеку клиники в ОЗУ
+	const candidatePhoneSuffixes = new Set<string>();
+	const candidateLowerNames = new Set<string>();
 	for (let i = 0; i < dataRows.length; i++) {
 		const row = dataRows[i] ?? [];
 		const rawName = (row[nameIdx] ?? "").trim();
 		const rawPhone = (row[phoneIdx] ?? "").trim();
-		const rawDob = (row[dobIdx] ?? "").trim();
-		const rawNotes = (row[notesIdx] ?? "").trim();
-
 		const phone = rawPhone ? normalizePhone(rawPhone) : null;
-		const birthDate = rawDob ? normalizeDate(rawDob) : null;
-		const rowNumber = i + (hasRecognizedHeader ? 2 : 1);
+		if (rawName) candidateLowerNames.add(rawName.toLowerCase());
+		if (phone) {
+			const digits = phone.replace(/\D/g, "");
+			if (digits.length >= 7) {
+				candidatePhoneSuffixes.add(digits.slice(-10));
+			}
+		}
+	}
 
-		if (!rawName) {
-			items.push({
-				rowNumber,
-				fullName: "Не указано",
-				phone,
-				birthDate,
-				notes: rawNotes || null,
-				status: "blocked",
-				warning: "Отсутствует ФИО пациента",
-			});
-			continue;
+	const loadExistingKeys = async (tx: TenantDb) => {
+		const existingPhones = new Set<string>();
+		const existingNames = new Set<string>();
+		const phoneList = [...candidatePhoneSuffixes];
+		const nameList = [...candidateLowerNames];
+		const keyChunkSize = 500;
+
+		for (let i = 0; i < phoneList.length; i += keyChunkSize) {
+			const phoneChunk = phoneList.slice(i, i + keyChunkSize);
+			const matched = await tx
+				.select({ phone: patients.phone })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						inArray(
+							sql`right(regexp_replace(coalesce(${patients.phone}, ''), '\\D', '', 'g'), 10)`,
+							phoneChunk,
+						),
+					),
+				);
+			for (const p of matched) {
+				const normalized = p.phone ? normalizePhone(p.phone) : null;
+				if (normalized) existingPhones.add(normalized);
+			}
 		}
 
-		// Duplicate detection
-		const isPhoneDuplicate = Boolean(phone && existingPhones.has(phone));
-		const isNameDuplicate = existingNames.has(rawName.toLowerCase());
+		for (let i = 0; i < nameList.length; i += keyChunkSize) {
+			const nameChunk = nameList.slice(i, i + keyChunkSize);
+			const matched = await tx
+				.select({ fullName: patients.fullName })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						inArray(sql`lower(trim(${patients.fullName}))`, nameChunk),
+					),
+				);
+			for (const p of matched) {
+				existingNames.add(p.fullName.trim().toLowerCase());
+			}
+		}
 
-		if (isPhoneDuplicate || isNameDuplicate) {
+		return { existingPhones, existingNames };
+	};
+
+	const items: PatientImportResultItem[] = [];
+	const importedPatientIds: string[] = [];
+
+	const processWithTx = async (tx: TenantDb, shouldCommit: boolean) => {
+		const { existingPhones, existingNames } = await loadExistingKeys(tx);
+		const toInsertPayloads: Array<{
+			organizationId: string;
+			fullName: string;
+			phone: string | null;
+			birthDate: string | null;
+			notes: string | null;
+			status: "active";
+		}> = [];
+
+		for (let i = 0; i < dataRows.length; i++) {
+			const row = dataRows[i] ?? [];
+			const rawName = (row[nameIdx] ?? "").trim();
+			const rawPhone = (row[phoneIdx] ?? "").trim();
+			const rawDob = (row[dobIdx] ?? "").trim();
+			const rawNotes = (row[notesIdx] ?? "").trim();
+
+			const phone = rawPhone ? normalizePhone(rawPhone) : null;
+			const birthDate = rawDob ? normalizeDate(rawDob) : null;
+			const rowNumber = i + (hasRecognizedHeader ? 2 : 1);
+
+			if (!rawName) {
+				items.push({
+					rowNumber,
+					fullName: "Не указано",
+					phone,
+					birthDate,
+					notes: rawNotes || null,
+					status: "blocked",
+					warning: "Отсутствует ФИО пациента",
+				});
+				continue;
+			}
+
+			const isPhoneDuplicate = Boolean(phone && existingPhones.has(phone));
+			const isNameDuplicate = existingNames.has(rawName.toLowerCase());
+
+			if (isPhoneDuplicate || isNameDuplicate) {
+				items.push({
+					rowNumber,
+					fullName: rawName,
+					phone,
+					birthDate,
+					notes: rawNotes || null,
+					status: "warning",
+					warning: isPhoneDuplicate
+						? "Дубликат по номеру телефона (пропущен)"
+						: "Дубликат по ФИО (пропущен)",
+				});
+				continue;
+			}
+
 			items.push({
 				rowNumber,
 				fullName: rawName,
 				phone,
 				birthDate,
 				notes: rawNotes || null,
-				status: "warning",
-				warning: isPhoneDuplicate
-					? "Дубликат по номеру телефона (пропущен)"
-					: "Дубликат по ФИО (пропущен)",
+				status: "ready",
 			});
-			continue;
+
+			toInsertPayloads.push({
+				organizationId,
+				fullName: rawName,
+				phone,
+				birthDate,
+				notes: rawNotes || null,
+				status: "active",
+			});
+
+			if (phone) existingPhones.add(phone);
+			existingNames.add(rawName.toLowerCase());
 		}
 
-		// Valid new patient
-		items.push({
-			rowNumber,
-			fullName: rawName,
-			phone,
-			birthDate,
-			notes: rawNotes || null,
-			status: "ready",
-		});
-
-		toInsertPayloads.push({
-			organizationId,
-			fullName: rawName,
-			phone,
-			birthDate,
-			notes: rawNotes || null,
-			status: "active",
-		});
-
-		// Track within current batch to prevent intra-batch dupes
-		if (phone) existingPhones.add(phone);
-		existingNames.add(rawName.toLowerCase());
-	}
-
-	const importedPatientIds: string[] = [];
-
-	// 3. Execution / Commit to PostgreSQL
-	if (commit && toInsertPayloads.length > 0) {
-		await db.transaction(async (tx) => {
-			const batchSize = 100;
+		if (shouldCommit && toInsertPayloads.length > 0) {
+			const batchSize = 200;
 			for (let b = 0; b < toInsertPayloads.length; b += batchSize) {
 				const chunk = toInsertPayloads.slice(b, b + batchSize);
 				const inserted = await tx
@@ -239,7 +283,6 @@ export async function importPatientsStream(params: {
 				importedPatientIds.push(...inserted.map((p) => p.id));
 			}
 
-			// Audit batch log
 			const [batchRecord] = await tx
 				.insert(importBatches)
 				.values({
@@ -263,7 +306,15 @@ export async function importPatientsStream(params: {
 					reason: `Импорт пациентов из ${filename}: успешно импортировано ${importedPatientIds.length}.`,
 				});
 			}
-		});
+		}
+	};
+
+	if (executor) {
+		await processWithTx(executor, commit);
+	} else if (commit) {
+		await withTenantWriteCtx(organizationId, (tx) => processWithTx(tx, true));
+	} else {
+		await withTenantReadCtx(organizationId, (tx) => processWithTx(tx, false));
 	}
 
 	const readyRows = items.filter((it) => it.status === "ready").length;

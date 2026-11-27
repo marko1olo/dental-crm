@@ -14,6 +14,10 @@ export async function fetchCuratorAnalyticsPayload(
 	options?: { queueLimit?: number; queueOffset?: number },
 	executor?: TenantDb,
 ) {
+	const queueOffset = Math.max(0, options?.queueOffset ?? 0);
+	const queueLimit = Math.max(1, Math.min(1000, options?.queueLimit ?? 500));
+	const scanLimit = Math.min(2000, Math.max(queueOffset + queueLimit, 500));
+
 	const runQuery = async (tx: TenantDb) => {
 			const staffRows = await tx
 				.select({ id: users.id, fullName: users.fullName, role: users.role })
@@ -41,7 +45,8 @@ export async function fetchCuratorAnalyticsPayload(
 				.from(treatmentPlans)
 				.innerJoin(patients, and(eq(treatmentPlans.patientId, patients.id), eq(patients.organizationId, orgId)))
 				.where(eq(treatmentPlans.organizationId, orgId))
-				.orderBy(desc(treatmentPlans.createdAt));
+				.orderBy(desc(treatmentPlans.createdAt))
+				.limit(scanLimit);
 
 			// PLN-05 [SEV-1]: Учет оплат строго по planId / treatmentPlanId, ликвидация заражения планов старыми оплатами пациента.
 			// 1. Прямые оплаты, привязанные к плану лечения (documentId = treatment_plans.id)
@@ -121,8 +126,6 @@ export async function fetchCuratorAnalyticsPayload(
 	const perCuratorMetrics = curatorUsers.map((cur) =>
 		calculateCuratorMetrics(allQueueItems, cur.id, cur.fullName),
 	);
-	const queueOffset = Math.max(0, options?.queueOffset ?? 0);
-	const queueLimit = Math.max(1, Math.min(1000, options?.queueLimit ?? 500));
 	const queueItems = allQueueItems.slice(queueOffset, queueOffset + queueLimit);
 
 	return {

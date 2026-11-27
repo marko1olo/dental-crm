@@ -91,8 +91,20 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 						startDate = periodRes.from;
 					}
 				} else if (range === "last_month") {
-					const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 15);
-					const prevMonth = currentMonthPeriod(prevMonthDate, timeZone);
+					const tz = timeZone ?? "Europe/Samara";
+					const parts = new Map(
+						new Intl.DateTimeFormat("en-CA", {
+							timeZone: tz,
+							year: "numeric",
+							month: "2-digit",
+						})
+							.formatToParts(now)
+							.map((p) => [p.type, p.value] as const),
+					);
+					const y = Number(parts.get("year") ?? now.getUTCFullYear());
+					const m = Number(parts.get("month") ?? now.getUTCMonth() + 1);
+					const prevMonthAnchor = new Date(Date.UTC(y, m - 2, 15, 12, 0, 0));
+					const prevMonth = currentMonthPeriod(prevMonthAnchor, timeZone);
 					startDate = prevMonth.from;
 				}
 
@@ -228,21 +240,19 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 				.from(appointments)
 				.where(withDate(appointments.organizationId, appointments.startsAt));
 
-			// 5. 3-Tier Treatment Plan Acceptance Rate & Primary Consultation Conversion
-			const allPlans = await tx
+			// 5. 3-Tier Treatment Plan Acceptance Rate & Primary Consultation Conversion (SQL GROUP BY без выгрузки всех строк в ОЗУ)
+			const planTierAggRows = await tx
 				.select({
-					id: treatmentPlans.id,
-					name: treatmentPlans.name,
-					status: treatmentPlans.status,
-					totalPriceKopecks: treatmentPlans.totalPriceKopecks,
-					totalPriceRub: treatmentPlans.totalPriceRub,
-					totalPrice: treatmentPlans.totalPrice,
 					alternativeTier: treatmentPlans.alternativeTier,
+					status: treatmentPlans.status,
+					count: sql<number>`count(*)::int`,
+					totalKopecks: sql<string>`coalesce(sum(case when ${treatmentPlans.totalPriceKopecks} is not null then ${treatmentPlans.totalPriceKopecks}::bigint else round(coalesce(${treatmentPlans.totalPriceRub}, ${treatmentPlans.totalPrice}, 0)::numeric * 100)::bigint end), 0)::bigint`,
 				})
 				.from(treatmentPlans)
 				.where(
 					withDate(treatmentPlans.organizationId, treatmentPlans.createdAt),
-				);
+				)
+				.groupBy(treatmentPlans.alternativeTier, treatmentPlans.status);
 
 			// [ANL-05] Первичный приём: по явному маркеру консультации/первички в причине,
 			// либо по отсутствию у пациента завершенных приемов в прошлом (без ложного "or reason is null").
@@ -294,12 +304,11 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			};
 
 			// [ANL-05] Реляционная классификация по alternativeTier вместо строкового поиска подстрок в имени и цен
-			for (const plan of allPlans) {
-				const priceKopecks =
-					plan.totalPriceKopecks != null
-						? Number(plan.totalPriceKopecks)
-						: rublesToKopecks(Number(plan.totalPriceRub || plan.totalPrice || 0));
-				const rawTier = (plan.alternativeTier || "").toLowerCase().trim();
+			let totalPlansCount = 0;
+			for (const aggRow of planTierAggRows) {
+				const rowCount = Number(aggRow.count ?? 0);
+				const priceKopecks = Number(aggRow.totalKopecks ?? 0);
+				const rawTier = (aggRow.alternativeTier || "").toLowerCase().trim();
 				let tier: TierKey = "optimum";
 				if (rawTier === "premium" || rawTier === "vip") {
 					tier = "premium";
@@ -309,25 +318,23 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 					rawTier === "compromise"
 				) {
 					tier = "basic";
-				} else if (rawTier === "optimum" || rawTier === "standard") {
-					tier = "optimum";
 				} else {
 					tier = "optimum";
 				}
 
-				tierGroups[tier].totalPlans += 1;
+				totalPlansCount += rowCount;
+				tierGroups[tier].totalPlans += rowCount;
 				const isAccepted =
-					plan.status === "Approved" ||
-					plan.status === "Active" ||
-					plan.status === "Completed";
+					aggRow.status === "Approved" ||
+					aggRow.status === "Active" ||
+					aggRow.status === "Completed";
 				if (isAccepted) {
-					tierGroups[tier].acceptedPlans += 1;
+					tierGroups[tier].acceptedPlans += rowCount;
 					tierGroups[tier].totalKopecks += priceKopecks;
 					tierGroups[tier].totalRub = kopecksToRubles(tierGroups[tier].totalKopecks);
 				}
 			}
 
-			const totalPlansCount = allPlans.length;
 			const acceptedPlansCount = Object.values(tierGroups).reduce(
 				(s, g) => s + g.acceptedPlans,
 				0,

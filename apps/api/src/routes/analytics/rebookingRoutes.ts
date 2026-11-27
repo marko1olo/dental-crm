@@ -559,6 +559,7 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 					byDoctors: byStaff.filter((s) => s.role === "doctor"),
 					events: computedEvents.map((e) => ({
 						id: e.id,
+						visitId: e.id,
 						patientName: e.patientName,
 						rebookedBy: e.rebookedBy,
 						timeDeltaMinutes: e.timeDeltaMinutes,
@@ -575,6 +576,7 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 					})),
 					records: allRecords.map((r) => ({
 						id: r.id,
+						visitId: r.id,
 						patientName: r.patientName,
 						rebookedBy: r.rebookedBy,
 						timeDeltaMinutes: r.timeDeltaMinutes,

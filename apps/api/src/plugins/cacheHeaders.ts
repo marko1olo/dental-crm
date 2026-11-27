@@ -236,6 +236,17 @@ export function buildCacheControlHeader(config: RouteCacheConfig): string {
 	return parts.join(", ");
 }
 
+function resolveCacheRoleKey(request: FastifyRequest): string {
+	const identity = getRequestIdentity(request);
+	const reqWithUser = request as FastifyRequest & {
+		user?: { role?: string | null };
+		staffRole?: string | null;
+	};
+	const rawRole = identity.role ?? reqWithUser.user?.role ?? reqWithUser.staffRole ?? "anon";
+	const normalized = typeof rawRole === "string" ? rawRole.trim().toLowerCase() : "";
+	return normalized || "anon";
+}
+
 /**
  * Сброс in-memory ETag кэша по шаблону пути и/или tenantId.
  */
@@ -245,7 +256,9 @@ export function invalidateCache(
 ): number {
 	let deletedCount = 0;
 	for (const [key] of etagMemoryCache.entries()) {
-		const [entryTenant, , entryPath] = key.split("::");
+		const parts = key.split("::");
+		const entryTenant = parts[0];
+		const entryPath = parts.slice(3).join("::");
 
 		if (tenantId && entryTenant !== tenantId) {
 			continue;
@@ -319,7 +332,8 @@ const cacheHeadersPluginAsync: FastifyPluginAsync<
 			return;
 		}
 		const cacheScope = tenantId ?? "public";
-		const cacheKey = `${cacheScope}::${request.method}::${request.url}`;
+		const roleKey = resolveCacheRoleKey(request);
+		const cacheKey = `${cacheScope}::${roleKey}::${request.method}::${request.url}`;
 		const entry = etagMemoryCache.get(cacheKey);
 
 		if (entry && Date.now() - entry.cachedAt < ttlMs) {
@@ -367,7 +381,8 @@ const cacheHeadersPluginAsync: FastifyPluginAsync<
 				return payload;
 			}
 			const cacheScope = tenantId ?? "public";
-			const cacheKey = `${cacheScope}::${request.method}::${request.url}`;
+			const roleKey = resolveCacheRoleKey(request);
+			const cacheKey = `${cacheScope}::${roleKey}::${request.method}::${request.url}`;
 
 			// Сохраняем в in-memory таблицу с контролем размера (LRU / FIFO)
 			if (etagMemoryCache.size >= maxEntries) {

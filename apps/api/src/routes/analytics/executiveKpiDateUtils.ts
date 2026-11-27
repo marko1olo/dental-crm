@@ -1,4 +1,63 @@
 import { type ExecutivePeriod, rublesToKopecks } from "@dental/shared";
+import { instantOfLocalTime } from "../../services/reports/managerReports/periodBounds.js";
+import { DEFAULT_CLINIC_TIME_ZONE } from "../../services/reports/managerReports/timezone.js";
+
+function extractLocalCalendarParts(
+	date: Date,
+	timeZone: string,
+): { year: number; month: number; day: number; dayOfWeekMon0: number } {
+	try {
+		const parts = new Map(
+			new Intl.DateTimeFormat("en-CA", {
+				timeZone,
+				year: "numeric",
+				month: "2-digit",
+				day: "2-digit",
+				weekday: "short",
+			})
+				.formatToParts(date)
+				.map((p) => [p.type, p.value] as const),
+		);
+		const year = Number(parts.get("year"));
+		const month = Number(parts.get("month"));
+		const day = Number(parts.get("day"));
+		const wd = parts.get("weekday") ?? "";
+		const wdMap: Record<string, number> = {
+			Mon: 0,
+			Tue: 1,
+			Wed: 2,
+			Thu: 3,
+			Fri: 4,
+			Sat: 5,
+			Sun: 6,
+		};
+		const dayOfWeekMon0 = wdMap[wd] ?? (date.getUTCDay() === 0 ? 6 : date.getUTCDay() - 1);
+		if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+			return { year, month, day, dayOfWeekMon0 };
+		}
+	} catch {
+		// Fallback to UTC below
+	}
+	const utcDow = date.getUTCDay() === 0 ? 6 : date.getUTCDay() - 1;
+	return {
+		year: date.getUTCFullYear(),
+		month: date.getUTCMonth() + 1,
+		day: date.getUTCDate(),
+		dayOfWeekMon0: utcDow,
+	};
+}
+
+function zonedDayStart(timeZone: string, year: number, month: number, day: number): Date {
+	const ms = instantOfLocalTime(timeZone, year, month, day);
+	return ms !== null ? new Date(ms) : new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+}
+
+function zonedDayEnd(timeZone: string, year: number, month: number, day: number): Date {
+	const nextDayStart = instantOfLocalTime(timeZone, year, month, day + 1);
+	return nextDayStart !== null
+		? new Date(nextDayStart - 1)
+		: new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+}
 
 /**
  * Канонические типизированные коды регламентированных статей расходов РКО (Мандат 8ap & 8bm).
@@ -37,46 +96,51 @@ export function resolveExecutiveDateRange(
 	period?: string,
 	fromDateIso?: string,
 	toDateIso?: string,
+	timeZone?: string | null,
 ): ExecutivePeriodRange {
 	const execPeriod: ExecutivePeriod = isExecutivePeriod(period) ? period : "month";
+	const resolvedTz = timeZone?.trim() || DEFAULT_CLINIC_TIME_ZONE;
 
 	const now = new Date();
-	const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+	const localNow = extractLocalCalendarParts(now, resolvedTz);
+	const endOfToday = zonedDayEnd(resolvedTz, localNow.year, localNow.month, localNow.day);
 	let startDate: Date;
 	let endDate: Date = endOfToday;
 
 	if (execPeriod === "yesterday") {
-		startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
-		endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+		startDate = zonedDayStart(resolvedTz, localNow.year, localNow.month, localNow.day - 1);
+		endDate = zonedDayEnd(resolvedTz, localNow.year, localNow.month, localNow.day - 1);
 	} else if (execPeriod === "day") {
-		startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+		startDate = zonedDayStart(resolvedTz, localNow.year, localNow.month, localNow.day);
 		endDate = endOfToday;
 	} else if (execPeriod === "week") {
-		const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0 = Monday
-		startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek, 0, 0, 0, 0);
+		startDate = zonedDayStart(resolvedTz, localNow.year, localNow.month, localNow.day - localNow.dayOfWeekMon0);
 		endDate = endOfToday;
 	} else if (execPeriod === "quarter") {
-		const currentQuarterMonth = Math.floor(now.getMonth() / 3) * 3;
-		startDate = new Date(now.getFullYear(), currentQuarterMonth, 1, 0, 0, 0, 0);
+		const currentQuarterMonth = Math.floor((localNow.month - 1) / 3) * 3 + 1;
+		startDate = zonedDayStart(resolvedTz, localNow.year, currentQuarterMonth, 1);
 		endDate = endOfToday;
 	} else if (execPeriod === "year") {
-		startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+		startDate = zonedDayStart(resolvedTz, localNow.year, 1, 1);
 		endDate = endOfToday;
 	} else if (execPeriod === "custom" && fromDateIso) {
 		const parsedFrom = new Date(fromDateIso);
 		startDate = Number.isNaN(parsedFrom.getTime())
-			? new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+			? zonedDayStart(resolvedTz, localNow.year, localNow.month, 1)
 			: parsedFrom;
 		if (toDateIso) {
 			const parsedTo = new Date(toDateIso);
-			endDate = Number.isNaN(parsedTo.getTime())
-				? endOfToday
-				: new Date(parsedTo.getFullYear(), parsedTo.getMonth(), parsedTo.getDate(), 23, 59, 59, 999);
+			if (Number.isNaN(parsedTo.getTime())) {
+				endDate = endOfToday;
+			} else {
+				const toParts = extractLocalCalendarParts(parsedTo, resolvedTz);
+				endDate = zonedDayEnd(resolvedTz, toParts.year, toParts.month, toParts.day);
+			}
 		} else {
 			endDate = endOfToday;
 		}
 	} else {
-		startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+		startDate = zonedDayStart(resolvedTz, localNow.year, localNow.month, 1);
 		endDate = endOfToday;
 	}
 

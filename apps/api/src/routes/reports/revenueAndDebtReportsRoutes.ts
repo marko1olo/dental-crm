@@ -4,10 +4,9 @@
  */
 
 import type { FastifyInstance } from "fastify";
-import { requireClinicalReadContext } from "../../accessGuard.js";
 import { defineStreamRoute } from "../../core/routeFactories.js";
 import { withTenantReadCtx } from "../../db/rls.js";
-import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
+import { requireExecutiveAccess } from "../analytics/executiveAccessGuard.js";
 import {
 	appointmentFunnel,
 	chairLoad,
@@ -48,6 +47,7 @@ export async function registerRevenueAndDebtReportsRoutes(app: FastifyInstance) 
 						...report,
 					};
 				},
+				{ executivePnl: true },
 			);
 		},
 	});
@@ -73,6 +73,7 @@ export async function registerRevenueAndDebtReportsRoutes(app: FastifyInstance) 
 						...summary,
 					};
 				},
+				{ executivePnl: true },
 			);
 		},
 	});
@@ -85,14 +86,8 @@ export async function registerRevenueAndDebtReportsRoutes(app: FastifyInstance) 
 		path: "/api/reports/receivables",
 		permission: "public",
 		handler: async ({ request, reply }) => {
-			const context = await requireClinicalReadContext(
-				request,
-				reply,
-				"report receivables",
-			);
-			if (!context) return;
-			if (!enforcePermissionWhenStaffKnown(request, reply, "analytics.read"))
-				return;
+			const organizationId = await requireExecutiveAccess(request, reply);
+			if (!organizationId) return;
 
 			const parsed = periodQuerySchema.safeParse(request.query);
 			if (!parsed.success)
@@ -103,8 +98,8 @@ export async function registerRevenueAndDebtReportsRoutes(app: FastifyInstance) 
 				options.minDebtRub = parsed.data.minDebtRub;
 			if (parsed.data.limit !== undefined) options.limit = parsed.data.limit;
 
-			return withTenantReadCtx(context.organizationId, (tx) =>
-				receivables(context.organizationId, options, tx),
+			return withTenantReadCtx(organizationId, (tx) =>
+				receivables(organizationId, options, tx),
 			);
 		},
 	});
@@ -160,6 +155,7 @@ export async function registerRevenueAndDebtReportsRoutes(app: FastifyInstance) 
 							flow.isEmpty,
 					};
 				},
+				{ executivePnl: true },
 			);
 		},
 	});

@@ -1,8 +1,8 @@
 import { kopecksToRubles } from "@dental/shared";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
-import { payments, users, visitDiaries } from "../../db/schema.js";
+import { db, type TenantDb } from "../../db/client.js";
+import { withTenantReadCtx } from "../../db/rls.js";
+import { organizations, payments, users, visitDiaries } from "../../db/schema.js";
 import {
 	clinicTimeZone,
 	inClinicZone,
@@ -35,13 +35,17 @@ export interface CohortRevenuePoint {
  * Месяц когорты считается в часовом поясе клиники (Europe/Moscow, Europe/Samara и др.),
  * приведение к поясу выполняется через проверку postgresKnowsTimeZone.
  */
-export async function computeCohortLtvAll(organizationIds: readonly string[]) {
+export async function computeCohortLtvAll(
+	organizationIds: readonly string[],
+	executor?: TenantDb,
+) {
 	const map = new Map<string, CohortRevenuePoint[]>();
 
 	for (const organizationId of organizationIds) {
-		await withTenantCtx(organizationId, async (tx) => {
+		const runForOrg = async (tx: TenantDb) => {
 			const zone = await postgresKnowsTimeZone(
-				await clinicTimeZone(organizationId),
+				await clinicTimeZone(organizationId, tx),
+				tx,
 			);
 			// Выражение месяца объявлено ОДИН раз на SELECT, GROUP BY и ORDER BY.
 			const monthBucket = sql`date_trunc('month', ${inClinicZone(payments.createdAt, zone)})`;
@@ -67,7 +71,13 @@ export async function computeCohortLtvAll(organizationIds: readonly string[]) {
 					"Month 1": kopecksToRubles(Number(r.totalKopecks ?? 0)),
 				})),
 			);
-		});
+		};
+
+		if (executor) {
+			await runForOrg(executor);
+		} else {
+			await withTenantReadCtx(organizationId, runForOrg);
+		}
 	}
 
 	return map;
@@ -109,50 +119,68 @@ export function doctorProfitabilityRow(
  */
 export async function computeDoctorProfitabilityAll(
 	organizationIds?: readonly string[],
+	executor?: TenantDb,
 ): Promise<Map<string, DoctorProfitabilitySnapshotRow[]>> {
 	if (organizationIds && organizationIds.length === 0) {
 		return new Map();
 	}
-	const whereClause = organizationIds
-		? and(PAID_PAYMENTS_ONLY, inArray(payments.organizationId, [...organizationIds]))
-		: PAID_PAYMENTS_ONLY;
-	const rows = await db
-		.select({
-			organizationId: payments.organizationId,
-			doctorId: visitDiaries.doctorId,
-			doctorName: users.fullName,
-			totalRevenueKopecks: sql<string>`coalesce(sum(${PAYMENT_KOPECKS_SQL}), 0)::bigint`,
-		})
-		.from(payments)
-		.leftJoin(
-			visitDiaries,
-			and(
-				eq(payments.visitId, visitDiaries.visitId),
-				eq(visitDiaries.organizationId, payments.organizationId),
-			),
-		)
-		.leftJoin(
-			users,
-			and(
-				eq(visitDiaries.doctorId, users.id),
-				eq(users.organizationId, payments.organizationId),
-			),
-		)
-		.where(whereClause)
-		.groupBy(payments.organizationId, visitDiaries.doctorId, users.fullName);
 
 	const map = new Map<string, DoctorProfitabilitySnapshotRow[]>();
-	for (const r of rows) {
-		if (!r.organizationId) continue;
-		if (!map.has(r.organizationId)) {
-			map.set(r.organizationId, []);
+
+	const queryWithTx = async (tx: TenantDb, scopeOrgIds?: readonly string[]) => {
+		const whereClause = scopeOrgIds
+			? and(PAID_PAYMENTS_ONLY, inArray(payments.organizationId, [...scopeOrgIds]))
+			: PAID_PAYMENTS_ONLY;
+		const rows = await tx
+			.select({
+				organizationId: payments.organizationId,
+				doctorId: visitDiaries.doctorId,
+				doctorName: users.fullName,
+				totalRevenueKopecks: sql<string>`coalesce(sum(${PAYMENT_KOPECKS_SQL}), 0)::bigint`,
+			})
+			.from(payments)
+			.leftJoin(
+				visitDiaries,
+				and(
+					eq(payments.visitId, visitDiaries.visitId),
+					eq(visitDiaries.organizationId, payments.organizationId),
+				),
+			)
+			.leftJoin(
+				users,
+				and(
+					eq(visitDiaries.doctorId, users.id),
+					eq(users.organizationId, payments.organizationId),
+				),
+			)
+			.where(whereClause)
+			.groupBy(payments.organizationId, visitDiaries.doctorId, users.fullName);
+
+		for (const r of rows) {
+			if (!r.organizationId) continue;
+			if (!map.has(r.organizationId)) {
+				map.set(r.organizationId, []);
+			}
+			map.get(r.organizationId)?.push(
+				doctorProfitabilityRow(
+					r.doctorName ?? "Врач не указан",
+					kopecksToRubles(Number(r.totalRevenueKopecks ?? 0)),
+				),
+			);
 		}
-		map.get(r.organizationId)?.push(
-			doctorProfitabilityRow(
-				r.doctorName ?? "Врач не указан",
-				kopecksToRubles(Number(r.totalRevenueKopecks ?? 0)),
-			),
-		);
+	};
+
+	if (executor) {
+		await queryWithTx(executor, organizationIds);
+		return map;
+	}
+
+	const targetOrgIds =
+		organizationIds ??
+		(await db.select({ id: organizations.id }).from(organizations)).map((o) => o.id);
+
+	for (const orgId of targetOrgIds) {
+		await withTenantReadCtx(orgId, (tx) => queryWithTx(tx, [orgId]));
 	}
 
 	return map;

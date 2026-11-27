@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Activity, CheckCircle2, AlertCircle, RefreshCw, Radio } from "lucide-react";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
 
 export interface ImportProgressEvent {
@@ -44,10 +45,13 @@ export function MigrationStreamProgress({
 	const [progress, setProgress] = useState<ImportProgressEvent | null>(null);
 
 	useEffect(() => {
-		let es: EventSource | null = null;
-		const handleProgress = (event: MessageEvent) => {
+		const controller = new AbortController();
+		let isMounted = true;
+		let reconnectTimer: number | null = null;
+
+		const dispatchEvent = (rawData: string) => {
 			try {
-				const data = JSON.parse(event.data) as ImportProgressEvent;
+				const data = JSON.parse(rawData) as ImportProgressEvent;
 				if (!activeTaskId || data.taskId === activeTaskId) {
 					setProgress(data);
 					if (data.phase === "done" && onCompleted) {
@@ -59,27 +63,77 @@ export function MigrationStreamProgress({
 			}
 		};
 
-		try {
-			es = new EventSource("/api/imports/smart/progress/stream");
+		async function connectSseWithAuth() {
+			try {
+				const res = await fetch("/api/imports/smart/progress/stream", {
+					method: "GET",
+					headers: denteClinicalReadHeaders({
+						Accept: "text/event-stream",
+					}),
+					signal: controller.signal,
+				});
+				if (!res.ok || !res.body) {
+					if (isMounted) setConnected(false);
+					return;
+				}
+				if (isMounted) setConnected(true);
 
-			es.onopen = () => {
-				setConnected(true);
-			};
+				const reader = res.body.getReader();
+				const decoder = new TextDecoder("utf-8");
+				let buffer = "";
+				let currentEvent = "message";
+				let dataLines: string[] = [];
 
-			es.addEventListener("progress", handleProgress);
+				const flushFrame = () => {
+					if (dataLines.length > 0 && currentEvent === "progress") {
+						dispatchEvent(dataLines.join("\n"));
+					}
+					currentEvent = "message";
+					dataLines = [];
+				};
 
-			es.onerror = () => {
-				setConnected(false);
-			};
-		} catch (err) {
-			clientLogger.warn("[MigrationStream] Failed to initialize EventSource:", err);
-			setConnected(false);
+				while (isMounted && !controller.signal.aborted) {
+					const { value, done } = await reader.read();
+					if (done) break;
+					buffer += decoder.decode(value, { stream: true });
+
+					const lines = buffer.split(/\r?\n/);
+					buffer = lines.pop() ?? "";
+					for (const line of lines) {
+						if (line === "") {
+							flushFrame();
+							continue;
+						}
+						if (line.startsWith(":")) continue;
+						if (line.startsWith("event:")) {
+							currentEvent = line.slice(6).trim();
+						} else if (line.startsWith("data:")) {
+							dataLines.push(line.slice(5).trimStart());
+						}
+					}
+				}
+				flushFrame();
+				if (isMounted) setConnected(false);
+			} catch (err) {
+				if (!controller.signal.aborted && isMounted) {
+					clientLogger.warn("[MigrationStream] SSE stream disconnected:", err);
+					setConnected(false);
+					reconnectTimer = window.setTimeout(() => {
+						if (isMounted && !controller.signal.aborted) {
+							void connectSseWithAuth();
+						}
+					}, 3000);
+				}
+			}
 		}
 
+		void connectSseWithAuth();
+
 		return () => {
-			if (es) {
-				es.removeEventListener("progress", handleProgress);
-				es.close();
+			isMounted = false;
+			controller.abort();
+			if (reconnectTimer !== null) {
+				window.clearTimeout(reconnectTimer);
 			}
 		};
 	}, [activeTaskId, onCompleted]);

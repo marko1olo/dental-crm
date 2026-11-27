@@ -9,8 +9,12 @@
  */
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { and, eq, inArray, notExists, sql } from "drizzle-orm";
-import { withTenantCtx } from "../db/rls.js";
+import { and, desc, eq, gte, inArray, lte, notExists, sql } from "drizzle-orm";
+import { z } from "zod";
+import { defineStreamRoute } from "../core/routeFactories.js";
+import { withSavepoint, withTenantReadCtx } from "../db/rls.js";
+import { clinicTimeZone } from "../services/reports/managerReports/timezone.js";
+import { resolveExecutiveDateRange } from "./analytics/executiveKpiDateUtils.js";
 import {
 	appointments,
 	cashOperations,
@@ -105,6 +109,67 @@ function buildNetPaidRowsForRomi(
 	return result;
 }
 
+const marketingAnalyticsQuerySchema = z.object({
+	period: z.enum(["day", "week", "month", "quarter", "year", "all", "7d", "30d", "90d"]).optional(),
+	from: z.string().trim().min(1).max(64).optional(),
+	to: z.string().trim().min(1).max(64).optional(),
+	limit: z.coerce.number().int().min(1).max(5000).optional(),
+});
+
+function resolveMarketingBounds(
+	query: z.infer<typeof marketingAnalyticsQuerySchema>,
+	timeZone: string | null,
+): { startDate: Date | null; endDate: Date | null; apptEndDate: Date | null; rowLimit: number } {
+	const rowLimit = query.limit ?? 2000;
+	if (query.period === "all" && !query.from && !query.to) {
+		return { startDate: null, endDate: null, apptEndDate: null, rowLimit };
+	}
+	if (query.from) {
+		const range = resolveExecutiveDateRange("custom", query.from, query.to, timeZone);
+		return {
+			startDate: range.startDate,
+			endDate: range.endDate,
+			apptEndDate: query.to ? range.endDate : null,
+			rowLimit,
+		};
+	}
+	const p = query.period ?? "year";
+	if (p === "7d") {
+		const end = new Date();
+		return {
+			startDate: new Date(end.getTime() - 7 * 86_400_000),
+			endDate: end,
+			apptEndDate: query.to ? end : null,
+			rowLimit,
+		};
+	}
+	if (p === "30d") {
+		const end = new Date();
+		return {
+			startDate: new Date(end.getTime() - 30 * 86_400_000),
+			endDate: end,
+			apptEndDate: query.to ? end : null,
+			rowLimit,
+		};
+	}
+	if (p === "90d") {
+		const end = new Date();
+		return {
+			startDate: new Date(end.getTime() - 90 * 86_400_000),
+			endDate: end,
+			apptEndDate: query.to ? end : null,
+			rowLimit,
+		};
+	}
+	const range = resolveExecutiveDateRange(p, undefined, undefined, timeZone);
+	return {
+		startDate: range.startDate,
+		endDate: range.endDate,
+		apptEndDate: query.to ? range.endDate : null,
+		rowLimit,
+	};
+}
+
 export async function registerMarketingRoutes(app: FastifyInstance) {
 	await registerMarketingPromosRoutes(app);
 
@@ -112,156 +177,361 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 	 * GET /api/marketing/attribution
 	 * Сводная сквозная аналитика: онлайн-самозапись vs телефония регистратуры + каналы ROMI (Фича #28)
 	 */
-	app.get("/api/marketing/attribution", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireMarketingReadAccess(request, reply, "marketing attribution");
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/marketing/attribution",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireMarketingReadAccess(request, reply, "marketing attribution");
+			if (!orgId) return;
 
-		try {
-			const [allLeads, allAppts, allPayments, allPatients, allCallEvents, allMarketingExpenses] =
-				await withTenantCtx(orgId, (tx) =>
-					Promise.all([
-						tx.select({
-							id: crmLeads.id,
-							patientId: crmLeads.patientId,
-							phone: crmLeads.phone,
-							source: crmLeads.source,
-							status: crmLeads.status,
-							createdAt: crmLeads.createdAt,
-						}).from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
-						tx.select({
-							id: appointments.id,
-							patientId: appointments.patientId,
-							status: appointments.status,
-							startsAt: appointments.startsAt,
-						}).from(appointments).where(eq(appointments.organizationId, orgId)),
-						tx.select({
-							id: payments.id,
-							patientId: payments.patientId,
-							amountKopecks: payments.amountKopecks,
-							amountRub: payments.amountRub,
-							status: payments.status,
-						}).from(payments).where(
-							and(
-								eq(payments.organizationId, orgId),
-								inArray(payments.status, ["paid", "refunded"]),
-								notExists(
-									tx.select({ id: patientInvoices.id })
-										.from(patientInvoices)
-										.where(
-											and(
-												eq(patientInvoices.id, payments.documentId),
-												eq(patientInvoices.organizationId, orgId),
-												inArray(patientInvoices.status, ["voided", "cancelled"]),
-											),
-										),
+			const parsedQuery = marketingAnalyticsQuerySchema.safeParse(request.query ?? {});
+			if (!parsedQuery.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры периода аналитики маркетинга",
+				});
+			}
+
+			try {
+				const [allLeads, allAppts, allPayments, allPatients, allCallEvents, allMarketingExpenses] =
+					await withTenantReadCtx(orgId, async (tx) => {
+						const tz = await clinicTimeZone(orgId, tx);
+						const { startDate, endDate, apptEndDate, rowLimit } = resolveMarketingBounds(parsedQuery.data, tz);
+						return Promise.all([
+							tx.select({
+								id: crmLeads.id,
+								patientId: crmLeads.patientId,
+								phone: crmLeads.phone,
+								source: crmLeads.source,
+								status: crmLeads.status,
+								createdAt: crmLeads.createdAt,
+							}).from(crmLeads).where(
+								and(
+									eq(crmLeads.organizationId, orgId),
+									startDate ? gte(crmLeads.createdAt, startDate) : sql`true`,
+									endDate ? lte(crmLeads.createdAt, endDate) : sql`true`,
 								),
-							),
-						),
-						tx.select({
-							id: patients.id,
-							fullName: patients.fullName,
-							phone: patients.phone,
-							notes: patients.notes,
-							administrativeProfile: patients.administrativeProfile,
-							createdAt: patients.createdAt,
-						}).from(patients).where(eq(patients.organizationId, orgId)),
-						tx.select({
-							id: communicationEvents.id,
-							channel: communicationEvents.channel,
-							direction: communicationEvents.direction,
-							durationSeconds: communicationEvents.durationSeconds,
-							status: communicationEvents.status,
-						}).from(communicationEvents).where(
-							and(
-								eq(communicationEvents.organizationId, orgId),
-								eq(communicationEvents.channel, "phone"),
-							),
-						),
-						tx.select({
-							amountKopecks: cashOperations.amountKopecks,
-							amountRub: cashOperations.amountRub,
-							metadata: cashOperations.metadata,
-							reasonCode: cashOperations.reasonCode,
-						}).from(cashOperations).where(
-							and(
-								eq(cashOperations.organizationId, orgId),
-								eq(cashOperations.operationType, "expense"),
-								sql`(${cashOperations.reasonCode} = 6 or (${cashOperations.metadata}->>'category') = 'marketing')`,
-							),
-						),
-					]),
-				);
+							).orderBy(desc(crmLeads.createdAt)).limit(rowLimit),
+							tx.select({
+								id: appointments.id,
+								patientId: appointments.patientId,
+								status: appointments.status,
+								startsAt: appointments.startsAt,
+							}).from(appointments).where(
+								and(
+									eq(appointments.organizationId, orgId),
+									startDate ? gte(appointments.startsAt, startDate) : sql`true`,
+									apptEndDate ? lte(appointments.startsAt, apptEndDate) : sql`true`,
+								),
+							).orderBy(desc(appointments.startsAt)).limit(rowLimit),
+							tx.select({
+								id: payments.id,
+								patientId: payments.patientId,
+								amountKopecks: payments.amountKopecks,
+								amountRub: payments.amountRub,
+								status: payments.status,
+							}).from(payments).where(
+								and(
+									eq(payments.organizationId, orgId),
+									inArray(payments.status, ["paid", "refunded"]),
+									startDate ? gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate) : sql`true`,
+									endDate ? lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, endDate) : sql`true`,
+									notExists(
+										tx.select({ id: patientInvoices.id })
+											.from(patientInvoices)
+											.where(
+												and(
+													eq(patientInvoices.id, payments.documentId),
+													eq(patientInvoices.organizationId, orgId),
+													inArray(patientInvoices.status, ["voided", "cancelled"]),
+												),
+											),
+									),
+								),
+							).orderBy(desc(payments.createdAt)).limit(rowLimit),
+							tx.select({
+								id: patients.id,
+								fullName: patients.fullName,
+								phone: patients.phone,
+								notes: patients.notes,
+								administrativeProfile: patients.administrativeProfile,
+								createdAt: patients.createdAt,
+							}).from(patients).where(eq(patients.organizationId, orgId))
+								.orderBy(desc(patients.createdAt)).limit(rowLimit),
+							tx.select({
+								id: communicationEvents.id,
+								channel: communicationEvents.channel,
+								direction: communicationEvents.direction,
+								durationSeconds: communicationEvents.durationSeconds,
+								status: communicationEvents.status,
+							}).from(communicationEvents).where(
+								and(
+									eq(communicationEvents.organizationId, orgId),
+									eq(communicationEvents.channel, "phone"),
+									startDate ? gte(communicationEvents.createdAt, startDate) : sql`true`,
+									endDate ? lte(communicationEvents.createdAt, endDate) : sql`true`,
+								),
+							).orderBy(desc(communicationEvents.createdAt)).limit(rowLimit),
+							tx.select({
+								amountKopecks: cashOperations.amountKopecks,
+								amountRub: cashOperations.amountRub,
+								metadata: cashOperations.metadata,
+								reasonCode: cashOperations.reasonCode,
+							}).from(cashOperations).where(
+								and(
+									eq(cashOperations.organizationId, orgId),
+									eq(cashOperations.operationType, "expense"),
+									sql`(${cashOperations.reasonCode} = 6 or (${cashOperations.metadata}->>'category') = 'marketing')`,
+									startDate ? gte(cashOperations.createdAt, startDate) : sql`true`,
+									endDate ? lte(cashOperations.createdAt, endDate) : sql`true`,
+								),
+							).orderBy(desc(cashOperations.createdAt)).limit(rowLimit),
+						]);
+					});
 
-			const report = calculateMarketingAttributionReport({
-				organizationId: orgId,
-				allLeads,
-				allAppts,
-				allPayments,
-				allPatients,
-				allCallEvents,
-				allMarketingExpenses,
-			});
+				const report = calculateMarketingAttributionReport({
+					organizationId: orgId,
+					allLeads,
+					allAppts,
+					allPayments,
+					allPatients,
+					allCallEvents,
+					allMarketingExpenses,
+				});
 
-			const romiChannels = aggregateCrmMarketingMetrics({
-				patients: allPatients.map((p) => ({
-					id: p.id,
-					administrativeProfile: (p.administrativeProfile && typeof p.administrativeProfile === "object"
-						? (p.administrativeProfile as Record<string, unknown>)
-						: null),
-					notes: p.notes,
-				})),
-				appointments: allAppts.map((a) => ({
-					id: a.id,
-					patientId: a.patientId ?? "",
-					status: a.status ?? "",
-				})),
-				payments: buildNetPaidRowsForRomi(allPayments),
-				communicationEvents: allCallEvents.map((c) => ({
-					id: c.id,
-					channel: c.channel ?? "phone",
-					source: "telephony",
-				})),
-			});
+				const romiChannels = aggregateCrmMarketingMetrics({
+					patients: allPatients.map((p) => ({
+						id: p.id,
+						administrativeProfile: (p.administrativeProfile && typeof p.administrativeProfile === "object"
+							? (p.administrativeProfile as Record<string, unknown>)
+							: null),
+						notes: p.notes,
+					})),
+					appointments: allAppts.map((a) => ({
+						id: a.id,
+						patientId: a.patientId ?? "",
+						status: a.status ?? "",
+					})),
+					payments: buildNetPaidRowsForRomi(allPayments),
+					communicationEvents: allCallEvents.map((c) => ({
+						id: c.id,
+						channel: c.channel ?? "phone",
+						source: "telephony",
+					})),
+				});
 
-			return reply.code(200).send({
-				...report,
-				romiChannels,
-				channels: romiChannels,
-			});
-		} catch (err) {
-			request.log.error({ err }, "[Marketing] Error fetching attribution report");
-			return reply.code(500).send({
-				error: "InternalServerError",
-				message: "Не удалось сформировать отчет по маркетинговой атрибуции",
-			});
-		}
+				return reply.code(200).send({
+					...report,
+					romiChannels,
+					channels: romiChannels,
+				});
+			} catch (err) {
+				request.log.error({ err }, "[Marketing] Error fetching attribution report");
+				return reply.code(500).send({
+					error: "InternalServerError",
+					message: "Не удалось сформировать отчет по маркетинговой атрибуции",
+				});
+			}
+		},
 	});
 
 	/**
 	 * GET /api/marketing/romi
 	 * Прямая сводная таблица окупаемости маркетинга (ROMI) из реальных данных БД CRM.
 	 */
-	app.get("/api/marketing/romi", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireMarketingReadAccess(request, reply, "marketing romi");
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/marketing/romi",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireMarketingReadAccess(request, reply, "marketing romi");
+			if (!orgId) return;
 
-		try {
-			const { allPatients, allAppts, allPayments, allCallEvents, customBudgetsKopecks } =
-				await withTenantCtx(orgId, async (tx) => {
-					const [patientsRows, apptsRows, paymentsRows, callRows] = await Promise.all([
+			const parsedQuery = marketingAnalyticsQuerySchema.safeParse(request.query ?? {});
+			if (!parsedQuery.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры периода ROMI",
+				});
+			}
+
+			try {
+				const { allPatients, allAppts, allPayments, allCallEvents, customBudgetsKopecks } =
+					await withTenantReadCtx(orgId, async (tx) => {
+						const tz = await clinicTimeZone(orgId, tx);
+						const { startDate, endDate, apptEndDate, rowLimit } = resolveMarketingBounds(parsedQuery.data, tz);
+						const [patientsRows, apptsRows, paymentsRows, callRows] = await Promise.all([
+							tx.select({
+								id: patients.id,
+								fullName: patients.fullName,
+								phone: patients.phone,
+								notes: patients.notes,
+								administrativeProfile: patients.administrativeProfile,
+								createdAt: patients.createdAt,
+							}).from(patients).where(eq(patients.organizationId, orgId))
+								.orderBy(desc(patients.createdAt)).limit(rowLimit),
+							tx.select({
+								id: appointments.id,
+								patientId: appointments.patientId,
+								status: appointments.status,
+							}).from(appointments).where(
+								and(
+									eq(appointments.organizationId, orgId),
+									startDate ? gte(appointments.startsAt, startDate) : sql`true`,
+									apptEndDate ? lte(appointments.startsAt, apptEndDate) : sql`true`,
+								),
+							).orderBy(desc(appointments.startsAt)).limit(rowLimit),
+							tx.select({
+								id: payments.id,
+								patientId: payments.patientId,
+								amountKopecks: payments.amountKopecks,
+								amountRub: payments.amountRub,
+								status: payments.status,
+							}).from(payments).where(
+								and(
+									eq(payments.organizationId, orgId),
+									inArray(payments.status, ["paid", "refunded"]),
+									startDate ? gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate) : sql`true`,
+									endDate ? lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, endDate) : sql`true`,
+									notExists(
+										tx.select({ id: patientInvoices.id })
+											.from(patientInvoices)
+											.where(
+												and(
+													eq(patientInvoices.id, payments.documentId),
+													eq(patientInvoices.organizationId, orgId),
+													inArray(patientInvoices.status, ["voided", "cancelled"]),
+												),
+											),
+									),
+								),
+							).orderBy(desc(payments.createdAt)).limit(rowLimit),
+							tx.select({
+								id: communicationEvents.id,
+								channel: communicationEvents.channel,
+								direction: communicationEvents.direction,
+								durationSeconds: communicationEvents.durationSeconds,
+								status: communicationEvents.status,
+							}).from(communicationEvents).where(
+								and(
+									eq(communicationEvents.organizationId, orgId),
+									startDate ? gte(communicationEvents.createdAt, startDate) : sql`true`,
+									endDate ? lte(communicationEvents.createdAt, endDate) : sql`true`,
+								),
+							).orderBy(desc(communicationEvents.createdAt)).limit(rowLimit),
+						]);
+
+						let budgets: Record<string, number> | undefined;
+						try {
+							const { channels: persistedChannels } = await withSavepoint(
+								tx,
+								(spTx) => readOrSeedOrganizationRomiChannels(orgId, spTx),
+							);
+							budgets = {};
+							for (const ch of persistedChannels) {
+								if (ch.spentKopecks > 0) {
+									budgets[ch.channelKey] = ch.spentKopecks;
+								}
+							}
+						} catch (romiSeedErr) {
+							request.log.warn({ romiSeedErr }, "[Marketing] Non-critical: could not load persisted custom budgets, using CRM default aggregation");
+						}
+
+						return {
+							allPatients: patientsRows,
+							allAppts: apptsRows,
+							allPayments: paymentsRows,
+							allCallEvents: callRows,
+							customBudgetsKopecks: budgets,
+						};
+					});
+
+				const romiChannels = aggregateCrmMarketingMetrics({
+					patients: allPatients.map((p) => ({
+						id: p.id,
+						administrativeProfile: (p.administrativeProfile && typeof p.administrativeProfile === "object"
+							? (p.administrativeProfile as Record<string, unknown>)
+							: null),
+						notes: p.notes,
+					})),
+					appointments: allAppts.map((a) => ({
+						id: a.id,
+						patientId: a.patientId ?? "",
+						status: a.status ?? "",
+					})),
+					payments: buildNetPaidRowsForRomi(allPayments),
+					communicationEvents: allCallEvents.map((c) => ({
+						id: c.id,
+						channel: c.channel ?? "",
+						source: c.channel ?? "",
+					})),
+					customBudgetsKopecks,
+				});
+
+				return reply.code(200).send({
+					organizationId: orgId,
+					channels: romiChannels,
+				});
+			} catch (err) {
+				request.log.error({ err }, "[Marketing] Error calculating romi channels");
+				return reply.code(500).send({
+					error: "InternalServerError",
+					message: "Не удалось рассчитать показатели ROMI",
+				});
+			}
+		},
+	});
+
+	/**
+	 * GET /api/marketing/online-booking/funnel
+	 * Пошаговая воронка конверсии самозаписи (Фича №28)
+	 */
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/marketing/online-booking/funnel",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireMarketingReadAccess(request, reply, "online booking funnel");
+			if (!orgId) return;
+
+			const parsedQuery = marketingAnalyticsQuerySchema.safeParse(request.query ?? {});
+			if (!parsedQuery.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры периода воронки самозаписи",
+				});
+			}
+
+			try {
+				const [allLeads, allAppts, allPayments, allPatients] = await withTenantReadCtx(orgId, async (tx) => {
+					const tz = await clinicTimeZone(orgId, tx);
+					const { startDate, endDate, apptEndDate, rowLimit } = resolveMarketingBounds(parsedQuery.data, tz);
+					return Promise.all([
 						tx.select({
-							id: patients.id,
-							fullName: patients.fullName,
-							phone: patients.phone,
-							notes: patients.notes,
-							administrativeProfile: patients.administrativeProfile,
-							createdAt: patients.createdAt,
-						}).from(patients).where(eq(patients.organizationId, orgId)),
+							id: crmLeads.id,
+							patientId: crmLeads.patientId,
+							phone: crmLeads.phone,
+							source: crmLeads.source,
+							status: crmLeads.status,
+						}).from(crmLeads).where(
+							and(
+								eq(crmLeads.organizationId, orgId),
+								startDate ? gte(crmLeads.createdAt, startDate) : sql`true`,
+								endDate ? lte(crmLeads.createdAt, endDate) : sql`true`,
+							),
+						).orderBy(desc(crmLeads.createdAt)).limit(rowLimit),
 						tx.select({
 							id: appointments.id,
 							patientId: appointments.patientId,
 							status: appointments.status,
-						}).from(appointments).where(eq(appointments.organizationId, orgId)),
+						}).from(appointments).where(
+							and(
+								eq(appointments.organizationId, orgId),
+								startDate ? gte(appointments.startsAt, startDate) : sql`true`,
+								apptEndDate ? lte(appointments.startsAt, apptEndDate) : sql`true`,
+							),
+						).orderBy(desc(appointments.startsAt)).limit(rowLimit),
 						tx.select({
 							id: payments.id,
 							patientId: payments.patientId,
@@ -272,6 +542,8 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 							and(
 								eq(payments.organizationId, orgId),
 								inArray(payments.status, ["paid", "refunded"]),
+								startDate ? gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate) : sql`true`,
+								endDate ? lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, endDate) : sql`true`,
 								notExists(
 									tx.select({ id: patientInvoices.id })
 										.from(patientInvoices)
@@ -284,165 +556,60 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 										),
 								),
 							),
-						),
+						).orderBy(desc(payments.createdAt)).limit(rowLimit),
 						tx.select({
-							id: communicationEvents.id,
-							channel: communicationEvents.channel,
-							direction: communicationEvents.direction,
-							durationSeconds: communicationEvents.durationSeconds,
-							status: communicationEvents.status,
-						}).from(communicationEvents).where(eq(communicationEvents.organizationId, orgId)),
+							id: patients.id,
+							fullName: patients.fullName,
+							phone: patients.phone,
+							notes: patients.notes,
+							administrativeProfile: patients.administrativeProfile,
+							createdAt: patients.createdAt,
+						}).from(patients).where(eq(patients.organizationId, orgId))
+							.orderBy(desc(patients.createdAt)).limit(rowLimit),
 					]);
-
-					let budgets: Record<string, number> | undefined;
-					try {
-						const { channels: persistedChannels } = await readOrSeedOrganizationRomiChannels(orgId, tx);
-						budgets = {};
-						for (const ch of persistedChannels) {
-							if (ch.spentKopecks > 0) {
-								budgets[ch.channelKey] = ch.spentKopecks;
-							}
-						}
-					} catch (romiSeedErr) {
-						request.log.warn({ romiSeedErr }, "[Marketing] Non-critical: could not load persisted custom budgets, using CRM default aggregation");
-					}
-
-					return {
-						allPatients: patientsRows,
-						allAppts: apptsRows,
-						allPayments: paymentsRows,
-						allCallEvents: callRows,
-						customBudgetsKopecks: budgets,
-					};
 				});
 
-			const romiChannels = aggregateCrmMarketingMetrics({
-				patients: allPatients.map((p) => ({
-					id: p.id,
-					administrativeProfile: (p.administrativeProfile && typeof p.administrativeProfile === "object"
-						? (p.administrativeProfile as Record<string, unknown>)
-						: null),
-					notes: p.notes,
-				})),
-				appointments: allAppts.map((a) => ({
-					id: a.id,
-					patientId: a.patientId ?? "",
-					status: a.status ?? "",
-				})),
-				payments: buildNetPaidRowsForRomi(allPayments),
-				communicationEvents: allCallEvents.map((c) => ({
-					id: c.id,
-					channel: c.channel ?? "",
-					source: c.channel ?? "",
-				})),
-				customBudgetsKopecks,
-			});
+				const funnel = calculateOnlineBookingFunnel({
+					allLeads,
+					allAppts,
+					allPayments,
+					allPatients,
+				});
 
-			return reply.code(200).send({
-				organizationId: orgId,
-				channels: romiChannels,
-			});
-		} catch (err) {
-			request.log.error({ err }, "[Marketing] Error calculating romi channels");
-			return reply.code(500).send({
-				error: "InternalServerError",
-				message: "Не удалось рассчитать показатели ROMI",
-			});
-		}
-	});
-
-	/**
-	 * GET /api/marketing/online-booking/funnel
-	 * Пошаговая воронка конверсии самозаписи (Фича №28)
-	 */
-	app.get("/api/marketing/online-booking/funnel", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireMarketingReadAccess(request, reply, "online booking funnel");
-		if (!orgId) return;
-
-		try {
-			const [allLeads, allAppts, allPayments, allPatients] = await withTenantCtx(orgId, (tx) =>
-				Promise.all([
-					tx.select({
-						id: crmLeads.id,
-						patientId: crmLeads.patientId,
-						phone: crmLeads.phone,
-						source: crmLeads.source,
-						status: crmLeads.status,
-					}).from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
-					tx.select({
-						id: appointments.id,
-						patientId: appointments.patientId,
-						status: appointments.status,
-					}).from(appointments).where(eq(appointments.organizationId, orgId)),
-					tx.select({
-						id: payments.id,
-						patientId: payments.patientId,
-						amountKopecks: payments.amountKopecks,
-						amountRub: payments.amountRub,
-						status: payments.status,
-					}).from(payments).where(
-						and(
-							eq(payments.organizationId, orgId),
-							inArray(payments.status, ["paid", "refunded"]),
-							notExists(
-								tx.select({ id: patientInvoices.id })
-									.from(patientInvoices)
-									.where(
-										and(
-											eq(patientInvoices.id, payments.documentId),
-											eq(patientInvoices.organizationId, orgId),
-											inArray(patientInvoices.status, ["voided", "cancelled"]),
-										),
-									),
-							),
-						),
-					),
-					tx.select({
-						id: patients.id,
-						fullName: patients.fullName,
-						phone: patients.phone,
-						notes: patients.notes,
-						administrativeProfile: patients.administrativeProfile,
-						createdAt: patients.createdAt,
-					}).from(patients).where(eq(patients.organizationId, orgId)),
-				]),
-			);
-
-			const funnel = calculateOnlineBookingFunnel({
-				allLeads,
-				allAppts,
-				allPayments,
-				allPatients,
-			});
-
-			return reply.code(200).send(funnel);
-		} catch (err) {
-			request.log.error({ err }, "[Marketing] Error fetching online booking funnel");
-			return reply.code(500).send({
-				error: "InternalServerError",
-				message: "Не удалось сформировать воронку онлайн-самозаписи",
-			});
-		}
+				return reply.code(200).send(funnel);
+			} catch (err) {
+				request.log.error({ err }, "[Marketing] Error fetching online booking funnel");
+				return reply.code(500).send({
+					error: "InternalServerError",
+					message: "Не удалось сформировать воронку онлайн-самозаписи",
+				});
+			}
+		},
 	});
 
 	/**
 	 * GET /api/marketing/cohort-segments
 	 * Честные когорты пациентов и 3D RFM матрица из реальной базы PostgreSQL 18 ([LOY-10 & LOY-11]).
 	 */
-	app.get("/api/marketing/cohort-segments", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireMarketingReadAccess(request, reply, "marketing cohort segments");
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/marketing/cohort-segments",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireMarketingReadAccess(request, reply, "marketing cohort segments");
+			if (!orgId) return;
 
-		try {
-			const report = await calculateRealMarketingCohorts(orgId);
-			return reply.code(200).send(report);
-		} catch (err) {
-			request.log.error({ err }, "[Marketing] Error calculating cohort segments");
-			return reply.code(500).send({
-				error: "InternalServerError",
-				message: "Не удалось рассчитать когортные сегменты и RFM матрицу",
-			});
-		}
+			try {
+				const report = await calculateRealMarketingCohorts(orgId);
+				return reply.code(200).send(report);
+			} catch (err) {
+				request.log.error({ err }, "[Marketing] Error calculating cohort segments");
+				return reply.code(500).send({
+					error: "InternalServerError",
+					message: "Не удалось рассчитать когортные сегменты и RFM матрицу",
+				});
+			}
+		},
 	});
 
 	/**

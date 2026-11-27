@@ -16,7 +16,11 @@ import {
 	calculateAssistantPeriodPayroll,
 	kopecksToRubles,
 } from "@dental/shared";
-import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../../../db/rls.js";
+import {
+	formatDateIsoInTimeZone,
+	resolveClinicTimeZone,
+} from "../../../routes/payrollModules/payrollTypesAndQueries.js";
 import {
 	appointments,
 	doctorShiftRosters,
@@ -71,6 +75,7 @@ export async function assistantPayrollReport(
 	executor?: TenantDb,
 ): Promise<AssistantPayrollReportData> {
 	const runQuery = async (tx: TenantDb): Promise<AssistantPayrollReportData> => {
+		const clinicTimeZone = scope.timeZone ?? (await resolveClinicTimeZone(tx, scope.organizationId));
 		// 1. Ассистенты и медицинские сестры клиники из штатного расписания
 		const assistantUsers = await tx
 			.select({
@@ -112,8 +117,8 @@ export async function assistantPayrollReport(
 			);
 
 		// 3. Смены из графика дежурств и табеля doctor_shift_rosters
-		const fromDateIso = scope.from.toISOString().slice(0, 10);
-		const toDateIso = scope.to.toISOString().slice(0, 10);
+		const fromDateIso = formatDateIsoInTimeZone(scope.from, clinicTimeZone);
+		const toDateIso = formatDateIsoInTimeZone(scope.to, clinicTimeZone);
 		const rosterShifts = await tx
 			.select({
 				doctorId: doctorShiftRosters.doctorId,
@@ -264,7 +269,7 @@ export async function assistantPayrollReport(
 		let totalNdflTaxKopecks = 0;
 		let totalPayoutKopecks = 0;
 
-		const periodLabel = `${scope.from.toISOString().slice(0, 10)} — ${scope.to.toISOString().slice(0, 10)}`;
+		const periodLabel = `${fromDateIso} — ${toDateIso}`;
 
 		for (const [astId, meta] of assistantsMap.entries()) {
 			const appts = apptsByAssistant.get(astId) ?? [];
@@ -275,7 +280,7 @@ export async function assistantPayrollReport(
 			let totalSurgeries = 0;
 
 			for (const appt of appts) {
-				const dayKey = appt.startsAt.toISOString().slice(0, 10);
+				const dayKey = formatDateIsoInTimeZone(appt.startsAt, clinicTimeZone);
 				const durationMin = Math.max(
 					15,
 					Math.round((appt.endsAt.getTime() - appt.startsAt.getTime()) / 60000),
@@ -385,5 +390,5 @@ export async function assistantPayrollReport(
 	};
 
 	if (executor) return runQuery(executor);
-	return withTenantCtx(scope.organizationId, runQuery);
+	return withTenantReadCtx(scope.organizationId, runQuery);
 }

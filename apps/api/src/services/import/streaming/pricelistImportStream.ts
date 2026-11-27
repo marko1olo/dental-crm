@@ -10,8 +10,9 @@
  */
 
 import { kopecksToRubles, rublesToKopecks, type DentalSpecialty, type ServiceCategory } from "@dental/shared";
-import { eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import type { TenantDb } from "../../../db/client.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
 import { auditEvents, serviceCatalogItems } from "../../../db/schema.js";
 import {
 	parseDelimitedTextToMatrix,
@@ -142,8 +143,9 @@ export async function importPricelistStream(params: {
 	bufferOrText: Buffer | string;
 	filename: string;
 	commit?: boolean;
+	executor?: TenantDb;
 }): Promise<PricelistImportExecutionResult> {
-	const { organizationId, bufferOrText, filename, commit = false } = params;
+	const { organizationId, bufferOrText, filename, commit = false, executor } = params;
 
 	let matrix: string[][];
 	if (Buffer.isBuffer(bufferOrText)) {
@@ -186,105 +188,127 @@ export async function importPricelistStream(params: {
 
 	const dataRows = hasRecognizedHeader ? matrix.slice(1) : matrix;
 
-	// 2. Fetch existing codes for tenant
-	const existingItems = await db
-		.select({ code: serviceCatalogItems.code })
-		.from(serviceCatalogItems)
-		.where(eq(serviceCatalogItems.organizationId, organizationId));
-
-	const existingCodes = new Set(
-		existingItems.map((it) => it.code.trim().toUpperCase()),
-	);
-
-	const items: PricelistImportResultItem[] = [];
-	const toInsertPayloads: Array<{
-		organizationId: string;
-		code: string;
-		title: string;
-		category: ServiceCategory;
-		specialty: DentalSpecialty;
-		basePriceRub: number;
-		basePriceKopecks: bigint;
-		priceRub: number;
-		priceKopecks: bigint;
-		durationMinutes: number;
-		taxDeductible: boolean;
-		isActive: boolean;
-	}> = [];
-
+	// Собираем только коды текущего батча, не выгружая весь прайс-лист клиники в ОЗУ
+	const candidateCodes = new Set<string>();
 	for (let i = 0; i < dataRows.length; i++) {
 		const row = dataRows[i] ?? [];
-		let rawCode = (row[codeIdx] ?? "").trim();
 		const rawTitle = (row[titleIdx] ?? "").trim();
-		const rawCategory = (row[categoryIdx] ?? "").trim();
-		const rawPrice = (row[priceIdx] ?? "").trim();
-		const rawDuration = (row[durationIdx] ?? "").trim();
-
+		if (!rawTitle) continue;
 		const rowNumber = i + (hasRecognizedHeader ? 2 : 1);
-
-		if (!rawTitle) {
-			items.push({
-				rowNumber,
-				code: rawCode || `ROW-${rowNumber}`,
-				title: "Не указано",
-				category: "other",
-				priceRub: 0,
-				durationMinutes: 30,
-				status: "blocked",
-				warning: "Отсутствует наименование услуги",
-			});
-			continue;
-		}
-
-		if (!rawCode) {
-			rawCode = `SRV-${String(rowNumber).padStart(4, "0")}`;
-		}
-
-		const category = normalizePricelistCategory(rawCategory);
-		const priceRub = parsePriceNumber(rawPrice);
-		const durationMinutes = parseDurationNumber(rawDuration);
-
-		const isCodeDuplicate = existingCodes.has(rawCode.toUpperCase());
-		if (isCodeDuplicate) {
-			// Auto-resolve code conflict by appending row suffix
-			rawCode = `${rawCode}-${rowNumber}`;
-		}
-
-		items.push({
-			rowNumber,
-			code: rawCode,
-			title: rawTitle,
-			category,
-			priceRub,
-			durationMinutes,
-			status: "ready",
-		});
-
-		const priceKopecksBigInt = BigInt(rublesToKopecks(priceRub));
-		toInsertPayloads.push({
-			organizationId,
-			code: rawCode,
-			title: rawTitle,
-			category,
-			specialty: "universal",
-			basePriceRub: priceRub,
-			basePriceKopecks: priceKopecksBigInt,
-			priceRub: priceRub,
-			priceKopecks: priceKopecksBigInt,
-			durationMinutes,
-			taxDeductible: true,
-			isActive: true,
-		});
-
-		existingCodes.add(rawCode.toUpperCase());
+		const rawCode = (row[codeIdx] ?? "").trim() || `SRV-${String(rowNumber).padStart(4, "0")}`;
+		candidateCodes.add(rawCode.toUpperCase());
 	}
 
+	const loadExistingCodes = async (tx: TenantDb) => {
+		const existingCodes = new Set<string>();
+		const codeList = [...candidateCodes];
+		const keyChunkSize = 500;
+		for (let i = 0; i < codeList.length; i += keyChunkSize) {
+			const codeChunk = codeList.slice(i, i + keyChunkSize);
+			const matched = await tx
+				.select({ code: serviceCatalogItems.code })
+				.from(serviceCatalogItems)
+				.where(
+					and(
+						eq(serviceCatalogItems.organizationId, organizationId),
+						inArray(sql`upper(trim(${serviceCatalogItems.code}))`, codeChunk),
+					),
+				);
+			for (const it of matched) {
+				existingCodes.add(it.code.trim().toUpperCase());
+			}
+		}
+		return existingCodes;
+	};
+
+	const items: PricelistImportResultItem[] = [];
 	const importedItemIds: string[] = [];
 
-	// 3. Execution / Commit to PostgreSQL
-	if (commit && toInsertPayloads.length > 0) {
-		await db.transaction(async (tx) => {
-			const batchSize = 100;
+	const processWithTx = async (tx: TenantDb, shouldCommit: boolean) => {
+		const existingCodes = await loadExistingCodes(tx);
+		const toInsertPayloads: Array<{
+			organizationId: string;
+			code: string;
+			title: string;
+			category: ServiceCategory;
+			specialty: DentalSpecialty;
+			basePriceRub: number;
+			basePriceKopecks: bigint;
+			priceRub: number;
+			priceKopecks: bigint;
+			durationMinutes: number;
+			taxDeductible: boolean;
+			isActive: boolean;
+		}> = [];
+
+		for (let i = 0; i < dataRows.length; i++) {
+			const row = dataRows[i] ?? [];
+			let rawCode = (row[codeIdx] ?? "").trim();
+			const rawTitle = (row[titleIdx] ?? "").trim();
+			const rawCategory = (row[categoryIdx] ?? "").trim();
+			const rawPrice = (row[priceIdx] ?? "").trim();
+			const rawDuration = (row[durationIdx] ?? "").trim();
+
+			const rowNumber = i + (hasRecognizedHeader ? 2 : 1);
+
+			if (!rawTitle) {
+				items.push({
+					rowNumber,
+					code: rawCode || `ROW-${rowNumber}`,
+					title: "Не указано",
+					category: "other",
+					priceRub: 0,
+					durationMinutes: 30,
+					status: "blocked",
+					warning: "Отсутствует наименование услуги",
+				});
+				continue;
+			}
+
+			if (!rawCode) {
+				rawCode = `SRV-${String(rowNumber).padStart(4, "0")}`;
+			}
+
+			const category = normalizePricelistCategory(rawCategory);
+			const priceRub = parsePriceNumber(rawPrice);
+			const durationMinutes = parseDurationNumber(rawDuration);
+
+			const isCodeDuplicate = existingCodes.has(rawCode.toUpperCase());
+			if (isCodeDuplicate) {
+				rawCode = `${rawCode}-${rowNumber}`;
+			}
+
+			items.push({
+				rowNumber,
+				code: rawCode,
+				title: rawTitle,
+				category,
+				priceRub,
+				durationMinutes,
+				status: "ready",
+			});
+
+			const priceKopecksBigInt = BigInt(rublesToKopecks(priceRub));
+			toInsertPayloads.push({
+				organizationId,
+				code: rawCode,
+				title: rawTitle,
+				category,
+				specialty: "universal",
+				basePriceRub: priceRub,
+				basePriceKopecks: priceKopecksBigInt,
+				priceRub: priceRub,
+				priceKopecks: priceKopecksBigInt,
+				durationMinutes,
+				taxDeductible: true,
+				isActive: true,
+			});
+
+			existingCodes.add(rawCode.toUpperCase());
+		}
+
+		if (shouldCommit && toInsertPayloads.length > 0) {
+			const batchSize = 200;
 			for (let b = 0; b < toInsertPayloads.length; b += batchSize) {
 				const chunk = toInsertPayloads.slice(b, b + batchSize);
 				const inserted = await tx
@@ -294,7 +318,6 @@ export async function importPricelistStream(params: {
 				importedItemIds.push(...inserted.map((it) => it.id));
 			}
 
-			// Audit batch log
 			await tx.insert(auditEvents).values({
 				organizationId,
 				entityType: "price_list",
@@ -302,7 +325,15 @@ export async function importPricelistStream(params: {
 				action: "import_committed",
 				reason: `Импорт прейскуранта из ${filename}: успешно импортировано ${importedItemIds.length} позиций.`,
 			});
-		});
+		}
+	};
+
+	if (executor) {
+		await processWithTx(executor, commit);
+	} else if (commit) {
+		await withTenantWriteCtx(organizationId, (tx) => processWithTx(tx, true));
+	} else {
+		await withTenantReadCtx(organizationId, (tx) => processWithTx(tx, false));
 	}
 
 	const readyRows = items.filter((it) => it.status === "ready").length;

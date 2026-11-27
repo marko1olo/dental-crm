@@ -15,11 +15,11 @@
 	}
 	.analytics-header {
 		display: flex; flex-direction: row; align-items: center; justify-content: space-between;
-		gap: 8px; padding-bottom: 6px; min-height: 36px; height: auto; flex-wrap: wrap;
+		gap: 8px; padding-bottom: 6px; min-height: 36px; height: auto; max-height: none; flex-wrap: wrap;
 	}
 	.analytics-header-title-group {
 		width: 100%; display: flex; align-items: center; justify-content: space-between;
-		gap: 8px; flex-wrap: nowrap;
+		gap: 8px; flex-wrap: wrap;
 	}
 	.analytics-title { font-size: 1.125rem; white-space: nowrap; flex-shrink: 0; }
 	.analytics-section-tabs {

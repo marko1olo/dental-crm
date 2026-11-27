@@ -6,7 +6,7 @@ import {
 import { and, eq, gte, inArray, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { withTenantCtx, withTenantReadCtx, type TenantDb } from "../../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../../db/rls.js";
 import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	appointments,
@@ -15,6 +15,11 @@ import {
 	organizations,
 } from "../../db/schema.js";
 import {
+	clinicTimeZone,
+	DEFAULT_CLINIC_TIME_ZONE,
+} from "../../services/reports/managerReports/timezone.js";
+import { instantOfLocalTime } from "../../services/reports/managerReports/periodBounds.js";
+import {
 	type DoctorProfitabilityItem,
 	calculateDoctorProfitability,
 } from "./doctorProfitabilityCalculator.js";
@@ -22,6 +27,7 @@ import { requireExecutiveAccess } from "./executiveAccessGuard.js";
 import {
 	calculateWorkingMinutesInPeriod,
 	resolveClinicScheduleWorkHours,
+	resolveExecutiveDateRange,
 } from "./executiveKpiDateUtils.js";
 import {
 	type HeatmapCell,
@@ -248,26 +254,37 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 		try {
 			const query: UtilizationQuery = parsedQuery.data;
 			const { range } = query;
-			let startDate: Date | undefined;
 			const now = new Date();
 
-			if (range === "today" || range === "day") {
-				startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-			} else if (range === "yesterday") {
-				startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
-			} else if (range === "week") {
-				const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
-				startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek, 0, 0, 0, 0);
-			} else if (range === "month" || range === "last_month" || range === "this_month") {
-				startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-			} else if (range === "quarter" || range === "last_3_months") {
-				const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
-				startDate = new Date(now.getFullYear(), quarterMonth, 1, 0, 0, 0, 0);
-			} else if (range === "year" || range === "this_year") {
-				startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
-			}
-
 			const data = await withTenantReadCtx(orgId, async (tx) => {
+				const timeZone = (await clinicTimeZone(orgId, tx)) || DEFAULT_CLINIC_TIME_ZONE;
+				let mappedExecPeriod = "month";
+				if (range === "today" || range === "day") mappedExecPeriod = "day";
+				else if (range === "yesterday") mappedExecPeriod = "yesterday";
+				else if (range === "week") mappedExecPeriod = "week";
+				else if (range === "month" || range === "last_month" || range === "this_month") mappedExecPeriod = "month";
+				else if (range === "quarter" || range === "last_3_months") mappedExecPeriod = "quarter";
+				else if (range === "year" || range === "this_year") mappedExecPeriod = "year";
+
+				let startDate = resolveExecutiveDateRange(mappedExecPeriod, undefined, undefined, timeZone).startDate;
+				if (range === "last_month") {
+					const parts = new Map(
+						new Intl.DateTimeFormat("en-CA", {
+							timeZone,
+							year: "numeric",
+							month: "2-digit",
+						})
+							.formatToParts(now)
+							.map((p) => [p.type, p.value] as const),
+					);
+					const y = Number(parts.get("year") ?? now.getUTCFullYear());
+					const m = Number(parts.get("month") ?? now.getUTCMonth() + 1);
+					const prevMs = instantOfLocalTime(timeZone, y, m - 1, 1);
+					if (prevMs !== null) {
+						startDate = new Date(prevMs);
+					}
+				}
+
 				const chairData = await calculateChairUtilization(orgId, startDate, now, undefined, tx);
 				const doctorProfitability = await calculateDoctorProfitability(orgId, startDate, tx);
 
@@ -302,7 +319,7 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 						and(
 							eq(cashOperations.organizationId, orgId),
 							eq(cashOperations.operationType, "expense"),
-							startDate ? gte(cashOperations.createdAt, startDate) : gte(cashOperations.createdAt, new Date(now.getFullYear(), now.getMonth(), 1)),
+							gte(cashOperations.createdAt, startDate),
 						),
 					);
 				const actualExpenses = sumExpenseCategoryKopecks(expenseRows);

@@ -47,6 +47,7 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 	const [sortBy, setSortBy] = useState<"priority" | "sum_desc" | "days_in_stage_desc" | "assigned_at_desc">("priority");
 	const [assignmentTarget, setAssignmentTarget] = useState<CuratorAssignmentTarget | null>(null);
 	const [openMenuPlanId, setOpenMenuPlanId] = useState<string | null>(null);
+	const [visibleQueueCount, setVisibleQueueCount] = useState<number>(35);
 
 	const staffCurators = useMemo(() => {
 		const staff: readonly ContextStaffMember[] = (dashboard?.clinicSettings?.staff as readonly ContextStaffMember[] | undefined) ?? [];
@@ -73,20 +74,20 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 
 	return (
 		<div className={`curator-dashboard-container ${className}`}>
-			<CuratorHeader staffCurators={staffCurators} selectedCuratorId={selectedCuratorId} onSelectCuratorId={setSelectedCuratorId} />
+			<CuratorHeader staffCurators={staffCurators} selectedCuratorId={selectedCuratorId} onSelectCuratorId={(id) => { setSelectedCuratorId(id); setVisibleQueueCount(35); }} />
 			<CuratorKpiCardsGrid metrics={metrics} />
-			<CuratorConversionFunnel metrics={metrics} selectedStage={selectedStage} onSelectStage={setSelectedStage} />
+			<CuratorConversionFunnel metrics={metrics} selectedStage={selectedStage} onSelectStage={(stage) => { setSelectedStage(stage); setVisibleQueueCount(35); }} />
 
 			<div className="curator-queue-section">
 				<CuratorQueueFiltersBar
 					searchQuery={searchQuery}
-					onSearchChange={setSearchQuery}
+					onSearchChange={(q) => { setSearchQuery(q); setVisibleQueueCount(35); }}
 					selectedPriceRange={selectedPriceRange}
-					onSelectPriceRange={setSelectedPriceRange}
+					onSelectPriceRange={(r) => { setSelectedPriceRange(r); setVisibleQueueCount(35); }}
 					onlyAttentionFlags={onlyAttentionFlags}
-					onToggleAttentionFlags={() => setOnlyAttentionFlags((v) => !v)}
+					onToggleAttentionFlags={() => { setOnlyAttentionFlags((v) => !v); setVisibleQueueCount(35); }}
 					sortBy={sortBy}
-					onSortChange={setSortBy}
+					onSortChange={(s) => { setSortBy(s); setVisibleQueueCount(35); }}
 				/>
 
 				<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -95,22 +96,35 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 							Пациентов по выбранным фильтрам не найдено
 						</div>
 					) : (
-						filteredQueue.map((item) => (
-							<CuratorQueueCard
-								key={item.treatmentPlanId}
-								item={item}
-								isOpenMenu={openMenuPlanId === item.treatmentPlanId}
-								onToggleMenu={() => setOpenMenuPlanId((prev) => (prev === item.treatmentPlanId ? null : item.treatmentPlanId))}
-								onCloseMenu={() => setOpenMenuPlanId(null)}
-								onOpenPatientCard={onOpenPatientCard}
-								onOpenPatientPlan={onOpenPatientPlan}
-								onAdvanceStage={(it) => {
-									const next = (it.funnelStage === "consultation" ? "plan_negotiation" : it.funnelStage === "plan_negotiation" ? "prepayment" : it.funnelStage === "prepayment" ? "treatment_start" : "completed") as CuratorFunnelStage;
-									advanceStage(it.patientId, it.treatmentPlanId, next);
-								}}
-								onAssignCurator={setAssignmentTarget}
-							/>
-						))
+						<>
+							{filteredQueue.slice(0, visibleQueueCount).map((item) => (
+								<CuratorQueueCard
+									key={item.treatmentPlanId}
+									item={item}
+									isOpenMenu={openMenuPlanId === item.treatmentPlanId}
+									onToggleMenu={() => setOpenMenuPlanId((prev) => (prev === item.treatmentPlanId ? null : item.treatmentPlanId))}
+									onCloseMenu={() => setOpenMenuPlanId(null)}
+									onOpenPatientCard={onOpenPatientCard}
+									onOpenPatientPlan={onOpenPatientPlan}
+									onAdvanceStage={(it) => {
+										const next = (it.funnelStage === "consultation" ? "plan_negotiation" : it.funnelStage === "plan_negotiation" ? "prepayment" : it.funnelStage === "prepayment" ? "treatment_start" : "completed") as CuratorFunnelStage;
+										advanceStage(it.patientId, it.treatmentPlanId, next);
+									}}
+									onAssignCurator={setAssignmentTarget}
+								/>
+							))}
+							{filteredQueue.length > visibleQueueCount && (
+								<div className="flex justify-center pt-2">
+									<button
+										type="button"
+										onClick={() => setVisibleQueueCount((c) => c + 35)}
+										className="h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer"
+									>
+										Показать ещё ({filteredQueue.length - visibleQueueCount})
+									</button>
+								</div>
+							)}
+						</>
 					)}
 				</div>
 			</div>

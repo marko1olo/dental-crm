@@ -19,7 +19,6 @@ import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
 
 const EXECUTIVE_ROLES = new Set([
 	"owner",
-	"admin",
 	"manager",
 	"director",
 	"chief_doctor",
@@ -83,15 +82,29 @@ export async function requireExecutiveAccess(
 			return { overrides: loadedOverrides, clinicMode: mode };
 		});
 
-		const doctorOverrides = overrides?.[role] ?? (role === "doctor" ? overrides?.doctor : undefined);
+		const roleOverrides = overrides?.[role] ?? (role === "doctor" ? overrides?.doctor : undefined);
+		const hasExplicitPnlGrant =
+			roleOverrides?.["finance.reports_pnl"] === true ||
+			roleOverrides?.["finance.reports_pnl"] === "full" ||
+			roleOverrides?.["finance.reports_pnl"] === "read";
+		const hasExplicitAnalyticsGrant =
+			roleOverrides?.["analytics.read"] === true ||
+			roleOverrides?.["analytics.read"] === "full" ||
+			roleOverrides?.["analytics.read"] === "read";
+
+		// Мандат 8n: admin, administrator, senior_admin, registrar и curator не получают P&L аналитику по умолчанию —
+		// только при явном переопределении finance.reports_pnl (или analytics.read для admin/ресепшена) в матрице прав.
 		const hasExplicitPnlOrAnalytics =
-			doctorOverrides?.["finance.reports_pnl"] === true ||
-			doctorOverrides?.["finance.reports_pnl"] === "full" ||
-			doctorOverrides?.["finance.reports_pnl"] === "read" ||
-			doctorOverrides?.["analytics.read"] === true ||
-			doctorOverrides?.["analytics.read"] === "full" ||
-			doctorOverrides?.["analytics.read"] === "read" ||
-			roleHasPermissionWithOverrides(role, "analytics.read", overrides);
+			role === "curator"
+				? hasExplicitPnlGrant
+				: role === "admin" ||
+						role === "administrator" ||
+						role === "senior_admin" ||
+						role === "registrar"
+					? hasExplicitPnlGrant || hasExplicitAnalyticsGrant
+					: hasExplicitPnlGrant ||
+						hasExplicitAnalyticsGrant ||
+						roleHasPermissionWithOverrides(role, "analytics.read", overrides);
 
 		if (role === "doctor") {
 			if (hasExplicitPnlOrAnalytics) {

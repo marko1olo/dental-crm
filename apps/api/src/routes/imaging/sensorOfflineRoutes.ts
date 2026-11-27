@@ -1,5 +1,4 @@
-import { openSync, readSync, closeSync } from "node:fs";
-import { readFile, unlink } from "node:fs/promises";
+import { open, readFile, unlink } from "node:fs/promises";
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import type { ImagingStudyKind } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
@@ -71,7 +70,10 @@ const registerLocalStudyBodySchema = z
 	.strict();
 
 export async function registerSensorOfflineRoutes(app: FastifyInstance) {
-	app.post("/api/imaging/local-offline/register", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post(
+		"/api/imaging/local-offline/register",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "register local radiology scan"))) {
 			return;
 		}
@@ -294,9 +296,12 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 				if (stored.detectedFormat === "dicom") {
 					try {
 						const headBuf = Buffer.alloc(Math.min(stored.fileSizeBytes, 65536));
-						const fd = openSync(stored.storagePath, "r");
-						readSync(fd, headBuf, 0, headBuf.length, 0);
-						closeSync(fd);
+						const fileHandle = await open(stored.storagePath, "r");
+						try {
+							await fileHandle.read(headBuf, 0, headBuf.length, 0);
+						} finally {
+							await fileHandle.close();
+						}
 						const parsed = parseDicomHeader(headBuf);
 						if (parsed.tagsRead > 0) {
 							dicomMetadata = parsed;
@@ -306,13 +311,16 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 					}
 				} else if (stored.detectedFormat === "heic") {
 					try {
-						const fileBuf = await readFile(stored.storagePath);
-						const decoded = await decodeServerHeicImage(fileBuf, {
-							thumbnailSize: 200,
-							generateThumbnail: true,
-						});
-						if (decoded.success && decoded.thumbnailBuffer) {
-							localThumbnailDataUri = `data:image/webp;base64,${decoded.thumbnailBuffer.toString("base64")}`;
+						// Ограничиваем чтение HEIC-буфера 32 МБ под 4 ГБ ОЗУ для защиты от OOM при генерации превью
+						if (stored.fileSizeBytes <= 32 * 1024 * 1024) {
+							const fileBuf = await readFile(stored.storagePath);
+							const decoded = await decodeServerHeicImage(fileBuf, {
+								thumbnailSize: 200,
+								generateThumbnail: true,
+							});
+							if (decoded.success && decoded.thumbnailBuffer) {
+								localThumbnailDataUri = `data:image/webp;base64,${decoded.thumbnailBuffer.toString("base64")}`;
+							}
 						}
 					} catch (heicErr) {
 						request.log.warn({ err: heicErr, fileName: filename }, "Non-fatal HEIC thumbnail decode error on upload");
@@ -426,6 +434,7 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 	 */
 	app.get<{ Params: { studyId: string } }>(
 		"/api/imaging/local-offline/studies/:studyId",
+		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
 			if (!(await requireClinicalReadAccess(request, reply, "get local radiology study"))) {
 				return;
@@ -467,7 +476,10 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 		})
 		.strict();
 
-	app.post("/api/imaging/local-offline/sync-queue", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post(
+		"/api/imaging/local-offline/sync-queue",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "queue local study sync"))) {
 			return;
 		}
@@ -504,7 +516,10 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 	 * Returns queue of local studies and their cloud sync status.
 	 */
 
-	app.get("/api/imaging/local-offline/sync-status", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.get(
+		"/api/imaging/local-offline/sync-status",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "get local sync status"))) {
 			return;
 		}

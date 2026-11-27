@@ -37,6 +37,11 @@ export interface ExecutiveReceivablesPanelProps {
 }
 
 const BUCKET_LABELS_RU: Readonly<Record<string, string>> = {
+	current: "Текущая (в срок)",
+	up_to_30: "Просрочка до 30 дней",
+	up_to_90: "Просрочка 31–90 дней",
+	over_90: "Просрочка свыше 90 дней",
+	undated: "Без даты визита",
 	"0-30": "До 30 дней",
 	"31-60": "31–60 дней",
 	"61-90": "61–90 дней",
@@ -156,8 +161,12 @@ export const ExecutiveReceivablesPanel: React.FC<ExecutiveReceivablesPanelProps>
 		}
 	}, [period, periodBounds, receivables, summary]);
 
+	const [showAllDebtors, setShowAllDebtors] = useState(false);
+	const [showAllPrepayments, setShowAllPrepayments] = useState(false);
 	const rows = receivables?.rows ?? [];
 	const prepayments = receivables?.prepayments ?? [];
+	const visibleDebtors = showAllDebtors ? rows : rows.slice(0, 35);
+	const visiblePrepayments = showAllPrepayments ? prepayments : prepayments.slice(0, 35);
 	const totalDebtRub = receivables?.totalDebtRub ?? 0;
 	const totalPrepaidRub = receivables?.totalPrepaidRub ?? 0;
 	const summaryRevenueRub = summary?.revenue?.totalRub ?? 0;
@@ -264,27 +273,40 @@ export const ExecutiveReceivablesPanel: React.FC<ExecutiveReceivablesPanelProps>
 								Задолженности отсутствуют
 							</div>
 						) : (
-							<div className="divide-y divide-[var(--line)]">
-								{rows.map((r, idx) => (
-									<div
-										key={r.patientId || `${r.patientName}-${idx}`}
-										className="px-4 py-3 flex items-center justify-between gap-3"
-									>
-										<div className="min-w-0">
-											<div className="text-sm font-medium text-[var(--ink)] truncate">
-												{r.patientName}
+							<>
+								<div className="divide-y divide-[var(--line)]">
+									{visibleDebtors.map((r, idx) => (
+										<div
+											key={r.patientId || `${r.patientName}-${idx}`}
+											className="px-4 py-3 flex items-center justify-between gap-3"
+										>
+											<div className="min-w-0">
+												<div className="text-sm font-medium text-[var(--ink)] truncate">
+													{r.patientName}
+												</div>
+												<div className="text-xs text-[var(--ink-muted)]">
+													{BUCKET_LABELS_RU[r.bucket] ?? r.bucket}
+													{r.oldestChargeAt ? ` • с ${String(r.oldestChargeAt).slice(0, 10)}` : ""}
+												</div>
 											</div>
-											<div className="text-xs text-[var(--ink-muted)]">
-												{BUCKET_LABELS_RU[r.bucket] ?? r.bucket}
-												{r.oldestChargeAt ? ` • с ${String(r.oldestChargeAt).slice(0, 10)}` : ""}
-											</div>
+											<span className="text-sm font-semibold font-mono tracking-tight text-right tabular-nums text-[var(--danger)] shrink-0">
+												{formatRubMoney(r.debtRub)}
+											</span>
 										</div>
-										<span className="text-sm font-semibold font-mono tracking-tight text-right tabular-nums text-[var(--danger)] shrink-0">
-											{formatRubMoney(r.debtRub)}
-										</span>
+									))}
+								</div>
+								{!showAllDebtors && rows.length > 35 && (
+									<div className="p-3 border-t border-[var(--line)] flex justify-center">
+										<button
+											type="button"
+											onClick={() => setShowAllDebtors(true)}
+											className="h-8 px-3 rounded-md text-xs font-medium bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer"
+										>
+											Показать всех ({rows.length})
+										</button>
 									</div>
-								))}
-							</div>
+								)}
+							</>
 						)}
 					</div>
 
@@ -300,21 +322,34 @@ export const ExecutiveReceivablesPanel: React.FC<ExecutiveReceivablesPanelProps>
 								Активных авансов нет
 							</div>
 						) : (
-							<div className="divide-y divide-[var(--line)]">
-								{prepayments.map((p, idx) => (
-									<div
-										key={p.patientId || `${p.patientName}-${idx}`}
-										className="px-4 py-3 flex items-center justify-between gap-3"
-									>
-										<div className="text-sm font-medium text-[var(--ink)] truncate">
-											{p.patientName}
+							<>
+								<div className="divide-y divide-[var(--line)]">
+									{visiblePrepayments.map((p, idx) => (
+										<div
+											key={p.patientId || `${p.patientName}-${idx}`}
+											className="px-4 py-3 flex items-center justify-between gap-3"
+										>
+											<div className="text-sm font-medium text-[var(--ink)] truncate">
+												{p.patientName}
+											</div>
+											<span className="text-sm font-semibold font-mono tracking-tight text-right tabular-nums text-[var(--primary)] shrink-0">
+												{formatRubMoney(p.prepaidRub)}
+											</span>
 										</div>
-										<span className="text-sm font-semibold font-mono tracking-tight text-right tabular-nums text-[var(--primary)] shrink-0">
-											{formatRubMoney(p.prepaidRub)}
-										</span>
+									))}
+								</div>
+								{!showAllPrepayments && prepayments.length > 35 && (
+									<div className="p-3 border-t border-[var(--line)] flex justify-center">
+										<button
+											type="button"
+											onClick={() => setShowAllPrepayments(true)}
+											className="h-8 px-3 rounded-md text-xs font-medium bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer"
+										>
+											Показать все ({prepayments.length})
+										</button>
 									</div>
-								))}
-							</div>
+								)}
+							</>
 						)}
 					</div>
 				</div>

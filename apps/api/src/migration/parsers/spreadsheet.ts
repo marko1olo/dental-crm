@@ -1,6 +1,10 @@
+import yauzl from "yauzl";
 import {
+	ByteLimitTransform,
 	iterateZipEntries,
 	readLimitedStreamToBuffer,
+	safeFileLabel,
+	ZipBombLimitError,
 } from "../../ingestion/docExtractor/zipReader.js";
 import { streamXmlTagElements } from "./streamingXmlRowScanner.js";
 
@@ -298,9 +302,16 @@ function resolveSheetDisplayName(
 	);
 }
 
+export async function readXlsxSheetNames(source: Buffer | string): Promise<string[]> {
+	const meta = await readXlsxMetadataPass(source);
+	return meta.sheetEntryNames.map((entryName) =>
+		resolveSheetDisplayName(entryName, meta.sheetNames),
+	);
+}
+
 /**
- * Потоково читает листы XLSX с файлового пути (yauzl.open) или из Buffer
- * без буферизации sheet*.xml целиком, выдавая выровненные батчи строк.
+ * Истинно потоковый ленивый генератор батчей XLSX (yauzl lazyEntries -> ByteLimitTransform -> XML SAX):
+ * каждый батч отдаётся вызывающему коду немедленно через `yield` без накопления листа или батчей в ОЗУ.
  */
 export async function* streamXlsxSheetBatches(
 	source: Buffer | string,
@@ -326,13 +337,14 @@ export async function* streamXlsxSheetBatches(
 		if (!targetEntryName) continue;
 		const displayName = resolveSheetDisplayName(targetEntryName, meta.sheetNames);
 
-		const batches: StreamedXlsxBatch[] = [];
 		let columns: string[] = [];
 		let headerCaptured = false;
 		let pendingCells: Array<Map<number, string>> = [];
 		let observedMaxCol = -1;
 		let totalDataRowsEmitted = 0;
+		let emittedAnyBatch = false;
 		let hitLimit = false;
+		const passWarnings: string[] = [];
 
 		const flushPending = (isFirstHeaderBatch: boolean): StreamedXlsxBatch | null => {
 			if (pendingCells.length === 0) return null;
@@ -363,67 +375,102 @@ export async function* streamXlsxSheetBatches(
 					: [...columns, ...Array<string>(width - columns.length).fill("")],
 				rows,
 				firstRowNumber,
-				warnings: isFirstHeaderBatch ? meta.warnings : [],
+				warnings: isFirstHeaderBatch ? [...meta.warnings] : [],
 			};
 		};
 
-		// Стримим один лист за проход — не держим открытых 200МБ потоков одновременно
-		const passWarnings: string[] = [];
-		const iter = await iterateZipEntries(
-			source,
-			async (entry) => {
-				if (entry.name !== targetEntryName) return;
-				const stream = await entry.openStream(MAX_WORKSHEET_XML_BYTES);
+		if (Buffer.isBuffer(source) && source.length < 22) {
+			passWarnings.push("Архив книги Excel: zip_buffer_too_small.");
+		} else {
+			let zipfile: yauzl.ZipFile | undefined;
+			const sharedBudget = { used: 0, maxTotal: MAX_WORKSHEET_XML_BYTES * 2 };
+			try {
+				zipfile = Buffer.isBuffer(source)
+					? await yauzl.fromBufferPromise(source, { lazyEntries: true })
+					: await yauzl.openPromise(source, { lazyEntries: true });
 
-				for await (const rowEl of streamXmlTagElements(stream, "row")) {
-					const { cells, maxColumnIndex } = parseRowCells(
-						rowEl.innerXml,
-						meta.shared,
-						meta.dateStyles,
-					);
-					if (cells.size === 0) continue;
-					if (maxColumnIndex > observedMaxCol) observedMaxCol = maxColumnIndex;
-
-					pendingCells.push(cells);
-
-					const dataCountPending = headerCaptured
-						? pendingCells.length
-						: Math.max(0, pendingCells.length - 1);
-
-					if (dataCountPending >= batchRows) {
-						const batch = flushPending(totalDataRowsEmitted === 0);
-						if (batch) batches.push(batch);
-					}
-
-					if (totalDataRowsEmitted + pendingCells.length >= maxRowsPerSheet + 1) {
-						hitLimit = true;
-						stream.destroy();
+				for await (const entry of zipfile.eachEntry()) {
+					const name = entry.fileName.replace(/\\/g, "/");
+					if (name !== targetEntryName) continue;
+					if (entry.isEncrypted()) {
+						passWarnings.push(
+							`Архив книги Excel: zip_encrypted_entry:${safeFileLabel(name, "Файл архива")}.`,
+						);
 						break;
 					}
+
+					const rawStream = await zipfile.openReadStreamPromise(entry);
+					const limiter = new ByteLimitTransform(MAX_WORKSHEET_XML_BYTES, sharedBudget);
+					rawStream.on("error", (err) => limiter.destroy(err));
+					limiter.on("close", () => {
+						if (!rawStream.destroyed) rawStream.destroy();
+					});
+					const stream = rawStream.pipe(limiter);
+
+					try {
+						for await (const rowEl of streamXmlTagElements(stream, "row")) {
+							const { cells, maxColumnIndex } = parseRowCells(
+								rowEl.innerXml,
+								meta.shared,
+								meta.dateStyles,
+							);
+							if (cells.size === 0) continue;
+							if (maxColumnIndex > observedMaxCol) observedMaxCol = maxColumnIndex;
+
+							pendingCells.push(cells);
+
+							const dataCountPending = headerCaptured
+								? pendingCells.length
+								: Math.max(0, pendingCells.length - 1);
+
+							if (dataCountPending >= batchRows) {
+								const batch = flushPending(!emittedAnyBatch);
+								if (batch) {
+									emittedAnyBatch = true;
+									yield batch;
+								}
+							}
+
+							if (totalDataRowsEmitted + pendingCells.length >= maxRowsPerSheet + 1) {
+								hitLimit = true;
+								stream.destroy();
+								break;
+							}
+						}
+					} catch (streamErr: unknown) {
+						if (streamErr instanceof ZipBombLimitError) {
+							passWarnings.push("Архив книги Excel: zip_bomb_size_limit_exceeded.");
+						} else {
+							const reason =
+								streamErr instanceof Error ? streamErr.message : "inflate_error";
+							passWarnings.push(
+								`Архив книги Excel: zip_entry_inflate_failed:${safeFileLabel(name, "Файл архива")}:${reason}.`,
+							);
+						}
+					}
+					break;
 				}
-				return "stop";
-			},
-			{
-				maxEntryBytes: MAX_WORKSHEET_XML_BYTES,
-				maxTotalBytes: MAX_WORKSHEET_XML_BYTES * 2,
-				checkDeclaredSize: false,
-			},
-		);
-
-		passWarnings.push(...iter.warnings.map((c) => `Архив книги Excel: ${c}.`));
-
-		for (const b of batches) {
-			yield b;
+			} catch (zipErr: unknown) {
+				passWarnings.push(
+					`Архив книги Excel: zip_read_error:${zipErr instanceof Error ? zipErr.message : "corrupted_zip"}.`,
+				);
+			} finally {
+				try {
+					zipfile?.close();
+				} catch {
+					// yauzl уже закрыт
+				}
+			}
 		}
+
 		if (!hitLimit || pendingCells.length > 0) {
-			const tailBatch = flushPending(totalDataRowsEmitted === 0);
+			const tailBatch = flushPending(!emittedAnyBatch);
 			if (tailBatch) {
 				if (passWarnings.length > 0) {
 					tailBatch.warnings.push(...passWarnings);
 				}
+				emittedAnyBatch = true;
 				yield tailBatch;
-			} else if (!headerCaptured && columns.length === 0 && batches.length === 0) {
-				// Лист пуст — ничего не отдаём
 			}
 		}
 	}

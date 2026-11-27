@@ -1,8 +1,9 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { db, type TenantDb } from "../../db/client.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	appointments,
+	organizations,
 	patients,
 	treatmentPlanStatus,
 	treatmentPlans,
@@ -105,6 +106,7 @@ export function buildPlanFunnel(
  */
 export async function computePlanFunnelAll(
 	organizationIds?: readonly string[],
+	executor?: TenantDb,
 ): Promise<Map<string, PlanFunnelStage[]>> {
 	const map = new Map<string, PlanFunnelStage[]>();
 	if (!organizationIds || organizationIds.length === 0) {
@@ -112,7 +114,7 @@ export async function computePlanFunnelAll(
 	}
 
 	for (const organizationId of organizationIds) {
-		await withTenantCtx(organizationId, async (tx) => {
+		const runForOrg = async (tx: TenantDb) => {
 			const stats = await tx
 				.select({
 					status: treatmentPlans.status,
@@ -126,7 +128,13 @@ export async function computePlanFunnelAll(
 			if (stats.length > 0) {
 				map.set(organizationId, buildPlanFunnel(stats));
 			}
-		});
+		};
+
+		if (executor) {
+			await runForOrg(executor);
+		} else {
+			await withTenantReadCtx(organizationId, runForOrg);
+		}
 	}
 
 	return map;
@@ -143,40 +151,56 @@ export interface ChairUtilizationPoint {
  */
 export async function computeChairUtilizationAll(
 	organizationIds?: readonly string[],
+	executor?: TenantDb,
 ): Promise<Map<string, ChairUtilizationPoint[]>> {
 	if (organizationIds && organizationIds.length === 0) {
 		return new Map();
 	}
 	const completedOnly = eq(appointments.status, "completed");
-	const whereClause = organizationIds
-		? and(completedOnly, inArray(appointments.organizationId, [...organizationIds]))
-		: completedOnly;
-	const stats = await db
-		.select({
-			organizationId: appointments.organizationId,
-			chairId: appointments.chairId,
-			count: sql<number>`count(*)`,
-		})
-		.from(appointments)
-		.where(whereClause)
-		.groupBy(appointments.organizationId, appointments.chairId);
-
 	const orgChairs = new Map<string, ChairUtilizationPoint[]>();
 
-	for (const s of stats) {
-		if (!s.organizationId) continue;
-		if (!orgChairs.has(s.organizationId)) {
-			orgChairs.set(s.organizationId, []);
-		}
+	const queryWithTx = async (tx: TenantDb, scopeOrgIds?: readonly string[]) => {
+		const whereClause = scopeOrgIds
+			? and(completedOnly, inArray(appointments.organizationId, [...scopeOrgIds]))
+			: completedOnly;
+		const stats = await tx
+			.select({
+				organizationId: appointments.organizationId,
+				chairId: appointments.chairId,
+				count: sql<number>`count(*)`,
+			})
+			.from(appointments)
+			.where(whereClause)
+			.groupBy(appointments.organizationId, appointments.chairId);
 
-		const arr = orgChairs.get(s.organizationId);
-		if (!arr) continue;
-		const i = arr.length;
-		arr.push({
-			name: s.chairId ? `Кресло ${s.chairId.substring(0, 4)}` : "Без кресла",
-			value: Number(s.count),
-			fill: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"][i % 4] ?? "#3b82f6",
-		});
+		for (const s of stats) {
+			if (!s.organizationId) continue;
+			if (!orgChairs.has(s.organizationId)) {
+				orgChairs.set(s.organizationId, []);
+			}
+
+			const arr = orgChairs.get(s.organizationId);
+			if (!arr) continue;
+			const i = arr.length;
+			arr.push({
+				name: s.chairId ? `Кресло ${s.chairId.substring(0, 4)}` : "Без кресла",
+				value: Number(s.count),
+				fill: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"][i % 4] ?? "#3b82f6",
+			});
+		}
+	};
+
+	if (executor) {
+		await queryWithTx(executor, organizationIds);
+		return orgChairs;
+	}
+
+	const targetOrgIds =
+		organizationIds ??
+		(await db.select({ id: organizations.id }).from(organizations)).map((o) => o.id);
+
+	for (const orgId of targetOrgIds) {
+		await withTenantReadCtx(orgId, (tx) => queryWithTx(tx, [orgId]));
 	}
 
 	return orgChairs;

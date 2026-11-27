@@ -7,6 +7,7 @@ import { open } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { MigrationLocalSourceDiscoveryCandidate, SmartImportLegacySource } from "@dental/shared";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { uniqueStrings, legacySourceTitles } from "./smartImportsUtils.js";
 
@@ -545,7 +546,10 @@ export type MigrationSourceRoute = {
 	createdAtMs: number;
 };
 
-export const migrationSourceRouteStore = new Map<string, MigrationSourceRoute>();
+export const migrationSourceRouteStore = new BoundedTtlMap<string, MigrationSourceRoute>({
+	maxEntries: 500,
+	ttlMs: 60 * 60 * 1000,
+});
 
 function resolveRealPathOrNearestParent(resolvedPath: string): string {
 	try {

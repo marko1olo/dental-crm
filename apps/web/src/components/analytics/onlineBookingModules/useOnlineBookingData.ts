@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Kopecks } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import {
 	computeOnlineComparison,
 	computeOnlineSummary,
@@ -50,16 +50,30 @@ export function useOnlineBookingData() {
 		DEFAULT_ADMIN_PHONE_FUNNEL,
 	);
 	const [_loading, setLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
 		let isMounted = true;
+		const controller = new AbortController();
 		async function loadLiveAttribution() {
 			try {
 				setLoading(true);
-				const res = await fetch("/api/marketing/attribution", {
-					headers: denteAdminSecretRequestHeaders(),
-				});
-				if (!res.ok) return;
+				setError(null);
+				const res = await fetch(
+					`/api/marketing/attribution?period=${encodeURIComponent(period)}`,
+					{
+						headers: denteClinicalReadHeaders(),
+						signal: controller.signal,
+					},
+				);
+				if (!res.ok) {
+					if (isMounted) {
+						setChannels(DEFAULT_ONLINE_CHANNELS);
+						setAdminFunnel(DEFAULT_ADMIN_PHONE_FUNNEL);
+						setError(`Не удалось загрузить атрибуцию (HTTP ${res.status})`);
+					}
+					return;
+				}
 				const data = (await res.json()) as {
 					selfBookingChannels?: SelfBookingChannelDto[];
 					telephonyAdminFunnel?: Record<string, unknown>;
@@ -91,20 +105,25 @@ export function useOnlineBookingData() {
 						noShowCount: Math.max(0, Math.round(Number(taf.noShowCount) || 0)),
 						paidPatientsCount: Math.max(0, Math.round(Number(taf.paidPatientsCount) || 0)),
 						revenueKopecks: Math.max(0, Math.round(Number(taf.revenueKopecks) || 0)) as Kopecks,
-						avgCallDurationSeconds: Math.max(0, Math.round(Number(taf.avgCallDurationSeconds) || 120)),
+						avgCallDurationSeconds: Math.max(0, Math.round(Number(taf.avgCallDurationSeconds) || 0)),
 					});
 				}
-			} catch {
-				// Graceful fallback
+			} catch (err) {
+				if (isMounted && !controller.signal.aborted) {
+					setChannels(DEFAULT_ONLINE_CHANNELS);
+					setAdminFunnel(DEFAULT_ADMIN_PHONE_FUNNEL);
+					setError(err instanceof Error ? err.message : "Ошибка загрузки данных самозаписи");
+				}
 			} finally {
 				if (isMounted) setLoading(false);
 			}
 		}
-		loadLiveAttribution();
+		void loadLiveAttribution();
 		return () => {
 			isMounted = false;
+			controller.abort();
 		};
-	}, []);
+	}, [period]);
 
 	const onlineSummary = useMemo(
 		() => computeOnlineSummary(channels, selectedChannelKey),
@@ -127,5 +146,6 @@ export function useOnlineBookingData() {
 		adminFunnel,
 		onlineSummary,
 		comparison,
+		error,
 	};
 }

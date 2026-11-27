@@ -12,7 +12,7 @@
 
 import { createHash } from "node:crypto";
 import crypto from "node:crypto";
-import { createReadStream, createWriteStream, existsSync, statSync } from "node:fs";
+import { createReadStream, createWriteStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { Readable, Transform } from "node:stream";
@@ -21,6 +21,7 @@ import { type ImagingStudyKind, isHeicOrHeifBuffer } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import { imagingStudies } from "../../db/schema.js";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { PacsDbRegistration } from "./pacsDbRegistration.js";
 
 export * from "./localPacsSanitizer.js";
@@ -96,9 +97,15 @@ export interface LocalPacsSyncQueueItem {
 
 export class LocalPacsStorageService {
 	/**
-	 * In-memory registry for tracking local workstation sync statuses.
+	 * Bounded LRU+TTL in-memory registry for tracking local workstation sync statuses.
 	 */
-	private static syncQueueMap = new Map<string, { status: CloudSyncStatus; error?: string; updatedAt: string }>();
+	private static syncQueueMap = new BoundedTtlMap<
+		string,
+		{ status: CloudSyncStatus; error?: string; updatedAt: string }
+	>({
+		maxEntries: 2000,
+		ttlMs: 24 * 60 * 60 * 1000,
+	});
 
 	/**
 	 * Root storage directory for clinic PACS / radiology files.
@@ -208,13 +215,7 @@ export class LocalPacsStorageService {
 		try {
 			await pipeline(sourceStream, inspector, writeStream);
 		} catch (err) {
-			try {
-				if (existsSync(targetPath)) {
-					await fs.unlink(targetPath);
-				}
-			} catch {
-				// ignore cleanup error
-			}
+			await fs.unlink(targetPath).catch(() => undefined);
 			throw err;
 		}
 
@@ -258,8 +259,8 @@ export class LocalPacsStorageService {
 	}
 
 	/**
-	 * Safely stores a 2D X-ray (visiograph/panoramic) scan buffer in isolated tenant storage on disk.
-	 * Returns storagePath and relativePath to eliminate base64 storage in PostgreSQL columns.
+	 * Safely stores a 2D X-ray (visiograph/panoramic) scan stream on disk in isolated tenant storage.
+	 * Streams via pipeline + on-the-fly SHA-256 without double buffering in RAM.
 	 */
 	public static async storeXrayScanFile(
 		organizationId: string,
@@ -311,9 +312,21 @@ export class LocalPacsStorageService {
 		const uniqueName = `${Date.now()}_${crypto.randomUUID()}_${safeName}`;
 		const targetPath = path.join(tenantDir, uniqueName);
 
-		await fs.writeFile(targetPath, buffer);
+		const hash = createHash("sha256");
+		const hasher = new Transform({
+			transform(chunk, _encoding, callback) {
+				hash.update(chunk as Buffer);
+				callback(null, chunk);
+			},
+		});
+		try {
+			await pipeline(Readable.from(buffer), hasher, createWriteStream(targetPath));
+		} catch (err) {
+			await fs.unlink(targetPath).catch(() => undefined);
+			throw err;
+		}
 
-		const sha256 = crypto.createHash("sha256").update(buffer).digest("hex");
+		const sha256 = hash.digest("hex");
 
 		return {
 			storagePath: targetPath,
@@ -343,11 +356,12 @@ export class LocalPacsStorageService {
 		contentLength: number;
 	}> {
 		const resolved = this.resolveTenantStoragePath(organizationId, storagePathOrName);
-		if (!existsSync(resolved)) {
+		let stat: Awaited<ReturnType<typeof fs.stat>>;
+		try {
+			stat = await fs.stat(resolved);
+		} catch {
 			throw new Error("Файл снимка не найден на диске клиники.");
 		}
-
-		const stat = statSync(resolved);
 		const totalSize = stat.size;
 
 		let mimeType = "application/octet-stream";
@@ -419,11 +433,12 @@ export class LocalPacsStorageService {
 		storagePathOrName: string,
 	): Promise<boolean> {
 		const resolved = this.resolveTenantStoragePath(organizationId, storagePathOrName);
-		if (existsSync(resolved)) {
+		try {
 			await fs.unlink(resolved);
 			return true;
+		} catch {
+			return false;
 		}
-		return false;
 	}
 
 	/**
@@ -441,14 +456,12 @@ export class LocalPacsStorageService {
 
 		if (input.localFilePath) {
 			canonicalPath = this.validateAndResolveLocalFilePath(input.organizationId, input.localFilePath);
-			if (existsSync(canonicalPath)) {
-				try {
-					const stat = statSync(canonicalPath);
-					fileSizeBytes = stat.size;
-					fileExistsLocally = true;
-				} catch {
-					fileExistsLocally = false;
-				}
+			try {
+				const stat = await fs.stat(canonicalPath);
+				fileSizeBytes = stat.size;
+				fileExistsLocally = true;
+			} catch {
+				fileExistsLocally = false;
 			}
 		}
 
@@ -509,11 +522,9 @@ export class LocalPacsStorageService {
 		if (localPath) {
 			try {
 				const resolvedDiskPath = this.validateAndResolveLocalFilePath(organizationId, localPath);
-				if (existsSync(resolvedDiskPath)) {
-					const stat = statSync(resolvedDiskPath);
-					fileSizeBytes = stat.size;
-					fileExistsLocally = true;
-				}
+				const stat = await fs.stat(resolvedDiskPath);
+				fileSizeBytes = stat.size;
+				fileExistsLocally = true;
 			} catch {
 				fileExistsLocally = false;
 			}
@@ -567,12 +578,6 @@ export class LocalPacsStorageService {
 			};
 		}
 
-		if (this.syncQueueMap.size >= 2000 && !this.syncQueueMap.has(studyId)) {
-			const oldestKey = this.syncQueueMap.keys().next().value;
-			if (oldestKey !== undefined) {
-				this.syncQueueMap.delete(oldestKey);
-			}
-		}
 		this.syncQueueMap.set(studyId, {
 			status: "sync_queued",
 			updatedAt: new Date().toISOString(),
@@ -604,30 +609,31 @@ export class LocalPacsStorageService {
 				.limit(50),
 		);
 
-		return studies.map((s) => {
-			const sync = this.syncQueueMap.get(s.id);
-			let fileSizeBytes = 0;
-			if (s.storagePath) {
-				try {
-					const resolved = this.validateAndResolveLocalFilePath(organizationId, s.storagePath);
-					if (existsSync(resolved)) {
-						fileSizeBytes = statSync(resolved).size;
+		return Promise.all(
+			studies.map(async (s) => {
+				const sync = this.syncQueueMap.get(s.id);
+				let fileSizeBytes = 0;
+				if (s.storagePath) {
+					try {
+						const resolved = this.validateAndResolveLocalFilePath(organizationId, s.storagePath);
+						const st = await fs.stat(resolved);
+						fileSizeBytes = st.size;
+					} catch {
+						fileSizeBytes = 0;
 					}
-				} catch {
-					fileSizeBytes = 0;
 				}
-			}
-			return {
-				studyId: s.id,
-				patientId: s.patientId,
-				title: s.title,
-				localFilePath: s.storagePath || "",
-				fileSizeBytes,
+				return {
+					studyId: s.id,
+					patientId: s.patientId,
+					title: s.title,
+					localFilePath: s.storagePath || "",
+					fileSizeBytes,
 				syncStatus: sync?.status || "local_only",
 				createdAt: s.createdAt.toISOString(),
 				lastSyncAttemptAt: sync?.updatedAt || null,
 				syncError: sync?.error || null,
 			};
-		});
-	}
+		}),
+	);
+}
 }

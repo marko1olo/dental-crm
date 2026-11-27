@@ -61,16 +61,6 @@ export interface D4WInvoiceItem {
 	quantity: number;
 }
 
-export interface D4WInvoiceItem {
-  itemCode: string | null;
-  description: string;
-  tooth: string | null;
-  surface: string | null;
-  feeRub: number;
-  feeKopecks: number;
-  quantity: number;
-}
-
 export interface D4WInvoiceRecord {
 	externalId: string;
 	patientRef: string;

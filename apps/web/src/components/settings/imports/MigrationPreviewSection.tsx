@@ -19,6 +19,10 @@ import { importRowStatusLabels } from "./constants";
 import { humanizeMigrationText, patientImportRowWarningText } from "./helpers";
 import type { InputChangeEvent, TextInputChangeEvent } from "./types";
 
+export const STANDARD_PATIENT_IMPORT_TEMPLATE = `ФИО;Телефон;Дата рождения;Комментарий
+Иванов Иван Иванович;+79991234567;15.03.1985;Первичный пациент
+Петрова Мария Сергеевна;+79997654321;22.11.1990;Плановая гигиена`;
+
 export const STANDARD_CLINICAL_PRICELIST_TEMPLATE = `Код;Наименование;Категория;Цена;Длительность
 A16.07.002;Наложение пломбы светового отверждения;Терапия;4500;45
 A16.07.002.001;Лечение среднего кариеса с реставрацией;Терапия;5200;60
@@ -329,21 +333,40 @@ export function MigrationPreviewSection({
 						aria-live="polite"
 					>
 						<span className="text-xs text-[var(--ink-muted)]">
-							Вставьте список пациентов или нажмите для загрузки готового прейскуранта:
+							{documentIngestionTarget === "pricelist"
+								? "Вставьте строки прейскуранта или загрузите типовой шаблон:"
+								: "Вставьте список пациентов или загрузите готовый шаблон:"}
 						</span>
-						<button
-							type="button"
-							data-testid="load-standard-pricelists-btn"
-							className="secondary-button text-xs font-medium shrink-0"
-							onClick={() => {
-								setImportText(STANDARD_CLINICAL_PRICELIST_TEMPLATE);
-								setImportPreview(null);
-								setImportCommit(null);
-								setImportIntake(null);
-							}}
-						>
-							✓ Загрузить типовой прейскурант (терапия, ортопедия, хирургия)
-						</button>
+						<div className="flex flex-wrap items-center gap-2 shrink-0">
+							<button
+								type="button"
+								data-testid="load-standard-patients-btn"
+								className="secondary-button text-xs font-medium shrink-0"
+								onClick={() => {
+									setImportText(STANDARD_PATIENT_IMPORT_TEMPLATE);
+									setImportPreview(null);
+									setImportCommit(null);
+									setImportIntake(null);
+								}}
+							>
+								✓ Загрузить шаблон пациентов
+							</button>
+							{documentIngestionTarget === "pricelist" && (
+								<button
+									type="button"
+									data-testid="load-standard-pricelists-btn"
+									className="secondary-button text-xs font-medium shrink-0"
+									onClick={() => {
+										setImportText(STANDARD_CLINICAL_PRICELIST_TEMPLATE);
+										setImportPreview(null);
+										setImportCommit(null);
+										setImportIntake(null);
+									}}
+								>
+									✓ Загрузить типовой прейскурант
+								</button>
+							)}
+						</div>
 					</div>
 				) : null}
 			</div>

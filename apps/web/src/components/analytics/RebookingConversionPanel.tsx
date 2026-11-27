@@ -43,16 +43,42 @@ export interface RebookingSummary {
 }
 
 export interface RebookingStaffStats {
-	readonly staffId: string;
+	readonly staffId: string | null;
 	readonly staffName: string;
 	readonly role: "doctor" | "administrator";
 	readonly completedVisitsCount: number;
-	readonly rebookingsCount: number;
-	readonly chairsideCount: number;
-	readonly adminCount: number;
+	readonly rebookingsCount?: number | undefined;
+	readonly rebookingCount?: number | undefined;
+	readonly chairsideCount?: number | undefined;
+	readonly doctorRebookingsCount?: number | undefined;
+	readonly adminCount?: number | undefined;
+	readonly adminRebookingsCount?: number | undefined;
 	readonly conversionRate: number;
-	readonly meetsTarget: boolean;
+	readonly meetsTarget?: boolean | undefined;
+	readonly retentionKpiStatus?: "target_met" | "needs_improvement" | undefined;
 	readonly specialty?: string | undefined;
+}
+
+function normalizeStaffItem(raw: RebookingStaffStats, index: number): RebookingStaffStats & {
+	readonly stableKey: string;
+	readonly chairsideResolved: number;
+	readonly adminResolved: number;
+} {
+	const chairsideResolved = Number(raw.chairsideCount ?? raw.doctorRebookingsCount ?? 0);
+	const adminResolved = Number(raw.adminCount ?? raw.adminRebookingsCount ?? 0);
+	return {
+		...raw,
+		stableKey: raw.staffId ?? `role-${raw.role}-${index}`,
+		chairsideCount: chairsideResolved,
+		adminCount: adminResolved,
+		rebookingsCount: Number(raw.rebookingsCount ?? raw.rebookingCount ?? chairsideResolved + adminResolved),
+		meetsTarget:
+			typeof raw.meetsTarget === "boolean"
+				? raw.meetsTarget
+				: raw.retentionKpiStatus === "target_met" || raw.conversionRate >= CLINICAL_TARGET_PERCENT,
+		chairsideResolved,
+		adminResolved,
+	};
 }
 
 export interface RebookingAuditEvent {
@@ -125,7 +151,11 @@ export const RebookingConversionPanel: React.FC<RebookingConversionPanelProps> =
 					setSummary(payload.summary);
 				}
 				if (Array.isArray(payload?.byStaff)) {
-					setStaffList(payload.byStaff);
+					setStaffList(
+						(payload.byStaff as RebookingStaffStats[]).map((item, idx) =>
+							normalizeStaffItem(item, idx),
+						),
+					);
 				}
 				if (Array.isArray(payload?.events)) {
 					setRecentEvents(payload.events);
@@ -498,13 +528,14 @@ export const RebookingConversionPanel: React.FC<RebookingConversionPanelProps> =
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-[var(--line)]">
-							{filteredStaff.map((staff) => {
+							{filteredStaff.slice(0, 35).map((rawStaff, idx) => {
+								const staff = normalizeStaffItem(rawStaff, idx);
 								const isTargetMet = staff.conversionRate >= CLINICAL_TARGET_PERCENT;
 								return (
 									<tr
-										key={staff.staffId}
+										key={staff.stableKey}
 										className="hover:bg-[var(--paper-soft)]/50 transition-colors"
-										data-testid={`staff-row-${staff.staffId}`}
+										data-testid={`staff-row-${staff.stableKey}`}
 									>
 										<td className="py-3 px-4">
 											<div className="font-medium text-[var(--ink)]">{staff.staffName}</div>
@@ -518,10 +549,10 @@ export const RebookingConversionPanel: React.FC<RebookingConversionPanelProps> =
 											{staff.completedVisitsCount}
 										</td>
 										<td className="py-3 px-3 text-right font-mono text-[var(--success,#10b981)] font-semibold">
-											{staff.chairsideCount}
+											{staff.chairsideResolved}
 										</td>
 										<td className="py-3 px-3 text-right font-mono text-[var(--ink-muted)]">
-											{staff.adminCount}
+											{staff.adminResolved}
 										</td>
 										<td className="py-3 px-3 text-right">
 											<span
@@ -562,13 +593,14 @@ export const RebookingConversionPanel: React.FC<RebookingConversionPanelProps> =
 
 				{/* 2. Мобильное представление: Apple HIG Grouped List Cards (<= 768px, тач >= 44px) */}
 				<div className="md:hidden p-3 space-y-2.5">
-					{filteredStaff.map((staff) => {
+					{filteredStaff.slice(0, 35).map((rawStaff, idx) => {
+						const staff = normalizeStaffItem(rawStaff, idx);
 						const isTargetMet = staff.conversionRate >= CLINICAL_TARGET_PERCENT;
 						return (
 							<div
-								key={staff.staffId}
+								key={staff.stableKey}
 								className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2.5 shadow-xs"
-								data-testid={`mobile-staff-card-${staff.staffId}`}
+								data-testid={`mobile-staff-card-${staff.stableKey}`}
 							>
 								<div className="flex items-start justify-between gap-2">
 									<div>
@@ -602,7 +634,7 @@ export const RebookingConversionPanel: React.FC<RebookingConversionPanelProps> =
 									<div>
 										<div className="text-[10px] text-[var(--ink-muted)]">У кресла</div>
 										<div className="font-mono font-bold text-xs text-[var(--success,#10b981)]">
-											{staff.chairsideCount}
+											{staff.chairsideResolved}
 										</div>
 									</div>
 									<div>
@@ -646,7 +678,7 @@ export const RebookingConversionPanel: React.FC<RebookingConversionPanelProps> =
 							Нет зафиксированных повторных записей за выбранный период
 						</div>
 					) : (
-						recentEvents.map((ev) => (
+						recentEvents.slice(0, 35).map((ev) => (
 							<div
 								key={ev.id}
 								className="p-3 sm:px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-[var(--paper-soft)]/40 transition-colors text-xs"

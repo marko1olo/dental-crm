@@ -6,6 +6,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import type { TenantDb } from "../../db/client.js";
 import { withTenantCtx, withTenantReadCtx } from "../../db/rls.js";
 import { auditEvents } from "../../db/schema/system.js";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { unguardedBypassAllowed } from "../bypass.js";
 import { getRequestIdentity } from "../identity.js";
@@ -18,13 +19,13 @@ import type { Permission } from "./permissionMatrix.js";
 
 const permissionLogger = createApiLogger("permissionGuards");
 
-interface RoleMatrixCacheEntry {
-	overrides: Record<string, Record<string, string | boolean>>;
-	expiresAt: number;
-}
+type RoleMatrixOverrides = Record<string, Record<string, string | boolean>>;
 
-const roleMatrixCache = new Map<string, RoleMatrixCacheEntry>();
 const ROLE_MATRIX_CACHE_TTL_MS = 60_000; // 60 секунд in-memory кэш
+const roleMatrixCache = new BoundedTtlMap<string, RoleMatrixOverrides>({
+	maxEntries: 500,
+	ttlMs: ROLE_MATRIX_CACHE_TTL_MS,
+});
 
 /**
  * Сброс in-memory кэша матрицы прав (вызывается при PUT /api/settings/role-matrix).
@@ -43,7 +44,7 @@ export function invalidateRoleMatrixCache(organizationId?: string): void {
 export async function fetchRoleMatrixOverrides(
 	orgIdOrTx: string | TenantDb,
 	maybeOrgIdOrTx?: string | TenantDb,
-): Promise<Record<string, Record<string, string | boolean>> | null> {
+): Promise<RoleMatrixOverrides | null> {
 	let organizationId: string;
 	let tx: TenantDb | undefined;
 
@@ -57,10 +58,9 @@ export async function fetchRoleMatrixOverrides(
 
 	if (!organizationId) return null;
 
-	const now = Date.now();
 	const cached = roleMatrixCache.get(organizationId);
-	if (cached && cached.expiresAt > now) {
-		return cached.overrides;
+	if (cached) {
+		return cached;
 	}
 
 	try {
@@ -80,12 +80,9 @@ export async function fetchRoleMatrixOverrides(
 
 		const flags = (org?.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
 		const overrides =
-			(flags.roleMatrixOverrides as Record<string, Record<string, string | boolean>> | null) ?? {};
+			(flags.roleMatrixOverrides as RoleMatrixOverrides | null) ?? {};
 
-		roleMatrixCache.set(organizationId, {
-			overrides,
-			expiresAt: now + ROLE_MATRIX_CACHE_TTL_MS,
-		});
+		roleMatrixCache.set(organizationId, overrides);
 
 		return overrides;
 	} catch (err: unknown) {
@@ -102,13 +99,8 @@ export async function fetchRoleMatrixOverrides(
  */
 export function getCachedRoleMatrixOverrides(
 	organizationId: string,
-): Record<string, Record<string, string | boolean>> | null {
-	const now = Date.now();
-	const cached = roleMatrixCache.get(organizationId);
-	if (cached && cached.expiresAt > now) {
-		return cached.overrides;
-	}
-	return null;
+): RoleMatrixOverrides | null {
+	return roleMatrixCache.get(organizationId) ?? null;
 }
 
 /**

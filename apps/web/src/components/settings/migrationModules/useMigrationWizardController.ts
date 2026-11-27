@@ -302,7 +302,7 @@ export function useMigrationWizardController() {
 						targetField,
 					}));
 				if (overrides.length > 0) {
-					await fetch(`/api/migration/${upload.runId}/map`, {
+					const mapResponse = await fetch(`/api/migration/${upload.runId}/map`, {
 						method: "POST",
 						headers: clinicalMutationHeaders({
 							"content-type": "application/json",
@@ -311,7 +311,13 @@ export function useMigrationWizardController() {
 							allowLlm: false,
 							mappingOverrides: overrides,
 						}),
-					}).catch(() => null);
+					});
+					const mapResult = await readResponse<unknown>(mapResponse);
+					if (!mapResult.ok) {
+						setError({ code: mapResult.code, message: mapResult.message });
+						setBusy(false);
+						return;
+					}
 				}
 
 				const response = await fetch(`/api/migration/${upload.runId}/execute`, {

@@ -11,7 +11,7 @@
 
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	isIncomePaymentRowSql,
 	paymentAbsKopecksSql,
@@ -337,7 +337,7 @@ export async function financialExecutiveSummary(
 	};
 
 	if (executor) return runQuery(executor);
-	return withTenantCtx(scope.organizationId, runQuery);
+	return withTenantReadCtx(scope.organizationId, runQuery);
 }
 
 /**
@@ -357,16 +357,12 @@ export async function doctorPayrollReport(
 ): Promise<DoctorPayrollReportData> {
 	const identSalaryModel: IdentSalaryModel = options?.identSalaryModel ?? "net_proportional_discount";
 	const cashAdvancePolicy: CashAdvanceAllocationPolicy = options?.cashAdvancePolicy ?? "proportional";
-	try {
-		let activeDoctors = await fetchActiveDoctorProfiles(scope.organizationId);
+	const runReport = async (tx: TenantDb): Promise<DoctorPayrollReportData> => {
+		let activeDoctors = await fetchActiveDoctorProfiles(scope.organizationId, tx);
 		if (filterDoctorId) {
 			activeDoctors = activeDoctors.filter((doc) => doc.id === filterDoctorId);
 		}
-		const clinicTimeZone = executor
-			? await resolveClinicTimeZone(executor, scope.organizationId)
-			: await withTenantCtx(scope.organizationId, (tx) =>
-					resolveClinicTimeZone(tx, scope.organizationId),
-				);
+		const clinicTimeZone = await resolveClinicTimeZone(tx, scope.organizationId);
 		const fromStr = formatDateIsoInTimeZone(scope.from, clinicTimeZone);
 		const toStr = formatDateIsoInTimeZone(scope.to, clinicTimeZone);
 
@@ -386,6 +382,7 @@ export async function doctorPayrollReport(
 				toStr,
 				fromDate: scope.from,
 				toDate: scope.to,
+				tx,
 			});
 
 			const docPayoutModel = doc.payoutModel as "percentage" | "chair_rental";
@@ -457,7 +454,7 @@ export async function doctorPayrollReport(
 		// 6. Расчет оплаты труда ассистентов клиники (скрывается при персональной выгрузке врача)
 		const assistantReport = filterDoctorId
 			? { rows: [], totals: { totalPayoutRub: 0, totalPayoutKopecks: 0 }, isEmpty: true }
-			: await assistantPayrollReport(scope, executor);
+			: await assistantPayrollReport(scope, tx);
 
 		return {
 			period: {
@@ -492,6 +489,10 @@ export async function doctorPayrollReport(
 				(rows.length === 0 || totalServicesRenderedKopecks === 0) &&
 				assistantReport.isEmpty,
 		};
+	};
+
+	try {
+		return executor ? await runReport(executor) : await withTenantReadCtx(scope.organizationId, runReport);
 	} catch (err) {
 		logger?.error({ err }, "DOCTOR_PAYROLL_REPORT_ERROR");
 		throw err;

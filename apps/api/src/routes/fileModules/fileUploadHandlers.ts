@@ -227,5 +227,23 @@ export function registerFileUploadRoutes(app: FastifyInstance) {
 		{ config: { tenantTxSelfManaged: true } },
 		downloadAttachmentHandler,
 	);
-	app.post("/api/imaging/decode-heic", { schema: { description: "HEIC decode with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" }, organizationid: { type: "string" }, "x-organization-id": { type: "string" } } } } }, decodeHeicHandler);
+	app.post(
+		"/api/imaging/decode-heic",
+		{
+			config: { tenantTxSelfManaged: true },
+			schema: {
+				description: "HEIC decode with mandatory RFC 9562 Idempotency-Key",
+				headers: {
+					type: "object",
+					properties: {
+						"idempotency-key": { type: "string" },
+						"x-idempotency-key": { type: "string" },
+						organizationid: { type: "string" },
+						"x-organization-id": { type: "string" },
+					},
+				},
+			},
+		},
+		decodeHeicHandler,
+	);
 }

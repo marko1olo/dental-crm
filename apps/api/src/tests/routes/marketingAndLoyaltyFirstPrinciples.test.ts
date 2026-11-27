@@ -326,7 +326,7 @@ describe("Marketing, Public Booking & Loyalty First-Principles Integration", () 
 			administrativeProfile: {
 				leadSource: "gis_2",
 				utmSource: "gis_2",
-			} as any,
+			},
 		}).returning();
 
 		assert.ok(gisPatient);
@@ -349,7 +349,10 @@ describe("Marketing, Public Booking & Loyalty First-Principles Integration", () 
 		const data = res.json();
 
 		assert.ok(Array.isArray(data.selfBookingChannels));
-		const gisChannel = data.selfBookingChannels.find((c: any) => c.key === "gis2" || c.key === "gis_2");
+		const gisChannel = data.selfBookingChannels.find(
+			(c: { key: string; spentKopecks: number; revenueKopecks: number; romiPercent: number; cacKopecks: number }) =>
+				c.key === "gis2" || c.key === "gis_2",
+		);
 		assert.ok(gisChannel, "Канал 2ГИС должен присутствовать в отчете");
 
 		// Затраты 15 000 руб = 1 500 000 коп
@@ -362,7 +365,7 @@ describe("Marketing, Public Booking & Loyalty First-Principles Integration", () 
 		assert.equal(gisChannel.cacKopecks, 1500000);
 
 		// Проверяем, что нет NaN или Infinity
-		for (const ch of data.selfBookingChannels) {
+		for (const ch of data.selfBookingChannels as Array<{ romiPercent: number; cacKopecks: number }>) {
 			assert.ok(Number.isFinite(ch.romiPercent));
 			assert.ok(Number.isFinite(ch.cacKopecks));
 		}
@@ -409,13 +412,16 @@ describe("Marketing, Public Booking & Loyalty First-Principles Integration", () 
 		assert.ok(Array.isArray(funnel.steps));
 		assert.equal(funnel.steps.length, 5);
 
-		const viewsStep = funnel.steps.find((s: any) => s.stage === "views");
-		const bookedStep = funnel.steps.find((s: any) => s.stage === "booked");
-		const attendedStep = funnel.steps.find((s: any) => s.stage === "attended");
-		const paidStep = funnel.steps.find((s: any) => s.stage === "paid");
+		const viewsStep = funnel.steps.find((s: { stage: string; count: number }) => s.stage === "views");
+		const slotSelectedStep = funnel.steps.find((s: { stage: string; count: number }) => s.stage === "slot_selected");
+		const bookedStep = funnel.steps.find((s: { stage: string; count: number }) => s.stage === "booked");
+		const attendedStep = funnel.steps.find((s: { stage: string; count: number }) => s.stage === "attended");
+		const paidStep = funnel.steps.find((s: { stage: string; count: number }) => s.stage === "paid");
 
-		// В тесте 1 был создан 1 онлайн-лид ("Смирнова Ольга Ивановна", yandex_maps, consult_booked)
-		assert.equal(viewsStep.count, 1, "Онлайн-лидов ровно 1");
+		// Просмотры виджета отдельно не пишутся в БД и не синтезируются (views === 0);
+		// онлайн-лид из теста 1 ("Смирнова Ольга Ивановна", yandex_maps, consult_booked) отражается в slot_selected и booked
+		assert.equal(viewsStep.count, 0, "Просмотры виджета не синтезируются из лидов");
+		assert.equal(slotSelectedStep.count, 1, "Онлайн-лидов (выбор слота) ровно 1");
 		assert.equal(bookedStep.count, 1, "Забронированных записей онлайн ровно 1");
 
 		// Оффлайн-пациент НЕ должен попадать в онлайн-воронку!

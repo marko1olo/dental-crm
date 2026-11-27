@@ -6,7 +6,8 @@
 import type { FastifyInstance } from "fastify";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { users } from "../../db/schema.js";
 import {
 	assistantPayrollReport,
@@ -20,7 +21,7 @@ import {
 	periodBoundarySchema,
 	periodQuerySchema,
 	resolvePeriod,
-	scopeForReport,
+	withTenantReportScope,
 } from "./reportsShared.js";
 import { requirePayoutAccess } from "../billingRoutes/payoutAccessService.js";
 
@@ -37,15 +38,25 @@ export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstanc
 	/**
 	 * Выработка и результативность врачей клиники за выбранный период.
 	 */
-	app.get("/api/reports/doctors", async (request, reply) => {
-		const resolved = await scopeForReport(request, reply, "report doctors");
-		if (!resolved) return;
-		const report = await doctorPerformance(resolved.scope);
-		return {
-			period: { from: resolved.scope.from, to: resolved.scope.to },
-			doctors: report.rows,
-			...report,
-		};
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/reports/doctors",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			return withTenantReportScope(
+				request,
+				reply,
+				"report doctors",
+				async (resolved, tx) => {
+					const report = await doctorPerformance(resolved.scope, tx);
+					return {
+						period: { from: resolved.scope.from, to: resolved.scope.to },
+						doctors: report.rows,
+						...report,
+					};
+				},
+			);
+		},
 	});
 
 	/**
@@ -56,76 +67,81 @@ export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstanc
 	 * DEF-PAYROLL-02: Права доступа переведены на requirePayoutAccess (payroll.read / payroll.read.own),
 	 * для врачей с payroll.read.own ведомость фильтруется строго по их doctorId.
 	 */
-	app.get("/api/reports/doctor-payroll", async (request, reply) => {
-		const payoutAccess = await requirePayoutAccess(request, reply);
-		if (!payoutAccess) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/reports/doctor-payroll",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const payoutAccess = await requirePayoutAccess(request, reply);
+			if (!payoutAccess) return;
 
-		const parsed = doctorPayrollReportQuerySchema.safeParse(request.query);
-		if (!parsed.success) {
-			badRequest(
-				reply,
-				"Проверьте параметры отчёта: даты, детализацию и пределы.",
-			);
-			return;
-		}
-
-		const queryData = {
-			...parsed.data,
-			from: parsed.data.from ?? parsed.data.startDate,
-			to: parsed.data.to ?? parsed.data.endDate,
-		};
-
-		const timeZone = await clinicTimeZone(payoutAccess.organizationId);
-		const period = resolvePeriod(queryData, timeZone);
-		if (!period.ok) {
-			badRequest(reply, period.message);
-			return;
-		}
-
-		const scope = {
-			organizationId: payoutAccess.organizationId,
-			from: period.from,
-			to: period.to,
-			timeZone,
-		};
-
-		let filterDoctorId: string | undefined;
-		if (payoutAccess.scope === "own") {
-			filterDoctorId = payoutAccess.userId;
-		} else {
-			const queryDoctorId = parsed.data.doctorId;
-			if (queryDoctorId && queryDoctorId !== "all") {
-				const [existingDoctor] = await withTenantCtx(payoutAccess.organizationId, async (tx) => {
-					return await tx
-						.select({ id: users.id })
-						.from(users)
-						.where(
-							and(
-								eq(users.id, queryDoctorId),
-								eq(users.organizationId, payoutAccess.organizationId),
-							),
-						)
-						.limit(1);
-				});
-
-				if (!existingDoctor) {
-					request.log.warn(
-						{ queryDoctorId, organizationId: payoutAccess.organizationId },
-						"Security probe: doctor not found or does not belong to organization",
-					);
-					return reply.code(404).send({
-						error: "DoctorNotFound",
-						message: "Врач не найден в штате текущей клиники",
-					});
-				}
-				filterDoctorId = existingDoctor.id;
+			const parsed = doctorPayrollReportQuerySchema.safeParse(request.query);
+			if (!parsed.success) {
+				badRequest(
+					reply,
+					"Проверьте параметры отчёта: даты, детализацию и пределы.",
+				);
+				return;
 			}
-		}
 
-		return await doctorPayrollReport(scope, filterDoctorId, request.log, undefined, {
-			identSalaryModel: parsed.data.identSalaryModel,
-			cashAdvancePolicy: parsed.data.cashAdvancePolicy,
-		});
+			const queryData = {
+				...parsed.data,
+				from: parsed.data.from ?? parsed.data.startDate,
+				to: parsed.data.to ?? parsed.data.endDate,
+			};
+
+			return withTenantReadCtx(payoutAccess.organizationId, async (tx) => {
+				const timeZone = await clinicTimeZone(payoutAccess.organizationId, tx);
+				const period = resolvePeriod(queryData, timeZone);
+				if (!period.ok) {
+					badRequest(reply, period.message);
+					return;
+				}
+
+				const scope = {
+					organizationId: payoutAccess.organizationId,
+					from: period.from,
+					to: period.to,
+					timeZone,
+				};
+
+				let filterDoctorId: string | undefined;
+				if (payoutAccess.scope === "own") {
+					filterDoctorId = payoutAccess.userId;
+				} else {
+					const queryDoctorId = parsed.data.doctorId;
+					if (queryDoctorId && queryDoctorId !== "all") {
+						const [existingDoctor] = await tx
+							.select({ id: users.id })
+							.from(users)
+							.where(
+								and(
+									eq(users.id, queryDoctorId),
+									eq(users.organizationId, payoutAccess.organizationId),
+								),
+							)
+							.limit(1);
+
+						if (!existingDoctor) {
+							request.log.warn(
+								{ queryDoctorId, organizationId: payoutAccess.organizationId },
+								"Security probe: doctor not found or does not belong to organization",
+							);
+							return reply.code(404).send({
+								error: "DoctorNotFound",
+								message: "Врач не найден в штате текущей клиники",
+							});
+						}
+						filterDoctorId = existingDoctor.id;
+					}
+				}
+
+				return await doctorPayrollReport(scope, filterDoctorId, request.log, tx, {
+					identSalaryModel: parsed.data.identSalaryModel,
+					cashAdvancePolicy: parsed.data.cashAdvancePolicy,
+				});
+			});
+		},
 	});
 
 	/**
@@ -134,60 +150,78 @@ export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstanc
 	 * базовая ставка за смену, доплаты, НДФЛ 13% и чистая выплата на руки.
 	 * Требует полномочие payroll.read (requirePayoutAccess с проверкой scope === "all").
 	 */
-	app.get("/api/reports/assistant-payroll", async (request, reply) => {
-		const payoutAccess = await requirePayoutAccess(request, reply);
-		if (!payoutAccess) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/reports/assistant-payroll",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const payoutAccess = await requirePayoutAccess(request, reply);
+			if (!payoutAccess) return;
 
-		if (payoutAccess.scope !== "all") {
-			reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "payroll.read",
-				role: payoutAccess.role,
-				message: "Недостаточно прав для просмотра ведомости ассистентов клиники.",
+			if (payoutAccess.scope !== "all") {
+				reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "payroll.read",
+					role: payoutAccess.role,
+					message: "Недостаточно прав для просмотра ведомости ассистентов клиники.",
+				});
+				return;
+			}
+
+			const parsed = periodQuerySchema.safeParse(request.query);
+			if (!parsed.success) {
+				badRequest(
+					reply,
+					"Проверьте параметры отчёта: даты, детализацию и пределы.",
+				);
+				return;
+			}
+
+			return withTenantReadCtx(payoutAccess.organizationId, async (tx) => {
+				const timeZone = await clinicTimeZone(payoutAccess.organizationId, tx);
+				const period = resolvePeriod(parsed.data, timeZone);
+				if (!period.ok) {
+					badRequest(reply, period.message);
+					return;
+				}
+
+				const scope = {
+					organizationId: payoutAccess.organizationId,
+					from: period.from,
+					to: period.to,
+					timeZone,
+					logger: request.log,
+				};
+
+				return await assistantPayrollReport(scope, tx);
 			});
-			return;
-		}
-
-		const parsed = periodQuerySchema.safeParse(request.query);
-		if (!parsed.success) {
-			badRequest(
-				reply,
-				"Проверьте параметры отчёта: даты, детализацию и пределы.",
-			);
-			return;
-		}
-
-		const timeZone = await clinicTimeZone(payoutAccess.organizationId);
-		const period = resolvePeriod(parsed.data, timeZone);
-		if (!period.ok) {
-			badRequest(reply, period.message);
-			return;
-		}
-
-		const scope = {
-			organizationId: payoutAccess.organizationId,
-			from: period.from,
-			to: period.to,
-			timeZone,
-			logger: request.log,
-		};
-
-		return await assistantPayrollReport(scope);
+		},
 	});
 
 	/**
 	 * Продажи медицинских услуг по прейскуранту клиники с ранжированием по выручке.
 	 */
-	app.get("/api/reports/services", async (request, reply) => {
-		const resolved = await scopeForReport(request, reply, "report services");
-		if (!resolved) return;
-		const report = await serviceSales(
-			resolved.scope,
-			resolved.query.limit ?? 50,
-		);
-		return {
-			period: { from: resolved.scope.from, to: resolved.scope.to },
-			...report,
-		};
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/reports/services",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			return withTenantReportScope(
+				request,
+				reply,
+				"report services",
+				async (resolved, tx) => {
+					const report = await serviceSales(
+						resolved.scope,
+						resolved.query.limit ?? 50,
+						tx,
+					);
+					return {
+						period: { from: resolved.scope.from, to: resolved.scope.to },
+						...report,
+					};
+				},
+			);
+		},
 	});
 }

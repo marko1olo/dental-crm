@@ -57,6 +57,34 @@ export interface MigrationDiscoverySectionProps {
 	lookupClinicPublicProfile: () => void;
 }
 
+const SOURCE_KIND_FILTER_GROUPS: Record<string, ReadonlySet<string>> = {
+	database: new Set([
+		"mis_database",
+		"firebird_database",
+		"access_database",
+		"sqlite_database",
+		"sql_dump",
+	]),
+	dicom: new Set([
+		"pacs_dicom",
+		"dicom_folder",
+		"xray_image_archive",
+		"vendor_imaging_system",
+	]),
+	tabular: new Set([
+		"spreadsheet_export",
+		"csv_export",
+		"archive_export",
+	]),
+};
+
+function matchesSourceKindFilter(sourceKind: string | undefined, filterKey: string): boolean {
+	if (filterKey === "all") return true;
+	if (!sourceKind) return false;
+	const group = SOURCE_KIND_FILTER_GROUPS[filterKey];
+	return group ? group.has(sourceKind) : sourceKind === filterKey;
+}
+
 export function MigrationDiscoverySection({
 	typedMigrationSourceDiscovery,
 	typedMigrationDiscoveryCandidates,
@@ -92,9 +120,10 @@ export function MigrationDiscoverySection({
 			candidate.sourceFingerprint?.toLowerCase().includes(q) ||
 			candidate.reasons?.some((r) => r.toLowerCase().includes(q));
 
-		const matchesKind =
-			sourceKindFilter === "all" ||
-			candidate.sourceKind === sourceKindFilter;
+		const matchesKind = matchesSourceKindFilter(
+			candidate.sourceKind,
+			sourceKindFilter,
+		);
 
 		return matchesQuery && matchesKind;
 	});
@@ -152,9 +181,12 @@ export function MigrationDiscoverySection({
 							{ key: "dicom", label: "КТ / Снимки" },
 							{ key: "tabular", label: "Таблицы / Excel" },
 						].map((filter) => {
-							const count = filter.key === "all"
-								? typedMigrationDiscoveryCandidates.length
-								: typedMigrationDiscoveryCandidates.filter((c) => c.sourceKind === filter.key).length;
+							const count =
+								filter.key === "all"
+									? typedMigrationDiscoveryCandidates.length
+									: typedMigrationDiscoveryCandidates.filter((c) =>
+											matchesSourceKindFilter(c.sourceKind, filter.key),
+										).length;
 							return (
 								<button
 									key={filter.key}

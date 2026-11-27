@@ -1,3 +1,4 @@
+import multipart from "@fastify/multipart";
 import type { FastifyInstance } from "fastify";
 import { requestLoggingPlugin } from "../observability/index.js";
 import { cacheHeadersPlugin } from "../plugins/cacheHeaders.js";
@@ -13,6 +14,16 @@ import { registerRouteNotFoundHandler } from "../utils/routeNotFound.js";
 export async function registerCorePlugins(app: FastifyInstance): Promise<void> {
 	// Сквозное структурированное логирование, Correlation ID и замер латентности
 	await app.register(requestLoggingPlugin);
+
+	// Потоковый multipart-парсер (1 файл за раз, жёсткий лимит под 4 ГБ ОЗУ — без буферизации в RAM)
+	await app.register(multipart, {
+		limits: {
+			files: 1,
+			fields: 20,
+			fieldSize: 64 * 1024,
+			fileSize: Number(process.env.DICOM_BODY_LIMIT_BYTES ?? 256 * 1024 * 1024),
+		},
+	});
 
 	// HTTP кэширование справочников (ETag, Cache-Control, 304 Not Modified) для медленных HDD
 	await app.register(cacheHeadersPlugin);

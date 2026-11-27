@@ -170,10 +170,10 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 			className="executive-dashboard-container space-y-4"
 			data-testid="executive-dashboard-root"
 		>
-			{/* Верхний лаконичный селектор режима (32-36px) — ровно 1 строка */}
-			<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-1.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
+			{/* Верхний лаконичный селектор режима — адаптивная переносная строка без перекрытия и обрезания */}
+			<div className="flex flex-wrap items-center justify-between gap-2 p-1.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm max-w-full">
 				<div
-					className="p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] grid grid-cols-5 sm:flex sm:flex-nowrap gap-1 w-full sm:w-auto"
+					className="p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] flex items-center flex-nowrap gap-1 overflow-x-auto no-scrollbar max-w-full min-w-0"
 					role="tablist"
 					aria-label="Вкладки финансового пульта"
 				>
@@ -183,14 +183,14 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						data-testid="executive-tab-financial"
 						aria-selected={activeTab === "financial"}
 						onClick={() => setActiveTab("financial")}
-						className={`h-8 px-1.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 ${
+						className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 ${
 							activeTab === "financial"
 								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
 								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<CreditCard size={14} aria-hidden="true" className="shrink-0" />
-						<span className="sm:hidden text-[11px]">Финансы</span>
+						<span className="sm:hidden">Финансы</span>
 						<span className="hidden sm:inline">Финансовый пульт</span>
 					</button>
 
@@ -200,14 +200,14 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						data-testid="executive-tab-payroll"
 						aria-selected={activeTab === "payroll"}
 						onClick={() => setActiveTab("payroll")}
-						className={`h-8 px-1.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 ${
+						className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 ${
 							activeTab === "payroll"
 								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
 								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Users size={14} aria-hidden="true" className="shrink-0" />
-						<span className="sm:hidden text-[11px]">Зарплаты</span>
+						<span className="sm:hidden">Зарплаты</span>
 						<span className="hidden sm:inline">Зарплаты врачей (Net)</span>
 					</button>
 
@@ -217,14 +217,14 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						data-testid="executive-tab-chairs"
 						aria-selected={activeTab === "chairs"}
 						onClick={() => setActiveTab("chairs")}
-						className={`h-8 px-1.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 ${
+						className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 ${
 							activeTab === "chairs"
 								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
 								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Armchair size={14} aria-hidden="true" className="shrink-0" />
-						<span className="sm:hidden text-[11px]">Кресла</span>
+						<span className="sm:hidden">Кресла</span>
 						<span className="hidden sm:inline">Загрузка кресел</span>
 					</button>
 
@@ -234,14 +234,14 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						data-testid="executive-tab-rebooking"
 						aria-selected={activeTab === "rebooking"}
 						onClick={() => setActiveTab("rebooking")}
-						className={`h-8 px-1.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 ${
+						className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 ${
 							activeTab === "rebooking"
 								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
 								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Repeat size={14} aria-hidden="true" className="shrink-0" />
-						<span className="sm:hidden text-[11px]">Повтор</span>
+						<span className="sm:hidden">Повтор</span>
 						<span className="hidden sm:inline">Повторная запись</span>
 					</button>
 
@@ -251,37 +251,37 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						data-testid="executive-tab-receivables"
 						aria-selected={activeTab === "receivables"}
 						onClick={() => setActiveTab("receivables")}
-						className={`h-8 px-1.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 ${
+						className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 ${
 							activeTab === "receivables"
 								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
 								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Wallet size={14} aria-hidden="true" className="shrink-0" />
-						<span className="sm:hidden text-[11px]">Долги</span>
+						<span className="sm:hidden">Долги</span>
 						<span className="hidden sm:inline">Дебиторка и авансы</span>
 					</button>
 				</div>
 
-				<div className="flex items-center justify-end gap-2 shrink-0">
+				<div className="flex items-center justify-end gap-2 shrink-0 ml-auto">
 					<button
 						type="button"
 						onClick={() => void handleExportCsv()}
 						data-testid="executive-export-csv-btn"
-						className="secondary-button h-8 px-2.5 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer whitespace-nowrap shrink-0 inline-flex items-center gap-1.5"
 						title="Выгрузить сводный отчёт в CSV (Excel)"
 					>
-						<Download size={13} aria-hidden="true" />
+						<Download size={13} aria-hidden="true" className="shrink-0" />
 						<span className="hidden sm:inline">CSV</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={handlePrint}
-						className="secondary-button h-8 px-2.5 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer whitespace-nowrap shrink-0 inline-flex items-center gap-1.5"
 						title="Распечатать отчёт"
 					>
-						<Printer size={13} aria-hidden="true" />
+						<Printer size={13} aria-hidden="true" className="shrink-0" />
 						<span className="hidden sm:inline">Печать</span>
 					</button>
 
@@ -292,9 +292,9 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 							else if (onNavigateToSection) onNavigateToSection("financial_analytics");
 							else setIsPnlModalOpen(true);
 						}}
-						className="primary-button h-8 px-3 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-hover)] transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-sm"
+						className="primary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-hover)] transition-colors cursor-pointer whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 shadow-sm"
 					>
-						<Calculator size={13} aria-hidden="true" />
+						<Calculator size={13} aria-hidden="true" className="shrink-0" />
 						<span>Управленческий P&amp;L</span>
 					</button>
 				</div>

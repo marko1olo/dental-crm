@@ -3,6 +3,7 @@
  *
  * Decomposed into modular import services with SSE progress streaming and zero-downtime re-exports.
  */
+import { randomUUID } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import {
   clinicPublicLookupRequestSchema,
@@ -18,7 +19,7 @@ import {
   requireClinicalReadAccess,
   requireResolvedOrganizationId,
 } from "../accessGuard.js";
-import { withTenantCtx } from "../db/rls.js";
+import { withTenantWriteCtx } from "../db/rls.js";
 import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 import { commitImagingImport } from "./imaging.js";
 import { commitPatientImport } from "./imports.js";
@@ -37,6 +38,15 @@ import {
   parseSmartImportPayload
 } from "../services/imports/smartImportsReports.js";
 import { importProgressManager } from "../services/imports/smartImportsProgressStream.js";
+
+function resolveImportTaskId(headers: Record<string, unknown>, prefix: string): string {
+	const raw = headers["x-import-task-id"];
+	const val = Array.isArray(raw) ? raw[0] : raw;
+	if (typeof val === "string" && val.trim().length > 0 && val.trim().length <= 128) {
+		return val.trim();
+	}
+	return `${prefix}:${randomUUID()}`;
+}
 
 export async function registerSmartImportRoutes(app: FastifyInstance) {
 	app.get("/api/imports/smart/progress/stream", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
@@ -59,6 +69,8 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 	});
 
 	app.post("/api/imports/smart/preview", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
+		let taskId: string | null = null;
+		let resolvedOrgId: string | null = null;
 		try {
 			if (
 				!(await requireClinicalReadAccess(
@@ -81,8 +93,42 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 				"smart import",
 			);
 			if (!orgId) return;
-			return await buildSmartImportPreview(orgId, input);
+			resolvedOrgId = orgId;
+			taskId = resolveImportTaskId(request.headers, "preview");
+			importProgressManager.updateProgress({
+				taskId,
+				organizationId: orgId,
+				phase: "parsing",
+				percent: 25,
+				processed: 0,
+				total: 1,
+				message: `Разбор источника «${input.sourceName}»…`,
+			});
+			const preview = await buildSmartImportPreview(orgId, input);
+			const totalRows = preview.patientPreview.totalRows + preview.imagingPreview.totalRows;
+			importProgressManager.updateProgress({
+				taskId,
+				organizationId: orgId,
+				phase: "done",
+				percent: 100,
+				processed: totalRows,
+				total: totalRows,
+				message: `Предпросмотр «${input.sourceName}» готов (${totalRows} строк).`,
+			});
+			return preview;
 		} catch (error) {
+			if (taskId && resolvedOrgId) {
+				importProgressManager.updateProgress({
+					taskId,
+					organizationId: resolvedOrgId,
+					phase: "error",
+					percent: 100,
+					processed: 0,
+					total: 1,
+					message: "Ошибка предпросмотра импорта",
+					error: error instanceof Error ? error.message : "Internal Server Error",
+				});
+			}
 			request.log.error(error);
 			return reply.code(500).send({ error: "Internal Server Error" });
 		}
@@ -92,6 +138,8 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		"/api/imports/smart/local-source-discovery",
 		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
+			let taskId: string | null = null;
+			let resolvedOrgId: string | null = null;
 			try {
 				if (
 					!(await requireClinicalReadAccess(
@@ -114,8 +162,41 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 				);
 				if (!parsed.ok) return reply.code(400).send(parsed.response);
 				const input = parsed.data;
-				return await discoverLocalMigrationSources(input, orgId);
+				resolvedOrgId = orgId;
+				taskId = resolveImportTaskId(request.headers, "discovery");
+				importProgressManager.updateProgress({
+					taskId,
+					organizationId: orgId,
+					phase: "discovery",
+					percent: 15,
+					processed: 0,
+					total: 1,
+					message: "Поиск локальных баз и архивов МИС…",
+				});
+				const discovery = await discoverLocalMigrationSources(input, orgId);
+				importProgressManager.updateProgress({
+					taskId,
+					organizationId: orgId,
+					phase: "done",
+					percent: 100,
+					processed: discovery.candidates.length,
+					total: Math.max(1, discovery.candidates.length),
+					message: `Найдено источников: ${discovery.candidates.length}.`,
+				});
+				return discovery;
 			} catch (error) {
+				if (taskId && resolvedOrgId) {
+					importProgressManager.updateProgress({
+						taskId,
+						organizationId: resolvedOrgId,
+						phase: "error",
+						percent: 100,
+						processed: 0,
+						total: 1,
+						message: "Ошибка поиска локальных источников",
+						error: error instanceof Error ? error.message : "Internal Server Error",
+					});
+				}
 				request.log.error(error);
 				return reply.code(500).send({ error: "Internal Server Error" });
 			}
@@ -194,6 +275,8 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		"/api/imports/smart/migration-autopilot",
 		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
+			let taskId: string | null = null;
+			let resolvedOrgId: string | null = null;
 			try {
 				if (
 					!(await requireClinicalReadAccess(
@@ -216,8 +299,41 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 					"smart import",
 				);
 				if (!orgId) return;
-				return await buildMigrationAutopilot(orgId, input);
+				resolvedOrgId = orgId;
+				taskId = resolveImportTaskId(request.headers, "autopilot");
+				importProgressManager.updateProgress({
+					taskId,
+					organizationId: orgId,
+					phase: "validation",
+					percent: 30,
+					processed: 0,
+					total: 1,
+					message: "Сборка автопилотного плана переноса…",
+				});
+				const plan = await buildMigrationAutopilot(orgId, input);
+				importProgressManager.updateProgress({
+					taskId,
+					organizationId: orgId,
+					phase: "done",
+					percent: 100,
+					processed: 1,
+					total: 1,
+					message: "Автопилотный план переноса сформирован.",
+				});
+				return plan;
 			} catch (error) {
+				if (taskId && resolvedOrgId) {
+					importProgressManager.updateProgress({
+						taskId,
+						organizationId: resolvedOrgId,
+						phase: "error",
+						percent: 100,
+						processed: 0,
+						total: 1,
+						message: "Ошибка сборки автопилота переноса",
+						error: error instanceof Error ? error.message : "Internal Server Error",
+					});
+				}
 				request.log.error(error);
 				return reply.code(500).send({ error: "Internal Server Error" });
 			}
@@ -423,8 +539,22 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 				);
 				if (!orgId) return;
 				const preview = await buildSmartImportPreview(orgId, input);
+				const totalRows = Math.max(
+					1,
+					preview.patientPreview.totalRows + preview.imagingPreview.totalRows,
+				);
+				const commitTaskId = resolveImportTaskId(request.headers, "commit");
+				importProgressManager.updateProgress({
+					taskId: commitTaskId,
+					organizationId: orgId,
+					phase: "committing",
+					percent: 50,
+					processed: 0,
+					total: totalRows,
+					message: `Сохранение пациентов и снимков «${input.sourceName}» в PostgreSQL…`,
+				});
 
-				const { patientCommit, imagingCommit } = await withTenantCtx(orgId, async () => {
+				const { patientCommit, imagingCommit } = await withTenantWriteCtx(orgId, async () => {
 					const pCommit =
 						preview.patientPreview.totalRows > 0
 							? await commitPatientImport(orgId, {
@@ -443,6 +573,18 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 							: null;
 
 					return { patientCommit: pCommit, imagingCommit: iCommit };
+				});
+
+				const committedCount =
+					(patientCommit?.importedCount ?? 0) + (imagingCommit?.importedCount ?? 0);
+				importProgressManager.updateProgress({
+					taskId: commitTaskId,
+					organizationId: orgId,
+					phase: "done",
+					percent: 100,
+					processed: committedCount,
+					total: totalRows,
+					message: `Импорт завершён: перенесено записей ${committedCount}.`,
 				});
 
 				return smartImportCommitResponseSchema.parse({

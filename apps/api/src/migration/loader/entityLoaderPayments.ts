@@ -3,6 +3,7 @@
  * Layer 2: Payments Entity Loader.
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import {
@@ -168,12 +169,14 @@ export async function loadPayments(input: {
 							);
 						}
 
+						const amountKopecks = BigInt(rublesToKopecks(amountRub));
 						const [created] = await tx
 							.insert(payments)
 							.values({
 								organizationId: input.organizationId,
 								patientId,
 								amountRub,
+								amountKopecks,
 								method:
 									(values.method as typeof payments.$inferInsert.method) ??
 									"card",
