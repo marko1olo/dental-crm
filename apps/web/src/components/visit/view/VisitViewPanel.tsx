@@ -11,7 +11,7 @@ export interface VisitViewPanelProps {
 
 export function VisitViewPanel({ s }: VisitViewPanelProps) {
 	return (
-		<div className="panel visit-panel pb-28 sm:pb-8" id="visit" data-testid="visit-view">
+		<div className="panel visit-panel pb-28 sm:pb-20" id="visit" data-testid="visit-view">
 			<header
 				className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-visible shrink-0 sticky top-0 z-30 backdrop-blur-md"
 				data-testid="visit-header-monolith"

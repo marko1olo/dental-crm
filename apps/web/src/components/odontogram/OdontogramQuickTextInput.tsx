@@ -91,7 +91,7 @@ export const OdontogramQuickTextInput: React.FC<OdontogramQuickTextInputProps> =
 			} ${className}`}
 			data-testid="odontogram-quick-text-input"
 		>
-			<div className="flex items-center gap-1.5 w-full">
+			<div className="flex items-center gap-1.5 w-full md:pr-44">
 				<div className="relative flex-1 flex items-center min-w-0">
 					<div className="absolute left-3 pointer-events-none flex items-center justify-center text-slate-400 dark:text-slate-500">
 						<Keyboard className="w-4 h-4 shrink-0" />

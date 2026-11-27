@@ -29,12 +29,16 @@ import {
 	calcNetRevenueKopecks,
 } from "../dentalLabCatalogData";
 import { resolveClinicRoute } from "../../../router/routeResolver";
+import { registerOrdersCrudRoutes } from "../../../../../api/src/routes/lab/ordersCrudRoutes.js";
+import { insertLabOrderInDb } from "../../../../../api/src/routes/lab/ordersCrudModules/labOrderInsertDb.js";
+import type { FastifyInstance } from "fastify";
+import type { TenantDb } from "../../../../../api/src/db/rls.js";
+import type { CreateLabOrderInput } from "../../../../../api/src/routes/lab/ordersCrudModules/labOrderValidationSchemas.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const labDir = path.resolve(__dirname, "..");
 const webSrcDir = path.resolve(labDir, "../..");
-const apiSrcDir = path.resolve(webSrcDir, "../../api/src");
 
 describe("DENTE Dental Lab SSOT Consolidation & Orders Inquisitor [LAB-01..05]", () => {
 	// =========================================================================
@@ -217,35 +221,77 @@ describe("DENTE Dental Lab SSOT Consolidation & Orders Inquisitor [LAB-01..05]",
 	// 4. БЭКЕНД РОУТЫ И КАНОНИЧЕСКИЙ ЭНДПОИНТ /api/lab/orders
 	// =========================================================================
 	describe("4. Backend Fastify Routes & Canonical Endpoint SSOT", () => {
-		const routesFile = path.resolve(apiSrcDir, "routes/lab/ordersCrudRoutes.ts");
-		const insertDbFile = path.resolve(apiSrcDir, "routes/lab/ordersCrudModules/labOrderInsertDb.ts");
+		interface CapturedRoute {
+			method: string;
+			url: string;
+			config?: Record<string, unknown>;
+		}
 
-		it("4.1. ordersCrudRoutes.ts registers /api/lab/orders as primary SSOT route", () => {
-			assert.ok(fs.existsSync(routesFile), "ordersCrudRoutes.ts must exist");
-			const content = fs.readFileSync(routesFile, "utf-8");
-			assert.ok(content.includes('app.get("/api/lab/orders"'), "Must support GET /api/lab/orders");
-			assert.ok(content.includes('app.post("/api/lab/orders"'), "Must support POST /api/lab/orders");
-			assert.ok(content.includes('app.put("/api/lab/orders/:id"'), "Must support PUT /api/lab/orders/:id");
-			assert.ok(content.includes('app.delete("/api/lab/orders/:id"'), "Must support DELETE /api/lab/orders/:id");
+		async function collectRegisteredLabRoutes(): Promise<CapturedRoute[]> {
+			const routes: CapturedRoute[] = [];
+			const appStub: Pick<FastifyInstance, "route"> = {
+				route(opts: { method: string | string[]; url: string; config?: Record<string, unknown> }) {
+					const methods = Array.isArray(opts.method) ? opts.method : [opts.method];
+					for (const method of methods) {
+						routes.push({ method: method.toUpperCase(), url: opts.url, config: opts.config });
+					}
+					return appStub as FastifyInstance;
+				},
+			};
+			await registerOrdersCrudRoutes(appStub as FastifyInstance);
+			return routes;
+		}
+
+		it("4.1. registerOrdersCrudRoutes registers /api/lab/orders CRUD endpoints via routeFactories", async () => {
+			const routes = await collectRegisteredLabRoutes();
+			const hasRoute = (method: string, url: string) =>
+				routes.some((r) => r.method === method && r.url === url && r.config?.tenantTxSelfManaged === true);
+
+			assert.ok(hasRoute("GET", "/api/lab/orders"), "Must register GET /api/lab/orders");
+			assert.ok(hasRoute("POST", "/api/lab/orders"), "Must register POST /api/lab/orders");
+			assert.ok(hasRoute("PUT", "/api/lab/orders/:id"), "Must register PUT /api/lab/orders/:id");
+			assert.ok(hasRoute("DELETE", "/api/lab/orders/:id"), "Must register DELETE /api/lab/orders/:id");
 		});
 
-		it("4.2. ordersCrudRoutes.ts preserves backward compatibility with /api/clinical/lab-orders", () => {
-			const content = fs.readFileSync(routesFile, "utf-8");
-			assert.ok(content.includes("/api/clinical/lab-orders"), "Must preserve /api/clinical/lab-orders");
-			assert.ok(content.includes("/api/lab/orders"), "Must preserve /api/lab/orders");
+		it("4.2. registerOrdersCrudRoutes preserves backward compatibility with /api/clinical/lab-orders", async () => {
+			const routes = await collectRegisteredLabRoutes();
+			const hasRoute = (method: string, url: string) =>
+				routes.some((r) => r.method === method && r.url === url);
+
+			assert.ok(hasRoute("GET", "/api/clinical/lab-orders"), "Must register GET /api/clinical/lab-orders");
+			assert.ok(hasRoute("POST", "/api/clinical/lab-orders"), "Must register POST /api/clinical/lab-orders");
+			assert.ok(hasRoute("PUT", "/api/clinical/lab-orders/:id"), "Must register PUT /api/clinical/lab-orders/:id");
+			assert.ok(hasRoute("DELETE", "/api/clinical/lab-orders/:id"), "Must register DELETE /api/clinical/lab-orders/:id");
+			assert.ok(hasRoute("GET", "/api/lab/orders"), "Must register canonical GET /api/lab/orders");
 		});
 
-		it("4.3. insertLabOrderInDb prevents quiet patient hijacking [LAB-01]", () => {
-			assert.ok(fs.existsSync(insertDbFile), "labOrderInsertDb.ts must exist");
-			const content = fs.readFileSync(insertDbFile, "utf-8");
-			assert.ok(
-				!content.includes("firstPatient"),
-				"Must NEVER silently hijack arbitrary patient from database without explicit patientId",
+		it("4.3. insertLabOrderInDb prevents quiet patient hijacking [LAB-01]", async () => {
+			const txStub = {
+				select() {
+					return {
+						from() {
+							return {
+								where() {
+									return {
+										limit: async () => [],
+									};
+								},
+							};
+						},
+					};
+				},
+			} as Partial<TenantDb>;
+			const result = await insertLabOrderInDb(
+				txStub as TenantDb,
+				"00000000-0000-4000-8000-000000000001",
+				{
+					patientId: "00000000-0000-4000-8000-000000000999",
+					materialId: "zirconia",
+					construction: "Коронка",
+					teeth: [16],
+				} as CreateLabOrderInput,
 			);
-			assert.ok(
-				content.includes('kind: "patient_not_found"'),
-				"Must return patient_not_found when patientId is missing or invalid",
-			);
+			assert.deepEqual(result, { kind: "patient_not_found" });
 		});
 	});
 });
