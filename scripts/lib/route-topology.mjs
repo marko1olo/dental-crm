@@ -69,6 +69,15 @@ const ROUTE_METHODS = new Set([
 	"options",
 ]);
 
+/** Типизированные фабрики из `apps/api/src/core/routeFactories.ts`. */
+const ROUTE_FACTORY_DEFAULT_METHOD = new Map([
+	["defineTenantQuery", "GET"],
+	["defineTenantMutation", null],
+	["defineStreamRoute", null],
+	["definePublicRoute", null],
+	["defineWebhookRoute", null],
+]);
+
 /**
  * Получатели, которых заведомо НЕ надо считать экземпляром Fastify.
  *
@@ -371,34 +380,100 @@ function prefixByRouteFile() {
 	return { prefixes, unresolved };
 }
 
+function objectLiteralPropertyValue(objectNode, propertyName, resolve) {
+	for (const property of objectNode.properties) {
+		if (ts.isShorthandPropertyAssignment(property)) {
+			if (property.name.text === propertyName) {
+				return resolve?.get(property.name.text) ?? null;
+			}
+			continue;
+		}
+		if (!ts.isPropertyAssignment(property)) continue;
+		const key =
+			ts.isIdentifier(property.name) || ts.isStringLiteralLike(property.name)
+				? property.name.text
+				: null;
+		if (key !== propertyName) continue;
+		return literalText(property.initializer, resolve);
+	}
+	return null;
+}
+
 /**
  * Регистрации маршрутов в одном файле. Экспортируется, чтобы самопроверка гоняла
  * ТОТ ЖЕ код, что и дерево, на фикстурах, а не проверяла разбор пересказом.
  */
 export function routeRegistrationsIn(file, source) {
 	const parsed = parseSource(file, source);
+	const moduleConstants = new Map();
+	for (const statement of parsed.statements) {
+		if (!ts.isVariableStatement(statement)) continue;
+		for (const declaration of statement.declarationList.declarations) {
+			if (!ts.isIdentifier(declaration.name) || declaration.initializer === undefined) {
+				continue;
+			}
+			const value = literalText(declaration.initializer, moduleConstants);
+			if (value !== null) {
+				moduleConstants.set(declaration.name.text, value);
+			}
+		}
+	}
+
 	const found = [];
 	const visit = (node) => {
-		if (
-			ts.isCallExpression(node) &&
-			ts.isPropertyAccessExpression(node.expression)
-		) {
-			const callee = node.expression;
-			const receiver = ts.isIdentifier(callee.expression)
-				? callee.expression.text
-				: null;
-			const verb = callee.name.text;
+		if (ts.isCallExpression(node)) {
+			if (ts.isPropertyAccessExpression(node.expression)) {
+				const callee = node.expression;
+				const receiver = ts.isIdentifier(callee.expression)
+					? callee.expression.text
+					: null;
+				const verb = callee.name.text;
+				if (
+					receiver !== null &&
+					!NON_FASTIFY_RECEIVERS.has(receiver) &&
+					ROUTE_METHODS.has(verb) &&
+					node.arguments.length >= 2
+				) {
+					const declared = literalText(node.arguments[0], moduleConstants);
+					if (declared !== null && declared.startsWith("/")) {
+						found.push({
+							receiver,
+							method: verb.toUpperCase(),
+							declaredPath: declared,
+							line: lineOf(parsed, node),
+						});
+					}
+				}
+			}
+
+			const factoryName = calleeName(node.expression);
 			if (
-				receiver !== null &&
-				!NON_FASTIFY_RECEIVERS.has(receiver) &&
-				ROUTE_METHODS.has(verb) &&
-				node.arguments.length >= 2
+				factoryName !== null &&
+				ROUTE_FACTORY_DEFAULT_METHOD.has(factoryName) &&
+				node.arguments.length >= 2 &&
+				ts.isObjectLiteralExpression(node.arguments[1])
 			) {
-				const declared = literalText(node.arguments[0]);
-				if (declared !== null && declared.startsWith("/")) {
+				const spec = node.arguments[1];
+				const declared =
+					objectLiteralPropertyValue(spec, "path", moduleConstants) ??
+					objectLiteralPropertyValue(spec, "url", moduleConstants);
+				const defaultMethod = ROUTE_FACTORY_DEFAULT_METHOD.get(factoryName);
+				const rawMethod =
+					objectLiteralPropertyValue(spec, "method", moduleConstants) ??
+					defaultMethod;
+				const normalizedMethod =
+					typeof rawMethod === "string" ? rawMethod.trim().toUpperCase() : null;
+				const appArg = node.arguments[0];
+				const receiver = ts.isIdentifier(appArg) ? appArg.text : factoryName;
+				if (
+					declared !== null &&
+					declared.startsWith("/") &&
+					normalizedMethod !== null &&
+					ROUTE_METHODS.has(normalizedMethod.toLowerCase())
+				) {
 					found.push({
 						receiver,
-						method: verb.toUpperCase(),
+						method: normalizedMethod,
 						declaredPath: declared,
 						line: lineOf(parsed, node),
 					});

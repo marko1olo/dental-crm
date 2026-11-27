@@ -14,7 +14,7 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 const PREVIEW_URL = `${BASE_URL}/checkout-preview.html`;
 const BRAIN_DIR = 'C:/Users/Admin/.gemini/antigravity/brain/388df89f-157a-4f6f-8849-8213afd4c358';
 const PROOFS_DIR = 'C:/Clinic_MVP/dental-crm/docs/proofs/finance';
-const PUBLIC_DIR = 'C:/Clinic_MVP/dental-crm/apps/web/public/screenshots';
+const PUBLIC_DIR = 'C:/Clinic_MVP/dental-crm/scratch/screenshots';
 
 for (const dir of [BRAIN_DIR, PROOFS_DIR, PUBLIC_DIR]) {
   if (!existsSync(dir)) {

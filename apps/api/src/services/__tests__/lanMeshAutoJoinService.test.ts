@@ -1,7 +1,11 @@
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import {
+	AUTO_JOIN_MAX_ORGS,
 	LanMeshAutoJoinService,
+	getAutoJoinServicesByOrgCountForTest,
+	getLanMeshAutoJoinServiceForOrg,
+	hasLanMeshAutoJoinServiceForOrg,
 	resetLanMeshAutoJoinServiceForTest,
 } from "../lanMeshAutoJoinService.js";
 
@@ -240,5 +244,63 @@ describe("LanMeshAutoJoinService: 6-Digit PIN & QR Pairing Protocol", () => {
 		assert.ok(status.qrPayload.startsWith("dente://pair?"));
 		assert.ok(status.httpPairUrl.startsWith("http://"));
 		assert.equal(status.joinedPeersCount, 0);
+	});
+
+	it("bounds joinedNodes and rateLimits via BoundedTtlMap (evicts oldest entries without unbounded growth)", () => {
+		const bounded = new LanMeshAutoJoinService({
+			clinicId: "bounded-clinic",
+			maxJoinedNodes: 3,
+			maxRateLimitEntries: 3,
+			maxAttemptsPerWindow: 5,
+		});
+
+		try {
+			const pin = bounded.getActivePinInfo().pin;
+			for (let i = 1; i <= 5; i++) {
+				const joinRes = bounded.verifyAndJoin({
+					pin,
+					nodeId: `tablet-${i}`,
+					clientIp: `192.168.1.${10 + i}`,
+				});
+				assert.equal(joinRes.success, true);
+			}
+
+			const nodes = bounded.getJoinedNodes();
+			assert.equal(nodes.length, 3);
+			assert.deepEqual(
+				nodes.map((n) => n.nodeId),
+				["tablet-3", "tablet-4", "tablet-5"],
+			);
+
+			for (let i = 1; i <= 5; i++) {
+				const failRes = bounded.verifyAndJoin({
+					pin: "000000",
+					clientIp: `10.0.0.${i}`,
+				});
+				assert.equal(failRes.success, false);
+			}
+			// 10.0.0.1 was evicted when 4th/5th distinct IPs arrived, so remaining attempts start fresh at 4
+			const evictedIpRetry = bounded.verifyAndJoin({
+				pin: "000000",
+				clientIp: "10.0.0.1",
+			});
+			assert.equal(evictedIpRetry.success, false);
+			if (!evictedIpRetry.success) {
+				assert.equal(evictedIpRetry.error, "INVALID_PIN");
+				assert.ok(evictedIpRetry.message.includes("Осталось попыток: 4"));
+			}
+		} finally {
+			bounded.stop();
+		}
+	});
+
+	it("bounds autoJoinServicesByOrg singleton registry and stops evicted services", () => {
+		const total = AUTO_JOIN_MAX_ORGS + 10;
+		for (let i = 0; i < total; i++) {
+			getLanMeshAutoJoinServiceForOrg(`org-bounded-${i}`);
+		}
+		assert.equal(getAutoJoinServicesByOrgCountForTest(), AUTO_JOIN_MAX_ORGS);
+		assert.equal(hasLanMeshAutoJoinServiceForOrg("org-bounded-0"), false);
+		assert.equal(hasLanMeshAutoJoinServiceForOrg(`org-bounded-${total - 1}`), true);
 	});
 });

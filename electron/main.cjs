@@ -10,6 +10,7 @@ const { configureDesktopLogFile, createDesktopLogger } = require("./src/desktopL
 const {
 	startLoopbackHttpServer, stopLoopbackHttpServer, getLoopbackBaseUrl,
 	probePostgresTcpSocket, getLocalServerStatus, switchLocalDatabaseMode, stopManagedServices,
+	ensureEmbeddedBackendStarted,
 } = require("./src/embeddedServerSupervisor.cjs");
 const {
 	checkKktStatusTcpSocket, printFiscalReceiptTcpSocket, printAtol10FiscalReceipt, printShtrihMFiscalReceipt,
@@ -108,6 +109,14 @@ async function createWindow() {
 	if (!BrowserWindow) return;
 	const userDataDir = getUserDataDir();
 	const runtimeConfigPath = userDataDir ? path.join(userDataDir, "runtime.json") : null;
+	const embeddedStatus = await ensureEmbeddedBackendStarted({
+		userDataDir,
+		runtimeConfigPath,
+		argv: process.argv,
+	});
+	if (embeddedStatus?.mode === "standalone" && (!embeddedStatus.pg?.started || !embeddedStatus.api?.started)) {
+		logger.warn("Standalone embedded backend started in degraded state", embeddedStatus);
+	}
 	const loopback = await startLoopbackHttpServer({ runtimeConfigPath });
 
 	mainWindow = new BrowserWindow({
@@ -246,6 +255,7 @@ module.exports = {
 	toggleKioskMode,
 	getWindowState,
 	getLocalServerStatus,
+	ensureEmbeddedBackendStarted,
 	probePostgresTcpSocket,
 	switchLocalDatabaseMode,
 	startLoopbackHttpServer,

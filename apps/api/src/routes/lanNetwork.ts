@@ -19,7 +19,7 @@ import {
 import { withTenantWriteCtx } from "../db/rls.js";
 import { users } from "../db/schema.js";
 import { authTokenSecret } from "../security/authSecret.js";
-import { getRequestIdentity } from "../security/identity.js";
+import { getRequestIdentity, invalidateStaffSessionCache } from "../security/identity.js";
 import { BoundedTtlMap } from "../lib/boundedTtlMap.js";
 import {
 	requireClinicalMutationContext,
@@ -532,8 +532,9 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			60 * 60 * 24 * 7, // 7 days persistent tablet link
 		);
 
-		// Lookup explicitly bound staff user only (never pick arbitrary first user)
-		// and persist a CSPRNG sessionId so verifyActiveStaffSession accepts the paired staffToken.
+		// Lookup explicitly bound staff user only (never pick arbitrary first user).
+		// Preserve an already-active desktop currentSessionId so LAN pairing does not
+		// log out the doctor's workstation PC; initialize one only when none exists yet.
 		let matchedUser: { id: string; fullName: string; role: string } | null = null;
 		let pairedSessionId: string | null = null;
 
@@ -542,7 +543,13 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			const nextSessionId = crypto.randomUUID();
 			const userWithSession = await withTenantWriteCtx(orgId, async (tx) => {
 				const [user] = await tx
-					.select({ id: users.id, fullName: users.fullName, role: users.role })
+					.select({
+						id: users.id,
+						fullName: users.fullName,
+						role: users.role,
+						isActive: users.isActive,
+						currentSessionId: users.currentSessionId,
+					})
 					.from(users)
 					.where(
 						and(
@@ -551,24 +558,37 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 						),
 					)
 					.limit(1);
-				if (!user) return null;
-				await tx
-					.update(users)
-					.set({ currentSessionId: nextSessionId })
-					.where(
-						and(
-							eq(users.id, user.id),
-							eq(users.organizationId, orgId),
-						),
-					);
-				return { user, sessionId: nextSessionId };
+				if (!user || !user.isActive) return null;
+
+				const activeSessionId = user.currentSessionId ?? nextSessionId;
+				let initializedSession = false;
+				if (!user.currentSessionId) {
+					await tx
+						.update(users)
+						.set({ currentSessionId: activeSessionId })
+						.where(
+							and(
+								eq(users.id, user.id),
+								eq(users.organizationId, orgId),
+							),
+						);
+					initializedSession = true;
+				}
+				return {
+					user: { id: user.id, fullName: user.fullName, role: user.role },
+					sessionId: activeSessionId,
+					initializedSession,
+				};
 			});
 			if (!userWithSession) {
 				return reply.code(403).send({
 					ok: false,
 					error: "StaffUserNotFound",
-					message: "Указанный сотрудник не найден в этой клинике.",
+					message: "Указанный сотрудник не найден или деактивирован в этой клинике.",
 				});
+			}
+			if (userWithSession.initializedSession) {
+				invalidateStaffSessionCache(userWithSession.user.id, orgId);
 			}
 			matchedUser = userWithSession.user;
 			pairedSessionId = userWithSession.sessionId;

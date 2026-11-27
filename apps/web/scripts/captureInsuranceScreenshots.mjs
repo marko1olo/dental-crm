@@ -11,7 +11,7 @@ import { chromium } from 'playwright';
 const BASE_URL = 'http://127.0.0.1:5173/?dms=true';
 const BRAIN_DIR = 'C:/Users/Admin/.gemini/antigravity/brain/96ef30db-4ea3-48b9-a458-0904c66a4516';
 const PROOFS_DIR = 'C:/Clinic_MVP/dental-crm/docs/proofs/insurance';
-const PUBLIC_DIR = 'C:/Clinic_MVP/dental-crm/apps/web/public/screenshots/insurance';
+const PUBLIC_DIR = 'C:/Clinic_MVP/dental-crm/scratch/screenshots/insurance';
 
 for (const dir of [BRAIN_DIR, PROOFS_DIR, PUBLIC_DIR]) {
   if (!existsSync(dir)) {

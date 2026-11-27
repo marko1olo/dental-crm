@@ -14,9 +14,13 @@ const {
 	computeXorChecksum,
 } = require("../src/kktHardwareDriver.cjs");
 const {
+	ensureEmbeddedBackendStarted,
+	ensureManagedApiStarted,
 	getLocalServerStatus,
+	shouldRunEmbeddedBackend,
 	startLoopbackHttpServer,
 	stopLoopbackHttpServer,
+	stopManagedServices,
 	switchLocalDatabaseMode,
 } = require("../src/embeddedServerSupervisor.cjs");
 const {
@@ -417,5 +421,84 @@ test("Wave6 Desktop Runtime: Honest KKT Framing, Loopback HTTP & TWAIN/WIA/HotFo
 
 		assert.equal(resolveConfiguredClinicServerUrl({ clinicServerUrl: "http://192.168.1.100:4100/path" }), "http://192.168.1.100:4100");
 		assert.equal(resolveConfiguredClinicServerUrl({ clinicServerUrl: "file:///C:/invalid" }), null);
+	});
+
+	await t.test("Electron builder config avoids web/dist duplication and points to valid Windows ICO", () => {
+		const electronDir = path.resolve(import.meta.dirname, "..");
+		const builderConfig = JSON.parse(fs.readFileSync(path.join(electronDir, "electron-builder.json"), "utf8"));
+		assert.equal(
+			(builderConfig.files || []).some((entry) => String(entry).includes("apps/web/dist")),
+			false,
+			"files[] must not duplicate ../apps/web/dist",
+		);
+		assert.ok(
+			(builderConfig.extraResources || []).some(
+				(res) => res && res.from === "../apps/web/dist" && res.to === "web/dist",
+			),
+			"extraResources must include ../apps/web/dist -> web/dist",
+		);
+		const iconPath = path.resolve(electronDir, builderConfig.win.icon);
+		assert.equal(iconPath.toLowerCase().endsWith(".svg"), false);
+		assert.ok(fs.existsSync(iconPath), `Missing Windows icon at ${iconPath}`);
+		const icoBytes = fs.readFileSync(iconPath);
+		assert.ok(icoBytes.length > 100);
+		assert.equal(icoBytes.readUInt16LE(0), 0);
+		assert.equal(icoBytes.readUInt16LE(2), 1);
+	});
+
+	await t.test("Embedded server supervisor respects remote flags and manages standalone API lifecycle safely", async () => {
+		assert.equal(shouldRunEmbeddedBackend({ argv: ["--remote"], env: {}, runtimeConfig: {} }).enabled, false);
+		assert.equal(shouldRunEmbeddedBackend({ argv: [], env: { DENTE_API_URL: "http://192.168.1.20:4100" }, runtimeConfig: {} }).enabled, false);
+		assert.equal(shouldRunEmbeddedBackend({ argv: [], env: { DENTE_DISABLE_EMBEDDED_SERVER: "1" }, runtimeConfig: {} }).enabled, false);
+		assert.equal(shouldRunEmbeddedBackend({ argv: [], env: {}, runtimeConfig: { engine: "lan_client" } }).enabled, false);
+		assert.equal(shouldRunEmbeddedBackend({ argv: [], env: {}, runtimeConfig: { clinicServerUrl: "http://192.168.1.50:4100" } }).enabled, false);
+		assert.equal(shouldRunEmbeddedBackend({ argv: [], env: {}, runtimeConfig: { engine: "embedded-postgres" } }).enabled, true);
+
+		const skipped = await ensureEmbeddedBackendStarted({ argv: ["--remote"], env: {} });
+		assert.equal(skipped.mode, "remote_or_disabled");
+		assert.equal(skipped.reason, "remote_cli_flag");
+		assert.equal(skipped.api.skipped, true);
+
+		const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "dente-embedded-api-test-"));
+		const dummyEntry = path.join(tempDir, "server.js");
+		const closedProbe = net.createServer();
+		await new Promise((r) => closedProbe.listen(0, "127.0.0.1", r));
+		const targetPort = closedProbe.address().port;
+		await new Promise((r) => closedProbe.close(r));
+
+		fs.writeFileSync(
+			dummyEntry,
+			`const http = require("node:http");
+const srv = http.createServer((req, res) => {
+  if (req.url === "/api/health") { res.writeHead(200); res.end('{"ok":true}'); return; }
+  res.writeHead(404); res.end();
+});
+srv.listen(Number(process.env.API_PORT), "127.0.0.1");
+process.on("SIGTERM", () => srv.close(() => process.exit(0)));
+`,
+			"utf8",
+		);
+
+		try {
+			const started = await ensureManagedApiStarted({
+				apiBaseUrl: `http://127.0.0.1:${targetPort}`,
+				apiEntryPath: dummyEntry,
+				nodeExecPath: process.execPath,
+				startupTimeoutMs: 3000,
+			});
+			assert.equal(started.started, true);
+			assert.equal(started.external, false);
+			assert.ok(typeof started.pid === "number" && started.pid > 0);
+
+			const status = await getLocalServerStatus({
+				pgPort: targetPort,
+				apiBaseUrl: `http://127.0.0.1:${targetPort}`,
+			});
+			assert.equal(status.apiReachable, true);
+			assert.equal(status.managedApiPid, started.pid);
+		} finally {
+			await stopManagedServices();
+			fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+		}
 	});
 });

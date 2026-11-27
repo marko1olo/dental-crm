@@ -6,6 +6,8 @@ const fs = require("node:fs");
 const net = require("node:net");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
+const { once } = require("node:events");
+const { setTimeout: delay } = require("node:timers/promises");
 const { createDesktopLogger } = require("./desktopLogger.cjs");
 const { resolveConfiguredClinicServerUrl } = require("./lanBeaconDesktopBridge.cjs");
 const { createLoopbackServer } = require("./loopbackHttpServer.cjs");
@@ -25,6 +27,7 @@ const supervisorState = {
 	pgInstance: null,
 	apiChildProcess: null,
 	pgDataDir: null,
+	embeddedStatus: null,
 };
 
 function resolveDefaultWebDistDir() {
@@ -33,6 +36,41 @@ function resolveDefaultWebDistDir() {
 		return packagedDist;
 	}
 	return path.resolve(__dirname, "../../apps/web/dist");
+}
+
+function resolveDefaultApiEntryPath() {
+	const packagedApi = process.resourcesPath ? path.join(process.resourcesPath, "api", "dist", "server.js") : null;
+	if (packagedApi && fs.existsSync(packagedApi)) {
+		return packagedApi;
+	}
+	const devApi = path.resolve(__dirname, "../../apps/api/dist/server.js");
+	if (fs.existsSync(devApi)) {
+		return devApi;
+	}
+	return null;
+}
+
+function shouldRunEmbeddedBackend({ argv = process.argv, env = process.env, runtimeConfig = {} } = {}) {
+	if (env.DENTE_DISABLE_EMBEDDED_SERVER === "1") {
+		return { enabled: false, reason: "disabled_by_env" };
+	}
+	if (Array.isArray(argv) && argv.includes("--remote")) {
+		return { enabled: false, reason: "remote_cli_flag" };
+	}
+	if (typeof env.DENTE_API_URL === "string" && env.DENTE_API_URL.trim().length > 0) {
+		return { enabled: false, reason: "external_api_url" };
+	}
+	if (typeof env.DENTE_WEB_URL === "string" && env.DENTE_WEB_URL.trim().length > 0) {
+		return { enabled: false, reason: "external_web_url" };
+	}
+	if (resolveConfiguredClinicServerUrl(runtimeConfig)) {
+		return { enabled: false, reason: "configured_clinic_server" };
+	}
+	const configuredEngine = runtimeConfig.engine || activeLocalDbMode;
+	if (configuredEngine === "lan_client") {
+		return { enabled: false, reason: "lan_client_mode" };
+	}
+	return { enabled: true, reason: "standalone" };
 }
 
 function readRuntimeConfig(runtimeConfigPath) {
@@ -260,15 +298,180 @@ async function ensureManagedPostgresStarted(options = {}) {
 	}
 }
 
+async function ensureManagedApiStarted(options = {}) {
+	const runtimeConfig = options.runtimeConfig ?? readRuntimeConfig(options.runtimeConfigPath);
+	const apiBaseUrl = options.apiBaseUrl || supervisorState.apiBaseUrl || resolveApiBaseUrl(options, runtimeConfig);
+	const existingHealth = await probeApiHealth(apiBaseUrl, 300);
+	if (existingHealth.reachable) {
+		return { started: true, external: true, apiBaseUrl };
+	}
+
+	let parsedUrl;
+	try {
+		parsedUrl = new URL(apiBaseUrl);
+	} catch (err) {
+		return { started: false, apiBaseUrl, reason: err instanceof Error ? err.message : String(err) };
+	}
+	if (parsedUrl.hostname !== "127.0.0.1" && parsedUrl.hostname !== "localhost") {
+		return { started: false, skipped: true, apiBaseUrl, reason: "remote_api_host" };
+	}
+
+	const runningChild = supervisorState.apiChildProcess;
+	if (runningChild && !runningChild.killed && runningChild.exitCode === null) {
+		return { started: true, external: false, pid: runningChild.pid ?? null, apiBaseUrl };
+	}
+
+	const apiEntryPath = options.apiEntryPath || resolveDefaultApiEntryPath();
+	if (!apiEntryPath || !fs.existsSync(apiEntryPath)) {
+		return { started: false, apiBaseUrl, reason: "API server bundle not found" };
+	}
+
+	const apiPort = parsedUrl.port || "4100";
+	const spawnFn = typeof options.spawnFn === "function" ? options.spawnFn : spawn;
+	const childEnv = {
+		...process.env,
+		ELECTRON_RUN_AS_NODE: "1",
+		API_PORT: String(apiPort),
+		...(options.pgPort ? { DENTE_PG_PORT: String(options.pgPort) } : {}),
+		...(options.env || {}),
+	};
+
+	let earlyExitInfo = null;
+	try {
+		const child = spawnFn(options.nodeExecPath || process.execPath, [apiEntryPath], {
+			env: childEnv,
+			cwd: path.dirname(apiEntryPath),
+			stdio: ["ignore", "pipe", "pipe"],
+			windowsHide: true,
+		});
+		supervisorState.apiChildProcess = child;
+
+		if (child.stderr && typeof child.stderr.on === "function") {
+			child.stderr.on("data", (chunk) => {
+				const text = String(chunk).trim();
+				if (text) logger.warn("Managed API stderr", { text: text.slice(0, 400) });
+			});
+		}
+		if (typeof child.on === "function") {
+			child.on("error", (err) => {
+				earlyExitInfo = err instanceof Error ? err.message : String(err);
+				logger.warn("Managed API process error", { error: earlyExitInfo });
+			});
+			child.on("exit", (code, signal) => {
+				if (supervisorState.apiChildProcess === child) {
+					supervisorState.apiChildProcess = null;
+				}
+				earlyExitInfo = `exited (code=${code ?? "null"}, signal=${signal ?? "null"})`;
+				logger.info("Managed API process stopped", { code, signal });
+			});
+		}
+
+		const timeoutMs = Number.isFinite(options.startupTimeoutMs) ? Math.max(0, options.startupTimeoutMs) : 3000;
+		const deadline = Date.now() + timeoutMs;
+		while (Date.now() <= deadline) {
+			if (earlyExitInfo) {
+				return { started: false, external: false, pid: null, apiBaseUrl, reason: earlyExitInfo };
+			}
+			const health = await probeApiHealth(apiBaseUrl, 250);
+			if (health.reachable) {
+				return { started: true, external: false, pid: child.pid ?? null, apiBaseUrl };
+			}
+			if (Date.now() >= deadline) break;
+			await delay(150, undefined, { ref: false });
+		}
+
+		return {
+			started: false,
+			external: false,
+			pid: child.pid ?? null,
+			apiBaseUrl,
+			reason: earlyExitInfo || "API startup health timeout",
+		};
+	} catch (err) {
+		return {
+			started: false,
+			external: false,
+			apiBaseUrl,
+			reason: err instanceof Error ? err.message : String(err),
+		};
+	}
+}
+
+async function ensureEmbeddedBackendStarted(options = {}) {
+	const runtimeConfigPath = options.runtimeConfigPath || supervisorState.runtimeConfigPath || null;
+	const runtimeConfig = options.runtimeConfig ?? readRuntimeConfig(runtimeConfigPath);
+	const decision = shouldRunEmbeddedBackend({
+		argv: options.argv || process.argv,
+		env: options.env || process.env,
+		runtimeConfig,
+	});
+
+	if (!decision.enabled) {
+		const skippedStatus = {
+			mode: "remote_or_disabled",
+			reason: decision.reason,
+			pg: { started: false, skipped: true, reason: decision.reason },
+			api: { started: false, skipped: true, reason: decision.reason },
+		};
+		supervisorState.embeddedStatus = skippedStatus;
+		logger.info("Embedded PG/API startup skipped", { reason: decision.reason });
+		return skippedStatus;
+	}
+
+	const pgResult = await ensureManagedPostgresStarted({
+		userDataDir: options.userDataDir,
+		pgDataDir: options.pgDataDir,
+		pgHost: options.pgHost,
+		pgPort: options.pgPort,
+	});
+
+	const apiBaseUrl = options.apiBaseUrl || supervisorState.apiBaseUrl || resolveApiBaseUrl(options, runtimeConfig);
+	let apiResult;
+	if (pgResult.started || options.startApiWithoutPg) {
+		apiResult = await ensureManagedApiStarted({
+			...options,
+			runtimeConfig,
+			apiBaseUrl,
+		});
+	} else {
+		const health = await probeApiHealth(apiBaseUrl, 300);
+		apiResult = health.reachable
+			? { started: true, external: true, apiBaseUrl }
+			: { started: false, skipped: true, apiBaseUrl, reason: pgResult.error || pgResult.reason || "postgres_unavailable" };
+	}
+
+	const status = {
+		mode: "standalone",
+		reason: "standalone",
+		pg: pgResult,
+		api: apiResult,
+	};
+	supervisorState.embeddedStatus = status;
+	return status;
+}
+
 async function stopManagedServices() {
 	await stopLoopbackHttpServer();
-	if (supervisorState.apiChildProcess) {
-		try {
-			supervisorState.apiChildProcess.kill("SIGTERM");
-		} catch (err) {
-			logger.warn("Failed to terminate managed API child process", err);
-		}
+	const child = supervisorState.apiChildProcess;
+	if (child) {
 		supervisorState.apiChildProcess = null;
+		if (child.exitCode === null && !child.killed) {
+			try {
+				child.kill("SIGTERM");
+				await once(child, "exit", { signal: AbortSignal.timeout(1000) });
+			} catch (err) {
+				logger.debug("Managed API child did not exit cleanly on SIGTERM, escalating", {
+					error: err instanceof Error ? err.message : String(err),
+				});
+				if (child.exitCode === null) {
+					try {
+						child.kill("SIGKILL");
+					} catch (killErr) {
+						logger.warn("Failed to force-kill managed API child process", killErr);
+					}
+				}
+			}
+		}
 	}
 	if (supervisorState.pgInstance) {
 		try {
@@ -278,6 +481,7 @@ async function stopManagedServices() {
 		}
 		supervisorState.pgInstance = null;
 	}
+	supervisorState.embeddedStatus = null;
 }
 
 async function getLocalServerStatus(options = {}) {
@@ -317,6 +521,9 @@ async function getLocalServerStatus(options = {}) {
 		apiBaseUrl,
 		pgDataDir: options.pgDataDir || supervisorState.pgDataDir,
 		pgVersion: pgDirInfo.pgVersion,
+		managedPgRunning: Boolean(supervisorState.pgInstance),
+		managedApiPid: supervisorState.apiChildProcess?.pid ?? null,
+		embeddedBackend: supervisorState.embeddedStatus,
 	};
 }
 
@@ -344,12 +551,17 @@ module.exports = {
 	VALID_LOCAL_DB_MODES,
 	readRuntimeConfig,
 	writeRuntimeConfig,
+	resolveDefaultWebDistDir,
+	resolveDefaultApiEntryPath,
+	shouldRunEmbeddedBackend,
 	startLoopbackHttpServer,
 	stopLoopbackHttpServer,
 	getLoopbackBaseUrl,
 	probePostgresTcpSocket,
 	probeApiHealth,
 	ensureManagedPostgresStarted,
+	ensureManagedApiStarted,
+	ensureEmbeddedBackendStarted,
 	stopManagedServices,
 	getLocalServerStatus,
 	switchLocalDatabaseMode,

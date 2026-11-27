@@ -57,6 +57,22 @@ const builderConfig = JSON.parse(fs.readFileSync(builderConfigPath, "utf8"));
 if (!builderConfig.appId || !builderConfig.win) {
 	throw new Error("Invalid electron-builder.json: missing appId or win target definition");
 }
+if ((builderConfig.files || []).some((pattern) => String(pattern).includes("apps/web/dist"))) {
+	throw new Error("electron-builder.json files[] must NOT duplicate ../apps/web/dist (served via extraResources)");
+}
+const hasWebDistResource = (builderConfig.extraResources || []).some(
+	(entry) => entry && entry.from === "../apps/web/dist" && entry.to === "web/dist",
+);
+if (!hasWebDistResource) {
+	throw new Error("electron-builder.json extraResources must map ../apps/web/dist -> web/dist");
+}
+const winIconRel = String(builderConfig.win.icon || "");
+if (!winIconRel || winIconRel.toLowerCase().endsWith(".svg")) {
+	throw new Error(`Invalid win.icon in electron-builder.json (Windows requires .ico or .png): ${winIconRel}`);
+}
+if (!fs.existsSync(path.resolve(electronDir, winIconRel))) {
+	throw new Error(`Missing Windows icon file: ${winIconRel}`);
+}
 
 const winTargetNames = (builderConfig.win.target || []).map((t) => (typeof t === "string" ? t : t.target));
 for (const target of ["nsis", "portable"]) {

@@ -27,6 +27,7 @@ import {
 	scanClinicSubnets,
 	timingSafeStringEqual,
 } from "@dental/shared";
+import { BoundedTtlMap } from "../lib/boundedTtlMap.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import { getPrimaryLanIp } from "./lanDiscoveryService.js";
@@ -117,6 +118,9 @@ export interface LanMeshAutoJoinConfig {
 	readonly secret?: string | undefined;
 	readonly maxAttemptsPerWindow?: number | undefined;
 	readonly rateLimitWindowMs?: number | undefined;
+	readonly maxRateLimitEntries?: number | undefined;
+	readonly maxJoinedNodes?: number | undefined;
+	readonly joinedNodeTtlMs?: number | undefined;
 	readonly lanMeshService?: LanMeshService | undefined;
 }
 
@@ -148,10 +152,10 @@ export class LanMeshAutoJoinService {
 	private previousExpiresAt: number = 0;
 
 	private rotationTimer: NodeJS.Timeout | null = null;
-	private readonly rateLimits = new Map<string, RateLimitEntry>();
+	private readonly rateLimits: BoundedTtlMap<string, RateLimitEntry>;
 	private consecutiveFailedAttemptsAllIps = 0;
 	private globalLockedUntil = 0;
-	private readonly joinedNodes = new Map<string, JoinedNodeRecord>();
+	private readonly joinedNodes: BoundedTtlMap<string, JoinedNodeRecord>;
 
 	constructor(config: LanMeshAutoJoinConfig = {}) {
 		this.clinicId = config.clinicId || process.env.DENTE_CLINIC_ID || "clinic-default";
@@ -167,6 +171,14 @@ export class LanMeshAutoJoinService {
 		this.maxGlobalFailedAttempts = Math.max(this.maxAttemptsPerWindow * 3, 15);
 		this.rateLimitWindowMs = config.rateLimitWindowMs || 5 * 60 * 1000; // 5 minutes
 		this.meshService = config.lanMeshService;
+		this.rateLimits = new BoundedTtlMap<string, RateLimitEntry>({
+			maxEntries: config.maxRateLimitEntries ?? 2048,
+			ttlMs: this.rateLimitWindowMs * 2,
+		});
+		this.joinedNodes = new BoundedTtlMap<string, JoinedNodeRecord>({
+			maxEntries: config.maxJoinedNodes ?? 1024,
+			ttlMs: config.joinedNodeTtlMs ?? 24 * 60 * 60 * 1000,
+		});
 
 		// Initialize first rotating PIN
 		this.rotatePin(true);
@@ -448,12 +460,12 @@ export class LanMeshAutoJoinService {
 			httpPairUrl: pinInfo.httpPairUrl,
 			activeSubnetsCount: scanResult.clinicSubnets.length,
 			joinedPeersCount: this.joinedNodes.size,
-			joinedPeers: Array.from(this.joinedNodes.values()),
+			joinedPeers: this.joinedNodes.values(),
 		};
 	}
 
 	getJoinedNodes(): JoinedNodeRecord[] {
-		return Array.from(this.joinedNodes.values());
+		return this.joinedNodes.values();
 	}
 
 	revokeNode(nodeId: string): boolean {
@@ -544,7 +556,20 @@ export class LanMeshAutoJoinService {
 // 3. Per-Tenant Singleton Accessor
 // ─────────────────────────────────────────────────────────────────────────────
 
-const autoJoinServicesByOrg = new Map<string, LanMeshAutoJoinService>();
+export const AUTO_JOIN_MAX_ORGS = 512;
+export const AUTO_JOIN_ORG_TTL_MS = 24 * 60 * 60 * 1000;
+
+const autoJoinServicesByOrg = new BoundedTtlMap<string, LanMeshAutoJoinService>({
+	maxEntries: AUTO_JOIN_MAX_ORGS,
+	ttlMs: AUTO_JOIN_ORG_TTL_MS,
+	onEvict: (_orgId, service) => {
+		service.stop();
+	},
+});
+
+export function getAutoJoinServicesByOrgCountForTest(): number {
+	return autoJoinServicesByOrg.size;
+}
 
 export function hasLanMeshAutoJoinServiceForOrg(organizationId: string): boolean {
 	const orgKey = organizationId.trim();
