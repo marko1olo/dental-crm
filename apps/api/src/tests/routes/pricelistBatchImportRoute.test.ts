@@ -17,17 +17,34 @@ import {
 	pricelistParseFileSchema,
 	registerPricelistRoutes,
 } from "../../routes/pricelist.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 
 describe("POST /api/pricelist/parse-file & /api/pricelist/batch-import Routes", () => {
 	const prevEnv = { ...process.env };
 	let app: ReturnType<typeof Fastify>;
+	let authHeaders: Record<string, string> = {};
 
 	before(async () => {
 		process.env.NODE_ENV = "test";
+		process.env.AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET || "pricelist-test-secret-32-bytes-minimum!!";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 		process.env.DENTAL_STATE_PERSISTENCE = "off";
+
+		const staffToken = signToken(
+			{
+				organizationId: "dce70000-f06e-4c07-8ac1-e23698670001",
+				userId: "pricelist-batch-test-admin",
+				role: "admin",
+			},
+			authTokenSecret(),
+		);
+		authHeaders = {
+			"x-organization-id": "dce70000-f06e-4c07-8ac1-e23698670001",
+			"x-dente-staff-token": staffToken,
+		};
 
 		app = Fastify();
 		await registerPricelistRoutes(app);
@@ -37,6 +54,11 @@ describe("POST /api/pricelist/parse-file & /api/pricelist/batch-import Routes", 
 	after(async () => {
 		await app.close();
 		process.env.NODE_ENV = prevEnv.NODE_ENV;
+		if (prevEnv.AUTH_TOKEN_SECRET !== undefined) {
+			process.env.AUTH_TOKEN_SECRET = prevEnv.AUTH_TOKEN_SECRET;
+		} else {
+			delete process.env.AUTH_TOKEN_SECRET;
+		}
 		if (prevEnv.DENTAL_STATE_PERSISTENCE !== undefined) {
 			process.env.DENTAL_STATE_PERSISTENCE = prevEnv.DENTAL_STATE_PERSISTENCE;
 		} else {
@@ -82,9 +104,7 @@ describe("POST /api/pricelist/parse-file & /api/pricelist/batch-import Routes", 
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/pricelist/parse-file",
-			headers: {
-				"x-organization-id": "dce70000-f06e-4c07-8ac1-e23698670001",
-			},
+			headers: authHeaders,
 			payload: {
 				rawText: rawCsv,
 				filename: "ident_pricelist.csv",
@@ -107,9 +127,7 @@ describe("POST /api/pricelist/parse-file & /api/pricelist/batch-import Routes", 
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/pricelist/batch-import",
-			headers: {
-				"x-organization-id": "dce70000-f06e-4c07-8ac1-e23698670001",
-			},
+			headers: authHeaders,
 			payload: {
 				items: [],
 			},
@@ -125,9 +143,7 @@ describe("POST /api/pricelist/parse-file & /api/pricelist/batch-import Routes", 
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/pricelist/batch-import",
-			headers: {
-				"x-organization-id": "dce70000-f06e-4c07-8ac1-e23698670001",
-			},
+			headers: authHeaders,
 			payload: {
 				items: [
 					{

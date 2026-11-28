@@ -7,6 +7,7 @@ import { executeSterilizationConsumablesDeduction } from "../handlers/sterilizat
 import { buildUnsealKraftPackageResponse } from "../sterilizationHelpers.js";
 import { unsealBodySchema } from "../sterilizationSchemas.js";
 import { executeLinkDiaryTransaction } from "./sterilizationLinkTransaction.js";
+import { clinicTimeZone, DEFAULT_CLINIC_TIME_ZONE } from "../../../../services/reports/managerReports/timezone.js";
 
 export async function handleUnsealKraftPackage(req: FastifyRequest, reply: FastifyReply) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -26,11 +27,24 @@ export async function handleUnsealKraftPackage(req: FastifyRequest, reply: Fasti
 	}
 	const data = parsed.data;
 	const now = new Date();
-	const effectiveBarcode =
+	const explicitOrVisitBarcode =
 		(data.barcode || "").trim() ||
-		(data.visitId ? `TRAY-VISIT-${data.visitId}` : `BATCH-SHIFT-${now.toISOString().slice(0, 10).replace(/-/g, "")}`);
+		(data.visitId ? `TRAY-VISIT-${data.visitId}` : "");
 
-	await withTenantWriteCtx(organizationId, async (tx) => {
+	const effectiveBarcode = await withTenantWriteCtx(organizationId, async (tx) => {
+		let resolvedBarcode = explicitOrVisitBarcode;
+		if (!resolvedBarcode) {
+			const tz = (await clinicTimeZone(organizationId, tx)) ?? DEFAULT_CLINIC_TIME_ZONE;
+			const localDateCompact = new Intl.DateTimeFormat("en-CA", {
+				timeZone: tz,
+				year: "numeric",
+				month: "2-digit",
+				day: "2-digit",
+			})
+				.format(now)
+				.replace(/-/g, "");
+			resolvedBarcode = `BATCH-SHIFT-${localDateCompact}`;
+		}
 		if (data.barcode && data.barcode.trim()) {
 			const [existingLog] = await tx
 				.select()
@@ -38,7 +52,7 @@ export async function handleUnsealKraftPackage(req: FastifyRequest, reply: Fasti
 				.where(
 					and(
 						eq(sterilizationLogs.organizationId, organizationId),
-						eq(sterilizationLogs.barcode, effectiveBarcode),
+						eq(sterilizationLogs.barcode, resolvedBarcode),
 					),
 				)
 				.limit(1)
@@ -67,7 +81,7 @@ export async function handleUnsealKraftPackage(req: FastifyRequest, reply: Fasti
 					executeLinkDiaryTransaction({
 						organizationId,
 						visitId,
-						trimmedBarcode: effectiveBarcode,
+						trimmedBarcode: resolvedBarcode,
 						doctorUserId: data.operatorId || null,
 						isEmergencyAdmission: false,
 						emergencyAdmissionNote: "",
@@ -76,7 +90,7 @@ export async function handleUnsealKraftPackage(req: FastifyRequest, reply: Fasti
 				);
 			} catch (linkErr) {
 				req.log.warn(
-					{ err: linkErr, visitId: data.visitId, barcode: effectiveBarcode },
+					{ err: linkErr, visitId: data.visitId, barcode: resolvedBarcode },
 					"Не удалось привязать стерильный лоток к дневнику визита при вскрытии упаковки",
 				);
 			}
@@ -87,9 +101,10 @@ export async function handleUnsealKraftPackage(req: FastifyRequest, reply: Fasti
 			userId: data.operatorId || null,
 			count: 1,
 			cycleNumber: 1,
-			barcode: effectiveBarcode,
+			barcode: resolvedBarcode,
 			logger: req.log,
 		}, tx);
+		return resolvedBarcode;
 	});
 
 	return reply.send(

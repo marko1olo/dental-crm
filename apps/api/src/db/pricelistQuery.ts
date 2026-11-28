@@ -4,9 +4,11 @@
  */
 export {
 	SERVICE_CATALOG_EMPTY_MESSAGE,
+	getServiceCatalogBatchForOrganization,
 	getServiceCatalogForOrganization,
 	getSingleServiceCatalogItemFromDb,
 	projectServiceCatalogRows,
+	type ServiceCatalogBatchPage,
 	type ServiceCatalogProjection,
 	type ServiceCatalogRow,
 } from "./pricelistModules/pricelistReadQueries.js";

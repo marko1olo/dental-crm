@@ -1,3 +1,5 @@
+import { Readable } from "node:stream";
+import type { ServiceCatalogItem } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import {
 	requireClinicalMutationAccess,
@@ -6,14 +8,16 @@ import {
 } from "../../accessGuard.js";
 import {
 	batchRepriceServicesInDb,
-	getServiceCatalogForOrganization,
+	getServiceCatalogBatchForOrganization,
 	ServiceCatalogStorageDisabledError,
 } from "../../db/pricelistQuery.js";
-import { formatPricelistToCsv } from "./spreadsheetImport.js";
+import { formatPricelistCsvHeader, formatPricelistCsvRow } from "./spreadsheetImport.js";
 import {
 	batchRepriceBodySchema,
 	pricelistExportQuerySchema,
 } from "./types.js";
+
+const PRICELIST_EXPORT_BATCH_SIZE = 500;
 
 export async function handleExportPricelist(
 	request: FastifyRequest,
@@ -34,31 +38,57 @@ export async function handleExportPricelist(
 		});
 	}
 	const query = queryParse.data;
-
-	const catalog = await getServiceCatalogForOrganization(orgId);
-	let filtered = catalog;
-	if (query.category && query.category !== "all") {
-		filtered = filtered.filter((s) => s.category === query.category);
-	}
-	if (query.activeOnly) {
-		filtered = filtered.filter((s) => s.active);
-	}
+	const filterOpts = {
+		...(query.category && query.category !== "all" ? { category: query.category } : {}),
+		...(query.activeOnly !== undefined ? { activeOnly: query.activeOnly } : {}),
+	};
 
 	const todayStr = new Date().toISOString().slice(0, 10);
 	if (query.format === "json") {
+		const items: ServiceCatalogItem[] = [];
+		let afterId: string | undefined;
+		while (true) {
+			const page = await getServiceCatalogBatchForOrganization(orgId, {
+				...filterOpts,
+				afterId,
+				limit: PRICELIST_EXPORT_BATCH_SIZE,
+			});
+			items.push(...page.items);
+			if (!page.nextCursorId) break;
+			afterId = page.nextCursorId;
+		}
 		return reply.code(200).send({
 			success: true,
 			organizationId: orgId,
-			totalCount: filtered.length,
+			totalCount: items.length,
 			exportedAt: new Date().toISOString(),
-			items: filtered,
+			items,
 		});
 	}
 
-	const csvOutput = formatPricelistToCsv(filtered);
 	reply.header("Content-Type", "text/csv; charset=utf-8");
 	reply.header("Content-Disposition", `attachment; filename="dente_pricelist_${todayStr}.csv"`);
-	return reply.send(csvOutput);
+
+	const csvStream = Readable.from(
+		(async function* () {
+			yield `\uFEFF${formatPricelistCsvHeader()}`;
+			let afterId: string | undefined;
+			while (true) {
+				const page = await getServiceCatalogBatchForOrganization(orgId, {
+					...filterOpts,
+					afterId,
+					limit: PRICELIST_EXPORT_BATCH_SIZE,
+				});
+				if (page.items.length > 0) {
+					yield `\r\n${page.items.map(formatPricelistCsvRow).join("\r\n")}`;
+				}
+				if (!page.nextCursorId) break;
+				afterId = page.nextCursorId;
+			}
+		})(),
+	);
+
+	return reply.send(csvStream);
 }
 
 export async function handleBatchReprice(

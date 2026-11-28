@@ -177,6 +177,7 @@ export const treatmentConsumableDeductionRecordSchema = z.object({
 	deficit: z.number(),
 	isDeficit: z.boolean(),
 	unit: z.string().default("шт"),
+	unitCostKopecks: z.number().int().nonnegative().optional(),
 	unitCostRub: z.number().default(0),
 });
 

@@ -16,7 +16,7 @@ import {
 	type TreatmentConsumableDeductionWarning,
 } from "@dental/shared";
 import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import {
 	inventoryItems,
 	procedureMaterialRules,
@@ -287,6 +287,7 @@ async function executeCanonicalApplyDeduction(
 			deficit,
 			isDeficit: itemIsDeficit,
 			unit: inv.unit ?? "шт",
+			unitCostKopecks: Number(costKopecks),
 			unitCostRub: kopecksToRubles(Number(costKopecks)),
 		});
 
@@ -369,7 +370,7 @@ export async function applyCanonicalProcedureDeduction(
 	if (existingTx) {
 		return executeCanonicalApplyDeduction(existingTx, organizationId, request);
 	}
-	return withTenantCtx(organizationId, async (tx) =>
+	return withTenantWriteCtx(organizationId, async (tx) =>
 		executeCanonicalApplyDeduction(tx, organizationId, request),
 	);
 }

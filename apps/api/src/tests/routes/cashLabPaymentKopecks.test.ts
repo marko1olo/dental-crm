@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { sql } from "drizzle-orm";
@@ -184,6 +185,7 @@ describe("Связка наряда лаборатории с кассой (amou
 			headers: {
 				"x-dente-clinic-token": staffToken,
 				"x-dente-staff-token": staffToken,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				clinicalNotes: "Коронка установлена на цемент Fuji I, контакты проверены копиркой 12мкм",
@@ -220,6 +222,7 @@ describe("Связка наряда лаборатории с кассой (amou
 			headers: {
 				"x-dente-clinic-token": staffToken,
 				"x-dente-staff-token": staffToken,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				clinicalNotes: "Вкладка зафиксирована, окклюзия проверена",

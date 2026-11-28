@@ -2,11 +2,12 @@ import {
 	type DentalSpecialty,
 	type ServiceCatalogItem,
 	type ServiceCategory,
+	kopecksToRubles,
 	rublesToKopecks,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { db } from "../client.js";
-import { withTenantCtx, type TenantDb } from "../rls.js";
+import { withTenantWriteCtx, type TenantDb } from "../rls.js";
 import * as schema from "../schema.js";
 import {
 	projectSingleServiceCatalogRow,
@@ -20,13 +21,16 @@ export interface ServiceCatalogItemInput {
 	readonly title: string;
 	readonly category: ServiceCategory;
 	readonly specialty: DentalSpecialty;
-	readonly basePriceRub: number;
+	readonly basePriceRub?: number | undefined;
+	readonly basePriceKopecks?: number | undefined;
 	readonly durationMinutes: number;
 	readonly taxDeductible: boolean;
 	readonly active: boolean;
 	readonly order804nCode?: string | null | undefined;
 	readonly materialsCostRub?: number | null | undefined;
+	readonly materialsCostKopecks?: number | null | undefined;
 	readonly labCostRub?: number | null | undefined;
+	readonly labCostKopecks?: number | null | undefined;
 	readonly salaryPriceKopecks?: number | null | undefined;
 	readonly tierPrices?: Record<string, number> | null | undefined;
 }
@@ -57,11 +61,16 @@ export class ServiceCatalogItemNotFoundError extends Error {
 	}
 }
 
-export function moneyColumns(basePriceRub: number) {
-	const kop = BigInt(rublesToKopecks(basePriceRub));
+export function moneyColumns(basePriceRub?: number, basePriceKopecks?: number) {
+	const kopNum =
+		basePriceKopecks !== undefined
+			? Math.max(0, Math.round(basePriceKopecks))
+			: rublesToKopecks(basePriceRub ?? 0);
+	const kop = BigInt(kopNum);
+	const rub = basePriceKopecks !== undefined ? kopecksToRubles(kopNum) : (basePriceRub ?? 0);
 	return {
-		basePriceRub,
-		priceRub: basePriceRub,
+		basePriceRub: rub,
+		priceRub: rub,
 		priceKopecks: kop,
 		basePriceKopecks: kop,
 	};
@@ -76,16 +85,26 @@ export async function createServiceCatalogItemInDb(
 	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
 
 	const run = async (client: TenantDb | typeof db) => {
-		const materialsCostRub =
-			input.materialsCostRub !== undefined && input.materialsCostRub !== null
-				? input.materialsCostRub
-				: 0;
-		const labCostRub =
-			input.labCostRub !== undefined && input.labCostRub !== null
-				? input.labCostRub
-				: 0;
-		const materialsCostKopecks = BigInt(rublesToKopecks(materialsCostRub));
-		const labCostKopecks = BigInt(rublesToKopecks(labCostRub));
+		const materialsCostKopNum =
+			input.materialsCostKopecks !== undefined && input.materialsCostKopecks !== null
+				? Math.max(0, Math.round(input.materialsCostKopecks))
+				: rublesToKopecks(
+						input.materialsCostRub !== undefined && input.materialsCostRub !== null
+							? input.materialsCostRub
+							: 0,
+					);
+		const labCostKopNum =
+			input.labCostKopecks !== undefined && input.labCostKopecks !== null
+				? Math.max(0, Math.round(input.labCostKopecks))
+				: rublesToKopecks(
+						input.labCostRub !== undefined && input.labCostRub !== null
+							? input.labCostRub
+							: 0,
+					);
+		const materialsCostRub = kopecksToRubles(materialsCostKopNum);
+		const labCostRub = kopecksToRubles(labCostKopNum);
+		const materialsCostKopecks = BigInt(materialsCostKopNum);
+		const labCostKopecks = BigInt(labCostKopNum);
 
 		const [row] = await client
 			.insert(schema.serviceCatalogItems)
@@ -95,7 +114,7 @@ export async function createServiceCatalogItemInDb(
 				title: input.title,
 				category: input.category,
 				specialty: input.specialty,
-				...moneyColumns(input.basePriceRub),
+				...moneyColumns(input.basePriceRub, input.basePriceKopecks),
 				durationMinutes: input.durationMinutes,
 				taxDeductible: input.taxDeductible,
 				isActive: input.active,
@@ -118,7 +137,7 @@ export async function createServiceCatalogItemInDb(
 
 	return executor
 		? await run(executor)
-		: await withTenantCtx(organizationId, run);
+		: await withTenantWriteCtx(organizationId, run);
 }
 
 /** Правка услуги. Меняются только переданные поля. */
@@ -143,8 +162,9 @@ export async function updateServiceCatalogItemInDb(
 		if (patch.title !== undefined) updates.title = patch.title;
 		if (patch.category !== undefined) updates.category = patch.category;
 		if (patch.specialty !== undefined) updates.specialty = patch.specialty;
-		if (patch.basePriceRub !== undefined)
-			Object.assign(updates, moneyColumns(patch.basePriceRub));
+		if (patch.basePriceKopecks !== undefined || patch.basePriceRub !== undefined) {
+			Object.assign(updates, moneyColumns(patch.basePriceRub, patch.basePriceKopecks));
+		}
 		if (patch.durationMinutes !== undefined)
 			updates.durationMinutes = patch.durationMinutes;
 		if (patch.taxDeductible !== undefined)
@@ -152,12 +172,20 @@ export async function updateServiceCatalogItemInDb(
 		if (patch.active !== undefined) updates.isActive = patch.active;
 		if (patch.order804nCode !== undefined)
 			updates.order804nCode = patch.order804nCode;
-		if (patch.materialsCostRub !== undefined) {
+		if (patch.materialsCostKopecks !== undefined) {
+			const kop = patch.materialsCostKopecks !== null ? Math.max(0, Math.round(patch.materialsCostKopecks)) : 0;
+			updates.materialsCostKopecks = BigInt(kop);
+			updates.materialsCostRub = kopecksToRubles(kop);
+		} else if (patch.materialsCostRub !== undefined) {
 			const rub = patch.materialsCostRub !== null ? patch.materialsCostRub : 0;
 			updates.materialsCostRub = rub;
 			updates.materialsCostKopecks = BigInt(rublesToKopecks(rub));
 		}
-		if (patch.labCostRub !== undefined) {
+		if (patch.labCostKopecks !== undefined) {
+			const kop = patch.labCostKopecks !== null ? Math.max(0, Math.round(patch.labCostKopecks)) : 0;
+			updates.labCostKopecks = BigInt(kop);
+			updates.labCostRub = kopecksToRubles(kop);
+		} else if (patch.labCostRub !== undefined) {
 			const rub = patch.labCostRub !== null ? patch.labCostRub : 0;
 			updates.labCostRub = rub;
 			updates.labCostKopecks = BigInt(rublesToKopecks(rub));
@@ -187,7 +215,7 @@ export async function updateServiceCatalogItemInDb(
 
 	return executor
 		? await run(executor)
-		: await withTenantCtx(organizationId, run);
+		: await withTenantWriteCtx(organizationId, run);
 }
 
 /**
@@ -222,5 +250,5 @@ export async function deactivateServiceCatalogItemInDb(
 
 	return executor
 		? await run(executor)
-		: await withTenantCtx(organizationId, run);
+		: await withTenantWriteCtx(organizationId, run);
 }

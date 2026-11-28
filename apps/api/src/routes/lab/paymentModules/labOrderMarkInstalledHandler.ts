@@ -1,5 +1,4 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { generateUuidV7 } from "@dental/shared";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -23,18 +22,20 @@ export async function labOrderMarkInstalledHandler(
 		(request.headers?.["x-idempotency-key"] as string | undefined) ??
 		(request.headers?.["Idempotency-Key"] as string | undefined);
 
-	let idempotencyKey = rawIdempotencyKey?.trim();
+	const idempotencyKey = rawIdempotencyKey?.trim();
 	if (!idempotencyKey) {
-		idempotencyKey = generateUuidV7();
-	} else {
-		const uuidValidation = z.string().uuid().safeParse(idempotencyKey);
-		if (!uuidValidation.success) {
-			return reply.code(400).send({
-				error: "InvalidIdempotencyKey",
-				message: "Некорректный формат Idempotency-Key (ожидается валидный UUIDv7).",
-				details: uuidValidation.error.issues,
-			});
-		}
+		return reply.code(400).send({
+			error: "IdempotencyKeyRequired",
+			message: "Для фиксации установки наряда ЗТЛ обязателен заголовок Idempotency-Key (UUIDv7).",
+		});
+	}
+	const uuidValidation = z.string().uuid().safeParse(idempotencyKey);
+	if (!uuidValidation.success) {
+		return reply.code(400).send({
+			error: "InvalidIdempotencyKey",
+			message: "Некорректный формат Idempotency-Key (ожидается валидный UUIDv7).",
+			details: uuidValidation.error.issues,
+		});
 	}
 
 	reply.header("Idempotency-Key", idempotencyKey);

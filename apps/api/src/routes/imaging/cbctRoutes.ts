@@ -276,8 +276,8 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 			);
 			if (!parsed.ok) return reply.code(400).send(parsed.response);
 			const input = parsed.data;
-			const bundle = await withTenantWriteCtx(orgId, () =>
-				saveDicomWorkbenchBundle(orgId, input),
+			const bundle = await withTenantWriteCtx(orgId, (tx) =>
+				saveDicomWorkbenchBundle(orgId, input, tx),
 			);
 			return reply.code(201).send(
 				dicomWorkbenchBundleResponseSchema.parse({
@@ -310,10 +310,11 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 			// доступ к снимкам клиники А. Организация берётся из проверенного токена.
 			const orgId = getImagingOrganizationId(request, reply);
 			if (!orgId) return reply;
-			const bundles = await withTenantReadCtx(orgId, () =>
+			const bundles = await withTenantReadCtx(orgId, (tx) =>
 				listDicomWorkbenchBundles(
 					orgId,
 					Number.isFinite(requestedLimit) ? requestedLimit : 8,
+					tx,
 				),
 			);
 			return dicomWorkbenchBundleListResponseSchema.parse({

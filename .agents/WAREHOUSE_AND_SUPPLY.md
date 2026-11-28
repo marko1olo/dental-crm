@@ -642,6 +642,26 @@
   - `npm run check:diff`: 0 запрещенных костылей (as any, !, float money).
   - `npx tsc -p apps/api/tsconfig.json --noEmit` в доменах склада и списания: 0 ошибок компилятора.
 
+---
+
+## 🛡️ 27. Red Team Fixer-5A: Устранение дедлоков `40P01`, закрытие `permission: "public"`, потоковый экспорт и честные `*Kopecks`-контракты
+
+* **Анти-дедлок блокировок (P1-1.1 / P1-2.3)**:
+  - В `unifiedStockDeductionEngine.ts` и `bactericidalShiftAutopilotHandler.ts` перед `.for("update")` добавлен детерминированный `.orderBy(asc(...id))`.
+  - В `sterilizationConsumablesDeduction.ts` устранена поштучная блокировка в цикле; внедрена единая отсортированная батч-блокировка `inventoryItems` (`ORDER BY id ASC FOR UPDATE`) и `stockBatches` (`ORDER BY expiration_date ASC, id ASC FOR UPDATE`), удалён мёртвый импорт `db`.
+  - В `labOrderBatchPatchHandler.ts` добавлена `.strict()`-валидация схемы, дедупликация и сортировка `orderIds`, пакетная блокировка `ORDER BY id ASC FOR UPDATE`, единый пакетный `UPDATE ... WHERE inArray(...)` и пакетная запись `labOrderEvents`.
+- **Миграция `permission: "public"` и `READ ONLY` TX (P1-1.2 / P1-4.2)**:
+  - Маршруты `sanpin/sterilizationRoutes.ts`, `lab/ordersCrudRoutes.ts`, `lab/pipelineRoutes.ts`, `imaging/dicomRoutes.ts` и `pricelist/routeHandlers.ts` переведены с `permission: "public"` и сырых `app.post`/`app.delete` на `defineTenantQuery` (`READ ONLY`) и `defineStreamRoute` с явными RBAC-правами (`inventory.*`, `clinical.*`, `workstation.*`, `settings.*`).
+  - `pricelistReadQueries.ts` и `pricelistBomQueries.ts` переведены на `withTenantReadCtx(..., externalTx?)`, `procedureApplyDeductionHandler.ts` — на `withTenantWriteCtx`.
+  - В `imagingHelpers.ts` удалён захардкоженный UUID-фолбэк для `DENTAL_STATE_PERSISTENCE=off`.
+  - В `imagingWorkbenchBundles.ts` и `cbctRoutes.ts` проброшен `tx: TenantDb` без повторного открытия `withTenantCtx` (безопасность при `pg.Pool max: 1`); в `chunkedUploadRoutes.ts` добавлен лимит `MAX_HEIC_DECODE_BYTES = 64 МБ` перед `fs.readFile` и логирование `request.log.warn` во всех `.catch`.
+- **Автономия ЗТЛ, часовые пояса, копейки и потоки (P1-2.2 / P2)**:
+  - `labOrderInsertDb.ts` детерминированно резолвит активного специалиста клиники при незаданном `doctorId` или дефолтном плейсхолдере `"Врач-ортопед"`, сохраняя `doctor_not_found` для несуществующего явного UUID `doctorId`.
+  - `labOrderMarkInstalledHandler.ts` требует клиентский `Idempotency-Key` (400 `IdempotencyKeyRequired` при отсутствии).
+  - `bactericidalShiftAutopilotHandler.ts`, `handleUnsealKraftPackage.ts` и `labOrderMarkInstalledDb.ts` переведены с UTC-даты на локальный `clinicTimeZone`.
+  - В `stornoBatchRestoration.ts` тип `PreferredBatchAllocation.batchId` исправлен на `string | null` без `as unknown as string`.
+  - `serviceCatalogItemSchema`, `pricelistReadQueries.ts`, `pricelistWriteMutations.ts`, `settings/types.ts` и `procedureApplyDeductionHandler.ts` дополнены целочисленными `*Kopecks`-полями; `handleExportPricelist` переведён на потоковую keyset-выборку `getServiceCatalogBatchForOrganization`; `parseOds` ограничен по строкам (`MAX_ODS_ROWS_PER_SHEET = 50_000`) и выбранному листу.
+
 
 
 

@@ -27,7 +27,7 @@ export interface RestoredStornoItem {
 }
 
 interface PreferredBatchAllocation {
-	batchId: string;
+	batchId: string | null;
 	qty: number;
 }
 
@@ -285,7 +285,7 @@ export async function restoreStockAndBatchesForMaterial(
 	const allocations =
 		restoredBatchAllocations.length > 0
 			? restoredBatchAllocations
-			: [{ batchId: null as unknown as string, qty: m.quantity }];
+			: [{ batchId: null, qty: m.quantity }];
 
 	const baseNote = buildStornoJournalNote({
 		customNote: notes,

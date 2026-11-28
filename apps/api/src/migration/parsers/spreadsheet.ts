@@ -579,14 +579,28 @@ export async function parseXlsx(
 	return { sheets, warnings };
 }
 
+const MAX_ODS_ROWS_PER_SHEET = 50_000;
+
+export interface ParseOdsOptions {
+	readonly maxRowsPerSheet?: number | undefined;
+	readonly selectedSheetIndex?: number | undefined;
+}
+
 /**
  * OpenDocument (.ods) — потоковый разбор через yauzl + streamXmlTagElements("table:table").
  */
 export async function parseOds(
 	source: Buffer | string,
+	options?: ParseOdsOptions,
 ): Promise<SpreadsheetParseResult> {
 	const sheets: SpreadsheetSheet[] = [];
 	let contentFound = false;
+	const maxRowsPerSheet = Math.max(
+		1,
+		Math.min(options?.maxRowsPerSheet ?? MAX_ODS_ROWS_PER_SHEET, MAX_ODS_ROWS_PER_SHEET),
+	);
+	const selectedSheetIndex = options?.selectedSheetIndex;
+	let rowLimitReached = false;
 
 	const { warnings } = await iterateZipEntries(
 		source,
@@ -595,26 +609,42 @@ export async function parseOds(
 			contentFound = true;
 			const stream = await entry.openStream(MAX_ODS_CONTENT_BYTES);
 
+			let sheetIndex = 0;
 			for await (const tableEl of streamXmlTagElements(stream, "table:table")) {
+				const currentIndex = sheetIndex;
+				sheetIndex += 1;
 				const name = xmlDecodeEntities(
 					/table:name="([^"]*)"/.exec(tableEl.attrs)?.[1] ??
 						`Лист ${sheets.length + 1}`,
 				);
+				if (selectedSheetIndex !== undefined && currentIndex !== selectedSheetIndex) {
+					sheets.push({ name, rows: [] });
+					continue;
+				}
 				const body = tableEl.innerXml;
 				const rows: string[][] = [];
 
 				for (const rowMatch of body.matchAll(
 					/<table:table-row\b([^>]*)>([\s\S]*?)<\/table:table-row>|<table:table-row\b([^>]*)\/>/g,
 				)) {
+					if (rows.length >= maxRowsPerSheet) {
+						rowLimitReached = true;
+						break;
+					}
 					const rowAttributes = rowMatch[1] ?? rowMatch[3] ?? "";
 					const rowBody = rowMatch[2] ?? "";
-					const rowRepeat = Math.min(
-						Number(
-							/table:number-rows-repeated="(\d+)"/.exec(rowAttributes)?.[1] ??
-								"1",
-						),
-						10_000,
+					const remainingBudget = Math.max(0, maxRowsPerSheet - rows.length);
+					const rawRowRepeat = Number(
+						/table:number-rows-repeated="(\d+)"/.exec(rowAttributes)?.[1] ?? "1",
 					);
+					const rowRepeat = Math.min(rawRowRepeat, 10_000, remainingBudget);
+					if (rawRowRepeat > remainingBudget) {
+						rowLimitReached = true;
+					}
+					if (rowRepeat <= 0) {
+						rowLimitReached = true;
+						break;
+					}
 
 					const cells: string[] = [];
 					for (const cellMatch of rowBody.matchAll(
@@ -658,8 +688,14 @@ export async function parseOds(
 						rows.push([...cells]);
 				}
 
-				if (rows.length === 0) continue;
-				const width = Math.max(...rows.map((row) => row.length));
+				if (rows.length === 0) {
+					if (selectedSheetIndex !== undefined) sheets.push({ name, rows: [] });
+					continue;
+				}
+				let width = 0;
+				for (const row of rows) {
+					if (row.length > width) width = row.length;
+				}
 				sheets.push({
 					name,
 					rows: rows.map((row) => [
@@ -678,6 +714,11 @@ export async function parseOds(
 	);
 
 	const formattedWarnings = warnings.map((code) => `Архив ODS: ${code}.`);
+	if (rowLimitReached) {
+		formattedWarnings.push(
+			`Лист ODS усечён до безопасного лимита ${maxRowsPerSheet} строк.`,
+		);
+	}
 	if (!contentFound) {
 		return {
 			sheets: [],

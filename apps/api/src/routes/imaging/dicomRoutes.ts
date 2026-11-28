@@ -28,6 +28,19 @@ import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { getImagingOrganizationId } from "./imagingHelpers.js";
 import { validateAndResolvePacsLocalFilePath } from "../../services/imaging/localPacsSanitizer.js";
 
+const DICOM_AUTH_OPTIONS = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+} as const;
+
+const DICOM_READ_PERMISSION = {
+	anyOf: ["workstation.read", "clinical.read"],
+} as const;
+
+const DICOM_WRITE_PERMISSION = {
+	anyOf: ["workstation.write", "clinical.write"],
+} as const;
+
 export async function registerDicomRoutes(app: FastifyInstance) {
 	/**
 	 * GET /api/imaging/daemon/status
@@ -35,7 +48,8 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/imaging/daemon/status",
-		permission: "public",
+		permission: DICOM_READ_PERMISSION,
+		authOptions: DICOM_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => {
 			if (!(await requireClinicalReadAccess(request, reply, "dicom daemon status"))) return;
 			const status = dicomCrawlerDaemon.getStatus();
@@ -49,7 +63,8 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/imaging/daemon/start",
-		permission: "public",
+		permission: { anyOf: ["workstation.write", "settings.write"] },
+		authOptions: DICOM_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => {
 			if (!(await requireNonDoctorAccess(request, reply, "start dicom daemon"))) return;
 			const orgId = getImagingOrganizationId(request, reply);
@@ -81,7 +96,8 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/imaging/daemon/stop",
-		permission: "public",
+		permission: { anyOf: ["workstation.write", "settings.write"] },
+		authOptions: DICOM_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => {
 			if (!(await requireNonDoctorAccess(request, reply, "stop dicom daemon"))) return;
 			const orgId = getImagingOrganizationId(request, reply);
@@ -113,7 +129,8 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/imaging/daemon/scan-now",
-		permission: "public",
+		permission: DICOM_WRITE_PERMISSION,
+		authOptions: DICOM_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "manual dicom scan"))) return;
 
@@ -174,7 +191,8 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/imaging/daemon/config",
-		permission: "public",
+		permission: DICOM_WRITE_PERMISSION,
+		authOptions: DICOM_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "configure dicom daemon"))) return;
 
@@ -249,7 +267,8 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/imaging/daemon/pending",
-		permission: "public",
+		permission: DICOM_READ_PERMISSION,
+		authOptions: DICOM_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalReadAccess(request, reply, "pending dicom studies"))) return;
 
@@ -324,7 +343,8 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/imaging/daemon/bind-patient",
-		permission: "public",
+		permission: DICOM_WRITE_PERMISSION,
+		authOptions: DICOM_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "bind study to patient"))) return;
 
@@ -428,7 +448,8 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/imaging/daemon/dismiss",
-		permission: "public",
+		permission: DICOM_WRITE_PERMISSION,
+		authOptions: DICOM_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "dismiss study"))) return;
 

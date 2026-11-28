@@ -26,12 +26,22 @@ import {
 	matchOrder804nNomenclature,
 } from "../../services/ai/priceListIngestionService.js";
 import { registerExportRoutes } from "../../routes/export.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 
 describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 	const prevEnv = { ...process.env };
+	const authHeadersFor = (orgId: string) => ({
+		"x-organization-id": orgId,
+		"x-dente-staff-token": signToken(
+			{ organizationId: orgId, userId: `pricelist-test-admin-${orgId}`, role: "admin" },
+			authTokenSecret(),
+		),
+	});
 
 	before(() => {
 		process.env.NODE_ENV = "test";
+		process.env.AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET || "pricelist-unit-secret-32-bytes-minimum!!";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
@@ -40,6 +50,11 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 
 	after(() => {
 		process.env.NODE_ENV = prevEnv.NODE_ENV;
+		if (prevEnv.AUTH_TOKEN_SECRET !== undefined) {
+			process.env.AUTH_TOKEN_SECRET = prevEnv.AUTH_TOKEN_SECRET;
+		} else {
+			delete process.env.AUTH_TOKEN_SECRET;
+		}
 		if (prevEnv.DENTAL_STATE_PERSISTENCE !== undefined) {
 			process.env.DENTAL_STATE_PERSISTENCE = prevEnv.DENTAL_STATE_PERSISTENCE;
 		} else {
@@ -163,6 +178,7 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 			const response = await app.inject({
 				method: "GET",
 				url: "/api/pricelist/categories",
+				headers: authHeadersFor("org-test-categories"),
 			});
 
 			assert.strictEqual(response.statusCode, 200);
@@ -184,9 +200,7 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/pricelist/seed-baseline-804n",
-				headers: {
-					"x-organization-id": "org-test-seed",
-				},
+				headers: authHeadersFor("org-test-seed"),
 				payload: {
 					replace: "not-a-boolean",
 				},
@@ -204,9 +218,7 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/pricelist/seed-baseline",
-				headers: {
-					"x-organization-id": "org-test-seed",
-				},
+				headers: authHeadersFor("org-test-seed"),
 				payload: {
 					replace: "not-a-boolean",
 				},
@@ -224,9 +236,7 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/pricelist/seed",
-				headers: {
-					"x-organization-id": "org-test-seed",
-				},
+				headers: authHeadersFor("org-test-seed"),
 				payload: {
 					replace: "not-a-boolean",
 				},
@@ -248,9 +258,7 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 			const response = await app.inject({
 				method: "GET",
 				url: "/api/pricelist/export?format=csv",
-				headers: {
-					"x-organization-id": "org-test-export",
-				},
+				headers: authHeadersFor("org-test-export"),
 			});
 
 			assert.strictEqual(response.statusCode, 200);
@@ -275,9 +283,7 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 			const response = await app.inject({
 				method: "GET",
 				url: "/api/pricelist/export?format=json",
-				headers: {
-					"x-organization-id": "org-test-export",
-				},
+				headers: authHeadersFor("org-test-export"),
 			});
 
 			assert.strictEqual(response.statusCode, 200);
@@ -294,9 +300,7 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 			const response = await app.inject({
 				method: "GET",
 				url: "/api/export/pricelist",
-				headers: {
-					"x-organization-id": "org-test-export",
-				},
+				headers: authHeadersFor("org-test-export"),
 			});
 
 			assert.strictEqual(response.statusCode, 200);
@@ -339,9 +343,7 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 			const invalidResponse = await app.inject({
 				method: "POST",
 				url: "/api/pricelist/batch-reprice",
-				headers: {
-					"x-organization-id": "org-test-reprice",
-				},
+				headers: authHeadersFor("org-test-reprice"),
 				payload: {
 					percentChange: 99999, // exceeds max: 500
 				},

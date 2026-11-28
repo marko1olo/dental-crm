@@ -58,7 +58,7 @@ describe("Domain 25 Red Team Fixer Surgeon: API & Lab Cost Calculator", () => {
 			const jsonInvalid = resInvalid.json<{ error: string }>();
 			assert.equal(jsonInvalid.error, "InvalidIdempotencyKey");
 
-			// Тест 2: Запрос без переданного Idempotency-Key автоматически генерирует UUIDv7 и возвращает в заголовке ответа
+			// Тест 2: Запрос без переданного Idempotency-Key отклоняется с 400 IdempotencyKeyRequired (Мандат 8d/8zp)
 			const resNoKey = await app.inject({
 				method: "POST",
 				url: `/api/lab-orders/${generateUuidV7()}/mark-installed`,
@@ -66,8 +66,9 @@ describe("Domain 25 Red Team Fixer Surgeon: API & Lab Cost Calculator", () => {
 				payload: {},
 			});
 
-			const echoGeneratedKey = resNoKey.headers["idempotency-key"];
-			assert.ok(typeof echoGeneratedKey === "string" && echoGeneratedKey.length > 0);
+			assert.equal(resNoKey.statusCode, 400);
+			const jsonNoKey = resNoKey.json<{ error: string }>();
+			assert.equal(jsonNoKey.error, "IdempotencyKeyRequired");
 
 			// Тест 3: Запрос с валидным UUIDv7 выставляет эхо-заголовок Idempotency-Key
 			const validKey = generateUuidV7();

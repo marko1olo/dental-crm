@@ -38,6 +38,7 @@ import { parseDicomHeader } from "./dicomParsing.js";
 import type { DicomHeaderMetadata } from "./imagingConstants.js";
 
 const MAX_CHUNK_BYTES = 64 * 1024 * 1024;
+const MAX_HEIC_DECODE_BYTES = 64 * 1024 * 1024;
 const MAX_TOTAL_CHUNKS = 2048;
 const MAX_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024 * 1024;
 
@@ -415,7 +416,9 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 						uploadedChunks: session.uploadedChunks,
 					});
 				} catch (err) {
-					await fs.unlink(tempPartPath).catch(() => {});
+					await fs.unlink(tempPartPath).catch((unlinkErr) => {
+						request.log.warn({ err: unlinkErr, tempPartPath, uploadId }, "Chunk temp file cleanup warning");
+					});
 					if (err instanceof Error && err.message === "CHUNK_SIZE_EXCEEDED") {
 						return reply.status(413).send({
 							error: "ChunkTooLarge",
@@ -501,7 +504,9 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 			storedStoragePath = stored.storagePath;
 
 			if (stored.sha256.toLowerCase() !== session.fileSha256) {
-				await fs.unlink(stored.storagePath).catch(() => {});
+				await fs.unlink(stored.storagePath).catch((unlinkErr) => {
+					request.log.warn({ err: unlinkErr, storagePath: stored.storagePath, uploadId }, "Corrupt upload artifact cleanup warning");
+				});
 				return reply.status(422).send({
 					error: "FileSha256Mismatch",
 					message: "Итоговая контрольная сумма SHA-256 собранного файла не совпала.",
@@ -525,17 +530,24 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 					request.log.warn({ err: hdrErr, fileName: session.fileName }, "Non-fatal DICOM header probe error");
 				}
 			} else if (stored.detectedFormat === "heic") {
-				try {
-					const fileBuf = await fs.readFile(stored.storagePath);
-					const decoded = await decodeServerHeicImage(fileBuf, {
-						thumbnailSize: 200,
-						generateThumbnail: true,
-					});
-					if (decoded.success && decoded.thumbnailBuffer) {
-						localThumbnailDataUri = `data:image/webp;base64,${decoded.thumbnailBuffer.toString("base64")}`;
+				if (stored.fileSizeBytes > MAX_HEIC_DECODE_BYTES) {
+					request.log.warn(
+						{ fileName: session.fileName, fileSizeBytes: stored.fileSizeBytes, limitBytes: MAX_HEIC_DECODE_BYTES },
+						"Skipping server HEIC thumbnail decode because file exceeds 64 MB limit",
+					);
+				} else {
+					try {
+						const fileBuf = await fs.readFile(stored.storagePath);
+						const decoded = await decodeServerHeicImage(fileBuf, {
+							thumbnailSize: 200,
+							generateThumbnail: true,
+						});
+						if (decoded.success && decoded.thumbnailBuffer) {
+							localThumbnailDataUri = `data:image/webp;base64,${decoded.thumbnailBuffer.toString("base64")}`;
+						}
+					} catch (heicErr) {
+						request.log.warn({ err: heicErr, fileName: session.fileName }, "Non-fatal HEIC thumbnail decode error");
 					}
-				} catch (heicErr) {
-					request.log.warn({ err: heicErr, fileName: session.fileName }, "Non-fatal HEIC thumbnail decode error");
 				}
 			}
 
@@ -601,7 +613,9 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 			});
 
 			activeChunkSessions.delete(uploadId);
-			await fs.rm(sessionDir, { recursive: true, force: true }).catch(() => {});
+			await fs.rm(sessionDir, { recursive: true, force: true }).catch((cleanupErr) => {
+				request.log.warn({ err: cleanupErr, sessionDir, uploadId }, "Chunk session directory cleanup warning");
+			});
 
 			return reply.status(201).send({
 				success: true,
@@ -618,7 +632,9 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 			});
 		} catch (err) {
 			if (storedStoragePath) {
-				await fs.unlink(storedStoragePath).catch(() => {});
+				await fs.unlink(storedStoragePath).catch((unlinkErr) => {
+					request.log.warn({ err: unlinkErr, storedStoragePath, uploadId }, "Failed study file rollback cleanup warning");
+				});
 			}
 			if (err instanceof InvalidMagicBytesError || err instanceof PathTraversalError || err instanceof TenantIsolationError) {
 				return reply.status(err instanceof TenantIsolationError ? 403 : 400).send({

@@ -3,12 +3,13 @@ import {
 	kopecksToRubles,
 	rublesToKopecks,
 	serviceCatalogItemSchema,
+	serviceCategorySchema,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, gt } from "drizzle-orm";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { schemaIssueWords } from "../../utils/schemaRefusalWords.js";
 import { db } from "../client.js";
-import { withTenantCtx, type TenantDb } from "../rls.js";
+import { withTenantCtx, withTenantReadCtx, type TenantDb } from "../rls.js";
 import * as schema from "../schema.js";
 
 const logger = createApiLogger("pricelistQuery");
@@ -153,6 +154,9 @@ export function projectServiceCatalogRows(
 			order804nCode: row.order804nCode ?? null,
 			materialsCostRub: kopecksToRubles(resolvedMaterialsCostKopecks),
 			labCostRub: kopecksToRubles(resolvedLabCostKopecks),
+			basePriceKopecks: resolvedPriceKopecks,
+			materialsCostKopecks: resolvedMaterialsCostKopecks,
+			labCostKopecks: resolvedLabCostKopecks,
 			salaryPriceKopecks:
 				row.salaryPriceKopecks !== null && row.salaryPriceKopecks !== undefined
 					? Number(row.salaryPriceKopecks)
@@ -212,28 +216,85 @@ export function projectSingleServiceCatalogRow(
 	);
 }
 
+export interface ServiceCatalogBatchPage {
+	readonly items: ServiceCatalogItem[];
+	readonly nextCursorId: string | null;
+}
+
+/** Потоковая keyset-выборка прайс-листа для экспорта и больших каталогов (без полного дампа в RAM). */
+export async function getServiceCatalogBatchForOrganization(
+	organizationId: string,
+	options: {
+		readonly afterId?: string | undefined;
+		readonly limit?: number | undefined;
+		readonly category?: string | undefined;
+		readonly activeOnly?: boolean | undefined;
+		readonly tx?: TenantDb | undefined;
+	} = {},
+): Promise<ServiceCatalogBatchPage> {
+	if (useInMemory()) {
+		return { items: [], nextCursorId: null };
+	}
+	const batchLimit = Math.max(1, Math.min(options.limit ?? 500, 1000));
+	const runQuery = async (tx: TenantDb): Promise<ServiceCatalogBatchPage> => {
+		const conditions = [eq(schema.serviceCatalogItems.organizationId, organizationId)];
+		if (options.afterId) {
+			conditions.push(gt(schema.serviceCatalogItems.id, options.afterId));
+		}
+		if (options.category && options.category !== "all") {
+			const parsedCategory = serviceCategorySchema.safeParse(options.category);
+			if (!parsedCategory.success) {
+				return { items: [], nextCursorId: null };
+			}
+			conditions.push(eq(schema.serviceCatalogItems.category, parsedCategory.data));
+		}
+		if (options.activeOnly) {
+			conditions.push(eq(schema.serviceCatalogItems.isActive, true));
+		}
+
+		const rows = await tx
+			.select()
+			.from(schema.serviceCatalogItems)
+			.where(and(...conditions))
+			.orderBy(asc(schema.serviceCatalogItems.id))
+			.limit(batchLimit + 1);
+
+		const hasMore = rows.length > batchLimit;
+		const pageRows = hasMore ? rows.slice(0, batchLimit) : rows;
+		const nextCursorId = hasMore ? pageRows[pageRows.length - 1]?.id ?? null : null;
+		return {
+			items: projectServiceCatalogRows(pageRows).items,
+			nextCursorId,
+		};
+	};
+	return options.tx ? await runQuery(options.tx) : await withTenantReadCtx(organizationId, runQuery);
+}
+
 /** Прайс организации для документов и анализа прайса. */
 export async function getServiceCatalogForOrganization(
 	organizationId: string,
+	externalTx?: TenantDb,
 ): Promise<ServiceCatalogItem[]> {
 	if (useInMemory()) {
 		return [];
 	}
-	return await withTenantCtx(organizationId, async (tx) => {
+	const runQuery = async (tx: TenantDb) => {
 		const rows = await tx
 			.select()
 			.from(schema.serviceCatalogItems)
 			.where(eq(schema.serviceCatalogItems.organizationId, organizationId));
 		return projectServiceCatalogRows(rows).items;
-	});
+	};
+	return externalTx ? await runQuery(externalTx) : await withTenantReadCtx(organizationId, runQuery);
 }
 
 export async function getSingleServiceCatalogItemFromDb(
 	organizationId: string,
 	serviceId: string,
+	externalTx?: TenantDb,
 ): Promise<ServiceCatalogItem | null> {
 	if (useInMemory()) return null;
-	return await withTenantCtx(organizationId, async (tx) => {
+	const runQuery = async (tx: TenantDb) => {
 		const row = await selectOwnedServiceCatalogRow(
 			organizationId,
 			serviceId,
@@ -241,5 +302,6 @@ export async function getSingleServiceCatalogItemFromDb(
 		);
 		if (!row) return null;
 		return projectSingleServiceCatalogRow(row);
-	});
+	};
+	return externalTx ? await runQuery(externalTx) : await withTenantReadCtx(organizationId, runQuery);
 }

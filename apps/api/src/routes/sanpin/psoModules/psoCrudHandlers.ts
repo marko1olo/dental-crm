@@ -13,13 +13,13 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { recordAuditEvent } from "../../../audit.js";
-import { withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx, type TenantDb } from "../../../db/rls.js";
 import { preSterilizationCleaningLogs, users } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
 
-export async function handleGetPso(req: FastifyRequest, reply: FastifyReply) {
+export async function handleGetPso(req: FastifyRequest, reply: FastifyReply, externalTx?: TenantDb) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 		req,
 		reply,
@@ -27,7 +27,7 @@ export async function handleGetPso(req: FastifyRequest, reply: FastifyReply) {
 	);
 	if (!organizationId) return;
 
-	const logs = await withTenantReadCtx(organizationId, async (tx) => {
+	const runQuery = async (tx: TenantDb) => {
 		return tx
 			.select({
 				id: preSterilizationCleaningLogs.id,
@@ -51,9 +51,9 @@ export async function handleGetPso(req: FastifyRequest, reply: FastifyReply) {
 			.leftJoin(users, eq(users.id, preSterilizationCleaningLogs.operatorId))
 			.where(eq(preSterilizationCleaningLogs.organizationId, organizationId))
 			.orderBy(desc(preSterilizationCleaningLogs.timestamp));
-	});
+	};
 
-	return logs;
+	return externalTx ? await runQuery(externalTx) : await withTenantReadCtx(organizationId, runQuery);
 }
 
 export async function handlePostPso(req: FastifyRequest, reply: FastifyReply) {

@@ -13,19 +13,32 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import Fastify from "fastify";
 import { registerPricelistRoutes } from "../../routes/pricelist.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 
 describe("POST /api/pricelist/scan-and-import Route & Integration Engine", () => {
 	const prevEnv = { ...process.env };
 	let app: ReturnType<typeof Fastify>;
+	let authHeaders: Record<string, string> = {};
 
 	const testOrgId = "dce70000-f06e-4c07-8ac1-e23698670001";
 
 	before(async () => {
 		process.env.NODE_ENV = "test";
+		process.env.AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET || "pricelist-scan-secret-32-bytes-minimum!";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 		process.env.DENTAL_STATE_PERSISTENCE = "off";
+
+		const staffToken = signToken(
+			{ organizationId: testOrgId, userId: "pricelist-scan-test-admin", role: "admin" },
+			authTokenSecret(),
+		);
+		authHeaders = {
+			"x-organization-id": testOrgId,
+			"x-dente-staff-token": staffToken,
+		};
 
 		app = Fastify();
 		await registerPricelistRoutes(app);
@@ -35,6 +48,11 @@ describe("POST /api/pricelist/scan-and-import Route & Integration Engine", () =>
 	after(async () => {
 		await app.close();
 		process.env.NODE_ENV = prevEnv.NODE_ENV;
+		if (prevEnv.AUTH_TOKEN_SECRET !== undefined) {
+			process.env.AUTH_TOKEN_SECRET = prevEnv.AUTH_TOKEN_SECRET;
+		} else {
+			delete process.env.AUTH_TOKEN_SECRET;
+		}
 		if (prevEnv.DENTAL_STATE_PERSISTENCE !== undefined) {
 			process.env.DENTAL_STATE_PERSISTENCE = prevEnv.DENTAL_STATE_PERSISTENCE;
 		} else {
@@ -69,9 +87,7 @@ describe("POST /api/pricelist/scan-and-import Route & Integration Engine", () =>
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/pricelist/scan-and-import",
-			headers: {
-				"x-organization-id": testOrgId,
-			},
+			headers: authHeaders,
 			payload: {
 				rawContent: rawCsv,
 				filename: "clinic_pricelist.csv",
@@ -119,9 +135,7 @@ describe("POST /api/pricelist/scan-and-import Route & Integration Engine", () =>
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/pricelist/scan-and-import",
-			headers: {
-				"x-organization-id": testOrgId,
-			},
+			headers: authHeaders,
 			payload: {
 				rawText,
 				commit: false,
@@ -151,9 +165,7 @@ describe("POST /api/pricelist/scan-and-import Route & Integration Engine", () =>
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/pricelist/scan-and-import",
-			headers: {
-				"x-organization-id": testOrgId,
-			},
+			headers: authHeaders,
 			payload: {},
 		});
 
@@ -171,9 +183,7 @@ describe("POST /api/pricelist/scan-and-import Route & Integration Engine", () =>
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/pricelist/scan-and-import",
-			headers: {
-				"x-organization-id": testOrgId,
-			},
+			headers: authHeaders,
 			payload: {
 				rawContent: rawCsv,
 				commit: true,
@@ -188,9 +198,7 @@ describe("POST /api/pricelist/scan-and-import Route & Integration Engine", () =>
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/pricelist/scan-and-import",
-			headers: {
-				"x-organization-id": testOrgId,
-			},
+			headers: authHeaders,
 			payload: {
 				commit: true,
 				collisionStrategy: "update_existing",

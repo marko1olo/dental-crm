@@ -3,7 +3,7 @@
  * Complies with Mandates 8e, 8n (Solo Doctor & Small Clinic), and 8aa (Zero Blocking Alarms).
  */
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { inventoryItems } from "../../db/schema.js";
 import { fefoStockService } from "../inventory/fefoStockService.js";
 import type { DbTransaction } from "../inventory/fefo/types.js";
@@ -42,6 +42,7 @@ export async function executeUnifiedStockDeduction(
 		.select()
 		.from(inventoryItems)
 		.where(and(inArray(inventoryItems.id, sortedIds), eq(inventoryItems.organizationId, organizationId)))
+		.orderBy(asc(inventoryItems.id))
 		.for("update");
 
 	const lockedMap = new Map(lockedRows.map((r) => [r.id, r]));

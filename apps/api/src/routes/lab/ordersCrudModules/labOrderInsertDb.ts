@@ -10,7 +10,7 @@ import {
 	kopecksToNumericString,
 	splitKopecks,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import type { TenantDb } from "../../../db/rls.js";
 import { appointments, labItems, labOrders, patients, treatmentPlans, users, visits } from "../../../db/schema.js";
 import type { LabOrderStatus } from "../../../db/labQuery.js";
@@ -140,8 +140,10 @@ export async function insertLabOrderInDb(
 	let doctorName: string | null = null;
 	let effectiveDoctorId: string | null = null;
 
-	const candidateDoctorId = data.doctorId && isValidUuid(data.doctorId) ? data.doctorId : null;
-	const fallbackDoctorId = currentUserId && isValidUuid(currentUserId) ? currentUserId : null;
+	const rawDoctorId = typeof data.doctorId === "string" ? data.doctorId.trim() : "";
+	const explicitDoctorIdProvided = rawDoctorId.length > 0;
+	const candidateDoctorId = explicitDoctorIdProvided && isValidUuid(rawDoctorId) ? rawDoctorId : null;
+	const fallbackDoctorId = !explicitDoctorIdProvided && currentUserId && isValidUuid(currentUserId) ? currentUserId : null;
 	const targetDoctorId = candidateDoctorId || fallbackDoctorId;
 
 	if (targetDoctorId) {
@@ -158,9 +160,15 @@ export async function insertLabOrderInDb(
 		}
 	}
 
-	// Если по ID не найден, пробуем найти по ФИО врача (если передано data.doctorName)
-	if (!effectiveDoctorId && data.doctorName && data.doctorName.trim()) {
-		const trimmedDocName = data.doctorName.trim();
+	// Если явный UUID doctorId передан, но не найден в этой клинике — сразу возвращаем doctor_not_found
+	if (explicitDoctorIdProvided && !effectiveDoctorId) {
+		return { kind: "doctor_not_found" as const };
+	}
+
+	// Если ID не передан и по currentUserId не найден — пробуем найти по ФИО врача (игнорируя заглушку "Врач-ортопед")
+	const trimmedDocName = data.doctorName ? data.doctorName.trim() : "";
+	const isPlaceholderDoctorName = trimmedDocName === "Врач-ортопед";
+	if (!effectiveDoctorId && trimmedDocName && !isPlaceholderDoctorName) {
 		const [matchedDoctor] = await tx
 			.select({ id: users.id, fullName: users.fullName })
 			.from(users)
@@ -177,8 +185,26 @@ export async function insertLabOrderInDb(
 		}
 	}
 
-	// Строгий контроль автора наряда ЗТЛ: запрещен тихий подхват случайного сотрудника через .limit(1)!
-	// Если врач не передан явно и не определен по текущему пользователю/ФИО — возвращаем doctor_not_found (Дефект 5).
+	// Для соло-клиники или дефолтной подписи "Врач-ортопед" без explicit doctorId — детерминированно выбираем активного врача клиники
+	if (!effectiveDoctorId && !explicitDoctorIdProvided) {
+		const [defaultClinicDoctor] = await tx
+			.select({ id: users.id, fullName: users.fullName })
+			.from(users)
+			.where(
+				and(
+					eq(users.organizationId, orgId),
+					eq(users.isActive, true),
+					inArray(users.role, ["doctor", "head_doctor", "owner"]),
+				),
+			)
+			.orderBy(asc(users.createdAt), asc(users.id))
+			.limit(1);
+		if (defaultClinicDoctor) {
+			effectiveDoctorId = defaultClinicDoctor.id;
+			doctorName = defaultClinicDoctor.fullName;
+		}
+	}
+
 	if (!effectiveDoctorId) {
 		return { kind: "doctor_not_found" as const };
 	}

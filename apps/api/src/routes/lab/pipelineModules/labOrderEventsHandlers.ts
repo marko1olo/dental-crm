@@ -2,7 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { generateUuidV7, isValidUuid } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { withTenantReadCtx, withTenantWriteCtx } from "../../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx, type TenantDb } from "../../../db/rls.js";
 import { labOrderEvents, labOrders } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
@@ -14,7 +14,11 @@ function readLabOrderIdParam(request: FastifyRequest): string {
 	return typeof record.id === "string" ? record.id : "";
 }
 
-export async function handleGetLabOrderEvents(request: FastifyRequest, reply: FastifyReply) {
+export async function handleGetLabOrderEvents(
+	request: FastifyRequest,
+	reply: FastifyReply,
+	externalTx?: TenantDb,
+) {
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
 
@@ -32,8 +36,8 @@ export async function handleGetLabOrderEvents(request: FastifyRequest, reply: Fa
 
 	const labOrderId = readLabOrderIdParam(request);
 
-	const events = await withTenantReadCtx(orgId, async (tx) => {
-		return tx
+	const runQuery = (tx: TenantDb) =>
+		tx
 			.select()
 			.from(labOrderEvents)
 			.where(
@@ -43,7 +47,8 @@ export async function handleGetLabOrderEvents(request: FastifyRequest, reply: Fa
 				),
 			)
 			.orderBy(desc(labOrderEvents.createdAt));
-	});
+
+	const events = externalTx ? await runQuery(externalTx) : await withTenantReadCtx(orgId, runQuery);
 
 	return reply.send({ events });
 }

@@ -10,46 +10,50 @@ import {
 	type ScanAndImportItem,
 } from "./types.js";
 
+const PRICELIST_CSV_DELIMITER = ";";
+const PRICELIST_CSV_HEADERS = [
+	"Код услуги",
+	"Коммерческое наименование",
+	"Раздел",
+	"Специальность",
+	"Цена (руб)",
+	"Длительность (мин)",
+	"НДС",
+	"Налоговый вычет",
+	"Статус",
+] as const;
+
+export function formatPricelistCsvHeader(): string {
+	return PRICELIST_CSV_HEADERS.map((h) => escapeCsvCell(h, PRICELIST_CSV_DELIMITER)).join(PRICELIST_CSV_DELIMITER);
+}
+
+export function formatPricelistCsvRow(item: ServiceCatalogItem): string {
+	const categoryMeta = SERVICE_CATEGORIES_METADATA.find(
+		(m) => m.id === item.category,
+	);
+	const categoryTitle = categoryMeta?.shortLabel || item.category;
+	const row = [
+		item.code,
+		item.title,
+		categoryTitle,
+		item.specialty,
+		item.basePriceRub,
+		item.durationMinutes,
+		"НДС не облагается (ст. 149 НК РФ)",
+		item.taxDeductible ? "Да" : "Нет",
+		item.active ? "Активна" : "В архиве",
+	];
+	return row.map((val) => escapeCsvCell(val, PRICELIST_CSV_DELIMITER)).join(PRICELIST_CSV_DELIMITER);
+}
+
 /**
  * Formats clinical catalog items to RFC 4180 CSV with UTF-8 BOM.
  */
 export function formatPricelistToCsv(items: ServiceCatalogItem[]): string {
-	const delimiter = ";";
-	const headers = [
-		"Код услуги",
-		"Коммерческое наименование",
-		"Раздел",
-		"Специальность",
-		"Цена (руб)",
-		"Длительность (мин)",
-		"НДС",
-		"Налоговый вычет",
-		"Статус",
-	];
-
-	const rows: string[] = [
-		headers.map((h) => escapeCsvCell(h, delimiter)).join(delimiter),
-	];
-
+	const rows: string[] = [formatPricelistCsvHeader()];
 	for (const item of items) {
-		const categoryMeta = SERVICE_CATEGORIES_METADATA.find(
-			(m) => m.id === item.category,
-		);
-		const categoryTitle = categoryMeta?.shortLabel || item.category;
-		const row = [
-			item.code,
-			item.title,
-			categoryTitle,
-			item.specialty,
-			item.basePriceRub,
-			item.durationMinutes,
-			"НДС не облагается (ст. 149 НК РФ)",
-			item.taxDeductible ? "Да" : "Нет",
-			item.active ? "Активна" : "В архиве",
-		];
-		rows.push(row.map((val) => escapeCsvCell(val, delimiter)).join(delimiter));
+		rows.push(formatPricelistCsvRow(item));
 	}
-
 	const UTF8_BOM = "\uFEFF";
 	return UTF8_BOM + rows.join("\r\n");
 }

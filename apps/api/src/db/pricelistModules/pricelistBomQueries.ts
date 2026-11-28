@@ -4,7 +4,7 @@ import {
 	rublesToKopecks,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { withTenantCtx } from "../rls.js";
+import { withTenantCtx, withTenantReadCtx, type TenantDb } from "../rls.js";
 import * as schema from "../schema.js";
 import {
 	selectOwnedServiceCatalogRow,
@@ -70,9 +70,10 @@ function resolveInventoryUnitCostKopecks(inv: {
 export async function getServiceBomFromDb(
 	organizationId: string,
 	serviceId: string,
+	externalTx?: TenantDb,
 ): Promise<ServiceBomDetails | null> {
 	if (useInMemory()) return null;
-	return await withTenantCtx(organizationId, async (tx) => {
+	const runQuery = async (tx: TenantDb) => {
 		const service = await selectOwnedServiceCatalogRow(
 			organizationId,
 			serviceId,
@@ -179,7 +180,8 @@ export async function getServiceBomFromDb(
 			items,
 			totalMaterialsCostRub: 0,
 		};
-	});
+	};
+	return externalTx ? await runQuery(externalTx) : await withTenantReadCtx(organizationId, runQuery);
 }
 
 export async function upsertServiceBomInDb(

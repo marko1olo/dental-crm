@@ -11,6 +11,7 @@ const payParamsSchema = z.object({
 
 const payBodySchema = z.object({
 	cashBoxId: z.string().uuid().optional(),
+	/** @deprecated Legacy float fallback for Fixer-5B transition; prefer integer amountKopecks. */
 	amountRub: positiveMoneyRubSchema.optional(),
 	amountKopecks: z.union([z.number().int().positive(), z.bigint()]).optional(),
 	notes: z.string().trim().max(500).optional(),

@@ -207,4 +207,4 @@ function _acceptVisitDraft(
  * и `actorUserId` не смотрят. Ни один тест значение автора не проверяет.
  */
 
-export { visitDraftAutosaves, visitSaveReceipts };
+export { _acceptVisitDraft as acceptVisitDraft, visitDraftAutosaves, visitSaveReceipts };

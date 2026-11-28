@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { DicomWorkbenchBundle, SaveDicomWorkbenchBundleRequest } from "@dental/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { cloneDicomWorkbenchManifestForServerStorage } from "../../routes/imaging/workstationReadiness.js";
-import { withTenantCtx } from "../rls.js";
+import { withTenantReadCtx, withTenantWriteCtx, type TenantDb } from "../rls.js";
 import { dicomWorkbenchBundles } from "../schema.js";
 
 function mapWorkbenchBundle(b: typeof dicomWorkbenchBundles.$inferSelect): DicomWorkbenchBundle {
@@ -28,8 +28,9 @@ function mapWorkbenchBundle(b: typeof dicomWorkbenchBundles.$inferSelect): Dicom
 export async function listDicomWorkbenchBundles(
 	organizationId: string,
 	limit: number,
+	externalTx?: TenantDb,
 ): Promise<DicomWorkbenchBundle[]> {
-	return await withTenantCtx(organizationId, async (tx) => {
+	const runQuery = async (tx: TenantDb) => {
 		const bundles = await tx
 			.select()
 			.from(dicomWorkbenchBundles)
@@ -38,19 +39,21 @@ export async function listDicomWorkbenchBundles(
 			.limit(limit);
 
 		return bundles.map(mapWorkbenchBundle);
-	});
+	};
+	return externalTx ? await runQuery(externalTx) : await withTenantReadCtx(organizationId, runQuery);
 }
 
 export async function saveDicomWorkbenchBundle(
 	organizationId: string,
 	input: SaveDicomWorkbenchBundleRequest,
+	externalTx?: TenantDb,
 ): Promise<DicomWorkbenchBundle> {
 	const sanitizedManifest = cloneDicomWorkbenchManifestForServerStorage(input.manifest);
 	const clientSavedAt = input.clientSavedAt ? new Date(input.clientSavedAt) : null;
 	const now = new Date();
 	const existingSeriesKey = input.seriesKey ?? `series_${randomUUID()}`;
 
-	return await withTenantCtx(organizationId, async (tx) => {
+	const runSave = async (tx: TenantDb) => {
 		await tx.execute(
 			sql`SELECT pg_advisory_xact_lock(hashtext(${`dicom_workbench:${organizationId}:${existingSeriesKey}`}))`,
 		);
@@ -104,5 +107,6 @@ export async function saveDicomWorkbenchBundle(
 		if (!newBundle) throw new Error("Не удалось создать пакет исследований");
 
 		return mapWorkbenchBundle(newBundle);
-	});
+	};
+	return externalTx ? await runSave(externalTx) : await withTenantWriteCtx(organizationId, runSave);
 }

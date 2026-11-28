@@ -1,4 +1,5 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
+import { clinicTimeZone, DEFAULT_CLINIC_TIME_ZONE } from "../../../../services/reports/managerReports/timezone.js";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { withTenantWriteCtx } from "../../../../db/rls.js";
@@ -34,7 +35,8 @@ export async function handleBactericidalShiftAutopilot(
 	}
 	const body = parsed.data;
 	const durationMinutes = typeof body.durationMinutes === "number" ? body.durationMinutes : 360;
-	const dateStr: string = typeof body.date === "string" && body.date.trim() ? body.date : new Date().toISOString().slice(0, 10);
+	const explicitDateStr = typeof body.date === "string" && body.date.trim() ? body.date.trim() : null;
+	const now = new Date();
 	const operatingMode: string =
 		typeof body.operatingMode === "string" && body.operatingMode.trim()
 			? body.operatingMode
@@ -45,6 +47,15 @@ export async function handleBactericidalShiftAutopilot(
 	const targetEquipmentId = body.equipmentId ? String(body.equipmentId) : undefined;
 
 	const results = await withTenantWriteCtx(organizationId, async (tx) => {
+		const tz = (await clinicTimeZone(organizationId, tx)) ?? DEFAULT_CLINIC_TIME_ZONE;
+		const dateStr =
+			explicitDateStr ??
+			new Intl.DateTimeFormat("en-CA", {
+				timeZone: tz,
+				year: "numeric",
+				month: "2-digit",
+				day: "2-digit",
+			}).format(now);
 		const activeEquipments = await tx
 			.select()
 			.from(bactericidalEquipments)
@@ -55,6 +66,7 @@ export async function handleBactericidalShiftAutopilot(
 					targetEquipmentId ? eq(bactericidalEquipments.id, targetEquipmentId) : undefined,
 				),
 			)
+			.orderBy(asc(bactericidalEquipments.id))
 			.for("update");
 
 		if (activeEquipments.length === 0) {

@@ -8,7 +8,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
-import { defineStreamRoute } from "../../core/routeFactories.js";
+import { defineStreamRoute, defineTenantQuery } from "../../core/routeFactories.js";
 import {
 	handleCreateDailyTest,
 	handleCreatePsoTest,
@@ -33,6 +33,11 @@ import {
 	handleUpdateSterilizerEquipment,
 } from "./sterilizationModules/sterilizerEquipmentHandlers.js";
 
+const SANPIN_STERILIZATION_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+} as const;
+
 const sanpinMutationSchema = {
 	description:
 		"SanPiN sterilization mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
@@ -56,55 +61,63 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	registeredSterilizationApps.add(app);
 
 	// Журнал работы стерилизаторов: канонические циклы с изоляцией organizationId и Idempotency-Key
-	defineStreamRoute(app, {
+	defineTenantQuery(app, {
 		method: "GET",
 		path: "/api/sanpin/sterilization",
-		permission: "public",
-		handler: async ({ request, reply }) => handleGetSterilizationLogs(request, reply),
+		permission: "inventory.read",
+		authOptions: SANPIN_STERILIZATION_AUTH,
+		handler: async ({ tx, request, reply }) => handleGetSterilizationLogs(request, reply, tx),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleCreateSterilizationLog(request, reply),
 	});
-	defineStreamRoute(app, {
+	defineTenantQuery(app, {
 		method: "GET",
 		path: "/api/sanpin/autoclave/cycles",
-		permission: "public",
-		handler: async ({ request, reply }) => handleGetSterilizationLogs(request, reply),
+		permission: "inventory.read",
+		authOptions: SANPIN_STERILIZATION_AUTH,
+		handler: async ({ tx, request, reply }) => handleGetSterilizationLogs(request, reply, tx),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/autoclave/cycles",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleCreateSterilizationLog(request, reply),
 	});
-	defineStreamRoute(app, {
+	defineTenantQuery(app, {
 		method: "GET",
 		path: "/api/sterilization/cycles",
-		permission: "public",
-		handler: async ({ request, reply }) => handleGetSterilizationLogs(request, reply),
+		permission: "inventory.read",
+		authOptions: SANPIN_STERILIZATION_AUTH,
+		handler: async ({ tx, request, reply }) => handleGetSterilizationLogs(request, reply, tx),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sterilization/cycles",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleCreateSterilizationLog(request, reply),
 	});
-	defineStreamRoute(app, {
+	defineTenantQuery(app, {
 		method: "GET",
 		path: "/api/sanpin/sterilization/cycles",
-		permission: "public",
-		handler: async ({ request, reply }) => handleGetSterilizationLogs(request, reply),
+		permission: "inventory.read",
+		authOptions: SANPIN_STERILIZATION_AUTH,
+		handler: async ({ tx, request, reply }) => handleGetSterilizationLogs(request, reply, tx),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization/cycles",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleCreateSterilizationLog(request, reply),
 	});
@@ -113,86 +126,98 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization/quick-norm",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleQuickNormCycle(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization/quick-norm-cycle",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleQuickNormCycle(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization-cycles/quick-norm",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleQuickNormCycle(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization-cycles/quick-norm-cycle",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleQuickNormCycle(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization-cycles/shift-batch",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleSterilizationShiftBatch(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization-cycles/batch",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleSterilizationShiftBatch(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization/shift-batch",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleSterilizationShiftBatch(request, reply),
 	});
 
 	// Контроль качества предстерилизационной очистки (азопирам, фенолфталеин)
-	defineStreamRoute(app, {
+	defineTenantQuery(app, {
 		method: "GET",
 		path: "/api/sanpin/sterilization/pso-tests",
-		permission: "public",
-		handler: async ({ request, reply }) => handleGetPsoTests(request, reply),
+		permission: "inventory.read",
+		authOptions: SANPIN_STERILIZATION_AUTH,
+		handler: async ({ tx, request, reply }) => handleGetPsoTests(request, reply, tx),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization/pso-tests",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleCreatePsoTest(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization/pso/quick-norm",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handlePsoQuickNorm(request, reply),
 	});
 
 	// Ежедневный контроль автоклавов (Bowie-Dick, Вакуум-тест)
-	defineStreamRoute(app, {
+	defineTenantQuery(app, {
 		method: "GET",
 		path: "/api/sanpin/sterilization/daily-tests",
-		permission: "public",
-		handler: async ({ request, reply }) => handleGetDailyTests(request, reply),
+		permission: "inventory.read",
+		authOptions: SANPIN_STERILIZATION_AUTH,
+		handler: async ({ tx, request, reply }) => handleGetDailyTests(request, reply, tx),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization/daily-tests",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleCreateDailyTest(request, reply),
 	});
@@ -201,27 +226,31 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/sanpin/sterilization/equipments",
-		permission: "public",
+		permission: "inventory.read",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		handler: async ({ request, reply }) => handleGetSterilizerEquipments(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization/equipments",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleCreateSterilizerEquipment(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "PUT",
 		path: "/api/sanpin/sterilization/equipments/:id",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleUpdateSterilizerEquipment(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "DELETE",
 		path: "/api/sanpin/sterilization/equipments/:id",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleDeleteSterilizerEquipment(request, reply),
 	});
@@ -230,42 +259,48 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization/scan",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleScanSterilization(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization/link",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleSterilizationLink(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization/generate-barcode",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleGenerateBarcode(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sanpin/sterilization/unseal",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleUnsealKraftPackage(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sterilization/scan",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleScanSterilization(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sterilization/link",
-		permission: "public",
+		permission: "inventory.write",
+		authOptions: SANPIN_STERILIZATION_AUTH,
 		schema: sanpinMutationSchema,
 		handler: async ({ request, reply }) => handleSterilizationLink(request, reply),
 	});

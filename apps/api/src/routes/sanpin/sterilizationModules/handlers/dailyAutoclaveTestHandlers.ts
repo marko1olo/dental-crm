@@ -9,14 +9,18 @@ import { createAutoclaveDailyTestSchema } from "@dental/shared";
 import { desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantReadCtx, withTenantWriteCtx } from "../../../../db/rls.js";
+import { withTenantReadCtx, withTenantWriteCtx, type TenantDb } from "../../../../db/rls.js";
 import { autoclaveDailyTests, users } from "../../../../db/schema.js";
 
-export async function handleGetDailyTests(req: FastifyRequest, reply: FastifyReply) {
+export async function handleGetDailyTests(
+	req: FastifyRequest,
+	reply: FastifyReply,
+	externalTx?: TenantDb,
+) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "read daily tests");
 	if (!organizationId) return;
 
-	return withTenantReadCtx(organizationId, (tx) =>
+	const runQuery = (tx: TenantDb) =>
 		tx
 			.select({
 				id: autoclaveDailyTests.id,
@@ -37,8 +41,9 @@ export async function handleGetDailyTests(req: FastifyRequest, reply: FastifyRep
 			.from(autoclaveDailyTests)
 			.leftJoin(users, eq(users.id, autoclaveDailyTests.operatorId))
 			.where(eq(autoclaveDailyTests.organizationId, organizationId))
-			.orderBy(desc(autoclaveDailyTests.timestamp)),
-	);
+			.orderBy(desc(autoclaveDailyTests.timestamp));
+
+	return externalTx ? runQuery(externalTx) : withTenantReadCtx(organizationId, runQuery);
 }
 
 export async function handleCreateDailyTest(req: FastifyRequest, reply: FastifyReply) {

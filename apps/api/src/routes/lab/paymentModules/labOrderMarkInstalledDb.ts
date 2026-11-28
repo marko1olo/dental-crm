@@ -11,6 +11,7 @@ import {
 	warrantyCertificates,
 } from "../../../db/schema.js";
 import { quickWriteoffOrthopedicProtocol } from "../../../services/treatmentConsumables/bundleWriteoffService.js";
+import { clinicTimeZone, DEFAULT_CLINIC_TIME_ZONE } from "../../../services/reports/managerReports/timezone.js";
 
 export interface LabOrderMarkInstalledInput {
 	readonly clinicalNotes?: string | undefined;
@@ -160,14 +161,21 @@ export async function executeLabOrderMarkInstalled(
 			const expirationDate = new Date(now.getTime());
 			expirationDate.setFullYear(expirationDate.getFullYear() + 2);
 			const nextRecallDate = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000);
+			const tz = (await clinicTimeZone(orgId, tx)) ?? DEFAULT_CLINIC_TIME_ZONE;
+			const dateFmt = new Intl.DateTimeFormat("en-CA", {
+				timeZone: tz,
+				year: "numeric",
+				month: "2-digit",
+				day: "2-digit",
+			});
 
 			const hashPayload = JSON.stringify({
 				organizationId: orgId,
 				patientId: order.patientId,
 				certificateNumber,
 				items: itemsPayload,
-				issuedAt: now.toISOString().slice(0, 10),
-				expiresAt: expirationDate.toISOString().slice(0, 10),
+				issuedAt: dateFmt.format(now),
+				expiresAt: dateFmt.format(expirationDate),
 				batchCode,
 			});
 			const integritySha256 = createHash("sha256").update(hashPayload).digest("hex");

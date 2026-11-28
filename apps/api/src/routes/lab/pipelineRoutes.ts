@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import { defineStreamRoute } from "../../core/routeFactories.js";
+import { defineStreamRoute, defineTenantQuery } from "../../core/routeFactories.js";
+import { labClinicalPermission } from "./ordersCrudRoutes.js";
 import {
 	handleCreateLabOrderEvent,
 	handleGetLabOrderEvents,
@@ -7,19 +8,30 @@ import {
 import { handleUpdatePipelineStage } from "./pipelineModules/pipelineStageHandler.js";
 import { handleGetWarrantyPassport } from "./pipelineModules/warrantyPassportHandler.js";
 
+const LAB_PIPELINE_AUTH = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+} as const;
+
+const LAB_PIPELINE_READ_PERMISSION = labClinicalPermission("clinical.lab_order.read");
+const LAB_PIPELINE_PASSPORT_PERMISSION = labClinicalPermission("clinical.lab_order.passport.read");
+const LAB_PIPELINE_WRITE_PERMISSION = labClinicalPermission("clinical.lab_order.write");
+
 export async function registerLabPipelineRoutes(app: FastifyInstance) {
-	// Журнал этапов наряда ЗТЛ и аудит событий
-	defineStreamRoute(app, {
+	// Журнал этапов наряда ЗТЛ и аудит событий (READ ONLY)
+	defineTenantQuery(app, {
 		method: "GET",
 		path: "/api/clinical/lab-orders/:id/events",
-		permission: "public",
-		handler: async ({ request, reply }) => handleGetLabOrderEvents(request, reply),
+		permission: LAB_PIPELINE_READ_PERMISSION,
+		authOptions: LAB_PIPELINE_AUTH,
+		handler: async ({ tx, request, reply }) => handleGetLabOrderEvents(request, reply, tx),
 	});
-	defineStreamRoute(app, {
+	defineTenantQuery(app, {
 		method: "GET",
 		path: "/api/lab/orders/:id/events",
-		permission: "public",
-		handler: async ({ request, reply }) => handleGetLabOrderEvents(request, reply),
+		permission: LAB_PIPELINE_READ_PERMISSION,
+		authOptions: LAB_PIPELINE_AUTH,
+		handler: async ({ tx, request, reply }) => handleGetLabOrderEvents(request, reply, tx),
 	});
 
 	// POST: Фиксация этапа наряда ЗТЛ
@@ -33,14 +45,16 @@ export async function registerLabPipelineRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/clinical/lab-orders/:id/events",
-		permission: "public",
+		permission: LAB_PIPELINE_WRITE_PERMISSION,
+		authOptions: LAB_PIPELINE_AUTH,
 		schema: eventPostSchema,
 		handler: async ({ request, reply }) => handleCreateLabOrderEvent(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/lab/orders/:id/events",
-		permission: "public",
+		permission: LAB_PIPELINE_WRITE_PERMISSION,
+		authOptions: LAB_PIPELINE_AUTH,
 		schema: eventPostSchema,
 		handler: async ({ request, reply }) => handleCreateLabOrderEvent(request, reply),
 	});
@@ -49,13 +63,15 @@ export async function registerLabPipelineRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/clinical/lab-orders/:id/warranty-passport",
-		permission: "public",
+		permission: LAB_PIPELINE_PASSPORT_PERMISSION,
+		authOptions: LAB_PIPELINE_AUTH,
 		handler: async ({ request, reply }) => handleGetWarrantyPassport(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/lab/orders/:id/warranty-passport",
-		permission: "public",
+		permission: LAB_PIPELINE_PASSPORT_PERMISSION,
+		authOptions: LAB_PIPELINE_AUTH,
 		handler: async ({ request, reply }) => handleGetWarrantyPassport(request, reply),
 	});
 
@@ -70,14 +86,16 @@ export async function registerLabPipelineRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/clinical/lab-orders/:id/pipeline-stage",
-		permission: "public",
+		permission: LAB_PIPELINE_WRITE_PERMISSION,
+		authOptions: LAB_PIPELINE_AUTH,
 		schema: pipelineStageSchema,
 		handler: async ({ request, reply }) => handleUpdatePipelineStage(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/lab/orders/:id/pipeline-stage",
-		permission: "public",
+		permission: LAB_PIPELINE_WRITE_PERMISSION,
+		authOptions: LAB_PIPELINE_AUTH,
 		schema: pipelineStageSchema,
 		handler: async ({ request, reply }) => handleUpdatePipelineStage(request, reply),
 	});

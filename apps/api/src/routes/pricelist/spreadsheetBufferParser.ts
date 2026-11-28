@@ -56,14 +56,26 @@ export async function parseSpreadsheetBuffer(
 	) {
 		const isOds = lowerName.endsWith(".ods");
 		if (isOds) {
-			const parsedBook = await parseOds(buffer);
+			const parsedBook = await parseOds(buffer, {
+				maxRowsPerSheet: MAX_SPREADSHEET_PREVIEW_ROWS,
+				selectedSheetIndex,
+			});
 			if (parsedBook.sheets.length > 0) {
 				sheets = parsedBook.sheets.map((s) => s.name);
 				const sheetIdx = Math.max(
 					0,
 					Math.min(selectedSheetIndex, parsedBook.sheets.length - 1),
 				);
-				rows = parsedBook.sheets[sheetIdx]?.rows ?? [];
+				const targetSheet = parsedBook.sheets[sheetIdx];
+				if (targetSheet && targetSheet.rows.length > 0) {
+					rows = targetSheet.rows;
+				} else if (sheetIdx !== selectedSheetIndex) {
+					const reParsed = await parseOds(buffer, {
+						maxRowsPerSheet: MAX_SPREADSHEET_PREVIEW_ROWS,
+						selectedSheetIndex: sheetIdx,
+					});
+					rows = reParsed.sheets[sheetIdx]?.rows ?? [];
+				}
 				return {
 					rows,
 					sheets,

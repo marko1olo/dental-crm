@@ -35,10 +35,7 @@
 
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { after, before, describe, test } from "node:test";
-import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import pino from "pino";
@@ -52,6 +49,9 @@ import {
 } from "../../db/schema.js";
 import { bindServerLogger } from "../../observability/logger.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
+import { auditEvents as inMemoryAuditEvents } from "../../sampleData/audit.js";
+import { activeVisit } from "../../sampleData/clinicalRecords.js";
+import { acceptVisitDraft, visitSaveReceipts } from "../../sampleData/visitDrafts.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
@@ -497,19 +497,42 @@ describe("подписание приёма оставляет след в audit
 	});
 
 	test("оба пути пишут одно имя действия: журнал приёма нельзя развести на две половины", () => {
-		/*
-		 * Расхождение формы между путём с базой и без — самостоятельный дефект:
-		 * журнал читают одним запросом по entity_type/entity_id, и два имени одного
-		 * действия дали бы две несводимые половины истории приёма. Проверяется
-		 * дословная строка в пути без базы, потому что общей константы на два пути
-		 * в проекте нет (это долг).
-		 */
-		const dir = path.dirname(fileURLToPath(import.meta.url));
-		const p1 = path.resolve(dir, "../../sampleData/visitDrafts.ts");
-		const p2 = path.resolve(dir, "../../sampleData.ts");
-		const target = existsSync(p1) ? p1 : p2;
-		assert.ok(existsSync(target), `путь без базы (${target}) не найден`);
-		const source = readFileSync(target, "utf8");
-		assert.ok(source.includes(`action: "${AUDIT_ACTION}"`), "имена действия разошлись");
+		const prevRevision = activeVisit.revision;
+		const prevSummary = activeVisit.doctorSummary;
+		const prevUpdatedAt = activeVisit.updatedAt;
+		const prevEventsCount = inMemoryAuditEvents.length;
+		const prevReceiptsCount = visitSaveReceipts.length;
+		const mutationId = `sut-audit-parity-${randomUUID()}`;
+
+		try {
+			const response = acceptVisitDraft({
+				visitId: activeVisit.id,
+				clientMutationId: mutationId,
+				baseRevision: prevRevision,
+				doctorSummary: "Проверка паритета action в auditEvents",
+				draft: {
+					complaint: activeVisit.complaint,
+					anamnesis: activeVisit.anamnesis,
+					objectiveStatus: activeVisit.objectiveStatus,
+					diagnosis: activeVisit.diagnosis,
+					treatmentPlan: activeVisit.treatmentPlan,
+					warnings: [],
+				},
+			});
+			assert.equal(response.saveReceipt.clientMutationId, mutationId);
+			const recorded = inMemoryAuditEvents.find(
+				(ev) => ev.entityType === AUDIT_ENTITY_TYPE && ev.entityId === activeVisit.id && ev.reason?.includes(mutationId),
+			);
+			assert.ok(recorded, "acceptVisitDraft обязан записывать аудит-событие в журнал");
+			assert.equal(recorded.action, AUDIT_ACTION, "имена действия между путём с БД и путём без БД не должны расходиться");
+		} finally {
+			const addedEvents = inMemoryAuditEvents.length - prevEventsCount;
+			if (addedEvents > 0) inMemoryAuditEvents.splice(0, addedEvents);
+			const addedReceipts = visitSaveReceipts.length - prevReceiptsCount;
+			if (addedReceipts > 0) visitSaveReceipts.splice(0, addedReceipts);
+			activeVisit.revision = prevRevision;
+			activeVisit.doctorSummary = prevSummary;
+			activeVisit.updatedAt = prevUpdatedAt;
+		}
 	});
 });

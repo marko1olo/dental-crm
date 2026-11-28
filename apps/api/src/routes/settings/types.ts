@@ -118,12 +118,15 @@ export const serviceCatalogItemFields = {
 			message: "цена услуги не помещается в денежную колонку прайса",
 		},
 	),
+	basePriceKopecks: z.number().int().nonnegative().max(999_999_999_900).optional(),
 	durationMinutes: z.number().int().positive().max(1440),
 	taxDeductible: z.boolean(),
 	active: z.boolean(),
 	order804nCode: z.string().trim().max(60).optional().nullable(),
 	materialsCostRub: nonNegativeMoneyRubSchema.optional().nullable(),
+	materialsCostKopecks: z.number().int().nonnegative().max(999_999_999_900).optional().nullable(),
 	labCostRub: nonNegativeMoneyRubSchema.optional().nullable(),
+	labCostKopecks: z.number().int().nonnegative().max(999_999_999_900).optional().nullable(),
 	salaryPriceKopecks: z.number().int().nonnegative().max(999_999_999_900).optional().nullable(),
 	tierPrices: z.record(z.string(), z.number()).optional().nullable(),
 };
@@ -137,6 +140,7 @@ export const createServiceCatalogItemSchema = z
 	.object({
 		...serviceCatalogItemFields,
 		code: serviceCatalogItemFields.code.default(""),
+		basePriceRub: serviceCatalogItemFields.basePriceRub.optional(),
 		taxDeductible: serviceCatalogItemFields.taxDeductible.default(true),
 		active: serviceCatalogItemFields.active.default(true),
 		order804nCode: serviceCatalogItemFields.order804nCode.default(null),
@@ -145,7 +149,16 @@ export const createServiceCatalogItemSchema = z
 		salaryPriceKopecks: serviceCatalogItemFields.salaryPriceKopecks.default(null),
 		tierPrices: serviceCatalogItemFields.tierPrices.default(null),
 	})
-	.strict();
+	.strict()
+	.superRefine((val, ctx) => {
+		if (val.basePriceRub === undefined && val.basePriceKopecks === undefined) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["basePriceKopecks"],
+				message: "Укажите цену услуги (basePriceKopecks или basePriceRub).",
+			});
+		}
+	});
 
 /** Правка услуги: интерфейс шлёт частичный набор полей. */
 export const updateServiceCatalogItemSchema = z
@@ -155,12 +168,15 @@ export const updateServiceCatalogItemSchema = z
 		category: serviceCatalogItemFields.category.optional(),
 		specialty: serviceCatalogItemFields.specialty.optional(),
 		basePriceRub: serviceCatalogItemFields.basePriceRub.optional(),
+		basePriceKopecks: serviceCatalogItemFields.basePriceKopecks,
 		durationMinutes: serviceCatalogItemFields.durationMinutes.optional(),
 		taxDeductible: serviceCatalogItemFields.taxDeductible.optional(),
 		active: serviceCatalogItemFields.active.optional(),
 		order804nCode: serviceCatalogItemFields.order804nCode.optional(),
 		materialsCostRub: serviceCatalogItemFields.materialsCostRub.optional(),
+		materialsCostKopecks: serviceCatalogItemFields.materialsCostKopecks,
 		labCostRub: serviceCatalogItemFields.labCostRub.optional(),
+		labCostKopecks: serviceCatalogItemFields.labCostKopecks,
 		salaryPriceKopecks: serviceCatalogItemFields.salaryPriceKopecks.optional(),
 		tierPrices: serviceCatalogItemFields.tierPrices.optional(),
 	})

@@ -8,12 +8,13 @@
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantReadCtx } from "../../../../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../../../../db/rls.js";
 import { sterilizationLogs, users } from "../../../../db/schema.js";
 
 export async function handleGetSterilizationLogs(
 	req: FastifyRequest,
 	reply: FastifyReply,
+	externalTx?: TenantDb,
 ) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 		req,
@@ -61,7 +62,7 @@ export async function handleGetSterilizationLogs(
 		conditions.push(eq(sterilizationLogs.autoclaveId, autoclaveId));
 	}
 
-	const logs = await withTenantReadCtx(organizationId, (tx) =>
+	const runQuery = (tx: TenantDb) =>
 		tx
 			.select({
 				id: sterilizationLogs.id,
@@ -98,8 +99,9 @@ export async function handleGetSterilizationLogs(
 				),
 			)
 			.where(and(...conditions))
-			.orderBy(desc(sterilizationLogs.timestamp)),
-	);
+			.orderBy(desc(sterilizationLogs.timestamp));
+
+	const logs = externalTx ? await runQuery(externalTx) : await withTenantReadCtx(organizationId, runQuery);
 
 	if (search && search.trim()) {
 		const q = search.trim().toLowerCase();
