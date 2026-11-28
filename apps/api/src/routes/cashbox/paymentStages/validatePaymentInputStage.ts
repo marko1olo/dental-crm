@@ -377,6 +377,7 @@ export function validatePaymentInput(
 		lockedFamilyGroup: null,
 		advanceRows: [],
 		familyBalanceKop: 0n,
+		isPersonalDepositSpend: false,
 
 		lockedBonusBalance: null,
 		pointsToDeductKop: 0n,

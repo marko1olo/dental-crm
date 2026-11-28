@@ -233,6 +233,7 @@ export const fiscalCalculationMethodSchema = z.enum([
 	"prepayment",
 	"partial_prepayment",
 	"advance",
+	"advance_offset",
 	"full_payment",
 	"full_settlement",
 	"partial_payment_and_credit",
@@ -303,6 +304,10 @@ export const fiscalReceiptDetailsSchema = z.object({
 	depositKopecks: z.number().int().nonnegative().nullable().optional(),
 	dmsKopecks: z.number().int().nonnegative().nullable().optional(),
 	refundedInPlace: z.boolean().nullable().optional(),
+	isPersonalAdvanceOffset: z.boolean().nullable().optional(),
+	isPersonalAdvanceTopup: z.boolean().nullable().optional(),
+	isFamilyWallet: z.boolean().nullable().optional(),
+	refundedItemIds: z.array(z.string().uuid()).nullable().optional(),
 }).strict();
 export type FiscalReceiptDetails = z.infer<typeof fiscalReceiptDetailsSchema>;
 

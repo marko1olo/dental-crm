@@ -73,7 +73,15 @@ export async function revertTreatmentItemsOnFullRefundTx(
 				),
 			);
 		const visitFlow = sumPaymentFlowBigInt(visitPayments, "ledger");
-		if (visitFlow.netKopecks <= 0n && visitFlow.refundedKopecks > 0n) {
+		const visitFullFlow = sumPaymentFlowBigInt(visitPayments, "flow");
+		const hasInPlaceVisitRefund = visitPayments.some(
+			(p) => (p.status ?? "").trim().toLowerCase() === "refunded",
+		);
+		const hasAnyVisitRefund =
+			visitFlow.refundedKopecks > 0n ||
+			visitFullFlow.refundedKopecks > 0n ||
+			hasInPlaceVisitRefund;
+		if (visitFlow.netKopecks <= 0n && hasAnyVisitRefund) {
 			await tx
 				.update(treatmentItems)
 				.set({
@@ -217,15 +225,41 @@ export async function reconcileInvoiceBalanceInDb(
 		);
 
 	const flowSummary = sumPaymentFlowBigInt(invoicePayments, "ledger");
+	const fullFlowSummary = sumPaymentFlowBigInt(invoicePayments, "flow");
+	const hasInPlaceRefund = invoicePayments.some(
+		(p) => (p.status ?? "").trim().toLowerCase() === "refunded",
+	);
+	const hasAnyRefund =
+		flowSummary.refundedKopecks > 0n ||
+		fullFlowSummary.refundedKopecks > 0n ||
+		hasInPlaceRefund;
 	const paidKopecks = flowSummary.netKopecks > 0n ? Number(flowSummary.netKopecks) : 0;
 	const remainingKopecks = Math.max(0, invoiceTotalKopecks - paidKopecks);
 	const isFullyPaid = paidKopecks >= invoiceTotalKopecks;
 
+	const nextStatus =
+		invoice.status === "voided" || invoice.status === "cancelled"
+			? invoice.status
+			: isFullyPaid && (invoiceTotalKopecks > 0 || !hasAnyRefund)
+				? invoice.status === "paid_warranty"
+					? "paid_warranty"
+					: "paid"
+				: paidKopecks > 0
+					? hasAnyRefund
+						? "partially_refunded"
+						: "partially_paid"
+					: hasAnyRefund
+						? "refunded"
+						: "draft";
+
 	await tx
 		.update(patientInvoices)
 		.set({
-			status: isFullyPaid ? "paid" : paidKopecks > 0 ? "partially_paid" : "draft",
-			paidAt: isFullyPaid ? invoice.paidAt ?? new Date() : null,
+			status: nextStatus,
+			paidAt:
+				nextStatus === "paid" || nextStatus === "paid_warranty"
+					? (invoice.paidAt ?? new Date())
+					: null,
 		})
 		.where(
 			and(
@@ -234,7 +268,7 @@ export async function reconcileInvoiceBalanceInDb(
 			),
 		);
 
-	if (flowSummary.netKopecks <= 0n && flowSummary.refundedKopecks > 0n) {
+	if (flowSummary.netKopecks <= 0n && hasAnyRefund) {
 		await revertTreatmentItemsOnFullRefundTx(tx, organizationId, {
 			invoiceId,
 			visitId: invoice.visitId,

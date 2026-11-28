@@ -1,6 +1,6 @@
 import type { PartialRefundCalculationResult } from "@dental/shared";
 
-export type RefundPaymentMethod = "card" | "cash" | "advance_deposit";
+export type RefundPaymentMethod = "card" | "sbp" | "cash" | "advance_deposit";
 export type RefundTabMode = "form" | "receipt";
 
 export interface RefundServiceItem {
@@ -33,6 +33,7 @@ export interface RefundServiceModalProps {
 	readonly doctorName?: string | undefined;
 	readonly doctorCommissionPct?: number | undefined;
 	readonly services?: readonly RefundServiceItem[] | undefined;
+	readonly clinicInfo?: RefundClinicInfo | undefined;
 	readonly onRefundSuccess?: ((result: PartialRefundCalculationResult) => void) | undefined;
 }
 

@@ -44,6 +44,7 @@ export async function handleCashRefund(request: FastifyRequest, reply: FastifyRe
 		invoiceId,
 		paymentId,
 		patientId,
+		refundedItemIds,
 		cashierFullName,
 	} = parsed.data;
 	const refundKop = rublesToKopecks(amountRub);
@@ -89,6 +90,7 @@ export async function handleCashRefund(request: FastifyRequest, reply: FastifyRe
 		invoiceId,
 		paymentId,
 		patientId,
+		refundedItemIds,
 		cashierFullName,
 		effectiveMutationId,
 	});

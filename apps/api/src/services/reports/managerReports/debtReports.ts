@@ -191,9 +191,14 @@ export async function receivables(
 			lower(coalesce(${payments.fiscalReceipt}->>'operationType', '')) in ('refund', 'income_return', 'advance_refund', 'return', 'refund_correction')
 			or lower(coalesce(${payments.fiscalReceipt}->>'type', '')) in ('refund', 'income_return', 'advance_refund', 'return', 'refund_correction')
 		)`;
+		const personalAdvanceOffsetSql = sql`(
+			lower(coalesce(${payments.fiscalReceipt}->>'isPersonalAdvanceOffset', 'false')) = 'true'
+			or lower(coalesce(${payments.fiscalReceipt}->>'calculationMethod', '')) = 'advance_offset'
+		)`;
 		const signedLedgerPaymentKopSql = sql<string>`coalesce(sum(case
 			when (${explicitRefundMetaSql} or (${rawPaymentKopSql}) < 0) then -abs(${rawPaymentKopSql})::bigint
 			when ${payments.status} = 'refunded' then 0::bigint
+			when ${personalAdvanceOffsetSql} then 0::bigint
 			else abs(${rawPaymentKopSql})::bigint
 		end), 0)::bigint`;
 

@@ -6,9 +6,8 @@ import {
 	type RefundableInvoiceItem,
 	type RefundReasonCategory,
 } from "@dental/shared";
-import { generateUuidV7, kopecksToRubles } from "@dental/shared";
+import { generateUuidV7 } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
-import { FiscalReceiptQueueManager } from "../../../../services/hardware/fiscalReceiptQueueManager";
 import { showToast } from "../../../GlobalToast";
 import { clientLogger } from "../../../../services/logging/clientLogger";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode.js";
@@ -30,7 +29,7 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 		invoiceNumber,
 		patientId,
 		patientName,
-		patientPhone,
+		patientPhone: _patientPhone,
 		cashBoxId,
 		originalPaymentId,
 		originalReceiptNumber,
@@ -39,6 +38,7 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 		doctorName = "Лечащий врач",
 		doctorCommissionPct = 30,
 		services = [],
+		clinicInfo: propsClinicInfo,
 		onRefundSuccess,
 	} = props;
 
@@ -117,13 +117,7 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 
 		const clientMutationId = generateUuidV7();
 
-		const {
-			refundPayload,
-			refundCashKopecks,
-			refundElectronicKopecks,
-			refundPrepaidKopecks,
-			reasonText,
-		} = buildRefundFiscalPayload({
+		const { reasonText } = buildRefundFiscalPayload({
 			clientMutationId,
 			patientId,
 			originalPaymentId,
@@ -156,18 +150,24 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 			const isInvoiceUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoiceId || "");
 			const isPatientUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId || "");
 			const isCashBoxUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cashBoxId || "");
+			const selectedUuidItemIds = Array.from(selectedItemIds).filter((id) =>
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id),
+			);
 			const methodLabel =
 				paymentMethod === "cash"
 					? "наличные"
-					: paymentMethod === "advance_deposit"
-						? "авансовый депозит"
-						: "безналично (карта)";
+					: paymentMethod === "sbp"
+						? "СБП (QR)"
+						: paymentMethod === "advance_deposit"
+							? "авансовый депозит"
+							: "безналично (карта)";
 
 			const refundCashboxPayload = {
 				...(isPaymentUuid && originalPaymentId ? { paymentId: originalPaymentId } : {}),
 				...(isInvoiceUuid && invoiceId ? { invoiceId } : {}),
 				...(isPatientUuid && patientId ? { patientId } : {}),
 				...(isCashBoxUuid && cashBoxId ? { cashBoxId } : {}),
+				...(selectedUuidItemIds.length > 0 ? { refundedItemIds: selectedUuidItemIds } : {}),
 				amountRub: calculation.totalRefundRub,
 				method: paymentMethod,
 				reasonText: `${reasonText} [Способ возврата: ${methodLabel}]`.slice(0, 500),
@@ -216,29 +216,7 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 				}
 
 				if (isOffline) {
-					FiscalReceiptQueueManager.enqueueReceipt(
-						{
-							operationType: "income_return",
-							customerContact: patientPhone || "",
-							cashierFullName: "Кассир-администратор",
-							totalRub: calculation.totalRefundRub,
-							items: calculation.refundedItems.map((it) => ({
-								name: it.name,
-								priceRub: it.unitPriceRub,
-								quantity: it.quantityRefunded,
-								amountRub: it.refundedNetRub,
-								paymentMethod: "full_payment",
-								paymentSubject: "service",
-							})),
-							cashRub: kopecksToRubles(refundCashKopecks),
-							electronicRub: kopecksToRubles(refundElectronicKopecks),
-							prepaidRub: kopecksToRubles(refundPrepaidKopecks),
-							taxationSystem: "usn_income",
-						},
-						"ККТ временно офлайн при фискализации возврата",
-						finalQueueId,
-					);
-					showToast("ККТ временно офлайн: чек возврата помещен в буфер отложенной печати", "warning");
+					showToast("ККТ временно офлайн: чек возврата поставлен в серверную очередь ОФД", "warning");
 				} else {
 					showToast(`Чек возврата «Возврат прихода» №${finalDocNumber || "б/н"} успешно фискализирован!`, "success");
 				}
@@ -290,7 +268,16 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 		}
 	};
 
-	const clinicInfo: RefundClinicInfo = DEFAULT_CLINIC_INFO;
+	const clinicInfo: RefundClinicInfo = propsClinicInfo ?? (
+		isDemo
+			? DEFAULT_CLINIC_INFO
+			: {
+					name: "Медицинская клиника",
+					inn: "",
+					kpp: "",
+					address: "",
+				}
+	);
 
 	const hasRealFiscalData = Boolean(
 		fiscalInfo &&

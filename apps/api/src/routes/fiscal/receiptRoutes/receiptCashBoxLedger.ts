@@ -102,11 +102,164 @@ export async function applyCashBoxFiscalReceipt(
 
 	const mainBox = allBoxes.find((b) => b.isMain || b.type === "main") ?? firstBox;
 	const cashlessBox = allBoxes.find((b) => b.isCashless || b.type === "cashless") ?? mainBox;
+	const chosenBox = data.cashBoxId
+		? (allBoxes.find((b) => b.id === data.cashBoxId) ?? mainBox)
+		: mainBox;
 
-	// If a specific cash box was selected by the cashier
-	if (data.cashBoxId) {
-		const chosenBox = allBoxes.find((b) => b.id === data.cashBoxId) ?? mainBox;
-		const totalInflowKop = (data.cashKopecks || 0) + (data.electronicCardKopecks || 0) + (data.sbpKopecks || 0);
+	const cashKop = data.cashKopecks || 0;
+	const electronicKop = (data.electronicCardKopecks || 0) + (data.sbpKopecks || 0);
+	const isChosenCashless = Boolean(
+		chosenBox.isCashless || chosenBox.type === "cashless" || chosenBox.type === "sbp",
+	);
+
+	// When a specific cashBoxId is passed, route physical cash to chosenBox and card/SBP to cashlessBox (unless chosenBox itself is cashless).
+	if (data.cashBoxId && !isChosenCashless) {
+		if (cashKop > 0 || (cashKop === 0 && electronicKop === 0)) {
+			const amountRub = kopecksToRub(cashKop);
+			const balanceBeforeKop = resolveSafeBoxBalanceKop(chosenBox);
+			const balanceAfterKop = balanceBeforeKop + cashKop;
+			const balanceBefore = kopecksToRub(balanceBeforeKop);
+			const balanceAfter = kopecksToRub(balanceAfterKop);
+
+			await tx
+				.update(cashBoxes)
+				.set({
+					balanceRub: balanceAfter,
+					balanceKopecks: balanceAfterKop,
+					updatedAt: new Date(),
+				})
+				.where(and(eq(cashBoxes.id, chosenBox.id), eq(cashBoxes.organizationId, orgId)));
+
+			const [activeShift] = await tx
+				.select()
+				.from(cashBoxShifts)
+				.where(
+					and(
+						eq(cashBoxShifts.organizationId, orgId),
+						eq(cashBoxShifts.cashBoxId, chosenBox.id),
+						eq(cashBoxShifts.status, "open"),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (activeShift && cashKop > 0) {
+				const prevIncomeKop =
+					activeShift.incomeTotalKopecks > 0 || Number(activeShift.incomeTotalRub || 0) === 0
+						? activeShift.incomeTotalKopecks
+						: parseKopecks(activeShift.incomeTotalRub);
+				const nextIncomeKop = prevIncomeKop + cashKop;
+				await tx
+					.update(cashBoxShifts)
+					.set({
+						incomeTotalRub: kopecksToRub(nextIncomeKop),
+						incomeTotalKopecks: nextIncomeKop,
+						updatedAt: new Date(),
+					})
+					.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
+			}
+
+			await tx.insert(cashOperations).values({
+				organizationId: orgId,
+				cashBoxId: chosenBox.id,
+				shiftId: activeShift?.id ?? null,
+				operationType: "income",
+				amountRub,
+				amountKopecks: cashKop,
+				balanceBeforeRub: balanceBefore,
+				balanceBeforeKopecks: BigInt(balanceBeforeKop),
+				balanceAfterRub: balanceAfter,
+				balanceAfterKopecks: BigInt(balanceAfterKop),
+				reasonText:
+					data.totalKopecks === 0
+						? "Акт гарантийного обслуживания / списания услуг (скидка 100%, 0.00 ₽)"
+						: `Фискальный чек 54-ФЗ (наличные) №${printResult.fiscalDocumentNumber || "б/н"}`,
+				operatorName: data.cashierFullName || null,
+				patientId: validPatientId,
+				kkmDocNumber: printResult.fiscalDocumentNumber ? String(printResult.fiscalDocumentNumber) : null,
+				kkmReceiptUrl: printResult.ofdVerificationUrl || null,
+				metadata: {
+					cashKopecks: cashKop,
+					prepaidKopecks: data.prepaidKopecks,
+					creditKopecks: data.creditKopecks,
+					totalKopecks: data.totalKopecks,
+				},
+			});
+		}
+
+		if (electronicKop > 0) {
+			const amountRub = kopecksToRub(electronicKop);
+			const balanceBeforeKop = resolveSafeBoxBalanceKop(cashlessBox);
+			const balanceAfterKop = balanceBeforeKop + electronicKop;
+			const balanceBefore = kopecksToRub(balanceBeforeKop);
+			const balanceAfter = kopecksToRub(balanceAfterKop);
+
+			await tx
+				.update(cashBoxes)
+				.set({
+					balanceRub: balanceAfter,
+					balanceKopecks: balanceAfterKop,
+					updatedAt: new Date(),
+				})
+				.where(and(eq(cashBoxes.id, cashlessBox.id), eq(cashBoxes.organizationId, orgId)));
+
+			const [activeShift] = await tx
+				.select()
+				.from(cashBoxShifts)
+				.where(
+					and(
+						eq(cashBoxShifts.organizationId, orgId),
+						eq(cashBoxShifts.cashBoxId, cashlessBox.id),
+						eq(cashBoxShifts.status, "open"),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (activeShift && electronicKop > 0) {
+				const prevIncomeKop =
+					activeShift.incomeTotalKopecks > 0 || Number(activeShift.incomeTotalRub || 0) === 0
+						? activeShift.incomeTotalKopecks
+						: parseKopecks(activeShift.incomeTotalRub);
+				const nextIncomeKop = prevIncomeKop + electronicKop;
+				await tx
+					.update(cashBoxShifts)
+					.set({
+						incomeTotalRub: kopecksToRub(nextIncomeKop),
+						incomeTotalKopecks: nextIncomeKop,
+						updatedAt: new Date(),
+					})
+					.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
+			}
+
+			await tx.insert(cashOperations).values({
+				organizationId: orgId,
+				cashBoxId: cashlessBox.id,
+				shiftId: activeShift?.id ?? null,
+				operationType: "income",
+				amountRub,
+				amountKopecks: electronicKop,
+				balanceBeforeRub: balanceBefore,
+				balanceBeforeKopecks: BigInt(balanceBeforeKop),
+				balanceAfterRub: balanceAfter,
+				balanceAfterKopecks: BigInt(balanceAfterKop),
+				reasonText: `Фискальный чек 54-ФЗ (безналичные) №${printResult.fiscalDocumentNumber || "б/н"}`,
+				operatorName: data.cashierFullName || null,
+				patientId: validPatientId,
+				kkmDocNumber: printResult.fiscalDocumentNumber ? String(printResult.fiscalDocumentNumber) : null,
+				kkmReceiptUrl: printResult.ofdVerificationUrl || null,
+				metadata: {
+					electronicCardKopecks: data.electronicCardKopecks,
+					sbpKopecks: data.sbpKopecks,
+					totalKopecks: data.totalKopecks,
+				},
+			});
+		}
+		return;
+	}
+
+	if (data.cashBoxId && isChosenCashless) {
+		const totalInflowKop = cashKop + electronicKop;
 		const amountRub = kopecksToRub(totalInflowKop);
 		const balanceBeforeKop = resolveSafeBoxBalanceKop(chosenBox);
 		const balanceAfterKop = balanceBeforeKop + totalInflowKop;
@@ -183,9 +336,6 @@ export async function applyCashBoxFiscalReceipt(
 	}
 
 	// Automatic routing: cash -> mainBox, card/sbp -> cashlessBox
-	const cashKop = data.cashKopecks || 0;
-	const electronicKop = (data.electronicCardKopecks || 0) + (data.sbpKopecks || 0);
-
 	if (cashKop > 0 || (cashKop === 0 && electronicKop === 0)) {
 		const amountRub = kopecksToRub(cashKop);
 		const balanceBeforeKop = resolveSafeBoxBalanceKop(mainBox);

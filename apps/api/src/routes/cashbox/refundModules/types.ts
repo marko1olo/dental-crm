@@ -17,6 +17,7 @@ export interface ExecuteCashRefundParams {
 	readonly invoiceId?: string | undefined;
 	readonly paymentId?: string | undefined;
 	readonly patientId?: string | undefined;
+	readonly refundedItemIds?: readonly string[] | undefined;
 	readonly cashierFullName?: string | undefined;
 	readonly effectiveMutationId: string;
 }

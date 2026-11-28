@@ -76,6 +76,8 @@ export type StageFailure =
 	| { kind: "patient_not_found"; requestedPatientId?: string }
 	| { kind: "invoice_not_found"; invoiceId: string }
 	| { kind: "invoice_already_paid"; invoiceId: string; status: string }
+	| { kind: "invoice_voided"; invoiceId: string; status: string }
+	| { kind: "invoice_overpayment"; invoiceId: string; remainingRub: string; requestedRub: string }
 	| { kind: "family_wallet_not_found" }
 	| { kind: "unauthorized_family_spend"; reason: string }
 	| { kind: "insufficient_deposit"; availableRub: string; requiredRub: string; isFamilyWallet?: boolean }
@@ -120,6 +122,28 @@ export function stageFailureToOutcome(failure: StageFailure): CashboxPaymentOutc
 					error: "InvoiceAlreadyPaidConflict",
 					message: `Счёт ${failure.invoiceId} уже был полностью оплачен. Повторное списание средств отклонено для исключения задвоения чеков.`,
 					invoiceId: failure.invoiceId,
+				},
+			};
+		case "invoice_voided":
+			return {
+				statusCode: 409,
+				body: {
+					error: "InvoiceVoidedConflict",
+					message: `Счёт ${failure.invoiceId} имеет статус "${failure.status}" и недоступен для оплаты.`,
+					invoiceId: failure.invoiceId,
+				},
+			};
+		case "invoice_overpayment":
+			return {
+				statusCode: 400,
+				body: {
+					error: "InvoiceOverpaymentError",
+					message: `Сумма оплаты (${failure.requestedRub} ₽) превышает остаток по счёту ${failure.invoiceId} (${failure.remainingRub} ₽).`,
+					details: {
+						invoiceId: failure.invoiceId,
+						remainingRub: failure.remainingRub,
+						requestedRub: failure.requestedRub,
+					},
 				},
 			};
 		case "family_wallet_not_found":
@@ -255,6 +279,7 @@ export interface PaymentProcessingContext {
 	lockedFamilyGroup: typeof familyGroups.$inferSelect | null;
 	advanceRows: (typeof advanceDepositTaggings.$inferSelect)[];
 	familyBalanceKop: bigint;
+	isPersonalDepositSpend: boolean;
 
 	// Бонусы
 	lockedBonusBalance: typeof patientBonusBalances.$inferSelect | null;

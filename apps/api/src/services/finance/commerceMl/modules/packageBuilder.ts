@@ -11,6 +11,7 @@ import {
 } from "@dental/shared";
 import { withTenantCtx } from "../../../../db/rls.js";
 import { clinics, organizations, warehouses } from "../../../../db/schema.js";
+import { resolvePeriodDateBoundsInTimeZone } from "../../../../routes/payrollModules/payrollTypesAndQueries.js";
 import { exportCommerceMlParamsSchema, type CommerceMlPackageResult, type ExportCommerceMlParams } from "../types.js";
 import { fetchAndReconcilePayments } from "./paymentReconciliation.js";
 import { fetchAndReconcileMedicalServices } from "./medicalServicesReconciliation.js";
@@ -21,8 +22,6 @@ export async function buildCommerceMlPackage(params: ExportCommerceMlParams): Pr
 	const parsed = exportCommerceMlParamsSchema.parse(params);
 	const orgId = parsed.organizationId;
 	const { startDateIso, endDateIso } = parsed;
-	const startTimestamp = new Date(`${startDateIso}T00:00:00.000Z`);
-	const endTimestamp = new Date(`${endDateIso}T23:59:59.999Z`);
 	const cleanDate = startDateIso.replace(/-/g, "");
 
 	const coaOverrides = parsed.chartOfAccountsOverrides;
@@ -56,6 +55,13 @@ export async function buildCommerceMlPackage(params: ExportCommerceMlParams): Pr
 			.from(clinics)
 			.where(eq(clinics.organizationId, orgId))
 			.limit(1);
+
+		const clinicTimeZone = clinicRow?.timezone?.trim() || "Europe/Moscow";
+		const { fromDate: startTimestamp, toDate: endTimestamp } = resolvePeriodDateBoundsInTimeZone(
+			startDateIso,
+			endDateIso,
+			clinicTimeZone,
+		);
 
 		const [defaultWarehouse] = await tx
 			.select({ name: warehouses.name })
@@ -93,7 +99,7 @@ export async function buildCommerceMlPackage(params: ExportCommerceMlParams): Pr
 			fetchAndReconcileMedicalServices(tx, { orgId, startTimestamp, endTimestamp, cleanDate, startDateIso, prefix }),
 			fetchAndBuildWriteoffDocument(tx, { orgId, startTimestamp, endTimestamp, cleanDate, startDateIso, prefix, clinic, chartOfAccounts }),
 			parsed.includePayroll
-				? fetchAndBuildPayrollDocument(tx, { orgId, cleanDate, startDateIso, prefix, chartOfAccounts })
+				? fetchAndBuildPayrollDocument(tx, { orgId, cleanDate, startDateIso, endDateIso, prefix, chartOfAccounts })
 				: Promise.resolve(null),
 		]);
 

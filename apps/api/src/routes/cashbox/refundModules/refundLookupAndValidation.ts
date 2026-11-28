@@ -253,7 +253,13 @@ export async function lockAndValidateRefundTargets(
 						and(
 							eq(payments.organizationId, orgId),
 							eq(payments.documentId, linkedInvoice.id),
-							eq(payments.status, "paid"),
+							or(
+								eq(payments.status, "paid"),
+								and(
+									eq(payments.status, "refunded"),
+									sql`coalesce((${payments.fiscalReceipt}->>'refundedInPlace')::boolean, false) = true`,
+								),
+							),
 							or(sql`${payments.amountKopecks} > 0`, sql`${payments.amountRub} > 0`),
 						),
 					)
@@ -268,7 +274,14 @@ export async function lockAndValidateRefundTargets(
 						and(
 							eq(payments.organizationId, orgId),
 							eq(payments.documentId, linkedInvoice.id),
-							or(sql`${payments.amountKopecks} < 0`, sql`${payments.amountRub} < 0`),
+							or(
+								sql`${payments.amountKopecks} < 0`,
+								sql`${payments.amountRub} < 0`,
+								and(
+									eq(payments.status, "refunded"),
+									sql`coalesce((${payments.fiscalReceipt}->>'refundedInPlace')::boolean, false) = false`,
+								),
+							),
 						),
 					),
 			]);

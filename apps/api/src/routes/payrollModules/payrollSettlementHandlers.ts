@@ -4,10 +4,10 @@
  */
 
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { calculateDoctorPeriodPayroll, isValidUuid, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
-import { doctorCommissions, users } from "../../db/schema.js";
+import { users } from "../../db/schema.js";
 import { requirePayoutAccess } from "../billingRoutes/payoutAccessService.js";
 import {
 	closeSettlementPeriodInDb,
@@ -18,6 +18,13 @@ import {
 	fetchActiveDoctorProfiles,
 	fetchDoctorPayrollDataset,
 } from "../doctorPayrollDbQueries.js";
+import {
+	computePayrollPeriodKey,
+	resolveClinicTimeZone,
+	resolveDoctorCommissionContext,
+	resolveDoctorPayrollSettings,
+	resolvePeriodDateBoundsInTimeZone,
+} from "./payrollTypesAndQueries.js";
 import {
 	closeSettlementSchema,
 	reopenSettlementSchema,
@@ -79,11 +86,7 @@ export async function closeSettlementHandler(
 		reply.header("X-Idempotency-Key", idempotencyKey);
 	}
 
-	const fromDate = new Date(`${body.periodStart.slice(0, 10)}T00:00:00.000Z`);
-	const toDate = new Date(`${body.periodEnd.slice(0, 10)}T23:59:59.999Z`);
-	const periodKey = body.periodStart.slice(0, 7) === body.periodEnd.slice(0, 7)
-		? body.periodStart.slice(0, 7)
-		: `${body.periodStart.slice(0, 10)}..${body.periodEnd.slice(0, 10)}`;
+	const periodKey = computePayrollPeriodKey(body.periodStart, body.periodEnd);
 
 	if (body.doctorId === "all") {
 		const batchStatements: (NonNullable<Awaited<ReturnType<typeof closeSettlementPeriodInDb>>["statement"]> & {
@@ -93,8 +96,15 @@ export async function closeSettlementHandler(
 		let totalClosedAppts = 0;
 
 		await withTenantCtx(orgId, async (tx) => {
+			const clinicTimeZone = await resolveClinicTimeZone(tx, orgId);
+			const { fromDate, toDate } = resolvePeriodDateBoundsInTimeZone(
+				body.periodStart,
+				body.periodEnd,
+				clinicTimeZone,
+			);
 			const activeDoctors = await fetchActiveDoctorProfiles(orgId, tx);
 			for (const doc of activeDoctors) {
+				const commCtx = await resolveDoctorCommissionContext(tx, orgId, doc.id);
 				const { shiftsCount, completedServices, refundDeductions, unallocatedLabKop, priorDebtCarryOverKop } = await fetchDoctorPayrollDataset({
 					orgId,
 					resolvedDocId: doc.id,
@@ -105,6 +115,15 @@ export async function closeSettlementHandler(
 					tx,
 				});
 
+				const enrichedServices = completedServices.map((cs) => ({
+					...cs,
+					customCommissionPercent: commCtx.resolveServiceCommissionPercent(
+						cs.category,
+						cs.serviceNameRu,
+						cs.serviceCode,
+					),
+				}));
+
 				const docPayoutModel = doc.payoutModel as "percentage" | "chair_rental";
 				const isRental = docPayoutModel === "chair_rental";
 
@@ -114,8 +133,9 @@ export async function closeSettlementHandler(
 					specialtyId: doc.specialtyId,
 					periodStartIso: body.periodStart.slice(0, 10),
 					periodEndIso: body.periodEnd.slice(0, 10),
-					services: completedServices,
-					customBasePercentage: doc.commissionPercent,
+					services: enrichedServices,
+					customBasePercentage: commCtx.basePercent ?? doc.commissionPercent,
+					categoryRates: commCtx.categoryRatesMap,
 					payoutModel: docPayoutModel,
 					chairRentalKop: isRental ? shiftsCount * doc.defaultShiftRateKop : 0,
 					advancePayoutKop: 0,
@@ -229,11 +249,18 @@ export async function closeSettlementHandler(
 			: 0;
 
 	const responsePayload = await withTenantCtx(orgId, async (tx) => {
+		const clinicTimeZone = await resolveClinicTimeZone(tx, orgId);
+		const { fromDate, toDate } = resolvePeriodDateBoundsInTimeZone(
+			body.periodStart,
+			body.periodEnd,
+			clinicTimeZone,
+		);
 		const [docUser] = await tx
 			.select({
 				id: users.id,
 				fullName: users.fullName,
 				specialties: users.specialties,
+				uiPreferences: users.uiPreferences,
 			})
 			.from(users)
 			.where(and(eq(users.id, resolvedDocId), eq(users.organizationId, orgId)))
@@ -243,34 +270,18 @@ export async function closeSettlementHandler(
 		const specId = Array.isArray(docUser?.specialties) && docUser.specialties[0]
 			? String(docUser.specialties[0])
 			: "therapy";
-
-		const [activeComm] = await tx
-			.select({
-				commissionPct: doctorCommissions.commissionPct,
-				commissionPercent: doctorCommissions.commissionPercent,
-				materialCostDeductionPct: doctorCommissions.materialCostDeductionPct,
-				labCostDeductionPct: doctorCommissions.labCostDeductionPct,
-			})
-			.from(doctorCommissions)
-			.where(
-				and(
-					eq(doctorCommissions.organizationId, orgId),
-					or(
-						eq(doctorCommissions.userId, resolvedDocId),
-						eq(doctorCommissions.doctorId, resolvedDocId),
-					),
-					eq(doctorCommissions.isActive, true),
-				),
-			)
-			.orderBy(sql`${doctorCommissions.effectiveFrom} desc`)
-			.limit(1);
-
-		const docPayoutModel = (body.payoutModel ?? "percentage") as "percentage" | "chair_rental";
+		const doctorSettings = resolveDoctorPayrollSettings(docUser?.uiPreferences);
+		const commCtx = await resolveDoctorCommissionContext(
+			tx,
+			orgId,
+			resolvedDocId,
+			body.categoryPercent,
+		);
+		const docPayoutModel = body.payoutModel ?? doctorSettings.payoutModel;
 		const isRental = docPayoutModel === "chair_rental";
-		const dbCommPct = activeComm?.commissionPercent || activeComm?.commissionPct;
 		const resolvedPct = body.categoryPercent !== undefined
 			? body.categoryPercent
-			: (dbCommPct ? Number(dbCommPct) : 25);
+			: commCtx.basePercent;
 
 		const { shiftsCount, completedServices, refundDeductions, unallocatedLabKop, priorDebtCarryOverKop } = await fetchDoctorPayrollDataset({
 			orgId,
@@ -282,18 +293,28 @@ export async function closeSettlementHandler(
 			tx,
 		});
 
+		const enrichedServices = completedServices.map((cs) => ({
+			...cs,
+			customCommissionPercent: commCtx.resolveServiceCommissionPercent(
+				cs.category,
+				cs.serviceNameRu,
+				cs.serviceCode,
+			),
+		}));
+
 		const payrollResult = calculateDoctorPeriodPayroll({
 			doctorId: resolvedDocId,
 			doctorName,
 			specialtyId: specId,
 			periodStartIso: body.periodStart.slice(0, 10),
 			periodEndIso: body.periodEnd.slice(0, 10),
-			services: completedServices,
+			services: enrichedServices,
 			customBasePercentage: resolvedPct,
+			...(body.categoryPercent === undefined ? { categoryRates: commCtx.categoryRatesMap } : {}),
 			payoutModel: docPayoutModel,
-			chairRentalKop: isRental ? shiftsCount * 400000 : 0,
+			chairRentalKop: isRental ? shiftsCount * doctorSettings.defaultShiftRateKop : 0,
 			advancePayoutKop: 0,
-			taxRegime: "employee",
+			taxRegime: doctorSettings.taxRegime,
 			refundDeductions,
 			unallocatedLabKop,
 			identSalaryModel: body.identSalaryModel,
@@ -413,9 +434,7 @@ export async function reopenSettlementHandler(
 	if (!resolvedDocId) {
 		return reply.code(404).send({ error: "DoctorNotFoundError", message: "Врач не найден" });
 	}
-	const periodKey = body.periodStart.slice(0, 7) === body.periodEnd.slice(0, 7)
-		? body.periodStart.slice(0, 7)
-		: `${body.periodStart.slice(0, 10)}..${body.periodEnd.slice(0, 10)}`;
+	const periodKey = computePayrollPeriodKey(body.periodStart, body.periodEnd);
 
 	const reopened = await reopenSettlementPeriodInDb(orgId, resolvedDocId, periodKey);
 	if (!reopened) {

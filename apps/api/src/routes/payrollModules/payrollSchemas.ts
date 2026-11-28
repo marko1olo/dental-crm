@@ -63,7 +63,7 @@ export const closeSettlementSchema = z
 		serviceSalaryPriceKopecks: z.number().int().optional(),
 		bonusesTotalKopecks: z.number().int().optional(),
 		penaltiesTotalKopecks: z.number().int().optional(),
-		payoutModel: z.enum(["percentage", "chair_rental"]).optional().default("percentage"),
+		payoutModel: z.enum(["percentage", "chair_rental"]).optional(),
 		categoryPercent: z.number().optional(),
 		chairRentalKopecks: z.number().int().optional(),
 		chairRentalRub: z.number().optional(),

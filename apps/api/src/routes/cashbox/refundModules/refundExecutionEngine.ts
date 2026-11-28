@@ -23,6 +23,7 @@ import {
 	patientRelationships,
 	patients,
 	payments,
+	treatmentItems,
 	users,
 } from "../../../db/schema.js";
 import { withTenantCtx } from "../../../db/rls.js";
@@ -50,6 +51,7 @@ export async function executeCashRefundTransaction(
 		invoiceId,
 		paymentId,
 		patientId,
+		refundedItemIds,
 		cashierFullName,
 		effectiveMutationId,
 	} = params;
@@ -462,6 +464,10 @@ export async function executeCashRefundTransaction(
 					paidAt: new Date(),
 					fiscalReceiptNumber: refundReceiptNumber,
 					fiscalReceiptIssuedAt: null,
+					fiscalReceipt: {
+						operationType: "income_return",
+						...(refundedItemIds && refundedItemIds.length > 0 ? { refundedItemIds: [...refundedItemIds] } : {}),
+					},
 					payerFullName: resolvedCashierName,
 					note: (() => {
 						const baseNote =
@@ -522,6 +528,7 @@ export async function executeCashRefundTransaction(
 								patientId: effectivePatientId,
 								patientName,
 								invoiceId: linkedInvoice?.id || null,
+								refundedItemIds: refundedItemIds ? [...refundedItemIds] : [],
 								reasonText: reasonText || "Возврат денежных средств покупателю",
 							},
 							retryCount: 0,
@@ -533,6 +540,55 @@ export async function executeCashRefundTransaction(
 			}
 		}
 
+		// При полном возврате по исходному платежу переводим его в status = "refunded" с пометкой refundedInPlace,
+		// чтобы леджер/отчёты по потоку учитывали ровно отрицательную контр-строку без двойного списания.
+		if (effectivePayment && effectivePayment.status !== "refunded") {
+			const origFlow = classifyPaymentFlowRecord(effectivePayment, "ledger");
+			const origKop = origFlow.absKopecks;
+			if (origKop > 0n) {
+				const refTag = `[ref:${effectivePayment.id}]`;
+				const linkedRefundRows = await tx
+					.select({
+						amountKopecks: payments.amountKopecks,
+						amountRub: payments.amountRub,
+					})
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, orgId),
+							sql`${payments.note} like ${`%${refTag}%`}`,
+						),
+					);
+				let cumulativeRefundKop = 0n;
+				for (const r of linkedRefundRows) {
+					const rk =
+						r.amountKopecks !== null && r.amountKopecks !== 0n
+							? r.amountKopecks
+							: BigInt(rublesToKopecks(Number(r.amountRub ?? 0)));
+					cumulativeRefundKop += rk < 0n ? -rk : rk;
+				}
+				if (cumulativeRefundKop === 0n && refundPaymentId) {
+					cumulativeRefundKop = BigInt(refundKop);
+				}
+				if (cumulativeRefundKop >= origKop) {
+					await tx
+						.update(payments)
+						.set({
+							status: "refunded",
+							fiscalReceipt: sql`jsonb_set(coalesce(${payments.fiscalReceipt}, '{}'::jsonb), '{refundedInPlace}', 'true'::jsonb)`,
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(payments.id, effectivePayment.id),
+								eq(payments.organizationId, orgId),
+							),
+						);
+				}
+			}
+		}
+
+		let didFullItemRevert = false;
 		if (linkedInvoice) {
 			const invoiceTotalKop = resolveInvoiceTotalKopecks(linkedInvoice);
 			const invoicePayments = await tx
@@ -577,15 +633,33 @@ export async function executeCashRefundTransaction(
 				);
 
 			if (netPaidKop <= 0n && totalRefundedKop > 0n) {
+				didFullItemRevert = true;
 				await revertTreatmentItemsOnFullRefundTx(tx, orgId, {
 					invoiceId: linkedInvoice.id,
 					visitId: linkedPayment?.visitId || linkedInvoice.visitId || null,
 				});
 			}
 		} else if (linkedPayment?.visitId) {
+			didFullItemRevert = true;
 			await revertTreatmentItemsOnFullRefundTx(tx, orgId, {
 				visitId: linkedPayment.visitId,
 			});
+		}
+
+		if (!didFullItemRevert && refundedItemIds && refundedItemIds.length > 0) {
+			await tx
+				.update(treatmentItems)
+				.set({
+					status: "approved",
+					version: sql`${treatmentItems.version} + 1`,
+				})
+				.where(
+					and(
+						eq(treatmentItems.organizationId, orgId),
+						inArray(treatmentItems.id, [...refundedItemIds]),
+						eq(treatmentItems.status, "completed"),
+					),
+				);
 		}
 
 		if (!operation || !updatedBox) {

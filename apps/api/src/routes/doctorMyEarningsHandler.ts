@@ -29,6 +29,7 @@ import {
 import {
 	formatDateIsoInTimeZone,
 	resolveClinicTimeZone,
+	resolveDoctorPayrollSettings,
 	resolvePeriodDateBoundsInTimeZone,
 } from "./payrollModules/payrollTypesAndQueries.js";
 
@@ -116,6 +117,7 @@ export async function handleGetDoctorMyEarnings(
 				id: users.id,
 				fullName: users.fullName,
 				specialties: users.specialties,
+				uiPreferences: users.uiPreferences,
 			})
 			.from(users)
 			.where(and(eq(users.id, resolvedDocId), eq(users.organizationId, orgId)))
@@ -240,12 +242,18 @@ export async function handleGetDoctorMyEarnings(
 		};
 	});
 
+	const doctorSettings = resolveDoctorPayrollSettings(docUser?.uiPreferences);
 	const identSalaryModel: IdentSalaryModel = q.identSalaryModel ?? "net_proportional_discount";
 	const cashAdvancePolicy: CashAdvanceAllocationPolicy = q.cashAdvancePolicy ?? "proportional";
-	const resolvedPayoutModel: "percentage" | "chair_rental" = q.payoutModel ?? "percentage";
-	const resolvedChairRentalKop = resolvedPayoutModel === "chair_rental" ? (q.chairRentalKop ?? shiftsCount * 400000) : 0;
+	const resolvedPayoutModel: "percentage" | "chair_rental" =
+		q.payoutModel ?? doctorSettings.payoutModel;
+	const resolvedChairRentalKop =
+		resolvedPayoutModel === "chair_rental"
+			? (q.chairRentalKop ?? shiftsCount * doctorSettings.defaultShiftRateKop)
+			: 0;
 	const resolvedTaxRegime: "employee" | "self_employed" =
-		q.taxRegime ?? (resolvedPayoutModel === "chair_rental" ? "self_employed" : "employee");
+		q.taxRegime ??
+		(q.payoutModel ? (resolvedPayoutModel === "chair_rental" ? "self_employed" : "employee") : doctorSettings.taxRegime);
 
 	const payrollResult = calculateDoctorPeriodPayroll({
 		doctorId: resolvedDocId,
@@ -536,6 +544,9 @@ export async function handleGetDoctorMyEarnings(
 		totalLabDeductionsKop,
 		totalMaterialDeductionsRub: kopecksToRubles(totalMaterialDeductionsKop),
 		totalMaterialDeductionsKop,
+		unallocatedLabKop: unallocatedLabKop ?? 0,
+		totalRefundClawbackKop: payrollResult.totalRefundClawbackKop ?? 0,
+		refundDeductionsCount: refundDeductions.length,
 		netBaseRevenueRub: kopecksToRubles(netBaseRevenueKop),
 		netBaseRevenueKop,
 		totalDoctorEarnedRub: kopecksToRubles(totalDoctorEarnedKop),

@@ -15,8 +15,7 @@ import React from "react";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
-import fs from "node:fs";
-import path from "node:path";
+import { TelephonyPopoverDialer } from "../../telephony/headerCapsule/TelephonyPopoverDialer.js";
 import { validate54FzBuyerInn } from "../cashboxInnValidation.js";
 import {
 	calculateCashChange,
@@ -29,40 +28,19 @@ import { InvoicesView, type BillingInvoice } from "../../billing/InvoicesView.js
 
 describe("Solo Doctor & Friction Killer Autonomy Suite (Wave 40 / Mandates 8e, 8k, 8n)", () => {
 	describe("1. Telephony Autonomy (Mandate 8e: Non-blocking call button)", () => {
-		it("TelephonySoftphonePopover and TelephonyPopoverDialer have no disabled call button and wire dialInputRef focus", () => {
-			const popoverPath = fs.existsSync(path.resolve(process.cwd(), "src/components/telephony/headerCapsule/TelephonySoftphonePopover.tsx"))
-				? path.resolve(process.cwd(), "src/components/telephony/headerCapsule/TelephonySoftphonePopover.tsx")
-				: path.resolve(process.cwd(), "apps/web/src/components/telephony/headerCapsule/TelephonySoftphonePopover.tsx");
-			const dialerPath = fs.existsSync(path.resolve(process.cwd(), "src/components/telephony/headerCapsule/TelephonyPopoverDialer.tsx"))
-				? path.resolve(process.cwd(), "src/components/telephony/headerCapsule/TelephonyPopoverDialer.tsx")
-				: path.resolve(process.cwd(), "apps/web/src/components/telephony/headerCapsule/TelephonyPopoverDialer.tsx");
-			const code = fs.readFileSync(popoverPath, "utf-8") + "\n" + fs.readFileSync(dialerPath, "utf-8");
-
-			// Verify dialInputRef is declared and attached
-			assert.ok(
-				code.includes("dialInputRef = useRef<HTMLInputElement | null>(null)"),
-				"Must declare dialInputRef",
-			);
-			assert.ok(
-				code.includes("ref={dialInputRef}") || code.includes("dialInputRef={dialInputRef}"),
-				"Must attach dialInputRef to dialer input",
+		it("TelephonyPopoverDialer renders unlocked primary call button even with empty dialNumber", () => {
+			const html = renderToString(
+				<TelephonyPopoverDialer
+					dialNumber=""
+					onDialNumberChange={() => {}}
+					onStartCall={() => {}}
+					dialInputRef={React.createRef<HTMLInputElement>()}
+				/>,
 			);
 
-			// Verify handleStartOutgoingCall focuses input and shows toast on empty number
-			assert.ok(
-				code.includes("dialInputRef.current?.focus()"),
-				"Must focus dial input on empty call attempt",
-			);
-			assert.ok(
-				code.includes('showToast("Введите номер телефона для набора", "warning")'),
-				"Must show soft toast warning instead of blocking button",
-			);
-
-			// Verify call button does NOT have disabled={!dialNumber.trim()}
-			assert.ok(
-				!code.includes("disabled={!dialNumber.trim()}"),
-				"Call button must NEVER be disabled on empty dialNumber",
-			);
+			assert.ok(html.includes('data-testid="btn-start-outgoing-call"'));
+			assert.ok(html.includes('aria-label="Номер телефона для набора"'));
+			assert.ok(!html.includes("disabled"), "Outgoing call button must never be disabled on empty number");
 		});
 	});
 

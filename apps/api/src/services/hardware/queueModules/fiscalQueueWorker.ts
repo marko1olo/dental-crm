@@ -6,7 +6,7 @@
 import { randomInt } from "node:crypto";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withSavepoint, withTenantCtx } from "../../../db/rls.js";
 import { fiscalReceiptQueue, payments } from "../../../db/schema.js";
 import { LanKktDriverService } from "../lanKktDriverService.js";
 import type { KktDeviceStatus, KktLanConfig, KktPrintResult } from "../types.js";
@@ -324,21 +324,28 @@ export class FiscalQueueRetryWorker {
 			);
 			if (targetPaymentIds.length > 0) {
 				try {
-					await targetDb
-						.update(payments)
-						.set({
-							fiscalReceiptNumber: printResult.fiscalDocumentNumber ?? null,
-							fiscalReceiptIssuedAt: printResult.receiptIssuedAt,
-							fiscalReceiptUrl: printResult.ofdVerificationUrl ?? null,
-							fiscalReceipt: buildFiscalReceiptDetails(payload, printResult),
-							updatedAt: now,
-						})
-						.where(
-							and(
-								inArray(payments.id, targetPaymentIds),
-								eq(payments.organizationId, organizationId),
-							),
-						);
+					const runPaySync = async (syncTx: typeof targetDb) => {
+						await syncTx
+							.update(payments)
+							.set({
+								fiscalReceiptNumber: printResult.fiscalDocumentNumber ?? null,
+								fiscalReceiptIssuedAt: printResult.receiptIssuedAt,
+								fiscalReceiptUrl: printResult.ofdVerificationUrl ?? null,
+								fiscalReceipt: buildFiscalReceiptDetails(payload, printResult),
+								updatedAt: now,
+							})
+							.where(
+								and(
+									inArray(payments.id, targetPaymentIds),
+									eq(payments.organizationId, organizationId),
+								),
+							);
+					};
+					if (tx) {
+						await withSavepoint(tx, runPaySync);
+					} else {
+						await runPaySync(targetDb);
+					}
 				} catch (paySyncErr) {
 					FiscalQueueRetryWorker.logger?.warn(
 						{ paySyncErr, paymentIds: targetPaymentIds },
@@ -360,6 +367,7 @@ export class FiscalQueueRetryWorker {
 	public static async flushOrganizationQueue(
 		organizationId: string,
 		config?: Partial<KktLanConfig>,
+		options?: { ignoreBackoff?: boolean | undefined },
 	): Promise<{
 		totalProcessed: number;
 		printedCount: number;
@@ -420,7 +428,7 @@ export class FiscalQueueRetryWorker {
 				(row) =>
 					(row.retryCount ?? 0) < MAX_FISCAL_RETRIES &&
 					!isFreshPrinting(row, claimTime.getTime()) &&
-					isNextRetryDue(row.payloadJson, claimTime.getTime()),
+					(options?.ignoreBackoff || isNextRetryDue(row.payloadJson, claimTime.getTime())),
 			);
 			if (eligible.length === 0) {
 				return [];
@@ -568,21 +576,28 @@ export class FiscalQueueRetryWorker {
 					);
 					if (targetPaymentIds.length > 0) {
 						try {
-							await targetDb
-								.update(payments)
-								.set({
-									fiscalReceiptNumber: printResult.fiscalDocumentNumber ?? null,
-									fiscalReceiptIssuedAt: printResult.receiptIssuedAt,
-									fiscalReceiptUrl: printResult.ofdVerificationUrl ?? null,
-									fiscalReceipt: buildFiscalReceiptDetails(payload, printResult),
-									updatedAt: now,
-								})
-								.where(
-									and(
-										inArray(payments.id, targetPaymentIds),
-										eq(payments.organizationId, organizationId),
-									),
-								);
+							const runBatchPaySync = async (syncTx: typeof targetDb) => {
+								await syncTx
+									.update(payments)
+									.set({
+										fiscalReceiptNumber: printResult.fiscalDocumentNumber ?? null,
+										fiscalReceiptIssuedAt: printResult.receiptIssuedAt,
+										fiscalReceiptUrl: printResult.ofdVerificationUrl ?? null,
+										fiscalReceipt: buildFiscalReceiptDetails(payload, printResult),
+										updatedAt: now,
+									})
+									.where(
+										and(
+											inArray(payments.id, targetPaymentIds),
+											eq(payments.organizationId, organizationId),
+										),
+									);
+							};
+							if (tx) {
+								await withSavepoint(tx, runBatchPaySync);
+							} else {
+								await runBatchPaySync(targetDb);
+							}
 						} catch (paySyncErr) {
 							FiscalQueueRetryWorker.logger?.warn(
 								{ paySyncErr, paymentIds: targetPaymentIds },

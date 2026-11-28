@@ -12,6 +12,7 @@ import {
 	calculateDoctorPayrollSummary,
 } from "./payrollCatalogData";
 import { generateUuidV7, rublesToKopecks, type CashAdvanceAllocationPolicy, type IdentSalaryModel } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import {
 	printDoctorPayslip,
 	copyPayslipToClipboard,
@@ -112,17 +113,19 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 		if (!isDemo) {
 			try {
 				const idempotencyKey = generateUuidV7();
+				const nowLocal = new Date();
+				const localExpenseDate = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, "0")}-${String(nowLocal.getDate()).padStart(2, "0")}`;
 				const res = await fetch("/api/expenses", {
 					method: "POST",
-					headers: {
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": idempotencyKey,
 						"X-Idempotency-Key": idempotencyKey,
-					},
+					}),
 					body: JSON.stringify({
 						category: "salaries",
 						amountKopecks: rublesToKopecks(advanceIncrement),
-						expenseDate: new Date().toISOString().slice(0, 10),
+						expenseDate: localExpenseDate,
 						description: `Аванс врачу: ${doctor.name}`,
 						paymentMethod: "cash",
 					}),
@@ -281,7 +284,7 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 							<tr><td colSpan={9} className="py-6 text-center text-[var(--muted)]">Нет закрытых нарядов за выбранный период</td></tr>
 						) : (
 							doctorOrders.map((ord) => {
-								const { netBase, fee } = calculateOrderNetAndFee(ord, doctor, customPercent);
+								const { netBase, fee } = calculateOrderNetAndFee(ord, doctor, customPercent, identSalaryModel, cashAdvancePolicy);
 								return (
 									<tr key={ord.id}>
 										<td className="font-mono font-medium"><div>{ord.orderNumber}</div><div className="text-[10px] text-[var(--muted)]">{ord.dateIso}</div></td>
@@ -305,7 +308,7 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 					<div className="py-6 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">Нет закрытых нарядов за выбранный период</div>
 				) : (
 					doctorOrders.map((ord) => {
-						const { netBase, fee } = calculateOrderNetAndFee(ord, doctor, customPercent);
+						const { netBase, fee } = calculateOrderNetAndFee(ord, doctor, customPercent, identSalaryModel, cashAdvancePolicy);
 						return (
 							<div key={ord.id} className="payroll-studio-mobile-card">
 								<div className="payroll-studio-mobile-card-row"><div><div className="font-bold text-xs text-[var(--ink)]">{ord.patientName}</div><div className="text-[11px] text-[var(--muted)]">{ord.serviceNameRu}</div></div><span className="font-bold text-xs text-[var(--primary)]">{rub(fee)}</span></div>

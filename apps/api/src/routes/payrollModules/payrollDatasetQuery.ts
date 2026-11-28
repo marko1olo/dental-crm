@@ -3,7 +3,7 @@
  * Decomposed in modular refactoring.
  */
 
-import { and, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import {
 	appointments,
@@ -238,11 +238,11 @@ export async function fetchDoctorPayrollDataset(params: {
 		const visitIds = clinicVisits.map((v) => v.id);
 		const visitToAppt = new Map(clinicVisits.map((v) => [v.id, v.appointmentId]));
 
-		// (status = 'paid')
+		// (status = 'paid', включая оплаты через documentId -> patient_invoices.visit_id когда payments.visit_id IS NULL)
 		const paidVisitRows = visitIds.length > 0
 			? await dbClient
 				.select({
-					visitId: payments.visitId,
+					resolvedVisitId: sql<string | null>`coalesce(${payments.visitId}, ${patientInvoices.visitId})`,
 					status: payments.status,
 					amountRub: payments.amountRub,
 					amountKopecks: payments.amountKopecks,
@@ -250,10 +250,14 @@ export async function fetchDoctorPayrollDataset(params: {
 					fiscalReceipt: payments.fiscalReceipt,
 				})
 				.from(payments)
+				.leftJoin(
+					patientInvoices,
+					and(eq(payments.documentId, patientInvoices.id), eq(patientInvoices.organizationId, orgId)),
+				)
 				.where(
 					and(
 						eq(payments.organizationId, orgId),
-						inArray(payments.visitId, visitIds),
+						inArray(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`, visitIds),
 						inArray(payments.status, ["paid", "refunded"]),
 					),
 				)
@@ -262,12 +266,15 @@ export async function fetchDoctorPayrollDataset(params: {
 		const paidKopBigByVisit = new Map<string, bigint>();
 		const fiscalReceiptByVisit = new Map<string, string>();
 		for (const p of paidVisitRows) {
-			if (!p.visitId) continue;
+			if (!p.resolvedVisitId) continue;
 			const flow = classifyPaymentFlowRecord(p, "flow");
 			if (flow.kind !== "payment" || flow.absKopecks <= 0n) continue;
-			paidKopBigByVisit.set(p.visitId, (paidKopBigByVisit.get(p.visitId) ?? 0n) + flow.absKopecks);
-			if (p.fiscalReceiptNumber && !fiscalReceiptByVisit.has(p.visitId)) {
-				fiscalReceiptByVisit.set(p.visitId, p.fiscalReceiptNumber);
+			paidKopBigByVisit.set(
+				p.resolvedVisitId,
+				(paidKopBigByVisit.get(p.resolvedVisitId) ?? 0n) + flow.absKopecks,
+			);
+			if (p.fiscalReceiptNumber && !fiscalReceiptByVisit.has(p.resolvedVisitId)) {
+				fiscalReceiptByVisit.set(p.resolvedVisitId, p.fiscalReceiptNumber);
 			}
 		}
 		const paidKopByVisit = new Map<string, number>();
@@ -392,20 +399,30 @@ export async function fetchDoctorPayrollDataset(params: {
 			const currentMonthKey = fromStr.slice(0, 7);
 			const currentExactKey = `${fromStr.slice(0, 10)}..${toStr.slice(0, 10)}`;
 			const closedRanges: { start: number; end: number }[] = [];
+			const sortedClosed = [...closedStatements].sort((a, b) => {
+				const endA = parseClosedPeriodRange(a.period)?.end.getTime() ?? new Date(a.createdAt).getTime();
+				const endB = parseClosedPeriodRange(b.period)?.end.getTime() ?? new Date(b.createdAt).getTime();
+				if (endB !== endA) return endB - endA;
+				return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+			});
 			let foundLatestPrior = false;
 
-			for (const cs of closedStatements) {
+			for (const cs of sortedClosed) {
 				if (cs.period === currentMonthKey || cs.period === currentExactKey) {
 					continue;
 				}
-				if (!foundLatestPrior && cs.period < currentMonthKey) {
+				const parsed = parseClosedPeriodRange(cs.period);
+				if (
+					!foundLatestPrior &&
+					parsed &&
+					parsed.end.getTime() < fromDate.getTime()
+				) {
 					foundLatestPrior = true;
 					const priorPayoutKop = Number(cs.netPayoutKopecks ?? 0);
 					if (priorPayoutKop < 0) {
 						priorDebtCarryOverKop = Math.abs(priorPayoutKop);
 					}
 				}
-				const parsed = parseClosedPeriodRange(cs.period);
 				if (parsed) {
 					closedRanges.push({
 						start: parsed.start.getTime(),
@@ -473,9 +490,10 @@ export async function fetchDoctorPayrollDataset(params: {
 						]),
 					),
 				)
+				.orderBy(asc(inventoryTransactions.createdAt), asc(inventoryTransactions.id))
 			: [];
 
-		const matCostByVisit = new Map<string, number>();
+		const rawMatCostByVisit = new Map<string, number>();
 		for (const inv of invDeductions) {
 			if (!inv.visitId || inv.isOverhead) continue;
 			const unitCostKop =
@@ -486,10 +504,14 @@ export async function fetchDoctorPayrollDataset(params: {
 			const absQty = Math.abs(Number(rawQty || 0));
 			const cKop = unitCostKop > 0 && absQty > 0 ? multiplyKopecksFractional(unitCostKop, absQty) : 0;
 			const signedKop = inv.transactionType === "storno" ? -cKop : cKop;
-			matCostByVisit.set(
+			rawMatCostByVisit.set(
 				inv.visitId,
-				Math.max(0, (matCostByVisit.get(inv.visitId) || 0) + signedKop),
+				(rawMatCostByVisit.get(inv.visitId) || 0) + signedKop,
 			);
+		}
+		const matCostByVisit = new Map<string, number>();
+		for (const [visitId, totalKop] of rawMatCostByVisit.entries()) {
+			matCostByVisit.set(visitId, Math.max(0, totalKop));
 		}
 
 		// Детерминированное пропорциональное распределение затрат материалов по услугам визита

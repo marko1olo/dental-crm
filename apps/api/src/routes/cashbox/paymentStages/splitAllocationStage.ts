@@ -209,6 +209,8 @@ export async function processSplitAllocationStage(
 		}
 
 		if (requiredDepositKopecks > 0n) {
+			const isPersonalAdvanceSpend =
+				ctx.isPersonalDepositSpend || !ctx.lockedFamilyGroup;
 			const [dp] = await tx
 				.insert(payments)
 				.values({
@@ -219,18 +221,41 @@ export async function processSplitAllocationStage(
 					clientMutationId: effectiveMutationId ? `${effectiveMutationId}:deposit` : null,
 					amountRub: kopecksToRubles(Number(requiredDepositKopecks)),
 					amountKopecks: requiredDepositKopecks,
-					method: "family_wallet",
+					method: isPersonalAdvanceSpend ? "other" : "family_wallet",
 					status: "paid",
 					paidAt: new Date(),
 					fiscalReceiptNumber: receiptNumber,
 					fiscalReceiptIssuedAt: issuedAt,
+					fiscalReceipt: isPersonalAdvanceSpend
+						? {
+								operationType: "income" as const,
+								calculationMethod: "advance_offset" as const,
+								calculationSubject: "payment" as const,
+								advancePaymentRub: kopecksToRubles(Number(requiredDepositKopecks)),
+								advanceOffsetKopecks: Number(requiredDepositKopecks),
+								depositKopecks: Number(requiredDepositKopecks),
+								isPersonalAdvanceOffset: true,
+							}
+						: {
+								operationType: "income" as const,
+								calculationMethod: "full_payment" as const,
+								calculationSubject: "payment" as const,
+								advancePaymentRub: kopecksToRubles(Number(requiredDepositKopecks)),
+								advanceOffsetKopecks: Number(requiredDepositKopecks),
+								depositKopecks: Number(requiredDepositKopecks),
+								isFamilyWallet: true,
+							},
 					payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
 					payerInn: body.payerInn || body.buyerInn || null,
 					payerBirthDate: body.payerBirthDate || null,
 					payerIdentityDocument: body.payerIdentityDocument || null,
 					payerRelationship: body.payerRelationship || null,
 					taxDeductionCode: effectiveTaxCode,
-					note: body.note ? `${body.note} (депозит)` : "Сплит-оплата (депозит)",
+					note: body.note
+						? `${body.note} (${isPersonalAdvanceSpend ? "личный аванс" : "депозит"})`
+						: isPersonalAdvanceSpend
+							? "Сплит-оплата (личный аванс)"
+							: "Сплит-оплата (семейный депозит)",
 				})
 				.returning();
 			depositPayment = dp;
@@ -380,6 +405,41 @@ export async function processSplitAllocationStage(
 					: ""
 			: "";
 
+		const rawMethod = body.method?.trim().toLowerCase();
+		const singleMethod = normalizePaymentMethod(body.method);
+		const isSinglePersonalAdvanceOffset =
+			(rawMethod === "deposit" || singleMethod === "family_wallet" || (requiredDepositKopecks > 0n && !ctx.lockedFamilyGroup)) &&
+			Boolean(ctx.isPersonalDepositSpend);
+		const effectiveSingleMethod = isSinglePersonalAdvanceOffset ? "other" : singleMethod;
+		const singleFiscalReceipt = isSinglePersonalAdvanceOffset
+			? {
+					operationType: "income" as const,
+					calculationMethod: "advance_offset" as const,
+					calculationSubject: "payment" as const,
+					advancePaymentRub: effectiveSingleAmountRub,
+					advanceOffsetKopecks: Number(effectiveSingleAmountKop),
+					depositKopecks: Number(effectiveSingleAmountKop),
+					isPersonalAdvanceOffset: true,
+				}
+			: body.isAdvanceDeposit && !body.familyGroupId
+				? {
+						operationType: "income" as const,
+						calculationMethod: "advance" as const,
+						calculationSubject: "payment" as const,
+						isPersonalAdvanceTopup: true,
+					}
+				: ctx.lockedFamilyGroup && requiredDepositKopecks > 0n
+					? {
+							operationType: "income" as const,
+							calculationMethod: "full_payment" as const,
+							calculationSubject: "payment" as const,
+							advancePaymentRub: kopecksToRubles(Number(requiredDepositKopecks)),
+							advanceOffsetKopecks: Number(requiredDepositKopecks),
+							depositKopecks: Number(requiredDepositKopecks),
+							isFamilyWallet: true,
+						}
+					: null;
+
 		const [np] = await tx
 			.insert(payments)
 			.values({
@@ -390,11 +450,12 @@ export async function processSplitAllocationStage(
 				clientMutationId: effectiveMutationId,
 				amountRub: effectiveSingleAmountRub,
 				amountKopecks: effectiveSingleAmountKop,
-				method: normalizePaymentMethod(body.method),
+				method: effectiveSingleMethod,
 				status: "paid",
 				paidAt: new Date(),
 				fiscalReceiptNumber: receiptNumber,
 				fiscalReceiptIssuedAt: issuedAt,
+				fiscalReceipt: singleFiscalReceipt,
 				payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
 				payerInn: body.payerInn || body.buyerInn || null,
 				payerBirthDate: body.payerBirthDate || null,

@@ -202,6 +202,53 @@ export async function calculateShiftTenderTotals(
 	const isAccountBox = boxType === "account";
 	const isExpensesBox = boxType === "expenses";
 
+	// В соло-клинике (1-3 кресла), когда открыта только смена main и нет конкурирующих смен cashless/sbp/dms,
+	// безналичные платежи (карта, СБП, зачёт аванса, ДМС) не должны теряться из Z-отчёта.
+	let absorbCashlessInMain = false;
+	let absorbSbpInMain = false;
+	let absorbDmsInMain = false;
+	if (isMainBox) {
+		const [openShiftsRes, orgBoxesRes] = await Promise.all([
+			tx
+				.select({
+					cashBoxId: cashBoxShifts.cashBoxId,
+				})
+				.from(cashBoxShifts)
+				.where(
+					and(
+						eq(cashBoxShifts.organizationId, orgId),
+						eq(cashBoxShifts.status, "open"),
+					),
+				),
+			tx
+				.select({
+					id: cashBoxes.id,
+					type: cashBoxes.type,
+					isCashless: cashBoxes.isCashless,
+				})
+				.from(cashBoxes)
+				.where(eq(cashBoxes.organizationId, orgId)),
+		]);
+		const boxById = new Map(
+			(Array.isArray(orgBoxesRes) ? orgBoxesRes : []).map((b) => [b.id, b]),
+		);
+		const otherShifts = (Array.isArray(openShiftsRes) ? openShiftsRes : []).filter(
+			(s) => s.cashBoxId !== shift.cashBoxId,
+		);
+		const hasDedicatedCashless = otherShifts.some((s) => {
+			const b = boxById.get(s.cashBoxId);
+			return b?.type === "cashless" || b?.isCashless === true;
+		});
+		const hasDedicatedSbp = otherShifts.some((s) => {
+			const b = boxById.get(s.cashBoxId);
+			return b?.type === "sbp" || b?.type === "cashless" || b?.isCashless === true;
+		});
+		const hasDedicatedDms = otherShifts.some((s) => boxById.get(s.cashBoxId)?.type === "dms");
+		absorbCashlessInMain = !hasDedicatedCashless;
+		absorbSbpInMain = !hasDedicatedSbp;
+		absorbDmsInMain = !hasDedicatedDms;
+	}
+
 	let cashKop = 0;
 	let cardKop = 0;
 	let sbpKop = 0;
@@ -270,10 +317,9 @@ export async function calculateShiftTenderTotals(
 			if (isAdvanceDepositPayment) {
 				if (
 					(canonicalTender === "cash" && isMainBox) ||
-					(canonicalTender === "sbp" && isCashlessBox) ||
+					(canonicalTender === "sbp" && (isCashlessBox || absorbSbpInMain)) ||
 					((canonicalTender === "card" || canonicalTender === "bank_transfer") &&
-						isCashlessBox &&
-						!isSbpBox) ||
+						((isCashlessBox && !isSbpBox) || absorbCashlessInMain)) ||
 					(isExtraBox && attributedBoxId === shift.cashBoxId)
 				) {
 					advanceDepositTotalKop += amtKop;
@@ -286,7 +332,7 @@ export async function calculateShiftTenderTotals(
 
 			if (isAdvanceOffsetPayment) {
 				// Зачёт аванса учитывается в безналичном/основном отчёте реализации, не дублируя кассу
-				if (isCashlessBox && !isSbpBox) {
+				if ((isCashlessBox && !isSbpBox) || absorbCashlessInMain) {
 					advanceKop += amtKop;
 				}
 			} else if (canonicalTender === "cash") {
@@ -295,23 +341,23 @@ export async function calculateShiftTenderTotals(
 					cashKop += amtKop;
 				}
 			} else if (canonicalTender === "sbp") {
-				// Безналичные СБП учитываются в кассе СБП / безналичной кассе
-				if (isCashlessBox) {
+				// Безналичные СБП учитываются в кассе СБП / безналичной кассе (или main в соло-режиме)
+				if (isCashlessBox || absorbSbpInMain) {
 					sbpKop += amtKop;
 				}
 			} else if (canonicalTender === "insurance") {
-				// Страховые выплаты ДМС учитываются в кассе ДМС
-				if (isDmsBox) {
+				// Страховые выплаты ДМС учитываются в кассе ДМС (или main в соло-режиме)
+				if (isDmsBox || absorbDmsInMain) {
 					insuranceKop += amtKop;
 				}
 			} else if (canonicalTender === "bank_transfer") {
 				// Банковский перевод на р/с
-				if (isAccountBox || (isCashlessBox && !isSbpBox)) {
+				if (isAccountBox || (isCashlessBox && !isSbpBox) || absorbCashlessInMain) {
 					cardKop += amtKop;
 				}
 			} else {
 				// Эквайринг карты / прочие электронные платежи
-				if (isCashlessBox && !isSbpBox) {
+				if ((isCashlessBox && !isSbpBox) || absorbCashlessInMain) {
 					cardKop += amtKop;
 				}
 			}
@@ -545,6 +591,10 @@ export async function reconcileSingleShift(
 
 	const finalBalanceRub = boxBalanceRubSafe;
 
+	const combinedExpenseRub = kopecksToRub(
+		rubToKopecks(returnTotalRub) + rubToKopecks(calculatedTotals.operationalExpenseRub),
+	);
+
 	const zReportData = buildZReportDataPayload({
 		now,
 		cashierFullName: input.cashierFullName ?? null,
@@ -554,7 +604,7 @@ export async function reconcileSingleShift(
 			netRevenueRub + returnTotalRub > 0
 				? kopecksToRub(rubToKopecks(netRevenueRub) + rubToKopecks(returnTotalRub))
 				: shift.incomeTotalRub,
-		expenseTotalRub: returnTotalRub > 0 ? returnTotalRub : shift.expenseTotalRub,
+		expenseTotalRub: combinedExpenseRub > 0 ? combinedExpenseRub : shift.expenseTotalRub,
 		countedCashRub,
 		incomeCashRub,
 		incomeElectronicRub,

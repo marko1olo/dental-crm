@@ -4,10 +4,10 @@
  */
 
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { calculateDoctorPeriodPayroll, rublesToKopecks } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
-import { doctorCommissions, users } from "../../db/schema.js";
+import { users } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { roleHasPermission } from "../../security/permissions.js";
 import { requirePayoutAccess } from "../billingRoutes/payoutAccessService.js";
@@ -22,6 +22,8 @@ import {
 import {
 	formatDateIsoInTimeZone,
 	resolveClinicTimeZone,
+	resolveDoctorCommissionContext,
+	resolveDoctorPayrollSettings,
 	resolvePeriodDateBoundsInTimeZone,
 } from "./payrollTypesAndQueries.js";
 import {
@@ -135,6 +137,17 @@ export async function getPayrollCalculationsHandler(
 			const doctorSummaries: Record<string, unknown> = {};
 
 			for (const doc of activeDoctors) {
+				const rawOverridePct =
+					q.commissionPercent !== undefined
+						? Number(q.commissionPercent)
+						: q.percent !== undefined
+							? Number(q.percent)
+							: undefined;
+				const overridePct =
+					rawOverridePct !== undefined && !Number.isNaN(rawOverridePct)
+						? rawOverridePct
+						: undefined;
+				const commCtx = await resolveDoctorCommissionContext(tx, orgId, doc.id, overridePct);
 				const { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop, priorDebtCarryOverKop } = await fetchDoctorPayrollDataset({
 					orgId,
 					resolvedDocId: doc.id,
@@ -145,6 +158,15 @@ export async function getPayrollCalculationsHandler(
 					tx,
 				});
 
+				const enrichedServices = completedServices.map((cs) => ({
+					...cs,
+					customCommissionPercent: commCtx.resolveServiceCommissionPercent(
+						cs.category,
+						cs.serviceNameRu,
+						cs.serviceCode,
+					),
+				}));
+
 				const docPayoutModel = doc.payoutModel as "percentage" | "chair_rental";
 				const isRental = docPayoutModel === "chair_rental";
 
@@ -154,13 +176,9 @@ export async function getPayrollCalculationsHandler(
 					specialtyId: doc.specialtyId,
 					periodStartIso: fromStr.slice(0, 10),
 					periodEndIso: toStr.slice(0, 10),
-					services: completedServices,
-					customBasePercentage:
-						q.commissionPercent !== undefined
-							? Number(q.commissionPercent)
-							: q.percent !== undefined
-								? Number(q.percent)
-								: doc.commissionPercent,
+					services: enrichedServices,
+					customBasePercentage: overridePct ?? commCtx.basePercent ?? doc.commissionPercent,
+					...(overridePct === undefined ? { categoryRates: commCtx.categoryRatesMap } : {}),
 					payoutModel: docPayoutModel,
 					chairRentalKop: isRental ? shiftsCount * doc.defaultShiftRateKop : 0,
 					advancePayoutKop: 0,
@@ -272,6 +290,7 @@ export async function getPayrollCalculationsHandler(
 				id: users.id,
 				fullName: users.fullName,
 				specialties: users.specialties,
+				uiPreferences: users.uiPreferences,
 			})
 			.from(users)
 			.where(and(eq(users.id, resolvedDocId), eq(users.organizationId, orgId)))
@@ -281,31 +300,27 @@ export async function getPayrollCalculationsHandler(
 		const specId = Array.isArray(docUser?.specialties) && docUser.specialties[0]
 			? String(docUser.specialties[0])
 			: "therapy";
-
-		const [activeComm] = await tx
-			.select({
-				commissionPct: doctorCommissions.commissionPct,
-				commissionPercent: doctorCommissions.commissionPercent,
-				materialDeductionPct: doctorCommissions.materialCostDeductionPct,
-				labDeductionPct: doctorCommissions.labCostDeductionPct,
-			})
-			.from(doctorCommissions)
-			.where(
-				and(
-					eq(doctorCommissions.organizationId, orgId),
-					or(
-						eq(doctorCommissions.userId, resolvedDocId),
-						eq(doctorCommissions.doctorId, resolvedDocId),
-					),
-					eq(doctorCommissions.isActive, true),
-				),
-			)
-			.orderBy(sql`${doctorCommissions.effectiveFrom} desc`)
-			.limit(1);
-
-		const resolvedPct = activeComm?.commissionPercent || activeComm?.commissionPct;
-		const customRate = q.commissionPercent !== undefined ? Number(q.commissionPercent) : (q.percent !== undefined ? Number(q.percent) : undefined);
-		const basePercent = customRate !== undefined && !Number.isNaN(customRate) ? customRate : (resolvedPct ? Number(resolvedPct) : 25);
+		const doctorSettings = resolveDoctorPayrollSettings(docUser?.uiPreferences);
+		const customRate =
+			q.commissionPercent !== undefined
+				? Number(q.commissionPercent)
+				: q.percent !== undefined
+					? Number(q.percent)
+					: undefined;
+		const validCustomRate =
+			customRate !== undefined && !Number.isNaN(customRate) ? customRate : undefined;
+		const commCtx = await resolveDoctorCommissionContext(
+			tx,
+			orgId,
+			resolvedDocId,
+			validCustomRate,
+		);
+		const resolvedPayoutModel = q.payoutModel ?? doctorSettings.payoutModel;
+		const resolvedTaxRegime = q.taxRegime ?? doctorSettings.taxRegime;
+		const resolvedShiftRateKop =
+			q.shiftRateKop !== undefined && Number.isFinite(Number(q.shiftRateKop))
+				? Number(q.shiftRateKop)
+				: doctorSettings.defaultShiftRateKop;
 
 		const { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop, priorDebtCarryOverKop } = await fetchDoctorPayrollDataset({
 			orgId,
@@ -317,25 +332,35 @@ export async function getPayrollCalculationsHandler(
 			tx,
 		});
 
+		const enrichedServices = completedServices.map((cs) => ({
+			...cs,
+			customCommissionPercent: commCtx.resolveServiceCommissionPercent(
+				cs.category,
+				cs.serviceNameRu,
+				cs.serviceCode,
+			),
+		}));
+
 		const payrollResult = calculateDoctorPeriodPayroll({
 			doctorId: resolvedDocId,
 			doctorName,
 			specialtyId: specId,
 			periodStartIso: fromStr.slice(0, 10),
 			periodEndIso: toStr.slice(0, 10),
-			services: completedServices,
-			customBasePercentage: basePercent,
-			payoutModel: q.payoutModel === "chair_rental" ? "chair_rental" : "percentage",
+			services: enrichedServices,
+			customBasePercentage: commCtx.basePercent,
+			...(validCustomRate === undefined ? { categoryRates: commCtx.categoryRatesMap } : {}),
+			payoutModel: resolvedPayoutModel,
 			chairRentalKop:
 				q.chairRentalRub !== undefined
 					? rublesToKopecks(Number(q.chairRentalRub) || 0)
 					: q.chairRentalKop !== undefined
 						? Number(q.chairRentalKop) || 0
-						: q.payoutModel === "chair_rental"
-							? shiftsCount * (Number(q.shiftRateKop) || 400000)
+						: resolvedPayoutModel === "chair_rental"
+							? shiftsCount * resolvedShiftRateKop
 							: 0,
 			advancePayoutKop: rublesToKopecks(Number(q.advanceRub) || 0),
-			taxRegime: q.taxRegime === "self_employed" ? "self_employed" : "employee",
+			taxRegime: resolvedTaxRegime,
 			refundDeductions,
 			unallocatedLabKop,
 			identSalaryModel,

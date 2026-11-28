@@ -6,7 +6,7 @@
  * Strictly <= 120 lines.
  */
 
-import React from "react";
+import React, { useRef } from "react";
 import { CreditCard, Printer, MoreVertical } from "lucide-react";
 import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type { BillingInvoice } from "./invoiceTypes.js";
@@ -38,6 +38,7 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = (props) => {
 	const isPaid = inv.status === "paid";
 	const isWarranty = inv.status === "warranty_100";
 	const isPending = !isPaid && !isWarranty;
+	const menuButtonRef = useRef<HTMLButtonElement | null>(null);
 	const totalKopecks = inv.totalAmountKopecks ?? rublesToKopecks(inv.totalAmountRub ?? 0);
 	const displayRub = kopecksToRubles(totalKopecks);
 
@@ -45,7 +46,7 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = (props) => {
 		<div
 			className="invoice-card rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3 sm:p-3.5 shadow-2xs hover:border-teal-500/30 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative"
 			data-testid={`invoice-card-${inv.id}`}
-			style={{ contentVisibility: "auto", containIntrinsicSize: "1px 48px" }}
+			style={isMenuOpen ? { zIndex: 30 } : { contentVisibility: "auto", containIntrinsicSize: "1px 48px" }}
 		>
 			<InvoiceCardIdentity invoice={inv} isPaid={isPaid} isWarranty={isWarranty} />
 
@@ -88,6 +89,7 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = (props) => {
 				{/* Context Menu Trigger */}
 				<div className="relative">
 					<button
+						ref={menuButtonRef}
 						type="button"
 						onClick={onToggleMenu}
 						className="w-8 h-8 min-h-[32px] min-w-[32px] max-md:w-11 max-md:h-11 max-md:min-h-[44px] max-md:min-w-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center justify-center text-[var(--ink-muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
@@ -100,6 +102,7 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = (props) => {
 					{isMenuOpen && (
 						<InvoiceCardContextMenu
 							invoice={inv}
+							anchorRef={menuButtonRef}
 							isPending={isPending}
 							isPaid={isPaid}
 							onPrintAct={onPrintAct}

@@ -101,21 +101,69 @@ export async function processDepositAndFamilyStage(
 
 	// 2. Списание с депозита / семейного баланса
 	if (requiredDepositKopecks > 0n && patientRow) {
-		let targetFamilyGroupId = body.familyGroupId || patientRow.familyGroupId || null;
-		if (!targetFamilyGroupId) {
-			const [headFamily] = await tx
-				.select({ id: familyGroups.id })
-				.from(familyGroups)
-				.where(
-					and(
-						eq(familyGroups.headPatientId, resolvedPatientId),
-						eq(familyGroups.organizationId, orgId),
-					),
-				)
-				.limit(1);
-			if (headFamily) {
-				targetFamilyGroupId = headFamily.id;
-			}
+		const explicitFamilySplit =
+			Array.isArray(body.splitTenders) &&
+			body.splitTenders.some((t) => {
+				const raw = t.method.trim().toLowerCase();
+				return (
+					raw === "family_wallet" ||
+					raw === "family_balance" ||
+					raw === "family_deposit" ||
+					raw === "family" ||
+					raw === "семейный" ||
+					raw === "семейный_баланс" ||
+					raw === "семейный_депозит"
+				);
+			});
+		const isExplicitFamilyTarget =
+			Boolean(body.familyGroupId) ||
+			body.method === "family_wallet" ||
+			(body.familyDepositAmountKopecks ?? 0) > 0 ||
+			(body.familyDepositAmountRub ?? 0) > 0 ||
+			explicitFamilySplit;
+		const isExplicitPersonalSplitField =
+			!isExplicitFamilyTarget &&
+			((body.depositAmountKopecks ?? 0) > 0 || (body.depositAmountRub ?? 0) > 0);
+
+		// Сначала проверяем личные размеченные авансы пациента (P0-2: личный депозит не перехватывается семейным пулом)
+		const preloadAdvanceRows = isExplicitFamilyTarget
+			? []
+			: await tx
+					.select()
+					.from(advanceDepositTaggings)
+					.where(
+						and(
+							eq(advanceDepositTaggings.organizationId, orgId),
+							or(
+								eq(advanceDepositTaggings.patientId, resolvedPatientId),
+								and(
+									isNull(advanceDepositTaggings.patientId),
+									eq(advanceDepositTaggings.patientName, patientRow.fullName || ""),
+								),
+							),
+							inArray(advanceDepositTaggings.allocationStatus, [
+								"unallocated",
+								"pinned",
+							]),
+						),
+					)
+					.for("update");
+
+		let preloadAdvanceTotalKop = 0n;
+		for (const adv of preloadAdvanceRows) {
+			preloadAdvanceTotalKop += adv.depositAmountKopecks ?? 0n;
+		}
+
+		let targetFamilyGroupId: string | null = null;
+		if (isExplicitFamilyTarget) {
+			targetFamilyGroupId = body.familyGroupId || patientRow.familyGroupId || null;
+		} else if (
+			!isExplicitPersonalSplitField &&
+			preloadAdvanceTotalKop <= 0n &&
+			patientRow.familyGroupId
+		) {
+			// Legacy compatibility: when personal advance is empty and patient belongs to family group
+			targetFamilyGroupId = patientRow.familyGroupId;
 		}
 
 		if (
@@ -181,6 +229,7 @@ export async function processDepositAndFamilyStage(
 		}
 
 		ctx.lockedFamilyGroup = lockedFamilyGroup;
+		ctx.isPersonalDepositSpend = !lockedFamilyGroup;
 		const familyBalanceKop = lockedFamilyGroup
 			? (lockedFamilyGroup.balanceKopecks != null && (Number(lockedFamilyGroup.balanceKopecks) !== 0 || !lockedFamilyGroup.balance || parseKopecks(lockedFamilyGroup.balance) === 0)
 				? BigInt(lockedFamilyGroup.balanceKopecks)
@@ -271,42 +320,20 @@ export async function processDepositAndFamilyStage(
 				});
 			});
 		} else {
-			// Поиск и блокировка целевых личных авансов advanceDepositTaggings
-			const advanceRows = await tx
-				.select()
-				.from(advanceDepositTaggings)
-				.where(
-					and(
-						eq(advanceDepositTaggings.organizationId, orgId),
-						or(
-							eq(advanceDepositTaggings.patientId, resolvedPatientId),
-							and(
-								isNull(advanceDepositTaggings.patientId),
-								eq(advanceDepositTaggings.patientName, patientRow.fullName || ""),
-							),
-						),
-						inArray(advanceDepositTaggings.allocationStatus, [
-							"unallocated",
-							"pinned",
-						]),
-					),
-				)
-				.for("update");
+			const advanceRows = preloadAdvanceRows;
 			ctx.advanceRows = advanceRows;
+			const advanceTotalKop = preloadAdvanceTotalKop;
 
-			let advanceTotalKop = 0n;
-			for (const adv of advanceRows) {
-				advanceTotalKop += adv.depositAmountKopecks ?? 0n;
-			}
-
-			// Расчёт фактического сальдо лицевого счета (переплата / авансы по леджеру)
+			// Расчёт фактического сальдо лицевого счета (переплата по леджеру без двойного учёта авансовых зачётов)
 			const [patientCharges, patientPayments] = await Promise.all([
 				tx
 					.select({
 						patientId: treatmentItems.patientId,
 						status: treatmentItems.status,
+						unitPriceKopecks: treatmentItems.unitPriceKopecks,
 						unitPriceRub: treatmentItems.unitPriceRub,
 						quantity: treatmentItems.quantity,
+						discountKopecks: treatmentItems.discountKopecks,
 						discountRub: treatmentItems.discountRub,
 					})
 					.from(treatmentItems)
@@ -320,8 +347,10 @@ export async function processDepositAndFamilyStage(
 					.select({
 						patientId: payments.patientId,
 						status: payments.status,
+						method: payments.method,
 						amountRub: payments.amountRub,
 						amountKopecks: payments.amountKopecks,
+						fiscalReceipt: payments.fiscalReceipt,
 					})
 					.from(payments)
 					.where(
@@ -334,7 +363,19 @@ export async function processDepositAndFamilyStage(
 
 			const ledger = buildPatientLedger(
 				resolvedPatientId,
-				patientCharges,
+				patientCharges.map((item) => ({
+					patientId: item.patientId,
+					status: item.status,
+					quantity: item.quantity,
+					unitPriceRub:
+						item.unitPriceKopecks !== 0n
+							? kopecksToRubles(Number(item.unitPriceKopecks))
+							: item.unitPriceRub,
+					discountRub:
+						item.discountKopecks !== 0n
+							? kopecksToRubles(Number(item.discountKopecks))
+							: item.discountRub,
+				})),
 				patientPayments.map((p) => ({
 					...p,
 					amountRub:
@@ -346,9 +387,9 @@ export async function processDepositAndFamilyStage(
 			);
 			const ledgerOverpaidKop = BigInt(clinicOwesPatientKopecks(ledger));
 
-			// Доступный личный аванс: максимум из размеченных авансов (advanceDepositTaggings) и сальдо леджера переплаты.
+			// Доступный личный аванс: при наличии размеченных записей — их точная сумма; иначе — подтверждённое сальдо переплаты
 			const personalAvailableKop =
-				advanceTotalKop > ledgerOverpaidKop
+				advanceRows.length > 0
 					? advanceTotalKop
 					: (ledgerOverpaidKop > 0n ? ledgerOverpaidKop : 0n);
 

@@ -258,6 +258,7 @@ export interface PaymentRow {
 	readonly status: string;
 	readonly type?: string | null | undefined;
 	readonly operationType?: string | null | undefined;
+	readonly method?: string | null | undefined;
 	readonly amountRub: MoneyInput;
 	readonly amountKopecks?: bigint | number | string | null | undefined;
 	readonly fiscalReceipt?: unknown;

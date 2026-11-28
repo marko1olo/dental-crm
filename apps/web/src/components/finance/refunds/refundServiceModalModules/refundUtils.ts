@@ -92,7 +92,8 @@ export function buildRefundFiscalPayload(params: {
 	}));
 
 	const refundCashKopecks = paymentMethod === "cash" ? calculation.totalRefundKop : 0;
-	const refundElectronicKopecks = paymentMethod === "card" ? calculation.totalRefundKop : 0;
+	const refundElectronicKopecks =
+		paymentMethod === "card" || paymentMethod === "sbp" ? calculation.totalRefundKop : 0;
 	const refundPrepaidKopecks = paymentMethod === "advance_deposit" ? calculation.totalRefundKop : 0;
 
 	const reasonText = customReason.trim()

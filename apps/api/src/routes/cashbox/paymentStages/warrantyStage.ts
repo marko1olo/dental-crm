@@ -5,7 +5,7 @@
  * Governed by Mandate 8e: Doctor & Cashier Autonomy.
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { normalizePaymentMethod } from "@dental/shared";
 import { patientInvoices, payments, visits } from "../../../db/schema.js";
 import type { PaymentProcessingContext, StageStepResult, TenantTransaction } from "./types.js";
@@ -45,6 +45,15 @@ export async function processWarrantyStage(
 				},
 			};
 		}
+		if (inv.status === "voided" || inv.status === "cancelled" || inv.status === "refunded") {
+			return {
+				failure: {
+					kind: "invoice_voided",
+					invoiceId: inv.id,
+					status: inv.status,
+				},
+			};
+		}
 
 		await tx
 			.update(patientInvoices)
@@ -61,18 +70,21 @@ export async function processWarrantyStage(
 	}
 
 	if (effectiveVisitId) {
-		await tx
-			.update(patientInvoices)
-			.set({
-				status: "paid_warranty",
-				paidAt: new Date(),
-			})
-			.where(
-				and(
-					eq(patientInvoices.visitId, effectiveVisitId),
-					eq(patientInvoices.organizationId, orgId),
-				),
-			);
+		if (!body.invoiceId) {
+			await tx
+				.update(patientInvoices)
+				.set({
+					status: "paid_warranty",
+					paidAt: new Date(),
+				})
+				.where(
+					and(
+						eq(patientInvoices.visitId, effectiveVisitId),
+						eq(patientInvoices.organizationId, orgId),
+						inArray(patientInvoices.status, ["draft", "issued", "sent", "partially_paid"]),
+					),
+				);
+		}
 
 		await tx
 			.update(visits)

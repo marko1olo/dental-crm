@@ -199,7 +199,9 @@ export async function handleFiscalQueueRetryAll(
 	if (!ctx) return;
 	const orgId = ctx.organizationId;
 
-	const result = await FiscalQueueRetryWorker.flushOrganizationQueue(orgId);
+	const result = await FiscalQueueRetryWorker.flushOrganizationQueue(orgId, undefined, {
+		ignoreBackoff: true,
+	});
 
 	return reply.status(200).send({
 		success: true,

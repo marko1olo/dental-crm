@@ -4,8 +4,19 @@ import {
 	type DoctorPayrollCalculation,
 	type PayrollDoctorProfile,
 	type DoctorPayrollSummary,
+	type PayrollServiceOrder,
 } from "./payrollCatalogData";
-import { formatKopecksToRubles, percentageOfKopecks, type Kopecks } from "@dental/shared";
+import {
+	basisPointsFromPercent,
+	computeEffectiveDoctorBaseAfterRefund,
+	formatKopecksToRubles,
+	percentageOfKopecks,
+	resolveIdentItemBasis,
+	type CashAdvanceAllocationPolicy,
+	type DoctorCompletedServiceItem,
+	type IdentSalaryModel,
+	type Kopecks,
+} from "@dental/shared";
 
 export function getDefaultPayrollPeriod(): { start: string; end: string } {
 	const now = new Date();
@@ -89,13 +100,47 @@ export function copyPayslipToClipboard(
 }
 
 export function calculateOrderNetAndFee(
-	ord: { grossKopecks: number; labCostKopecks: number; materialCostKopecks: number },
+	ord: PayrollServiceOrder,
 	doctor: PayrollDoctorProfile | null,
-	customPercent: number | null
+	customPercent: number | null,
+	identSalaryModel: IdentSalaryModel = "net_proportional_discount",
+	cashAdvancePolicy: CashAdvanceAllocationPolicy = "proportional",
 ): { netBase: number; fee: number } {
-	const netBase = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
-	const pct = customPercent ?? doctor?.commissionPercent ?? 25;
-	const fee = doctor?.payoutModel === "chair_rental" ? netBase : percentageOfKopecks(netBase as Kopecks, Math.round(pct * 100));
+	const svcItem: DoctorCompletedServiceItem = {
+		id: ord.id,
+		dateIso: ord.dateIso,
+		patientName: ord.patientName,
+		medicalCardNumber: ord.medicalCardNumber,
+		serviceNameRu: ord.serviceNameRu,
+		category: ord.category,
+		grossRevenueKop: ord.grossKopecks,
+		...(ord.listPriceKopecks !== undefined ? { listPriceKop: ord.listPriceKopecks } : {}),
+		...(ord.discountKopecks !== undefined ? { discountKop: ord.discountKopecks } : {}),
+		...(ord.salaryPriceKopecks !== undefined ? { salaryPriceKop: ord.salaryPriceKopecks } : {}),
+		labCostKop: ord.labCostKopecks,
+		materialCostKop: ord.materialCostKopecks,
+		isPaid: ord.isPaid54Fz,
+		...(ord.paidKopecks !== undefined ? { paidAmountKop: ord.paidKopecks, actuallyPaidGrossKop: ord.paidKopecks } : {}),
+	};
+	const basis = resolveIdentItemBasis(svcItem, identSalaryModel, cashAdvancePolicy);
+	if (!basis.shouldInclude) {
+		return { netBase: 0, fee: 0 };
+	}
+	const effectiveGrossKop = computeEffectiveDoctorBaseAfterRefund({
+		item: svcItem,
+		identSalaryModel,
+		cashAdvancePolicy,
+		salaryPriceKop: basis.salaryBaseConfiguredKop,
+		actualPaidKop: basis.actualPaidKop,
+		refundKop: 0,
+	});
+	const netBase = Math.max(0, effectiveGrossKop - ord.labCostKopecks - ord.materialCostKopecks);
+	const catRate = doctor?.categoryRates?.[ord.category];
+	const pct = customPercent ?? catRate ?? doctor?.commissionPercent ?? 25;
+	const fee =
+		doctor?.payoutModel === "chair_rental"
+			? netBase
+			: percentageOfKopecks(netBase as Kopecks, basisPointsFromPercent(pct));
 	return { netBase, fee };
 }
 

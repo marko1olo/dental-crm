@@ -72,7 +72,7 @@ export async function fetchAndReconcilePayments(
 
 	const breakdowns: OneCPaymentBreakdownItem[] = [];
 
-	if (cashKop > 0) {
+	if (cashKop !== 0) {
 		breakdowns.push({
 			id: `pay-cash-${cleanDate}`,
 			tenderType: "cash",
@@ -81,7 +81,7 @@ export async function fetchAndReconcilePayments(
 			accountCode: chartOfAccounts.accountCashDesk,
 		});
 	}
-	if (acquiringKop > 0) {
+	if (acquiringKop !== 0) {
 		breakdowns.push({
 			id: `pay-acq-${cleanDate}`,
 			tenderType: "card_acquiring",
@@ -91,7 +91,7 @@ export async function fetchAndReconcilePayments(
 			...(clinic.bankName ? { acquiringBankName: clinic.bankName } : {}),
 		});
 	}
-	if (sbpKop > 0) {
+	if (sbpKop !== 0) {
 		breakdowns.push({
 			id: `pay-sbp-${cleanDate}`,
 			tenderType: "sbp",
@@ -100,7 +100,7 @@ export async function fetchAndReconcilePayments(
 			accountCode: chartOfAccounts.accountBankCurrent,
 		});
 	}
-	if (advanceKop > 0) {
+	if (advanceKop !== 0) {
 		breakdowns.push({
 			id: `pay-adv-${cleanDate}`,
 			tenderType: "advance_offset",

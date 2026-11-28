@@ -77,6 +77,25 @@ function readRecordBooleanField(source: unknown, field: string): boolean {
 }
 
 /**
+ * Returns `true` when a payment row records an internal offset against a previously
+ * funded personal advance (`advanceDepositTaggings`). Those rows satisfy a specific
+ * visit/invoice, so visit & invoice reconcilers count them, while patient-level ledgers
+ * exclude them (unless refunded) to prevent double-counting the initial advance deposit.
+ */
+export function isPersonalAdvanceOffsetPayment(row: {
+	readonly method?: string | null | undefined;
+	readonly fiscalReceipt?: unknown;
+}): boolean {
+	if (readRecordBooleanField(row.fiscalReceipt, "isPersonalAdvanceOffset")) {
+		return true;
+	}
+	if (readRecordStringField(row.fiscalReceipt, "calculationMethod") === "advance_offset") {
+		return true;
+	}
+	return false;
+}
+
+/**
  * Extracts signed integer kopecks as `bigint` from a payment row or DTO.
  * Prefers non-zero `amountKopecks`, falling back to `amountRub` via `parseKopecks`.
  */

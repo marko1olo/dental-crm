@@ -229,9 +229,13 @@ export async function handleCloseCashShift(
 			const reconciledReturnKop = rublesToKopecks(
 				reconciliationResult.totals.returnTotalRub || 0,
 			);
+			const reconciledOpExpenseKop = rublesToKopecks(
+				reconciliationResult.totals.operationalExpenseRub || 0,
+			);
+			const combinedExpenseKop = reconciledReturnKop + reconciledOpExpenseKop;
 			const expenseTotalKop =
-				reconciledReturnKop > 0
-					? reconciledReturnKop
+				combinedExpenseKop > 0
+					? combinedExpenseKop
 					: resolveSafeKopecks(shift.expenseTotalKopecks, shift.expenseTotalRub);
 
 			const [updatedShift] = await tx

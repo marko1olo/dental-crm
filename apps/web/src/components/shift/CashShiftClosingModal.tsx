@@ -12,7 +12,7 @@
  * - Sweet Spot size: 300-380 lines.
  */
 
-import React, { useState, useEffect, useId, useMemo } from "react";
+import React, { useState, useEffect, useId, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
 	Banknote,
@@ -206,7 +206,14 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	const expectedCashInDrawer =
 		cashInDrawerRub !== undefined
 			? cashInDrawerRub
-			: kopecksToRub(rubToKopecks(initialChangeFundRub) + rubToKopecks(totalCashRevenue));
+			: Math.max(
+					0,
+					kopecksToRub(
+						rubToKopecks(initialChangeFundRub) +
+							rubToKopecks(totalCashRevenue) -
+							rubToKopecks(totalReturnRub),
+					),
+				);
 
 	// Acquiring & KKT reconciliation engine (real POS / OFD records only, no synthetic card metadata)
 	const hasRealAcquiringData = Boolean(
@@ -220,6 +227,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	}, [acquiringTransactions, kktElectronicRecords]);
 
 	// Form state
+	const hasUserEditedCountedCashRef = useRef(false);
 	const [countedCashRub, setCountedCashRub] = useState<number>(expectedCashInDrawer);
 	const [isTerminalReconciled, setIsTerminalReconciled] = useState<boolean>(true);
 	const [encashmentOption, setEncashmentOption] = useState<"full" | "retain_change">(
@@ -235,12 +243,15 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 
 	useEffect(() => {
 		if (!isOpen) {
+			hasUserEditedCountedCashRef.current = false;
 			setAutoFetchedData(null);
 			setIsTerminalReconciled(true);
 			setEncashmentOption("retain_change");
 			setPrintZReport(true);
+			setCountedCashRub(expectedCashInDrawer);
+		} else if (!hasUserEditedCountedCashRef.current) {
+			setCountedCashRub(expectedCashInDrawer);
 		}
-		setCountedCashRub(expectedCashInDrawer);
 		setChangeFundRetainRub(initialChangeFundRub);
 		setErrorMessage(null);
 		setClosedSuccessData(null);
@@ -459,7 +470,10 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 									type="number"
 									min={0}
 									value={countedCashRub || ""}
-									onChange={(e) => setCountedCashRub(Number(e.target.value) || 0)}
+									onChange={(e) => {
+										hasUserEditedCountedCashRef.current = true;
+										setCountedCashRub(Number(e.target.value) || 0);
+									}}
 									className="w-full h-11 md:h-9 px-3 rounded-xl md:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-base md:text-sm font-mono font-medium tracking-tight tabular-nums text-[var(--ink)]"
 								/>
 							</div>

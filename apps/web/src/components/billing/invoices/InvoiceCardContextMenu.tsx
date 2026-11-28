@@ -5,12 +5,14 @@
  * Strictly <= 120 lines per Mandate 8b.
  */
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { FileText, Receipt, CreditCard, QrCode, ShieldCheck, RotateCcw, FileCheck } from "lucide-react";
 import type { BillingInvoice } from "../invoiceTypes.js";
 
 interface InvoiceCardContextMenuProps {
 	readonly invoice: BillingInvoice;
+	readonly anchorRef?: React.RefObject<HTMLButtonElement | null> | undefined;
 	readonly isPending: boolean;
 	readonly isPaid: boolean;
 	readonly onPrintAct: () => void;
@@ -24,14 +26,41 @@ interface InvoiceCardContextMenuProps {
 
 export const InvoiceCardContextMenu: React.FC<InvoiceCardContextMenuProps> = (props) => {
 	const {
-		invoice: inv, isPending, isPaid, onPrintAct, onPrintReceipt,
+		invoice: inv, anchorRef, isPending, isPaid, onPrintAct, onPrintReceipt,
 		onSplitPay, onBankInstallment, onApplyWarranty, onRefund, onPrepareFnsTaxDeduction,
 	} = props;
 	const itemBtnCls = "w-full min-h-[32px] max-md:min-h-[44px] px-3 py-1.5 text-left flex items-center gap-2 cursor-pointer transition-colors";
 
-	return (
+	const computePos = (): { top: number; right: number } | null => {
+		if (typeof window === "undefined" || !anchorRef?.current) return null;
+		const rect = anchorRef.current.getBoundingClientRect();
+		return {
+			top: Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - 280)),
+			right: Math.max(8, window.innerWidth - rect.right),
+		};
+	};
+
+	const [portalPos, setPortalPos] = useState<{ top: number; right: number } | null>(computePos);
+
+	useEffect(() => {
+		const update = () => setPortalPos(computePos());
+		update();
+		window.addEventListener("resize", update);
+		window.addEventListener("scroll", update, true);
+		return () => {
+			window.removeEventListener("resize", update);
+			window.removeEventListener("scroll", update, true);
+		};
+	}, [anchorRef]);
+
+	const menuNode = (
 		<div
-			className="absolute right-0 top-full mt-1 w-56 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-xl z-20 py-1 text-xs text-[var(--ink,#0f172a)] animate-in fade-in zoom-in-95 duration-100"
+			className={
+				portalPos
+					? "fixed w-56 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-xl z-[80] py-1 text-xs text-[var(--ink,#0f172a)] animate-in fade-in zoom-in-95 duration-100"
+					: "absolute right-0 top-full mt-1 w-56 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-xl z-[80] py-1 text-xs text-[var(--ink,#0f172a)] animate-in fade-in zoom-in-95 duration-100"
+			}
+			style={portalPos ? { top: `${portalPos.top}px`, right: `${portalPos.right}px` } : undefined}
 			role="menu"
 		>
 			<button
@@ -108,4 +137,9 @@ export const InvoiceCardContextMenu: React.FC<InvoiceCardContextMenuProps> = (pr
 			</button>
 		</div>
 	);
+
+	if (typeof document !== "undefined" && portalPos) {
+		return createPortal(menuNode, document.body);
+	}
+	return menuNode;
 };

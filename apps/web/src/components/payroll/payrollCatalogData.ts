@@ -33,6 +33,7 @@ export interface PayrollDoctorProfile {
 	readonly defaultShiftRateKop: number; // e.g. 400000 kop (4 000 ₽/смена)
 	readonly minGuaranteeMonthlyKop: number; // e.g. 6000000 kop (60 000 ₽)
 	readonly taxRegime: "employee" | "self_employed";
+	readonly categoryRates?: Partial<Record<string, number>> | undefined;
 }
 
 export interface PayrollServiceOrder {
@@ -45,6 +46,8 @@ export interface PayrollServiceOrder {
 	readonly category: "orthopedics" | "therapy" | "surgery" | "hygiene" | "orthodontics";
 	readonly categoryLabelRu: string;
 	readonly grossKopecks: number; // Выручка по кассовым чекам
+	readonly listPriceKopecks?: number | undefined;
+	readonly discountKopecks?: number | undefined;
 	readonly salaryPriceKopecks?: number | undefined; // Цена для ЗП (salary_price)
 	readonly labCostKopecks: number; // Зуботехническая лаборатория (ЗТЛ)
 	readonly materialCostKopecks: number; // Дорогие материалы (Импланты)

@@ -14,9 +14,17 @@ import {
 } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { useDocumentBrandingStore } from "../../../store/documentBrandingStore";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { closeSettlementPeriodApi } from "../../payroll/closeSettlementPeriodApi.js";
 import type { EarningsDataState } from "./types.js";
+
+function toLocalYmd(date: Date): string {
+	const y = date.getFullYear();
+	const m = String(date.getMonth() + 1).padStart(2, "0");
+	const d = String(date.getDate()).padStart(2, "0");
+	return `${y}-${m}-${d}`;
+}
 
 export function useDoctorWalletLogic(
 	doctorId: string,
@@ -60,6 +68,7 @@ export function useDoctorWalletLogic(
 			for (let attempt = 1; attempt <= 3; attempt++) {
 				if (controller.signal.aborted) return;
 				const res = await fetch(`/api/doctor/my-earnings?${params.toString()}`, {
+					headers: getDenteAuthHeaders(),
 					signal: controller.signal,
 				});
 				lastRes = res;
@@ -101,7 +110,7 @@ export function useDoctorWalletLogic(
 	}, [selectedDate, identSalaryModel, cashAdvancePolicy, fetchEarnings]);
 
 	const handleSelectToday = () => {
-		const today = new Date().toISOString().split("T")[0] ?? "";
+		const today = toLocalYmd(new Date());
 		setSelectedDate(today);
 		setActivePeriodFilter("today");
 	};
@@ -109,7 +118,7 @@ export function useDoctorWalletLogic(
 	const handleSelectYesterday = () => {
 		const d = new Date();
 		d.setDate(d.getDate() - 1);
-		setSelectedDate(d.toISOString().split("T")[0] ?? "");
+		setSelectedDate(toLocalYmd(d));
 		setActivePeriodFilter("yesterday");
 	};
 

@@ -110,6 +110,7 @@ export const cashRefundBodySchema = z.object({
 	paymentId: z.preprocess((val) => (typeof val === "string" && val.trim() === "" ? undefined : val), z.string().uuid("Некорректный UUID платежа.").optional()),
 	operatorId: z.preprocess((val) => (typeof val === "string" && val.trim() === "" ? undefined : val), z.string().uuid("Некорректный UUID оператора.").optional()),
 	patientId: z.preprocess((val) => (typeof val === "string" && val.trim() === "" ? undefined : val), z.string().uuid("Некорректный UUID пациента.").optional()),
+	refundedItemIds: z.array(z.string().uuid("Некорректный UUID позиции лечения.")).optional(),
 	cashierFullName: z.string().trim().optional(),
 	idempotencyKey: z.string().trim().max(128).optional(),
 	clientMutationId: z.string().trim().max(128).optional(),

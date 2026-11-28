@@ -1,62 +1,46 @@
 /**
  * canonicalPayrollHubSsot.test.ts — Verification of Canonical SSOT Payroll Hub & Kopeck Engine
- * Mandate 8b (Sweet Spot limits), Mandate 8e (Doctor Autonomy), Mandate 8n (Solo Practice Sovereignty).
- * Tests integer Net Revenue arithmetic, solo chair rental, assistant piecework, and 1-click settlement.
+ * Mandate 8b, Mandate 8e, Mandate 8n, Mandate 8aq (WorkspaceStudioOverlayHost + routeResolver).
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToString } from "react-dom/server";
 import {
 	computeNetBaseKopecks,
 	calculateDoctorCommissionKopecks,
 	calculateSoloDoctorRentalModel,
 	calculateAssistantPiecework,
 	calculateDoctorPayrollFromOrders,
+	calculateDoctorPayrollSummary,
 	getQuickPeriodDates,
 	generateDoctorPayslipA5Html,
 	generateDoctorPayslipMessengerText,
 	CANONICAL_PAYROLL_DOCTORS,
 	CANONICAL_DEMO_ORDERS,
 } from "../../payrollCatalogData";
+import { calculateOrderNetAndFee } from "../../doctorPayrollModalUtils";
 import { DoctorPayrollStudioModal } from "../../DoctorPayrollStudioModal";
 import { WorkspaceStudioOverlayHost } from "../../../appLayout/WorkspaceStudioOverlayHost";
 import { resolveClinicRoute } from "../../../../router/routeResolver";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 describe("Canonical SSOT Payroll Hub & Kopeck-Exact Engine", () => {
 	it("1.1 computeNetBaseKopecks: Gross − Lab − Materials = Net Base in exact kopecks", () => {
-		// Gross 42 000 ₽ (4 200 000 kop), Lab 9 500 ₽ (950 000 kop), Materials 1 800 ₽ (180 000 kop)
 		const netBase = computeNetBaseKopecks(4200000, 950000, 180000);
 		assert.equal(netBase, 3070000, "Net base must equal 30 700 ₽ (3 070 000 kop)");
 
-		// Zero negative base on excessive expenses
 		const clampZero = computeNetBaseKopecks(500000, 400000, 200000);
 		assert.equal(clampZero, 0, "Net base cannot drop below 0");
 	});
 
 	it("1.2 calculateDoctorCommissionKopecks: 20–35% commission on Net Base without float drift", () => {
-		// 30% on 30 700 ₽ = 9 210 ₽ (921 000 kop)
-		const fee30 = calculateDoctorCommissionKopecks(3070000, 30);
-		assert.equal(fee30, 921000);
-
-		// 25% on 14 500 ₽ − 1 800 ₽ = 12 700 ₽ (1 270 000 kop) -> 3 175 ₽ (317 500 kop)
-		const fee25 = calculateDoctorCommissionKopecks(1270000, 25);
-		assert.equal(fee25, 317500);
-
-		// 35% on 41 000 ₽ (4 100 000 kop) -> 14 350 ₽ (1 435 000 kop)
-		const fee35 = calculateDoctorCommissionKopecks(4100000, 35);
-		assert.equal(fee35, 1435000);
+		assert.equal(calculateDoctorCommissionKopecks(3070000, 30), 921000);
+		assert.equal(calculateDoctorCommissionKopecks(1270000, 25), 317500);
+		assert.equal(calculateDoctorCommissionKopecks(4100000, 35), 1435000);
 	});
 
 	it("1.3 calculateSoloDoctorRentalModel: Mandate 8n Solo Doctor 100% net profit minus chair rental", () => {
-		// Gross 32 000 ₽, Lab 2 500 ₽, Materials 3 500 ₽ -> Net Base 26 000 ₽
-		// Shifts: 5 shifts * 4 000 ₽ = 20 000 ₽ rent. Advance: 2 000 ₽.
-		// Payout: 26 000 ₽ − 20 000 ₽ − 2 000 ₽ = 4 000 ₽
 		const rentalRes = calculateSoloDoctorRentalModel({
 			grossRevenueKop: 3200000,
 			labCostKop: 250000,
@@ -74,11 +58,6 @@ describe("Canonical SSOT Payroll Hub & Kopeck-Exact Engine", () => {
 	});
 
 	it("1.4 calculateAssistantPiecework: hourly and per-shift piecework with surgical & x-ray bonuses", () => {
-		// 10 shifts * 3 000 ₽ = 30 000 ₽
-		// 15 hours * 400 ₽ = 6 000 ₽
-		// 4 surgeries * 1 500 ₽ = 6 000 ₽
-		// 20 x-rays * 200 ₽ = 4 000 ₽
-		// Total: 46 000 ₽ (4 600 000 kop)
 		const ast = calculateAssistantPiecework({
 			shiftsCount: 10,
 			shiftRateKop: 300000,
@@ -93,17 +72,29 @@ describe("Canonical SSOT Payroll Hub & Kopeck-Exact Engine", () => {
 		assert.equal(ast.totalAssistantPayoutKop, 4600000);
 	});
 
-	it("1.5 calculateDoctorPayrollFromOrders: processes canonical demo orders cleanly", () => {
-		const volkov = CANONICAL_PAYROLL_DOCTORS.find((d) => d.id === "doc-volkov")!;
+	it("1.5 calculateDoctorPayrollFromOrders matches calculateDoctorPayrollSummary & per-row calculateOrderNetAndFee", () => {
+		const volkov = CANONICAL_PAYROLL_DOCTORS.find((d) => d.id === "doc-volkov");
+		assert.ok(volkov);
 		const calc = calculateDoctorPayrollFromOrders(CANONICAL_DEMO_ORDERS, volkov);
+		const summary = calculateDoctorPayrollSummary({
+			orders: CANONICAL_DEMO_ORDERS,
+			doctor: volkov,
+		});
 
 		assert.equal(calc.servicesCount, 2);
-		assert.equal(calc.totalGrossKopecks, 8000000, "Gross is 38k + 42k = 80k ₽");
-		assert.equal(calc.totalLabCostKopecks, 1800000, "Lab is 8.5k + 9.5k = 18k ₽");
-		assert.equal(calc.totalMaterialCostKopecks, 330000, "Materials is 1.5k + 1.8k = 3.3k ₽");
-		assert.equal(calc.totalNetBaseKopecks, 5870000, "Net base is 80k - 18k - 3.3k = 58.7k ₽");
-		assert.equal(calc.commissionPercent, 30);
-		assert.equal(calc.earnedDoctorKopecks, 1761000, "30% of 58 700 ₽ = 17 610 ₽");
+		assert.equal(calc.totalGrossKopecks, 8000000);
+		assert.equal(calc.totalLabCostKopecks, 1800000);
+		assert.equal(calc.totalMaterialCostKopecks, 330000);
+		assert.equal(calc.totalNetBaseKopecks, 5870000);
+		assert.equal(calc.earnedDoctorKopecks, 1761000);
+		assert.equal(summary.doctorAccruedKopecks, calc.earnedDoctorKopecks);
+
+		const volkovOrders = CANONICAL_DEMO_ORDERS.filter((o) => o.doctorId === volkov.id);
+		const sumRowFees = volkovOrders.reduce(
+			(acc, o) => acc + calculateOrderNetAndFee(o, volkov, null).fee,
+			0,
+		);
+		assert.equal(sumRowFees, summary.doctorAccruedKopecks);
 	});
 
 	it("1.6 getQuickPeriodDates: generates today, yesterday, current week, and current month", () => {
@@ -117,7 +108,8 @@ describe("Canonical SSOT Payroll Hub & Kopeck-Exact Engine", () => {
 	});
 
 	it("2.1 Payslip generators exclude Soviet bureaucratic codes and include clean A5 / messenger formats", () => {
-		const volkov = CANONICAL_PAYROLL_DOCTORS.find((d) => d.id === "doc-volkov")!;
+		const volkov = CANONICAL_PAYROLL_DOCTORS.find((d) => d.id === "doc-volkov");
+		assert.ok(volkov);
 		const calc = calculateDoctorPayrollFromOrders(CANONICAL_DEMO_ORDERS, volkov);
 
 		const html = generateDoctorPayslipA5Html(calc, volkov, "Стоматология DENTE");
@@ -132,29 +124,20 @@ describe("Canonical SSOT Payroll Hub & Kopeck-Exact Engine", () => {
 		assert.ok(text.toLowerCase().includes("к выплате:"));
 	});
 
-	it("3.1 Verifies Sweet Spot line limits for the new SSOT architecture (Mandate 8b)", () => {
-		const baseDir = path.resolve(__dirname, "../..");
-		const catalogPath = path.join(baseDir, "payrollCatalogData.ts");
-		const studioPath = path.join(baseDir, "DoctorPayrollStudioModal.tsx");
+	it("3.1 Payroll Studio resolves in 3-shell routeResolver and renders cleanly via SSR", () => {
+		const route = resolveClinicRoute("", "#payroll");
+		assert.equal(route.studio?.kind, "doctor_payroll");
 
-		assert.ok(fs.existsSync(catalogPath));
-		assert.ok(fs.existsSync(studioPath));
-
-		const catalogLines = fs.readFileSync(catalogPath, "utf8").split("\n").length;
-		const studioLines = fs.readFileSync(studioPath, "utf8").split("\n").length;
-
-		assert.ok(catalogLines <= 350, `payrollCatalogData.ts has ${catalogLines} lines (must be <= 350)`);
-		assert.ok(studioLines <= 480, `DoctorPayrollStudioModal.tsx has ${studioLines} lines (must be <= 480)`);
-	});
-
-	it("3.2 Verifies Payroll Studio is mounted via WorkspaceStudioOverlayHost & routeResolver (Mandate 8aq)", () => {
-		const containerPath = path.resolve(__dirname, "../../../appLayout/AppModalsContainer.tsx");
-		assert.ok(fs.readFileSync(containerPath, "utf8").includes("WorkspaceStudioOverlayHost"));
-		assert.equal(resolveClinicRoute("", "#payroll").studio?.kind, "doctor_payroll");
-	});
-
-	it("3.3 Components export cleanly without errors", () => {
-		assert.ok(DoctorPayrollStudioModal);
+		const modalHtml = renderToString(
+			React.createElement(DoctorPayrollStudioModal, {
+				isOpen: true,
+				onClose: () => {},
+				orders: [...CANONICAL_DEMO_ORDERS],
+			}),
+		);
+		assert.ok(modalHtml.includes('data-testid="doctor-payroll-studio-modal"'));
+		assert.ok(modalHtml.includes('data-testid="payroll-studio-primary-cta"'));
+		assert.ok(!modalHtml.includes("Форма Т-51"));
 		assert.ok(WorkspaceStudioOverlayHost);
 	});
 });

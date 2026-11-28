@@ -7,11 +7,13 @@
 
 import { and, eq, or, sql } from "drizzle-orm";
 import {
+	kopecksToNumericString,
 	kopecksToRubles,
 	parseKopecks,
 	sumKopecks,
 } from "@dental/shared";
 import { familyGroups, patientInvoices, patients, payments } from "../../../db/schema.js";
+import { reconcileInvoiceBalanceInDb } from "../../billingRoutes/invoiceBalanceReconciler.js";
 import { normalizePatientAdministrativeProfile } from "../../../utils/patientAdministrativeProfile.js";
 import type {
 	PaymentProcessingContext,
@@ -228,6 +230,40 @@ export async function acquireLockAndResolvePatient(
 					status: inv.status,
 				},
 			};
+		}
+		if (inv.status === "voided" || inv.status === "cancelled" || inv.status === "refunded") {
+			return {
+				failure: {
+					kind: "invoice_voided",
+					invoiceId: inv.id,
+					status: inv.status,
+				},
+			};
+		}
+		if (
+			(inv.status === "partially_paid" || inv.status === "partially_refunded") &&
+			!body.isAdvanceDeposit
+		) {
+			const reconciled = await reconcileInvoiceBalanceInDb(tx, orgId, inv.id);
+			if (reconciled.remainingKopecks <= 0) {
+				return {
+					failure: {
+						kind: "invoice_already_paid",
+						invoiceId: inv.id,
+						status: "paid",
+					},
+				};
+			}
+			if (ctx.totalKopecks > BigInt(reconciled.remainingKopecks)) {
+				return {
+					failure: {
+						kind: "invoice_overpayment",
+						invoiceId: inv.id,
+						remainingRub: kopecksToNumericString(reconciled.remainingKopecks),
+						requestedRub: kopecksToNumericString(Number(ctx.totalKopecks)),
+					},
+				};
+			}
 		}
 		ctx.lockedInvoice = inv;
 		if (!ctx.effectiveVisitId && inv.visitId) {

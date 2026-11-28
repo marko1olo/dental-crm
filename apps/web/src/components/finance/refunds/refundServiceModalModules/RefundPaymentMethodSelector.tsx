@@ -1,5 +1,5 @@
 import React from "react";
-import { Coins, CreditCard, Wallet } from "lucide-react";
+import { Coins, CreditCard, QrCode, Wallet } from "lucide-react";
 import { REFUND_REASON_LABELS, type RefundReasonCategory } from "@dental/shared";
 import type { RefundPaymentMethod } from "./types";
 
@@ -17,7 +17,7 @@ export const RefundPaymentMethodSelector: React.FC<RefundPaymentMethodSelectorPr
 	setPaymentMethod,
 }) => {
 	return (
-		<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+		<div className="space-y-3">
 			<div>
 				<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1.5">
 					2. Причина возврата:
@@ -25,7 +25,7 @@ export const RefundPaymentMethodSelector: React.FC<RefundPaymentMethodSelectorPr
 				<select
 					value={reasonCategory}
 					onChange={(e) => setReasonCategory(e.target.value as RefundReasonCategory)}
-					className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--border,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-medium text-[var(--ink,#0f172a)] focus:ring-2 focus:ring-amber-500 outline-none"
+					className="w-full h-9 max-md:h-11 max-md:min-h-[44px] px-3 rounded-xl border border-[var(--border,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-medium text-[var(--ink,#0f172a)] focus:ring-2 focus:ring-amber-500 outline-none"
 				>
 					{Object.entries(REFUND_REASON_LABELS).map(([cat, label]) => (
 						<option key={cat} value={cat}>
@@ -39,41 +39,53 @@ export const RefundPaymentMethodSelector: React.FC<RefundPaymentMethodSelectorPr
 				<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1.5">
 					3. Способ возврата средств:
 				</label>
-				<div className="grid grid-cols-3 gap-1.5">
+				<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
 					<button
 						type="button"
 						onClick={() => setPaymentMethod("card")}
-						className={`min-h-[44px] px-2 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 transition-all ${
+						className={`h-9 max-md:h-11 max-md:min-h-[44px] px-2.5 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 whitespace-nowrap transition-all ${
 							paymentMethod === "card"
-								? "bg-teal-500/15 border-teal-500 text-teal-700 dark:text-teal-300"
-								: "border-[var(--border,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)]"
+								? "bg-[var(--primary)]/15 border-[var(--primary)] text-[var(--primary)]"
+								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)]"
 						}`}
 					>
-						<CreditCard className="w-3.5 h-3.5" />
+						<CreditCard className="w-3.5 h-3.5 shrink-0" />
 						<span>Карта</span>
 					</button>
 					<button
 						type="button"
-						onClick={() => setPaymentMethod("cash")}
-						className={`min-h-[44px] px-2 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 transition-all ${
-							paymentMethod === "cash"
-								? "bg-teal-500/15 border-teal-500 text-teal-700 dark:text-teal-300"
-								: "border-[var(--border,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)]"
+						onClick={() => setPaymentMethod("sbp")}
+						className={`h-9 max-md:h-11 max-md:min-h-[44px] px-2.5 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 whitespace-nowrap transition-all ${
+							paymentMethod === "sbp"
+								? "bg-[var(--primary)]/15 border-[var(--primary)] text-[var(--primary)]"
+								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)]"
 						}`}
 					>
-						<Coins className="w-3.5 h-3.5" />
+						<QrCode className="w-3.5 h-3.5 shrink-0" />
+						<span>СБП</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setPaymentMethod("cash")}
+						className={`h-9 max-md:h-11 max-md:min-h-[44px] px-2.5 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 whitespace-nowrap transition-all ${
+							paymentMethod === "cash"
+								? "bg-[var(--primary)]/15 border-[var(--primary)] text-[var(--primary)]"
+								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)]"
+						}`}
+					>
+						<Coins className="w-3.5 h-3.5 shrink-0" />
 						<span>Нал</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => setPaymentMethod("advance_deposit")}
-						className={`min-h-[44px] px-2 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 transition-all ${
+						className={`h-9 max-md:h-11 max-md:min-h-[44px] px-2.5 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 whitespace-nowrap transition-all ${
 							paymentMethod === "advance_deposit"
-								? "bg-teal-500/15 border-teal-500 text-teal-700 dark:text-teal-300"
-								: "border-[var(--border,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)]"
+								? "bg-[var(--primary)]/15 border-[var(--primary)] text-[var(--primary)]"
+								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)]"
 						}`}
 					>
-						<Wallet className="w-3.5 h-3.5" />
+						<Wallet className="w-3.5 h-3.5 shrink-0" />
 						<span>Аванс</span>
 					</button>
 				</div>

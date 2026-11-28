@@ -176,7 +176,12 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 			}
 		}).catch(() => {});
 		const reportPeriod = periodPreset === "shift" ? "day" : "month";
-		void fetch(`/api/reports/assistant-payroll?period=${encodeURIComponent(reportPeriod)}`, {
+		const assistantQuery = new URLSearchParams({
+			period: reportPeriod,
+			from: periodDates.startIso,
+			to: periodDates.endIso,
+		});
+		void fetch(`/api/reports/assistant-payroll?${assistantQuery.toString()}`, {
 			headers: getDenteAuthHeaders(),
 		})
 			.then((r) => (r.ok ? r.json() : null))
@@ -196,13 +201,26 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 			return activeTabDoctorSummary;
 		}
 		if (!selectedDoctor) return EMPTY_DOCTOR_PAYROLL_SUMMARY;
+		const cachedApi = !isDemo ? apiDoctorSummaries[selectedDoctor.id] : undefined;
+		if (cachedApi && activeTabCustomPercent === null && activeTabAdvanceRub === 0) {
+			return {
+				...EMPTY_DOCTOR_PAYROLL_SUMMARY,
+				...cachedApi,
+				doctorId: cachedApi.doctorId ?? selectedDoctor.id,
+				doctorName: cachedApi.doctorName ?? selectedDoctor.name,
+				payoutStatus:
+					payoutStatus === "paid_rko"
+						? "paid_rko"
+						: (cachedApi.payoutStatus ?? "accrued"),
+			};
+		}
 		return calculateDoctorPayrollSummary({
 			orders: effectiveOrders, doctor: selectedDoctor,
 			isRkoPaid: payoutStatus === "paid_rko",
 			identSalaryModel,
 			cashAdvancePolicy,
 		});
-	}, [activeTabDoctorSummary, selectedDoctor, effectiveOrders, payoutStatus, identSalaryModel, cashAdvancePolicy]);
+	}, [activeTabDoctorSummary, selectedDoctor, isDemo, apiDoctorSummaries, activeTabCustomPercent, activeTabAdvanceRub, effectiveOrders, payoutStatus, identSalaryModel, cashAdvancePolicy]);
 
 	const allDoctorsSummaries: readonly {
 		readonly doctor: PayrollDoctorProfile;

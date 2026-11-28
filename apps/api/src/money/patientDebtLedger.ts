@@ -1,5 +1,6 @@
 import {
 	classifyPaymentFlowRecord,
+	isPersonalAdvanceOffsetPayment,
 	type Kopecks,
 	sumKopecks,
 	toExactKopecks,
@@ -103,6 +104,15 @@ export function buildPatientLedgers(
 			},
 			"ledger",
 		);
+		if (
+			flow.kind === "payment" &&
+			isPersonalAdvanceOffsetPayment({
+				method: row.method,
+				fiscalReceipt: row.fiscalReceipt,
+			})
+		) {
+			return toExactKopecks(0);
+		}
 		return toExactKopecks(flow.signedKopecks);
 	};
 

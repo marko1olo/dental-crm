@@ -183,7 +183,6 @@ export async function submitInstallmentContractApi(params: {
 			patientId: params.patientId,
 			invoiceId: params.invoiceId || undefined,
 			visitId: params.visitId,
-			totalAmountKopecks: Number(params.effectiveTotalKopecks),
 			totalAmountRub: kopecksToRubles(Number(params.effectiveTotalKopecks)),
 			downPaymentRub: 0,
 			monthsCount: params.installmentMonths,
