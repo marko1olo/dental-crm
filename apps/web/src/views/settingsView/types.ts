@@ -10,12 +10,7 @@ import type { WorkspaceFeatureFlags } from "../../hooks/useWorkspaceProfile";
 import type { SettingsRoleMode } from "./settingsRoleTabs.js";
 
 export type { SettingsRoleMode };
-export {
-	DOCTOR_TABS,
-	ADMIN_TABS,
-	OWNER_TABS,
-	ENTERPRISE_ADVANCED_TABS,
-} from "./settingsRoleTabs.js";
+export { DOCTOR_TABS, ADMIN_TABS, OWNER_TABS, ENTERPRISE_ADVANCED_TABS } from "./settingsRoleTabs.js";
 
 export const SETTINGS_ROLE_LABELS: Record<SettingsRoleMode, string> = {
 	doctor: "Кабинет врача",
@@ -24,12 +19,7 @@ export const SETTINGS_ROLE_LABELS: Record<SettingsRoleMode, string> = {
 	all: "Полный каталог",
 };
 
-export type CanonicalSettingsTabId =
-	| "clinic"
-	| "prices"
-	| "staff"
-	| "hardware"
-	| "imports";
+export type CanonicalSettingsTabId = "clinic" | "prices" | "staff" | "hardware" | "imports";
 
 export interface CanonicalSettingsTabDefinition {
 	id: CanonicalSettingsTabId;
@@ -100,6 +90,11 @@ export interface SettingsSecurityAndBackupTabProps {
 }
 
 export interface SettingsViewLogicBag {
+	activeSettingsTabButtonRef?: React.RefObject<HTMLButtonElement | null> | undefined;
+	reopenOnboarding?: (() => void) | undefined;
+	setSettingsTab?: ((tab: string) => void) | undefined;
+	settingsTab?: string | undefined;
+	settingsTabs?: SettingsTabItem[] | undefined;
 	telegramAdminSecretSession?: boolean | undefined;
 	setTelegramAdminSecretDraft?: ((draft: string) => void) | undefined;
 	unlockTelegramAdminSession?: (() => void) | undefined;

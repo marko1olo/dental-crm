@@ -23,7 +23,7 @@
 }
 
 .tg-tab-content {
-	padding: 14px 16px;
+	padding: 14px 16px 96px 16px;
 	display: flex;
 	flex-direction: column;
 	gap: 14px;

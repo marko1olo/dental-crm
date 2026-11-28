@@ -1,7 +1,7 @@
 .pc-btn-primary {
 	min-height: 36px;
 	background: var(--pc-primary);
-	color: var(--paper-strong, #ffffff);
+	color: #ffffff;
 	border: none;
 	border-radius: var(--pc-radius-sm);
 	padding: 8px 16px;

@@ -4,12 +4,12 @@
    ========================================================================== */
 
 :root {
-	--tg-bg: #0f172a;
-	--tg-card-bg: #1e293b;
-	--tg-card-inner: #0f172a;
-	--tg-text: #f8fafc;
-	--tg-text-muted: #94a3b8;
-	--tg-border: rgba(255, 255, 255, 0.12);
+	--tg-bg: var(--paper, #111315);
+	--tg-card-bg: var(--paper-soft, #1a1b1e);
+	--tg-card-inner: rgba(255, 255, 255, 0.04);
+	--tg-text: var(--ink, #f4f4f5);
+	--tg-text-muted: var(--ink-muted, #a1a1aa);
+	--tg-border: var(--line, rgba(255, 255, 255, 0.12));
 	--tg-accent: var(--primary);
 	--tg-accent-hover: var(--primary-hover, var(--primary));
 	--tg-accent-text: #ffffff;
@@ -43,10 +43,10 @@ html[data-theme="light"] {
 :root[data-theme="dark"],
 html.dark,
 html[data-theme="dark"] {
-	--tg-bg: #0f172a;
-	--tg-card-bg: #1e293b;
-	--tg-card-inner: #0f172a;
-	--tg-text: #f8fafc;
-	--tg-text-muted: #94a3b8;
-	--tg-border: rgba(255, 255, 255, 0.12);
+	--tg-bg: var(--paper, #111315);
+	--tg-card-bg: var(--paper-soft, #1a1b1e);
+	--tg-card-inner: rgba(255, 255, 255, 0.04);
+	--tg-text: var(--ink, #f4f4f5);
+	--tg-text-muted: var(--ink-muted, #a1a1aa);
+	--tg-border: var(--line, rgba(255, 255, 255, 0.12));
 }

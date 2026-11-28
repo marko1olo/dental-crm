@@ -21,11 +21,11 @@ export async function handleWadoRetrieveFrames(
 	request: FastifyRequest<{ Params: { studyUid: string; seriesUid: string; instanceUid: string; frame: string } }>,
 	reply: FastifyReply,
 ) {
-	if (!(await requireClinicalReadAccess(request, reply, "dicom frame read"))) return;
+	if (!(await requireClinicalReadAccess(request, reply, "dicom frame read"))) return reply;
 	const organizationId = requireOrganizationId(request, reply);
-	if (!organizationId) return;
+	if (!organizationId) return reply;
 
-	if (!enforceClinicalDicomAccess(request, reply, "кадрам КТ / DICOM")) return;
+	if (!enforceClinicalDicomAccess(request, reply, "кадрам КТ / DICOM")) return reply;
 
 	const studyUid = normalizeUid(request.params.studyUid);
 	const seriesUid = normalizeUid(request.params.seriesUid);

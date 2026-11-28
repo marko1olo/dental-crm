@@ -23,6 +23,10 @@ import { deductConsumables } from "./deductConsumables.js";
 import { deductImplantScrew } from "./deductImplantScrew.js";
 import { linkBillingAndOdontogram } from "./installationBillingAndOdontogram.js";
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function normalizeBrandString(value: unknown): unknown {
 	return typeof value === "string"
 		? value.trim().toLowerCase().replace(/[\s-]+/g, "_")
@@ -46,8 +50,8 @@ function collectCandidateTeeth(rawBody: Record<string, unknown>): number[] {
 			? rawBody.teethSpecs
 			: [];
 	for (const item of rawSpecs) {
-		if (item && typeof item === "object") {
-			pushTooth((item as Record<string, unknown>).toothNumberFdi);
+		if (isPlainObject(item)) {
+			pushTooth(item.toothNumberFdi);
 		}
 	}
 	return result;
@@ -199,14 +203,14 @@ export function registerInstallationRoute(app: FastifyInstance) {
 			authOptions: {
 				allowClinicTokenWithoutStaff: true,
 				allowAdminSecretBypass: true,
+				permissionDeniedPermission: "clinical.implants.write",
 			},
 			idempotency: "optional_header",
 			execute: async ({ tx, principal, organizationId: orgId, request, reply }) => {
 				// Нормализация наименования бренда для устойчивости к пробелам и регистрам
-				const rawBody: Record<string, unknown> =
-					typeof request.body === "object" && request.body !== null
-						? { ...(request.body as Record<string, unknown>) }
-						: {};
+				const rawBody: Record<string, unknown> = isPlainObject(request.body)
+					? { ...request.body }
+					: {};
 				if (typeof rawBody.implantBrand === "string") {
 					rawBody.implantBrand = normalizeBrandString(rawBody.implantBrand);
 				}
@@ -214,8 +218,8 @@ export function registerInstallationRoute(app: FastifyInstance) {
 					const list = rawBody[key];
 					if (Array.isArray(list)) {
 						rawBody[key] = list.map((item) => {
-							if (item && typeof item === "object") {
-								const clone = { ...(item as Record<string, unknown>) };
+							if (isPlainObject(item)) {
+								const clone = { ...item };
 								if (typeof clone.implantBrand === "string") {
 									clone.implantBrand = normalizeBrandString(clone.implantBrand);
 								}

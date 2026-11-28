@@ -37,7 +37,7 @@ export const OverviewAlertsAndHealth: React.FC<OverviewAlertsAndHealthProps> = (
 					</div>
 					<button
 						type="button"
-						className="pc-btn-primary"
+						className="pc-btn-secondary"
 						onClick={() => {
 							if (firstUnpaid) onOpenSbpForInvoice(firstUnpaid);
 							else onOpenTab("invoices");
@@ -54,11 +54,11 @@ export const OverviewAlertsAndHealth: React.FC<OverviewAlertsAndHealthProps> = (
 					<div className="pc-alert-body">
 						<ShieldAlert size={22} className="pc-icon-danger flex-shrink-0" />
 						<div>
-							<strong>Ожидает подписи {summary.pendingConsentsCount} информированное согласие (ИДС)</strong>
+							<strong>Ожидают подписи согласия: {summary.pendingConsentsCount}</strong>
 							<p className="pc-alert-subtext">Подтвердите согласие на медицинское вмешательство по SMS прямо сейчас.</p>
 						</div>
 					</div>
-					<button type="button" className="pc-btn-primary pc-danger-btn" onClick={() => onOpenTab("documents")}>
+					<button type="button" className="pc-btn-secondary" onClick={() => onOpenTab("documents")}>
 						<Smartphone size={16} />
 						<span>Подписать по SMS</span>
 					</button>
@@ -70,7 +70,7 @@ export const OverviewAlertsAndHealth: React.FC<OverviewAlertsAndHealthProps> = (
 					<div className="pc-card-title">
 						<ShieldCheck size={20} className="pc-icon-primary" />
 						<div>
-							<strong>Интерактивный индекс здоровья зубов</strong>
+							<strong>Состояние зубов и индекс санации</strong>
 							<div className="pc-card-subtitle">{healthIndex.statusLabelRu} &bull; Формула FDI (32 зуба)</div>
 						</div>
 					</div>

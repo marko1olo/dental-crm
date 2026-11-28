@@ -48,11 +48,12 @@
 }
 
 .pc-tab-counter {
-	background: var(--pc-danger);
-	color: #ffffff;
+	background: var(--pc-surface-hover);
+	color: var(--pc-text-muted);
+	border: 1px solid var(--pc-border);
 	font-size: 0.75rem;
-	font-weight: 800;
+	font-weight: 700;
 	border-radius: 10px;
 	padding: 1px 6px;
-	line-height: 1;
+	line-height: 1.2;
 }

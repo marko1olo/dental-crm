@@ -12,8 +12,10 @@
 
 .tg-viewer-toolbar {
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: space-between;
 	align-items: center;
+	gap: 8px;
 	padding-bottom: 8px;
 	border-bottom: 1px solid var(--tg-border);
 }
@@ -21,6 +23,8 @@
 .tg-viewer-badge {
 	font-size: 11px;
 	font-weight: 700;
+	white-space: nowrap;
+	flex-shrink: 0;
 	background: rgba(13, 148, 136, 0.15);
 	color: #0d9488;
 	padding: 3px 8px;

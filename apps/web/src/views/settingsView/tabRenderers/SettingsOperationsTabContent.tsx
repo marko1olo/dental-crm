@@ -53,8 +53,8 @@ export const SettingsOperationsTabContent: React.FC<SettingsOperationsTabContent
 
 	if (settingsTab === "imports") {
 		const orgId = typeof settingsProps.organizationId === "string" ? settingsProps.organizationId : undefined;
-		const clinicProfile = settingsProps.clinicSettings as { name?: string } | undefined;
-		const clinicName = typeof clinicProfile?.name === "string" ? clinicProfile.name : undefined;
+		const clinicSettings = typeof settingsProps.clinicSettings === "object" && settingsProps.clinicSettings !== null ? settingsProps.clinicSettings : undefined;
+		const clinicName = clinicSettings && "name" in clinicSettings && typeof clinicSettings.name === "string" ? clinicSettings.name : undefined;
 
 		return (
 			<div className="space-y-6">

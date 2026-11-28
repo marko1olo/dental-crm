@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { RefreshCw, Sparkles, X } from "lucide-react";
+import { RefreshCw, X } from "lucide-react";
 import { generateUuidV7 } from "@dental/shared";
 import { formatRubles, type PatientInvoiceItem } from "../patientCabinetEngine.js";
 import { TaxDeductionCertificateModal } from "../../../documents/DocumentsStudioModal";
@@ -219,7 +219,6 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = (props) =
 								</button>
 							)}
 							<span className="pc-badge-bonus">
-								<Sparkles size={13} />
 								<span>{formatRubles(data.loyaltyBonusBalance)} бонусов</span>
 							</span>
 						</div>

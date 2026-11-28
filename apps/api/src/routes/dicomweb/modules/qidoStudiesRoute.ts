@@ -13,17 +13,17 @@ export async function handleQidoStudies(
 	}>,
 	reply: FastifyReply,
 ) {
-	if (!(await requireClinicalReadAccess(request, reply, "dicom qido studies"))) return;
+	if (!(await requireClinicalReadAccess(request, reply, "dicom qido studies"))) return reply;
 	const organizationId = requireOrganizationId(request, reply);
-	if (!organizationId) return;
+	if (!organizationId) return reply;
 
-	if (!enforceClinicalDicomAccess(request, reply, "реестру КТ / DICOM исследований")) return;
+	if (!enforceClinicalDicomAccess(request, reply, "реестру КТ / DICOM исследований")) return reply;
 
 	await auditMedicalAccessFromRequest(request, {
 		organizationId, action: "VIEW_DICOM_STUDIES", diagnosis: "Поиск КТ / DICOM исследований (QIDO-RS)",
 	});
 
-	if (!(await verifyDicomOrganization(organizationId, reply))) return;
+	if (!(await verifyDicomOrganization(organizationId, reply))) return reply;
 
 	const queryStudyUid = normalizeUid(request.query.StudyInstanceUID);
 	const queryPatientId = request.query.PatientID?.trim();

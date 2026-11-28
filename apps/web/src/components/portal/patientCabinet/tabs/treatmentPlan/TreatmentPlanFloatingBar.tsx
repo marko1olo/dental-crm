@@ -36,7 +36,7 @@ export const TreatmentPlanFloatingBar: React.FC<TreatmentPlanFloatingBarProps> =
 			data-testid="treatment-plan-floating-bar"
 		>
 			<div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-				<span style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>
+				<span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 600 }}>
 					Следующий этап
 				</span>
 				<strong style={{ fontSize: "13px", color: "var(--ink)", lineHeight: 1.2, wordBreak: "break-word" }}>
@@ -52,9 +52,9 @@ export const TreatmentPlanFloatingBar: React.FC<TreatmentPlanFloatingBarProps> =
 					minHeight: "48px",
 					padding: "10px 18px",
 					borderRadius: "12px",
-					backgroundColor: "var(--teal)",
-					color: "var(--on-teal, var(--paper))",
-					fontWeight: 800,
+					backgroundColor: "var(--primary, #0d9488)",
+					color: "#ffffff",
+					fontWeight: 600,
 					fontSize: "14px",
 					border: "none",
 					display: "flex",
@@ -62,7 +62,7 @@ export const TreatmentPlanFloatingBar: React.FC<TreatmentPlanFloatingBarProps> =
 					gap: "8px",
 					cursor: "pointer",
 					touchAction: "manipulation",
-					boxShadow: "0 4px 12px var(--teal-soft)",
+					boxShadow: "0 4px 12px rgba(13, 148, 136, 0.22)",
 					flexShrink: 0,
 				}}
 			>

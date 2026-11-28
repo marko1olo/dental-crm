@@ -28,21 +28,21 @@ html[data-theme="light"] .patient-cabinet-modal,
 
 html.dark:not([data-theme="light"]) .patient-cabinet-modal,
 [data-theme="dark"] .patient-cabinet-modal {
-	--pc-bg: #0f172a;
-	--pc-surface: #1e293b;
-	--pc-surface-hover: #334155;
-	--pc-border: #334155;
-	--pc-text-main: #f8fafc;
-	--pc-text-muted: #94a3b8;
-	--pc-primary: #2dd4bf;
-	--pc-primary-hover: #14b8a6;
-	--pc-primary-light: rgba(45, 212, 191, 0.15);
-	--pc-success: #34d399;
-	--pc-success-light: rgba(52, 211, 153, 0.15);
-	--pc-warning: #fbbf24;
-	--pc-warning-light: rgba(251, 191, 36, 0.15);
-	--pc-danger: #f87171;
-	--pc-danger-light: rgba(248, 113, 113, 0.15);
+	--pc-bg: var(--paper, #111315);
+	--pc-surface: var(--paper-soft, #1a1b1e);
+	--pc-surface-hover: rgba(255, 255, 255, 0.08);
+	--pc-border: var(--line, rgba(255, 255, 255, 0.12));
+	--pc-text-main: var(--ink, #f4f4f5);
+	--pc-text-muted: var(--ink-muted, #a1a1aa);
+	--pc-primary: var(--primary, #0d9488);
+	--pc-primary-hover: var(--primary-hover, #0f766e);
+	--pc-primary-light: rgba(13, 148, 136, 0.14);
+	--pc-success: #10b981;
+	--pc-success-light: rgba(16, 185, 129, 0.14);
+	--pc-warning: #f59e0b;
+	--pc-warning-light: rgba(245, 158, 11, 0.14);
+	--pc-danger: #ef4444;
+	--pc-danger-light: rgba(239, 68, 68, 0.14);
 }
 
 [data-theme="night"] .patient-cabinet-modal,

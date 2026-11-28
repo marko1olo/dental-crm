@@ -40,7 +40,6 @@ export const PatientCabinetNavTabs: React.FC<PatientCabinetNavTabsProps> = ({
 			label: "Счета и оплата",
 			icon: CreditCard,
 			count: unpaidInvoicesCount,
-			countBg: "var(--pc-danger)",
 		},
 		{
 			tab: "documents" as const,
@@ -48,7 +47,6 @@ export const PatientCabinetNavTabs: React.FC<PatientCabinetNavTabsProps> = ({
 			icon: FileText,
 			isMatch: (t: string) => t === "documents" || t === "care",
 			count: pendingConsentsCount,
-			countBg: "var(--pc-warning)",
 		},
 		{ tab: "family" as const, label: "Семья", icon: User },
 	];
@@ -68,10 +66,7 @@ export const PatientCabinetNavTabs: React.FC<PatientCabinetNavTabsProps> = ({
 						<Icon size={16} />
 						<span>{item.label}</span>
 						{typeof item.count === "number" && item.count > 0 && (
-							<span
-								className="pc-tab-counter"
-								style={item.countBg ? { background: item.countBg } : undefined}
-							>
+							<span className="pc-tab-counter">
 								{item.count}
 							</span>
 						)}

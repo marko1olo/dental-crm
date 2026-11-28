@@ -43,6 +43,10 @@ export interface SettingsDesktopLayoutProps {
 	activeSettingsTabButtonRef?: React.RefObject<HTMLButtonElement | null> | undefined;
 }
 
+const isDoctorTab = (t: string): t is DoctorSubTab => DOCTOR_TABS.has(t);
+const isAdminTab = (t: string): t is AdminSubTab => ADMIN_TABS.has(t);
+const isOwnerTab = (t: string): t is OwnerSubTab => OWNER_TABS.has(t);
+
 export function SettingsDesktopLayout({
 	roleMode,
 	setRoleMode,
@@ -72,9 +76,9 @@ export function SettingsDesktopLayout({
 			<SettingsNavigationMenu roleMode={roleMode} setRoleMode={setRoleMode} selectSettingsTab={selectSettingsTab} reopenOnboarding={reopenOnboarding} activeStaffUser={activeStaffUser} />
 
 			<div className="col-span-full w-full min-w-0" style={{ gridColumn: "1 / -1" }}>
-				{roleMode === "doctor" && <DoctorSettingsSection props={settingsProps} initialTab={DOCTOR_TABS.has(settingsTab) ? (settingsTab as DoctorSubTab) : "profile"} onSelectTab={selectSettingsTab} />}
-				{roleMode === "admin" && <AdminSettingsSection props={settingsProps} initialTab={ADMIN_TABS.has(settingsTab) ? (settingsTab as AdminSubTab) : "clinic"} onSelectTab={selectSettingsTab} />}
-				{roleMode === "owner" && <OwnerSettingsSection props={settingsProps} initialTab={OWNER_TABS.has(settingsTab) ? (settingsTab as OwnerSubTab) : "clinic"} onSelectTab={selectSettingsTab} appLogic={appLogic} />}
+				{roleMode === "doctor" && <DoctorSettingsSection props={settingsProps} initialTab={isDoctorTab(settingsTab) ? settingsTab : "profile"} onSelectTab={selectSettingsTab} />}
+				{roleMode === "admin" && <AdminSettingsSection props={settingsProps} initialTab={isAdminTab(settingsTab) ? settingsTab : "clinic"} onSelectTab={selectSettingsTab} />}
+				{roleMode === "owner" && <OwnerSettingsSection props={settingsProps} initialTab={isOwnerTab(settingsTab) ? settingsTab : "clinic"} onSelectTab={selectSettingsTab} appLogic={appLogic} />}
 				{roleMode === "all" && (
 					<div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6 items-start">
 						<SettingsNavigationSidebar typedSettingsTabs={typedSettingsTabs} settingsTab={settingsTab} selectSettingsTab={selectSettingsTab} handleSettingsTabKeyDown={handleSettingsTabKeyDown} activeSettingsTabButtonRef={activeSettingsTabButtonRef} settingsTabButtonId={settingsTabButtonId} settingsTabPanelId={settingsTabPanelId} />

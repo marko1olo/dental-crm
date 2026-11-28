@@ -1,5 +1,5 @@
 import React from "react";
-import { CalendarPlus, CheckCircle2, CreditCard, Heart, QrCode } from "lucide-react";
+import { CalendarPlus, CheckCircle2, CreditCard, Heart } from "lucide-react";
 import type { PatientCabinetSummary, PatientInvoiceItem } from "../../patientCabinetEngine";
 import type { PatientCabinetTab } from "../../modal/types.js";
 
@@ -71,16 +71,6 @@ export const OverviewQuickActions: React.FC<OverviewQuickActionsProps> = ({
 			>
 				<Heart size={18} />
 				<span>Памятка после приема</span>
-			</button>
-
-			<button
-				type="button"
-				className="pc-quick-action-btn accent"
-				onClick={onOpenReceptionQr}
-				data-testid="btn-show-reception-qr"
-			>
-				<QrCode size={18} />
-				<span>Показать администратору</span>
 			</button>
 		</div>
 	);

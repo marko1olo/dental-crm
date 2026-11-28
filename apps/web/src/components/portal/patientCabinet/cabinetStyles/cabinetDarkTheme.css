@@ -1,15 +1,15 @@
 /* cabinetDarkTheme.css — Patient Cabinet Deep Dark Theme (Mandate 8b <= 120 lines) */
 :root[data-theme="dark"],
 .dark {
-	--pc-backdrop: rgba(2, 6, 23, 0.85);
-	--pc-surface: #0f172a;
-	--pc-border: #1e293b;
-	--pc-text: #f8fafc;
-	--pc-text-muted: #94a3b8;
+	--pc-backdrop: rgba(0, 0, 0, 0.78);
+	--pc-surface: var(--paper-soft, #1a1b1e);
+	--pc-border: var(--line, rgba(255, 255, 255, 0.12));
+	--pc-text: var(--ink, #f4f4f5);
+	--pc-text-muted: var(--ink-muted, #a1a1aa);
 	--pc-hover: rgba(255, 255, 255, 0.06);
 	--pc-chip-bg: rgba(255, 255, 255, 0.05);
-	--pc-primary-soft: rgba(20, 184, 166, 0.15);
-	--pc-primary-line: rgba(20, 184, 166, 0.3);
+	--pc-primary-soft: rgba(13, 148, 136, 0.14);
+	--pc-primary-line: rgba(13, 148, 136, 0.28);
 }
 
 [data-theme="dark"] .patient-cabinet-modal,
@@ -89,6 +89,6 @@
 
 [data-theme="dark"] .pc-reception-qr-card,
 .dark .pc-reception-qr-card {
-	background: var(--paper, var(--pc-surface, #0f172a));
-	border-color: var(--pc-primary, #14b8a6);
+	background: var(--pc-surface);
+	border-color: var(--line, var(--pc-border));
 }

@@ -15,10 +15,10 @@ export const CabinetFinanceTab: React.FC<CabinetFinanceTabProps> = memo(({
 	onShareReferral,
 }) => {
 	return (
-		<main className="tg-tab-content">
+		<main className="tg-tab-content pb-24">
 			<div className="tg-section-header">
 				<div>
-					<h2 className="tg-section-title">Финансы & Бонусы</h2>
+					<h2 className="tg-section-title">Финансы и бонусы</h2>
 					<p className="tg-section-desc">
 						Баланс клиники, кэшбэк и программа «Приведи друга»
 					</p>
@@ -44,20 +44,20 @@ export const CabinetFinanceTab: React.FC<CabinetFinanceTabProps> = memo(({
 			{/* Карточка акции «Подари другу 1 000 ₽» */}
 			<div className="tg-referral-card">
 				<div className="flex items-center gap-2 mb-2">
-					<div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+					<div className="w-8 h-8 rounded-lg bg-[var(--primary,#0d9488)]/15 text-[var(--primary,#0d9488)] flex items-center justify-center font-bold">
 						🎁
 					</div>
 					<div>
-						<div className="text-sm font-bold text-slate-100">Подари другу 1 000 ₽</div>
-						<div className="text-xs text-slate-400">И получи +500 бонусов себе на счет</div>
+						<div className="text-sm font-bold text-[var(--tg-text)]">Подари другу 1 000 ₽</div>
+						<div className="text-xs text-[var(--tg-text-muted)]">И получи +500 бонусов себе на счет</div>
 					</div>
 				</div>
-				<p className="text-xs text-slate-300 leading-relaxed mb-3">
+				<p className="text-xs text-[var(--tg-text-muted)] leading-relaxed mb-3">
 					Ваш друг получит персональный сертификат на 1 000 ₽ на первый визит или комплексную чистку, а вы — 500 бонусов DENTE сразу после его записи.
 				</p>
 				<button
 					type="button"
-					className="tg-cta-button bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold"
+					className="tg-cta-button"
 					onClick={onShareReferral}
 				>
 					<Share2 size={16} />
@@ -67,7 +67,7 @@ export const CabinetFinanceTab: React.FC<CabinetFinanceTabProps> = memo(({
 
 			{/* Детализация начислений и списаний */}
 			<div className="tg-grouped-card p-4">
-				<div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+				<div className="text-xs font-semibold text-slate-400 mb-3">
 					История начислений и операций:
 				</div>
 

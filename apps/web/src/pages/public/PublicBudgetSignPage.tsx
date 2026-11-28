@@ -399,7 +399,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 					}
 				}
 			`}</style>
-			<div className="max-w-lg w-full mx-auto space-y-6">
+			<div className="max-w-2xl w-full mx-auto space-y-6">
 				{/* Top Clinic Header */}
 				<header className="public-budget-print-card bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-4 shadow-lg flex items-center justify-between">
 					<div>
@@ -582,15 +582,15 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 											</p>
 										)}
 										<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-xs">
-											<div className="rounded-lg bg-[var(--paper,#ffffff)] border border-[var(--line,rgb(226,232,240))] px-3 py-2 flex items-center justify-between gap-2">
-												<span className="text-[var(--ink-muted,#64748b)]">Рассрочка 0% (12 мес):</span>
-												<span className="font-mono tracking-tight font-medium text-[var(--ink,#0f172a)] tabular-nums">
+											<div className="rounded-lg bg-[var(--paper,#ffffff)] border border-[var(--line,rgb(226,232,240))] px-3 py-2 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+												<span className="text-[var(--ink-muted,#64748b)] whitespace-nowrap">Рассрочка 0% (12 мес):</span>
+												<span className="font-mono tracking-tight font-medium text-[var(--ink,#0f172a)] tabular-nums whitespace-nowrap shrink-0">
 													от {formatKopecksToRub(activeTier.monthly12mKopecks)}/мес
 												</span>
 											</div>
-											<div className="rounded-lg bg-[var(--paper,#ffffff)] border border-[var(--line,rgb(226,232,240))] px-3 py-2 flex items-center justify-between gap-2">
-												<span className="text-[var(--ink-muted,#64748b)]">Вычет 13% НДФЛ:</span>
-												<span className="font-mono tracking-tight font-medium text-[var(--ink,#0f172a)] tabular-nums">
+											<div className="rounded-lg bg-[var(--paper,#ffffff)] border border-[var(--line,rgb(226,232,240))] px-3 py-2 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+												<span className="text-[var(--ink-muted,#64748b)] whitespace-nowrap">Вычет 13% НДФЛ:</span>
+												<span className="font-mono tracking-tight font-medium text-[var(--ink,#0f172a)] tabular-nums whitespace-nowrap shrink-0">
 													+{formatKopecksToRub(activeTier.taxDeduction13Kopecks)}
 												</span>
 											</div>
@@ -619,9 +619,9 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 											<div className="space-y-1">
 												<div className="flex items-center gap-2">
 													{it.toothNumber ? (
-														<span className="px-1.5 py-0.5 rounded bg-cyan-50 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 font-mono text-[11px] font-medium border border-cyan-200 dark:border-cyan-800/60">Зуб {it.toothNumber}</span>
+														<span className="px-1.5 py-0.5 rounded bg-cyan-50 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 font-mono text-[11px] font-medium border border-cyan-200 dark:border-cyan-800/60 whitespace-nowrap shrink-0">Зуб {it.toothNumber}</span>
 													) : (
-														<span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 text-[11px] font-medium">Комплекс</span>
+														<span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 text-[11px] font-medium whitespace-nowrap shrink-0">Комплекс</span>
 													)}
 													<span className="text-xs font-medium text-slate-800 dark:text-slate-200">{formatProcedureTitle(it.title)}</span>
 												</div>

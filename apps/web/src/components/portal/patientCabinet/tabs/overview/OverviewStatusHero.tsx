@@ -1,5 +1,5 @@
 import React from "react";
-import { Award, Heart, Sparkles } from "lucide-react";
+import { Award, Heart, Wallet } from "lucide-react";
 import type { PatientPersonalCabinetData } from "../../patientCabinetEngine";
 
 export interface OverviewStatusHeroProps {
@@ -31,7 +31,7 @@ export const OverviewStatusHero: React.FC<OverviewStatusHeroProps> = ({ data }) 
 
 			<div className="pc-loyalty-strip">
 				<div className="pc-loyalty-pill">
-					<Sparkles size={16} className="pc-icon-amber" />
+					<Wallet size={16} className="pc-icon-primary" />
 					<div className="pc-loyalty-text">
 						<span className="pc-loyalty-label">Бонусный баланс:</span>
 						<strong className="pc-loyalty-val">

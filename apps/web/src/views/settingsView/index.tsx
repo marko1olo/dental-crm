@@ -21,18 +21,22 @@ import { buildSettingsViewLogicBag, useSettingsRoleModeSync, selectSettingsTabHe
 
 export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 	const appLogic = useAppLogicContext();
+	const activeSettingsTabButtonRef = appLogic.activeSettingsTabButtonRef;
+	const reopenOnboarding = appLogic.reopenOnboarding;
+	const setSettingsTab = appLogic.setSettingsTab;
+	const settingsTab = appLogic.settingsTab;
+	const rawSettingsTabs = appLogic.settingsTabs;
 	const settingsStore = useSettingsStore();
 	const derivations = useSettingsDerivations();
-	const logic = buildSettingsViewLogicBag(appLogic as Record<string, unknown> | null) as SettingsViewLogicBag;
-	const { activeSettingsTabButtonRef, reopenOnboarding, setSettingsTab, settingsTab, settingsTabs: rawSettingsTabs } =
-		logic as { activeSettingsTabButtonRef?: React.RefObject<HTMLButtonElement | null>; reopenOnboarding?: () => void; setSettingsTab?: (tab: string) => void; settingsTab?: string; settingsTabs?: SettingsTabItem[] };
+	const logic = buildSettingsViewLogicBag(appLogic);
 	const settingsProps = buildSettingsProps(logic, settingsStore, derivations, activeStaffUser);
 	const [roleMode, setRoleMode] = useState<SettingsRoleMode>("all");
 	const effectiveSettingsTab = settingsTab || "clinic";
 	useSettingsRoleModeSync(effectiveSettingsTab, roleMode, setRoleMode);
 
 	const flags = useWorkspaceProfile();
-	let typedSettingsTabs = (Array.isArray(rawSettingsTabs) && rawSettingsTabs.length > 0 ? rawSettingsTabs : settingsTabs) as Array<{ id: SettingsTabId; title: string; group: SettingsTabGroup }>;
+	const baseTabs: SettingsTabItem[] = Array.isArray(rawSettingsTabs) && rawSettingsTabs.length > 0 ? rawSettingsTabs : [...settingsTabs];
+	let typedSettingsTabs = baseTabs;
 	if (!flags.hasMarketingModule) typedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== "marketing");
 	if (!flags.hasAnalyticsModule) typedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== "reporting");
 	if (!flags.hasBpmWorkflows) typedSettingsTabs = typedSettingsTabs.filter((t) => t.id !== "bpmn");

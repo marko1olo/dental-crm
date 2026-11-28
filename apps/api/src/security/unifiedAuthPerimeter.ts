@@ -82,6 +82,7 @@ export interface PrincipalAuthOptions {
 	allowUnverifiedHeaderRead?: boolean | undefined;
 	missingOrgPayload?: Record<string, unknown> | undefined;
 	permissionDeniedCode?: string | undefined;
+	permissionDeniedPermission?: string | undefined;
 	permissionDeniedMessage?: string | undefined;
 }
 
@@ -186,7 +187,7 @@ async function checkPermissionRequirement(
 		}
 		reply.code(403).send({
 			error: options?.permissionDeniedCode ?? "PermissionDenied",
-			permission: requirement,
+			permission: options?.permissionDeniedPermission ?? requirement,
 			role: principal.role,
 			message:
 				options?.permissionDeniedMessage ??

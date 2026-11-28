@@ -13,8 +13,18 @@ import { DeepClinicalSettingsSection } from "../../../components/settings/DeepCl
 
 export interface SettingsClinicalTabContentProps {
 	settingsTab: string;
-	settingsProps: Record<string, unknown>;
-	logic: Record<string, unknown>;
+	settingsProps: Record<string, unknown> & {
+		soundNotificationsMuted?: boolean | undefined;
+		setSoundNotificationsMuted?: ((m: boolean) => void) | undefined;
+		testOnlineBookingSound?: (() => void) | undefined;
+		testSlotEndSound?: (() => void) | undefined;
+	};
+	logic: Record<string, unknown> & {
+		soundNotificationsMuted?: boolean | undefined;
+		setSoundNotificationsMuted?: ((m: boolean) => void) | undefined;
+		testOnlineBookingSound?: (() => void) | undefined;
+		testSlotEndSound?: (() => void) | undefined;
+	};
 }
 
 export const SettingsClinicalTabContent: React.FC<SettingsClinicalTabContentProps> = ({
@@ -27,24 +37,27 @@ export const SettingsClinicalTabContent: React.FC<SettingsClinicalTabContentProp
 			settingsProps?.soundNotificationsMuted ??
 			logic?.soundNotificationsMuted,
 		);
-		const onToggleMuted =
-			typeof settingsProps?.setSoundNotificationsMuted === "function"
-				? (settingsProps.setSoundNotificationsMuted as (muted: boolean) => void)
-				: typeof logic?.setSoundNotificationsMuted === "function"
-					? (logic.setSoundNotificationsMuted as (muted: boolean) => void)
-					: undefined;
-		const onTestBookingSound =
-			typeof settingsProps?.testOnlineBookingSound === "function"
-				? (settingsProps.testOnlineBookingSound as () => void)
-				: typeof logic?.testOnlineBookingSound === "function"
-					? (logic.testOnlineBookingSound as () => void)
-					: undefined;
-		const onTestEndSound =
-			typeof settingsProps?.testSlotEndSound === "function"
-				? (settingsProps.testSlotEndSound as () => void)
-				: typeof logic?.testSlotEndSound === "function"
-					? (logic.testSlotEndSound as () => void)
-					: undefined;
+		const onToggleMuted = (muted: boolean) => {
+			if (typeof settingsProps?.setSoundNotificationsMuted === "function") {
+				settingsProps.setSoundNotificationsMuted(muted);
+			} else if (typeof logic?.setSoundNotificationsMuted === "function") {
+				logic.setSoundNotificationsMuted(muted);
+			}
+		};
+		const onTestBookingSound = () => {
+			if (typeof settingsProps?.testOnlineBookingSound === "function") {
+				settingsProps.testOnlineBookingSound();
+			} else if (typeof logic?.testOnlineBookingSound === "function") {
+				logic.testOnlineBookingSound();
+			}
+		};
+		const onTestEndSound = () => {
+			if (typeof settingsProps?.testSlotEndSound === "function") {
+				settingsProps.testSlotEndSound();
+			} else if (typeof logic?.testSlotEndSound === "function") {
+				logic.testSlotEndSound();
+			}
+		};
 
 		return (
 			<ErrorBoundary moduleName="Клинические пресеты врача">

@@ -15,7 +15,7 @@ export const CabinetTaxTab: React.FC<CabinetTaxTabProps> = memo(({
 	onOpenTaxSheet,
 }) => {
 	return (
-		<main className="tg-tab-content">
+		<main className="tg-tab-content pb-24">
 			<div className="tg-section-header">
 				<div>
 					<h2 className="tg-section-title">Налоговый вычет 13% (НДФЛ)</h2>
@@ -59,7 +59,7 @@ export const CabinetTaxTab: React.FC<CabinetTaxTabProps> = memo(({
 
 			{/* Информационный гид в 3 шага */}
 			<div className="tg-grouped-card p-4">
-				<div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+				<div className="text-xs font-semibold text-slate-400 mb-3">
 					Как получить возврат 13% за 3 простых шага:
 				</div>
 

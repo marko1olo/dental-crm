@@ -37,7 +37,7 @@ export const CabinetTreatmentPlansTab: React.FC<CabinetTreatmentPlansTabProps> =
 	onApprovePlan,
 	onTriggerHaptic,
 }) => (
-	<main className="tg-tab-content">
+	<main className="tg-tab-content pb-24">
 		<div className="tg-section-header">
 			<div>
 				<h2 className="tg-section-title">Планы лечения и смета</h2>

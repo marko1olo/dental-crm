@@ -246,7 +246,7 @@ describe("TelegramPatientPortalCabinet Decomposed Architecture Test Suite", () =
 			}),
 		);
 
-		assert.ok(html.includes("Финансы") && html.includes("Бонусы"));
+		assert.ok(html.includes("Финансы и бонусы"));
 		assert.ok(html.includes("Бонусный счет DENTE"));
 		assert.ok(html.includes("1 бонус = 1 рубль"));
 		assert.ok(html.includes("Депозит клиники (аванс):"));

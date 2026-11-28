@@ -4,7 +4,7 @@
    ========================================================================== */
 
 .tg-finance-balance-card {
-	background: linear-gradient(135deg, var(--tg-card-bg) 0%, var(--tg-card-inner) 100%);
+	background: var(--tg-card-bg);
 	border: 1px solid var(--tg-border);
 	border-radius: 22px;
 	padding: 20px;
@@ -12,11 +12,11 @@
 }
 
 .tg-referral-card {
-	background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.08) 100%);
-	border: 1px solid rgba(245, 158, 11, 0.35);
+	background: var(--tg-card-bg);
+	border: 1px solid var(--tg-border);
 	border-radius: 20px;
 	padding: 16px;
-	box-shadow: 0 4px 16px rgba(245, 158, 11, 0.08);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .tg-sheet-title {

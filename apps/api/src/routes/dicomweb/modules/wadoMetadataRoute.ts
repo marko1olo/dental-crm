@@ -22,11 +22,11 @@ export async function handleWadoSeriesMetadata(
 	request: FastifyRequest<{ Params: { studyUid: string; seriesUid: string } }>,
 	reply: FastifyReply,
 ) {
-	if (!(await requireClinicalReadAccess(request, reply, "dicom series metadata"))) return;
+	if (!(await requireClinicalReadAccess(request, reply, "dicom series metadata"))) return reply;
 	const organizationId = requireOrganizationId(request, reply);
-	if (!organizationId) return;
+	if (!organizationId) return reply;
 
-	if (!enforceClinicalDicomAccess(request, reply, "метаданным серии")) return;
+	if (!enforceClinicalDicomAccess(request, reply, "метаданным серии")) return reply;
 
 	const studyUid = normalizeUid(request.params.studyUid);
 	const seriesUid = normalizeUid(request.params.seriesUid);
@@ -34,7 +34,7 @@ export async function handleWadoSeriesMetadata(
 		return reply.code(400).send({ error: "InvalidUid", message: "Не указан StudyInstanceUID или SeriesInstanceUID." });
 	}
 
-	if (!(await verifyDicomOrganization(organizationId, reply))) return;
+	if (!(await verifyDicomOrganization(organizationId, reply))) return reply;
 
 	const instances = await withTenantCtx(organizationId, async (tx) => {
 		const orgKnown = await organizationExists(organizationId, tx);

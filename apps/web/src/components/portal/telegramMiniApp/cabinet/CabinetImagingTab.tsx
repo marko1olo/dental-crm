@@ -178,7 +178,7 @@ export const CabinetImagingTab: React.FC<CabinetImagingTabProps> = memo(({
 		<main className="tg-tab-content">
 			<div className="tg-section-header">
 				<div>
-					<h2 className="tg-section-title">Цифровая диагностика & КТ</h2>
+					<h2 className="tg-section-title">Цифровая диагностика и КТ</h2>
 					<p className="tg-section-desc">
 						Рентгенограммы высокого разрешения с заключениями вашего врача
 					</p>
@@ -228,14 +228,14 @@ export const CabinetImagingTab: React.FC<CabinetImagingTabProps> = memo(({
 				<div className="tg-grouped-card tg-viewer-container">
 					{/* Верхний тулбар вьювера: зум, инверсия, резкость */}
 					<div className="tg-viewer-toolbar">
-						<div className="flex items-center gap-1.5">
-							<span className="tg-viewer-badge">{activeScan.scanTypeLabel}</span>
-							<span className="text-[11px] text-[var(--ink-muted)]">
+						<div className="flex flex-wrap items-center gap-1.5 min-w-0">
+							<span className="tg-viewer-badge whitespace-nowrap shrink-0">{activeScan.scanTypeLabel}</span>
+							<span className="text-[11px] text-[var(--ink-muted)] whitespace-nowrap shrink-0">
 								Доза: {activeScan.radiationDoseMsv} мЗв
 							</span>
 						</div>
 
-						<div className="flex items-center gap-1">
+						<div className="flex items-center gap-1 shrink-0 ml-auto">
 							<button
 								type="button"
 								className={`tg-viewer-tool-btn ${isInverted ? "active" : ""}`}
@@ -393,12 +393,12 @@ export const CabinetImagingTab: React.FC<CabinetImagingTabProps> = memo(({
 
 					{/* Заключение доктора под снимком */}
 					<div className="tg-viewer-footer">
-						<div className="flex items-center justify-between mb-1.5">
-							<div className="tg-doctor-name flex items-center gap-1.5">
-								<FileText size={13} className="text-[var(--primary)]" />
+						<div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+							<div className="tg-doctor-name flex items-center gap-1.5 min-w-0">
+								<FileText size={13} className="text-[var(--primary)] shrink-0" />
 								<span>Заключение: {activeScan.doctorName}</span>
 							</div>
-							<span className="text-[11px] font-bold text-[var(--primary)]">
+							<span className="text-[11px] font-bold text-[var(--primary)] whitespace-nowrap shrink-0">
 								{activeScan.diagnosisBadge}
 							</span>
 						</div>

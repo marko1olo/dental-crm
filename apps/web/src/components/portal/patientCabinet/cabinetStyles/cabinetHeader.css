@@ -55,26 +55,26 @@
 }
 
 .pc-badge-bonus {
-	background: var(--pc-primary-light);
-	color: var(--pc-primary);
-	border: 1px solid var(--pc-primary);
+	background: var(--pc-surface);
+	color: var(--pc-text-main);
+	border: 1px solid var(--pc-border);
 	border-radius: 20px;
 	padding: 4px 10px;
 	font-size: 0.75rem;
-	font-weight: 700;
+	font-weight: 600;
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
 }
 
 .pc-badge-tier {
-	background: var(--pc-warning-light);
-	color: var(--pc-warning);
-	border: 1px solid var(--pc-warning);
+	background: var(--pc-surface);
+	color: var(--pc-text-muted);
+	border: 1px solid var(--pc-border);
 	border-radius: 20px;
 	padding: 4px 10px;
 	font-size: 0.75rem;
-	font-weight: 700;
+	font-weight: 600;
 }
 
 .pc-close-btn {

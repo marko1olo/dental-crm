@@ -167,7 +167,7 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 	);
 
 	return (
-		<div className="pc-tab-content-container" data-testid="pc-treatment-plan-tab">
+		<div className="pc-tab-content-container pb-24" data-testid="pc-treatment-plan-tab">
 			<TreatmentPlanHeroCard currentPlan={currentPlan} isPlanApproved={isPlanApproved} completedStages={completedStages} totalStages={currentPlan.stages.length} onApprovePlan={handleApprovePlan} onPrintEstimate={() => openPrintWindow(generateTreatmentPlanEstimateHtml(isPlanApproved ? { ...currentPlan, approvedByPatient: true } : currentPlan, data))} onOpenClinicalScans={onOpenClinicalScans} isClinicalScansOpen={isClinicalScansOpen} />
 			<div className="pc-all-inclusive-banner" data-testid="pc-all-inclusive-banner">
 				<div className="pc-ai-icon"><ShieldCheck size={24} /></div>

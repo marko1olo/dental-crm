@@ -22,14 +22,13 @@
 	height: 48px;
 	min-width: 48px;
 	border-radius: 50%;
-	background: linear-gradient(135deg, var(--pc-primary), var(--pc-primary-hover));
+	background: var(--pc-primary);
 	color: #ffffff;
 	font-size: 1.25rem;
 	font-weight: 800;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
 }
 
 .pc-status-hero-details {

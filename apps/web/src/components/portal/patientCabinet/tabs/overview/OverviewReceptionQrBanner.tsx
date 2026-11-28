@@ -1,5 +1,5 @@
 import React from "react";
-import { QrCode, Sparkles } from "lucide-react";
+import { QrCode } from "lucide-react";
 
 export interface OverviewReceptionQrBannerProps {
 	readonly onOpenReceptionQr: () => void;
@@ -22,11 +22,11 @@ export const OverviewReceptionQrBanner: React.FC<OverviewReceptionQrBannerProps>
 				</div>
 				<button
 					type="button"
-					className="pc-btn-primary pc-reception-open-btn"
+					className="pc-btn-secondary pc-reception-open-btn"
 					onClick={onOpenReceptionQr}
 					data-testid="btn-show-reception-qr"
 				>
-					<Sparkles size={16} />
+					<QrCode size={16} />
 					<span>Показать администратору</span>
 				</button>
 			</div>

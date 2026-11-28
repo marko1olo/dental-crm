@@ -26,7 +26,7 @@
 
 .pc-quick-action-btn.primary {
 	background: var(--pc-primary);
-	color: var(--paper-strong, #ffffff);
+	color: #ffffff;
 	border-color: var(--pc-primary);
 	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
 }

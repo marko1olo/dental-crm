@@ -22,24 +22,11 @@ export const OverviewNextAppointmentActions: React.FC<OverviewNextAppointmentAct
 		<div className="pc-appt-actions-row">
 			<button
 				type="button"
-				className="pc-btn-primary pc-appt-action-btn pc-btn-i-am-here"
+				className="pc-btn-secondary pc-appt-action-btn pc-btn-i-am-here"
 				onClick={onOpenSelfCheckin}
 				data-testid="btn-i-am-here-checkin"
 				title="Отметить прибытие в клинику и получить талон электронной очереди"
-				style={{
-					minHeight: "44px",
-					backgroundColor: "var(--teal)",
-					color: "var(--on-teal, #ffffff)",
-					fontWeight: 700,
-					display: "inline-flex",
-					alignItems: "center",
-					gap: "6px",
-					padding: "8px 16px",
-					borderRadius: "10px",
-					cursor: "pointer",
-					border: "none",
-					touchAction: "manipulation",
-				}}
+				style={{ minHeight: "44px", touchAction: "manipulation" }}
 			>
 				<CheckCircle2 size={16} />
 				<span>Я на месте / Чекин</span>

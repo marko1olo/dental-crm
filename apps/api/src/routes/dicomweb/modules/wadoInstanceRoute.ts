@@ -15,11 +15,11 @@ export async function handleWadoRetrieveInstance(
 	request: FastifyRequest<{ Params: { studyUid: string; seriesUid: string; instanceUid: string } }>,
 	reply: FastifyReply,
 ) {
-	if (!(await requireClinicalReadAccess(request, reply, "dicom instance read"))) return;
+	if (!(await requireClinicalReadAccess(request, reply, "dicom instance read"))) return reply;
 	const organizationId = requireOrganizationId(request, reply);
-	if (!organizationId) return;
+	if (!organizationId) return reply;
 
-	if (!enforceClinicalDicomAccess(request, reply, "КТ / DICOM снимку")) return;
+	if (!enforceClinicalDicomAccess(request, reply, "КТ / DICOM снимку")) return reply;
 
 	const rawStudyUid = request.params.studyUid?.trim();
 	const rawSeriesUid = request.params.seriesUid?.trim();

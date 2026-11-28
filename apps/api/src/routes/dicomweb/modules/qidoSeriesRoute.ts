@@ -18,18 +18,18 @@ export async function handleQidoSeries(
 	request: FastifyRequest<{ Params: { studyUid: string } }>,
 	reply: FastifyReply,
 ) {
-	if (!(await requireClinicalReadAccess(request, reply, "dicom qido series"))) return;
+	if (!(await requireClinicalReadAccess(request, reply, "dicom qido series"))) return reply;
 	const organizationId = requireOrganizationId(request, reply);
-	if (!organizationId) return;
+	if (!organizationId) return reply;
 
-	if (!enforceClinicalDicomAccess(request, reply, "сериям КТ / DICOM")) return;
+	if (!enforceClinicalDicomAccess(request, reply, "сериям КТ / DICOM")) return reply;
 
 	const studyUid = normalizeUid(request.params.studyUid);
 	if (!studyUid) {
 		return reply.code(400).send({ error: "InvalidStudyUid", message: "Не указан StudyInstanceUID." });
 	}
 
-	if (!(await verifyDicomOrganization(organizationId, reply))) return;
+	if (!(await verifyDicomOrganization(organizationId, reply))) return reply;
 
 	const rows = await withTenantCtx(organizationId, async (tx) => {
 		const orgKnown = await organizationExists(organizationId, tx);
