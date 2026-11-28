@@ -199,7 +199,7 @@ export class IdentMappers {
 			obj["startDate"]) as string;
 		const date =
 			IdentJsonParser.normalizeDate(rawDate) ||
-			new Date().toISOString().slice(0, 10);
+			todayDateKeyInTimeZone("Europe/Samara");
 
 		const time = obj["time"]
 			? String(obj["time"])
@@ -292,7 +292,7 @@ export class IdentMappers {
 			obj["data"]) as string;
 		const date =
 			IdentJsonParser.normalizeDate(rawDate) ||
-			new Date().toISOString().slice(0, 10);
+			todayDateKeyInTimeZone("Europe/Samara");
 
 		const rawAmount = (obj["amount"] ??
 			obj["summa"] ??

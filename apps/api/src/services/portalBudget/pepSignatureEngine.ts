@@ -39,11 +39,12 @@ function escapeSvgText(raw: string): string {
 export function generateFallbackTextSignatureDataUrl(
 	signerName: string,
 	signedAtIso?: string,
+	timeZone = "Europe/Samara",
 ): string {
 	const cleanName = escapeSvgText((signerName || "Пациент").trim() || "Пациент");
 	const dateLabel = signedAtIso
 		? escapeSvgText(signedAtIso.slice(0, 10))
-		: new Date().toISOString().slice(0, 10);
+		: todayDateKeyInTimeZone(timeZone);
 	const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="32" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ЭЛЕКТРОННАЯ ПОДПИСЬ ПАЦИЕНТА</text><text x="160" y="54" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">${cleanName} • ${dateLabel}</text></svg>`;
 	return `data:image/svg+xml;base64,${Buffer.from(svg, "utf-8").toString("base64")}`;
 }

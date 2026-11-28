@@ -221,7 +221,7 @@ export class D4wExtractors {
 				null;
 			const date =
 				Dental4WindowsXmlParser.normalizeDate(rawDate) ||
-				new Date().toISOString().slice(0, 10);
+				todayDateKeyInTimeZone("Europe/Samara");
 
 			const startTime =
 				values["starttime"] ||
@@ -347,7 +347,7 @@ export class D4wExtractors {
 				null;
 			const date =
 				Dental4WindowsXmlParser.normalizeDate(rawDate) ||
-				new Date().toISOString().slice(0, 10);
+				todayDateKeyInTimeZone("Europe/Samara");
 
 			const totalKopecks =
 				Dental4WindowsXmlParser.parseKopecks(

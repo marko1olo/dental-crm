@@ -3,11 +3,13 @@ import {
 	generateUuidV7,
 	kopecksToRubles,
 	type MdlpDisposalItem,
+	resolveValidIanaTimeZone,
+	todayDateKeyInTimeZone,
 } from "@dental/shared";
 import { and, asc, eq, inArray, lte, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
-import { mdlpItems } from "../../db/schema.js";
+import { clinics, mdlpItems } from "../../db/schema.js";
 import { mdlpOutboxTable } from "../../db/schema/inventory/mdlpOutboxTable.js";
 import type { DbExecutor } from "../treatmentConsumables/types.js";
 import { mdlpLogger } from "./logger.js";

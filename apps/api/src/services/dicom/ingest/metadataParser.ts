@@ -227,9 +227,12 @@ export async function recordSanpinRadiationDose(
 		const effectiveDoseMsv = metadata.estimatedEffectiveDoseMsv ?? 0.055;
 		const effectiveDoseMicrosieverts = Number((effectiveDoseMsv * 1000).toFixed(1));
 
+		const resolvedClinicTz = resolveValidIanaTimeZone(
+			await clinicTimeZone(organizationId, tx),
+		);
 		const newEntry: RadiationExposureEntry = {
 			id: crypto.randomUUID(),
-			studyDate: metadata.studyDate ?? new Date().toISOString().slice(0, 10),
+			studyDate: metadata.studyDate ?? todayDateKeyInTimeZone(resolvedClinicTz),
 			studyType,
 			anatomicalArea,
 			apparatusModel: metadata.manufacturerModelName || metadata.manufacturer || "Vatech / Picasso",

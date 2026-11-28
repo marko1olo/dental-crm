@@ -3,9 +3,17 @@
  * Mandate 8v / 8aa: Real per-visit dynamic calculation & BOM resolution.
  */
 
-import { kopecksToNumericString, resolveCostKopecks, toExactKopecks } from "@dental/shared";
+import {
+	kopecksToNumericString,
+	resolveCostKopecks,
+	resolveValidIanaTimeZone,
+	shiftCalendarDay,
+	todayDateKeyInTimeZone,
+	toExactKopecks,
+	wallClockToUtcInTimeZone,
+} from "@dental/shared";
 import { and, eq, gte, inArray, lte, ne, or } from "drizzle-orm";
-import { inventoryItems, inventoryTransactions, treatmentItems, visits } from "../../../db/schema.js";
+import { clinics, inventoryItems, inventoryTransactions, treatmentItems, visits } from "../../../db/schema.js";
 import type { DbExecutor } from "../types.js";
 import {
 	resolveRequiredMaterialsForServices,

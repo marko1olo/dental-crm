@@ -143,7 +143,7 @@ export class InfodentExtractors {
 
 			const date =
 				InfodentCsvParser.normalizeDate(getValue("date")) ||
-				new Date().toISOString().slice(0, 10);
+				todayDateKeyInTimeZone("Europe/Samara");
 			const time = getValue("time") || null;
 			let startsAt: string | null = null;
 			let endsAt: string | null = null;

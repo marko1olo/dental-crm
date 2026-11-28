@@ -30,7 +30,9 @@ export async function seedSanpinRegisters(
 	operatorUserId: string,
 ): Promise<void> {
 	const now = new Date();
-	const todayStr = now.toISOString().slice(0, 10);
+	const resolvedClinicTz = resolveValidIanaTimeZone(await clinicTimeZone(organizationId, tx));
+	const todayStr = todayDateKeyInTimeZone(resolvedClinicTz, now);
+	const yesterdayStr = shiftCalendarDay(todayStr, -1);
 	const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
 	// 1. Паспорта стерилизаторов (автоклав + сухожар)

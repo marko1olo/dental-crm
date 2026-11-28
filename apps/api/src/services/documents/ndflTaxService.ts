@@ -208,10 +208,12 @@ export class NdflTaxService {
 		}
 
 		// 2. Получение оплат и выданных документов пациента (для учета частичных возвратов по ст. 219 НК РФ)
-		const [allPayments, patientDocuments] = await Promise.all([
+		const [allPayments, patientDocuments, rawClinicTimeZone] = await Promise.all([
 			getPaymentsByPatientIdInDb(organizationId, patientId),
 			getDocumentsByPatientId(organizationId, patientId),
+			clinicTimeZone(organizationId),
 		]);
+		const resolvedClinicTimeZone = resolveValidIanaTimeZone(rawClinicTimeZone);
 
 		const periodPayments = allPayments.filter((p) => {
 			if (p.status !== "paid" && p.status !== "refunded") return false;
