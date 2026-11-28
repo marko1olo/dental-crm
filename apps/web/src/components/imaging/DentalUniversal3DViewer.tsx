@@ -14,6 +14,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { UploadCloud, FileBox, AlertCircle, Loader2, Box } from "lucide-react";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { isLowSpecDevice } from "../../lib/hardwareCapabilities/domAdapter.js";
 import type {
 	DentalArchLayer,
 	DentalMaterialMode,
@@ -61,6 +62,7 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 	const [isDragOver, setIsDragOver] = useState(false);
 	const [isFullscreen, setIsFullscreen] = useState(false);
 	const [hasModelsLoaded, setHasModelsLoaded] = useState(false);
+	const isLowSpec = isLowSpecDevice();
 
 	// Viewer Controls State
 	const [materialMode, setMaterialMode] = useState<DentalMaterialMode>(initialMaterialMode);
@@ -444,7 +446,9 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 			{/* Честный пустой стейт при отсутствии реального файла скана */}
 			{!hasModelsLoaded && !isLoading && (
 				<div
-					className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 text-center bg-slate-950/90 backdrop-blur-xs select-text"
+					className={`absolute inset-0 z-30 flex flex-col items-center justify-center p-6 text-center select-text ${
+						isLowSpec ? "bg-slate-950" : "bg-slate-950/90 backdrop-blur-xs"
+					}`}
 					data-testid="3d-viewer-empty-state"
 				>
 					<div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-[var(--primary)] mb-3 shadow-inner">
@@ -483,7 +487,9 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 			{/* Loading Spinner Indicator */}
 			{isLoading && (
 				<div
-					className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-slate-950/70 backdrop-blur-xs"
+					className={`absolute inset-0 z-40 flex flex-col items-center justify-center ${
+						isLowSpec ? "bg-slate-950" : "bg-slate-950/70 backdrop-blur-xs"
+					}`}
 					data-testid="viewer3d-loader"
 				>
 					<div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-2xl flex flex-col items-center gap-2.5 max-w-[280px] text-center">
@@ -517,7 +523,9 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 			{/* Drag & Drop Visual Overlay */}
 			{isDragOver && (
 				<div
-					className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-teal-950/80 backdrop-blur-sm border-2 border-dashed border-teal-400 p-6 text-center animate-in fade-in duration-150"
+					className={`absolute inset-0 z-50 flex flex-col items-center justify-center border-2 border-dashed border-teal-400 p-6 text-center animate-in fade-in duration-150 ${
+						isLowSpec ? "bg-teal-950" : "bg-teal-950/80 backdrop-blur-sm"
+					}`}
 					data-testid="drag-drop-overlay"
 				>
 					<UploadCloud className="w-12 h-12 text-teal-400 animate-bounce mb-3" />

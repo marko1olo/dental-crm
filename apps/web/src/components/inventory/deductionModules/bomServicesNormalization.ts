@@ -55,8 +55,11 @@ export function buildCabinetScopedStockMap(
 			if (scope.chairId && it.chairId && it.chairId !== scope.chairId) continue;
 			if (scope.cabinetId && it.cabinetId && it.cabinetId !== scope.cabinetId) continue;
 
-			const ext = it as unknown as Record<string, unknown>;
-			const qty = Number(it.stockQuantity ?? ext.quantity) || 0;
+			const rawQty =
+				"quantity" in it && (typeof it.quantity === "number" || typeof it.quantity === "string")
+					? it.quantity
+					: undefined;
+			const qty = Number(it.stockQuantity ?? rawQty) || 0;
 			if (it.id) {
 				stockMap[it.id] = (stockMap[it.id] ?? 0) + qty;
 			}

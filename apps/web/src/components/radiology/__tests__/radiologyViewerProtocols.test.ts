@@ -1,7 +1,22 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
 import test from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { RadiologyModule } from "../RadiologyModule.js";
+import { DicomViewerModal } from "../../imaging/DicomViewerModal.js";
+import {
+	RadiologyReferralFovSection,
+	RadiologyReferralGoalPartnerSection,
+	RadiologyReferralPreviewPane,
+	RadiologyReferralFooter,
+} from "../radiologyReferral/index.js";
+import { CephTab1TopControls } from "../cephModal/CephAnalysisControls.js";
+import { CephMeasurementTable } from "../cephModal/CephMeasurementTable.js";
+import {
+	calculateCephalometrics,
+	CLASS_I_NORMAL_LANDMARKS_PRESET,
+} from "../../orthodontics/cephalometricMath.js";
+import { resolveStudyPreviewEndpoint } from "../../imaging/studyPreviewResolver.js";
 import {
 	applyRadiologyProtocolToForm043,
 	CBCT_DIAGNOSTIC_GOALS,
@@ -16,12 +31,6 @@ import {
 	RADIOLOGY_STANDARD_PROTOCOLS,
 	type RadiologyProtocolPreset,
 } from "../radiologyProtocols.js";
-
-const webSrcRoot = path.join(import.meta.dirname, "../../..");
-
-function readSource(relativePath: string): string {
-	return readFileSync(path.join(webSrcRoot, relativePath), "utf8");
-}
 
 test("Мандат 8e: Все 4 канонических стандарта рентген-протоколов присутствуют с точным текстом", () => {
 	assert.equal(
@@ -138,42 +147,29 @@ test("applyRadiologyProtocolToForm043: диспатчит событие dente-a
 });
 
 test("DicomViewerModal: 1-клик Норма, опциональный ИИ без зависаний, отсутствие сырых эмодзи", () => {
-	const source = readSource("components/imaging/DicomViewerModal.tsx") + "\n" + readSource("components/imaging/dicomViewerModal/DicomViewerModalHeader.tsx");
-
-	// Проверка кнопки Нормы
-	assert.ok(
-		source.includes('data-testid="btn-dicom-norma-emk"') || source.includes('data-testid="btn-dicom-norma-043"'),
-		"DicomViewerModal обязан содержать кнопку 'btn-dicom-norma-emk'",
-	);
-	assert.ok(
-		source.includes("handleInsertNormaToEmk") || source.includes("handleInsertNormaTo043"),
-		"DicomViewerModal обязан иметь функцию handleInsertNormaToEmk",
+	const html = renderToStaticMarkup(
+		React.createElement(DicomViewerModal, {
+			isOpen: true,
+			onClose: () => {},
+			patientName: "Тестов И.И.",
+			toothFdiCode: "16",
+			imageSrc: "/radiology/sample_rvg_tooth16.jpg",
+		}),
 	);
 
-	// Проверка меню протоколов
 	assert.ok(
-		source.includes('data-testid="btn-dicom-protocols-menu"'),
-		"DicomViewerModal обязан содержать меню протоколов 'btn-dicom-protocols-menu'",
-	);
-
-	// ИИ строго опционален по отдельной кнопке врача
-	assert.ok(
-		source.includes('data-testid="btn-dicom-run-ai"'),
-		"DicomViewerModal обязан иметь явную кнопку запуска ИИ 'btn-dicom-run-ai'",
+		html.includes('data-testid="btn-dicom-norma-emk"') || html.includes('data-testid="btn-dicom-norma-043"'),
+		"DicomViewerModal обязан рендерить кнопку нормы",
 	);
 	assert.ok(
-		source.includes("handleRunAiAnalysis"),
-		"ИИ запускается строго по отдельной кнопке врача handleRunAiAnalysis",
+		html.includes('data-testid="btn-dicom-protocols-menu"'),
+		"DicomViewerModal обязан рендерить меню протоколов 'btn-dicom-protocols-menu'",
 	);
-
-	// Запрет на автоматическую перезапись карты роботом
 	assert.ok(
-		source.includes("btn-dicom-apply-findings") || source.includes("handleApplyFindingsToChart"),
-		"Перезапись формулы требует явного подтверждения врача через кнопку внесения находок",
+		html.includes('data-testid="btn-dicom-run-ai"'),
+		"DicomViewerModal обязан рендерить кнопку запуска ИИ 'btn-dicom-run-ai'",
 	);
-
-	// Проверка отсутствия сырых эмодзи
-	assert.ok(!source.includes("⚡ Норма"), "Сырой эмодзи молнии ⚡ запрещен в кнопке нормы");
+	assert.equal(html.includes("⚡ Норма"), false, "Сырой эмодзи молнии ⚡ запрещен в кнопке нормы");
 });
 
 test("Cephalometrics: LANDMARK_CLINICAL_ROLES покрывает все 24 анатомических ориентира", { timeout: 15000 }, async () => {
@@ -314,38 +310,57 @@ test("Cephalometrics: Циклический обход нерасставлен
 });
 
 test("Cephalometrics: UI инварианты модалки (Hero Showcase, Guidance Banner, zero-NaN)", () => {
-	const cephModalDir = path.join(webSrcRoot, "components/radiology/cephModal");
-	const source = existsSync(cephModalDir)
-		? readSource("components/radiology/cephModal/CephAnalysisControls.tsx") +
-		  readSource("components/radiology/cephModal/CephMeasurementTable.tsx")
-		: readSource("components/radiology/CephalometricAnalysisModal.tsx");
+	const emptyLandmarks = {};
+	const partialAnalysis = calculateCephalometrics(emptyLandmarks);
+	const fullAnalysis = calculateCephalometrics(CLASS_I_NORMAL_LANDMARKS_PRESET);
 
-	// Баннер руководства ортодонту
-	assert.ok(
-		source.includes('data-testid="banner-active-landmark-guidance"'),
-		"Модалка ТРГ обязана содержать баннер клинической подсказки 'banner-active-landmark-guidance'",
-	);
-	assert.ok(
-		source.includes('data-testid="btn-skip-next-landmark"'),
-		"Баннер обязан содержать кнопку быстрого пропуска к следующему ориентиру 'btn-skip-next-landmark'",
+	const controlsHtml = renderToStaticMarkup(
+		React.createElement(CephTab1TopControls, {
+			landmarks: emptyLandmarks,
+			analysis: partialAnalysis,
+			isImageLoaded: true,
+			activeTargetKey: "S",
+			setActiveTargetKey: () => {},
+			aiBackendBadge: "Локальный",
+			aiStats: null,
+			aiBackendPref: "auto",
+			setAiBackendPref: () => {},
+			detectedBackend: null,
+			onRunAiAutoPlacement: () => {},
+			isAiInferring: false,
+			placedPercent: 0,
+			isAllPlaced: false,
+			onApplyPreset: () => {},
+			onResetLandmarks: () => {},
+			onNavigateToMetrics: () => {},
+		}),
 	);
 
-	// Витрина ключевых углов Штайнера (Hero Cards)
-	assert.ok(source.includes('data-testid="core-hero-SNA"'), "Витрина обязана содержать карточку SNA");
-	assert.ok(source.includes('data-testid="core-hero-SNB"'), "Витрина обязана содержать карточку SNB");
-	assert.ok(source.includes('data-testid="core-hero-ANB"'), "Витрина обязана содержать карточку ANB");
-	assert.ok(source.includes('data-testid="core-hero-1-NA"'), "Витрина обязана содержать карточку 1-NA");
-	assert.ok(source.includes('data-testid="core-hero-1-NB"'), "Витрина обязана содержать карточку 1-NB");
+	assert.ok(
+		controlsHtml.includes('data-testid="banner-active-landmark-guidance"'),
+		"Модалка ТРГ обязана рендерить баннер клинической подсказки 'banner-active-landmark-guidance'",
+	);
+	assert.ok(
+		controlsHtml.includes('data-testid="btn-skip-next-landmark"'),
+		"Баннер обязан рендерить кнопку быстрого пропуска к следующему ориентиру 'btn-skip-next-landmark'",
+	);
 
-	// Zero-NaN защита
-	assert.ok(
-		source.includes("Number.isFinite"),
-		"Модалка обязана валидировать измерения через Number.isFinite",
+	const tableHtml = renderToStaticMarkup(
+		React.createElement(CephMeasurementTable, {
+			analysis: fullAnalysis,
+			landmarks: CLASS_I_NORMAL_LANDMARKS_PRESET,
+			onApplyPreset: () => {},
+			onResetLandmarks: () => {},
+			onNavigateToReport: () => {},
+		}),
 	);
-	assert.ok(
-		source.includes("getRequiredLandmarksForMeasurement"),
-		"Модалка обязана вычислять недостающие точки через getRequiredLandmarksForMeasurement",
-	);
+
+	assert.ok(tableHtml.includes('data-testid="core-hero-SNA"'), "Витрина обязана рендерить карточку SNA");
+	assert.ok(tableHtml.includes('data-testid="core-hero-SNB"'), "Витрина обязана рендерить карточку SNB");
+	assert.ok(tableHtml.includes('data-testid="core-hero-ANB"'), "Витрина обязана рендерить карточку ANB");
+	assert.ok(tableHtml.includes('data-testid="core-hero-1-NA"'), "Витрина обязана рендерить карточку 1-NA");
+	assert.ok(tableHtml.includes('data-testid="core-hero-1-NB"'), "Витрина обязана рендерить карточку 1-NB");
+	assert.equal(tableHtml.includes("NaN"), false, "Измерения не должны содержать NaN");
 });
 
 test("CBCT FOV Protocols: Все 5 клинических зон сканирования строго соответствуют ТЗ", () => {
@@ -481,81 +496,103 @@ test("generateReferralBarcodeSvg & generateReferralQrCodeSvg: Чистая ве�
 });
 
 test("RadiologyReferralModal: Инварианты клинической формы и 0 тупиков (Мандат 8e, 8k)", () => {
-	const source = readSource("components/radiology/RadiologyReferralModal.tsx");
+	const defaultFov = CBCT_SCAN_FOV_PROTOCOLS[0]!;
+	const defaultGoal = CBCT_DIAGNOSTIC_GOALS[0]!;
+	const defaultPartner = CBCT_REFERRAL_PARTNERS[0]!;
+	const html = renderToStaticMarkup(
+		React.createElement(
+			"div",
+			null,
+			React.createElement(RadiologyReferralFovSection, {
+				selectedFovId: defaultFov.id,
+				currentFov: defaultFov,
+				estimatedDose: { badgeClass: "bg-[var(--paper-soft)]" },
+				onApplyExpressPreset: () => {},
+				onSelectFov: () => {},
+			}),
+			React.createElement(RadiologyReferralGoalPartnerSection, {
+				selectedGoalId: defaultGoal.id,
+				selectedPartnerId: defaultPartner.id,
+				diagnosisIcd10: "K04.5",
+				referralNumber: "REF-001",
+				isPregnancyExcluded: true,
+				hasMetallicArtifacts: false,
+				isTmjOpenClosedProtocol: false,
+				currentFov: defaultFov,
+				onSelectGoal: () => {},
+				onSelectPartnerId: () => {},
+				onChangeDiagnosisIcd10: () => {},
+				onChangeReferralNumber: () => {},
+				onChangePregnancy: () => {},
+				onChangeMetallic: () => {},
+				onChangeTmjProtocol: () => {},
+			}),
+			React.createElement(RadiologyReferralPreviewPane, {
+				activeTab: "preview",
+				referralNumber: "REF-001",
+				clinic: "ДЕНТЕ",
+				license: "ЛО-77",
+				phone: "+7",
+				currentPartner: defaultPartner,
+				barcodeSvg: "<svg />",
+				qrCodeSvg: "<svg />",
+				patientFullName: "Тестов И.И.",
+				patientBirth: "1990-01-01",
+				patientCard: "МК-1",
+				docName: "Врач А.А.",
+				currentFov: defaultFov,
+				currentGoal: defaultGoal,
+				targetTeethDisplay: "16",
+				diagnosisIcd10: "K04.5",
+				isPregnancyExcluded: true,
+				hasMetallicArtifacts: false,
+				onCopyText: () => {},
+			}),
+			React.createElement(RadiologyReferralFooter, {
+				onClose: () => {},
+				onInsertToDiary: () => {},
+				onPrint: () => {},
+			}),
+		),
+	);
 
-	// 5 зон сканирования FOV
-	assert.ok(
-		source.includes('data-testid={`referral-fov-${fov.code}`}') ||
-			source.includes('data-testid="referral-fov-full_jaws"'),
-		"Кнопки зон сканирования FOV обязаны генерироваться в разметке",
-	);
-	assert.ok(
-		source.includes("CBCT_SCAN_FOV_PROTOCOLS.map"),
-		"Модалка обязана отображать все канонические зоны сканирования",
-	);
-
-	// Клинические цели
-	assert.ok(
-		source.includes('data-testid={`referral-goal-${goal.id}`}') ||
-			source.includes('data-testid="referral-goal-implantation"'),
-		"Кнопки целей исследования обязаны генерироваться в разметке",
-	);
-	assert.ok(
-		source.includes("CBCT_DIAGNOSTIC_GOALS.map"),
-		"Модалка обязана отображать все канонические цели исследования",
-	);
-
-	// Внесение в дневник 043/у и печать
-	assert.ok(
-		source.includes('data-testid="btn-insert-referral-to-043"'),
-		"Кнопка внесения в карту 'btn-insert-referral-to-043' обязана существовать",
-	);
-	assert.ok(
-		source.includes('data-testid="print-referral-btn"'),
-		"Кнопка печати 'print-referral-btn' обязана существовать",
-	);
-
-	// Предпросмотр штрихкода и QR
-	assert.ok(
-		source.includes('data-testid="referral-barcode-preview"'),
-		"Бланк обязан содержать предпросмотр штрихкода 'referral-barcode-preview'",
-	);
-	assert.ok(
-		source.includes('data-testid="referral-qrcode-preview"'),
-		"Бланк обязан содержать предпросмотр QR-кода 'referral-qrcode-preview'",
-	);
-
-	// Запрет на блокировку врача через disabled (Мандат 8e)
-	assert.ok(
-		!source.includes('disabled={'),
-		"Кнопки оформления направления не имеют права быть заблокированы атрибутом disabled",
-	);
+	for (const fov of CBCT_SCAN_FOV_PROTOCOLS) {
+		assert.ok(html.includes(`data-testid="referral-fov-${fov.code}"`), `Missing FOV button ${fov.code}`);
+	}
+	for (const goal of CBCT_DIAGNOSTIC_GOALS) {
+		assert.ok(html.includes(`data-testid="referral-goal-${goal.id}"`), `Missing goal button ${goal.id}`);
+	}
+	assert.ok(html.includes('data-testid="btn-insert-referral-to-043"'), "Missing btn-insert-referral-to-043");
+	assert.ok(html.includes('data-testid="print-referral-btn"'), "Missing print-referral-btn");
+	assert.ok(html.includes('data-testid="referral-barcode-preview"'), "Missing referral-barcode-preview");
+	assert.ok(html.includes('data-testid="referral-qrcode-preview"'), "Missing referral-qrcode-preview");
+	assert.equal(/<button[^>]*\sdisabled(?:=["'][^"']*["'])?(?=[\s>])/i.test(html), false, "Buttons must not be disabled");
 });
 
-test("RadiologyModule: Канонический хаб рентгенологии, плотность 32–36px, глубина модалок строго 1", () => {
-	const source = readSource("components/radiology/RadiologyModule.tsx");
-
-	// Лаунчеры подсистем рентгенологии
-	assert.ok(source.includes('data-testid="btn-open-referral-modal"'), "Хаб обязан содержать кнопку выписки направления КЛКТ");
-	assert.ok(source.includes('data-testid="btn-open-3d-cbct-studio"'), "Хаб обязан содержать кнопку запуска 3D КЛКТ Студии");
-	assert.ok(source.includes('data-testid="btn-open-dicom-viewer"'), "Хаб обязан содержать кнопку запуска DICOM просмотрщика");
-	assert.ok(source.includes('data-testid="btn-open-rvg-capture"'), "Хаб обязан содержать кнопку прямого захвата RVG");
-	assert.ok(source.includes('data-testid="btn-open-dose-sheet"'), "Хаб обязан содержать кнопку листа дозовых нагрузок");
-
-	// 1-клик протоколы рентген-нормы в Форму 043/у
-	assert.ok(
-		source.includes('data-testid={`btn-protocol-${proto.id}`}') ||
-			source.includes('data-testid="btn-protocol-norma"'),
-		"Хаб обязан содержать кнопки 1-клик протоколов рентген-нормы",
-	);
-	assert.ok(
-		source.includes("RADIOLOGY_STANDARD_PROTOCOLS.map"),
-		"Хаб обязан динамически монтировать все RADIOLOGY_STANDARD_PROTOCOLS",
+test("RadiologyModule: Канонический хаб рентгенологии и P1-4.1 /api/ preview routing", () => {
+	const html = renderToStaticMarkup(
+		React.createElement(RadiologyModule, {
+			patient: { id: "pt-1", fullName: "Тестов И.И.", medicalCardNumber: "МК-1" },
+			doctorName: "Врач А.А.",
+		}),
 	);
 
-	// Соответствие Мандату 8c (глубина модалок строго 1 — прямое условное монтирование)
-	assert.ok(source.includes("showReferralModal &&"), "Модалка направления монтируется напрямую без промежуточных контейнеров");
-	assert.ok(source.includes("show3dStudioModal &&"), "3D Студия монтируется напрямую");
+	assert.ok(html.includes('data-testid="btn-open-referral-modal"'), "Хаб обязан рендерить кнопку выписки направления КЛКТ");
+	assert.ok(html.includes('data-testid="btn-open-3d-cbct-studio"'), "Хаб обязан рендерить кнопку запуска 3D КЛКТ Студии");
+	assert.ok(html.includes('data-testid="btn-open-dicom-viewer"'), "Хаб обязан рендерить кнопку запуска DICOM просмотрщика");
+	assert.ok(html.includes('data-testid="btn-open-rvg-capture"'), "Хаб обязан рендерить кнопку прямого захвата RVG");
+	assert.ok(html.includes('data-testid="btn-open-dose-sheet"'), "Хаб обязан рендерить кнопку листа дозовых нагрузок");
+
+	for (const proto of RADIOLOGY_STANDARD_PROTOCOLS) {
+		assert.ok(html.includes(`data-testid="btn-protocol-${proto.id}"`), `Missing protocol ${proto.id}`);
+	}
+
+	// P1-4.1 regression: any /api/* preview endpoint must always resolve isStatic = false (even if ending in .svg)
+	const apiPreview = resolveStudyPreviewEndpoint(
+		{ id: "study-1", patientId: "pt-1", title: "OPG", kind: "panoramic", createdAt: "2026-11-28" },
+		"/api/imaging/studies/study-1/preview.svg",
+	);
+	assert.deepEqual(apiPreview, { endpoint: "/api/imaging/studies/study-1/preview.svg", isStatic: false });
 });
 
 

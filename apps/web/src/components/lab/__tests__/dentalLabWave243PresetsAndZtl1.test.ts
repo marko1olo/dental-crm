@@ -1,17 +1,18 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import {
 	EXPRESS_PRESET_ZIRCONIA_CROWN,
 	EXPRESS_PRESET_BRIDGE_ZIRCONIA,
 	EXPRESS_PRESET_EMAX_INLAY,
 	MODAL_EXPRESS_LAB_PRESETS,
+	CANONICAL_LAB_STAGES,
 } from "../dentalLabCatalogData";
+import { generateDentalLabOrderA4PrintBlank } from "../dentalLabWorkflowExport";
+import { createDentalLabOrder } from "../dentalLabWorkflowEngine";
+import { CANONICAL_5_CLINICAL_LAB_STATUSES } from "../dentalLabOrderEngine";
 
 describe("Wave 243 — Presets & Form ZTL-1", () => {
-	it("1. 1-Click presets include Single crown ZrO2, Bridge prosthesis, and Inlay E.max", () => {
+	it("1. Express presets include Single crown ZrO2, Bridge prosthesis, and Inlay E.max", () => {
 		assert.ok(EXPRESS_PRESET_ZIRCONIA_CROWN);
 		assert.equal(EXPRESS_PRESET_ZIRCONIA_CROWN.constructionType, "single_crown");
 		assert.equal(EXPRESS_PRESET_ZIRCONIA_CROWN.materialId, "zirconia_multilayer");
@@ -37,17 +38,25 @@ describe("Wave 243 — Presets & Form ZTL-1", () => {
 		assert.ok(presetIds.includes("emax_crown_express"));
 	});
 
-	it("4. Form ZTL-1 5-stage tracker and Mandate 8e/8s invariants", () => {
-		const currentFile = fileURLToPath(import.meta.url);
-		const labDir = path.resolve(path.dirname(currentFile), "..");
-		const catalogPath = path.join(labDir, "dentalLabCatalogData.ts");
-		const content = fs.readFileSync(catalogPath, "utf-8");
-
-		assert.ok(content.includes("CANONICAL_LAB_STAGES"));
-		assert.ok(content.includes("scan_sent"));
-		assert.ok(content.includes("in_production"));
-		assert.ok(content.includes("fitting_ready"));
-		assert.ok(content.includes("in_clinic"));
-		assert.ok(content.includes("seated"));
+	it("4. Form ZTL-1 5-stage tracker exposes all canonical stages in order without legacy blockers", () => {
+		assert.deepEqual(
+			CANONICAL_LAB_STAGES.map((s) => s.id),
+			["scan_sent", "in_production", "fitting_ready", "in_clinic", "seated"],
+		);
+		assert.deepEqual(
+			CANONICAL_5_CLINICAL_LAB_STATUSES.map((s) => s.id),
+			["sent", "in_progress", "fitting", "ready", "completed"],
+		);
+		const wfOrder = createDentalLabOrder({
+			patientId: "pt-243",
+			patientName: "Пациент Тест",
+			doctorId: "doc-243",
+			doctorName: "Врач Тест",
+			workTypeId: "crown_zirconia",
+			selectedTeeth: [16],
+		});
+		const printHtml = generateDentalLabOrderA4PrintBlank(wfOrder);
+		assert.ok(printHtml.includes("Пациент Тест"));
+		assert.ok(printHtml.includes("@media print"));
 	});
 });

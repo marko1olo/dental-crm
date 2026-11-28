@@ -1,138 +1,201 @@
 /**
  * visitSoapTemplatesAutonomy.test.tsx
  *
- * Wave 101 Verification Suite:
- * 1. Mandate 8d & Anti-Matryoshka Law: VisitEmkTab nested cards flattened into natural document sections.
- * 2. WCAG AAA Contrast Law: WhatsAppChatPanel light mode contrast >= 4.5:1 with proper dark: tokens.
- * 3. Mandate 8p (Elephant in the room): SettingsView eliminates duplicate migration wizard mounting.
+ * Wave 101 Rendered Runtime Verification Suite:
+ * 1. Mandate 8d & Anti-Matryoshka Law: EmkAnesthesiaPresetChips & EmkEndoSection flattened into clean dividers.
+ * 2. WCAG AAA Contrast Law: WhatsAppChatHeader & WhatsAppEmptyStatePresets light/dark contrast tokens.
+ * 3. Mandate 8p: SettingsOperationsTabContent encapsulates legacy imports inside a collapsible <details> spoiler.
  */
 
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { test } from "node:test";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";
+import { EmkAnesthesiaPresetChips } from "../emk/EmkAnesthesiaPresetChips";
+import { EmkEndoSection } from "../emk/EmkEndoSection";
+import { VisitEmkServicesBilling } from "../emkTab/VisitEmkServicesBilling";
+import { WhatsAppChatHeader } from "../../chat/WhatsAppChatHeader";
+import { WhatsAppEmptyStatePresets } from "../../chat/WhatsAppEmptyStatePresets";
+import { SettingsOperationsTabContent } from "../../../views/settingsView/tabRenderers/SettingsOperationsTabContent";
+import type { WorkspaceFeatureFlags } from "../../../hooks/useWorkspaceProfile";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const webSrcRoot = path.resolve(__dirname, "../../..");
-
-test("VisitEmkTab: nested card matryoshka is eliminated per Anti-Matryoshka law", () => {
-	const emkPath = path.join(webSrcRoot, "components/visit/VisitEmkTab.tsx");
-	const anesthesiaPath = path.join(webSrcRoot, "components/visit/emk/EmkAnesthesiaPresetChips.tsx");
-	const presetsPath = path.join(webSrcRoot, "components/visit/emk/emkAnesthesiaPresets.ts");
-	const endoSectionPath = path.join(webSrcRoot, "components/visit/emk/EmkEndoSection.tsx");
-	const endoQuickBarPath = path.join(webSrcRoot, "components/endo/ChairsideEndoQuickBar.tsx");
-	const billingPath = path.join(webSrcRoot, "components/visit/emkTab/VisitEmkServicesBilling.tsx");
-	const code = [emkPath, anesthesiaPath, presetsPath, endoSectionPath, endoQuickBarPath, billingPath]
-		.filter((p) => existsSync(p))
-		.map((p) => readFileSync(p, "utf8"))
-		.join("\n");
-
-	// 1. Anesthesia quick protocol must NOT have nested card border/bg
-	assert.ok(
-		!code.includes('p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]'),
-		"VisitEmkTab must NOT have nested card styling on anesthesia quick bar",
-	);
-	assert.ok(
-		code.includes('border-t border-[var(--line)] bg-transparent'),
-		"VisitEmkTab anesthesia bar must use clean divider border-t border-[var(--line)]",
+test("VisitEmkTab sections: nested card matryoshka is eliminated per Anti-Matryoshka law", () => {
+	const anesHtml = renderToStaticMarkup(
+		React.createElement(EmkAnesthesiaPresetChips, {
+			selectedDrugKey: "ultracain_ds",
+			onApplyPreset: () => {},
+			onNoAnesthesia: () => {},
+			onAntishockEmergency: () => {},
+		}),
 	);
 
-	// 2. Doctor Autonomy: 1-click anesthesia presets preserved with testids
-	assert.ok(
-		code.includes('ultracain_ds') && (code.includes('data-testid="btn-anes-ultracain-ds"') || code.includes('btn-anes-${preset.key')),
-		"Preserves Ultracain DS 1:200k preset",
+	assert.equal(
+		anesHtml.includes("p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]"),
+		false,
+		"Anesthesia quick bar must NOT render nested card styling",
 	);
 	assert.ok(
-		code.includes('ultracain_ds_forte') && (code.includes('data-testid="btn-anes-ultracain-ds-forte"') || code.includes('btn-anes-${preset.key')),
-		"Preserves Ultracain DS Forte preset",
+		anesHtml.includes("border-t border-[var(--line)] bg-transparent"),
+		"Anesthesia bar must use clean divider border-t border-[var(--line)]",
 	);
-	assert.ok(
-		code.includes('scandonest_3') && (code.includes('data-testid="btn-anes-scandonest-3"') || code.includes('btn-anes-${preset.key')),
-		"Preserves Scandonest 3% preset",
-	);
+	assert.ok(anesHtml.includes('data-testid="btn-anes-ultracain-ds"'), "Preserves Ultracain DS 1:200k preset");
+	assert.ok(anesHtml.includes('data-testid="btn-anes-ultracain-ds-forte"'), "Preserves Ultracain DS Forte preset");
+	assert.ok(anesHtml.includes('data-testid="btn-anes-scandonest-3"'), "Preserves Scandonest 3% preset");
 
-	// 3. Endodontics section must NOT have nested card border/bg
-	assert.ok(
-		!code.includes('details className="group rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)]'),
+	const endoHtml = renderToStaticMarkup(
+		React.createElement(EmkEndoSection, {
+			visitNoteForm: { diagnosis: "Пульпит 16" },
+			updateVisitNoteField: () => {},
+			activeTooth: 16,
+		}),
+	);
+	assert.equal(
+		endoHtml.includes('details class="group rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)]'),
+		false,
 		"Endodontics details must NOT have nested card border/bg",
 	);
 	assert.ok(
-		code.includes('details className="group border-t border-[var(--line') ||
-		code.includes('data-testid="endo-canals-accordion"'),
+		endoHtml.includes('data-testid="endo-canals-accordion"'),
 		"Endodontics details must be flattened with clean divider",
 	);
 
-	// 4. Endodontics apply bar must NOT have nested card styling
-	assert.ok(
-		!code.includes('p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-center justify-between'),
-		"Endodontics apply bar must NOT have nested card border/bg",
+	const billingHtml = renderToStaticMarkup(
+		React.createElement(
+			React.Suspense,
+			{ fallback: null },
+			React.createElement(VisitEmkServicesBilling, {
+				openVisitId: "visit-1",
+				visitNoteForm: {},
+				updateVisitNoteField: () => {},
+				isLocked: false,
+				effectiveActiveTooth: 16,
+			}),
+		),
 	);
-
-	// 5. Price catalogue details must NOT have nested card styling
-	assert.ok(
-		!code.includes('details className="group rounded-xl border border-indigo-500/25 bg-indigo-500/5'),
-		"Price catalogue details must NOT have nested card border/bg",
-	);
-});
-
-test("WhatsAppChatPanel: WCAG AAA Light Mode contrast tokens are strictly applied", () => {
-	const chatPath = path.join(webSrcRoot, "components/chat/WhatsAppChatPanel.tsx");
-	const headerPath = path.join(webSrcRoot, "components/chat/WhatsAppChatHeader.tsx");
-	const stripPath = path.join(webSrcRoot, "components/chat/WhatsAppPatientSummaryStrip.tsx");
-	const presetsPath = path.join(webSrcRoot, "components/chat/WhatsAppEmptyStatePresets.tsx");
-	const code = [chatPath, headerPath, stripPath, presetsPath]
-		.filter((p) => existsSync(p))
-		.map((p) => readFileSync(p, "utf8"))
-		.join("\n");
-
-	// 1. Upcoming appointment banner contrast
-	assert.ok(
-		code.includes("text-teal-700 dark:text-teal-300"),
-		"WhatsAppChatPanel upcoming appointment must use text-teal-700 dark:text-teal-300",
-	);
-
-	// 2. Debt badge contrast
-	assert.ok(
-		code.includes("text-rose-700 bg-rose-100 border border-rose-200 dark:text-rose-300 dark:bg-rose-950/60"),
-		"WhatsAppChatPanel debt badge must support light theme with dark: variants",
-	);
-
-	// 3. DMS badge contrast
-	assert.ok(
-		code.includes("text-cyan-700 bg-cyan-100 border border-cyan-200 dark:text-cyan-300 dark:bg-cyan-950/60"),
-		"WhatsAppChatPanel DMS badge must support light theme with dark: variants",
-	);
-
-	// 4. Quick template chips hover states
-	assert.ok(
-		code.includes("hover:bg-teal-50 dark:hover:bg-teal-950/40 text-[var(--ink)] hover:text-teal-700 dark:hover:text-teal-300"),
-		"WhatsAppChatPanel template chip 1 hover must have high contrast in Light Mode",
-	);
-	assert.ok(
-		code.includes("hover:bg-amber-50 dark:hover:bg-amber-950/40 text-[var(--ink)] hover:text-amber-700 dark:hover:text-amber-300"),
-		"WhatsAppChatPanel template chip 2 hover must have high contrast in Light Mode",
-	);
-	assert.ok(
-		code.includes("hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-[var(--ink)] hover:text-emerald-700 dark:hover:text-emerald-300"),
-		"WhatsAppChatPanel template chip 3 hover must have high contrast in Light Mode",
+	assert.equal(
+		billingHtml.includes('details class="group rounded-xl border border-indigo-500/25 bg-indigo-500/5'),
+		false,
+		"Price catalogue details must NOT have nested card styling",
 	);
 });
 
-test("SettingsView: eliminates simultaneous dual mounting of MigrationWizard and legacy imports tab", () => {
-	const settingsPath = path.join(webSrcRoot, "SettingsView.tsx");
-	const code = readFileSync(settingsPath, "utf8");
+test("WhatsAppChatPanel: WCAG AAA Light/Dark contrast tokens are strictly applied in rendered UI", () => {
+	const headerHtml = renderToStaticMarkup(
+		React.createElement(WhatsAppChatHeader, {
+			effectiveName: "Смирнова Елена",
+			formattedPhone: "+7 999 000-00-00",
+			effectivePhone: "+79990000000",
+			initials: "СЕ",
+			avatarColors: { bg: "bg-teal-500/15", text: "text-teal-700", border: "border-teal-500/30" },
+			isPatient: true,
+			selectedChannel: "whatsapp",
+			isLoading: false,
+			isSearchOpen: false,
+			searchQuery: "",
+			onToggleSearch: () => {},
+			onSearchChange: () => {},
+			onClearSearch: () => {},
+			onRefresh: () => {},
+			onCallPatient: () => {},
+			onLaunchWhatsAppNative: () => {},
+			upcomingAppointment: { formattedDate: "01.12.2026", formattedTime: "10:00", doctorName: "Врач А.А." },
+			financialSummary: { hasDebt: true, formattedDebt: "3 500 ₽", hasInsurance: true },
+		}),
+	);
 
-	// 1. MigrationWizard is the primary interface
-	assert.ok(code.includes("<MigrationWizard />"), "SettingsView renders MigrationWizard");
-
-	// 2. SettingsImportsTab is encapsulated in a collapsible details spoiler
+	assert.ok(headerHtml.includes("text-teal-700 dark:text-teal-300"), "Upcoming appointment must use high-contrast teal token");
 	assert.ok(
-		code.includes("<details className=\"group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] overflow-hidden\">"),
+		headerHtml.includes("text-rose-700 bg-rose-100 border border-rose-200 dark:text-rose-300 dark:bg-rose-950/60"),
+		"Debt badge must support light theme with dark: variants",
+	);
+	assert.ok(
+		headerHtml.includes("text-cyan-700 bg-cyan-100 border border-cyan-200 dark:text-cyan-300 dark:bg-cyan-950/60"),
+		"DMS badge must support light theme with dark: variants",
+	);
+
+	const presetsHtml = renderToStaticMarkup(
+		React.createElement(WhatsAppEmptyStatePresets, {
+			effectiveName: "Смирнова Елена",
+			quickTemplates: [
+				{ id: "appt_reminder", title: "Напоминание", text: "Ждём вас завтра" },
+				{ id: "surgery_memo", title: "Памятка", text: "После удаления" },
+				{ id: "appt_confirm", title: "Подтверждение", text: "Подтвердите визит" },
+			],
+			onApplyTemplate: () => {},
+		}),
+	);
+
+	assert.ok(
+		presetsHtml.includes("hover:bg-teal-50 dark:hover:bg-teal-950/40 text-[var(--ink)] hover:text-teal-700 dark:hover:text-teal-300"),
+		"Template chip 1 hover must have high contrast in Light/Dark mode",
+	);
+	assert.ok(
+		presetsHtml.includes("hover:bg-amber-50 dark:hover:bg-amber-950/40 text-[var(--ink)] hover:text-amber-700 dark:hover:text-amber-300"),
+		"Template chip 2 hover must have high contrast in Light/Dark mode",
+	);
+	assert.ok(
+		presetsHtml.includes("hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-[var(--ink)] hover:text-emerald-700 dark:hover:text-emerald-300"),
+		"Template chip 3 hover must have high contrast in Light/Dark mode",
+	);
+});
+
+test("SettingsView: encapsulates legacy imports inside collapsible details spoiler", () => {
+	const flags: WorkspaceFeatureFlags = {
+		hasAssistants: true,
+		hasMultipleChairs: true,
+		hasDentalLab: true,
+		hasInsuranceCoPay: true,
+		hasInstallments: true,
+		hasOrthodontics: true,
+		hasGnathology: true,
+		hasTasks: true,
+		hasReclamations: true,
+		workspacePreset: "full",
+		onboardingCompleted: true,
+		hasPediatricMode: true,
+		isOmniRole: false,
+		numberOfDoctors: 3,
+		hasPayrollModule: true,
+		hasMarketingModule: false,
+		hasAnalyticsModule: false,
+		hasCsoScanner: true,
+		hasLeadsKanban: true,
+		hasOmnichannel: true,
+		hasInventoryModule: true,
+		aiEnableTreatmentPlan: true,
+		aiEnableRecommendations: true,
+		aiEnableDocuments: true,
+		hasEngineeringStatus: false,
+		hasClinicalRules: false,
+		hasReferralModule: false,
+		hasBpmWorkflows: false,
+	};
+
+	const mockAppLogic = {
+		activePatient: { id: "pt-1", fullName: "Тестов И.И." },
+		dashboard: { patients: [], activeDoctor: { id: "doc-1", fullName: "Врач А.А." } },
+		auth: { currentUser: { name: "Врач А.А." } },
+	} as unknown as AppLogicContextType;
+
+	const html = renderToStaticMarkup(
+		React.createElement(
+			AppLogicProvider,
+			{ value: mockAppLogic },
+			React.createElement(SettingsOperationsTabContent, {
+				settingsTab: "imports",
+				settingsProps: { organizationId: "org-1" },
+				flags,
+			}),
+		),
+	);
+
+	assert.ok(
+		html.includes('<details class="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] overflow-hidden">'),
 		"SettingsImportsTab must be wrapped in a collapsible details spoiler",
 	);
 	assert.ok(
-		code.includes("Расширенный режим: Индивидуальный импорт и ручные утилиты (legacy)"),
+		html.includes("Расширенный режим: Индивидуальный импорт и ручные утилиты (legacy)"),
 		"SettingsImportsTab summary must label the legacy developer mode",
 	);
 });

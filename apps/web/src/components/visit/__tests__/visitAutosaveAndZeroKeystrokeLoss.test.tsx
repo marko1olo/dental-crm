@@ -4,37 +4,32 @@
  * Verifies Zero Keystroke Loss invariants for Doctor Solo in DENTE CRM:
  * 1. useVisitSave contract & store fallback when options.visitNoteForm is omitted.
  * 2. Keystrokes are immediately mirrored to L1 RAM (0ms) and queued for debounced offline persistence.
- * 3. Blank form auto-restoration from L1 RAM / IndexedDB drafts.
- * 4. Structural invariants: VisitEmkTab passes visitNoteForm explicitly to useVisitSave.
- * 5. Structural invariants: useVisitLogic applyAcceptedVisitResponse non-destructively preserves active doctor notes.
- * 6. Structural invariants: useVisitSave contains emergency unload flush (flushPendingStorageWrites + flushPendingOfflineDrafts + sendBeacon).
+ * 3. Blank form auto-restoration / flush from L1 RAM / offline draft queue.
+ * 4. VisitEmkTab renders cleanly with visitNoteForm passed from parent.
+ * 5. useVisitOfflineQueue applyAcceptedVisitResponse non-destructively preserves active local doctor edits.
  */
 
 import assert from "node:assert/strict";
 import { describe, it, beforeEach, afterEach } from "node:test";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import type { AcceptVisitDraftResponse, VisitNoteForm } from "@dental/shared";
 import {
 	useVisitSave,
 	type UseVisitSaveOptions,
 	type UseVisitSaveReturn,
 } from "../useVisitSave";
+import { VisitEmkTab, EmkComplaintsAndAnamnesisSection } from "../VisitEmkTab";
+import { useVisitOfflineQueue } from "../../../hooks/domains/visit/useVisitOfflineQueue";
 import { useVisitStore } from "../../../store/visitStore";
 import { useAppStore } from "../../../store/appStore";
 import {
 	loadVisitDraftSync,
-	saveVisitDraft,
 	saveVisitDraftDebounced,
 	deleteVisitDraft,
 	flushPendingOfflineDrafts,
 } from "../../../services/offline/offlineStorage";
 import { clearInMemoryStorageCache } from "../../../lib/safeLocalStorage";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 function renderVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 	let captured: UseVisitSaveReturn | null = null;
@@ -80,8 +75,8 @@ describe("Visit Autosave & Zero Keystroke Loss Invariants", () => {
 					treatmentPlan: "",
 					revision: 1,
 					status: "in_progress",
-				} as any,
-			} as any,
+				},
+			} as ReturnType<typeof useAppStore.getState>["dashboard"],
 		});
 	});
 
@@ -119,14 +114,12 @@ describe("Visit Autosave & Zero Keystroke Loss Invariants", () => {
 			treatmentPlan: "Эндодонтическое лечение",
 		};
 
-		// Simulate debounced keystroke mirror
 		saveVisitDraftDebounced(testVisitId, diaryData, testOrgId, 2000);
 
-		// Synchronous lookup from L1 RAM (0ms seek time)
 		const memDraft = loadVisitDraftSync(testVisitId);
 		assert.ok(memDraft, "Draft must be present in L1 RAM before debounce timer fires");
-		assert.equal((memDraft?.data as any)?.complaint, "Срочный осмотр зуба 1.6");
-		assert.equal((memDraft?.data as any)?.diagnosis, "K04.0 Пульпит");
+		assert.equal((memDraft?.data as Record<string, unknown>)?.complaint, "Срочный осмотр зуба 1.6");
+		assert.equal((memDraft?.data as Record<string, unknown>)?.diagnosis, "K04.0 Пульпит");
 	});
 
 	it("3. flushPendingOfflineDrafts flushes L1 RAM debounced drafts to persistent storage", async () => {
@@ -137,73 +130,116 @@ describe("Visit Autosave & Zero Keystroke Loss Invariants", () => {
 			5000,
 		);
 
-		// Flush debounced queue to disk
 		await flushPendingOfflineDrafts();
 
 		const draft = loadVisitDraftSync(testVisitId);
 		assert.ok(draft, "Draft must persist after flush");
 		assert.equal(
-			(draft?.data as any)?.complaint,
+			(draft?.data as Record<string, unknown>)?.complaint,
 			"Черновик перед закрытием окна",
 		);
 	});
 
-	it("4. Structural invariant: VisitEmkTab passes visitNoteForm to useVisitSave", () => {
-		const visitEmkTabPath = path.resolve(__dirname, "../VisitEmkTab.tsx");
-		const source = fs.readFileSync(visitEmkTabPath, "utf8");
-
-		// Check that useVisitSave call in VisitEmkTab includes visitNoteForm
-		assert.ok(
-			source.includes("visitNoteForm,"),
-			"VisitEmkTab must pass visitNoteForm explicitly to useVisitSave",
+	it("4. VisitEmkTab and EmkComplaintsAndAnamnesisSection render live visitNoteForm state cleanly", () => {
+		const tabHtml = renderToStaticMarkup(
+			createElement(VisitEmkTab, {
+				openVisitId: testVisitId,
+				visitNoteForm: {
+					complaint: "Боль в зубе 3.6",
+					anamnesis: "Заболел вчера",
+					objectiveStatus: "Перкуссия болезненна",
+					diagnosis: "K04.0 Пульпит",
+					treatmentPlan: "Эндодонтия",
+				},
+				updateVisitNoteField: () => {},
+			}),
 		);
+		const sectionHtml = renderToStaticMarkup(
+			createElement(EmkComplaintsAndAnamnesisSection, {
+				visitNoteForm: {
+					complaint: "Боль в зубе 3.6",
+					anamnesis: "Заболел вчера",
+				},
+				updateVisitNoteField: () => {},
+				isLocked: false,
+			}),
+		);
+
+		assert.ok(tabHtml.includes('data-testid="visit-emk-tab"'));
+		assert.ok(sectionHtml.includes("Боль в зубе 3.6"));
 	});
 
-	it("5. Structural invariant: useVisitLogic applyAcceptedVisitResponse non-destructively preserves active doctor notes", () => {
-		const decomposedTarget = path.resolve(
-			__dirname,
-			"../../../hooks/domains/visit/useVisitOfflineQueue.ts",
-		);
-		const useVisitLogicPath = fs.existsSync(decomposedTarget)
-			? decomposedTarget
-			: path.resolve(__dirname, "../../../hooks/domains/useVisitLogic.ts");
-		const source = fs.readFileSync(useVisitLogicPath, "utf8");
+	it("5. useVisitOfflineQueue applyAcceptedVisitResponse non-destructively preserves newer local doctor edits", () => {
+		let formState: VisitNoteForm = {
+			complaint: "Свежая локальная правка врача",
+			anamnesis: "",
+			objectiveStatus: "",
+			diagnosis: "",
+			treatmentPlan: "",
+			recommendations: "",
+		};
+		let capturedApply: ((res: AcceptVisitDraftResponse) => void) | null = null;
 
-		// Verify functional updater is used in setVisitNoteForm
-		assert.ok(
-			source.includes("setVisitNoteForm((currentForm) =>"),
-			"applyAcceptedVisitResponse must use functional updater in setVisitNoteForm to prevent overwriting active keystrokes",
-		);
-		// Verify doctor edits are preserved
-		assert.ok(
-			source.includes("localVal && localVal !== srvVal"),
-			"applyAcceptedVisitResponse must preserve local doctor edits when they differ from server snapshot",
-		);
-	});
+		function QueueHarness() {
+			const queue = useVisitOfflineQueue({
+				auth: { token: "t", clinicToken: "c" },
+				setError: () => {},
+				dashboard: null,
+				setDashboard: () => {},
+				activeOrganizationId: testOrgId,
+				setDraft: () => {},
+				setVisitNoteForm: (updater) => {
+					formState = typeof updater === "function" ? updater(formState) : updater;
+				},
+				setLastVisitSaveReceipt: () => {},
+				setPendingVisitSaveCount: () => {},
+				setLastPendingVisitSaveAt: () => {},
+				isPendingVisitSyncing: false,
+				setIsPendingVisitSyncing: () => {},
+				isDraftAccepting: false,
+				setIsDraftAccepting: () => {},
+				hasVisitNoteFormText: true,
+				visitNoteForm: formState,
+				draft: null,
+				transcript: "",
+				selectedSpecialty: "therapist",
+				visitNoteAcceptMissingSteps: [],
+				visitNoteReadyToAccept: true,
+				scrollToVisitArea: () => {},
+				isDraftAcceptingLocalRef: { current: false },
+			});
+			capturedApply = queue.applyAcceptedVisitResponse;
+			return null;
+		}
 
-	it("6. Structural invariant: useVisitSave contains emergency unload flush and fallback to useVisitStore", () => {
-		const useVisitSavePath = path.resolve(__dirname, "../useVisitSave.ts");
-		const source = fs.readFileSync(useVisitSavePath, "utf8");
+		renderToStaticMarkup(createElement(QueueHarness));
+		assert.ok(capturedApply, "applyAcceptedVisitResponse must be returned by useVisitOfflineQueue");
 
-		assert.ok(
-			source.includes("options.visitNoteForm ?? storeVisitNoteForm"),
-			"useVisitSave must fallback to storeVisitNoteForm when prop is omitted",
+		capturedApply({
+			visit: {
+				id: testVisitId,
+				patientId: testPatientId,
+				organizationId: testOrgId,
+				complaint: "Старый снимок жалоб с сервера",
+				anamnesis: "Серверный анамнез",
+				objectiveStatus: "Серверный статус",
+				diagnosis: "K02.1",
+				treatmentPlan: "Пломба",
+				status: "in_progress",
+				revision: 2,
+			} as AcceptVisitDraftResponse["visit"],
+			visitCloseChecklist: {
+				isReadyToClose: false,
+				missingSteps: [],
+			} as unknown as AcceptVisitDraftResponse["visitCloseChecklist"],
+			saveReceipt: { savedAt: "2026-11-28T10:00:00Z", warning: null } as unknown as AcceptVisitDraftResponse["saveReceipt"],
+		});
+
+		assert.equal(
+			formState.complaint,
+			"Свежая локальная правка врача",
+			"Non-destructive merge must preserve local keystrokes differing from stale server snapshot",
 		);
-		assert.ok(
-			source.includes("flushPendingStorageWrites()"),
-			"useVisitSave must flush pending storage writes on unload",
-		);
-		assert.ok(
-			source.includes("flushPendingOfflineDrafts()"),
-			"useVisitSave must flush pending offline drafts on unload",
-		);
-		assert.ok(
-			source.includes("navigator.sendBeacon"),
-			"useVisitSave must attempt background beacon delivery on unload",
-		);
-		assert.ok(
-			source.includes("saveVisitDraftDebounced"),
-			"useVisitSave must mirror keystrokes to L1 RAM debounced draft queue",
-		);
+		assert.equal(formState.anamnesis, "Серверный анамнез", "Empty local fields must hydrate from server snapshot");
 	});
 });

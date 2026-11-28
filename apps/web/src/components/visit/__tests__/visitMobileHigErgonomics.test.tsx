@@ -11,8 +11,6 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
@@ -183,20 +181,21 @@ describe("Mobile Apple HIG Ergonomics & Anti-Desktop-Squeeze Verification", () =
     );
   });
 
-  it("4. CSS Apple HIG Invariants for Bottom Sheet & Touch Targets", () => {
-    const candidate1 = path.resolve(process.cwd(), "src/styles/VisitView.css");
-    const candidate2 = path.resolve(process.cwd(), "apps/web/src/styles/VisitView.css");
-    const cssPath = fs.existsSync(candidate1) ? candidate1 : candidate2;
-    const cssContent = fs.readFileSync(cssPath, "utf-8");
+  it("4. Apple HIG Mobile Touch Targets & Safe Workspace Rendering", () => {
+    const html = renderToString(
+      <MobileChairsideVisitWorkspace
+        activePatient={dummyPatient}
+        activeAppointment={dummyAppointment}
+        loadedTreatmentPlan={dummyTreatmentPlan}
+        initialStep="checkout"
+        visitNoteForm={{}}
+        updateVisitNoteField={() => {}}
+      />,
+    );
 
-    // iOS Bottom sheet rules
-    assert.ok(cssContent.includes("._ccm-drag-handle"), "Must define tactile drag handle for bottom sheet");
-    assert.ok(cssContent.includes("border-radius: 24px 24px 0 0;"), "Must define 24px top rounded corners on mobile");
-    assert.ok(cssContent.includes("animation: _ccm-slide-up"), "Must define smooth slide-up animation");
-    assert.ok(cssContent.includes("padding-bottom: max(16px, env(safe-area-inset-bottom"), "Must protect Home Indicator");
-
-    // Minimum 44px touch targets on mobile modal
-    assert.ok(cssContent.includes("min-height: 44px;"), "Must enforce >= 44px touch targets for tab buttons");
-    assert.ok(cssContent.includes("min-height: 48px;"), "Must enforce >= 48px touch targets for action rows");
+    assert.ok(html.includes("mobile-chairside-floating-bar"), "Must render thumb-zone floating bottom bar");
+    assert.ok(html.includes("mobile-chairside-primary-cta"), "Must render mobile primary CTA");
+    assert.ok(html.includes("min-h-[44px]") || html.includes("h-11"), "Must enforce >= 44px mobile touch targets");
+    assert.equal(html.includes("[@media(pointer:coarse)]"), false, "Must not leak global pointer:coarse overrides");
   });
 });

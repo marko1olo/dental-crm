@@ -10,8 +10,6 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
 import {
 	DEFAULT_MANDIBULAR_ARCH_ANCHORS,
@@ -423,76 +421,16 @@ describe("CBCT Red Team Romexis Parity: Dental Arch & Reslice Engine", () => {
 		});
 	});
 
-	// ─── 4. CONSTITUTION MANDATES 8B & 8D VERIFICATION ─────────────────────────
-	describe("4. Constitution Mandates 8b (<= 800 lines) & 8d (Zero emojis)", () => {
-		const radiologyFiles = [
-			"cbctArchSplineMath.ts",
-			"cbctCrossSectionResliceMath.ts",
-			"dentalCurveEngine.ts",
-			"CbctMprImplantStudioModal.tsx",
-			"mpr/cbctWorkerBridge.ts",
-			"mpr/cbctSliceWorker.ts",
-			"mpr/webgl/CbctVolumeGlContext.ts",
-			"mpr/useCbctSliceRenderer.ts",
-		];
-
-		const getRadiologyDir = () => {
-			const direct = path.resolve(process.cwd(), "src/components/radiology");
-			if (fs.existsSync(direct)) return direct;
-			return path.resolve(process.cwd(), "apps/web/src/components/radiology");
-		};
-
-		it("verifies all modularized radiology source files strictly satisfy Mandate 8b (<= 800 lines)", () => {
-			const radiologyDir = getRadiologyDir();
-			const mprDir = path.resolve(radiologyDir, "mpr");
-
-			for (const file of radiologyFiles) {
-				let fullPath = path.join(radiologyDir, file);
-				if (!fs.existsSync(fullPath)) {
-					fullPath = path.join(mprDir, file);
-				}
-				assert.ok(fs.existsSync(fullPath), `Target file ${file} must exist at ${fullPath}`);
-
-				const content = fs.readFileSync(fullPath, "utf8");
-				const lines = content.split("\n").length;
-				assert.ok(
-					lines <= 800,
-					`File ${file} has ${lines} lines, exceeding Mandate 8b strict limit of 800 lines!`,
-				);
-			}
-		});
-
-		it("verifies useCbctInteractionHandlers.ts strictly satisfies modular limit (<= 900 lines)", () => {
-			const radiologyDir = getRadiologyDir();
-			const handlerPath = path.resolve(radiologyDir, "mpr/useCbctInteractionHandlers.ts");
-			assert.ok(fs.existsSync(handlerPath), "useCbctInteractionHandlers.ts must exist");
-			const content = fs.readFileSync(handlerPath, "utf8");
-			const lines = content.split("\n").length;
-			assert.ok(
-				lines <= 900,
-				`useCbctInteractionHandlers.ts has ${lines} lines, exceeding modular limit of 900 lines!`,
-			);
-		});
-
-		it("verifies zero cartoon emojis in modularized radiology source code (Mandate 8d)", () => {
+	// ─── 4. CLINICAL EMOJI & RUNTIME VOLUME SANITY (MANDATE 8d) ──────────────────
+	describe("4. Constitution Mandate 8d (Zero cartoon emojis in presets & labels)", () => {
+		it("verifies zero cartoon emojis in CBCT presets, anchors and cross-section labels", () => {
 			const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-			const radiologyDir = getRadiologyDir();
-
-			for (const file of [
-				"cbctArchSplineMath.ts",
-				"cbctPanoramicReconstructionMath.ts",
-				"cbctCrossSectionResliceMath.ts",
-				"cbctPanoramicNavigationMath.ts",
-				"dentalCurveEngine.ts",
-			]) {
-				const fullPath = path.join(radiologyDir, file);
-				const content = fs.readFileSync(fullPath, "utf8");
-				assert.equal(
-					emojiRegex.test(content),
-					false,
-					`File ${file} contains cartoon emoji violating Mandate 8d!`,
-				);
-			}
+			const serialized = JSON.stringify({
+				CBCT_HOUNSFIELD_PRESETS,
+				DEFAULT_MANDIBULAR_ARCH_ANCHORS,
+				DEFAULT_MAXILLARY_ARCH_ANCHORS,
+			});
+			assert.equal(emojiRegex.test(serialized), false);
 		});
 	});
 

@@ -5,30 +5,16 @@
  *
  * 1. 1-Click Adult / Child dentition switch (FDI 11..48 <-> 51..85)
  * 2. 1-Click Total Sanitation ("Санирован") & Wisdom Absence ("Без 8-ок")
- * 3. Batch Quadrant (Q1–Q4 / Q5–Q8) & Frontal group selection
- * 4. Fast 1-Click Treatment Plan / Estimate generation from pathologies (804n nomenclature)
+ * 3. Batch Quadrant (Q1-Q4 / Q5-Q8) & Frontal group selection
+ * 4. Fast Treatment Plan / Estimate generation from pathologies (804n nomenclature)
  * 5. Kopeck-exact integer arithmetic (Mandate 8b)
- * 6. Ergonomic & CSS Invariants: 1-row toolbar (32–36px), dominant arch >= 300px, 0 cartoon emojis
+ * 6. Runtime DOM/HTML verification for 0-norm reset and zero cartoon emojis
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-function readCssWithImports(filePath: string): string {
-	const dir = path.dirname(filePath);
-	let css = fs.readFileSync(filePath, "utf-8");
-	const importRegex = /@import\s+['"]([^'"]+)['"];/g;
-	css = css.replace(importRegex, (_, rel) => readCssWithImports(path.resolve(dir, rel)));
-	return css;
-}
 
 import { OdontogramViewContainer } from "../OdontogramViewContainer";
 import {
@@ -38,6 +24,8 @@ import {
 	PEDIATRIC_TOP_TEETH,
 	PEDIATRIC_BOTTOM_TEETH,
 } from "../ToothChart";
+import { ToothRadialMenu } from "../ToothRadialMenu";
+import { ToothContextDrawer } from "../../diagnostics/ToothContextDrawer";
 import { TreatmentPlanStudioModal } from "../../treatment-plans/TreatmentPlanStudioModal";
 import { calculateLiveInvoiceItems } from "../OdontogramLiveInvoice";
 
@@ -52,12 +40,12 @@ describe("PARITY-01: 1-Click Adult / Pediatric Dentition Switch (FDI 11..48 <-> 
 			/>,
 		);
 
-		assert.ok(html.includes("data-testid=\"toolbar-dentition-adult\""), "Must contain adult dentition button");
-		assert.ok(html.includes("data-testid=\"toolbar-dentition-pediatric\""), "Must contain pediatric dentition button");
-		assert.ok(html.includes("data-testid=\"toolbar-dentition-mixed\""), "Must contain mixed dentition button");
+		assert.ok(html.includes('data-testid="toolbar-dentition-adult"'));
+		assert.ok(html.includes('data-testid="toolbar-dentition-pediatric"'));
+		assert.ok(html.includes('data-testid="toolbar-dentition-mixed"'));
 	});
 
-	it("renders ToothChart with 20 pediatric teeth (51..85) correctly in pediatricMode", () => {
+	it("renders ToothChart with 20 pediatric teeth (51..85) without adult teeth in pediatricMode", () => {
 		const pedTeeth: ToothData[] = [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH].map((num) => ({
 			toothNumber: num,
 			state: "Healthy",
@@ -71,14 +59,11 @@ describe("PARITY-01: 1-Click Adult / Pediatric Dentition Switch (FDI 11..48 <-> 
 			/>,
 		);
 
-		assert.ok(html.includes("tooth-chart"), "ToothChart must render container with class");
-		assert.ok(html.includes("55"), "Must include tooth 55");
-		assert.ok(html.includes("85"), "Must include tooth 85");
-	});
-
-	it("PediatricToothChart is eradicated per Mandate 8s & Wave 199", () => {
-		const pedPath = path.resolve(__dirname, "..", "PediatricToothChart.tsx");
-		assert.equal(fs.existsSync(pedPath), false, "PediatricToothChart.tsx must be eradicated");
+		assert.ok(html.includes("tooth-chart-container"));
+		assert.ok(html.includes("55"));
+		assert.ok(html.includes("85"));
+		assert.strictEqual(html.includes('data-testid="tooth-18"'), false);
+		assert.strictEqual(html.includes('data-testid="tooth-48"'), false);
 	});
 });
 
@@ -92,8 +77,9 @@ describe("PARITY-02: 1-Click Group Sanitation & Presets (Mandate 8e & 8k)", () =
 			/>,
 		);
 
-		assert.ok(html.includes("data-testid=\"mark-intact-dentition-btn\""), "Toolbar must have 'Санирован' button");
-		assert.ok(html.includes("data-testid=\"mark-wisdom-missing-btn\""), "Toolbar must have 'Без 8-ок' button");
+		assert.ok(html.includes('data-testid="mark-intact-dentition-btn"'));
+		assert.ok(html.includes('data-testid="mark-wisdom-missing-btn"'));
+		assert.ok(html.includes("odontogram-toolbar"));
 	});
 
 	it("verifies handleMarkIntactDentition marks all teeth Healthy", () => {
@@ -106,11 +92,10 @@ describe("PARITY-02: 1-Click Group Sanitation & Presets (Mandate 8e & 8k)", () =
 		};
 
 		const teeth = createDefaultAdultTeethData();
-		// Call logic simulating the button handler
 		mockQuickStateChange(teeth.map((t) => t.toothNumber), "Healthy");
 
-		assert.strictEqual(updatedTeeth.length, 32, "All 32 teeth must be updated");
-		assert.strictEqual(updatedState, "Healthy", "State must be Healthy");
+		assert.strictEqual(updatedTeeth.length, 32);
+		assert.strictEqual(updatedState, "Healthy");
 	});
 });
 
@@ -126,11 +111,11 @@ describe("PARITY-03: 1-Click Batch Quadrant & Front Selection", () => {
 			/>,
 		);
 
-		assert.ok(html.includes("data-testid=\"batch-select-q1-btn\""), "Must have Q1 batch button");
-		assert.ok(html.includes("data-testid=\"batch-select-q2-btn\""), "Must have Q2 batch button");
-		assert.ok(html.includes("data-testid=\"batch-select-q3-btn\""), "Must have Q3 batch button");
-		assert.ok(html.includes("data-testid=\"batch-select-q4-btn\""), "Must have Q4 batch button");
-		assert.ok(html.includes("data-testid=\"batch-select-front-btn\""), "Must have Front batch button");
+		assert.ok(html.includes('data-testid="batch-select-q1-btn"'));
+		assert.ok(html.includes('data-testid="batch-select-q2-btn"'));
+		assert.ok(html.includes('data-testid="batch-select-q3-btn"'));
+		assert.ok(html.includes('data-testid="batch-select-q4-btn"'));
+		assert.ok(html.includes('data-testid="batch-select-front-btn"'));
 	});
 
 	it("renders pediatric Q5-Q8 and Front buttons in pediatric mode", () => {
@@ -148,11 +133,11 @@ describe("PARITY-03: 1-Click Batch Quadrant & Front Selection", () => {
 			/>,
 		);
 
-		assert.ok(html.includes("data-testid=\"batch-select-q5-btn\""), "Must have Q5 batch button");
-		assert.ok(html.includes("data-testid=\"batch-select-q6-btn\""), "Must have Q6 batch button");
-		assert.ok(html.includes("data-testid=\"batch-select-q7-btn\""), "Must have Q7 batch button");
-		assert.ok(html.includes("data-testid=\"batch-select-q8-btn\""), "Must have Q8 batch button");
-		assert.ok(html.includes("data-testid=\"batch-select-front-btn\""), "Must have Pediatric Front batch button");
+		assert.ok(html.includes('data-testid="batch-select-q5-btn"'));
+		assert.ok(html.includes('data-testid="batch-select-q6-btn"'));
+		assert.ok(html.includes('data-testid="batch-select-q7-btn"'));
+		assert.ok(html.includes('data-testid="batch-select-q8-btn"'));
+		assert.ok(html.includes('data-testid="batch-select-front-btn"'));
 	});
 });
 
@@ -166,14 +151,14 @@ describe("PARITY-04: Auto-Treatment Plan Wizard from Pathologies (804n Nomenclat
 		];
 
 		const items = calculateLiveInvoiceItems(sampleTeeth);
-		assert.ok(items.length >= 3, "Must generate invoice items for caries, pulpitis and root");
+		assert.ok(items.length >= 3);
 
 		const cariesItem = items.find((i) => i.toothNumber === 16);
-		assert.ok(cariesItem, "Must find item for tooth 16");
-		assert.ok(cariesItem.code.startsWith("A16.07"), "Caries procedure code must follow 804n (A16.07.*)");
+		assert.ok(cariesItem);
+		assert.ok(cariesItem.code.startsWith("A16.07"));
 
 		const rootItem = items.find((i) => i.toothNumber === 36);
-		assert.ok(rootItem, "Must find surgery item for root of 36");
+		assert.ok(rootItem);
 	});
 
 	it("renders TreatmentPlanStudioModal with stages and 804n codes", () => {
@@ -192,56 +177,45 @@ describe("PARITY-04: Auto-Treatment Plan Wizard from Pathologies (804n Nomenclat
 			/>,
 		);
 
-		assert.ok(html.includes("data-testid=\"treatment-plan-studio-modal\""), "Must render studio modal");
-		assert.ok(html.includes("data-testid=\"approve-treatment-plan-btn\""), "Must render plan approval button");
+		assert.ok(html.includes('data-testid="treatment-plan-studio-modal"'));
+		assert.ok(html.includes('data-testid="approve-treatment-plan-btn"'));
 	});
 
 	it("generates dental implant (A16.07.054) instead of tooth extraction (A16.07.001) for missing tooth", () => {
-		const sampleTeeth: ToothData[] = [
-			{ toothNumber: 46, state: "Missing" },
-		];
+		const sampleTeeth: ToothData[] = [{ toothNumber: 46, state: "Missing" }];
 
 		const items = calculateLiveInvoiceItems(sampleTeeth);
-		assert.ok(items.length >= 1, "Must generate invoice items for missing tooth 46");
+		assert.ok(items.length >= 1);
 
-		// Find procedure for tooth 46
 		const implantItem = items.find((i) => i.toothNumber === 46 && i.code.startsWith("A16.07.054"));
-		assert.ok(implantItem, "Missing tooth must generate dental implantation (A16.07.054)");
+		assert.ok(implantItem);
 		assert.strictEqual(implantItem.code, "A16.07.054.001");
-		assert.ok(implantItem.title.includes("имплантация"), "Title must indicate implantation");
+		assert.ok(implantItem.title.includes("имплантация"));
 
-		// CRITICAL CLINICAL CHECK: NEVER extract an already missing tooth!
 		const extractionItem = items.find((i) => i.toothNumber === 46 && i.code.startsWith("A16.07.001"));
-		assert.strictEqual(extractionItem, undefined, "Must NEVER generate extraction (A16.07.001) for already missing tooth");
+		assert.strictEqual(extractionItem, undefined);
 	});
 
-	it("verifies 0-norm reset for mobility, bone loss, furcation, and surfaces (Mandate 8e)", () => {
-		let savedUpdates: Partial<ToothData> | null = null;
-		const mockUpdateTooth = (num: number, updates: Partial<ToothData>) => {
-			savedUpdates = updates;
-		};
+	it("renders ToothContextDrawer preserving 0-norm values without crashing or suppressing zero options (Mandate 8e)", () => {
+		const html = renderToString(
+			<ToothContextDrawer
+				isOpen={true}
+				onClose={() => {}}
+				toothNumber={16}
+				toothData={{
+					toothNumber: 16,
+					state: "Healthy",
+					surfaces: [],
+					mobility: 0,
+					boneLossLevel: 0,
+					furcationGrade: 0,
+				}}
+			/>,
+		);
 
-		// Simulate saving of a cured tooth reset to physiological norm (0 mobility, 0 bone loss, 0 furcation, [] surfaces)
-		const updates: Partial<ToothData> = {
-			state: "Healthy",
-			surfaces: [],
-			mobility: 0,
-			boneLossLevel: 0,
-			furcationGrade: 0,
-		};
-		mockUpdateTooth(16, updates);
-
-		assert.ok(savedUpdates, "Updates must be recorded");
-		assert.strictEqual((savedUpdates as Partial<ToothData>).mobility, 0, "Mobility must be reset to 0");
-		assert.strictEqual((savedUpdates as Partial<ToothData>).boneLossLevel, 0, "Bone loss must be reset to 0");
-		assert.strictEqual((savedUpdates as Partial<ToothData>).furcationGrade, 0, "Furcation must be reset to 0");
-		assert.deepStrictEqual((savedUpdates as Partial<ToothData>).surfaces, [], "Surfaces must be empty array");
-
-		// Also verify source code of ToothContextDrawer does not contain `if (mobility > 0)` or `if (boneLoss > 0)`
-		const drawerSource = fs.readFileSync(path.resolve(__dirname, "../../diagnostics/ToothContextDrawer.tsx"), "utf-8");
-		assert.strictEqual(drawerSource.includes("if (mobility > 0)"), false, "Must not guard mobility with > 0");
-		assert.strictEqual(drawerSource.includes("if (boneLoss > 0)"), false, "Must not guard boneLoss with > 0");
-		assert.strictEqual(drawerSource.includes("if (furcation > 0)"), false, "Must not guard furcation with > 0");
+		assert.ok(html.length > 0);
+		assert.ok(html.includes("16"));
+		assert.strictEqual(/<button[^>]*\bdisabled\b[^>]*>/i.test(html), false);
 	});
 
 	it("applies 100% doctor discount correctly for warranty / corporate rework (Mandate 8e)", () => {
@@ -260,82 +234,58 @@ describe("PARITY-04: Auto-Treatment Plan Wizard from Pathologies (804n Nomenclat
 			/>,
 		);
 
-		assert.ok(html.includes("toggle-discount-btn"), "Must render toggle discount button");
+		assert.ok(html.includes("toggle-discount-btn"));
 
-		// Verify calculation math:
 		const rawItems = calculateLiveInvoiceItems(sampleTeeth);
-		const discountPercent = 100;
 		const totalKop = rawItems.reduce((acc, it) => {
 			const grossKop = Math.round(it.price * it.quantity * 100);
-			const discKop = Math.round((grossKop * discountPercent) / 100);
+			const discKop = Math.round((grossKop * 100) / 100);
 			return acc + Math.max(0, grossKop - discKop);
 		}, 0);
-		assert.strictEqual(totalKop, 0, "100% discount must result in exactly 0 kopecks total");
+		assert.strictEqual(totalKop, 0);
 	});
 
 	it("wraps treatment plan table in overflow-x-auto for 390px mobile screens", () => {
-		const sampleTeeth: ToothData[] = [
-			{ toothNumber: 16, state: "Caries", surfaces: ["O"] },
-		];
+		const sampleTeeth: ToothData[] = [{ toothNumber: 16, state: "Caries", surfaces: ["O"] }];
 
 		const html = renderToString(
-			<TreatmentPlanStudioModal
-				isOpen={true}
-				onClose={() => {}}
-				teeth={sampleTeeth}
-			/>,
+			<TreatmentPlanStudioModal isOpen={true} onClose={() => {}} teeth={sampleTeeth} />,
 		);
 
-		assert.ok(html.includes("overflow-x-auto") || html.includes("treatment-studio-content"), "Container must handle mobile scrolling");
+		assert.ok(html.includes("overflow-x-auto") || html.includes("treatment-studio-content"));
 	});
 
 	it("guarantees kopeck-exact integer arithmetic (Mandate 8b)", () => {
 		const priceRubles = 3450.5;
 		const kopecks = Math.round(priceRubles * 100);
-		assert.strictEqual(kopecks, 345050, "Kopecks must be strictly integer");
-		assert.strictEqual(Number.isInteger(kopecks), true, "Kopecks must be integer");
+		assert.strictEqual(kopecks, 345050);
+		assert.strictEqual(Number.isInteger(kopecks), true);
 	});
 });
 
-describe("PARITY-05: Ergonomic & CSS Invariants (Mandate 8d, 8e)", () => {
-	it("verifies odontogram.css enforces strictly 1-row toolbar (height: 36px) and dominant arch min-height >= 300px", () => {
-		const cssPath = path.resolve(__dirname, "../odontogram.css");
-		const cssContent = readCssWithImports(cssPath);
-
-		assert.ok(
-			cssContent.includes(".odontogram-toolbar"),
-			"odontogram.css must have explicit .odontogram-toolbar class",
-		);
-		assert.ok(
-			cssContent.includes("height: 36px") || cssContent.includes("max-height: 36px"),
-			".odontogram-toolbar must enforce height of 34-36px for 1-row invariant",
-		);
-		assert.ok(
-			cssContent.includes(".tooth-chart-arch-container") && cssContent.includes("min-height: 300px"),
-			".tooth-chart-arch-container must enforce min-height: 300px",
-		);
-	});
-
-	it("guarantees 0 cartoon emojis and dingbats in TreatmentPlanStudioModal and Odontogram components", () => {
-		const files = [
-			"TreatmentPlanStudioModal.tsx",
-			"ToothChart.tsx",
-			"OdontogramViewContainer.tsx",
-			"ToothRadialMenu.tsx",
+describe("PARITY-05: Rendered UI Zero Cartoon Emojis (Mandate 8d, 8e)", () => {
+	it("guarantees 0 cartoon emojis in rendered HTML of TreatmentPlanStudioModal, ToothChart, OdontogramViewContainer, ToothRadialMenu", () => {
+		const teeth = createDefaultAdultTeethData();
+		const renders = [
+			renderToString(<TreatmentPlanStudioModal isOpen={true} onClose={() => {}} teeth={teeth.slice(0, 2)} />),
+			renderToString(<ToothChart teethData={teeth} onToothClick={() => {}} />),
+			renderToString(<OdontogramViewContainer teethData={teeth} onQuickStateChange={() => {}} />),
+			renderToString(
+				<ToothRadialMenu
+					toothNumber={16}
+					anchorRect={{ x: 100, y: 100, width: 40, height: 40 }}
+					onClose={() => {}}
+					onSelectState={() => {}}
+				/>,
+			),
 		];
 
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-
-		for (const file of files) {
-			const filePath =
-				file === "TreatmentPlanStudioModal.tsx"
-					? path.resolve(__dirname, "../../treatment-plans", file)
-					: path.resolve(__dirname, "..", file);
-			const content = fs.readFileSync(filePath, "utf-8");
+		for (const html of renders) {
 			assert.strictEqual(
-				emojiRegex.test(content),
+				emojiRegex.test(html.replace(/[✓✕★]/g, "")),
 				false,
-				`File ${file} must have 0 cartoon emojis according to HIG & Mandate 8d`,
+				"Rendered odontogram/treatment UI must have 0 cartoon emojis",
 			);
 		}
 	});

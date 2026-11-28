@@ -19,7 +19,13 @@ export function NativeTomographyLaunchBar({
 	const handleLaunchApp = async (viewerId: string, vendorName: string) => {
 		setLaunchingApp(vendorName);
 		try {
-			const studyPath = (selectedImagingStudy as { filePath?: string } | null)?.filePath || selectedImagingStudy?.id || "";
+			const filePath =
+				selectedImagingStudy &&
+				"filePath" in selectedImagingStudy &&
+				typeof selectedImagingStudy.filePath === "string"
+					? selectedImagingStudy.filePath
+					: "";
+			const studyPath = filePath || selectedImagingStudy?.id || "";
 			const res = await launchExternalCtViewer({
 				viewerId,
 				studyPath,

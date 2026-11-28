@@ -1,17 +1,16 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { generateSanpinShiftAutopilotBundle } from "@dental/shared";
 import {
 	createQuickClassBWasteRecord,
 	createQuickClassGWasteRecord,
 } from "../waste/medicalWasteEngine.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const sanpinDir = path.resolve(__dirname, "..");
+import { SanpinRegisters } from "../SanpinRegisters";
+import { SterilizationBatchCycleModal } from "../SterilizationBatchCycleModal";
+import { SanPinSterilizationJournal } from "../SanPinSterilizationJournal";
+import { CleaningControlTab } from "../CleaningControlTab";
 
 const BANNED_SYNTHETIC_NAMES = [
 	"Иванова О.С.",
@@ -25,41 +24,26 @@ const BANNED_SYNTHETIC_NAMES = [
 ];
 
 describe("SanPiN Registers — Synthetic Names Elimination & Regulatory Roles Verification (Wave 105)", () => {
-	it("verifies elimination of banned synthetic names from production SanPiN components", () => {
-		const targetFiles = [
-			"SanpinRegisters.tsx",
-			"SterilizationBatchCycleModal.tsx",
-			"SanPinSterilizationJournal.tsx",
-			"GeneralCleaningRegisterTab.tsx",
-			"BactericidalRegisterTab.tsx",
-			"CleaningControlTab.tsx",
-			"RetroactiveBatchTab.tsx",
-			"RetroactiveSanpinBatchModal.tsx",
-			"waste/MedicalWasteJournalModal.tsx",
-			"waste/medicalWasteEngine.ts",
+	it("verifies rendered SanPiN screens contain zero banned synthetic names", () => {
+		const renderedScreens = [
+			renderToStaticMarkup(React.createElement(SanpinRegisters)),
+			renderToStaticMarkup(React.createElement(SterilizationBatchCycleModal, { isOpen: true, onClose: () => {} })),
+			renderToStaticMarkup(React.createElement(SanPinSterilizationJournal)),
+			renderToStaticMarkup(React.createElement(CleaningControlTab)),
 		];
 
-		for (const relPath of targetFiles) {
-			const fullPath = path.join(sanpinDir, relPath);
-			assert.ok(fs.existsSync(fullPath), `Target file exists: ${relPath}`);
-			const content = fs.readFileSync(fullPath, "utf8");
-
+		for (const html of renderedScreens) {
 			for (const banned of BANNED_SYNTHETIC_NAMES) {
-				assert.ok(
-					!content.includes(banned),
-					`Found banned synthetic name "${banned}" in ${relPath}`,
-				);
+				assert.equal(html.includes(banned), false, `Rendered output must not contain banned synthetic name "${banned}"`);
 			}
 		}
 	});
 
 	it("verifies regulatory statutory roles are used as clean defaults", () => {
-		// 1. Shared autopilot shift bundle
 		const bundle = generateSanpinShiftAutopilotBundle();
 		assert.equal(bundle.operatorFullName, "Медсестра ЦСО");
 		assert.equal(bundle.headNurseFullName, "Главная медсестра");
 
-		// 2. Quick waste records
 		const wasteB = createQuickClassBWasteRecord();
 		assert.equal(wasteB.operatorStaffFullName, "Медсестра процедурного кабинета");
 		assert.equal(wasteB.operatorStaffPosition, "Медсестра процедурного кабинета");

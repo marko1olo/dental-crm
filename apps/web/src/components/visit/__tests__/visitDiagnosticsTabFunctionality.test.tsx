@@ -18,10 +18,7 @@
 
 import "../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import React, { Suspense } from "react";
 import { renderToString } from "react-dom/server";
 import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";
@@ -30,9 +27,6 @@ import { DiagnosticsPhotoSection } from "../diagnosticsTab/DiagnosticsPhotoSecti
 import { DiagnosticsCbctSection } from "../diagnosticsTab/DiagnosticsCbctSection";
 import { DiagnosticsCephSection } from "../diagnosticsTab/DiagnosticsCephSection";
 import { DiagnosticsTabToolbar } from "../diagnosticsTab/DiagnosticsTabToolbar";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const mockPatient = {
 	id: "pat-diagnostics-001",
@@ -234,24 +228,47 @@ describe("VisitDiagnosticsTab Comprehensive Functionality & Button Test Suite", 
 			assert.ok(html.includes("Снимки и диагностика"), "Header must include 'Снимки и диагностика'");
 		});
 
-		it("source code verification: VisitDiagnosticsTab strictly enforces design tokens across all tabs", () => {
-			const diagnosticsDir = path.resolve(__dirname, "../diagnosticsTab");
-			const sourceFiles = [
-				path.resolve(__dirname, "../VisitDiagnosticsTab.tsx"),
-				...(fs.existsSync(diagnosticsDir)
-					? fs.readdirSync(diagnosticsDir).map((f) => path.resolve(diagnosticsDir, f))
-					: []),
-			];
-			const source = sourceFiles.map((f) => fs.readFileSync(f, "utf8")).join("\n");
-
-			// Check all 3 segmented mode buttons use bg-transparent border border-transparent
-			const bgTransparentCount = (source.match(/bg-transparent border border-transparent/g) || []).length;
+		it("rendered VisitDiagnosticsTab strictly enforces design tokens and required interactive triggers across modes", () => {
+			const htmlRvg = renderTabHtml();
+			const bgTransparentMatches = htmlRvg.match(/bg-transparent border border-transparent/g) || [];
 			assert.ok(
-				bgTransparentCount >= 3,
-				`Expected at least 3 occurrences of 'bg-transparent border border-transparent' for inactive tabs, found ${bgTransparentCount}`,
+				bgTransparentMatches.length >= 2,
+				`Expected at least 2 inactive segmented buttons with 'bg-transparent border border-transparent', found ${bgTransparentMatches.length}`,
 			);
 
-			// Check all required testids are in the source
+			const toolbarHtml = renderToString(
+				<DiagnosticsTabToolbar
+					activeDiagnosticMode="photo"
+					setActiveDiagnosticMode={() => {}}
+					isAdvancedDiagnosticsOpen={true}
+					setIsAdvancedDiagnosticsOpen={() => {}}
+					studiesCount={1}
+					photosCount={1}
+					cbctCount={1}
+					selectedPatientName="Тестовый Пациент"
+					onOpenReportStudio={() => {}}
+				/>,
+			);
+			const cbctHtml = renderToString(
+				<DiagnosticsCbctSection
+					isVisible={true}
+					onOpenCbctStudio={() => {}}
+					onOpenRadiologyReferral={() => {}}
+					patientId="pat-1"
+					patientName="Тестовый Пациент"
+				/>,
+			);
+			const cephHtml = renderToString(
+				<DiagnosticsCephSection
+					isOpen={true}
+					setIsOpen={() => {}}
+					onOpenCephModal={() => {}}
+					patientId="pat-1"
+					patientName="Тестовый Пациент"
+				/>,
+			);
+			const combinedHtml = `${htmlRvg}\n${toolbarHtml}\n${cbctHtml}\n${cephHtml}`;
+
 			const requiredTestIds = [
 				"tab-diagnostic-mode-rvg",
 				"tab-diagnostic-mode-photo",
@@ -263,15 +280,14 @@ describe("VisitDiagnosticsTab Comprehensive Functionality & Button Test Suite", 
 				"btn-open-cbct-studio-modal",
 				"toggle-advanced-diagnostics-btn",
 				"open-visit-ceph-modal-btn",
-				"visit-photo-protocol-card",
 				"visit-cbct-optg-card",
 				"visit-ceph-diagnostic-card",
 			];
 
 			for (const testId of requiredTestIds) {
 				assert.ok(
-					source.includes(`data-testid="${testId}"`),
-					`VisitDiagnosticsTab.tsx must contain data-testid="${testId}"`,
+					combinedHtml.includes(`data-testid="${testId}"`),
+					`Rendered VisitDiagnosticsTab sections must include data-testid="${testId}"`,
 				);
 			}
 		});

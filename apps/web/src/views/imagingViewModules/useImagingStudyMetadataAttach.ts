@@ -9,6 +9,15 @@ import { showToast } from "../../components/GlobalToast";
 import { clientLogger } from "../../services/logging/clientLogger";
 import type { ImagingStudy } from "./imagingViewTypes";
 
+function isImagingStudyCandidate(val: unknown): val is ImagingStudy {
+	return (
+		typeof val === "object" &&
+		val !== null &&
+		"id" in val &&
+		typeof val.id === "string"
+	);
+}
+
 export function useImagingStudyMetadataAttach(
 	selectedImagingStudy: ImagingStudy | null,
 	auth: { denteClinicalMutationHeaders?: (headers?: Record<string, string>) => Record<string, string> } | null | undefined,
@@ -35,9 +44,13 @@ export function useImagingStudyMetadataAttach(
 				body: JSON.stringify({ toothCode: toothCode || null }),
 			});
 			if (res.ok) {
-				const json = await res.json();
-				const payload = (json && typeof json === "object" && "data" in json) ? (json as { data: ImagingStudy }).data : (json as ImagingStudy);
-				props.onStudyUpdated?.(payload);
+				const json: unknown = await res.json();
+				const rawData =
+					typeof json === "object" && json !== null && "data" in json && json.data !== undefined
+						? json.data
+						: json;
+				const payload = isImagingStudyCandidate(rawData) ? rawData : null;
+				if (payload) props.onStudyUpdated?.(payload);
 				if (typeof window !== "undefined") {
 					window.dispatchEvent(
 						new CustomEvent("dente-tooth-scan-bound", {
@@ -83,9 +96,13 @@ export function useImagingStudyMetadataAttach(
 				body: JSON.stringify({ visitId: visitId || null }),
 			});
 			if (res.ok) {
-				const json = await res.json();
-				const payload = (json && typeof json === "object" && "data" in json) ? (json as { data: ImagingStudy }).data : (json as ImagingStudy);
-				props.onStudyUpdated?.(payload);
+				const json: unknown = await res.json();
+				const rawData =
+					typeof json === "object" && json !== null && "data" in json && json.data !== undefined
+						? json.data
+						: json;
+				const payload = isImagingStudyCandidate(rawData) ? rawData : null;
+				if (payload) props.onStudyUpdated?.(payload);
 				if (appLogic?.loadDashboard) void appLogic.loadDashboard();
 				showToast("Снимок привязан к текущему приёму", "success");
 			} else {

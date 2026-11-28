@@ -27,7 +27,7 @@ import {
 import {
 	validateMedicalRecordCompleteness, formatPatientAge, calculateDmftIndex, calculateCpitnIndex, generateMedicalRecordPrintHtml,
 } from "./clinicalDiaryMath";
-import { generateUuidV7 } from "@dental/shared";
+import { generateUuidV7, todayDateKeyInTimeZone } from "@dental/shared";
 import {
 	getSynchronousDraft,
 	loadOfflineDraft,
@@ -129,13 +129,17 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		}, [initialData, resolvedClinic, resolvedPatient, effectivePatientId]);
 
 		const [formData, setFormData] = useState<MedicalRecordData>(buildInitialFormData);
+		const isDirtyRef = useRef<boolean>(false);
 
 		// Async IndexedDB Draft Hydration: восстановление при сбое браузера / Ctrl+W / OOM
 		useEffect(() => {
 			if (!effectivePatientId) return;
 			let cancelled = false;
 			void loadOfflineDraft<Partial<MedicalRecordData>>(`draft:emk:${effectivePatientId}`).then((idbDraft) => {
-				if (!cancelled && idbDraft?.data) setFormData((prev) => mergeRecordSections(prev, idbDraft.data));
+				if (!cancelled && idbDraft?.data) {
+					isDirtyRef.current = false;
+					setFormData((prev) => mergeRecordSections(prev, idbDraft.data));
+				}
 			});
 			return () => { cancelled = true; };
 		}, [effectivePatientId]);
@@ -147,6 +151,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		useEffect(() => {
 			if (lastPatientIdRef.current !== effectivePatientId) {
 				lastPatientIdRef.current = effectivePatientId;
+				isDirtyRef.current = false;
 				setFormData(buildInitialRef.current());
 			}
 		}, [effectivePatientId]);
@@ -174,7 +179,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		// Debounced 3-tier автосейв всей карты в IndexedDB + LocalStorage (Zero Keystroke Loss & Zero-Leak Draft)
 		const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 		useEffect(() => {
-			if (!effectivePatientId) return;
+			if (!effectivePatientId || !isDirtyRef.current) return;
 			if (autosaveRef.current) clearTimeout(autosaveRef.current);
 			autosaveRef.current = setTimeout(() => {
 				try {
@@ -193,7 +198,10 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			return () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); };
 		}, [formData, effectivePatientId, profile?.organizationId]);
 
-		const resetDraft = useCallback(() => setFormData(buildInitialRef.current()), []);
+		const resetDraft = useCallback(() => {
+			isDirtyRef.current = false;
+			setFormData(buildInitialRef.current());
+		}, []);
 
 		// Zero-Leak Draft (Мандаты 8zq/8bn): сброс только при реальном unmount и переходе isOpen true -> false (не при ре-рендере родителя)
 		const wasOpenRef = useRef<boolean>(isOpen);
@@ -231,6 +239,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		const { isSaving, handleSaveForm } = useMedicalRecordSave({ formData, onSave, visitId, patientId: effectivePatientId, initialData: initialData as Record<string, unknown> | undefined, effectiveIsDraft });
 
 		const applyFormUpdate = useCallback((updater: (prev: MedicalRecordData) => MedicalRecordData) => {
+			isDirtyRef.current = true;
 			setFormData((prev) => { const updated = updater(prev); onSave?.(updated); return updated; });
 		}, [onSave]);
 		const handleApplyNorm = useCallback(() => applyFormUpdate(applyMedicalCardPhysiologicalNorm), [applyFormUpdate]);
@@ -404,7 +413,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								embedded={true} isOpen={true} onClose={() => setIsProtocolGeneratorOpen(false)} activeTooth={numTooth}
 								onApplyPatch={(patch) => {
 									handleAddDiary({
-										id: generateUuidV7(), entryDate: new Date().toISOString().split("T")[0] || "", entryTime: new Date().toTimeString().slice(0, 5),
+										id: generateUuidV7(), entryDate: todayDateKeyInTimeZone(profile?.timezone), entryTime: new Date().toTimeString().slice(0, 5),
 										doctorFullName: formData.passport.attendingDoctorFullName || "Лечащий врач", doctorSpecialty: formData.passport.attendingDoctorSpecialty || "Стоматолог-терапевт",
 										toothNumber: String(protocolGeneratorTooth || 11), subjectiveComplaints: patch.complaint || "", objectiveStatusLocalis: patch.objectiveStatus || "",
 										assessmentDiagnosisText: patch.diagnosis || "", assessmentIcd10Code: (patch.diagnosis || "").split(" ")[0] || "K02.1",

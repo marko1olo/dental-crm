@@ -1,7 +1,5 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { EmkToolbar } from "../emk/EmkToolbar.js";
@@ -9,12 +7,8 @@ import { RecordNewDiaryInlineForm } from "../../emr/record/tabs/RecordNewDiaryIn
 import { InstallmentsActionBar } from "../../billing/installments/InstallmentsActionBar.js";
 import { RefundModalFooter } from "../../finance/refunds/refundServiceModalModules/RefundModalFooter.js";
 import { CheckoutDiscountAndPayerControls } from "../../cashbox/studioModules/checkout/CheckoutDiscountAndPayerControls.js";
-
-import { fileURLToPath } from "node:url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const WEB_SRC = path.resolve(__dirname, "../../../");
+import { CopilotStudioModal } from "../../copilot/CopilotStudioModal.js";
+import { InventoryServiceUsagePanel } from "../../InventoryServiceUsagePanel.js";
 
 describe("Red Team Clinical Inquisition: Mandates 8e & 8n Verification", () => {
 	it("1.1 confirms btn-chairside-physiological-norm is visible, beautiful, and not hidden with sr-only in EmkToolbar", () => {
@@ -128,13 +122,17 @@ describe("Red Team Clinical Inquisition: Mandates 8e & 8n Verification", () => {
 		assert.ok(!html.includes("54-ФЗ"), "Must not leak raw 54-FZ statute citation onto badge");
 	});
 
-	it("4.1 verifies source files purged of raw regulatory acronyms in UI strings", () => {
-		const copilotFile = path.join(WEB_SRC, "components/copilot/CopilotStudioModal.tsx");
-		const copilotContent = fs.readFileSync(copilotFile, "utf8");
-		assert.ok(!copilotContent.includes("дневника 043/у"), "CopilotStudioModal must not contain 'дневника 043/у'");
+	it("4.1 verifies rendered CopilotStudioModal and InventoryServiceUsagePanel purge raw regulatory acronyms", () => {
+		const copilotHtml = renderToString(
+			<CopilotStudioModal isOpen={true} onClose={() => {}} />,
+		);
+		assert.ok(!copilotHtml.includes("дневника 043/у"), "CopilotStudioModal must not render 'дневника 043/у'");
+		assert.ok(!copilotHtml.includes("043/у"), "CopilotStudioModal must not render raw 043/у");
 
-		const usagePanelFile = path.join(WEB_SRC, "components/InventoryServiceUsagePanel.tsx");
-		const usageContent = fs.readFileSync(usagePanelFile, "utf8");
-		assert.ok(!usageContent.includes("Номенклатура 804н"), "InventoryServiceUsagePanel must not show 'Номенклатура 804н' in heading");
+		const usageHtml = renderToString(
+			<InventoryServiceUsagePanel organizationId="org-1" />,
+		);
+		assert.ok(!usageHtml.includes("Номенклатура 804н"), "InventoryServiceUsagePanel must not render 'Номенклатура 804н'");
+		assert.ok(usageHtml.includes("Технологические карты процедур"), "Must render plain Russian heading");
 	});
 });

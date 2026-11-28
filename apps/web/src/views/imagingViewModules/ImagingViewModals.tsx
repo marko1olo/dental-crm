@@ -5,6 +5,11 @@ import { DirectRvgCaptureModal } from "../../components/radiology/DirectRvgCaptu
 import { ImagingAuxiliaryModals } from "../../components/imaging";
 import type { ImagingStudy } from "./imagingViewTypes";
 
+const readEntityId = (val: unknown): string | undefined =>
+	typeof val === "object" && val !== null && "id" in val && typeof val.id === "string"
+		? val.id
+		: undefined;
+
 const CbctMprImplantStudioModal = lazyWithRetry(() =>
 	import("../../components/radiology/CbctMprImplantStudioModal.js").then((m) => ({
 		default: m.CbctMprImplantStudioModal,
@@ -102,15 +107,15 @@ export function ImagingViewModals(props: ImagingViewModalsProps) {
 					cardNumber={activePatient?.cardNumber ?? activePatient?.medicalCardNumber}
 					studies={activeImagingStudies}
 					onSelectStudy={(study) => {
-						const studyId = (study as { id?: string } | null | undefined)?.id;
+						const studyId = readEntityId(study);
 						if (studyId) setSelectedImagingStudyId?.(studyId);
 					}}
 					onOpenCbctStudio={(study, ids) => {
-						const studyId = (study as { id?: string } | null | undefined)?.id;
+						const studyId = readEntityId(study);
 						openPopoutStudio(studyId, ids);
 					}}
 					onImagesLoaded={(ids, meta) => {
-						const metaId = (meta as { id?: string } | null | undefined)?.id;
+						const metaId = readEntityId(meta);
 						openPopoutStudio(metaId, ids);
 					}}
 				/>

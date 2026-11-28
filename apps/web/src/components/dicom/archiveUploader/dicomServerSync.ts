@@ -35,9 +35,11 @@ export async function persistAndSyncDicomStudy(options: SyncStudyOptions): Promi
 		studyUid = headerInfo.studyInstanceUid || studyUid;
 		patientIdFromDicom = headerInfo.patientId;
 
-		const sliceBuffers = await Promise.all(
-			validFiles.map(async (f) => ({ name: f.name, buffer: await f.arrayBuffer() })),
-		);
+		const sliceBuffers: Array<{ name: string; buffer: ArrayBuffer }> = [];
+		for (const f of validFiles) {
+			if (!isMounted()) return;
+			sliceBuffers.push({ name: f.name, buffer: await f.arrayBuffer() });
+		}
 
 		await saveLocalDicomStudy({
 			studyInstanceUid: studyUid, seriesUid: headerInfo.seriesUid,
@@ -70,23 +72,19 @@ export async function persistAndSyncDicomStudy(options: SyncStudyOptions): Promi
 	let uploadedCount = 0;
 	const failedFiles: File[] = [];
 	const total = validFiles.length;
-	let uploadIndex = 0;
-	const workers = Array.from({ length: Math.min(4, total) }, async () => {
-		while (uploadIndex < total) {
-			if (!isMounted()) break;
-			const taskIdx = uploadIndex++;
-			const file = validFiles[taskIdx]!;
-			const ok = await uploadDicomFileToStow(file, effectivePatientId, doctorId);
-			if (!ok) failedFiles.push(file);
-			uploadedCount++;
-			if (isMounted()) {
-				const pct = Math.round((uploadedCount / total) * 100);
-				setProgressPercent(pct);
-				setStatus(`Синхронизация с PACS: ${uploadedCount}/${total} (${pct}%)...`);
-			}
+	for (let i = 0; i < total; i++) {
+		if (!isMounted()) break;
+		const file = validFiles[i];
+		if (!file) continue;
+		const ok = await uploadDicomFileToStow(file, effectivePatientId, doctorId);
+		if (!ok) failedFiles.push(file);
+		uploadedCount++;
+		if (isMounted()) {
+			const pct = Math.round((uploadedCount / total) * 100);
+			setProgressPercent(pct);
+			setStatus(`Синхронизация с PACS: ${uploadedCount}/${total} (${pct}%)...`);
 		}
-	});
-	await Promise.all(workers);
+	}
 
 	if (failedFiles.length > 0) {
 		await markStudySyncFailed(studyUid, `Не удалось отправить ${failedFiles.length} из ${total} срезов`);

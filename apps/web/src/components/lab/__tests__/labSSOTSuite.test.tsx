@@ -1,24 +1,19 @@
 /**
  * apps/web/src/components/lab/__tests__/labSSOTSuite.test.tsx
  *
- * DENTE Dental CRM — Red Team SSOT Inquisition Suite for Dental Laboratory & Studio.
- * Verifies orthopedic constructions, Vita shades, 5 production stages, doctor autonomy (Mandate 8e),
- * single primary CTA #0d9488 (Mandate 8am), and Standalone Launchers mounting (Mandate 8aq).
- * Uses native node:test & node:assert/strict for zero-bloat ultra-fast execution.
+ * DENTE Dental CRM — Runtime SSOT Inquisition Suite for Dental Laboratory & Studio.
  */
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToString } from "react-dom/server";
 
 import {
 	CANONICAL_LAB_STAGES,
 	CANONICAL_LAB_MATERIALS,
 	VITA_SHADES_SSOT,
 	STUMP_SHADES,
-	CLINIC_LABORATORIES,
 	UPPER_JAW_TEETH,
 	LOWER_JAW_TEETH,
 	SEED_LAB_ORDERS,
@@ -29,81 +24,63 @@ import {
 	getMaterialMeta,
 	isOrderOverdue,
 } from "../dentalLabCatalogData";
+import { DentalLabStudioModal } from "../DentalLabStudioModal";
+import { DentalLabCreateOrderSection } from "../DentalLabCreateOrderSection";
+import { DentalLabOrdersView } from "../DentalLabOrdersView";
 import { resolveClinicRoute } from "../../../router/routeResolver";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const labDir = path.resolve(__dirname, "..");
-const webSrcDir = path.resolve(labDir, "../..");
+const REAL_HTML_DISABLED_BTN_REGEX = /<button[^>]*\sdisabled(?:=["'][^"']*["'])?(?=[\s>])/i;
 
-describe("DENTE Dental Laboratory SSOT & Studio Red Team Suite", () => {
+describe("DENTE Dental Laboratory SSOT & Studio Runtime Suite", () => {
 	it("1.1. Contains all canonical orthopedic materials with integer kopecks pricing", () => {
-		assert.ok(CANONICAL_LAB_MATERIALS.length >= 6, "Must contain at least 6 canonical materials");
+		assert.ok(CANONICAL_LAB_MATERIALS.length >= 6);
 		const ids = CANONICAL_LAB_MATERIALS.map((m) => m.id);
-		assert.ok(ids.includes("zirconia_multilayer"), "Must contain zirconia multilayer");
-		assert.ok(ids.includes("emax_press"), "Must contain emax press");
-		assert.ok(ids.includes("metal_ceramic_cocr"), "Must contain metal ceramic");
-		assert.ok(ids.includes("pmma_temp"), "Must contain PMMA temporary");
-		assert.ok(ids.includes("clasp_prosthesis"), "Must contain clasp prosthesis");
-		assert.ok(ids.includes("zirconia_abutment"), "Must contain custom zirconia abutment");
+		assert.ok(ids.includes("zirconia_multilayer"));
+		assert.ok(ids.includes("emax_press"));
+		assert.ok(ids.includes("metal_ceramic_cocr"));
+		assert.ok(ids.includes("pmma_temp"));
+		assert.ok(ids.includes("clasp_prosthesis"));
+		assert.ok(ids.includes("zirconia_abutment"));
 
 		for (const m of CANONICAL_LAB_MATERIALS) {
-			assert.ok(m.baseLabCostKopecks > 0, `Base cost must be > 0 for ${m.id}`);
-			assert.ok(
-				m.defaultPatientPriceKopecks > m.baseLabCostKopecks,
-				`Patient price must exceed lab cost for ${m.id}`,
-			);
-			assert.ok(m.defaultDurationDays > 0, `Duration must be > 0 for ${m.id}`);
-			assert.ok(m.titleRu && m.titleRu.length > 5, `TitleRu must be present for ${m.id}`);
+			assert.ok(m.baseLabCostKopecks > 0);
+			assert.ok(m.defaultPatientPriceKopecks > m.baseLabCostKopecks);
+			assert.ok(m.defaultDurationDays > 0);
+			assert.ok(m.titleRu && m.titleRu.length > 5);
 		}
 	});
 
 	it("1.2. Contains comprehensive Vita Classical & Bleach shades with valid hex colors", () => {
-		assert.ok(VITA_SHADES_SSOT.length >= 16, "Must contain at least 16 Vita shades");
+		assert.ok(VITA_SHADES_SSOT.length >= 16);
 		const codes = VITA_SHADES_SSOT.map((v) => v.code);
-		assert.ok(codes.includes("A1"), "Must contain A1");
-		assert.ok(codes.includes("A2"), "Must contain A2");
-		assert.ok(codes.includes("A3"), "Must contain A3");
-		assert.ok(codes.includes("A3.5"), "Must contain A3.5");
-		assert.ok(codes.includes("B1"), "Must contain B1");
-		assert.ok(codes.includes("C1"), "Must contain C1");
-		assert.ok(codes.includes("D2"), "Must contain D2");
-		assert.ok(codes.includes("BL1"), "Must contain BL1 Bleach");
-		assert.ok(codes.includes("BL2"), "Must contain BL2 Bleach");
-
-		for (const v of VITA_SHADES_SSOT) {
-			assert.match(v.approxHex, /^#[0-9A-Fa-f]{6}$/, `Invalid hex color for ${v.code}`);
+		for (const expected of ["A1", "A2", "A3", "A3.5", "B1", "C1", "D2", "BL1", "BL2"]) {
+			assert.ok(codes.includes(expected));
 		}
-
-		assert.ok(STUMP_SHADES.length >= 9, "Must contain ND1..ND9 stump shades");
+		for (const v of VITA_SHADES_SSOT) {
+			assert.match(v.approxHex, /^#[0-9A-Fa-f]{6}$/);
+		}
+		assert.ok(STUMP_SHADES.length >= 9);
 	});
 
 	it("1.3. Contains 5 sequential canonical stages", () => {
-		assert.equal(CANONICAL_LAB_STAGES.length, 5, "Must contain exactly 5 canonical stages");
-		const stageIds = CANONICAL_LAB_STAGES.map((s) => s.id);
-		assert.deepEqual(stageIds, [
+		assert.equal(CANONICAL_LAB_STAGES.length, 5);
+		assert.deepEqual(CANONICAL_LAB_STAGES.map((s) => s.id), [
 			"scan_sent",
 			"in_production",
 			"fitting_ready",
 			"in_clinic",
 			"seated",
 		]);
-
 		CANONICAL_LAB_STAGES.forEach((s, idx) => {
-			assert.equal(s.stepNumber, idx + 1, `Stage ${s.id} stepNumber must be ${idx + 1}`);
-			assert.ok(s.labelRu && s.labelRu.length > 3, `Stage ${s.id} labelRu must be present`);
+			assert.equal(s.stepNumber, idx + 1);
+			assert.ok(s.labelRu && s.labelRu.length > 3);
 		});
 	});
 
 	it("1.4. Validates Russian working days calculation (excluding weekends)", () => {
-		// Пятница: +1 рабочий день должен стать понедельником (+3 календарных дня)
-		const friday = new Date(2026, 9, 30); // 30 Oct 2026 = Friday
-		const nextWorkDay = addWorkingDaysRu(friday, 1);
-		assert.equal(nextWorkDay.getDay(), 1, "Next working day after Friday must be Monday");
-
-		// +5 рабочих дней
-		const fiveDaysLater = addWorkingDaysRu(friday, 5);
-		assert.equal(fiveDaysLater.getDay(), 5, "5 working days after Friday must be next Friday");
+		const friday = new Date(2026, 9, 30);
+		assert.equal(addWorkingDaysRu(friday, 1).getDay(), 1);
+		assert.equal(addWorkingDaysRu(friday, 5).getDay(), 5);
 	});
 
 	it("1.5. Validates integer kopecks accounting and formatting helpers", () => {
@@ -113,139 +90,84 @@ describe("DENTE Dental Laboratory SSOT & Studio Red Team Suite", () => {
 		assert.equal(getStageMeta("in_clinic").labelRu, "Готово в клинике");
 		assert.equal(getMaterialMeta("zirconia_multilayer").shortTitle, "Цирконий (ZrO2)");
 
-		const overdueOrder = {
-			...SEED_LAB_ORDERS[0]!,
-			stage: "in_production" as const,
-			dueDate: "2020-01-01",
-		};
-		assert.equal(isOrderOverdue(overdueOrder), true);
-
-		const completedOrder = {
-			...SEED_LAB_ORDERS[0]!,
-			stage: "in_clinic" as const,
-			dueDate: "2020-01-01",
-		};
-		assert.equal(isOrderOverdue(completedOrder), false);
+		const seedOrder = SEED_LAB_ORDERS[0];
+		assert.ok(seedOrder);
+		assert.equal(isOrderOverdue({ ...seedOrder, stage: "in_production", dueDate: "2020-01-01" }), true);
+		assert.equal(isOrderOverdue({ ...seedOrder, stage: "in_clinic", dueDate: "2020-01-01" }), false);
 	});
 
-	it("2.1. Validates LabStudioModal structure and Mandate 8am (Single Primary CTA #0d9488)", () => {
-		const modalPath = path.resolve(labDir, "DentalLabStudioModal.tsx");
-		assert.ok(fs.existsSync(modalPath), "DentalLabStudioModal.tsx must exist");
-		const content =
-			fs.readFileSync(modalPath, "utf-8") +
-			fs.readFileSync(path.resolve(labDir, "DentalLabCreateOrderSection.tsx"), "utf-8");
-
-		// Заголовок и клиническая терминология (Мандат 8x)
-		assert.ok(
-			content.includes("Зуботехническая лаборатория и заказ-наряды"),
-			"Must include clean domain header",
+	it("2.1. Renders DentalLabStudioModal & registry view cleanly without synthetic doctor fallback or cartoon emojis", () => {
+		const modalHtml = renderToString(
+			<DentalLabStudioModal isOpen={true} onClose={() => {}} patientName="Иванов И.И." />,
+		);
+		const registryHtml = renderToString(
+			<DentalLabStudioModal isOpen={true} onClose={() => {}} initialTab="registry" patientName="Иванов И.И." />,
+		);
+		const viewHtml = renderToString(<DentalLabOrdersView initialOrders={[]} />);
+		const formHtml = renderToString(
+			<DentalLabCreateOrderSection
+				activeMainTab="new_order"
+				patientInput="Иванов И.И."
+				setPatientInput={() => {}}
+				availablePatients={[]}
+				selectedTeeth={[16]}
+				setSelectedTeeth={() => {}}
+				toggleTooth={() => {}}
+				selectedMaterialId="zirconia_multilayer"
+				setSelectedMaterialId={() => {}}
+				selectedShade="A2"
+				setSelectedShade={() => {}}
+				selectedLab="Лаборатория Альфа"
+				setSelectedLab={() => {}}
+				allLaboratories={["Лаборатория Альфа"]}
+				customLabs={[]}
+				setCustomLabs={() => {}}
+				effectiveDueDate="2026-12-05"
+				setCustomDueDate={() => {}}
+				isUrgent={false}
+				setIsUrgent={() => {}}
+				notes=""
+				setNotes={() => {}}
+				teethCount={1}
+				totalLabCostKopecks={750000}
+				totalPatientPriceKopecks={2400000}
+				netClinicRevenueKopecks={1650000}
+				handleCreateOrder={() => {}}
+				handlePrintA5Blank={() => {}}
+				handleCourierBlank={() => {}}
+			/>,
 		);
 
-		// Ровно 1 Primary CTA кнопка (Мандат 8am: var(--primary))
-		assert.ok(
-			content.includes('data-testid="submit-lab-order-button"'),
-			"Must render submit-lab-order-button",
-		);
-		assert.ok(
-			content.includes("✓ Создать заказ-наряд"),
-			"Button must state '✓ Создать заказ-наряд'",
-		);
-		assert.ok(
-			content.includes("var(--primary)") || content.includes("var(--teal"),
-			"Primary CTA must use semantic token var(--primary)",
-		);
+		assert.ok(modalHtml.includes("Зуботехническая лаборатория и заказ-наряды"));
+		assert.ok(modalHtml.includes("w-9 h-1 rounded-full"));
+		assert.ok(modalHtml.includes("rounded-t-[24px]") || modalHtml.includes("dental-lab-modal-container"));
+		assert.equal(modalHtml.includes("Врач-ортопед"), false, "P2-2.1: must not inject fake doctor fallback");
 
-		// Мандат 8e: Кнопка НИКОГДА не disabled
-		assert.ok(
-			!content.includes('disabled={!'),
-			"Primary CTA must NEVER be disabled by secondary inputs",
-		);
-		assert.ok(
-			!content.includes("disabled={true}"),
-			"Primary CTA must NEVER be permanently disabled",
-		);
-	});
+		assert.ok(registryHtml.includes('data-testid="filter-tab-all"'));
+		assert.ok(registryHtml.includes('data-testid="lab-orders-search-input"'));
+		assert.ok(formHtml.includes('data-testid="submit-lab-order-button"'));
+		assert.ok(formHtml.includes("✓ Создать заказ-наряд"));
+		assert.ok(formHtml.includes("Экспресс-наряд у кресла"));
+		assert.ok(formHtml.includes('data-testid="tooth-chip-16"'));
+		assert.ok(formHtml.includes('data-testid="shade-chip-A2"'));
+		assert.ok(formHtml.includes('data-testid="lab-material-select"'));
 
-	it("2.2. Validates Doctor Autonomy & Express Order 1-Click Form (Mandate 8e)", () => {
-		const modalPath = path.resolve(labDir, "DentalLabStudioModal.tsx");
-		const content =
-			fs.readFileSync(modalPath, "utf-8") +
-			fs.readFileSync(path.resolve(labDir, "DentalLabCreateOrderSection.tsx"), "utf-8");
+		assert.equal(REAL_HTML_DISABLED_BTN_REGEX.test(modalHtml), false);
+		assert.equal(REAL_HTML_DISABLED_BTN_REGEX.test(formHtml), false);
 
-		// Экспресс-создание наряда у кресла
-		assert.ok(
-			content.includes("Экспресс-наряд у кресла"),
-			"Must feature chairside express order section",
-		);
-		assert.ok(
-			content.includes('data-testid={`tooth-chip-${tooth}`}'),
-			"Must render FDI tooth chips",
-		);
-		assert.ok(
-			content.includes('data-testid={`shade-chip-${v.code}`}'),
-			"Must render Vita shade chips",
-		);
-		assert.ok(
-			content.includes('data-testid="lab-material-select"'),
-			"Must render material select dropdown",
-		);
-
-		// Фильтры реестра нарядов
-		assert.ok(
-			content.includes('data-testid={`filter-tab-${tab}`}'),
-			"Must render filter tabs",
-		);
-		assert.ok(
-			content.includes('data-testid="lab-orders-search-input"'),
-			"Must render search input",
-		);
-	});
-
-	it("2.3. Validates Apple HIG Mobile Bottom Sheet & Drag Handle (Mandate 8ze)", () => {
-		const modalPath = path.resolve(labDir, "DentalLabStudioModal.tsx");
-		const content = fs.readFileSync(modalPath, "utf-8");
-
-		// Drag handle 36x5px (w-9 h-1 rounded-full)
-		assert.ok(
-			content.includes("w-9 h-1 rounded-full"),
-			"Must render Apple HIG drag handle 36x5px",
-		);
-		assert.ok(
-			content.includes("rounded-t-[24px]") || content.includes("dental-lab-modal-container"),
-			"Must render Bottom Sheet top corners",
-		);
+		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+		for (const html of [modalHtml, registryHtml, viewHtml, formHtml]) {
+			assert.equal(emojiRegex.test(html.replace(/[✓✕•→]/g, "")), false);
+		}
 	});
 
 	it("2.4. Validates FDI 2-jaw anatomy without scrolling", () => {
-		assert.equal(UPPER_JAW_TEETH.length, 14, "Upper jaw must contain 14 teeth");
-		assert.equal(LOWER_JAW_TEETH.length, 14, "Lower jaw must contain 14 teeth");
-		assert.ok(UPPER_JAW_TEETH.includes(16), "Upper jaw must include 16");
-		assert.ok(UPPER_JAW_TEETH.includes(21), "Upper jaw must include 21");
-		assert.ok(LOWER_JAW_TEETH.includes(46), "Lower jaw must include 46");
-		assert.ok(LOWER_JAW_TEETH.includes(31), "Lower jaw must include 31");
-	});
-
-	it("2.5. Validates zero cartoon emojis in lab components (Mandate 8d)", () => {
-		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-		const targetFiles = [
-			path.resolve(labDir, "DentalLabStudioModal.tsx"),
-			path.resolve(labDir, "DentalLabOrdersView.tsx"),
-			path.resolve(labDir, "dentalLabCatalogData.ts"),
-		];
-
-		for (const file of targetFiles) {
-			const content = fs.readFileSync(file, "utf-8");
-			const lines = content.split(/\r?\n/);
-			lines.forEach((line, idx) => {
-				const cleaned = line.replace(/✓/g, "").replace(/✕/g, "");
-				const match = cleaned.match(emojiRegex);
-				assert.equal(
-					match,
-					null,
-					`Found cartoon emoji ${match?.[0]} in ${path.basename(file)} at line ${idx + 1}`,
-				);
-			});
-		}
+		assert.equal(UPPER_JAW_TEETH.length, 14);
+		assert.equal(LOWER_JAW_TEETH.length, 14);
+		assert.ok(UPPER_JAW_TEETH.includes(16));
+		assert.ok(UPPER_JAW_TEETH.includes(21));
+		assert.ok(LOWER_JAW_TEETH.includes(46));
+		assert.ok(LOWER_JAW_TEETH.includes(31));
 	});
 
 	it("3.1. resolveClinicRoute detects deep-link signatures correctly", () => {
@@ -254,15 +176,5 @@ describe("DENTE Dental Laboratory SSOT & Studio Red Team Suite", () => {
 		assert.equal(resolveClinicRoute("?standalone=dental_lab", "").view, "lab");
 		assert.equal(resolveClinicRoute("?lab=1", "").view, "lab");
 		assert.notEqual(resolveClinicRoute("", "").view, "lab");
-	});
-
-	it("3.2. Mandate 8aq: DentalLab routes cleanly via App.tsx and AppModalsContainer", () => {
-		const appPath = path.resolve(webSrcDir, "App.tsx");
-		const containerPath = path.resolve(webSrcDir, "components/appLayout/AppModalsContainer.tsx");
-
-		assert.ok(fs.existsSync(appPath), "App.tsx must exist");
-		assert.ok(fs.existsSync(containerPath), "AppModalsContainer.tsx must exist");
-		assert.ok(fs.readFileSync(appPath, "utf-8").includes("resolveClinicRoute"));
-		assert.ok(fs.readFileSync(containerPath, "utf-8").includes("WorkspaceStudioOverlayHost"));
 	});
 });

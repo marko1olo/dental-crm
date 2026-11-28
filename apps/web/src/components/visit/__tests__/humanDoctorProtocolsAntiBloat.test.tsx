@@ -1,20 +1,13 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { RecordNewDiaryInlineForm } from "../../emr/record/tabs/RecordNewDiaryInlineForm";
 import { EmkComplaintsSection } from "../emk/EmkComplaintsSection";
 import { EmkDiaryProtocolSection } from "../emk/EmkDiaryProtocolSection";
 import { CompletedServicesList } from "../CompletedServicesList";
-import { VisitSummaryModal } from "../VisitSummaryModal";
+import { VisitRecommendationsSection } from "../summaryModal/VisitRecommendationsSection";
 import { PatientMemoPrintModal } from "../PatientMemoPrintModal";
-import { AppLogicProvider } from "../../../contexts/AppLogicContext";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 describe("Anti-Academic Bloat & Human Doctor Protocol Inquisition", () => {
 	it("1. RecordNewDiaryInlineForm renders 1-click physiological norm without Latin abbreviations", () => {
@@ -145,13 +138,17 @@ describe("Anti-Academic Bloat & Human Doctor Protocol Inquisition", () => {
 		assert.ok(memoHtml.includes("btn-print-active-memo"), "Provides print button with testid");
 		assert.ok(memoHtml.includes("Распечатать памятку"), "Provides print button label");
 
-		// 2. Verify VisitSummaryModal source code structurally mounts PatientMemoPrintModal and memo buttons
-		const summaryFilePath = path.resolve(__dirname, "../VisitSummaryModal.tsx");
-		const summaryCode = fs.readFileSync(summaryFilePath, "utf8");
+		// 2. Verify VisitRecommendationsSection renders summary-quick-memo-btn cleanly
+		const recHtml = renderToStaticMarkup(
+			createElement(VisitRecommendationsSection, {
+				diary: { diagnosisIcd10: "K02.1", treatmentDescription: "Пломбирование 16" },
+				abnormalTeeth: [],
+				onScheduleNextStage: () => {},
+				onOpenProtocolGenerator: () => {},
+				onOpenMemoModal: () => {},
+			}),
+		);
 
-		assert.ok(summaryCode.includes("summary-quick-memo-btn"), "VisitSummaryModal has summary-quick-memo-btn in banner");
-		assert.ok(summaryCode.includes("summary-print-memo-btn"), "VisitSummaryModal has summary-print-memo-btn in footer");
-		assert.ok(summaryCode.includes("PatientMemoPrintModal"), "VisitSummaryModal imports and mounts PatientMemoPrintModal");
-		assert.ok(summaryCode.includes("isMemoModalOpen"), "VisitSummaryModal manages isMemoModalOpen state");
+		assert.ok(recHtml.includes("summary-quick-memo-btn"), "VisitRecommendationsSection renders summary-quick-memo-btn");
 	});
 });

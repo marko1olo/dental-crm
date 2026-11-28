@@ -316,7 +316,7 @@ export const CbctQuickColormapBar: React.FC<CbctQuickColormapBarProps> = ({
 					e.stopPropagation();
 					handleToggleSharpen();
 				}}
-				className={`h-6 min-h-[24px] max-h-[24px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+				className={`h-6 min-h-[24px] max-h-[24px] max-md:h-11 max-md:min-h-[44px] max-md:max-h-[44px] px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition-all cursor-pointer ${
 					currentSharpen > 0
 						? "bg-emerald-950/70 text-emerald-200 font-medium border border-emerald-500/50 shadow-xs ring-1 ring-emerald-400/30"
 						: "bg-zinc-900/80 border border-zinc-700/70 text-zinc-300 hover:text-white hover:bg-zinc-800"

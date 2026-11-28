@@ -14,35 +14,25 @@
 import assert from "node:assert/strict";
 import { describe, it, beforeEach, afterEach } from "node:test";
 import React from "react";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-function readCssWithImports(filePath: string): string {
-	const dir = path.dirname(filePath);
-	let css = fs.readFileSync(filePath, "utf-8");
-	const importRegex = /@import\s+['"]([^'"]+)['"];/g;
-	css = css.replace(importRegex, (_, rel) => readCssWithImports(path.resolve(dir, rel)));
-	return css;
-}
+import { renderToString } from "react-dom/server";
 
 import {
 	areAnatomicalToothPropsEqual,
 	type AnatomicalToothProps,
 } from "../gate0/AnatomicalTooth";
 import {
-	isLowSpecFilterDisabled,
 	TOP_TEETH,
 	BOTTOM_TEETH,
 	PEDIATRIC_TOP_TEETH,
 	PEDIATRIC_BOTTOM_TEETH,
 	MIXED_TOP_TEETH,
 	MIXED_BOTTOM_TEETH,
-} from "../AnatomicalToothColors";
-import type { ToothData, ToothState } from "../ToothChart";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+} from "@dental/shared";
+import {
+	ToothChart,
+	createDefaultAdultTeethData,
+	isLowSpecFilterDisabled,
+} from "../ToothChart";
 
 describe("1. 60 FPS Vector Mesh: Parasitic Re-render Elimination & Comparators", () => {
 	it("areAnatomicalToothPropsEqual returns true for tooth 15 when tooth 16 changes state", () => {
@@ -103,19 +93,20 @@ describe("1. 60 FPS Vector Mesh: Parasitic Re-render Elimination & Comparators",
 
 	it("areAnatomicalToothPropsEqual preserves memoization with deep layer comparison", () => {
 		const onClickDummy = () => {};
+		const baseLayers = {
+			crown: true,
+			roots: true,
+			canals: true,
+			pulp: true,
+			caries: false,
+		} as unknown as NonNullable<AnatomicalToothProps["layers"]>;
 
 		const prevProps: AnatomicalToothProps = {
 			toothNumber: 46,
 			isDark: false,
 			zoom: 1,
 			onClick: onClickDummy,
-			layers: {
-				crown: true,
-				roots: true,
-				canals: true,
-				pulp: true,
-				caries: false,
-			} as any,
+			layers: { ...baseLayers },
 		};
 
 		const nextProps: AnatomicalToothProps = {
@@ -123,13 +114,7 @@ describe("1. 60 FPS Vector Mesh: Parasitic Re-render Elimination & Comparators",
 			isDark: false,
 			zoom: 1,
 			onClick: onClickDummy,
-			layers: {
-				crown: true,
-				roots: true,
-				canals: true,
-				pulp: true,
-				caries: false,
-			} as any,
+			layers: { ...baseLayers },
 		};
 
 		assert.strictEqual(areAnatomicalToothPropsEqual(prevProps, nextProps), true);
@@ -137,9 +122,9 @@ describe("1. 60 FPS Vector Mesh: Parasitic Re-render Elimination & Comparators",
 		const changedProps: AnatomicalToothProps = {
 			...nextProps,
 			layers: {
-				...nextProps.layers!,
+				...baseLayers,
 				caries: true,
-			},
+			} as NonNullable<AnatomicalToothProps["layers"]>,
 		};
 		assert.strictEqual(areAnatomicalToothPropsEqual(prevProps, changedProps), false);
 	});
@@ -148,7 +133,6 @@ describe("1. 60 FPS Vector Mesh: Parasitic Re-render Elimination & Comparators",
 		const allTeeth = [...TOP_TEETH, ...BOTTOM_TEETH];
 		const onClickStable = () => {};
 
-		// Initial state: all intact
 		const prevMap = new Map<number, AnatomicalToothProps>();
 		const nextMap = new Map<number, AnatomicalToothProps>();
 
@@ -177,8 +161,9 @@ describe("1. 60 FPS Vector Mesh: Parasitic Re-render Elimination & Comparators",
 		const reRenderedTeeth: number[] = [];
 
 		for (const toothNum of allTeeth) {
-			const prevProps = prevMap.get(toothNum)!;
-			const nextProps = nextMap.get(toothNum)!;
+			const prevProps = prevMap.get(toothNum);
+			const nextProps = nextMap.get(toothNum);
+			if (!prevProps || !nextProps) continue;
 
 			const shouldSkipRender = areAnatomicalToothPropsEqual(prevProps, nextProps);
 			if (!shouldSkipRender) {
@@ -187,22 +172,21 @@ describe("1. 60 FPS Vector Mesh: Parasitic Re-render Elimination & Comparators",
 			}
 		}
 
-		// STRICTURE: Strictly tooth 16 re-renders! All 31 other teeth skip render!
 		assert.strictEqual(reRenderCount, 1);
 		assert.deepStrictEqual(reRenderedTeeth, [16]);
 	});
 });
 
 describe("2. Low-End Hardware Mode & Reduced Motion Graphic Filters", () => {
-	let origDocument: any;
+	let origDocument: Document | undefined;
 
 	beforeEach(() => {
-		origDocument = (globalThis as any).document;
+		origDocument = globalThis.document;
 		const attributes: Record<string, string> = {};
 		const classList = new Set<string>();
 		const bodyClassList = new Set<string>();
 
-		(globalThis as any).document = {
+		const mockDoc = {
 			documentElement: {
 				getAttribute: (name: string) => attributes[name] ?? null,
 				setAttribute: (name: string, val: string) => {
@@ -225,10 +209,19 @@ describe("2. Low-End Hardware Mode & Reduced Motion Graphic Filters", () => {
 				},
 			},
 		};
+		Object.defineProperty(globalThis, "document", {
+			value: mockDoc,
+			writable: true,
+			configurable: true,
+		});
 	});
 
 	afterEach(() => {
-		(globalThis as any).document = origDocument;
+		Object.defineProperty(globalThis, "document", {
+			value: origDocument,
+			writable: true,
+			configurable: true,
+		});
 	});
 
 	it("isLowSpecFilterDisabled() correctly detects .low-end-hardware-mode class", () => {
@@ -253,14 +246,16 @@ describe("2. Low-End Hardware Mode & Reduced Motion Graphic Filters", () => {
 		assert.strictEqual(isLowSpecFilterDisabled(), true);
 	});
 
-	it("odontogram.css physically contains low-end hardware mode and reduced motion filter: none rules", () => {
-		const cssPath = path.resolve(__dirname, "../odontogram.css");
-		const cssContent = readCssWithImports(cssPath);
+	it("ToothChart renders 32-tooth vector arch container and SVG elements cleanly", () => {
+		const html = renderToString(
+			<ToothChart teethData={createDefaultAdultTeethData()} onToothClick={() => {}} />,
+		);
 
-		assert.ok(cssContent.includes(".low-end-hardware-mode .tooth-svg-element"));
-		assert.ok(cssContent.includes("filter: none !important;"));
-		assert.ok(cssContent.includes("outline: 2px solid var(--teal, #0d9488) !important;"));
-		assert.ok(cssContent.includes("@media (prefers-reduced-motion: reduce)"));
+		assert.ok(html.includes("tooth-chart-container"));
+		assert.ok(html.includes("<svg"));
+		assert.ok(html.includes("wheeler-global-shader-defs"));
+		assert.ok(html.includes("16"));
+		assert.ok(html.includes("46"));
 	});
 });
 

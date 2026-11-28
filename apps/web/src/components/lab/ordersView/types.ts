@@ -82,6 +82,7 @@ export interface LabOrdersTableProps {
 	readonly copyPortalLink: (token?: string) => void;
 	readonly getStatusBadge: (status?: string) => ReactNode;
 	readonly onBatchStatusChange?: ((orderIds: string[], newStatus: string) => Promise<void>) | undefined;
+	readonly initialSelectedIds?: readonly string[] | undefined;
 }
 
 export interface LabOrderCardsGridProps {

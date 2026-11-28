@@ -22,26 +22,30 @@ export interface ToothVisualProps {
 export const getToothColors = (
 	state: ToothState,
 	material?: RestorativeMaterialKey,
+	idPrefix?: string,
 ): ToothVisualProps => {
 	const stateStr = state as string;
 
 	if (stateStr === "Filled" || stateStr === "done") {
-		return getFilledToothColors(material);
+		return getFilledToothColors(material, idPrefix);
 	}
 
 	if (stateStr === "Crown" || stateStr === "crown") {
-		return getCrownToothColors(material);
+		return getCrownToothColors(material, idPrefix);
 	}
 
-	const pathologyColors = getPathologyToothColors(stateStr);
+	const pathologyColors = getPathologyToothColors(stateStr, idPrefix);
 	if (pathologyColors) {
 		return pathologyColors;
 	}
 
+	const enamelHealthy = idPrefix ? `url(#${idPrefix}-dente-enamel-healthy)` : "url(#dente-enamel-healthy)";
+	const rootDentin = idPrefix ? `url(#${idPrefix}-dente-root-dentin)` : "url(#dente-root-dentin)";
+
 	return {
-		fill: "url(#dente-enamel-healthy)",
-		crownFill: "url(#dente-enamel-healthy)",
-		rootFill: "url(#dente-root-dentin)",
+		fill: enamelHealthy,
+		crownFill: enamelHealthy,
+		rootFill: rootDentin,
 		stroke: "var(--tooth-root-stroke, #94a3b8)",
 		opacity: "1",
 		badgeColor: "#10b981",

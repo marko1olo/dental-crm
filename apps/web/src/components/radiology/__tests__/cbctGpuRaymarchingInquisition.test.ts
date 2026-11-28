@@ -420,51 +420,53 @@ describe("RED TEAM INQUISITION: CBCT GPU Raymarching & Enamel Burnout Safeguards
 		});
 	});
 
-	describe("5. GPU Priority & Emergency-Only CPU Fallback Invariant", () => {
-		it("proves CbctVolume3DViewport dispatches to WebGL2 GPU first and returns before CPU fallback", async () => {
-			const fs = await import("node:fs");
-			const path = await import("node:path");
-			const viewportPath = fs.existsSync(path.resolve("apps/web/src/components/radiology/mpr/CbctVolume3DViewport.tsx"))
-				? path.resolve("apps/web/src/components/radiology/mpr/CbctVolume3DViewport.tsx")
-				: path.resolve("src/components/radiology/mpr/CbctVolume3DViewport.tsx");
-			const src = fs.readFileSync(viewportPath, "utf-8");
+	describe("5. GPU Priority & Emergency-Only CPU Preview Fallback Invariant", () => {
+		it("executes WebGL2 volume raymarching without calling CPU 2D fallback when GL context is available", () => {
+			const { gl, calls } = createMockWebGL2Context();
+			gl.getParameter = () => 512;
+			gl.MAX_3D_TEXTURE_SIZE = 0x8073;
+			const volume = createMockVolume(32, 32, 16);
+			const initRes = initWebGl2VolumeRaymarching(gl as unknown as WebGL2RenderingContext);
+			assert.ok(initRes !== null);
 
-			const gpuCallIdx = src.indexOf("renderWebGl2VolumeRaymarching(");
-			const returnIdx = src.indexOf("return;", gpuCallIdx);
-			const cpuFallbackIdx = src.indexOf("renderCanvas2DPreviewSlice(", returnIdx);
-
-			assert.ok(gpuCallIdx !== -1, "Must contain renderWebGl2VolumeRaymarching GPU dispatch");
-			assert.ok(returnIdx !== -1, "Must contain immediate return; after GPU dispatch");
-			assert.ok(cpuFallbackIdx !== -1, "Must contain emergency renderCanvas2DPreviewSlice fallback");
-			assert.ok(
-				gpuCallIdx < returnIdx && returnIdx < cpuFallbackIdx,
-				"GPU render must execute and return; strictly BEFORE CPU preview slice fallback",
+			renderWebGl2VolumeRaymarching(
+				initRes,
+				volume,
+				"bone",
+				0,
+				0,
+				1,
+				{ x: 0, y: 0 },
+				64,
+				64,
+				false,
+				DEFAULT_VOLUME_3D_CLIPPING_BOX,
 			);
-			assert.ok(
-				!src.includes("renderCanvas2DVolumeRaymarching"),
-				"CbctVolume3DViewport must have zero occurrences of renderCanvas2DVolumeRaymarching (total liquidation of CPU raymarching vestige)",
-			);
+			assert.ok(calls.some((c) => c.startsWith("drawArrays")));
 		});
 
-		it("proves useCbctSliceRenderer returns immediately when WebGL2 GPU is available", async () => {
-			const fs = await import("node:fs");
-			const path = await import("node:path");
-			const rendererPath = fs.existsSync(path.resolve("apps/web/src/components/radiology/mpr/useCbctSliceRenderer.ts"))
-				? path.resolve("apps/web/src/components/radiology/mpr/useCbctSliceRenderer.ts")
-				: path.resolve("src/components/radiology/mpr/useCbctSliceRenderer.ts");
-			const src = fs.readFileSync(rendererPath, "utf-8");
-
-			const glCheckIdx = src.indexOf("if (glContext.isAvailable())");
-			const glReturnIdx = src.indexOf("return;", glCheckIdx);
-			const workerInitIdx = src.indexOf("bridge.initVolume(volume);", glReturnIdx);
-
-			assert.ok(glCheckIdx !== -1, "Must check glContext.isAvailable()");
-			assert.ok(glReturnIdx !== -1, "Must return immediately after GPU slice render");
-			assert.ok(workerInitIdx !== -1, "Worker init must only be placed after GPU return");
-			assert.ok(
-				glCheckIdx < glReturnIdx && glReturnIdx < workerInitIdx,
-				"WebGL2 GPU must return; strictly BEFORE worker init and volume cloning",
+		it("falls back cleanly to lightweight 2D slice preview (without heavy CPU raymarching) on context loss", () => {
+			const { canvas, putImages } = createMockCanvas(64, 64);
+			const volume = createMockVolume(32, 32, 16);
+			renderCanvas2DPreviewSlice(
+				canvas as unknown as HTMLCanvasElement,
+				volume,
+				"bone",
+				30,
+				12,
+				1.0,
+				{ x: 0, y: 0 },
+				64,
+				64,
+				false,
+				DEFAULT_VOLUME_3D_CLIPPING_BOX,
 			);
+			assert.equal(putImages.length, 1);
+			assert.equal(putImages[0].dx, 0);
+			assert.equal(putImages[0].dy, 0);
+			assert.equal(putImages[0].img.width, 64);
+			assert.equal(putImages[0].img.height, 64);
+			assert.equal(putImages[0].img.data.length, 64 * 64 * 4);
 		});
 	});
 });

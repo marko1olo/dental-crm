@@ -45,3 +45,30 @@ export function scaleCssPx(value: string, factor: number): string {
 	if (!Number.isFinite(parsed)) return value;
 	return `${parsed * factor}px`;
 }
+
+export function isLowSpecFilterDisabled(): boolean {
+	if (typeof document === "undefined") return false;
+	const root = document.documentElement;
+	const body = document.body;
+	const hasReducedMotion =
+		typeof window !== "undefined" &&
+		typeof window.matchMedia === "function" &&
+		window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	const tier = root.getAttribute("data-hardware-tier");
+	const perfTier = root.getAttribute("data-perf-tier");
+	return Boolean(
+		hasReducedMotion ||
+		tier === "low" ||
+		tier === "potato" ||
+		perfTier === "low" ||
+		perfTier === "potato" ||
+		root.getAttribute("data-low-spec") === "true" ||
+		root.getAttribute("data-perf") === "low" ||
+		root.getAttribute("data-perf-state") === "degraded" ||
+		root.getAttribute("data-ct-active") === "true" ||
+		root.classList.contains("low-spec-mode") ||
+		root.classList.contains("low-spec-perf") ||
+		root.classList.contains("low-end-hardware-mode") ||
+		body?.classList.contains("low-end-hardware-mode")
+	);
+}

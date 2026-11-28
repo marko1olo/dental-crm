@@ -229,7 +229,7 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 						e.stopPropagation();
 						onClearEndoCanals(viewportType);
 					}}
-					className="h-7 min-h-[28px] max-h-[28px] w-7 min-w-[28px] max-w-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md bg-zinc-900/90 hover:bg-rose-950/60 text-zinc-400 hover:text-rose-200 border border-zinc-700/80 hover:border-rose-500/60 backdrop-blur-sm flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+					className="h-7 min-h-[28px] max-h-[28px] w-7 min-w-[28px] max-w-[28px] max-md:w-11 max-md:h-11 max-md:min-w-[44px] max-md:min-h-[44px] max-md:max-w-[44px] max-md:max-h-[44px] rounded-md bg-zinc-900/90 hover:bg-rose-950/60 text-zinc-400 hover:text-rose-200 border border-zinc-700/80 hover:border-rose-500/60 backdrop-blur-sm flex items-center justify-center transition-colors cursor-pointer shadow-xs"
 					title="Очистить замеры каналов на этом срезе"
 					aria-label="Очистить замеры каналов"
 					data-testid={`cbct-clear-endo-btn-${viewportType}`}
@@ -280,7 +280,7 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 				<button
 					type="button"
 					onClick={handleClear}
-					className="h-7 min-h-[28px] max-h-[28px] w-7 min-w-[28px] max-w-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md bg-zinc-900/90 hover:bg-rose-950/60 text-zinc-400 hover:text-rose-200 border border-zinc-700/80 hover:border-rose-500/60 backdrop-blur-sm flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+					className="h-7 min-h-[28px] max-h-[28px] w-7 min-w-[28px] max-w-[28px] max-md:w-11 max-md:h-11 max-md:min-w-[44px] max-md:min-h-[44px] max-md:max-w-[44px] max-md:max-h-[44px] rounded-md bg-zinc-900/90 hover:bg-rose-950/60 text-zinc-400 hover:text-rose-200 border border-zinc-700/80 hover:border-rose-500/60 backdrop-blur-sm flex items-center justify-center transition-colors cursor-pointer shadow-xs"
 					title="Очистить все замеры линейки на этом срезе"
 					aria-label="Очистить замеры"
 					data-testid={`cbct-clear-rulers-btn-${viewportType}`}
@@ -311,7 +311,7 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 				<button
 					type="button"
 					onClick={handleClearAngles}
-					className="h-7 min-h-[28px] max-h-[28px] w-7 min-w-[28px] max-w-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md bg-zinc-900/90 hover:bg-rose-950/60 text-zinc-400 hover:text-rose-200 border border-zinc-700/80 hover:border-rose-500/60 backdrop-blur-sm flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+					className="h-7 min-h-[28px] max-h-[28px] w-7 min-w-[28px] max-w-[28px] max-md:w-11 max-md:h-11 max-md:min-w-[44px] max-md:min-h-[44px] max-md:max-w-[44px] max-md:max-h-[44px] rounded-md bg-zinc-900/90 hover:bg-rose-950/60 text-zinc-400 hover:text-rose-200 border border-zinc-700/80 hover:border-rose-500/60 backdrop-blur-sm flex items-center justify-center transition-colors cursor-pointer shadow-xs"
 					title="Очистить все замеры углов на этом срезе"
 					aria-label="Очистить углы"
 					data-testid={`cbct-clear-angles-btn-${viewportType}`}

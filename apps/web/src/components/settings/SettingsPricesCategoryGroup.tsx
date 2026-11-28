@@ -1,6 +1,6 @@
 import type React from "react";
 import { Edit3, Trash2 } from "lucide-react";
-import type { ServiceCatalogItem } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks, type ServiceCatalogItem } from "@dental/shared";
 import { money } from "../../AppHelpers";
 import { sliceDomList } from "../../utils/domVirtualizationHelper";
 
@@ -87,6 +87,12 @@ export const SettingsPricesCategoryGroup: React.FC<
 			<div className="catalog-items-grid">
 				{visibleItems.map((item) => {
 					const isArchived = item.active === false || item.isActive === false;
+					const resolvedKopecks =
+						"basePriceKopecks" in item && typeof item.basePriceKopecks === "number" && Number.isFinite(item.basePriceKopecks)
+							? item.basePriceKopecks
+							: typeof item.priceKopecks === "number" && Number.isFinite(item.priceKopecks) && item.priceKopecks > 0
+								? item.priceKopecks
+								: rublesToKopecks(item.basePriceRub ?? item.priceRub ?? 0);
 					return (
 					<div
 						className="catalog-item-card flex flex-col justify-between gap-2.5"
@@ -103,9 +109,15 @@ export const SettingsPricesCategoryGroup: React.FC<
 								{item.code || "Без кода"}
 							</div>
 							<div className="text-right flex items-baseline gap-1.5 shrink-0">
-								<span className="font-bold font-mono text-[var(--ink)] text-sm">
-									{money(item.basePriceRub ?? item.priceRub ?? 0)}
-								</span>
+								{resolvedKopecks > 0 ? (
+									<span className="font-bold font-mono text-[var(--ink)] text-sm tabular-nums">
+										{money(kopecksToRubles(resolvedKopecks))}
+									</span>
+								) : (
+									<span className="font-medium text-[var(--ink-muted)] text-xs">
+										По договорённости
+									</span>
+								)}
 								{item.durationMinutes ? (
 									<span className="text-xs font-medium text-[var(--muted)]">
 										{item.durationMinutes} мин.

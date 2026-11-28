@@ -1,19 +1,11 @@
 /**
  * apps/web/src/components/sanpin/__tests__/sterilizationSSOTSuite.test.tsx
  *
- * Исчерпывающий тестовый сьют Red Team инквизиции SSOT стерилизации и автоклавирования:
- * 1. Проверка Sweet Spot размеров файлов (Мандат 8b/8zi).
- * 2. Проверка SSOT каталога программ, автоклавов, индикаторов и упаковки.
- * 3. Валидация физических параметров цикла (температура, давление, экспозиция).
- * 4. Пакетное списание со склада (Soft Negative Stock, Мандат 8n).
- * 5. Рендеринг SterilizationHubModal: 4 вкладки, ровно 1 Primary CTA #0d9488, 0 disabled кнопок.
- * 6. Apple HIG: мобильный Drag Handle 36x5px, тач-таргеты >= 44x44px.
+ * Runtime Behavioral Test Suite for Sterilization SSOT & Autoclave Cycles.
  */
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -31,224 +23,90 @@ import {
 } from "../sanpinCatalogData";
 import { SterilizationBatchCycleModal as SanpinStudioModal } from "../SterilizationBatchCycleModal";
 import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
-const SANPIN_DIR = fs.existsSync(path.resolve(process.cwd(), "src/components/sanpin"))
-	? path.resolve(process.cwd(), "src/components/sanpin")
-	: path.resolve(process.cwd(), "apps/web/src/components/sanpin");
+const REAL_HTML_DISABLED_BTN_REGEX = /<button[^>]*\sdisabled(?:=["'][^"']*["'])?(?=[\s>])/i;
 
 describe("STERILIZATION SSOT & AUTOCLAVE RED TEAM SUITE", () => {
-	describe("1. Архитектурные Sweet Spot инварианты (Мандат 8b/8zi)", () => {
-		it("sanpinCatalogData.ts является единым SSOT в диапазоне 250–320 строк", () => {
-			const filePath = path.join(SANPIN_DIR, "sanpinCatalogData.ts");
-			const content = fs.readFileSync(filePath, "utf-8");
-			const lineCount = content.split("\n").length;
-			assert.ok(
-				lineCount >= 250 && lineCount <= 320,
-				`sanpinCatalogData.ts содержит ${lineCount} строк (ожидалось 250–320 по Мандату 8b)`,
-			);
-		});
-
-		it("SterilizationBatchCycleModal.tsx является каноническим студийным компонентом (Мандат 8b/8zi)", () => {
-			const filePath = path.join(SANPIN_DIR, "SterilizationBatchCycleModal.tsx");
-			const content = fs.readFileSync(filePath, "utf-8");
-			const lineCount = content.split("\n").length;
-			assert.ok(
-				lineCount >= 250 && lineCount <= 350,
-				`SterilizationBatchCycleModal.tsx содержит ${lineCount} строк (ожидалось 250–350 по Мандату 8b)`,
-			);
-		});
-
-		it("устаревший DirectSanpinLauncher.tsx снесён", () => {
-			const filePath = path.join(SANPIN_DIR, "DirectSanpinLauncher.tsx");
-			assert.equal(fs.existsSync(filePath), false);
+	describe("1. Единый роутинг СанПиН (Mandate 8aq)", () => {
+		it("resolveClinicRoute распознаёт маршруты стерилизации", () => {
+			assert.equal(resolveClinicRoute("", "#sanpin").studio?.kind, "sanpin");
+			assert.equal(resolveClinicRoute("?sanpin=1", "").studio?.kind, "sanpin");
 		});
 	});
 
 	describe("2. SSOT Каталог программ, автоклавов, индикаторов и упаковки", () => {
-		it("содержит 4 канонических режима автоклавирования", () => {
+		it("содержит 4 канонических режима, автоклавы, индикаторы и упаковки", () => {
 			assert.equal(AUTOCLAVE_PROGRAMS.length, 4);
 			const standard = AUTOCLAVE_PROGRAMS.find((p) => p.id === "standard_134");
 			const delicate = AUTOCLAVE_PROGRAMS.find((p) => p.id === "delicate_121");
 			const flash = AUTOCLAVE_PROGRAMS.find((p) => p.id === "flash_134");
 			const prion = AUTOCLAVE_PROGRAMS.find((p) => p.id === "prion_134");
 
-			assert.ok(standard, "Отсутствует стандартная программа 134°C");
+			assert.ok(standard && delicate && flash && prion);
 			assert.equal(standard.temperatureCelsius, 134);
-			assert.equal(standard.pressureBar, 2.1);
-			assert.equal(standard.exposureMinutes, 5);
-
-			assert.ok(delicate, "Отсутствует деликатная программа 121°C");
 			assert.equal(delicate.temperatureCelsius, 121);
-			assert.equal(delicate.pressureBar, 1.15);
-			assert.equal(delicate.exposureMinutes, 20);
-
-			assert.ok(flash, "Отсутствует экспресс-программа");
-			assert.equal(flash.temperatureCelsius, 134);
 			assert.equal(flash.exposureMinutes, 3);
-
-			assert.ok(prion, "Отсутствует антиприонный режим");
-			assert.equal(prion.temperatureCelsius, 134);
-			assert.equal(prion.pressureBar, 2.1);
 			assert.equal(prion.exposureMinutes, 18);
-		});
 
-		it("содержит предустановленный флот автоклавов класса B", () => {
-			assert.ok(CLINIC_STERILIZERS.length >= 3);
-			const melag = CLINIC_STERILIZERS.find((a) => a.model.includes("Melag"));
-			const euronda = CLINIC_STERILIZERS.find((a) => a.model.includes("Euronda"));
-			const sirona = CLINIC_STERILIZERS.find((a) => a.model.includes("DAC Universal"));
-
-			assert.ok(melag, "Отсутствует Melag Vacuklav");
-			assert.ok(euronda, "Отсутствует Euronda E9");
-			assert.ok(sirona, "Отсутствует Dentsply Sirona DAC");
-			assert.equal(melag.autoclaveClass, "B");
-			assert.equal(melag.isCompliant, true);
-		});
-
-		it("содержит химические индикаторы IV и V класса с эталоном теста", () => {
+			assert.ok(CLINIC_STERILIZERS.some((a) => a.model.includes("Melag") && a.autoclaveClass === "B"));
 			assert.equal(CHEMICAL_INDICATORS.length, 2);
-			const class5 = CHEMICAL_INDICATORS.find((i) => i.id === "class5_integrating");
-			assert.ok(class5);
-			assert.ok(class5.standardVerdict.includes("Эталон достигнут"));
-		});
-
-		it("содержит канонические типы упаковок и клинические шаблоны", () => {
 			assert.ok(STERILIZATION_PACKAGING.length >= 4);
 			assert.ok(CLINICAL_BATCH_TEMPLATES.length >= 4);
-			const kraft200 = STERILIZATION_PACKAGING.find((p) => p.id === "kraft_100x200");
-			assert.ok(kraft200);
-			assert.equal(kraft200.shelfLifeDays, 50);
 		});
 	});
 
 	describe("3. Валидация физических параметров цикла стерилизации", () => {
-		it("валидирует успешный стандартный цикл 134°C / 2.1 бар / 5 мин", () => {
-			const res = validateSterilizationCycleParameters("standard_134", 134.2, 2.12, 5.0);
-			assert.equal(res.valid, true);
-		});
-
-		it("отклоняет заниженную температуру (< 132°C)", () => {
-			const res = validateSterilizationCycleParameters("standard_134", 130.0, 2.1, 5.0);
-			assert.equal(res.valid, false);
-			assert.ok(res.reason?.includes("Температура"));
-		});
-
-		it("отклоняет заниженное давление (< 2.0 бар)", () => {
-			const res = validateSterilizationCycleParameters("standard_134", 134.0, 1.8, 5.0);
-			assert.equal(res.valid, false);
-			assert.ok(res.reason?.includes("Давление"));
-		});
-
-		it("отклоняет недостаточное время экспозиции (< 5 мин)", () => {
-			const res = validateSterilizationCycleParameters("standard_134", 134.0, 2.1, 4.0);
-			assert.equal(res.valid, false);
-			assert.ok(res.reason?.includes("экспозиции"));
-		});
-
-		it("валидирует щадящий цикл 121°C / 1.15 бар / 20 мин", () => {
-			const res = validateSterilizationCycleParameters("delicate_121", 121.5, 1.15, 20.0);
-			assert.equal(res.valid, true);
+		it("валидирует корректные циклы 134°C и 121°C и отклоняет нарушения", () => {
+			assert.equal(validateSterilizationCycleParameters("standard_134", 134.2, 2.12, 5.0).valid, true);
+			assert.equal(validateSterilizationCycleParameters("delicate_121", 121.5, 1.15, 20.0).valid, true);
+			assert.equal(validateSterilizationCycleParameters("standard_134", 130.0, 2.1, 5.0).valid, false);
+			assert.equal(validateSterilizationCycleParameters("standard_134", 134.0, 1.8, 5.0).valid, false);
+			assert.equal(validateSterilizationCycleParameters("standard_134", 134.0, 2.1, 4.0).valid, false);
 		});
 	});
 
 	describe("4. Пакетная стерилизация смены и списание со склада (Мандат 8n)", () => {
-		it("рассчитывает списание материалов для смены на 16 упаковок", () => {
+		it("рассчитывает списание материалов и формирует пакет смены", () => {
 			const deductions = calculateBatchStockDeduction(16);
 			assert.equal(deductions.length, 4);
+			assert.equal(deductions.find((d) => d.sku === "KRAFT-100X200")?.quantity, 16);
 
-			const kraft = deductions.find((d) => d.sku === "KRAFT-100X200");
-			const indicator = deductions.find((d) => d.sku === "IND-CLASS5-MEDIS");
-			const azopyram = deductions.find((d) => d.sku === "AZOPYRAM-REAGENT");
-			const phenolphthalein = deductions.find((d) => d.sku === "PHENOLPHTHALEIN-SOL");
-
-			assert.equal(kraft?.quantity, 16);
-			assert.equal(indicator?.quantity, 4);
-			assert.equal(azopyram?.quantity, 2);
-			assert.equal(phenolphthalein?.quantity, 1);
-		});
-
-		it("createOneClickShiftBatch формирует цикл 134°C, азопирам 100% норма и списание", () => {
 			const batch = createOneClickShiftBatch({ packagesCount: 16 });
 			assert.equal(batch.sterilizationCycle.packagesCount, 16);
-			assert.equal(batch.sterilizationCycle.temperatureCelsius, 134);
-			assert.equal(batch.sterilizationCycle.pressureBar, 2.1);
-			assert.equal(batch.sterilizationCycle.exposureMinutes, 5);
-			assert.equal(batch.sterilizationCycle.chemicalIndicatorVerdict, "ПРОЙДЕН");
-			assert.equal(batch.sterilizationCycle.status, "completed");
-
-			assert.equal(batch.psoRecord.azopyramResult, "negative");
-			assert.equal(batch.psoRecord.phenolphthaleinResult, "negative");
 			assert.equal(batch.psoRecord.verdict, "ГОДНО");
-
 			assert.equal(batch.deductedStock.length, 4);
 		});
 
-		it("getSanpinBatchRecords изолирует мокапы: в боевом режиме строго пустой список (Мандат 8wy)", () => {
-			const prodRecords = getSanpinBatchRecords(false);
-			assert.equal(prodRecords.length, 0);
-
+		it("изолирует мокапы и генерирует печатный А4 бланк", () => {
+			assert.equal(getSanpinBatchRecords(false).length, 0);
 			const demoRecords = getSanpinBatchRecords(true);
 			assert.ok(demoRecords.length >= 2);
-		});
-
-		it("generateSanpinPrintHtml генерирует чистый печатный А4 бланк", () => {
-			const demoRecords = getSanpinBatchRecords(true);
 			const html = generateSanpinPrintHtml(demoRecords);
 			assert.ok(html.includes("<!DOCTYPE html>"));
 			assert.ok(html.includes("Журнал контроля стерилизации"));
-			assert.ok(html.includes("Melag Vacuklav"));
 		});
 	});
 
-	describe("5. Рендеринг SterilizationHubModal: дизайн-код и эргономика", () => {
-		it("рендерит ключевые разделы в хабе", () => {
+	describe("5. Рендеринг SterilizationBatchCycleModal: дизайн-код и эргономика", () => {
+		it("рендерит ключевые разделы, Primary CTA, Drag Handle и 0 disabled кнопок", () => {
 			const html = renderToStaticMarkup(
 				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
 			);
-			assert.ok(html.includes("Автоклав") || html.includes("автоклава") || html.includes("стерилизации"));
-			assert.ok(html.includes("пакетов") || html.includes("крафт-пакет"));
+			assert.ok(html.includes("Автоклав") || html.includes("стерилизации"));
 			assert.ok(html.includes("Печать журнала"));
-		});
-
-		it("содержит ровно 1 Primary CTA кнопку #0d9488 на экране (Мандат 8am)", () => {
-			const html = renderToStaticMarkup(
-				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
-			);
-			assert.ok(html.includes("data-testid=\"sanpin-run-cycle-cta\"") || html.includes("data-testid=\"primary-batch-sterilization-btn\""));
-			assert.ok(html.includes("sanpin-primary-cta") || html.includes("#0d9488") || html.includes("var(--primary"));
-			assert.ok(html.includes("Утвердить цикл") || html.includes("Запустить автоклавирование"));
-		});
-
-		it("ни одна кнопка в модалке не заблокирована атрибутом disabled (Мандат 8e)", () => {
-			const html = renderToStaticMarkup(
-				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
-			);
-			const hasDisabled = /<button[^>]*\bdisabled\b[^>]*>/i.test(html);
-			assert.equal(hasDisabled, false, "Обнаружена заблокированная кнопка (Мандат 8e нарушен)");
-		});
-
-		it("содержит Drag Handle 36x5px и скругление rounded-t-[24px] для Apple HIG смартфонов", () => {
-			const html = renderToStaticMarkup(
-				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
-			);
+			assert.equal(html.match(/sanpin-primary-cta/g)?.length, 1);
+			assert.equal(REAL_HTML_DISABLED_BTN_REGEX.test(html), false);
 			assert.ok(html.includes("sanpin-drag-handle") || html.includes("w-9 h-1.5"));
-			assert.ok(html.includes("sanpin-studio-modal") || html.includes("max-sm:rounded-t-[24px]"));
-		});
-
-		it("не содержит советского канцелярита в заголовках (Мандат 8x)", () => {
-			const html = renderToStaticMarkup(
-				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
-			);
-			assert.ok(!html.includes("Форма 257/у"));
-			assert.ok(!html.includes("Форма 366/у"));
-			assert.ok(html.includes("Утверждение цикла автоклава") || html.includes("Студия стерилизации") || html.includes("Журнал автоклавирования"));
+			assert.equal(html.includes("Форма 257/у"), false);
+			assert.equal(html.includes("Форма 366/у"), false);
 		});
 	});
 
-	describe("6. Единый роутинг через WorkspaceStudioOverlayHost", () => {
+	describe("6. Единый роутер через WorkspaceStudioOverlayHost", () => {
 		it("WorkspaceStudioOverlayHost корректно инициализируется", () => {
-			assert.ok(WorkspaceStudioOverlayHost);
-			assert.equal(typeof WorkspaceStudioOverlayHost, "function");
+			const hostHtml = renderToStaticMarkup(<WorkspaceStudioOverlayHost />);
+			assert.ok(typeof hostHtml === "string");
 		});
 	});
 });

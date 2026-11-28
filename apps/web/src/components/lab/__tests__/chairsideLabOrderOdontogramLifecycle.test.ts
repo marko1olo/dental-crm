@@ -16,7 +16,6 @@ import {
 	getGostAbbreviation,
 } from "@dental/shared";
 import type { ToothState } from "../../odontogram/chart/types/toothStateUnion";
-import { getAnatomicalToothColors } from "../../odontogram/AnatomicalToothColors";
 import { getToothColors } from "../../odontogram/chart/ToothColors";
 import { GOST_ABBREVIATIONS, GOST_TOOTH_STATES, getToothStateFromHotkey } from "../../odontogram/clinical/clinicalToothStates";
 import { TOOTH_STATE_LABELS } from "../../odontogram/chart/toothChartTypes";
@@ -51,18 +50,17 @@ describe("Chairside Lab Order & Orthopedic Odontogram Lifecycle Inquisitor", () 
 		});
 	});
 	describe("2. Визуализация одонтограммы для коронки в изготовлении (Planned_Crown)", () => {
-		test("AnatomicalToothColors возвращает пульсирующий синий контур для Planned_Crown", () => {
-			const colors = getAnatomicalToothColors({
-				state: "Planned_Crown" as ToothState,
-			});
+		test("getToothColors возвращает пульсирующий синий контур для Planned_Crown", () => {
+			const colors = getToothColors("Planned_Crown");
 			assert.equal(colors.isPulsing, true, "Коронка в изготовлении ЗТЛ обязана пульсировать (isPulsing)");
 			assert.equal(colors.stroke, "#3b82f6", "Цвет контура должен быть сигнальным синим (#3b82f6)");
 			assert.equal(colors.badgeColor, "#3b82f6");
 		});
 		test("ToothColors (схематическая одонтограмма) возвращает пульсацию для Planned_Crown", () => {
-			const colors = getToothColors("Planned_Crown");
+			const colors = getToothColors("Planned_Crown", undefined, "arch-1");
 			assert.equal(colors.isPulsing, true, "Схематический зуб также обязан пульсировать");
 			assert.equal(colors.stroke, "#3b82f6");
+			assert.ok(colors.rootFill.includes("arch-1-dente-root-dentin"), "Градиенты должны изолироваться через idPrefix");
 		});
 		test("Odontogram SSOT поддерживает Planned_Crown и хоткеи (к + п)", () => {
 			assert.equal(GOST_ABBREVIATIONS["Кп"], "Planned_Crown");
@@ -85,9 +83,7 @@ describe("Chairside Lab Order & Orthopedic Odontogram Lifecycle Inquisitor", () 
 			// Шаг 2: Наряд отправлен -> одонтограмма переводит зуб в Planned_Crown
 			toothState = normalizeToothState("Planned_Crown") as ToothState;
 			assert.equal(toothState, "Planned_Crown");
-			const inProgressVisual = getAnatomicalToothColors({
-				state: toothState,
-			});
+			const inProgressVisual = getToothColors(toothState);
 			assert.equal(inProgressVisual.isPulsing, true, "Зуб визуально индицирует процесс изготовления в лаборатории");
 			// Шаг 3: Конструкция прибыла из лаборатории и сдана пациенту (POST /api/lab-orders/:id/mark-installed)
 			const markInstalledEvent = {
@@ -98,9 +94,7 @@ describe("Chairside Lab Order & Orthopedic Odontogram Lifecycle Inquisitor", () 
 			// Шаг 4: Зуб окончательно зафиксирован -> переход в постоянную Crown
 			toothState = normalizeToothState("Crown") as ToothState;
 			assert.equal(toothState, "Crown");
-			const installedVisual = getAnatomicalToothColors({
-				state: toothState,
-			});
+			const installedVisual = getToothColors(toothState, "zirconia");
 			assert.equal(installedVisual.isPulsing, undefined, "Зафиксированная постоянная коронка не пульсирует");
 			assert.equal(installedVisual.stroke, "#10b981", "Зафиксированная циркониевая коронка имеет статус нормы/установки");
 		});

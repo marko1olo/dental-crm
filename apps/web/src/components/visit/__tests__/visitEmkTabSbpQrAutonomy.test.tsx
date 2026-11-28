@@ -1,79 +1,68 @@
 /**
  * visitEmkTabSbpQrAutonomy.test.tsx
  *
- * Unit & structural tests for authentic ISO/IEC 18004 SBP QR matrix generator in VisitEmkTab,
- * verification of complete fake diorama eradication (Mandate 11: Core Engines Sacred vs Synthetic Garbage,
- * Core Route Rules 7 & 11, Mandate 8d UI Sin #7).
+ * Runtime & rendered DOM tests for authentic ISO/IEC 18004 SBP QR matrix generator in VisitEmkTab / VisitEmkModals,
+ * verification of complete fake diorama eradication (Mandate 8d Sin #7, Mandate 8k).
  */
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { generateQrCodeSvg, generateQrMatrix } from "@dental/shared";
+import { VisitEmkModals } from "../emkTab/VisitEmkModals";
 import { completeClinicalVisitAndAssembleEstimate } from "../clinicalVisitWorkflow";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 describe("Wave 24 Worker 3: VisitEmkTab Authentic SBP QR Generator & Zero Diorama", () => {
-	const emkTabPath = path.resolve(__dirname, "../VisitEmkTab.tsx");
-	const emkTabDir = path.resolve(__dirname, "../emkTab");
-	let loadedEmkSource = fs.readFileSync(emkTabPath, "utf8");
-	if (fs.existsSync(emkTabDir)) {
-		for (const f of fs.readdirSync(emkTabDir)) {
-			if (/\.(tsx|ts)$/.test(f)) {
-				loadedEmkSource += "\n" + fs.readFileSync(path.join(emkTabDir, f), "utf8");
-			}
-		}
-	}
-	const sourceCode = loadedEmkSource;
+	const testSbpPayload =
+		"https://qr.nspk.ru/AD1000CHK-2026-0906-881?type=02&bank=100000000004&sum=1450000&cur=RUB&crc=TEST";
 
-	it("1. guarantees total elimination of fake 9-rect SVG diorama from VisitEmkTab.tsx", () => {
-		// Verify zero fake corner marker rects from the old diorama
-		assert.strictEqual(
-			sourceCode.includes('rect x="5" y="5"'),
-			false,
-			"VisitEmkTab.tsx must NOT contain fake diorama rect 'x=5 y=5'",
-		);
-		assert.strictEqual(
-			sourceCode.includes('rect x="70" y="5"'),
-			false,
-			"VisitEmkTab.tsx must NOT contain fake diorama rect 'x=70 y=5'",
-		);
-		assert.strictEqual(
-			sourceCode.includes('rect x="5" y="70"'),
-			false,
-			"VisitEmkTab.tsx must NOT contain fake diorama rect 'x=5 y=70'",
-		);
-		assert.strictEqual(
-			sourceCode.includes('rect x="11" y="76"'),
-			false,
-			"VisitEmkTab.tsx must NOT contain fake diorama rect 'x=11 y=76'",
+	const renderSbpModalHtml = (payload = testSbpPayload) =>
+		renderToStaticMarkup(
+			React.createElement(VisitEmkModals, {
+				isSbpQrModalOpen: true,
+				setIsSbpQrModalOpen: () => {},
+				completionResult: {
+					visitId: "VIS-AUTONOMY-101",
+					invoiceId: "INV-101",
+					receiptNumber: "CHK-2026-0906-881",
+					status: "ready_for_payment",
+					totalGrossRub: 14500,
+					totalNetRub: 14500,
+					totalNetKop: 1450000,
+					sbpQrUrl: "",
+					sbpQrPayload: payload,
+					items: [],
+				},
+				activePatient: { id: "PAT-1", fullName: "Барабаш С.В." },
+				activeDoctor: { id: "DOC-1", fullName: "Врач А.А.", specialty: "therapist" },
+				isStarProtocolsOpen: false,
+				setIsStarProtocolsOpen: () => {},
+				isSoapTemplatesModalOpen: false,
+				setIsSoapTemplatesModalOpen: () => {},
+				isConsentModalOpen: false,
+				setIsConsentModalOpen: () => {},
+				isPrintModalOpen: false,
+				setIsPrintModalOpen: () => {},
+				visitNoteForm: {},
+				updateVisitNoteField: () => {},
+				isSignedVisit: false,
+				onApplyCatalogPatch: () => {},
+			}),
 		);
 
-		// Verify zero fake SVG circle with mock text
-		assert.strictEqual(
-			sourceCode.includes('<circle cx="50" cy="50" r="14"'),
-			false,
-			"VisitEmkTab.tsx must NOT contain mock diorama circle 'cx=50 cy=50'",
-		);
-		assert.strictEqual(
-			sourceCode.includes('<text x="50" y="54"'),
-			false,
-			"VisitEmkTab.tsx must NOT contain mock diorama text 'x=50 y=54'",
-		);
+	it("1. guarantees total elimination of fake 9-rect SVG diorama from rendered SBP QR modal", () => {
+		const html = renderSbpModalHtml();
+
+		assert.strictEqual(html.includes('rect x="5" y="5"'), false, "Must NOT render fake diorama rect 'x=5 y=5'");
+		assert.strictEqual(html.includes('rect x="70" y="5"'), false, "Must NOT render fake diorama rect 'x=70 y=5'");
+		assert.strictEqual(html.includes('rect x="5" y="70"'), false, "Must NOT render fake diorama rect 'x=5 y=70'");
+		assert.strictEqual(html.includes('rect x="11" y="76"'), false, "Must NOT render fake diorama rect 'x=11 y=76'");
+		assert.strictEqual(html.includes('<circle cx="50" cy="50" r="14"'), false, "Must NOT render mock diorama circle");
+		assert.strictEqual(html.includes('<text x="50" y="54"'), false, "Must NOT render mock diorama text");
 	});
 
-	it("2. guarantees authentic estimate calculation and zero synthetic URL hardcoding", () => {
-		// Import check
-		assert.ok(
-			sourceCode.includes("generateQrCodeSvg"),
-			"VisitEmkModals.tsx must import generateQrCodeSvg",
-		);
-
-		// Behavioral test of completeClinicalVisitAndAssembleEstimate
+	it("2. guarantees authentic estimate calculation and rendered sbp-qr-svg-container", () => {
 		const estimate = completeClinicalVisitAndAssembleEstimate({
 			visitId: "VIS-AUTONOMY-101",
 			patientId: "PAT-AUTONOMY-101",
@@ -91,37 +80,23 @@ describe("Wave 24 Worker 3: VisitEmkTab Authentic SBP QR Generator & Zero Dioram
 		assert.ok(estimate.totalGrossRub > 0, "Gross sum must be positive and non-zero");
 		assert.ok(estimate.totalNetRub > 0, "Net sum must be positive and non-zero");
 		assert.strictEqual(estimate.totalNetKop, estimate.totalNetRub * 100);
-		// Мандаты 8z, 8k: Ноль синтетического хардкода ссылки в сметном движке
 		assert.strictEqual(estimate.sbpQrUrl, "");
 		assert.strictEqual(estimate.invoiceId, "");
 
-		// QR SVG container check in DOM contract
-		assert.ok(
-			sourceCode.includes("data-testid=\"sbp-qr-svg-container\""),
-			"VisitEmkTab/Modals must render data-testid='sbp-qr-svg-container'",
-		);
+		const html = renderSbpModalHtml();
+		assert.ok(html.includes('data-testid="sbp-qr-svg-container"'), "VisitEmkModals must render sbp-qr-svg-container");
+		assert.ok(html.includes("data:image/svg+xml;utf8,"), "Must embed encoded SVG QR image");
+		assert.ok(html.includes('data-testid="btn-confirm-sbp-paid"'), "Must render btn-confirm-sbp-paid");
 	});
 
-	it("3. guarantees design-system SBP protocol badge with Lucide Zap icon (zero emojis)", () => {
-		assert.ok(
-			sourceCode.includes("СБП • НСПК ГОСТ Р 56042"),
-			"VisitEmkTab.tsx must render clean SBP GOST R 56042 badge",
-		);
-		assert.ok(
-			sourceCode.includes("<Zap className=\"w-3.5 h-3.5 shrink-0\" />"),
-			"VisitEmkTab.tsx must render Lucide Zap vector icon in SBP badge",
-		);
-		// Sin #7 check: no cartoon emojis in SBP modal section
-		const sbpModalMatch = sourceCode.match(
-			/\{isSbpQrModalOpen\s*&&\s*completionResult[\s\S]*?role="dialog"[\s\S]*?data-testid="btn-confirm-sbp-paid"[\s\S]*?<\/div>\s*\)\s*\}/,
-		);
-		assert.ok(sbpModalMatch, "SBP modal JSX section must exist");
-		const modalText = sbpModalMatch[0];
-		assert.ok(!modalText.includes("🎉"), "SBP modal must NOT contain emoji 🎉");
-		assert.ok(!modalText.includes("🚀"), "SBP modal must NOT contain emoji 🚀");
-		assert.ok(!modalText.includes("💡"), "SBP modal must NOT contain emoji 💡");
-		assert.ok(!modalText.includes("🦷"), "SBP modal must NOT contain emoji 🦷");
-		assert.ok(!modalText.includes("✓"), "SBP modal must NOT contain raw checkmark ✓");
+	it("3. guarantees design-system SBP protocol badge with zero cartoon emojis", () => {
+		const html = renderSbpModalHtml();
+		assert.ok(html.includes("СБП • НСПК ГОСТ Р 56042"), "Must render clean SBP GOST R 56042 badge");
+		assert.ok(!html.includes("🎉"), "SBP modal must NOT contain emoji 🎉");
+		assert.ok(!html.includes("🚀"), "SBP modal must NOT contain emoji 🚀");
+		assert.ok(!html.includes("💡"), "SBP modal must NOT contain emoji 💡");
+		assert.ok(!html.includes("🦷"), "SBP modal must NOT contain emoji 🦷");
+		assert.ok(!html.includes("✓"), "SBP modal must NOT contain raw checkmark ✓");
 	});
 
 	it("4. generates authentic ISO/IEC 18004 SVG QR code with hundreds of matrix modules", () => {
@@ -139,29 +114,17 @@ describe("Wave 24 Worker 3: VisitEmkTab Authentic SBP QR Generator & Zero Dioram
 			title: `Оплата по СБП: ${testReceipt}`,
 		});
 
-		// Basic SVG envelope verification
 		assert.ok(svg.startsWith("<svg"), "Generated QR must be valid SVG starting with <svg");
 		assert.ok(svg.endsWith("</svg>"), "Generated QR must end with </svg>");
 		assert.ok(svg.includes('xmlns="http://www.w3.org/2000/svg"'), "SVG must declare xmlns");
 		assert.ok(svg.includes('width="192"'), "SVG must set width=192");
 		assert.ok(svg.includes('height="192"'), "SVG must set height=192");
 		assert.ok(svg.includes("<title>Оплата по СБП: CHK-2026-0906-881</title>"), "SVG must set accessible title");
+		assert.ok(svg.match(/<rect width="\d+" height="\d+" fill="#ffffff"\/>/), "SVG must render white quiet zone rect");
 
-		// Background rect
-		assert.ok(
-			svg.match(/<rect width="\d+" height="\d+" fill="#ffffff"\/>/),
-			"SVG must render white quiet zone rect",
-		);
-
-		// Hundreds of modules verification (authentic QR code matrix)
 		const moduleMatches = svg.match(/h1v1h-1z/g);
 		assert.ok(moduleMatches, "SVG path must contain module step commands");
-		assert.ok(
-			moduleMatches.length >= 300,
-			`Authentic QR matrix must have >= 300 modules (found: ${moduleMatches.length})`,
-		);
-
-		// Verify absence of 9-rect diorama in generated SVG
+		assert.ok(moduleMatches.length >= 300, `Authentic QR matrix must have >= 300 modules (found: ${moduleMatches.length})`);
 		assert.strictEqual(svg.includes('rect x="5" y="5"'), false);
 		assert.strictEqual(svg.includes("circle cx="), false);
 	});
@@ -188,7 +151,6 @@ describe("Wave 24 Worker 3: VisitEmkTab Authentic SBP QR Generator & Zero Dioram
 			assert.ok(payload.includes("cur=RUB"));
 			assert.ok(payload.includes("type=02&bank=100000000004"));
 
-			// Verify QR can be generated without error
 			const qrSvg = generateQrCodeSvg(payload, { size: 192, margin: 2 });
 			assert.ok(qrSvg.length > 5000, `QR SVG length must be substantial (actual: ${qrSvg.length})`);
 		}
@@ -202,7 +164,6 @@ describe("Wave 24 Worker 3: VisitEmkTab Authentic SBP QR Generator & Zero Dioram
 		assert.strictEqual(size, 17 + version * 4, "Matrix size must equal 17 + version * 4");
 		assert.strictEqual(matrix.length, size, "Matrix row count must equal size");
 
-		// Finder pattern checks: top-left (0,0) must have 7x7 outer black square
 		for (let c = 0; c < 7; c++) {
 			assert.strictEqual(matrix[0]![c], true, `Finder (0, ${c}) must be black`);
 			assert.strictEqual(matrix[6]![c], true, `Finder (6, ${c}) must be black`);
@@ -212,7 +173,6 @@ describe("Wave 24 Worker 3: VisitEmkTab Authentic SBP QR Generator & Zero Dioram
 			assert.strictEqual(matrix[r]![6], true, `Finder (${r}, 6) must be black`);
 		}
 
-		// Count black modules
 		let blackModules = 0;
 		for (let r = 0; r < size; r++) {
 			for (let c = 0; c < size; c++) {
@@ -220,9 +180,6 @@ describe("Wave 24 Worker 3: VisitEmkTab Authentic SBP QR Generator & Zero Dioram
 			}
 		}
 
-		assert.ok(
-			blackModules > 300,
-			`Black modules count must be > 300 in QR matrix (actual: ${blackModules})`,
-		);
+		assert.ok(blackModules > 300, `Black modules count must be > 300 in QR matrix (actual: ${blackModules})`);
 	});
 });

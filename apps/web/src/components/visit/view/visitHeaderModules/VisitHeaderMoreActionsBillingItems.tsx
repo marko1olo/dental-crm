@@ -75,9 +75,9 @@ export function VisitHeaderMoreActionsBillingItems({
 				className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 				role="menuitem"
 			>
-				<Tablet className="w-4 h-4 text-[var(--teal)] shrink-0" aria-hidden="true" />
+				<Tablet className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
 				<div className="flex flex-col">
-					<span className="font-semibold">Презентация планов (3-Tier)</span>
+					<span className="font-semibold">Презентация планов лечения</span>
 					<span className="text-[10px] text-[var(--muted)]">Студия у кресла: 3 тарифа, одонтограмма, смета</span>
 				</div>
 			</button>
@@ -91,7 +91,7 @@ export function VisitHeaderMoreActionsBillingItems({
 				className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors"
 				role="menuitem"
 			>
-				<Pill className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--teal)] shrink-0" aria-hidden="true" />
+				<Pill className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" aria-hidden="true" />
 				<div className="flex flex-col">
 					<span className="font-semibold">Выписать рецепт</span>
 					<span className="text-[10px] text-[var(--muted)]">Рецептурные бланки, антибиотики, НПВС</span>

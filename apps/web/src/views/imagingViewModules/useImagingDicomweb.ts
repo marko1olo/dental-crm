@@ -11,6 +11,19 @@ interface UseImagingDicomwebParams {
 	setLocalImageIds: (ids: string[]) => void;
 }
 
+function isPlainRecord(val: unknown): val is Record<string, unknown> {
+	return typeof val === "object" && val !== null && !Array.isArray(val);
+}
+
+function readDicomTagFirstString(item: unknown, tag: string): string | undefined {
+	if (!isPlainRecord(item)) return undefined;
+	const tagObj = item[tag];
+	if (!isPlainRecord(tagObj)) return undefined;
+	const values = tagObj.Value;
+	if (!Array.isArray(values) || values.length === 0) return undefined;
+	return typeof values[0] === "string" ? values[0] : undefined;
+}
+
 export function useImagingDicomweb({
 	selectedImagingStudy,
 	activePatientId,
@@ -34,8 +47,8 @@ export function useImagingDicomweb({
 				const qidoUrl = `${apiBase}/api/dicomweb/studies${activePatientId ? `?PatientID=${encodeURIComponent(activePatientId)}` : ""}`;
 				const qidoRes = await fetch(qidoUrl, { headers: { Accept: "application/dicom+json", ...authHeaders } });
 				if (qidoRes.ok) {
-					const studies = (await qidoRes.json()) as Array<Record<string, { Value?: unknown[] }>>;
-					if (Array.isArray(studies) && studies.length > 0) studyUid = studies[0]?.["0020000D"]?.Value?.[0] as string | undefined;
+					const studies: unknown = await qidoRes.json();
+					if (Array.isArray(studies) && studies.length > 0) studyUid = readDicomTagFirstString(studies[0], "0020000D");
 				}
 			}
 			if (!studyUid) {
@@ -54,8 +67,8 @@ export function useImagingDicomweb({
 					headers: { Accept: "application/dicom+json", ...authHeaders },
 				});
 				if (seriesRes.ok) {
-					const seriesList = (await seriesRes.json()) as Array<Record<string, { Value?: unknown[] }>>;
-					if (Array.isArray(seriesList) && seriesList.length > 0) seriesUid = seriesList[0]?.["0020000E"]?.Value?.[0] as string | undefined;
+					const seriesList: unknown = await seriesRes.json();
+					if (Array.isArray(seriesList) && seriesList.length > 0) seriesUid = readDicomTagFirstString(seriesList[0], "0020000E");
 				}
 			}
 			if (!seriesUid) throw new Error("Не найдена серия снимков в исследовании PACS.");
@@ -65,12 +78,12 @@ export function useImagingDicomweb({
 				headers: { Accept: "application/dicom+json", ...authHeaders },
 			});
 			if (!metaRes.ok) throw new Error(`Ошибка загрузки метаданных серии: HTTP ${metaRes.status}`);
-			const metaJson = (await metaRes.json()) as Array<Record<string, { Value?: unknown[] }>>;
+			const metaJson: unknown = await metaRes.json();
 			if (!Array.isArray(metaJson) || metaJson.length === 0) throw new Error("В серии DICOMweb не найдено кадров.");
 
 			const wadoImageIds: string[] = [];
 			for (const item of metaJson) {
-				const sopUid = item?.["00080018"]?.Value?.[0] as string | undefined;
+				const sopUid = readDicomTagFirstString(item, "00080018");
 				if (sopUid) {
 					const wadoUrl = `${apiBase}/api/dicomweb/studies/${encodeURIComponent(studyUid)}/series/${encodeURIComponent(seriesUid)}/instances/${encodeURIComponent(sopUid)}`;
 					wadoImageIds.push(`wadouri:${wadoUrl}`);

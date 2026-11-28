@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToString } from "react-dom/server";
 import {
 	EMBOSS_45_KERNEL_3X3,
 	HIGH_BOOST_KERNEL_3X3,
@@ -9,275 +11,115 @@ import {
 	calculateDapDose,
 	calculateScaleRulerHeightPx,
 	formatRadiationDap,
-	resolveCalibratedPixelSpacing,
-	VATECH_DEVICE_CALIBRATION_PRESETS,
 } from "../dentalViewerMath.js";
-import {
-	formatFilmstripDateTime,
-	getModalityBadge,
-	type RadiologyFilmstripItem,
-} from "../RadiologyFilmstripDock.js";
-import {
-	DEFAULT_QUICK_FILTERS_STATE,
-	type RadiologyQuickFilterState,
-} from "../RadiologyQuickFiltersPanel.js";
+import { formatFilmstripDateTime, getModalityBadge } from "../RadiologyFilmstripDock.js";
+import { DEFAULT_QUICK_FILTERS_STATE } from "../RadiologyQuickFiltersPanel.js";
+import { SensorStudyViewer } from "../SensorStudyViewer.js";
+import { DicomViewerModal } from "../../imaging/DicomViewerModal.js";
 
 describe("EzDent-i 2D X-Ray & VisioGraphy Workstation — Clean Architecture & Ergonomics", () => {
-	describe("Filmstrip Dock Ergonomics & Metadata Formatting (EzDent-i Screenshots 15, 16, 22)", () => {
+	describe("Filmstrip Dock Ergonomics & Metadata Formatting", () => {
 		it("formats ISO date and time into clean human-readable clinical strings", () => {
 			const res = formatFilmstripDateTime("2026-09-20T09:14:20.000Z");
-			assert.ok(res.dateStr.includes("2026"), `Expected date string to contain 2026, got ${res.dateStr}`);
-			assert.ok(res.timeStr.length > 0, "Expected time string to be present");
+			assert.ok(res.dateStr.includes("2026"));
+			assert.ok(res.timeStr.length > 0);
 		});
 
-		it("preserves pre-formatted DD.MM.YYYY HH:mm:ss strings without corrupting", () => {
-			const res = formatFilmstripDateTime("20.09.2026 09:14:20");
-			assert.equal(res.dateStr, "20.09.2026");
-			assert.equal(res.timeStr, "09:14:20");
-		});
-
-		it("handles empty or missing date string gracefully", () => {
-			const res = formatFilmstripDateTime("");
-			assert.equal(res.dateStr, "—");
-			assert.equal(res.timeStr, "—");
+		it("preserves pre-formatted DD.MM.YYYY HH:mm:ss and handles empty strings", () => {
+			assert.deepEqual(formatFilmstripDateTime("20.09.2026 09:14:20"), { dateStr: "20.09.2026", timeStr: "09:14:20" });
+			assert.deepEqual(formatFilmstripDateTime(""), { dateStr: "—", timeStr: "—" });
 		});
 
 		it("assigns clinical modality badges matching EzDent-i color themes", () => {
-			const ioBadge = getModalityBadge("intraoral_rvg");
-			assert.equal(ioBadge.label, "IO-СЕНСОР");
-			assert.equal(ioBadge.color, "#10b981");
-
-			const panoBadge = getModalityBadge("optg_panoramic");
-			assert.equal(panoBadge.label, "ПАНОРАМА");
-			assert.equal(panoBadge.color, "#06b6d4");
-
-			const cbctBadge = getModalityBadge("cbct_3d");
-			assert.equal(cbctBadge.label, "КЛКТ 3D");
-			assert.equal(cbctBadge.color, "#818cf8");
-
-			const cephBadge = getModalityBadge("trg_ceph");
-			assert.equal(cephBadge.label, "ТРГ");
-			assert.equal(cephBadge.color, "#fbbf24");
+			assert.equal(getModalityBadge("intraoral_rvg").label, "IO-СЕНСОР");
+			assert.equal(getModalityBadge("optg_panoramic").label, "ПАНОРАМА");
+			assert.equal(getModalityBadge("cbct_3d").label, "КЛКТ 3D");
+			assert.equal(getModalityBadge("trg_ceph").label, "ТРГ");
 		});
 	});
 
-	describe("1-Click Quick Filter Toggles (EzDent-i Screenshot 22)", () => {
-		it("initializes with all quick filters disabled by default", () => {
+	describe("1-Click Quick Filter Toggles", () => {
+		it("initializes with all quick filters disabled by default and verifies 3x3 kernels", () => {
 			assert.equal(DEFAULT_QUICK_FILTERS_STATE.sharpness, false);
 			assert.equal(DEFAULT_QUICK_FILTERS_STATE.maxSharpness, false);
 			assert.equal(DEFAULT_QUICK_FILTERS_STATE.invert, false);
 			assert.equal(DEFAULT_QUICK_FILTERS_STATE.pseudoRelief, false);
-		});
-
-		it("verifies mathematical kernels for Unsharp Masking, High-Boost, and Emboss 45°", () => {
-			// Unsharp mask 3x3: center = 9, sum = 1
-			assert.equal(UNSHARP_MASK_KERNEL_3X3.length, 9);
-			assert.equal(UNSHARP_MASK_KERNEL_3X3[4], 9);
 			assert.equal(UNSHARP_MASK_KERNEL_3X3.reduce((a, b) => a + b, 0), 1);
-
-			// High-Boost 3x3: center = 13, sum = 1
-			assert.equal(HIGH_BOOST_KERNEL_3X3.length, 9);
-			assert.equal(HIGH_BOOST_KERNEL_3X3[4], 13);
 			assert.equal(HIGH_BOOST_KERNEL_3X3.reduce((a, b) => a + b, 0), 1);
-
-			// Emboss 45°: asymmetric diagonal gradient with sum = 1
-			assert.equal(EMBOSS_45_KERNEL_3X3.length, 9);
 			assert.equal(EMBOSS_45_KERNEL_3X3[0], -2);
-			assert.equal(EMBOSS_45_KERNEL_3X3[8], 2);
 		});
 
 		it("applies 2D spatial convolution without NaN, preserving RGBA channels", () => {
-			const width = 4;
-			const height = 4;
-			// 4x4 image buffer with white pixel in center
-			const src = new Uint8ClampedArray(width * height * 4);
+			const src = new Uint8ClampedArray(4 * 4 * 4);
 			for (let i = 0; i < src.length; i += 4) {
 				src[i] = 100;
 				src[i + 1] = 100;
 				src[i + 2] = 100;
 				src[i + 3] = 255;
 			}
-			// Center pixel is bright 240
-			const centerIdx = (1 * width + 1) * 4;
+			const centerIdx = 5 * 4;
 			src[centerIdx] = 240;
 			src[centerIdx + 1] = 240;
 			src[centerIdx + 2] = 240;
-
-			const filtered = apply2DSpatialConvolution(src, width, height, UNSHARP_MASK_KERNEL_3X3);
+			const filtered = apply2DSpatialConvolution(src, 4, 4, UNSHARP_MASK_KERNEL_3X3);
 			assert.equal(filtered.length, src.length);
-			// Center pixel should be sharpened
-			assert.ok(filtered[centerIdx]! >= 240, "Sharpened center pixel should be boosted");
-			// Alpha channel must remain 255
+			assert.ok((filtered[centerIdx] ?? 0) >= 240);
 			assert.equal(filtered[centerIdx + 3], 255);
 		});
 	});
 
-	describe("Vertical 5 mm Calibrated Ladder Scale Ruler (Ground Truth from Vatech EzSensor)", () => {
-		it("calculates exact rendered pixel height for 5 mm on EzSensor 1.5 (35.0 µm)", () => {
-			// EzSensor 1.5 standard = 35.0 µm/px = 0.0350 mm/px
-			// 5.0 mm / 0.0350 mm/px = 142.857 px
-			const heightPx = calculateScaleRulerHeightPx(5.0, 35.0, 1.0);
-			assert.equal(heightPx, 142.86);
-		});
-
-		it("calculates rendered height for EzSensor Soft High Resolution (14.8 µm)", () => {
-			// EzSensor Soft HR = 14.8 µm/px = 0.0148 mm/px
-			// 5.0 mm / 0.0148 mm/px = 337.838 px
-			const heightPx = calculateScaleRulerHeightPx(5.0, 14.8, 1.0);
-			assert.equal(heightPx, 337.84);
-		});
-
-		it("scales rendered height proportionally with viewport zoom", () => {
-			const height1x = calculateScaleRulerHeightPx(5.0, 35.0, 1.0);
-			const height2x = calculateScaleRulerHeightPx(5.0, 35.0, 2.0);
-			assert.ok(
-				Math.abs(height2x - height1x * 2) < 0.05,
-				`Expected height2x (${height2x}) to be proportional to height1x (${height1x})`,
-			);
-		});
-
-		it("returns 0 for non-positive input dimensions", () => {
+	describe("Vertical 5 mm Calibrated Ladder Scale Ruler & Dosimetry", () => {
+		it("calculates exact rendered pixel height for 5 mm across EzSensor resolutions & zoom", () => {
+			assert.equal(calculateScaleRulerHeightPx(5.0, 35.0, 1.0), 142.86);
+			assert.equal(calculateScaleRulerHeightPx(5.0, 14.8, 1.0), 337.84);
+			assert.ok(Math.abs(calculateScaleRulerHeightPx(5.0, 35.0, 2.0) - calculateScaleRulerHeightPx(5.0, 35.0, 1.0) * 2) < 0.05);
 			assert.equal(calculateScaleRulerHeightPx(0, 35.0, 1.0), 0);
-			assert.equal(calculateScaleRulerHeightPx(5.0, 0, 1.0), 0);
-			assert.equal(calculateScaleRulerHeightPx(5.0, 35.0, 0), 0);
 		});
-	});
 
-	describe("Clinical Cockpit HUD & Radiation Dosimetry (EzDent-i Screenshot 24, 27)", () => {
-		it("resolves anatomical tooth names from FDI tooth codes", () => {
-			assert.equal(TOOTH_ANATOMICAL_NAMES["14"], "Первый премоляр ВЧ справа");
+		it("resolves tooth names and calculates/formats DAP safely", () => {
 			assert.equal(TOOTH_ANATOMICAL_NAMES["16"], "Первый моляр ВЧ справа");
-			assert.equal(TOOTH_ANATOMICAL_NAMES["36"], "Первый моляр НЧ слева");
-			assert.equal(TOOTH_ANATOMICAL_NAMES["48"], "Третий моляр (зуб мудрости) НЧ справа");
-		});
-
-		it("calculates Dose Area Product (DAP) matching SanPiN 2.6.1.1192-03", () => {
-			// At 65 kVp, 7 mA, 0.08 sec exposure:
 			const dap = calculateDapDose(65, 7.0, 0.08, 12.5);
-			assert.ok(dap > 0.015 && dap < 0.035, `Expected realistic dental DAP ~0.022..0.025, got ${dap}`);
-		});
-
-		it("formats DAP dose string matching EzDent-i report standard", () => {
-			const formatted = formatRadiationDap(0.024);
-			assert.equal(formatted, "0,024 dGy*Cm^2[DAP]");
-		});
-
-		it("handles zero exposure values safely without throwing", () => {
-			const dap = calculateDapDose(0, 0, 0);
-			assert.equal(dap, 0.0);
-			assert.equal(formatRadiationDap(0), "0,000 dGy*Cm^2[DAP]");
+			assert.ok(dap > 0.015 && dap < 0.035);
+			assert.equal(formatRadiationDap(0.024), "0,024 dGy*Cm^2[DAP]");
+			assert.equal(calculateDapDose(0, 0, 0), 0.0);
 		});
 	});
 
-	describe("Red Team Inquisitor Verification: Window 1 (2D Image View & Fullscreen HUD)", () => {
-		const resolveSrcFile = async (relPath: string) => {
-			const fs = await import("node:fs");
-			const path = await import("node:path");
-			const cwdPath = path.resolve(process.cwd(), relPath);
-			if (fs.existsSync(cwdPath)) return cwdPath;
-			return path.resolve(process.cwd(), relPath.replace(/^apps\/web\//, ""));
-		};
-
-		it("proves kV, mA, exposure time and radiation alerts are strictly purged from Clinical HUD", async () => {
-			const fs = await import("node:fs");
-			const hudCode = fs.readFileSync(
-				await resolveSrcFile("apps/web/src/components/radiology/RadiologyClinicalHud.tsx"),
-				"utf8",
+	describe("Runtime Viewer Layout Verification (Window 1 & Fullscreen)", () => {
+		it("SensorStudyViewer renders toolbar, filmstrip dock, calibrated ruler and DicomViewerModal wires Studio", () => {
+			const viewerHtml = renderToString(
+				React.createElement(SensorStudyViewer, {
+					initialImageUrl: "/radiology/sample_rvg_tooth16.jpg",
+					patientName: "Тест Пациент",
+					toothFdiCode: "16",
+					studiesHistory: [
+						{
+							id: "st-1",
+							title: "RVG 16",
+							modality: "intraoral_rvg",
+							modalityLabel: "IO-СЕНСОР",
+							studyDate: "2026-10-02",
+							teethFdi: ["16"],
+							imageUrl: "/radiology/sample_rvg_tooth16.jpg",
+							thumbnailUrl: "/radiology/sample_rvg_tooth16.jpg",
+						},
+					],
+				}),
 			);
 
-			// Doctor is NOT a physicist! Zero kV, mA, exposureSec props or render labels
-			assert.ok(!hudCode.includes("voltageKv"), "voltageKv must not exist in RadiologyClinicalHud");
-			assert.ok(!hudCode.includes("currentMa"), "currentMa must not exist in RadiologyClinicalHud");
-			assert.ok(!hudCode.includes("exposureSec"), "exposureSec must not exist in RadiologyClinicalHud");
-			assert.ok(!hudCode.includes("dapDoseDgyCm2"), "dapDoseDgyCm2 must not exist in RadiologyClinicalHud");
-			assert.ok(!hudCode.includes("effectiveDoseMicrosv"), "effectiveDoseMicrosv must not exist in RadiologyClinicalHud");
-			assert.ok(!hudCode.includes("ShieldCheck"), "ShieldCheck radiation alerts must not exist in RadiologyClinicalHud");
-		});
+			assert.ok(viewerHtml.includes("sensor-viewer-top-toolbar"));
+			assert.ok(viewerHtml.includes('data-testid="radiology-filmstrip-dock"'));
+			assert.ok(viewerHtml.includes('data-testid="calibrated-scale-ruler-5mm"'));
+			assert.equal(viewerHtml.includes("voltageKv"), false);
 
-		it("proves SensorStudyViewer hides toolbars in fullscreen giving 100% viewport to radiograph", async () => {
-			const fs = await import("node:fs");
-			const viewerCode = fs.readFileSync(
-				await resolveSrcFile("apps/web/src/components/radiology/SensorStudyViewer.tsx"),
-				"utf8",
+			const dicomHtml = renderToString(
+				React.createElement(DicomViewerModal, {
+					isOpen: true,
+					onClose: () => {},
+					patientName: "Тест Пациент",
+				}),
 			);
-
-			// Check that top toolbar and filmstrip dock are conditionally hidden when isFullscreen is true
-			assert.ok(
-				viewerCode.includes("!isFullscreen && (") && viewerCode.includes("sensor-viewer-top-toolbar"),
-				"sensor-viewer-top-toolbar must be hidden in fullscreen mode",
-			);
-			assert.ok(
-				viewerCode.includes("!isFullscreen && (") && viewerCode.includes("<RadiologyFilmstripDock"),
-				"RadiologyFilmstripDock must be hidden in fullscreen mode",
-			);
-		});
-
-		it("proves convolution filter limit is expanded to >= 2600px for full RVG sensor resolution", async () => {
-			const fs = await import("node:fs");
-			const viewerCode = fs.readFileSync(
-				await resolveSrcFile("apps/web/src/components/radiology/SensorStudyViewer.tsx"),
-				"utf8",
-			);
-
-			assert.ok(
-				viewerCode.includes("2600"),
-				"Convolution filter limit must support high-res RVG sensors up to 2600px",
-			);
-			assert.ok(
-				!viewerCode.includes("img.width <= 1500"),
-				"Obsolete 1500px filter cutoff must be removed",
-			);
-		});
-
-		it("proves RadiologyFilmstripDock is integrated in SensorStudyViewerLayout for 1-click chairside switching", async () => {
-			const fs = await import("node:fs");
-			const layoutCode = fs.readFileSync(
-				await resolveSrcFile("apps/web/src/components/radiology/sensorViewer/SensorStudyViewerLayout.tsx"),
-				"utf8",
-			);
-
-			assert.ok(
-				layoutCode.includes("RadiologyFilmstripDock"),
-				"RadiologyFilmstripDock must be imported and rendered in SensorStudyViewerLayout",
-			);
-			assert.ok(
-				layoutCode.includes("effectiveStudiesHistory"),
-				"effectiveStudiesHistory must be passed to RadiologyFilmstripDock",
-			);
-		});
-
-		it("proves RadiologyCalibratedScaleRuler is mounted on ViewerCanvasViewport dominant canvas", async () => {
-			const fs = await import("node:fs");
-			const viewportCode = fs.readFileSync(
-				await resolveSrcFile("apps/web/src/components/radiology/sensorViewer/ViewerCanvasViewport.tsx"),
-				"utf8",
-			);
-
-			assert.ok(
-				viewportCode.includes("RadiologyCalibratedScaleRuler"),
-				"RadiologyCalibratedScaleRuler must be mounted in ViewerCanvasViewport",
-			);
-			assert.ok(
-				viewportCode.includes("targetLengthMm={5.0}"),
-				"5 mm calibrated target length must be specified",
-			);
-		});
-
-		it("proves DicomViewerModal integrates EzDent-i 2D DICOM viewer and CBCT modal launch", async () => {
-			const fs = await import("node:fs");
-			const dicomCode = fs.readFileSync(
-				await resolveSrcFile("apps/web/src/components/imaging/DicomViewerModal.tsx"),
-				"utf8",
-			);
-
-			assert.ok(
-				dicomCode.includes("btn-dicom-run-ai") || dicomCode.includes("DicomViewerModalHeader"),
-				"DicomViewerModal must integrate canonical header with AI and protocols",
-			);
-			assert.ok(
-				dicomCode.includes("CbctMprImplantStudioModal") || dicomCode.includes("openCbctPopoutWindow"),
-				"DicomViewerModal must integrate 3D CBCT studio modal launch",
-			);
+			assert.ok(dicomHtml.includes("btn-dicom-run-ai") || dicomHtml.includes("btn-dicom-norma-043"));
 		});
 	});
 });

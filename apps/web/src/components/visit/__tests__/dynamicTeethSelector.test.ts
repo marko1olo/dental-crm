@@ -15,9 +15,9 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { ClinicalQuickPresetsBar } from "../ClinicalQuickPresetsBar";
 
 import {
 	getDynamicPatientTeeth,
@@ -31,9 +31,6 @@ import {
 	ALL_ADULT_FDI_TEETH,
 	TOOTH_UI_STATE_LABELS,
 } from "../dynamicTeethSelector";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 describe("Dynamic Patient Teeth Selector (Red Team Mandate 8k & 8n)", () => {
 	it("1. Correctly extracts teeth with active pathologies from visitToothStateByCode", () => {
@@ -191,42 +188,29 @@ describe("Dynamic Patient Teeth Selector (Red Team Mandate 8k & 8n)", () => {
 		assert.deepStrictEqual(LOWER_JAW_FDI_TEETH.slice(8, 16), [31, 32, 33, 34, 35, 36, 37, 38]);
 	});
 
-	it("8. Eradicates COMMON_FDI_TEETH.slice(0, 8) hardcode in ClinicalQuickPresetsBar.tsx", () => {
-		const barPath = path.resolve(__dirname, "../ClinicalQuickPresetsBar.tsx");
-		const stripPath = path.resolve(__dirname, "../presets/ClinicalQuickToothSelectorStrip.tsx");
-		assert.ok(fs.existsSync(barPath), "ClinicalQuickPresetsBar.tsx must exist");
-		assert.ok(fs.existsSync(stripPath), "ClinicalQuickToothSelectorStrip.tsx must exist");
-
-		const content = fs.readFileSync(barPath, "utf-8");
-		const stripContent = fs.readFileSync(stripPath, "utf-8");
-
-		// The legacy hardcoded array slice MUST be completely eradicated
-		assert.strictEqual(
-			content.includes("COMMON_FDI_TEETH.slice(0, 8)"),
-			false,
-			"COMMON_FDI_TEETH.slice(0, 8) must NOT exist in ClinicalQuickPresetsBar.tsx",
+	it("8. ClinicalQuickPresetsBar renders dynamic teeth/quadrants strip without COMMON_FDI_TEETH.slice(0, 8)", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(ClinicalQuickPresetsBar, {
+				onSelectPreset: () => {},
+				activeTooth: 16,
+				defaultCollapsed: false,
+			}),
 		);
 
-		// Must use dynamic teeth data
 		assert.ok(
-			content.includes("getDynamicPatientTeeth"),
-			"Must call getDynamicPatientTeeth()",
-		);
-		assert.ok(
-			stripContent.includes("INTACT_QUADRANTS"),
-			"Must reference INTACT_QUADRANTS",
-		);
-		assert.ok(
-			stripContent.includes("UPPER_JAW_FDI_TEETH"),
-			"Must reference UPPER_JAW_FDI_TEETH for anatomical dropdown",
-		);
-		assert.ok(
-			stripContent.includes("LOWER_JAW_FDI_TEETH"),
-			"Must reference LOWER_JAW_FDI_TEETH for anatomical dropdown",
-		);
-		assert.ok(
-			stripContent.includes('data-testid="clinical-quick-active-tooth-bar"'),
+			html.includes('data-testid="clinical-quick-active-tooth-bar"'),
 			"Must render data-testid clinical-quick-active-tooth-bar",
 		);
+		assert.ok(
+			html.includes('data-testid="btn-select-quadrant-Q1"'),
+			"Must render intact quadrant selector chips from INTACT_QUADRANTS",
+		);
+		assert.ok(
+			html.includes('data-testid="select-active-tooth-fdi"'),
+			"Must render full UPPER_JAW_FDI_TEETH / LOWER_JAW_FDI_TEETH selector",
+		);
+		for (const tooth of [18, 17, 16, 28, 38, 48]) {
+			assert.ok(html.includes(`Зуб ${tooth}`), `Anatomical selector must include tooth ${tooth}`);
+		}
 	});
 });

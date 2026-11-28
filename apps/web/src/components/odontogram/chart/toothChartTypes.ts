@@ -94,6 +94,7 @@ export {
 	createDefaultAdultTeethData,
 	PEDIATRIC_MOLARS,
 	scaleCssPx,
+	isLowSpecFilterDisabled,
 	MIN_ARCH_SCALE,
 	getFurcationMarkerSvg,
 	getGingivalRecessionPath,

@@ -1,8 +1,5 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import {
 	calculateZtlWageFinancials,
@@ -38,14 +35,18 @@ describe("dentalLabZeroMock — Engine & 5-Stage Canonical Lifecycle", () => {
 		assert.equal(canTransitionLabOrderStatus("ready", "completed"), true);
 	});
 
-	it("в кодовой базе engine отсутствует Math.random()", () => {
-		const currentFile = fileURLToPath(import.meta.url);
-		const enginePath = path.resolve(path.dirname(currentFile), "../dentalLabOrderEngine.ts");
-		const engineContent = fs.readFileSync(enginePath, "utf-8");
-		const codeLines = engineContent
-			.split("\n")
-			.filter((line) => !line.trim().startsWith("*") && !line.trim().startsWith("//"));
-		assert.equal(codeLines.some((l) => l.includes("Math.random()")), false);
+	it("расчёты engine полностью детерминированы при повторных вызовах (без случайных отклонений)", () => {
+		const input = {
+			unitsCount: 3,
+			patientPriceKopecks: 7500000,
+			ztlCostKopecks: 2100000,
+			doctorSharePercent: 30,
+		};
+		const first = calculateZtlWageFinancials(input);
+		const second = calculateZtlWageFinancials(input);
+		assert.deepEqual(first, second);
+		assert.equal(first.doctorWageKopecks, 4860000);
+		assert.equal(mapTo5StageLabStatus("fitting_scheduled"), mapTo5StageLabStatus("fitting_scheduled"));
 	});
 
 	it("CANONICAL_5_CLINICAL_LAB_STATUSES содержит все 5 канонических этапов", () => {

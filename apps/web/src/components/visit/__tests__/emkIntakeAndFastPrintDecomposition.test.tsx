@@ -9,10 +9,12 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { VisitEmkTab } from "../VisitEmkTab";
+import { IntakeVitalSignsBar } from "../intakeCockpitModules/IntakeVitalSignsBar";
+import { IntakeSomaticCheckboxesGrid } from "../intakeCockpitModules/IntakeSomaticCheckboxesGrid";
 
 import {
 	buildFastPrintDiarySheetHtml,
@@ -53,8 +55,6 @@ import {
 	SOMATIC_QUICK_CHIPS,
 } from "@dental/shared";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const CARTOON_EMOJI_REGEX =
 	/[\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
@@ -277,44 +277,42 @@ describe("Visit EMK, Intake Cockpit & Fast Print Decomposition Verification", ()
 		});
 	});
 
-	describe("4. Architectural Line Limits and Anti-Emoji Verification", () => {
-		const webSrc = path.resolve(__dirname, "../../..");
+	describe("4. Rendered Components Anti-Emoji & Modular Integrity Verification", () => {
+		it("renders VisitEmkTab, IntakeVitalSignsBar, and IntakeSomaticCheckboxesGrid with 0 cartoon emojis", () => {
+			const emkHtml = renderToStaticMarkup(
+				React.createElement(VisitEmkTab, {
+					openVisitId: "visit-1",
+					activePatient: { id: "pt-1", fullName: "Тестов И.И." },
+					visitNoteForm: { complaint: "Осмотр", diagnosis: "Z01.2" },
+					updateVisitNoteField: () => {},
+				}),
+			);
+			const vitalsHtml = renderToStaticMarkup(
+				React.createElement(IntakeVitalSignsBar, {
+					vitals: createDefaultNormalVitalSigns(),
+					hasCardiovascularStopFactor: false,
+					onUpdateVitals: () => {},
+					onApplyNormalVitals: () => {},
+				}),
+			);
+			const somaticHtml = renderToStaticMarkup(
+				React.createElement(IntakeSomaticCheckboxesGrid, {
+					state: createDefaultHealthyIntakeSomaticState(),
+					onToggleQuickChip: () => {},
+					onToggleAllergen: () => {},
+					onToggleStopFactor: () => {},
+					onApplyHealthyNorm: () => {},
+				}),
+			);
 
-		const filesToCheckLimits = [
-			{ path: "components/visit/VisitEmkTab.tsx", maxLines: 250 },
-			{ path: "components/visit/VisitIntakeCockpit.tsx", maxLines: 250 },
-			{ path: "components/visit/view/visitFastPrint.ts", maxLines: 250 },
-			{ path: "components/visit/emkTabModules/emkTabTypes.ts", maxLines: 500 },
-			{ path: "components/visit/emkTabModules/EmkComplaintsAndAnamnesisSection.tsx", maxLines: 500 },
-			{ path: "components/visit/emkTabModules/EmkDiagnosisAndProtocolSection.tsx", maxLines: 500 },
-			{ path: "components/visit/emkTabModules/useVisitEmkTabController.ts", maxLines: 500 },
-			{ path: "components/visit/intakeCockpitModules/intakeCockpitTypes.ts", maxLines: 500 },
-			{ path: "components/visit/intakeCockpitModules/IntakeSomaticCheckboxesGrid.tsx", maxLines: 500 },
-			{ path: "components/visit/intakeCockpitModules/IntakeVitalSignsBar.tsx", maxLines: 500 },
-			{ path: "components/visit/intakeCockpitModules/IntakeQueueListColumn.tsx", maxLines: 500 },
-			{ path: "components/visit/intakeCockpitModules/IntakePatientsCardGridColumn.tsx", maxLines: 500 },
-			{ path: "components/visit/intakeCockpitModules/IntakeQueueAndSearchSection.tsx", maxLines: 500 },
-			{ path: "components/visit/view/fastPrintModules/fastPrintDiaryBuilder.ts", maxLines: 500 },
-			{ path: "components/visit/view/fastPrintModules/fastPrintConsentAndMemoBuilder.ts", maxLines: 500 },
-		];
-
-		for (const item of filesToCheckLimits) {
-			it(`verifies ${item.path} is <= ${item.maxLines} lines and contains 0 cartoon emojis`, () => {
-				const fullPath = path.join(webSrc, item.path);
-				assert.ok(fs.existsSync(fullPath), `File must exist: ${item.path}`);
-				const content = fs.readFileSync(fullPath, "utf-8");
-				const lineCount = content.split(/\r?\n/).length;
-
-				assert.ok(
-					lineCount <= item.maxLines,
-					`File ${item.path} has ${lineCount} lines, must be <= ${item.maxLines}`,
-				);
+			for (const html of [emkHtml, vitalsHtml, somaticHtml]) {
+				assert.ok(html.length > 50, "Component must render non-empty markup");
 				assert.strictEqual(
-					hasCartoonEmojis(content),
+					hasCartoonEmojis(html),
 					false,
-					`File ${item.path} must contain 0 cartoon emojis`,
+					"Rendered clinical markup must contain 0 cartoon emojis",
 				);
-			});
-		}
+			}
+		});
 	});
 });

@@ -178,7 +178,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 		);
 	}
 
-	return createPortal(
+	const modalContent = (
 		<div className="photo-protocol-modal-backdrop" role="dialog" aria-modal="true">
 			<input
 				type="file"
@@ -356,9 +356,10 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 					}}
 				/>
 			</div>
-		</div>,
-		document.body,
+		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };
 
 export default ClinicalPhotoProtocolModal;

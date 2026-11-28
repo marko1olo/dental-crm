@@ -1,18 +1,16 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { createBactericidalEquipmentDtoSchema } from "@dental/shared";
 import {
-	createBactericidalEquipmentDtoSchema,
-} from "@dental/shared";
-import {
+	BactericidalRegisterTab,
 	CANONICAL_BACTERICIDAL_EQUIPMENT_PRESET,
 	provisionCanonicalBactericidalEquipment,
 } from "../BactericidalRegisterTab";
+import { CleaningControlTab } from "../CleaningControlTab";
 
-import { fileURLToPath } from "node:url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REAL_HTML_DISABLED_BTN_REGEX = /<button[^>]*\sdisabled(?:=["'][^"']*["'])?(?=[\s>])/i;
 
 describe("SanPiN Bactericidal & Sterilizer Zero-Setup Provisioning (Mandates 8e, 8k, 8n)", () => {
 	describe("1. Canonical Bactericidal Recirculator Preset", () => {
@@ -24,7 +22,6 @@ describe("SanPiN Bactericidal & Sterilizer Zero-Setup Provisioning (Mandates 8e,
 			assert.equal(CANONICAL_BACTERICIDAL_EQUIPMENT_PRESET.maxLampHours, 8000);
 			assert.equal(CANONICAL_BACTERICIDAL_EQUIPMENT_PRESET.lampCount, 3);
 
-			// Validate with DTO schema
 			const validatedDezar = createBactericidalEquipmentDtoSchema.parse(CANONICAL_BACTERICIDAL_EQUIPMENT_PRESET);
 			assert.equal(validatedDezar.deviceType, "recirculator_closed");
 			assert.equal(validatedDezar.roomVolumeM3, 45.0);
@@ -34,15 +31,17 @@ describe("SanPiN Bactericidal & Sterilizer Zero-Setup Provisioning (Mandates 8e,
 
 	describe("2. Provisioning Helpers (Autonomous Zero-Setup Execution)", () => {
 		it("provisionCanonicalBactericidalEquipment executes POST request for canonical recirculator", async () => {
-			const postCalls: Array<{ url: string; body: any }> = [];
-			const mockFetch: typeof fetch = async (input: any, init?: any) => {
-				const url = typeof input === "string" ? input : input.url;
-				const body = init?.body ? JSON.parse(init.body as string) : null;
+			const postCalls: Array<{ url: string; body: Record<string, unknown> }> = [];
+			const mockFetch: typeof fetch = async (input, init) => {
+				const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+				const parsed: unknown = init?.body ? JSON.parse(String(init.body)) : {};
+				const body: Record<string, unknown> = {};
+				if (typeof parsed === "object" && parsed !== null) {
+					for (const [k, v] of Object.entries(parsed)) body[k] = v;
+				}
 				postCalls.push({ url, body });
-				return {
-					ok: true,
-					status: 201,
-					json: async () => ({
+				return new Response(
+					JSON.stringify({
 						id: "mock-bac-1",
 						...body,
 						remainingLampHours: 8000,
@@ -50,7 +49,8 @@ describe("SanPiN Bactericidal & Sterilizer Zero-Setup Provisioning (Mandates 8e,
 						createdAt: new Date().toISOString(),
 						updatedAt: new Date().toISOString(),
 					}),
-				} as Response;
+					{ status: 201, headers: { "Content-Type": "application/json" } },
+				);
 			};
 
 			const result = await provisionCanonicalBactericidalEquipment({
@@ -60,47 +60,23 @@ describe("SanPiN Bactericidal & Sterilizer Zero-Setup Provisioning (Mandates 8e,
 			assert.ok(result);
 			assert.equal(result.id, "mock-bac-1");
 			assert.equal(postCalls.length, 1);
-			assert.equal(postCalls[0]!.url, "/api/registers/bactericidal/equipments");
-			assert.ok(postCalls[0]!.body.deviceBrand.includes("Дезар-4"));
+			assert.equal(postCalls[0]?.url, "/api/registers/bactericidal/equipments");
+			assert.ok(String(postCalls[0]?.body.deviceBrand ?? "").includes("Дезар-4"));
 		});
 	});
 
-	describe("3. Static Invariants & Mandate 8e Zero-Roadblock Verification", () => {
-		const bacFilePath = path.resolve(
-			__dirname,
-			"../BactericidalRegisterTab.tsx",
-		);
-		const psoFilePath = fs.existsSync(path.resolve(__dirname, "../CleaningControlTab.tsx"))
-			? path.resolve(__dirname, "../CleaningControlTab.tsx")
-			: path.resolve(__dirname, "../PsoRegisterTab.tsx");
-
-		it("BactericidalRegisterTab has zero equipment disabled locks", () => {
-			const bacContent = fs.readFileSync(bacFilePath, "utf8");
-
-			assert.equal(
-				bacContent.includes("disabled={equipments.length === 0}"),
-				false,
-				"Bactericidal tab must not contain disabled={equipments.length === 0}",
-			);
-			assert.equal(
-				bacContent.includes("disabled={submitting || equipments.length === 0}"),
-				false,
-				"Bactericidal tab must not contain disabled={submitting || equipments.length === 0}",
-			);
+	describe("3. Rendered UI Zero-Roadblock Verification (Mandate 8e & P2-1.2)", () => {
+		it("BactericidalRegisterTab renders with zero disabled button locks", () => {
+			const html = renderToStaticMarkup(React.createElement(BactericidalRegisterTab));
+			assert.ok(html.length > 0);
+			assert.equal(REAL_HTML_DISABLED_BTN_REGEX.test(html), false);
 		});
 
-		it("PsoRegisterTab has zero disabled buttons and instant 1-click batch CTA", () => {
-			const psoContent = fs.readFileSync(psoFilePath, "utf8");
-
-			assert.equal(
-				psoContent.includes("disabled={true}"),
-				false,
-				"PsoRegisterTab must not contain permanent disabled buttons",
-			);
-			assert.ok(
-				psoContent.includes("pso-quick-mark-shift-btn"),
-				"PsoRegisterTab must contain 1-click batch mark CTA",
-			);
+		it("CleaningControlTab renders pso-quick-mark-shift-btn without disabled buttons or inline style tag", () => {
+			const html = renderToStaticMarkup(React.createElement(CleaningControlTab));
+			assert.ok(html.includes("pso-quick-mark-shift-btn"));
+			assert.equal(REAL_HTML_DISABLED_BTN_REGEX.test(html), false);
+			assert.equal(html.includes("<style>"), false);
 		});
 	});
 });

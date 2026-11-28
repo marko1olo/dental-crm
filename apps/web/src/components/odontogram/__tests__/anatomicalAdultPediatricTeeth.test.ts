@@ -21,7 +21,7 @@ import {
 	PEDIATRIC_UPPER_MOLAR_GEOMETRY,
 	PEDIATRIC_LOWER_MOLAR_GEOMETRY,
 } from "../anatomicalPediatricGeometries";
-import { BOTTOM_TEETH, TOP_TEETH } from "../AnatomicalToothColors";
+import { BOTTOM_TEETH, TOP_TEETH } from "@dental/shared";
 import { AnatomicalTooth } from "../gate0/AnatomicalTooth";
 
 describe("Anatomical Adult & Pediatric Teeth Morphology Suite (Wheeler 2.5D SSOT)", () => {

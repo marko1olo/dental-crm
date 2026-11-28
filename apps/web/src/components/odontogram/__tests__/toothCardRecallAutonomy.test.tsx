@@ -22,10 +22,7 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import { renderToString } from "react-dom/server";
 
 import {
@@ -33,9 +30,6 @@ import {
 	getSuggestedRecallForToothState,
 } from "../../diagnostics/ToothContextDrawer";
 import type { ToothData } from "../ToothChart";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 interface MockDomNode {
 	nodeType: number;
@@ -569,15 +563,24 @@ describe("WAVE 107: 1-Click Treatment Recall Scheduling from ToothCardModal", ()
 	});
 
 	describe("4. 7 Deadly Sins & Mandate 8d Compliance", () => {
-		it("guarantees 0 cartoon emojis in ToothContextDrawer.tsx (Mandate 8d & Apple HIG)", () => {
-			const modalPath = path.resolve(__dirname, "../../diagnostics/ToothContextDrawer.tsx");
-			const content = fs.readFileSync(modalPath, "utf-8");
+		it("guarantees 0 cartoon emojis in rendered ToothContextDrawer across clinical states (Mandate 8d & Apple HIG)", () => {
 			const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-			assert.strictEqual(
-				emojiRegex.test(content),
-				false,
-				"ToothContextDrawer.tsx must contain 0 cartoon emojis",
-			);
+			const states: ToothData["state"][] = ["Healthy", "Caries", "Periodontitis", "Implant"];
+			for (const state of states) {
+				const html = renderToString(
+					<ToothCardModal
+						isOpen={true}
+						onClose={() => {}}
+						toothNumber={26}
+						toothData={{ toothNumber: 26, state }}
+					/>,
+				);
+				assert.strictEqual(
+					emojiRegex.test(html.replace(/[✓✕]/g, "")),
+					false,
+					`Rendered ToothContextDrawer (${state}) must contain 0 cartoon emojis`,
+				);
+			}
 		});
 	});
 });

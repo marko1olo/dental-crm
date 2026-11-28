@@ -14,6 +14,10 @@ export function resolveStudyPreviewEndpoint(
 			? rawPreviewUrl
 			: `/api/imaging/studies/${selectedImagingStudy.id}/preview.svg`;
 
+	if (previewEndpoint.startsWith("/api/")) {
+		return { endpoint: previewEndpoint, isStatic: false };
+	}
+
 	const isStatic =
 		!previewEndpoint.startsWith("/api/") ||
 		previewEndpoint.startsWith("/radiology/") ||

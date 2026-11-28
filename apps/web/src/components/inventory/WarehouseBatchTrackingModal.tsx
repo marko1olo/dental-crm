@@ -40,7 +40,7 @@ export const WarehouseBatchTrackingModal: React.FC<
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[1100] flex items-center justify-center backdrop-blur-xs p-3 sm:p-5 overflow-y-auto"
+			className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-xs p-3 sm:p-5 overflow-y-auto"
 			style={{ backgroundColor: "rgba(15, 23, 42, 0.65)" }}
 			data-testid="warehouse-batch-tracking-modal"
 			role="dialog"
@@ -82,7 +82,7 @@ export const WarehouseBatchTrackingModal: React.FC<
 				</div>
 				<footer className="px-5 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between text-xs text-[var(--muted)] shrink-0">
 					<div className="flex items-center gap-2">
-						<ShieldAlert size={14} className="text-teal-600 shrink-0" />
+						<ShieldAlert size={14} className="text-[var(--primary)] shrink-0" />
 						<span>
 							Правило FEFO: при отпуске материалов в процедурный кабинет система
 							предлагает партию с ближайшим сроком.

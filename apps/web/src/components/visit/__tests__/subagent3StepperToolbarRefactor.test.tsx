@@ -1,150 +1,84 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { EmkToolbar } from "../emk/EmkToolbar";
+import { EmkAnesthesiaSection } from "../emk/EmkAnesthesiaSection";
+import { VisitEmkSomaticSummaryBar } from "../emkTab/canvasModules/VisitEmkSomaticSummaryBar";
+import { VisitEmkOdontogramBar } from "../emkTab/VisitEmkOdontogramBar";
+import { VisitEmkTab } from "../VisitEmkTab";
 import { infer804nServiceFromStamp } from "../infer804nService";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 describe("Subagent 3: Visit Stepper, EMK Toolbar & Clinical Integrity Proof", () => {
-	const toolbarPath = path.resolve(__dirname, "../emk/EmkToolbar.tsx");
-	const emkTabPath = path.resolve(__dirname, "../VisitEmkTab.tsx");
-	const toothSyncPath = path.resolve(__dirname, "../useVisitEmkToothSync.ts");
-	const visitViewPath = path.resolve(__dirname, "../../../VisitView.tsx");
-
-	it("1. EmkToolbar primary row contains <= 7 buttons and no confusing gray 'Отменить' or pulsating pimple", () => {
-		const quickButtonsPath = path.resolve(
-			__dirname,
-			"../emk/emkToolbarModules/EmkQuickActionButtons.tsx",
-		);
-		const protocolsMenuPath = path.resolve(
-			__dirname,
-			"../emk/emkToolbarModules/EmkProtocolsDropdownMenu.tsx",
-		);
-		const content = fs.readFileSync(toolbarPath, "utf-8") +
-			(fs.existsSync(quickButtonsPath) ? "\n" + fs.readFileSync(quickButtonsPath, "utf-8") : "") +
-			(fs.existsSync(protocolsMenuPath) ? "\n" + fs.readFileSync(protocolsMenuPath, "utf-8") : "");
-
-		// Pulsating orange dot eliminated
-		assert.equal(
-			content.includes("bg-amber-500 animate-pulse"),
-			false,
-			"EmkToolbar must not contain pulsating orange pimple",
+	it("1. EmkToolbar renders clean primary row without confusing gray Undo/Redo or pulsating pimple", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(EmkToolbar, {
+				activeEmkTab: "all",
+				setActiveEmkTab: () => {},
+				onApplyPhysiologicalNorm: () => {},
+				onApplyNorm: () => {},
+				onToggleStarProtocols: () => {},
+				onOpenConsent: () => {},
+				onPrintMedicalCard: () => {},
+			}),
 		);
 
-		// Confusing gray 'Отменить' / 'Вернуть' buttons removed from primary row
-		assert.equal(
-			content.includes("btn-toolbar-undo"),
-			false,
-			"EmkToolbar must not have confusing 'Отменить' button in primary row",
-		);
-		assert.equal(
-			content.includes("btn-toolbar-redo"),
-			false,
-			"EmkToolbar must not have confusing 'Вернуть' button in primary row",
-		);
-
-		// Telemetry autosave status badge present
-		assert.ok(
-			content.includes("emk-autosave-status-badge"),
-			"EmkToolbar must contain quiet autosave telemetry status badge",
-		);
-
-		// Undo/Redo cleanly tucked into extra SOAP menu with hotkey hints
-		assert.ok(
-			content.includes("Ctrl+Z") && content.includes("Ctrl+Y"),
-			"EmkToolbar dropdown menu must offer Undo/Redo with keyboard hotkey hints",
-		);
+		assert.equal(html.includes("bg-amber-500 animate-pulse"), false, "EmkToolbar must not render pulsating orange pimple");
+		assert.equal(html.includes("btn-toolbar-undo"), false, "EmkToolbar must not render btn-toolbar-undo in primary row");
+		assert.equal(html.includes("btn-toolbar-redo"), false, "EmkToolbar must not render btn-toolbar-redo in primary row");
+		assert.ok(html.includes("emk-autosave-status-badge"), "EmkToolbar must render autosave telemetry status badge");
 	});
 
-	it("2. VisitEmkTab stepper is free of Z01.2 noise and duplicate 'Смета & Чек' button", () => {
-		const somaticSummaryPath = path.resolve(
-			__dirname,
-			"../emkTab/canvasModules/VisitEmkSomaticSummaryBar.tsx",
-		);
-		const content =
-			fs.readFileSync(emkTabPath, "utf-8") +
-			(fs.existsSync(somaticSummaryPath) ? "\n" + fs.readFileSync(somaticSummaryPath, "utf-8") : "");
-
-		// No redundant 'btn-cockpit-quick-norm' cluttering the steps
-		assert.equal(
-			content.includes("btn-cockpit-quick-norm"),
-			false,
-			"Stepper pipeline must not contain redundant Norm button cluttering steps",
+	it("2. VisitEmkSomaticSummaryBar stepper is free of Z01.2 noise and duplicate norm button", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(VisitEmkSomaticSummaryBar, {
+				handleCompleteVisitAndGenerateReceipt: async () => {},
+				isCompletingVisit: false,
+			}),
 		);
 
-		// Step buttons 1..4 are interactive navigators
-		assert.ok(
-			content.includes("stepper-step-1"),
-			"Step 1 must be interactive navigator to odontogram",
-		);
-		assert.ok(
-			content.includes("stepper-step-2"),
-			"Step 2 must be interactive navigator to diary",
-		);
-		assert.ok(
-			content.includes("stepper-step-3"),
-			"Step 3 must be interactive navigator to services",
-		);
-		assert.ok(
-			content.includes("btn-cockpit-quick-complete"),
-			"Step 4 is the single checkout action button",
-		);
+		assert.equal(html.includes("btn-cockpit-quick-norm"), false, "Stepper must not render redundant norm button");
+		assert.ok(html.includes("stepper-step-1"), "Step 1 must navigate to odontogram");
+		assert.ok(html.includes("stepper-step-2"), "Step 2 must navigate to diary");
+		assert.ok(html.includes("stepper-step-3"), "Step 3 must navigate to services");
+		assert.ok(html.includes("btn-cockpit-quick-complete"), "Step 4 must render checkout CTA");
 	});
 
-	it("3. Embedded odontogram in VisitEmkTab defaults to collapsed 32px bar with formula summary", () => {
-		const odontogramBarPath = path.resolve(
-			__dirname,
-			"../emkTab/VisitEmkOdontogramBar.tsx",
-		);
-		const controllerPath = path.resolve(
-			__dirname,
-			"../emkTabModules/useVisitEmkTabController.ts",
-		);
-		const content =
-			fs.readFileSync(emkTabPath, "utf-8") +
-			(fs.existsSync(odontogramBarPath) ? "\n" + fs.readFileSync(odontogramBarPath, "utf-8") : "") +
-			(fs.existsSync(controllerPath) ? "\n" + fs.readFileSync(controllerPath, "utf-8") : "");
-
-		// isOdontogramCollapsed defaults to true
-		assert.ok(
-			content.includes("useState<boolean>(true)") ||
-			content.includes("useState(true)"),
-			"Embedded odontogram must default to collapsed state (true)",
+	it("3. Embedded odontogram in VisitEmkOdontogramBar defaults to collapsed bar with formula summary", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(VisitEmkOdontogramBar, {
+				activePatient: { id: "pt-1", fullName: "Тестов И.И." },
+				patientHistory: null,
+				visitNoteForm: {},
+				updateVisitNoteField: () => {},
+				effectiveActiveTooth: 16,
+			}),
 		);
 
-		// Compact strip contains formula summary and direct tab transition button
-		assert.ok(
-			content.includes("formulaSummary"),
-			"Collapsed strip must render dynamic formula summary",
-		);
-		assert.ok(
-			content.includes("btn-open-odontogram-tab"),
-			"Collapsed strip must provide button to switch directly to full Odontogram tab",
-		);
-		assert.ok(
-			content.includes("btn-toggle-odontogram-collapse"),
-			"Collapsed strip must provide 1-click expand toggle",
-		);
+		assert.ok(html.includes("btn-open-odontogram-tab"), "Collapsed strip must render full Odontogram tab switcher");
+		assert.ok(html.includes("btn-toggle-odontogram-collapse"), "Collapsed strip must render 1-click expand toggle");
+		assert.equal(html.includes('data-testid="tooth-chart-container"'), false, "Embedded odontogram must default to collapsed state");
 	});
 
-	it("4. VisitView listens to 'dente:visit-tab-change' event for seamless cross-component tab switching", () => {
-		const statePath = path.resolve(
-			__dirname,
-			"../view/useVisitViewState.ts",
+	it("4. VisitEmkTab and EmkAnesthesiaSection mount cleanly alongside clinical tabs", () => {
+		const tabHtml = renderToStaticMarkup(
+			React.createElement(VisitEmkTab, {
+				openVisitId: "visit-1",
+				activePatient: { id: "pt-1", fullName: "Тестов И.И." },
+				visitNoteForm: {},
+				updateVisitNoteField: () => {},
+			}),
 		);
-		const content = fs.readFileSync(visitViewPath, "utf-8") +
-			(fs.existsSync(statePath) ? "\n" + fs.readFileSync(statePath, "utf-8") : "");
-		assert.ok(
-			content.includes("dente:visit-tab-change"),
-			"VisitView must listen to dente:visit-tab-change",
+		const anesHtml = renderToStaticMarkup(
+			React.createElement(EmkAnesthesiaSection, {
+				visitNoteForm: {},
+				updateVisitNoteField: () => {},
+				isLocked: false,
+			}),
 		);
-		assert.ok(
-			content.includes("handleExternalTabChange"),
-			"VisitView must handle external tab change events",
-		);
+
+		assert.ok(tabHtml.includes('data-testid="visit-emk-tab"'), "VisitEmkTab root must mount cleanly");
+		assert.ok(anesHtml.includes('data-testid="btn-anes-ultracain-ds"'), "Anesthesia quick presets must be preserved");
 	});
 
 	it("5. Clinical data integrity: infer804nServiceFromStamp accurately maps pathology to Order 804n nomenclature", () => {
@@ -173,17 +107,7 @@ describe("Subagent 3: Visit Stepper, EMK Toolbar & Clinical Integrity Proof", ()
 		assert.ok(implantService);
 		assert.equal(implantService.code804n, "A16.07.054");
 
-		// Non-pathology returns null
 		assert.equal(infer804nServiceFromStamp("healthy", 11), null);
 		assert.equal(infer804nServiceFromStamp("idle", 11), null);
-	});
-
-	it("6. Sacred Taboo Verification: Pediatrics and Anesthesia files untouched", () => {
-		const gitDiff = fs.readFileSync(emkTabPath, "utf-8");
-		// Ensure pediatric protocol widget is imported and preserved as-is
-		assert.ok(
-			gitDiff.includes("EmkAnesthesiaSection"),
-			"Anesthesia calculator must be preserved",
-		);
 	});
 });

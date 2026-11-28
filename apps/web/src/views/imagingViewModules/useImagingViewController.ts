@@ -47,15 +47,27 @@ export function useImagingViewController(
 	}, []);
 
 	useEffect(() => {
+		const getEventDetail = (e: Event): Record<string, unknown> | null => {
+			if (!(e instanceof CustomEvent)) return null;
+			const raw: unknown = e.detail;
+			if (typeof raw !== "object" || raw === null) return null;
+			const out: Record<string, unknown> = {};
+			for (const [k, v] of Object.entries(raw)) out[k] = v;
+			return out;
+		};
 		const handleOpen = (e: Event) => {
-			const detail = (e as CustomEvent<{ modalId: string }>).detail;
-			if (detail?.modalId === "cbct_mpr_workspace" || detail?.modalId === "cbct_implant_studio") openPopoutStudio();
-			else if (detail?.modalId === "panoramic_recon_window") handleOpenPanoramic();
-			else if (detail?.modalId === "rvg_capture") setActiveModal("rvg_capture");
+			const detail = getEventDetail(e);
+			const modalId = typeof detail?.modalId === "string" ? detail.modalId : null;
+			if (modalId === "cbct_mpr_workspace" || modalId === "cbct_implant_studio") openPopoutStudio();
+			else if (modalId === "panoramic_recon_window") handleOpenPanoramic();
+			else if (modalId === "rvg_capture") setActiveModal("rvg_capture");
 		};
 		const handleOpenRvg = (e: Event) => {
-			const detail = (e as CustomEvent<{ tooth?: string; toothFdiCode?: string; toothNumber?: number }>).detail;
-			const tooth = detail?.tooth || detail?.toothFdiCode || (detail?.toothNumber ? String(detail.toothNumber) : null);
+			const detail = getEventDetail(e);
+			const tooth =
+				(typeof detail?.tooth === "string" && detail.tooth) ||
+				(typeof detail?.toothFdiCode === "string" && detail.toothFdiCode) ||
+				(typeof detail?.toothNumber === "number" ? String(detail.toothNumber) : null);
 			setRvgInitialTooth(tooth && tooth !== "all" ? tooth : null);
 			setActiveModal("rvg_capture");
 		};

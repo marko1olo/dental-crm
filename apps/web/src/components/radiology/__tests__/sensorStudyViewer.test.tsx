@@ -1,40 +1,24 @@
 /**
  * sensorStudyViewer.test.tsx
- *
- * Targeted Red Team Test Suite for SensorStudyViewer:
- * 1. Filmstrip Dock timeline navigation & persistent patient history.
- * 2. 1-Click Quick Filters (Unsharp Masking, High-Boost, Invert, Emboss 45°).
- * 3. Vertical 5 mm calibrated ladder scale ruler with physical grounding to EzSensor.
- * 4. Fullscreen Clinical Cockpit HUD with patient telemetry and zero kV/mA physics clutter.
- * 5. Interactive measurements (caliper ruler, curved canal working length, lesion contour area).
- * 6. 1-Click Norma protocol injection into Form 043/u.
- *
- * Standards: EzDent-i clinical screenshots 15..29; Mandate 8b (<=800 lines); Mandate 8e (Doctor Autonomy).
+ * Runtime Behavioral Test Suite for SensorStudyViewer & Clinical Cockpit.
  */
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import React from "react";
 import { renderToString } from "react-dom/server";
 
 import {
-	EMBOSS_45_KERNEL_3X3,
-	HIGH_BOOST_KERNEL_3X3,
-	TOOTH_ANATOMICAL_NAMES,
 	UNSHARP_MASK_KERNEL_3X3,
 	apply2DSpatialConvolution,
 	calculateCurvedCanalLengthMm,
 	calculateLesionAreaGaussMm2,
 	calculatePhysicalDistanceMm,
 	calculateScaleRulerHeightPx,
-	resolveCalibratedPixelSpacing,
 } from "../dentalViewerMath.js";
 import { applyRadiologyProtocolToForm043 } from "../radiologyProtocols.js";
 import {
 	formatFilmstripDateTime,
-	getModalityBadge,
 	RadiologyFilmstripDock,
 } from "../RadiologyFilmstripDock.js";
 import {
@@ -43,25 +27,12 @@ import {
 } from "../RadiologyQuickFiltersPanel.js";
 import { RadiologyClinicalHud } from "../RadiologyClinicalHud.js";
 import { RadiologyCalibratedScaleRuler } from "../RadiologyCalibratedScaleRuler.js";
-
-const webSrcRoot = path.join(import.meta.dirname, "../../..");
-
-function readSource(relativePath: string): string {
-	return readFileSync(path.join(webSrcRoot, relativePath), "utf8");
-}
+import { SensorStudyViewer } from "../SensorStudyViewer.js";
 
 describe("EzDent-i SensorStudyViewer & Clinical Cockpit", () => {
 	describe("1. Total Purge of Physics Clutter & Clean Clinical HUD", () => {
-		it("ensures RadiologyClinicalHud has zero kV, mA, or exposure time inputs", () => {
-			const hudSrc = readSource("components/radiology/RadiologyClinicalHud.tsx");
-			assert.ok(!hudSrc.includes("exposureSec"), "exposureSec must not exist in RadiologyClinicalHud");
-			assert.ok(!hudSrc.includes("voltageKv"), "voltageKv must not exist in RadiologyClinicalHud");
-			assert.ok(!hudSrc.includes("currentMa"), "currentMa must not exist in RadiologyClinicalHud");
-			assert.ok(!hudSrc.includes("напряжение на трубке"), "напряжение must not exist in RadiologyClinicalHud");
-		});
-
-		it("renders RadiologyClinicalHud with clean patient metadata and FDI tooth", () => {
-			const html = renderToString(
+		it("renders RadiologyClinicalHud & SensorStudyViewer with zero kV, mA, or manual exposure inputs", () => {
+			const hudHtml = renderToString(
 				React.createElement(RadiologyClinicalHud, {
 					patientName: "Алексеев П.С.",
 					medicalCardNumber: "ЭМК №2026-102",
@@ -70,17 +41,23 @@ describe("EzDent-i SensorStudyViewer & Clinical Cockpit", () => {
 				}),
 			);
 
-			assert.ok(html.includes("Алексеев П.С."));
-			assert.ok(html.includes("ЭМК №2026-102"));
-			assert.ok(html.includes('data-testid="hud-tooth-fdi"'));
-			assert.ok(html.includes("16"));
-			assert.ok(html.includes("Режим (Зуб FDI)"));
-		});
+			assert.ok(hudHtml.includes("Алексеев П.С."));
+			assert.ok(hudHtml.includes("ЭМК №2026-102"));
+			assert.ok(hudHtml.includes('data-testid="hud-tooth-fdi"'));
+			assert.ok(hudHtml.includes("16"));
+			assert.ok(hudHtml.includes("Режим (Зуб FDI)"));
+			assert.equal(hudHtml.includes("напряжение на трубке"), false);
+			assert.equal(hudHtml.includes("exposureSec"), false);
 
-		it("ensures SensorStudyViewer source contains zero manual exposure controls", () => {
-			const viewerSrc = readSource("components/radiology/SensorStudyViewer.tsx");
-			assert.ok(!viewerSrc.includes('data-testid="rvg-exposure-select"'));
-			assert.ok(!viewerSrc.includes("exposureSec: number"));
+			const viewerHtml = renderToString(
+				React.createElement(SensorStudyViewer, {
+					imageUrl: "/radiology/sample_rvg_tooth16.jpg",
+					patientName: "Алексеев П.С.",
+					toothFdi: "16",
+				}),
+			);
+			assert.equal(viewerHtml.includes('data-testid="rvg-exposure-select"'), false);
+			assert.ok(viewerHtml.includes("sensor-viewer-top-toolbar"));
 		});
 	});
 
@@ -134,18 +111,9 @@ describe("EzDent-i SensorStudyViewer & Clinical Cockpit", () => {
 			assert.ok(html.includes('data-testid="quick-filter-contrast-pill"'));
 		});
 
-		it("proves 2D convolution filters preserves buffer dimensions", () => {
-			const width = 10;
-			const height = 10;
-			const pixels = new Uint8ClampedArray(width * height * 4);
-			for (let i = 0; i < pixels.length; i += 4) {
-				pixels[i] = 128;
-				pixels[i + 1] = 128;
-				pixels[i + 2] = 128;
-				pixels[i + 3] = 255;
-			}
-
-			const sharpened = apply2DSpatialConvolution(pixels, width, height, UNSHARP_MASK_KERNEL_3X3);
+		it("proves 2D convolution filters preserve buffer dimensions", () => {
+			const pixels = new Uint8ClampedArray(10 * 10 * 4).fill(128);
+			const sharpened = apply2DSpatialConvolution(pixels, 10, 10, UNSHARP_MASK_KERNEL_3X3);
 			assert.equal(sharpened.length, pixels.length);
 		});
 	});
@@ -162,15 +130,11 @@ describe("EzDent-i SensorStudyViewer & Clinical Cockpit", () => {
 			assert.ok(html.includes('data-testid="calibrated-scale-ruler-5mm"'));
 			assert.ok(html.includes("mm"));
 			assert.ok(html.includes("5"));
-		});
-
-		it("calculates exact pixel height for 5mm on EzSensor (35.0 µm)", () => {
-			const px = calculateScaleRulerHeightPx(5.0, 35.0, 1.0);
-			assert.equal(px, 142.86);
+			assert.equal(calculateScaleRulerHeightPx(5.0, 35.0, 1.0), 142.86);
 		});
 	});
 
-	describe("5. Form 043/u Protocol Integration & Measurements", () => {
+	describe("5. Clinical Protocol Integration & Measurements", () => {
 		it("verifies applyRadiologyProtocolToForm043 formats clinical statement with tooth FDI", () => {
 			let capturedStatement = "";
 			const res = applyRadiologyProtocolToForm043({
@@ -187,24 +151,16 @@ describe("EzDent-i SensorStudyViewer & Clinical Cockpit", () => {
 		});
 
 		it("verifies measurement tools: straight distance, curved canal working length, lesion contour", () => {
-			const mmPerPixel = 0.035; // Vatech EzSensor 35 µm
-			// 1. Straight distance
-			const straightMm = calculatePhysicalDistanceMm({ x: 0, y: 0 }, { x: 100, y: 0 }, mmPerPixel);
-			assert.equal(straightMm, 3.5);
-
-			// 2. Curved canal polyline (3 points: 0,0 -> 30,40 -> 30,90: segments of 50px + 50px = 100px)
-			const curvedMm = calculateCurvedCanalLengthMm(
-				[{ x: 0, y: 0 }, { x: 30, y: 40 }, { x: 30, y: 90 }],
-				mmPerPixel,
+			const mmPerPixel = 0.035;
+			assert.equal(calculatePhysicalDistanceMm({ x: 0, y: 0 }, { x: 100, y: 0 }, mmPerPixel), 3.5);
+			assert.equal(calculateCurvedCanalLengthMm([{ x: 0, y: 0 }, { x: 30, y: 40 }, { x: 30, y: 90 }], mmPerPixel), 3.5);
+			assert.equal(
+				calculateLesionAreaGaussMm2(
+					[{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
+					mmPerPixel,
+				),
+				12.25,
 			);
-			assert.equal(curvedMm, 3.5);
-
-			// 3. Lesion area Gauss Shoelace (100x100 square: 10000 px² * 0.035² = 12.25 mm²)
-			const lesionArea = calculateLesionAreaGaussMm2(
-				[{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
-				mmPerPixel,
-			);
-			assert.equal(lesionArea, 12.25);
 		});
 	});
 });

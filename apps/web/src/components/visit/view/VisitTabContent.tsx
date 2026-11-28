@@ -135,8 +135,8 @@ export function VisitTabContent({
 								className="secondary-button text-xs py-1 px-2.5 inline-flex items-center gap-1.5"
 								data-testid="btn-open-treatment-presenter-from-visit"
 							>
-								<Tablet size={13} className="text-[var(--teal)]" />
-								<span>Презентация вариантов (3-Tier)</span>
+								<Tablet size={13} className="shrink-0" />
+								<span>Презентация вариантов лечения</span>
 							</button>
 							<button
 								type="button"
@@ -144,7 +144,7 @@ export function VisitTabContent({
 								className="secondary-button text-xs py-1 px-2.5 inline-flex items-center gap-1.5"
 								data-testid="btn-plan-tab-print-estimate"
 							>
-								<Calculator size={13} className="text-[var(--teal)]" />
+								<Calculator size={13} className="shrink-0" />
 								<span>Печать сметы</span>
 							</button>
 						</div>

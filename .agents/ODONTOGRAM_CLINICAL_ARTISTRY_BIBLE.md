@@ -519,5 +519,8 @@ apps/web/src/components/odontogram/gate0/teeth/tooth{ID}/
   * Искоренение хардкода длины канала: Выжжена выдуманная цифра «21.5 мм» в `ToothRvgThumbnail.tsx` в пользу честного физиологического протокола обтурации до апекса.
   * Биллинг и пакеты услуг: Тест `toothClinicalProtocolBilling.test.tsx` переписан на канонический контракт `CANONICAL_DIAGNOSIS_BUNDLES` из `@dental/shared` с динамическим расчетом копеек без хардкода цен.
   * 4-State Visual Proof: Сняты и лично отсмотрены через `read_file` все 4 состояния в `docs/proofs/tooth_context/` (PC Light 1440x900, PC Dark 1440x900, Mobile Light 390x844, Mobile Dark 390x844, размер файлов 82–143 КБ).
+- [x] Gate 4.4 (Завершен — P2-5.3 SSOT Цветов Зубов и 6Г-Чистота Тестов):
+  * Ликвидация мёртвого дубля `AnatomicalToothColors.ts` (`git rm`) с полной консолидацией цветовых шкал, `idPrefix`-изоляции градиентов `<defs>` (`ToothColors.ts` / `toothMaterialColors.ts` / `toothPathologyColors.ts`), констант нумерации (`toothNumberConstants.ts`) и единого детектора `isLowSpecFilterDisabled()`.
+  * Перевод 4 тестовых сьютов одонтограммы (`odontogramSSOTSuite.test.tsx`, `odontogramDeepClinicalParity.test.tsx`, `toothCardRecallAutonomy.test.tsx`, `odontogram60FpsVectorMesh.test.tsx`) на честное runtime/DOM-тестирование (6Г, ноль `readFileSync`).
 - [ ] Gate 5: Интерактивный 5-поверхностный селектор клика (Click-to-Apply) прямо по полигонам SVG.
 - [ ] Gate 6: Пародонтологический контур непрерывной альвеолярной кости и мостовидные протезы.

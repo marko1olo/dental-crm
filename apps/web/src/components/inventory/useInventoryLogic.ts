@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import {
 	type InventoryItem,
 	inventoryItemFromServer,
@@ -33,7 +34,9 @@ export function useInventoryLogic(organizationId: string) {
 						if (u?.organizationId) return String(u.organizationId);
 					}
 				}
-			} catch (_) {}
+			} catch (err) {
+				clientLogger.warn("[useInventoryLogic] Failed to parse cached active staff user", err, { module: "Inventory" });
+			}
 			return "";
 		})() ||
 		"current";
@@ -121,6 +124,9 @@ export function useInventoryLogic(organizationId: string) {
 		handleQuickWriteoffVisitBundle: quickWriteoff.handleQuickWriteoffVisitBundle,
 		isWritingOffVisitBundle: quickWriteoff.isWritingOffVisitBundle,
 		getHeaders,
-		servicesList: (dashboard as Record<string, unknown> | undefined)?.prices ?? dashboard?.serviceCatalog ?? [],
+		servicesList:
+			dashboard && "prices" in dashboard && Array.isArray(dashboard.prices)
+				? dashboard.prices
+				: (dashboard?.serviceCatalog ?? []),
 	};
 }

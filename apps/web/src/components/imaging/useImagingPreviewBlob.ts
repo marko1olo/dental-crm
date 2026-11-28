@@ -34,7 +34,9 @@ export function useImagingPreviewBlob({
 
 		const rawPreviewUrl = imagingPreviewSource
 			? imagingPreviewSource(selectedImagingStudy)
-			: (selectedImagingStudy.previewUrl as string | undefined);
+			: typeof selectedImagingStudy.previewUrl === "string"
+				? selectedImagingStudy.previewUrl
+				: undefined;
 		if (
 			typeof rawPreviewUrl === "string" &&
 			(rawPreviewUrl.startsWith("blob:") || rawPreviewUrl.startsWith("data:"))
@@ -72,24 +74,33 @@ export function useImagingPreviewBlob({
 		setIsPreviewLoading(true);
 		setPreviewLoadError(false);
 
+		const abortController = new AbortController();
+
 		fetch(endpoint, {
 			method: "GET",
 			headers,
+			signal: abortController.signal,
 		})
 			.then(async (res) => {
 				if (!res.ok) throw new Error(`HTTP ${res.status}`);
 				return res.blob();
 			})
 			.then((blob) => {
-				if (isCancelled) return;
+				if (isCancelled || abortController.signal.aborted) return;
 				const url = URL.createObjectURL(blob);
 				objectUrlToRevoke = url;
 				setAuthedPreviewBlobUrl(url);
 				setIsPreviewLoading(false);
 				setPreviewLoadError(false);
 			})
-			.catch(() => {
-				if (isCancelled) return;
+			.catch((err) => {
+				if (
+					isCancelled ||
+					abortController.signal.aborted ||
+					(err instanceof DOMException && err.name === "AbortError")
+				) {
+					return;
+				}
 				setAuthedPreviewBlobUrl(null);
 				setIsPreviewLoading(false);
 				setPreviewLoadError(true);
@@ -97,6 +108,7 @@ export function useImagingPreviewBlob({
 
 		return () => {
 			isCancelled = true;
+			abortController.abort();
 			if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
 		};
 	}, [selectedImagingStudy?.id, selectedImagingStudy?.storagePath, auth, imagingPreviewSource]);

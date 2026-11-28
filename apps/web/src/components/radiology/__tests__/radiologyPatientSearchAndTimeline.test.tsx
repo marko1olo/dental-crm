@@ -1,8 +1,5 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
@@ -21,9 +18,8 @@ import {
 import { PatientRadiologyTab } from "../../patients/tabs/PatientRadiologyTab";
 import { RadiologyStudiesArchive } from "../archive/RadiologyStudiesArchive";
 import { RadiologyModule } from "../RadiologyModule";
+import { PatientsToolbarActions } from "../../patients/filterToolbar/PatientsToolbarActions";
 import type { ImagingStudy } from "@dental/shared";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe("Window #2 Red Team Inquisition: Tactical Search Matrix & Patient Timeline (EzDent-i)", () => {
 	const sampleCbctStudy: ImagingStudy = {
@@ -137,7 +133,7 @@ describe("Window #2 Red Team Inquisition: Tactical Search Matrix & Patient Timel
 		// Modal container and header
 		assert.ok(html.includes("tactile-search-modal-backdrop"), "Backdrop exists");
 		assert.ok(html.includes("data-testid=\"tactile-search-modal-dialog\""), "Dialog container exists");
-		assert.ok(html.includes("СНИМКИ ВИЗИОГРАФА ПО ДАТАМ И ВИЗИТАМ"), "Header title correct");
+		assert.ok(html.includes("Снимки визиографа по датам и визитам"), "Header title correct");
 		assert.ok(html.includes("Визиограф RVG"), "Visiography RVG badge present");
 
 		// Quick date filter tabs
@@ -372,9 +368,18 @@ describe("Window #2 Red Team Inquisition: Tactical Search Matrix & Patient Timel
 	});
 
 	it("9. PatientsView integrates Matrix Search trigger button in header actions", () => {
-		const toolbarSource = fs.readFileSync(path.resolve(__dirname, "../../patients/filterToolbar/PatientsToolbarActions.tsx"), "utf-8");
+		const html = renderToStaticMarkup(
+			React.createElement(PatientsToolbarActions, {
+				onOpenRecallsHub: () => {},
+				onOpenTactileSearch: () => {},
+				showLostPatientsOnly: false,
+				onToggleLostPatients: () => {},
+				isLoadingLost: false,
+				onOpenCreatePatient: () => {},
+			}),
+		);
 		assert.ok(
-			toolbarSource.includes("btn-patients-tactile-search"),
+			html.includes('data-testid="btn-patients-tactile-search"'),
 			"PatientsView toolbar contains 'Матрица поиска (Снимок 19)' button",
 		);
 	});

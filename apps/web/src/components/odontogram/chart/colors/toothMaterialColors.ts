@@ -1,12 +1,18 @@
 import type { RestorativeMaterialKey } from "../../anatomicalGeometriesTypes";
 import type { ToothVisualProps } from "../ToothColors";
 
-export function getFilledToothColors(material?: RestorativeMaterialKey): ToothVisualProps {
+function scopeGrad(idPrefix: string | undefined, id: string): string {
+	return idPrefix ? `url(#${idPrefix}-${id})` : `url(#${id})`;
+}
+
+export function getFilledToothColors(material?: RestorativeMaterialKey, idPrefix?: string): ToothVisualProps {
+	const rootDentin = scopeGrad(idPrefix, "dente-root-dentin");
 	if (material === "amalgam") {
+		const fillUrl = scopeGrad(idPrefix, "amalgam-metal-gradient");
 		return {
-			fill: "url(#amalgam-metal-gradient)",
-			crownFill: "url(#amalgam-metal-gradient)",
-			rootFill: "url(#dente-root-dentin)",
+			fill: fillUrl,
+			crownFill: fillUrl,
+			rootFill: rootDentin,
 			stroke: "#334155",
 			opacity: "1",
 			badgeColor: "#64748b",
@@ -15,10 +21,11 @@ export function getFilledToothColors(material?: RestorativeMaterialKey): ToothVi
 		};
 	}
 	if (material === "ceramic_emax") {
+		const fillUrl = scopeGrad(idPrefix, "ceramic-emax-gradient");
 		return {
-			fill: "url(#ceramic-emax-gradient)",
-			crownFill: "url(#ceramic-emax-gradient)",
-			rootFill: "url(#dente-root-dentin)",
+			fill: fillUrl,
+			crownFill: fillUrl,
+			rootFill: rootDentin,
 			stroke: "#0284c7",
 			opacity: "1",
 			badgeColor: "#38bdf8",
@@ -27,10 +34,11 @@ export function getFilledToothColors(material?: RestorativeMaterialKey): ToothVi
 		};
 	}
 	if (material === "gold") {
+		const fillUrl = scopeGrad(idPrefix, "gold-crown-gradient");
 		return {
-			fill: "url(#gold-crown-gradient)",
-			crownFill: "url(#gold-crown-gradient)",
-			rootFill: "url(#dente-root-dentin)",
+			fill: fillUrl,
+			crownFill: fillUrl,
+			rootFill: rootDentin,
 			stroke: "#b45309",
 			opacity: "1",
 			badgeColor: "#f59e0b",
@@ -38,10 +46,11 @@ export function getFilledToothColors(material?: RestorativeMaterialKey): ToothVi
 			badgeText: "#b45309",
 		};
 	}
+	const fillUrl = scopeGrad(idPrefix, "composite-fill-gradient");
 	return {
-		fill: "url(#composite-fill-gradient)",
-		crownFill: "url(#composite-fill-gradient)",
-		rootFill: "url(#dente-root-dentin)",
+		fill: fillUrl,
+		crownFill: fillUrl,
+		rootFill: rootDentin,
 		stroke: "#0d9488",
 		opacity: "1",
 		badgeColor: "#10b981",
@@ -50,14 +59,16 @@ export function getFilledToothColors(material?: RestorativeMaterialKey): ToothVi
 	};
 }
 
-export function getCrownToothColors(material?: RestorativeMaterialKey): ToothVisualProps {
+export function getCrownToothColors(material?: RestorativeMaterialKey, idPrefix?: string): ToothVisualProps {
+	const rootDentin = scopeGrad(idPrefix, "dente-root-dentin");
 	if (material === "gold") {
+		const fillUrl = scopeGrad(idPrefix, "gold-crown-gradient");
 		return {
-			fill: "url(#gold-crown-gradient)",
-			crownFill: "url(#gold-crown-gradient)",
-			rootFill: "url(#dente-root-dentin)",
+			fill: fillUrl,
+			crownFill: fillUrl,
+			rootFill: rootDentin,
 			stroke: "#d97706",
-			collarFill: "url(#gold-ridge-burnish)",
+			collarFill: scopeGrad(idPrefix, "gold-ridge-burnish"),
 			opacity: "1",
 			badgeColor: "#f59e0b",
 			badgeBg: "rgba(245, 158, 11, 0.15)",
@@ -65,12 +76,13 @@ export function getCrownToothColors(material?: RestorativeMaterialKey): ToothVis
 		};
 	}
 	if (material === "pfm_crown") {
+		const fillUrl = scopeGrad(idPrefix, "pfm-crown-gradient");
 		return {
-			fill: "url(#pfm-crown-gradient)",
-			crownFill: "url(#pfm-crown-gradient)",
-			rootFill: "url(#dente-root-dentin)",
+			fill: fillUrl,
+			crownFill: fillUrl,
+			rootFill: rootDentin,
 			stroke: "#3b82f6",
-			collarFill: "url(#pfm-metal-collar)",
+			collarFill: scopeGrad(idPrefix, "pfm-metal-collar"),
 			opacity: "1",
 			badgeColor: "#2563eb",
 			badgeBg: "rgba(37, 99, 235, 0.15)",
@@ -78,12 +90,13 @@ export function getCrownToothColors(material?: RestorativeMaterialKey): ToothVis
 		};
 	}
 	if (material === "ceramic_emax") {
+		const fillUrl = scopeGrad(idPrefix, "ceramic-emax-gradient");
 		return {
-			fill: "url(#ceramic-emax-gradient)",
-			crownFill: "url(#ceramic-emax-gradient)",
-			rootFill: "url(#dente-root-dentin)",
+			fill: fillUrl,
+			crownFill: fillUrl,
+			rootFill: rootDentin,
 			stroke: "#38bdf8",
-			collarFill: "url(#ceramic-emax-gradient)",
+			collarFill: fillUrl,
 			opacity: "1",
 			badgeColor: "#38bdf8",
 			badgeBg: "rgba(56, 189, 248, 0.15)",
@@ -91,24 +104,26 @@ export function getCrownToothColors(material?: RestorativeMaterialKey): ToothVis
 		};
 	}
 	if (material === "zirconia") {
+		const fillUrl = scopeGrad(idPrefix, "zirconia-crown-gradient");
 		return {
-			fill: "url(#zirconia-crown-gradient)",
-			crownFill: "url(#zirconia-crown-gradient)",
-			rootFill: "url(#dente-root-dentin)",
+			fill: fillUrl,
+			crownFill: fillUrl,
+			rootFill: rootDentin,
 			stroke: "#10b981",
-			collarFill: "url(#dente-cervical-collar)",
+			collarFill: scopeGrad(idPrefix, "dente-cervical-collar"),
 			opacity: "1",
 			badgeColor: "#10b981",
 			badgeBg: "rgba(16, 185, 129, 0.15)",
 			badgeText: "#059669",
 		};
 	}
+	const fillUrl = scopeGrad(idPrefix, "gold-crown-gradient");
 	return {
-		fill: "url(#gold-crown-gradient)",
-		crownFill: "url(#gold-crown-gradient)",
-		rootFill: "url(#dente-root-dentin)",
+		fill: fillUrl,
+		crownFill: fillUrl,
+		rootFill: rootDentin,
 		stroke: "#d97706",
-		collarFill: "url(#gold-ridge-burnish)",
+		collarFill: scopeGrad(idPrefix, "gold-ridge-burnish"),
 		opacity: "1",
 		badgeColor: "#f59e0b",
 		badgeBg: "rgba(245, 158, 11, 0.15)",

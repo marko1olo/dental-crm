@@ -1,8 +1,12 @@
+import { generateUuidV7 } from "@dental/shared";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchAuthedApiFileObjectUrl } from "../../../lib/authedApiFile";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../../lib/denteRequestHeaders";
 import { requestFailureCause } from "../../../lib/panelStateText";
-import { readDenteClinicToken } from "../../../lib/safeLocalStorage";
 import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
 import { compressChairsidePhoto } from "../../photography/chairsidePhotoCompressor";
@@ -66,15 +70,12 @@ export function useVisitDiaryPhotoUploadState({
 			const cleanVisitId = visitId.startsWith("visit-")
 				? visitId.slice(6)
 				: visitId;
-			const clinicToken = readDenteClinicToken() || null;
 			let status: number | null = null;
 			try {
 				const res = await fetch(
 					`/api/files/visits/${cleanVisitId}/attachments`,
 					{
-						headers: {
-							...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-						},
+						headers: denteClinicalReadHeaders(),
 						...(signal ? { signal } : {}),
 					},
 				);
@@ -188,13 +189,11 @@ export function useVisitDiaryPhotoUploadState({
 				if (toothNumber !== undefined && toothNumber !== null && String(toothNumber).trim()) {
 					formData.append("toothNumber", String(toothNumber).trim());
 				}
-				const clinicToken = readDenteClinicToken() || null;
-
 				const res = await fetch(`/api/files/visits/${visitId}/attachments`, {
 					method: "POST",
-					headers: {
-						...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-					},
+					headers: denteClinicalMutationHeaders({
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: formData,
 				});
 				const rawBody = await res.text();

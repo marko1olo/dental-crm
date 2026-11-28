@@ -1,23 +1,34 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { Truck, Printer, X, CheckSquare, Loader2 } from "lucide-react";
+import { escapeHtml } from "@dental/shared";
 import type { LabOrdersTableProps } from "./types";
 import { LabOrdersTableHeader } from "./LabOrdersTableHeader";
 import { LabOrdersTableRow } from "./LabOrdersTableRow";
 import type { DentalLabOrderData } from "../labMath";
 
-function generateBatchRegistryPrintHtml(orders: readonly DentalLabOrderData[]): string {
-	const rows = orders.map((o, idx) => `
+export function generateBatchRegistryPrintHtml(orders: readonly DentalLabOrderData[]): string {
+	const rows = orders.map((o, idx) => {
+		const orderCode = escapeHtml(o.orderNumber || o.id || "—");
+		const patientName = escapeHtml(o.patientName || "—");
+		const doctorName = escapeHtml(o.doctorName || "—");
+		const toothText = o.toothFdi ? `№ ${escapeHtml(o.toothFdi)}` : "—";
+		const construction = escapeHtml(o.constructionType || "—");
+		const materialText = o.material ? ` (${escapeHtml(o.material)})` : "";
+		const colorVita = escapeHtml(o.colorVita || "—");
+		const dueDateText = o.dueDate ? escapeHtml(new Date(o.dueDate).toLocaleDateString("ru-RU")) : "—";
+		return `
 		<tr>
 			<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;">${idx + 1}</td>
-			<td style="border:1px solid #cbd5e1;padding:6px;font-weight:bold;">${o.orderNumber || o.id}</td>
-			<td style="border:1px solid #cbd5e1;padding:6px;">${o.patientName || "—"}</td>
-			<td style="border:1px solid #cbd5e1;padding:6px;">${o.doctorName || "—"}</td>
-			<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;">${o.toothFdi ? `№ ${o.toothFdi}` : "—"}</td>
-			<td style="border:1px solid #cbd5e1;padding:6px;">${o.constructionType || "—"} ${o.material ? `(${o.material})` : ""}</td>
-			<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;">${o.colorVita || "—"}</td>
-			<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;">${o.dueDate ? new Date(o.dueDate).toLocaleDateString("ru-RU") : "—"}</td>
+			<td style="border:1px solid #cbd5e1;padding:6px;font-weight:bold;">${orderCode}</td>
+			<td style="border:1px solid #cbd5e1;padding:6px;">${patientName}</td>
+			<td style="border:1px solid #cbd5e1;padding:6px;">${doctorName}</td>
+			<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;">${toothText}</td>
+			<td style="border:1px solid #cbd5e1;padding:6px;">${construction}${materialText}</td>
+			<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;">${colorVita}</td>
+			<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;">${dueDateText}</td>
 		</tr>
-	`).join("");
+	`;
+	}).join("");
 
 	return `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Реестр нарядов ЗТЛ для курьера</title>
 	<style>
@@ -56,8 +67,8 @@ function generateBatchRegistryPrintHtml(orders: readonly DentalLabOrderData[]): 
 }
 
 export function LabOrdersTable(props: LabOrdersTableProps): React.JSX.Element {
-	const { orders, onBatchStatusChange, ...rowProps } = props;
-	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+	const { orders, onBatchStatusChange, initialSelectedIds, ...rowProps } = props;
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(initialSelectedIds ?? []));
 	const [isSubmittingBatch, setIsSubmittingBatch] = useState(false);
 
 	const validOrderIds = useMemo(() => {
@@ -144,11 +155,11 @@ export function LabOrdersTable(props: LabOrdersTableProps): React.JSX.Element {
 			{/* Floating Batch Action Bar for Macro-workflow (1-Click Courier Handover) */}
 			{selectedIds.size > 0 ? (
 				<div
-					className="sticky bottom-3 z-30 mt-3 mx-auto max-w-2xl px-4 py-2.5 rounded-2xl bg-[var(--paper-strong,#1e293b)] text-white shadow-xl border border-[var(--line)] flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200"
+					className="sticky bottom-3 z-30 mt-3 mx-auto max-w-2xl px-4 py-2.5 rounded-2xl bg-[var(--paper-strong)] text-[var(--ink)] shadow-xl border border-[var(--line-strong)] flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200"
 					data-testid="lab-orders-batch-action-bar"
 				>
-					<div className="flex items-center gap-2 text-xs font-semibold">
-						<CheckSquare className="w-4 h-4 text-[var(--primary)]" />
+					<div className="flex items-center gap-2 text-xs font-semibold text-[var(--ink)]">
+						<CheckSquare className="w-4 h-4 text-[var(--primary)] shrink-0" />
 						<span>Выбрано нарядов: <strong className="text-[var(--primary)] font-mono text-sm">{selectedIds.size}</strong></span>
 					</div>
 
@@ -158,12 +169,12 @@ export function LabOrdersTable(props: LabOrdersTableProps): React.JSX.Element {
 								type="button"
 								onClick={handleBatchCourierHandover}
 								data-testid="batch-courier-handover-btn"
-								className="min-h-[36px] h-9 px-3.5 py-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-medium text-xs flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 transition-all"
+								className="min-h-[36px] h-9 px-3.5 py-1.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-medium text-xs flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 transition-all"
 							>
 								{isSubmittingBatch ? (
-									<Loader2 className="w-4 h-4 animate-spin" />
+									<Loader2 className="w-4 h-4 animate-spin shrink-0" />
 								) : (
-									<Truck className="w-4 h-4" />
+									<Truck className="w-4 h-4 shrink-0" />
 								)}
 								<span>Сдать курьеру ({selectedIds.size})</span>
 							</button>
@@ -173,9 +184,9 @@ export function LabOrdersTable(props: LabOrdersTableProps): React.JSX.Element {
 							type="button"
 							onClick={handlePrintRegistry}
 							data-testid="batch-print-registry-btn"
-							className="min-h-[36px] h-9 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-xs flex items-center gap-1.5 cursor-pointer border border-white/20 active:scale-95 transition-all"
+							className="min-h-[36px] h-9 px-3 py-1.5 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium text-xs flex items-center gap-1.5 cursor-pointer border border-[var(--line)] active:scale-95 transition-all"
 						>
-							<Printer className="w-4 h-4" />
+							<Printer className="w-4 h-4 shrink-0" />
 							<span>Печать реестра</span>
 						</button>
 
@@ -183,9 +194,10 @@ export function LabOrdersTable(props: LabOrdersTableProps): React.JSX.Element {
 							type="button"
 							onClick={() => setSelectedIds(new Set())}
 							title="Снять выбор"
-							className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 cursor-pointer transition-colors"
+							aria-label="Снять выбор"
+							className="h-9 w-9 rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer transition-colors"
 						>
-							<X className="w-4 h-4" />
+							<X className="w-4 h-4 shrink-0" />
 						</button>
 					</div>
 				</div>
