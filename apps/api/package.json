@@ -52,6 +52,6 @@
 		"@types/pg": "^8.11.14",
 		"drizzle-kit": "^0.31.10",
 		"tsx": "^4.19.4",
-		"typescript": "^5.8.3"
+		"typescript": "^7.0.2"
 	}
 }
