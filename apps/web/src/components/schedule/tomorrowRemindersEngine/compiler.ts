@@ -1,4 +1,4 @@
-import type { Chair, Dashboard, Patient, StaffMember } from "@dental/shared";
+import { formatDateKeyInTimeZone, type Chair, type Dashboard, type Patient, type StaffMember } from "@dental/shared";
 import { checkQuietHoursPolicy } from "../generateAppointmentWhatsAppMessage";
 import { getTomorrowDateIso } from "./dateHelpers";
 import { buildTomorrowReminderItem } from "./itemBuilder";
@@ -41,7 +41,10 @@ export function compileTomorrowReminders(
 
 	const tomorrowAppointments = allAppointments.filter((a) => {
 		if (a.status === "cancelled" || a.status === "no_show") return false;
-		return (a.startsAt ? a.startsAt.slice(0, 10) : "") === dateIso;
+		if (!a.startsAt) return false;
+		const parsedDate = new Date(a.startsAt);
+		if (Number.isNaN(parsedDate.getTime())) return false;
+		return formatDateKeyInTimeZone(parsedDate, timezone) === dateIso;
 	});
 	tomorrowAppointments.sort((a, b) => (a.startsAt || "").localeCompare(b.startsAt || ""));
 

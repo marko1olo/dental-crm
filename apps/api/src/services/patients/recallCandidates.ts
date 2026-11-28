@@ -77,12 +77,12 @@ const BAND_LABELS: Readonly<Record<RecallBand, string>> = {
  */
 function monthsBetween(from: Date, to: Date): number {
 	const wholeMonths =
-		(to.getFullYear() - from.getFullYear()) * 12 +
-		(to.getMonth() - from.getMonth());
+		(to.getUTCFullYear() - from.getUTCFullYear()) * 12 +
+		(to.getUTCMonth() - from.getUTCMonth());
 	// Если день месяца ещё не наступил, последний месяц не полный.
 	return Math.max(
 		0,
-		to.getDate() < from.getDate() ? wholeMonths - 1 : wholeMonths,
+		to.getUTCDate() < from.getUTCDate() ? wholeMonths - 1 : wholeMonths,
 	);
 }
 
@@ -173,33 +173,48 @@ export async function findRecallCandidates(
 	 */
 	const lastCompleted = sql<Date | null>`(
 		SELECT max(a.starts_at) FROM ${appointments} a
-		WHERE a.patient_id = ${patients}."id" AND a.status = 'completed'
+		WHERE a.patient_id = ${patients}."id"
+		  AND a.organization_id = ${patients}."organization_id"
+		  AND a.status = 'completed'
 	)`;
 	const lastDoctorId = sql<string | null>`(
 		SELECT a.doctor_user_id FROM ${appointments} a
-		WHERE a.patient_id = ${patients}."id" AND a.status = 'completed'
+		WHERE a.patient_id = ${patients}."id"
+		  AND a.organization_id = ${patients}."organization_id"
+		  AND a.status = 'completed'
 		ORDER BY a.starts_at DESC LIMIT 1
 	)`;
 	const lastReason = sql<string | null>`(
 		SELECT a.reason FROM ${appointments} a
-		WHERE a.patient_id = ${patients}."id" AND a.status = 'completed'
+		WHERE a.patient_id = ${patients}."id"
+		  AND a.organization_id = ${patients}."organization_id"
+		  AND a.status = 'completed'
 		ORDER BY a.starts_at DESC LIMIT 1
 	)`;
 	const implantCount = sql<number>`(
 		SELECT count(*) FROM ${patientImplantInstallations} pii
 		WHERE pii.patient_id = ${patients}."id"
+		  AND pii.organization_id = ${patients}."organization_id"
 	)`;
 	const futureCount = sql<number>`(
 		SELECT count(*) FROM ${appointments} a
 		WHERE a.patient_id = ${patients}."id"
+		  AND a.organization_id = ${patients}."organization_id"
 		  AND a.starts_at > now()
 		  AND a.status IN ('planned', 'confirmed', 'arrived', 'in_treatment')
 	)`;
 	const anyAppointment = sql<number>`(
-		SELECT count(*) FROM ${appointments} a WHERE a.patient_id = ${patients}."id"
+		SELECT count(*) FROM ${appointments} a
+		WHERE a.patient_id = ${patients}."id"
+		  AND a.organization_id = ${patients}."organization_id"
 	)`;
 	const lastRecallStatus = sql<string | null>`(
 		SELECT pr.status FROM ${patientRecalls} pr
+		WHERE pr.patient_id = ${patients}."id" AND pr.organization_id = ${patients}."organization_id"
+		ORDER BY pr.created_at DESC LIMIT 1
+	)`;
+	const lastRecallCohortType = sql<string | null>`(
+		SELECT pr.cohort_type FROM ${patientRecalls} pr
 		WHERE pr.patient_id = ${patients}."id" AND pr.organization_id = ${patients}."organization_id"
 		ORDER BY pr.created_at DESC LIMIT 1
 	)`;
@@ -215,7 +230,9 @@ export async function findRecallCandidates(
 	)`;
 	const lastDiagnosisMkb = sql<string | null>`(
 		SELECT a.diagnosis_mkb10 FROM ${appointments} a
-		WHERE a.patient_id = ${patients}."id" AND a.status = 'completed'
+		WHERE a.patient_id = ${patients}."id"
+		  AND a.organization_id = ${patients}."organization_id"
+		  AND a.status = 'completed'
 		ORDER BY a.starts_at DESC LIMIT 1
 	)`;
 
@@ -239,6 +256,7 @@ export async function findRecallCandidates(
 				futureAppointments: futureCount.as("future_appointments"),
 				totalAppointments: anyAppointment.as("total_appointments"),
 				lastRecallStatus: lastRecallStatus.as("last_recall_status"),
+				lastRecallCohortType: lastRecallCohortType.as("last_recall_cohort_type"),
 				lastRecallNotes: lastRecallNotes.as("last_recall_notes"),
 				lastRecallChannel: lastRecallChannel.as("last_recall_channel"),
 			})
@@ -338,14 +356,14 @@ export async function findRecallCandidates(
 		}
 
 		const isSurgical =
+			row.lastRecallCohortType === "surgical_suture_removal" ||
 			doctorSpecialty === "surgeon" ||
 			mkb.startsWith("K01") ||
 			mkb.startsWith("K10") ||
-			mkb.startsWith("K09") ||
-			/удален|резекц|хирург|синус|шв[ыа]|пластик|костн.*пластик|экстракц|surgery|extraction|suture/i.test(row.lastReason ?? "");
-		const isOrtho = doctorSpecialty === "orthodontist" || mkb.startsWith("K07");
-		const isEndo = mkb.startsWith("K04");
-		const isPerio = doctorSpecialty === "periodontist" || mkb.startsWith("K05");
+			mkb.startsWith("K09");
+		const isOrtho = row.lastRecallCohortType === "ortho_check" || doctorSpecialty === "orthodontist" || mkb.startsWith("K07");
+		const isEndo = row.lastRecallCohortType === "endodontic" || mkb.startsWith("K04");
+		const isPerio = row.lastRecallCohortType === "parodontology" || doctorSpecialty === "periodontist" || mkb.startsWith("K05");
 		const isPediatric = isChildUnder14 || doctorSpecialty === "pediatric";
 
 		let cohortType: RecallCohort = "hygiene_therapy";

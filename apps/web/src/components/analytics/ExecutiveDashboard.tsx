@@ -30,7 +30,10 @@ import { DoctorPayrollReport } from "./DoctorPayrollReport";
 import { ExecutiveFinancialSummary } from "./ExecutiveFinancialSummary";
 import { ExecutiveReceivablesPanel } from "./ExecutiveReceivablesPanel";
 import { RebookingConversionPanel } from "./RebookingConversionPanel";
+import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
+import { useAppStore } from "../../store/appStore";
+import { useSettingsStore } from "../../store/settingsStore";
 import { showToast } from "../GlobalToast";
 import {
 	generateManagerReportsCsv,
@@ -54,6 +57,24 @@ export type { ExecutiveDashboardProps, MobileAnalyticsPeriod };
 
 export type ExecutiveActiveTab = "financial" | "payroll" | "chairs" | "rebooking" | "receivables";
 
+export function resolveExecutiveDashboardVisibility(params: {
+	readonly clinicMode: ReturnType<typeof useSettingsStore.getState>["clinicMode"] | string;
+	readonly selectedWorkspaceRole: string;
+	readonly hasPayrollModule: boolean;
+	readonly hasMultipleChairs: boolean;
+}) {
+	const isSoloDoctor = params.clinicMode === "solo_doctor";
+	const showPayrollTab =
+		params.hasPayrollModule &&
+		!isSoloDoctor &&
+		!["administrator", "senior_admin", "registrar", "curator"].includes(params.selectedWorkspaceRole);
+	const showChairsTab = !isSoloDoctor || params.hasMultipleChairs;
+	const showPnlButton =
+		["owner", "manager", "accountant", "head_doctor"].includes(params.selectedWorkspaceRole) ||
+		(params.selectedWorkspaceRole === "doctor" && (isSoloDoctor || params.clinicMode === "one_chair"));
+	return { isSoloDoctor, showPayrollTab, showChairsTab, showPnlButton };
+}
+
 export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => {
 	const {
 		period = "month",
@@ -63,13 +84,23 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 		onOpenFinancialAnalytics,
 	} = props;
 
+	const { hasPayrollModule, hasMultipleChairs } = useWorkspaceProfile();
+	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
+	const clinicMode = useSettingsStore((s) => s.clinicMode);
+	const { showPayrollTab, showChairsTab, showPnlButton } = resolveExecutiveDashboardVisibility({
+		clinicMode,
+		selectedWorkspaceRole,
+		hasPayrollModule,
+		hasMultipleChairs,
+	});
+
 	const [activeTab, setActiveTab] = useState<ExecutiveActiveTab>(() => {
-		if (initialTab) return initialTab;
+		if (initialTab && (initialTab !== "payroll" || showPayrollTab)) return initialTab;
 		if (typeof window !== "undefined") {
 			const savedTab = sessionStorage.getItem("dente_executive_tab") || localStorage.getItem("dente_executive_tab");
 			if (
-				savedTab === "payroll" ||
-				savedTab === "chairs" ||
+				(savedTab === "payroll" && showPayrollTab) ||
+				(savedTab === "chairs" && showChairsTab) ||
 				savedTab === "financial" ||
 				savedTab === "rebooking" ||
 				savedTab === "receivables"
@@ -79,16 +110,17 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 			const h = window.location.hash.toLowerCase();
 			const s = window.location.search.toLowerCase();
 			if (
-				h.includes("payroll") ||
-				s.includes("payroll") ||
-				h.includes("payout") ||
-				s.includes("payout") ||
-				h.includes("salary") ||
-				s.includes("salary")
+				showPayrollTab &&
+				(h.includes("payroll") ||
+					s.includes("payroll") ||
+					h.includes("payout") ||
+					s.includes("payout") ||
+					h.includes("salary") ||
+					s.includes("salary"))
 			) {
 				return "payroll";
 			}
-			if (h.includes("chairs") || s.includes("chairs")) {
+			if (showChairsTab && (h.includes("chairs") || s.includes("chairs"))) {
 				return "chairs";
 			}
 			if (h.includes("rebooking") || s.includes("rebooking") || h.includes("retention") || s.includes("retention")) {
@@ -194,39 +226,43 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						<span className="hidden sm:inline">Финансовый пульт</span>
 					</button>
 
-					<button
-						type="button"
-						role="tab"
-						data-testid="executive-tab-payroll"
-						aria-selected={activeTab === "payroll"}
-						onClick={() => setActiveTab("payroll")}
-						className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 ${
-							activeTab === "payroll"
-								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
-								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
-						}`}
-					>
-						<Users size={14} aria-hidden="true" className="shrink-0" />
-						<span className="sm:hidden">Зарплаты</span>
-						<span className="hidden sm:inline">Зарплаты врачей (Net)</span>
-					</button>
+					{showPayrollTab && (
+						<button
+							type="button"
+							role="tab"
+							data-testid="executive-tab-payroll"
+							aria-selected={activeTab === "payroll"}
+							onClick={() => setActiveTab("payroll")}
+							className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 ${
+								activeTab === "payroll"
+									? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
+									: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
+							}`}
+						>
+							<Users size={14} aria-hidden="true" className="shrink-0" />
+							<span className="sm:hidden">Зарплаты</span>
+							<span className="hidden sm:inline">Зарплаты врачей (Net)</span>
+						</button>
+					)}
 
-					<button
-						type="button"
-						role="tab"
-						data-testid="executive-tab-chairs"
-						aria-selected={activeTab === "chairs"}
-						onClick={() => setActiveTab("chairs")}
-						className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 ${
-							activeTab === "chairs"
-								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
-								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
-						}`}
-					>
-						<Armchair size={14} aria-hidden="true" className="shrink-0" />
-						<span className="sm:hidden">Кресла</span>
-						<span className="hidden sm:inline">Загрузка кресел</span>
-					</button>
+					{showChairsTab && (
+						<button
+							type="button"
+							role="tab"
+							data-testid="executive-tab-chairs"
+							aria-selected={activeTab === "chairs"}
+							onClick={() => setActiveTab("chairs")}
+							className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 ${
+								activeTab === "chairs"
+									? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
+									: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
+							}`}
+						>
+							<Armchair size={14} aria-hidden="true" className="shrink-0" />
+							<span className="sm:hidden">Кресла</span>
+							<span className="hidden sm:inline">Загрузка кресел</span>
+						</button>
+					)}
 
 					<button
 						type="button"
@@ -285,18 +321,20 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						<span className="hidden sm:inline">Печать</span>
 					</button>
 
-					<button
-						type="button"
-						onClick={() => {
-							if (onOpenFinancialAnalytics) onOpenFinancialAnalytics();
-							else if (onNavigateToSection) onNavigateToSection("financial_analytics");
-							else setIsPnlModalOpen(true);
-						}}
-						className="primary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-hover)] transition-colors cursor-pointer whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 shadow-sm"
-					>
-						<Calculator size={13} aria-hidden="true" className="shrink-0" />
-						<span>Управленческий P&amp;L</span>
-					</button>
+					{showPnlButton && (
+						<button
+							type="button"
+							onClick={() => {
+								if (onOpenFinancialAnalytics) onOpenFinancialAnalytics();
+								else if (onNavigateToSection) onNavigateToSection("financial_analytics");
+								else setIsPnlModalOpen(true);
+							}}
+							className="primary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-hover)] transition-colors cursor-pointer whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 shadow-sm"
+						>
+							<Calculator size={13} aria-hidden="true" className="shrink-0" />
+							<span>Управленческий P&amp;L</span>
+						</button>
+					)}
 				</div>
 			</div>
 

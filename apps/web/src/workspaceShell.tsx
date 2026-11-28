@@ -19,6 +19,7 @@ export * from "./workspaceShellModules";
 // Реэкспорты маршрутных утилит для сохранения 100% контракта обратной совместимости
 export {
 	type AppView,
+	type FilteredAppViewsOptions,
 	appViews,
 	getFallbackAppView,
 	getFilteredAppViews,

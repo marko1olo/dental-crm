@@ -1,7 +1,6 @@
 import type React from "react";
 import { createPortal } from "react-dom";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import { QuickBookingDrawer } from "../schedule/QuickBookingDrawer";
 import { mapRecallCandidateToRecord } from "./recallCandidateAdapter";
 import { useRecallHubState } from "./useRecallHubState";
 import { useRecallHubActions } from "./useRecallHubActions";
@@ -103,20 +102,6 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 					onStatusUpdate={actions.handleStatusUpdate}
 				/>
 			</main>
-
-			{hub.bookingSlot && (
-				<QuickBookingDrawer
-					isOpen={Boolean(hub.bookingSlot)}
-					initialSlot={hub.bookingSlot}
-					dashboard={appLogic?.dashboard}
-					auth={appLogic?.auth}
-					onClose={() => hub.setBookingSlot(null)}
-					onAppointmentCreated={() => {
-						if (hub.bookingSlot?.patientId) actions.handleStatusUpdate(hub.bookingSlot.patientId, "scheduled");
-						hub.setBookingSlot(null);
-					}}
-				/>
-			)}
 		</div>
 	);
 

@@ -9,7 +9,9 @@ import {
 	appointments,
 	chairs,
 	clinics,
+	doctorShiftRosters,
 	organizations,
+	scheduleSlotLeases,
 	scheduleTimeReservations,
 	users,
 } from "../../../db/schema.js";
@@ -30,6 +32,41 @@ import {
 	resolveDaySchedule,
 	resolveDoctorDaySchedule,
 } from "../slotAvailabilityEngine.js";
+
+const BOOKABLE_CLINICAL_ROLES = [
+	"doctor",
+	"owner",
+	"head_doctor",
+	"chief_doctor",
+] as const;
+
+function isBookableClinician(
+	role: string | null | undefined,
+	clinicMode: string | null | undefined,
+	specialties: unknown,
+): boolean {
+	if (role === "doctor" || role === "head_doctor" || role === "chief_doctor") {
+		return true;
+	}
+	if (role === "owner") {
+		if (clinicMode === "solo_doctor" || clinicMode === "one_chair") {
+			return true;
+		}
+		return Array.isArray(specialties) && specialties.length > 0;
+	}
+	return false;
+}
+
+function parseHhMm(value: string | null | undefined): number | null {
+	if (!value) return null;
+	const m = /^(\d{1,2}):(\d{2})/.exec(value.trim());
+	if (!m) return null;
+	const hh = Number(m[1]);
+	const mm = Number(m[2]);
+	if (hh < 0 || hh > 24 || mm < 0 || mm > 59) return null;
+	const total = hh * 60 + mm;
+	return total <= 24 * 60 ? total : null;
+}
 
 export type DatabaseTransaction = TenantDb;
 
@@ -53,7 +90,8 @@ export type SlotCalculationResult =
 
 /**
  * Pure Slot Engine: calculates available schedule slots for an organization and date.
- * Enforces clinic schedule, doctor schedule windows, double-booking guard, and timezone offsets.
+ * Enforces clinic schedule, doctor shift rosters & schedule windows, slot leases,
+ * double-booking guard, and timezone offsets.
  */
 export async function calculateAvailableSlots(
 	tx: DatabaseTransaction,
@@ -62,7 +100,10 @@ export async function calculateAvailableSlots(
 	const { organizationId, date, requestedDoctorId } = options;
 
 	const [org] = await tx
-		.select({ clinicSchedule: organizations.clinicSchedule })
+		.select({
+			clinicSchedule: organizations.clinicSchedule,
+			clinicMode: organizations.clinicMode,
+		})
 		.from(organizations)
 		.where(eq(organizations.id, organizationId))
 		.limit(1);
@@ -115,24 +156,30 @@ export async function calculateAvailableSlots(
 		};
 	}
 
-	// Load target doctors
+	// Load target clinical doctors (including solo_doctor owner)
 	const doctorConditions = [
 		eq(users.organizationId, organizationId),
-		eq(users.role, "doctor"),
+		inArray(users.role, [...BOOKABLE_CLINICAL_ROLES]),
 		eq(users.isActive, true),
 	];
 	if (requestedDoctorId) {
 		doctorConditions.push(eq(users.id, requestedDoctorId));
 	}
 
-	const targetDoctors = await tx
+	const rawDoctors = await tx
 		.select({
 			id: users.id,
 			fullName: users.fullName,
+			role: users.role,
+			specialties: users.specialties,
 			workingHours: users.workingHours,
 		})
 		.from(users)
 		.where(and(...doctorConditions));
+
+	const targetDoctors = rawDoctors.filter((doc) =>
+		isBookableClinician(doc.role, org.clinicMode, doc.specialties),
+	);
 
 	if (targetDoctors.length === 0) {
 		if (requestedDoctorId) {
@@ -172,11 +219,41 @@ export async function calculateAvailableSlots(
 			),
 		);
 
-	// Load appointments on this date
+	// Load explicit doctor shift rosters for the target date
+	const doctorIds = targetDoctors.map((d) => d.id);
+	const dateRosters = await tx
+		.select({
+			doctorId: doctorShiftRosters.doctorId,
+			startTime: doctorShiftRosters.startTime,
+			endTime: doctorShiftRosters.endTime,
+		})
+		.from(doctorShiftRosters)
+		.where(
+			and(
+				eq(doctorShiftRosters.organizationId, organizationId),
+				eq(doctorShiftRosters.dateIso, date),
+				inArray(doctorShiftRosters.doctorId, doctorIds),
+			),
+		);
+
+	const rosterIntervalsByDoctor = new Map<
+		string,
+		Array<{ startMinute: number; endMinute: number }>
+	>();
+	for (const row of dateRosters) {
+		const sMin = parseHhMm(row.startTime);
+		const eMin = parseHhMm(row.endTime);
+		if (sMin === null || eMin === null || eMin <= sMin) continue;
+		const list = rosterIntervalsByDoctor.get(row.doctorId) ?? [];
+		list.push({ startMinute: sMin, endMinute: eMin });
+		rosterIntervalsByDoctor.set(row.doctorId, list);
+	}
+
+	// Load appointments and active slot leases on this date
 	const dayStartUtc = localWallTimeToUtc(date, 0, timeZone);
 	const dayEndUtc = new Date(dayStartUtc.getTime() + 24 * 60 * 60_000);
+	const nowDate = new Date();
 
-	const doctorIds = targetDoctors.map((d) => d.id);
 	const existingApps = await tx
 		.select({
 			doctorUserId: appointments.doctorUserId,
@@ -191,6 +268,23 @@ export async function calculateAvailableSlots(
 				lt(appointments.startsAt, dayEndUtc),
 				gt(appointments.endsAt, dayStartUtc),
 				notInArray(appointments.status, [...FREED_APPOINTMENT_STATUSES]),
+			),
+		);
+
+	const activeLeases = await tx
+		.select({
+			doctorUserId: scheduleSlotLeases.doctorUserId,
+			chairId: scheduleSlotLeases.chairId,
+			startsAt: scheduleSlotLeases.startsAt,
+			endsAt: scheduleSlotLeases.endsAt,
+		})
+		.from(scheduleSlotLeases)
+		.where(
+			and(
+				eq(scheduleSlotLeases.organizationId, organizationId),
+				gt(scheduleSlotLeases.expiresAt, nowDate),
+				lt(scheduleSlotLeases.startsAt, dayEndUtc),
+				gt(scheduleSlotLeases.endsAt, dayStartUtc),
 			),
 		);
 
@@ -224,6 +318,16 @@ export async function calculateAvailableSlots(
 			endMs: new Date(a.endsAt).getTime(),
 		}));
 
+	for (const lease of activeLeases) {
+		if (lease.chairId) {
+			occupiedChairIntervals.push({
+				chairId: lease.chairId,
+				startMs: new Date(lease.startsAt).getTime(),
+				endMs: new Date(lease.endsAt).getTime(),
+			});
+		}
+	}
+
 	const globalReservedIntervals: Array<{ startMs: number; endMs: number }> = [];
 	for (const res of lockedReservations) {
 		const rStartMs = parseReservationInstant(res.startTime, timeZone);
@@ -256,62 +360,83 @@ export async function calculateAvailableSlots(
 	let totalDoctorWindows = 0;
 
 	for (const doctor of targetDoctors) {
-		const doctorWindow = resolveDoctorDaySchedule(
-			doctor.workingHours,
-			calendarWeekday,
-			clinicDaySchedule,
-		);
+		const rosterWindows = rosterIntervalsByDoctor.get(doctor.id);
+		const candidateWindows =
+			rosterWindows && rosterWindows.length > 0
+				? rosterWindows.map((rw) =>
+						intersectWorkingWindows(
+							clinicDaySchedule,
+							{
+								isWorking: true,
+								startMinute: rw.startMinute,
+								endMinute: rw.endMinute,
+							},
+							slotMinutes,
+						),
+					)
+				: [
+						intersectWorkingWindows(
+							clinicDaySchedule,
+							resolveDoctorDaySchedule(
+								doctor.workingHours,
+								calendarWeekday,
+								clinicDaySchedule,
+							),
+							slotMinutes,
+						),
+					];
 
-		const effectiveWindow = intersectWorkingWindows(
-			clinicDaySchedule,
-			doctorWindow,
-			slotMinutes,
-		);
-
-		if (!effectiveWindow.isWorking) {
-			// Doctor is off on this weekday (enabled: false) or intersection is empty -> 0 slots for this doctor
+		const workingWindows = candidateWindows.filter((w) => w.isWorking);
+		if (workingWindows.length === 0) {
 			continue;
 		}
 
 		totalDoctorWindows += 1;
 		const doctorApps = existingApps.filter((a) => a.doctorUserId === doctor.id);
+		const doctorLeases = activeLeases.filter((l) => l.doctorUserId === doctor.id);
 
-		for (
-			let minute = effectiveWindow.startMinute;
-			minute + slotMinutes <= effectiveWindow.endMinute;
-			minute += slotMinutes
-		) {
-			const slotStart = localWallTimeToUtc(date, minute, timeZone);
-			const slotEnd = new Date(slotStart.getTime() + slotMinutes * 60_000);
-			const slotStartMs = slotStart.getTime();
-			const slotEndMs = slotEnd.getTime();
+		for (const effectiveWindow of workingWindows) {
+			for (
+				let minute = effectiveWindow.startMinute;
+				minute + slotMinutes <= effectiveWindow.endMinute;
+				minute += slotMinutes
+			) {
+				const slotStart = localWallTimeToUtc(date, minute, timeZone);
+				const slotEnd = new Date(slotStart.getTime() + slotMinutes * 60_000);
+				const slotStartMs = slotStart.getTime();
+				const slotEndMs = slotEnd.getTime();
 
-			if (slotStartMs <= nowMs) continue;
+				if (slotStartMs <= nowMs) continue;
 
-			// Chair & reservation availability pre-check: ensure at least one physical chair is unblocked
-			const globalBlocked = globalReservedIntervals.some(
-				(iv) => slotStartMs < iv.endMs && slotEndMs > iv.startMs,
-			);
-			if (globalBlocked) continue;
+				const globalBlocked = globalReservedIntervals.some(
+					(iv) => slotStartMs < iv.endMs && slotEndMs > iv.startMs,
+				);
+				if (globalBlocked) continue;
 
-			const chairAvailable = isAnyChairAvailable(
-				activeChairIds,
-				occupiedChairIntervals,
-				slotStartMs,
-				slotEndMs,
-			);
-			if (!chairAvailable) {
-				// All clinic chairs are occupied during this slot -> do not offer to avoid 409 Conflict
-				continue;
-			}
+				const chairAvailable = isAnyChairAvailable(
+					activeChairIds,
+					occupiedChairIntervals,
+					slotStartMs,
+					slotEndMs,
+				);
+				if (!chairAvailable) {
+					continue;
+				}
 
-			const isTaken = doctorApps.some((app) => {
-				const appStart = new Date(app.startsAt).getTime();
-				const appEnd = new Date(app.endsAt).getTime();
-				return slotStartMs < appEnd && slotEndMs > appStart;
-			});
+				const isTakenByAppt = doctorApps.some((app) => {
+					const appStart = new Date(app.startsAt).getTime();
+					const appEnd = new Date(app.endsAt).getTime();
+					return slotStartMs < appEnd && slotEndMs > appStart;
+				});
+				if (isTakenByAppt) continue;
 
-			if (!isTaken) {
+				const isTakenByLease = doctorLeases.some((lease) => {
+					const leaseStart = new Date(lease.startsAt).getTime();
+					const leaseEnd = new Date(lease.endsAt).getTime();
+					return slotStartMs < leaseEnd && slotEndMs > leaseStart;
+				});
+				if (isTakenByLease) continue;
+
 				const startsAtIso = slotStart.toISOString();
 				const existingSlot = slotUnionMap.get(startsAtIso);
 				if (existingSlot) {
@@ -331,11 +456,9 @@ export async function calculateAvailableSlots(
 	}
 
 	if (requestedDoctorId && totalDoctorWindows === 0) {
-		// The requested doctor does not work on this weekday
 		return { success: true, slots: [] };
 	}
 
-	// Sort chronologically and format
 	const sortedSlots: PublicSlotDto[] = Array.from(slotUnionMap.values())
 		.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
 		.map((s) => ({
@@ -405,7 +528,10 @@ export async function handleDoctorList(
 
 	return withTenantReadCtx(organizationId, async (tx) => {
 		const [organization] = await tx
-			.select({ id: organizations.id })
+			.select({
+				id: organizations.id,
+				clinicMode: organizations.clinicMode,
+			})
 			.from(organizations)
 			.where(eq(organizations.id, organizationId))
 			.limit(1);
@@ -416,21 +542,32 @@ export async function handleDoctorList(
 			});
 		}
 
-		const doctorsList = await tx
+		const rawDoctors = await tx
 			.select({
 				id: users.id,
 				fullName: users.fullName,
 				specialties: users.specialties,
+				role: users.role,
 			})
 			.from(users)
 			.where(
 				and(
 					eq(users.organizationId, organizationId),
-					eq(users.role, "doctor"),
+					inArray(users.role, [...BOOKABLE_CLINICAL_ROLES]),
 					eq(users.isActive, true),
 				),
 			)
 			.limit(50);
+
+		const doctorsList = rawDoctors
+			.filter((doc) =>
+				isBookableClinician(doc.role, organization.clinicMode, doc.specialties),
+			)
+			.map(({ id, fullName, specialties }) => ({
+				id,
+				fullName,
+				specialties,
+			}));
 
 		if (doctorsList.length === 0) {
 			return reply.status(503).send({

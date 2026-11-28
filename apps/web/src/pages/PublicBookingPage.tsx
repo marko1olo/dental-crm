@@ -66,13 +66,19 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 		isDemoShowcaseMode() ? DEMO_PATIENT_CABINET : undefined,
 	);
 
-	// Информация о клинике для десктопной витрины
-	const [clinicInfo, setClinicInfo] = useState({
-		name: "Стоматологическая клиника DENTE",
-		address: "Адрес уточняется у администратора",
-		workHours: "Пн–Сб 09:00 – 20:00, Вс 10:00 – 18:00",
-		phone: "+7 (800) 200-55-40",
-		license: "ЛО-77-01-021482",
+	// Информация о клинике для десктопной витрины (без фейковых заглушек лицензии и телефона)
+	const [clinicInfo, setClinicInfo] = useState<{
+		name: string;
+		address: string;
+		workHours: string;
+		phone: string;
+		license: string | null;
+	}>({
+		name: "Стоматологическая клиника",
+		address: "",
+		workHours: "",
+		phone: "",
+		license: null,
 	});
 
 	// Авторизация в личном кабинете (опциональная вкладка, НЕ барьер для записи!)
@@ -112,12 +118,13 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 				} else if (organizationId) {
 					setEffectiveOrgId(organizationId);
 				}
-				if (json?.name) {
+				if (json?.name || json?.address || json?.phone || json?.licenseNumber || json?.workHours) {
 					setClinicInfo((prev) => ({
-						...prev,
 						name: json.name || prev.name,
 						address: json.address || prev.address,
+						workHours: json.workHours || prev.workHours,
 						phone: json.phone || prev.phone,
+						license: json.licenseNumber || null,
 					}));
 				}
 				setIsResolvingClinic(false);
@@ -286,19 +293,20 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 
 			<div className="w-full max-w-6xl mx-auto flex flex-col items-center z-10 px-2 sm:px-4">
 				{/* Верхний переключатель режимов: Онлайн-запись / Личный кабинет */}
-				<div className="w-full max-w-2xl mb-4 sm:mb-6 flex items-center justify-between gap-1 PublicBookingWidget-glass-nav p-1 rounded-none sm:rounded-2xl shadow-sm border-x-0 border-t-0 sm:border border-[var(--line)]">
+				<div className="w-full max-w-2xl mb-4 sm:mb-6 flex items-center justify-between gap-1.5 PublicBookingWidget-glass-nav p-1 rounded-2xl shadow-sm border border-[var(--line)]">
 					<button
 						type="button"
 						onClick={() => setActiveMode("booking")}
 						data-active={activeMode === "booking"}
-						className={`flex-1 py-2.5 px-3 sm:px-4 rounded-xl text-[11px] sm:text-sm font-semibold flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap transition-all cursor-pointer ${
+						className={`flex-1 min-w-0 min-h-[44px] sm:min-h-0 py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap transition-all cursor-pointer ${
 							activeMode === "booking"
 								? "bg-[var(--primary)] text-white shadow-sm"
 								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 						}`}
 					>
-						<Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-						<span>Онлайн-запись на приём</span>
+						<Calendar className="w-4 h-4 shrink-0" />
+						<span className="sm:hidden">Онлайн-запись</span>
+						<span className="hidden sm:inline">Онлайн-запись на приём</span>
 					</button>
 					<button
 						type="button"
@@ -309,13 +317,13 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 							}
 						}}
 						data-active={activeMode === "cabinet"}
-						className={`sm:flex-1 py-2.5 px-3 sm:px-4 rounded-xl text-[11px] sm:text-sm font-semibold flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+						className={`flex-1 min-w-0 min-h-[44px] sm:min-h-0 py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap transition-all cursor-pointer ${
 							activeMode === "cabinet"
 								? "bg-[var(--primary)] text-white shadow-sm"
 								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 						}`}
 					>
-						<User className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+						<User className="w-4 h-4 shrink-0" />
 						<span>Личный кабинет</span>
 					</button>
 				</div>
@@ -344,53 +352,61 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 								</div>
 							</div>
 
-							{/* Лицензия ЛО-XX-XX */}
-							<div className="flex items-center gap-2.5 p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink-muted)]">
-								<ShieldCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-								<div className="flex flex-col min-w-0">
-									<span className="font-semibold text-[var(--ink)]">
-										Лицензия № {clinicInfo.license}
-									</span>
-									<span className="text-[11px] text-[var(--ink-muted)]">
-										Медицинская деятельность сертифицирована
-									</span>
+							{/* Реальная лицензия клиники (показываем только если заполнена в профиле) */}
+							{clinicInfo.license && (
+								<div className="flex items-center gap-2.5 p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink-muted)]">
+									<ShieldCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+									<div className="flex flex-col min-w-0">
+										<span className="font-semibold text-[var(--ink)]">
+											Лицензия № {clinicInfo.license}
+										</span>
+										<span className="text-[11px] text-[var(--ink-muted)]">
+											Медицинская деятельность сертифицирована
+										</span>
+									</div>
 								</div>
-							</div>
+							)}
 
 							{/* Контактные реквизиты */}
 							<div className="space-y-3.5 text-xs">
-								<div className="flex items-start gap-3">
-									<MapPin className="w-4 h-4 text-[var(--ink-muted)] shrink-0 mt-0.5" />
-									<div className="min-w-0">
-										<div className="font-semibold text-[var(--ink)]">Адрес клиники:</div>
-										<div className="text-[var(--ink-muted)] leading-relaxed mt-0.5">
-											{clinicInfo.address}
+								{clinicInfo.address && (
+									<div className="flex items-start gap-3">
+										<MapPin className="w-4 h-4 text-[var(--ink-muted)] shrink-0 mt-0.5" />
+										<div className="min-w-0">
+											<div className="font-semibold text-[var(--ink)]">Адрес клиники:</div>
+											<div className="text-[var(--ink-muted)] leading-relaxed mt-0.5">
+												{clinicInfo.address}
+											</div>
 										</div>
 									</div>
-								</div>
+								)}
 
-								<div className="flex items-start gap-3">
-									<Clock className="w-4 h-4 text-[var(--ink-muted)] shrink-0 mt-0.5" />
-									<div className="min-w-0">
-										<div className="font-semibold text-[var(--ink)]">Часы приёма:</div>
-										<div className="text-[var(--ink-muted)] leading-relaxed mt-0.5">
-											{clinicInfo.workHours}
+								{clinicInfo.workHours && (
+									<div className="flex items-start gap-3">
+										<Clock className="w-4 h-4 text-[var(--ink-muted)] shrink-0 mt-0.5" />
+										<div className="min-w-0">
+											<div className="font-semibold text-[var(--ink)]">Часы приёма:</div>
+											<div className="text-[var(--ink-muted)] leading-relaxed mt-0.5">
+												{clinicInfo.workHours}
+											</div>
 										</div>
 									</div>
-								</div>
+								)}
 
-								<div className="flex items-start gap-3">
-									<Phone className="w-4 h-4 text-[var(--ink-muted)] shrink-0 mt-0.5" />
-									<div className="min-w-0">
-										<div className="font-semibold text-[var(--ink)]">Телефон для связи:</div>
-										<a
-											href={`tel:${clinicInfo.phone.replace(/[^+\d]/g, "")}`}
-											className="text-[var(--primary)] hover:underline font-semibold leading-relaxed mt-0.5 block"
-										>
-											{clinicInfo.phone}
-										</a>
+								{clinicInfo.phone && (
+									<div className="flex items-start gap-3">
+										<Phone className="w-4 h-4 text-[var(--ink-muted)] shrink-0 mt-0.5" />
+										<div className="min-w-0">
+											<div className="font-semibold text-[var(--ink)]">Телефон для связи:</div>
+											<a
+												href={`tel:${clinicInfo.phone.replace(/[^+\d]/g, "")}`}
+												className="text-[var(--primary)] hover:underline font-semibold leading-relaxed mt-0.5 block"
+											>
+												{clinicInfo.phone}
+											</a>
+										</div>
 									</div>
-								</div>
+								)}
 							</div>
 
 							{/* Преимущества и сервис */}

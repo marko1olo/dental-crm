@@ -5,6 +5,7 @@ import { ExecutiveDashboard } from "../../components/analytics/ExecutiveDashboar
 import { LostPatientsPanel } from "../../components/analytics/LostPatientsPanel";
 import { MarketingAttributionDashboard } from "../../components/analytics/MarketingAttributionDashboard";
 import { FreedSlotsPanel } from "../../components/schedule/FreedSlotsPanel";
+import { emitClinicEvent, navigateToStudio } from "../../lib/clinicEventBus";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import type { AnalyticsSubDashboardsProps } from "./types";
@@ -93,13 +94,10 @@ export function AnalyticsSubDashboards({
 					onOpenPatientPlan={(patientId, planId) => {
 						usePatientStore.getState().setSelectedPatientId(patientId);
 						useAppStore.getState().setCurrentView("pipeline");
-						if (typeof window !== "undefined") {
-							window.dispatchEvent(
-								new CustomEvent("dente:open-treatment-plan", {
-									detail: { patientId, planId },
-								}),
-							);
-						}
+						emitClinicEvent("workspace:navigate", {
+							view: "treatment_plans",
+							entityId: planId,
+						});
 					}}
 				/>
 			)}
@@ -123,7 +121,7 @@ export function AnalyticsSubDashboards({
 						<button
 							type="button"
 							className="dente-btn-primary shrink-0"
-							onClick={() => window.dispatchEvent(new CustomEvent("dente:open-recalls"))}
+							onClick={() => navigateToStudio({ kind: "recalls" })}
 						>
 							Открыть хаб профосмотров
 						</button>

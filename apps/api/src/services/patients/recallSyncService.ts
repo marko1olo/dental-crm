@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { withTenantCtx, type TenantDb } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx, type TenantDb } from "../../db/rls.js";
 import { appointments } from "../../db/schema/schedule.js";
 import { patientRecalls } from "../../db/schema/patientsSchema/patientMedicalData.js";
 import { visits, visitDiaries } from "../../db/schema/clinical/visitsSchema.js";
@@ -192,17 +192,25 @@ export async function syncRecallOnAppointmentCreated(
 						doctorId: appointment.doctorUserId || null,
 						updatedAt: new Date(),
 					})
-					.where(eq(patientRecalls.id, pendingRecall.id));
+					.where(
+						and(
+							eq(patientRecalls.id, pendingRecall.id),
+							eq(patientRecalls.organizationId, organizationId),
+						),
+					);
 
-				wsBroker.broadcastToOrganization(organizationId, {
-					type: "PATIENT_RECALL_UPDATED",
-					payload: {
-						recallId: pendingRecall.id,
-						patientId,
-						status: "scheduled",
-						scheduledAppointmentId: appointment.id,
-						updatedAt: new Date().toISOString(),
-					},
+				const updatedAtIso = new Date().toISOString();
+				onTenantTxCommit(() => {
+					wsBroker.broadcastToOrganization(organizationId, {
+						type: "PATIENT_RECALL_UPDATED",
+						payload: {
+							recallId: pendingRecall.id,
+							patientId,
+							status: "scheduled",
+							scheduledAppointmentId: appointment.id,
+							updatedAt: updatedAtIso,
+						},
+					});
 				});
 			}
 		});
@@ -276,7 +284,12 @@ export async function syncRecallOnAppointmentCompleted(
 						appointmentId: appt.id,
 						updatedAt: now,
 					})
-					.where(eq(patientRecalls.id, activeRecall.id));
+					.where(
+						and(
+							eq(patientRecalls.id, activeRecall.id),
+							eq(patientRecalls.organizationId, organizationId),
+						),
+					);
 			}
 
 			// 2. Создаем следующий recall на основе динамической когорты
@@ -296,16 +309,18 @@ export async function syncRecallOnAppointmentCompleted(
 				})
 				.returning({ id: patientRecalls.id });
 
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "PATIENT_RECALL_UPDATED",
-				payload: {
-					completedRecallId: activeRecall?.id ?? null,
-					newRecallId: newRecall?.id ?? null,
-					patientId: appt.patientId,
-					status: "pending",
-					dueDate: cohortPlan.nextDueDate.toISOString(),
-					updatedAt: now.toISOString(),
-				},
+			onTenantTxCommit(() => {
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "PATIENT_RECALL_UPDATED",
+					payload: {
+						completedRecallId: activeRecall?.id ?? null,
+						newRecallId: newRecall?.id ?? null,
+						patientId: appt.patientId,
+						status: "pending",
+						dueDate: cohortPlan.nextDueDate.toISOString(),
+						updatedAt: now.toISOString(),
+					},
+				});
 			});
 		});
 	} catch (err) {
@@ -406,7 +421,12 @@ export async function syncRecallOnVisitCompleted(
 						appointmentId: v.appointmentId ?? null,
 						updatedAt: now,
 					})
-					.where(eq(patientRecalls.id, activeRecall.id));
+					.where(
+						and(
+							eq(patientRecalls.id, activeRecall.id),
+							eq(patientRecalls.organizationId, organizationId),
+						),
+					);
 			}
 
 			// 2. Создаем следующий recall на основе динамической когорты
@@ -426,16 +446,18 @@ export async function syncRecallOnVisitCompleted(
 				})
 				.returning({ id: patientRecalls.id });
 
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "PATIENT_RECALL_UPDATED",
-				payload: {
-					completedRecallId: activeRecall?.id ?? null,
-					newRecallId: newRecall?.id ?? null,
-					patientId: v.patientId,
-					status: "pending",
-					dueDate: cohortPlan.nextDueDate.toISOString(),
-					updatedAt: now.toISOString(),
-				},
+			onTenantTxCommit(() => {
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "PATIENT_RECALL_UPDATED",
+					payload: {
+						completedRecallId: activeRecall?.id ?? null,
+						newRecallId: newRecall?.id ?? null,
+						patientId: v.patientId,
+						status: "pending",
+						dueDate: cohortPlan.nextDueDate.toISOString(),
+						updatedAt: now.toISOString(),
+					},
+				});
 			});
 		});
 	} catch (err) {

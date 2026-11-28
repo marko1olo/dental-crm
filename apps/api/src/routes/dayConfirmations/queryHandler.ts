@@ -1,9 +1,8 @@
 import { and, asc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { requireClinicalReadContext } from "../../accessGuard.js";
-import { defineStreamRoute } from "../../core/routeFactories.js";
+import { defineTenantQuery } from "../../core/routeFactories.js";
 import { appointmentActionCodes } from "../../db/communicationsSchema.js";
-import { withSavepoint, withTenantReadCtx } from "../../db/rls.js";
+import { withSavepoint } from "../../db/rls.js";
 import {
 	appointments,
 	clinics,
@@ -11,7 +10,6 @@ import {
 	patients,
 	users,
 } from "../../db/schema.js";
-import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
 import {
 	OUTBOX_TO_REMINDER_STATE,
 	type ReminderState,
@@ -23,20 +21,15 @@ import {
 } from "./timezoneAndTypes.js";
 
 export function registerDayConfirmationQueryRoute(app: FastifyInstance): void {
-	defineStreamRoute(app, {
+	defineTenantQuery(app, {
 		method: "GET",
 		path: "/api/schedule/day-confirmations",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const context = await requireClinicalReadContext(
-				request,
-				reply,
-				"day confirmations",
-			);
-			if (!context) return;
-			if (!enforcePermissionWhenStaffKnown(request, reply, "schedule.read"))
-				return;
-
+		permission: "schedule.read",
+		authOptions: {
+			allowClinicTokenWithoutStaff: true,
+			allowAdminSecretBypass: true,
+		},
+		handler: async ({ tx, organizationId, request, reply }) => {
 			const parsed = dayConfirmationsQuerySchema.safeParse(request.query ?? {});
 			if (!parsed.success) {
 				return badDayConfirmationRequest(
@@ -45,11 +38,10 @@ export function registerDayConfirmationQueryRoute(app: FastifyInstance): void {
 				);
 			}
 
-			const outcome = await withTenantReadCtx(context.organizationId, async (tx) => {
 			const [clinic] = await tx
 				.select({ timezone: clinics.timezone })
 				.from(clinics)
-				.where(eq(clinics.organizationId, context.organizationId))
+				.where(eq(clinics.organizationId, organizationId))
 				.limit(1);
 			const timeZone = clinic?.timezone ?? "Europe/Moscow";
 
@@ -58,7 +50,10 @@ export function registerDayConfirmationQueryRoute(app: FastifyInstance): void {
 				tomorrowInTimeZone(timeZone, new Date(), request.log);
 			const bounds = dayBoundsInTimeZone(date, timeZone, request.log);
 			if (!bounds) {
-				return { kind: "invalid_bounds" as const };
+				return badDayConfirmationRequest(
+					reply,
+					"Не удалось определить границы дня в часовом поясе клиники.",
+				);
 			}
 
 			const appointmentRows = await tx
@@ -72,7 +67,7 @@ export function registerDayConfirmationQueryRoute(app: FastifyInstance): void {
 				.from(appointments)
 				.where(
 					and(
-						eq(appointments.organizationId, context.organizationId),
+						eq(appointments.organizationId, organizationId),
 						gte(appointments.startsAt, bounds.from),
 						lte(appointments.startsAt, bounds.to),
 					),
@@ -81,22 +76,19 @@ export function registerDayConfirmationQueryRoute(app: FastifyInstance): void {
 
 			if (appointmentRows.length === 0) {
 				return {
-					kind: "ok" as const,
-					payload: {
-						date,
-						timeZone,
-						summary: {
-							total: 0,
-							confirmed: 0,
-							awaiting: 0,
-							cancelled: 0,
-							noShow: 0,
-							needsCall: 0,
-							withoutPhone: 0,
-						},
-						rows: [],
-						isEmpty: true,
+					date,
+					timeZone,
+					summary: {
+						total: 0,
+						confirmed: 0,
+						awaiting: 0,
+						cancelled: 0,
+						noShow: 0,
+						needsCall: 0,
+						withoutPhone: 0,
 					},
+					rows: [],
+					isEmpty: true,
 				};
 			}
 
@@ -127,7 +119,7 @@ export function registerDayConfirmationQueryRoute(app: FastifyInstance): void {
 							.from(patients)
 							.where(
 								and(
-									eq(patients.organizationId, context.organizationId),
+									eq(patients.organizationId, organizationId),
 									inArray(patients.id, dayPatientIds),
 								),
 							)
@@ -141,7 +133,7 @@ export function registerDayConfirmationQueryRoute(app: FastifyInstance): void {
 							.from(users)
 							.where(
 								and(
-									eq(users.organizationId, context.organizationId),
+									eq(users.organizationId, organizationId),
 									inArray(users.id, dayDoctorIds),
 								),
 							)
@@ -163,10 +155,7 @@ export function registerDayConfirmationQueryRoute(app: FastifyInstance): void {
 							.from(communicationOutbox)
 							.where(
 								and(
-									eq(
-										communicationOutbox.organizationId,
-										context.organizationId,
-									),
+									eq(communicationOutbox.organizationId, organizationId),
 									or(
 										...dayAppointmentIds.map((id) =>
 											like(communicationOutbox.dedupeKey, `reminder:${id}:%`),
@@ -222,10 +211,7 @@ export function registerDayConfirmationQueryRoute(app: FastifyInstance): void {
 							.from(appointmentActionCodes)
 							.where(
 								and(
-									eq(
-										appointmentActionCodes.organizationId,
-										context.organizationId,
-									),
+									eq(appointmentActionCodes.organizationId, organizationId),
 									inArray(
 										appointmentActionCodes.appointmentId,
 										dayAppointmentIds,
@@ -299,32 +285,20 @@ export function registerDayConfirmationQueryRoute(app: FastifyInstance): void {
 			const awaiting = rows.filter((row) => row.status === "planned").length;
 
 			return {
-				kind: "ok" as const,
-				payload: {
-					date,
-					timeZone,
-					summary: {
-						total: rows.length,
-						confirmed,
-						awaiting,
-						cancelled,
-						noShow,
-						needsCall,
-						withoutPhone,
-					},
-					rows,
-					isEmpty: false,
+				date,
+				timeZone,
+				summary: {
+					total: rows.length,
+					confirmed,
+					awaiting,
+					cancelled,
+					noShow,
+					needsCall,
+					withoutPhone,
 				},
+				rows,
+				isEmpty: false,
 			};
-		});
-
-		if (outcome.kind === "invalid_bounds") {
-			return badDayConfirmationRequest(
-				reply,
-				"Дату не удалось разобрать в часовом поясе клиники.",
-			);
-		}
-		return outcome.payload;
-	},
-});
+		},
+	});
 }

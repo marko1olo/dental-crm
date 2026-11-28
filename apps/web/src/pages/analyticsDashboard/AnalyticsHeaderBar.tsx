@@ -9,8 +9,30 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
+import { useAppStore } from "../../store/appStore";
+import { useSettingsStore } from "../../store/settingsStore";
+import type { ClinicMode } from "../../lib/clinicCapabilities";
+import type { StaffRole } from "@dental/shared";
 import { BRANCH_OPTIONS, DATE_RANGES } from "./constants";
 import type { AnalyticsHeaderBarProps } from "./types";
+
+export function resolveAnalyticsHeaderVisibility(params: {
+	readonly clinicMode: ClinicMode | null | undefined;
+	readonly selectedWorkspaceRole: StaffRole | string;
+	readonly hasLeadsKanban: boolean;
+	readonly hasMarketingModule: boolean;
+	readonly hasMultipleChairs: boolean;
+}) {
+	const isSoloDoctor = params.clinicMode === "solo_doctor";
+	const showCurators = !isSoloDoctor && params.hasLeadsKanban;
+	const showMarketing = !isSoloDoctor && params.hasMarketingModule;
+	const showBranches = !isSoloDoctor && params.hasMultipleChairs;
+	const showPnl =
+		["owner", "manager", "accountant", "head_doctor"].includes(params.selectedWorkspaceRole) ||
+		(params.selectedWorkspaceRole === "doctor" && (isSoloDoctor || params.clinicMode === "one_chair"));
+	return { isSoloDoctor, showCurators, showMarketing, showBranches, showPnl };
+}
 
 export function AnalyticsHeaderBar({
 	updatedAt,
@@ -25,7 +47,19 @@ export function AnalyticsHeaderBar({
 	onRetry,
 	onOpenMarketingRoi,
 	onOpenFinancialAnalytics,
+	onOpenExecutiveStudio,
 }: AnalyticsHeaderBarProps) {
+	const { hasLeadsKanban, hasMarketingModule, hasMultipleChairs } = useWorkspaceProfile();
+	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
+	const clinicMode = useSettingsStore((s) => s.clinicMode);
+	const { showCurators, showMarketing, showBranches, showPnl } = resolveAnalyticsHeaderVisibility({
+		clinicMode,
+		selectedWorkspaceRole,
+		hasLeadsKanban,
+		hasMarketingModule,
+		hasMultipleChairs,
+	});
+
 	const [isSectionMoreOpen, setIsSectionMoreOpen] = useState(false);
 	const [isDateMoreOpen, setIsDateMoreOpen] = useState(false);
 	const sectionMoreRef = useRef<HTMLDivElement>(null);
@@ -111,18 +145,20 @@ export function AnalyticsHeaderBar({
 					>
 						<span>Графики</span>
 					</button>
-					<button
-						type="button"
-						role="tab"
-						aria-selected={analyticsSection === "curators"}
-						className={`analytics-tab-btn analytics-tab-btn--desktop-only ${analyticsSection === "curators" ? "analytics-tab-btn--active" : ""}`}
-						onClick={() => {
-							setAnalyticsSection("curators");
-							setIsSectionMoreOpen(false);
-						}}
-					>
-						<span>Кураторы</span>
-					</button>
+					{showCurators && (
+						<button
+							type="button"
+							role="tab"
+							aria-selected={analyticsSection === "curators"}
+							className={`analytics-tab-btn analytics-tab-btn--desktop-only ${analyticsSection === "curators" ? "analytics-tab-btn--active" : ""}`}
+							onClick={() => {
+								setAnalyticsSection("curators");
+								setIsSectionMoreOpen(false);
+							}}
+						>
+							<span>Кураторы</span>
+						</button>
+					)}
 
 					{/* Контекстное меню «...» для специализированных разделов */}
 					<div className="relative inline-flex items-center" ref={sectionMoreRef}>
@@ -173,24 +209,26 @@ export function AnalyticsHeaderBar({
 								className="analytics-dropdown-menu absolute left-0 top-full mt-1 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[220px] text-xs animate-in fade-in zoom-in-95 duration-100"
 								role="menu"
 							>
-								<button
-									type="button"
-									className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between cursor-pointer sm:hidden ${
-										analyticsSection === "curators"
-											? "bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal-dark,#0f766e)] font-semibold"
-											: "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-									}`}
-									role="menuitem"
-									onClick={() => {
-										setAnalyticsSection("curators");
-										setIsSectionMoreOpen(false);
-									}}
-								>
-									<span>Кураторы лечения</span>
-									{analyticsSection === "curators" && (
-										<Check size={14} className="text-[var(--teal)]" />
-									)}
-								</button>
+								{showCurators && (
+									<button
+										type="button"
+										className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between cursor-pointer sm:hidden ${
+											analyticsSection === "curators"
+												? "bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal-dark,#0f766e)] font-semibold"
+												: "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+										}`}
+										role="menuitem"
+										onClick={() => {
+											setAnalyticsSection("curators");
+											setIsSectionMoreOpen(false);
+										}}
+									>
+										<span>Кураторы лечения</span>
+										{analyticsSection === "curators" && (
+											<Check size={14} className="text-[var(--teal)]" />
+										)}
+									</button>
+								)}
 
 								<button
 									type="button"
@@ -230,24 +268,26 @@ export function AnalyticsHeaderBar({
 									)}
 								</button>
 
-								<button
-									type="button"
-									className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
-										analyticsSection === "marketing"
-											? "bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal-dark,#0f766e)] font-semibold"
-											: "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-									}`}
-									role="menuitem"
-									onClick={() => {
-										setAnalyticsSection("marketing");
-										setIsSectionMoreOpen(false);
-									}}
-								>
-									<span>Сквозной маркетинг и ROMI</span>
-									{analyticsSection === "marketing" && (
-										<Check size={14} className="text-[var(--teal)]" />
-									)}
-								</button>
+								{showMarketing && (
+									<button
+										type="button"
+										className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
+											analyticsSection === "marketing"
+												? "bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal-dark,#0f766e)] font-semibold"
+												: "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+										}`}
+										role="menuitem"
+										onClick={() => {
+											setAnalyticsSection("marketing");
+											setIsSectionMoreOpen(false);
+										}}
+									>
+										<span>Сквозной маркетинг и ROMI</span>
+										{analyticsSection === "marketing" && (
+											<Check size={14} className="text-[var(--teal)]" />
+										)}
+									</button>
+								)}
 
 								<button
 									type="button"
@@ -275,8 +315,10 @@ export function AnalyticsHeaderBar({
 									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 									onClick={() => {
-										if (typeof window !== "undefined") {
-											window.dispatchEvent(new CustomEvent("dente:open-analytics"));
+										if (onOpenExecutiveStudio) {
+											onOpenExecutiveStudio();
+										} else {
+											setAnalyticsSection("executive");
 										}
 										setIsSectionMoreOpen(false);
 									}}
@@ -287,35 +329,39 @@ export function AnalyticsHeaderBar({
 									<span>Управленческая студия</span>
 								</button>
 
-								<button
-									type="button"
-									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer"
-									role="menuitem"
-									onClick={() => {
-										onOpenMarketingRoi();
-										setIsSectionMoreOpen(false);
-									}}
-									data-testid="btn-open-marketing-roi-modal"
-									title="Открыть сквозную аналитику ROI маркетинговых кампаний"
-								>
-									<TrendingUp size={14} className="text-[var(--teal)]" />
-									<span>ROI маркетинговых кампаний</span>
-								</button>
+								{showMarketing && (
+									<button
+										type="button"
+										className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer"
+										role="menuitem"
+										onClick={() => {
+											onOpenMarketingRoi();
+											setIsSectionMoreOpen(false);
+										}}
+										data-testid="btn-open-marketing-roi-modal"
+										title="Открыть сквозную аналитику ROI маркетинговых кампаний"
+									>
+										<TrendingUp size={14} className="text-[var(--teal)]" />
+										<span>ROI маркетинговых кампаний</span>
+									</button>
+								)}
 
-								<button
-									type="button"
-									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer"
-									role="menuitem"
-									onClick={() => {
-										onOpenFinancialAnalytics();
-										setIsSectionMoreOpen(false);
-									}}
-									data-testid="btn-open-financial-analytics-modal"
-									title="Открыть финансовую аналитику P&L и кассовые остатки"
-								>
-									<DollarSign size={14} className="text-[var(--teal)]" />
-									<span>Финансовая аналитика P&L</span>
-								</button>
+								{showPnl && (
+									<button
+										type="button"
+										className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer"
+										role="menuitem"
+										onClick={() => {
+											onOpenFinancialAnalytics();
+											setIsSectionMoreOpen(false);
+										}}
+										data-testid="btn-open-financial-analytics-modal"
+										title="Открыть финансовую аналитику P&L и кассовые остатки"
+									>
+										<DollarSign size={14} className="text-[var(--teal)]" />
+										<span>Финансовая аналитика P&amp;L</span>
+									</button>
+								)}
 							</div>
 						)}
 					</div>
@@ -330,22 +376,24 @@ export function AnalyticsHeaderBar({
 					role="toolbar"
 					aria-label="Фильтры аналитики"
 				>
-				{/* Филиал (Compact 32px SegmentedControl) */}
-				<div className="analytics-segmented" role="radiogroup" aria-label="Выбор филиала">
-					{BRANCH_OPTIONS.map((b) => (
-						<button
-							key={b.value}
-							type="button"
-							className={`analytics-segmented-btn ${branchFilter === b.value ? "analytics-segmented-btn--active" : ""}`}
-							onClick={() => setBranchFilter(b.value)}
-							aria-checked={branchFilter === b.value}
-							role="radio"
-						>
-							{b.value === "all" && <Building2 size={12} aria-hidden="true" className="mr-1 inline-block" />}
-							{b.value === "all" ? "Все" : b.label}
-						</button>
-					))}
-				</div>
+				{/* Филиал (Compact 32px SegmentedControl, скрыт для соло-клиники и 1 кресла) */}
+				{showBranches && (
+					<div className="analytics-segmented" role="radiogroup" aria-label="Выбор филиала">
+						{BRANCH_OPTIONS.map((b) => (
+							<button
+								key={b.value}
+								type="button"
+								className={`analytics-segmented-btn ${branchFilter === b.value ? "analytics-segmented-btn--active" : ""}`}
+								onClick={() => setBranchFilter(b.value)}
+								aria-checked={branchFilter === b.value}
+								role="radio"
+							>
+								{b.value === "all" && <Building2 size={12} aria-hidden="true" className="mr-1 inline-block" />}
+								{b.value === "all" ? "Все" : b.label}
+							</button>
+						))}
+					</div>
+				)}
 
 				{/* Период (Compact 32px SegmentedControl: Сегодня, Неделя, Месяц, Квартал per Mandate 8e) */}
 				<div

@@ -7,7 +7,13 @@
 
 import type { StaffRole } from "@dental/shared";
 import { clientLogger } from "../logger.js";
-import { type AppView, appViews, getFilteredAppViews, getFallbackAppView } from "../routeUtils.js";
+import {
+	type AppView,
+	type FilteredAppViewsOptions,
+	appViews,
+	getFilteredAppViews,
+	getFallbackAppView,
+} from "../routeUtils.js";
 import type {
 	CbctStudioRouteParams,
 	CephStudioRouteParams,
@@ -17,9 +23,13 @@ import type {
 /**
  * Validates whether the given staff role is permitted to access the requested view.
  */
-export function validateRouteRoleAccess(route: AppView, role?: StaffRole): boolean {
+export function validateRouteRoleAccess(
+	route: AppView,
+	role?: StaffRole,
+	options?: FilteredAppViewsOptions,
+): boolean {
 	if (!role) return true;
-	const allowed = getFilteredAppViews(role);
+	const allowed = getFilteredAppViews(role, options);
 	return allowed.includes(route);
 }
 

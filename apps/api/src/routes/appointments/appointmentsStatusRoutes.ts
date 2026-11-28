@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { db } from "../../db/client.js";
 import { onTenantTxCommit, runDetachedInTenantCtx, withSavepoint } from "../../db/rls.js";
 import { visits } from "../../db/schema.js";
@@ -237,9 +238,27 @@ export function registerAppointmentStatusRoutes(
 		reply: FastifyReply,
 	) => Promise<unknown>,
 ) {
-	const routeOpts = { config: { tenantTxSelfManaged: true } } as const;
-	app.patch("/api/appointments/:appointmentId/status", routeOpts, statusHandler);
-	app.put("/api/appointments/:appointmentId/status", routeOpts, statusHandler);
-	app.put("/api/schedule/appointments/:appointmentId/status", routeOpts, statusHandler);
-	app.patch("/api/schedule/appointments/:appointmentId/status", routeOpts, statusHandler);
+	const authOptions = {
+		allowClinicTokenWithoutStaff: true,
+		allowAdminSecretBypass: true,
+	} as const;
+
+	for (const route of [
+		{ method: "PATCH" as const, path: "/api/appointments/:appointmentId/status" },
+		{ method: "PUT" as const, path: "/api/appointments/:appointmentId/status" },
+		{ method: "PUT" as const, path: "/api/schedule/appointments/:appointmentId/status" },
+		{ method: "PATCH" as const, path: "/api/schedule/appointments/:appointmentId/status" },
+	]) {
+		defineStreamRoute(app, {
+			method: route.method,
+			path: route.path,
+			permission: "schedule.write",
+			authOptions,
+			handler: async ({ request, reply }) =>
+				statusHandler(
+					request as FastifyRequest<{ Params: AppointmentIdParams }>,
+					reply,
+				),
+		});
+	}
 }

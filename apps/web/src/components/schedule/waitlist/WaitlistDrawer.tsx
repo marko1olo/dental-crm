@@ -105,7 +105,12 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
 
   const clinicName = dashboard?.clinicSettings?.profile?.clinicName || "Стоматология DENTE";
   const staffDoctors = (dashboard?.clinicSettings?.staff || []).filter(
-    (s: { role?: string }) => s.role === "doctor" || s.role === "dentist",
+    (s: { role?: string }) =>
+      s.role === "doctor" ||
+      s.role === "dentist" ||
+      s.role === "owner" ||
+      s.role === "head_doctor" ||
+      s.role === "chief_doctor",
   );
   const clinicPatients = dashboard?.patients || [];
 

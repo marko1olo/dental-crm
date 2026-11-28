@@ -64,6 +64,20 @@ const TABS = [
 	{ id: "family", testId: "tab-patient-family", label: "Семья", Icon: Users },
 ] as const;
 
+export function resolvePatientCardVisibleTabs(params: {
+	readonly hasDentalLab: boolean;
+	readonly hasReclamations: boolean;
+	readonly isDemo?: boolean | undefined;
+}) {
+	const showDentalLabTab = params.hasDentalLab || Boolean(params.isDemo);
+	const showReclamationsTab = params.hasReclamations || Boolean(params.isDemo);
+	return TABS.filter((tab) => {
+		if (tab.id === "labOrders" && !showDentalLabTab) return false;
+		if (tab.id === "reclamations" && !showReclamationsTab) return false;
+		return true;
+	});
+}
+
 export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(function PatientCardModal(props) {
 	const {
 		isOpen,
@@ -91,11 +105,17 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 	}, [effectiveInitialMode]);
 
 	const isCreateMode = activeMode === "create" || Boolean(createPatient);
-	const { hasDentalLab } = useWorkspaceProfile();
-	const showDentalLabTab = hasDentalLab || isDemoShowcaseMode();
+	const { hasDentalLab, hasReclamations } = useWorkspaceProfile();
+	const isDemo = isDemoShowcaseMode();
+	const showDentalLabTab = hasDentalLab || isDemo;
 	const visibleTabs = useMemo(
-		() => (showDentalLabTab ? TABS : TABS.filter((tab) => tab.id !== "labOrders")),
-		[showDentalLabTab],
+		() =>
+			resolvePatientCardVisibleTabs({
+				hasDentalLab,
+				hasReclamations,
+				isDemo,
+			}),
+		[hasDentalLab, hasReclamations, isDemo],
 	);
 
 	// Состояние для режима карты пациента

@@ -1,6 +1,6 @@
 import { and, asc, eq, gte, inArray, lte } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { withTenantWriteCtx } from "../../db/rls.js";
+import type { FastifyInstance } from "fastify";
+import { defineTenantMutation } from "../../core/routeFactories.js";
 import {
 	appointments,
 	clinics,
@@ -11,72 +11,41 @@ import {
 } from "../../db/schema.js";
 import { issueAppointmentActionLinks } from "../../services/communications/appointmentActionLinks.js";
 import { renderTemplate } from "../../services/communications/templateEngine/templateRenderer.js";
-import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import { decryptTelegramChatId } from "../../utils/telegramChatRef.js";
-import { requireScheduleMutationContext } from "../scheduleAuthGuard.js";
 import {
 	batchDispatchSchema,
 	dayBoundsInTimeZone,
 	tomorrowInTimeZone,
 } from "./timezoneAndTypes.js";
 
-const dayConfirmationsIdempotencyDispatchOptionsWithOrgId = {
-	config: {
-		tenantTxSelfManaged: true,
-	},
-	schema: {
-		description:
-			"Batch dispatch tomorrow appointment reminders with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-		headers: {
-			type: "object",
-			properties: {
-				"idempotency-key": { type: "string" },
-				"x-idempotency-key": { type: "string" },
-				organizationid: { type: "string" },
-				"x-organization-id": { type: "string" },
-			},
-		},
-	},
-};
-
 export function registerDayConfirmationDispatchRoutes(
 	app: FastifyInstance,
 ): void {
-	const handleDispatchBatchReminders = async (
-		request: FastifyRequest,
-		reply: FastifyReply,
-	) => {
-		const context = await requireScheduleMutationContext(
+	const dispatchSpec = {
+		method: "POST" as const,
+		permission: "schedule.write" as const,
+		authOptions: {
+			allowClinicTokenWithoutStaff: true,
+			allowAdminSecretBypass: true,
+		},
+		idempotency: "optional_header" as const,
+		bodySchema: batchDispatchSchema,
+		validationErrorMessage: "Неверные параметры запроса",
+		handler: async ({
+			tx,
+			organizationId,
+			body,
 			request,
 			reply,
-			"batch dispatch reminders",
-		);
-		if (!context) return;
-		const { organizationId } = context;
-
-		const rawIdemKey = extractIdempotencyKey(request);
-		const idempotencyKey = rawIdemKey?.trim() ? rawIdemKey.trim() : null;
-		if (idempotencyKey) {
-			if (!isValidUuid(idempotencyKey)) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Заголовок Idempotency-Key должен быть валидным UUID",
-				});
-			}
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-
-		const body = batchDispatchSchema.safeParse(request.body ?? {});
-		if (!body.success) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: body.error.errors[0]?.message ?? "Неверные параметры запроса",
-			});
-		}
-
-		const parsed = body.data;
-		try {
-			const txOutcome = await withTenantWriteCtx(organizationId, async (tx) => {
+		}: {
+			tx: import("../../db/rls.js").TenantDb;
+			organizationId: string;
+			body: import("zod").infer<typeof batchDispatchSchema>;
+			request: import("fastify").FastifyRequest;
+			reply: import("fastify").FastifyReply;
+		}) => {
+			const parsed = body;
+			try {
 				const clinicList = await tx
 					.select({
 						id: clinics.id,
@@ -94,7 +63,10 @@ export function registerDayConfirmationDispatchRoutes(
 					tomorrowInTimeZone(timeZone, new Date(), request.log);
 				const bounds = dayBoundsInTimeZone(date, timeZone, request.log);
 				if (!bounds) {
-					return { kind: "invalid_date" as const };
+					return reply.status(400).send({
+						error: "InvalidDate",
+						message: "Не удалось определить границы дня в часовом поясе клиники",
+					});
 				}
 
 				const nowInTz = new Intl.DateTimeFormat("en-US", {
@@ -179,7 +151,8 @@ export function registerDayConfirmationDispatchRoutes(
 						| "skipped_quiet_hours"
 						| "skipped_no_contact"
 						| "already_queued";
-					details?: string;
+					reason: string;
+					details: string;
 				}> = [];
 
 				const activeTemplates = await tx
@@ -213,25 +186,29 @@ export function registerDayConfirmationDispatchRoutes(
 
 					if (!phone && !telegram) {
 						skippedNoContact++;
+						const reasonText = "У пациента нет номера телефона или Telegram";
 						prefilteredResults.push({
 							appointmentId: appt.id,
 							patientName: patName,
 							channel: "none",
 							status: "skipped_no_contact",
-							details: "У пациента нет номера телефона или Telegram",
+							reason: reasonText,
+							details: reasonText,
 						});
 						continue;
 					}
 
 					if (isQuietHours && !parsed.allowQuietHoursOverride) {
 						skippedQuietHours++;
+						const reasonText =
+							"Тихий час (21:00–08:00). Отправка отложена до утра, чтобы не беспокоить пациента.";
 						prefilteredResults.push({
 							appointmentId: appt.id,
 							patientName: patName,
 							channel: telegram ? "telegram" : "whatsapp",
 							status: "skipped_quiet_hours",
-							details:
-								"Тихий час (21:00–08:00). Отправка отложена до утра, чтобы не беспокоить пациента.",
+							reason: reasonText,
+							details: reasonText,
 						});
 						continue;
 					}
@@ -261,12 +238,14 @@ export function registerDayConfirmationDispatchRoutes(
 								"Пропуск отправки через Telegram: отсутствует Telegram Chat ID",
 							);
 							skippedNoContact++;
+							const reasonText = "У пациента не привязан Telegram аккаунт";
 							prefilteredResults.push({
 								appointmentId: appt.id,
 								patientName: patName,
 								channel: "telegram",
 								status: "skipped_no_contact",
-								details: "У пациента не привязан Telegram аккаунт",
+								reason: reasonText,
+								details: reasonText,
 							});
 							continue;
 						}
@@ -378,77 +357,68 @@ export function registerDayConfirmationDispatchRoutes(
 					patientName: string;
 					channel: string;
 					status: "dispatched" | "already_queued";
+					reason: string;
 					details: string;
 				}> = outboxCandidates.map((c) => {
 					if (insertedDedupeKeys.has(c.dedupeKey)) {
 						dispatched++;
+						const reasonText = "Успешно поставлено в очередь рассылки";
 						return {
 							appointmentId: c.appointmentId,
 							patientName: c.patientName,
 							channel: c.channel,
 							status: "dispatched" as const,
-							details: "Успешно поставлено в очередь рассылки",
+							reason: reasonText,
+							details: reasonText,
 						};
 					}
 					alreadyQueued++;
+					const reasonText = "Напоминание уже сформировано и находится в очереди";
 					return {
 						appointmentId: c.appointmentId,
 						patientName: c.patientName,
 						channel: c.channel,
 						status: "already_queued" as const,
-						details: "Напоминание уже сформировано и находится в очереди",
+						reason: reasonText,
+						details: reasonText,
 					};
 				});
 
 				const results = [...prefilteredResults, ...queueResults];
 
-				return {
-					kind: "ok" as const,
-					payload: {
-						success: true,
-						date,
-						timeZone,
-						totalAppointments: targetAppointments.length,
-						dispatched,
-						alreadyQueued,
-						skippedQuietHours,
-						skippedNoContact,
-						isQuietHours,
-						results,
-						message: `Пакетная обработка напоминаний завершена: новых в очереди ${dispatched}, ранее создано ${alreadyQueued}, пропущено тихих часов ${skippedQuietHours}, без контакта ${skippedNoContact}.`,
-					},
-				};
-			});
-
-			if (txOutcome.kind === "invalid_date") {
-				return reply.status(400).send({
-					error: "InvalidDate",
-					message: "Не удалось определить границы дня в часовом поясе клиники",
+				return reply.send({
+					success: true,
+					date,
+					timeZone,
+					totalAppointments: targetAppointments.length,
+					dispatched,
+					alreadyQueued,
+					skippedQuietHours,
+					skippedNoContact,
+					isQuietHours,
+					results,
+					message: `Пакетная обработка напоминаний завершена: новых в очереди ${dispatched}, ранее создано ${alreadyQueued}, пропущено тихих часов ${skippedQuietHours}, без контакта ${skippedNoContact}.`,
+				});
+			} catch (err: unknown) {
+				request.log.error(err, "Ошибка пакетной отправки напоминаний на завтра");
+				const message =
+					err instanceof Error
+						? err.message
+						: "Внутренняя ошибка пакетной рассылки";
+				return reply.status(500).send({
+					error: "BatchDispatchError",
+					message,
 				});
 			}
-
-			return reply.send(txOutcome.payload);
-		} catch (err: unknown) {
-			request.log.error(err, "Ошибка пакетной отправки напоминаний на завтра");
-			const message =
-				err instanceof Error
-					? err.message
-					: "Внутренняя ошибка пакетной рассылки";
-			return reply.status(500).send({
-				error: "BatchDispatchError",
-				message,
-			});
-		}
+		},
 	};
 
-	app.post(
-		"/api/schedule/day-confirmations/dispatch",
-		dayConfirmationsIdempotencyDispatchOptionsWithOrgId,
-		handleDispatchBatchReminders,
-	);
-	app.post(
-		"/api/schedule/tomorrow-reminders/dispatch",
-		dayConfirmationsIdempotencyDispatchOptionsWithOrgId,
-		handleDispatchBatchReminders,
-	);
+	defineTenantMutation(app, {
+		...dispatchSpec,
+		path: "/api/schedule/day-confirmations/dispatch",
+	});
+	defineTenantMutation(app, {
+		...dispatchSpec,
+		path: "/api/schedule/tomorrow-reminders/dispatch",
+	});
 }

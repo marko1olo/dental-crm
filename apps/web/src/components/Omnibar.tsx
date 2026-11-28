@@ -168,12 +168,15 @@ export function Omnibar() {
 		);
 		const allowMarketingSection = hasCapability(effectiveClinicMode, "marketingSection");
 		const isSoloMode = effectiveClinicMode === "solo_doctor";
+		const isOneChairOrSolo = isSoloMode || effectiveClinicMode === "one_chair";
 		const showPayroll = (featureFlags.hasPayrollModule || isDemo) && !isSoloMode && allowedViewSet.has("finance");
 		const showLeads = allowedViewSet.has("leads") && allowMarketingSection && (featureFlags.hasLeadsKanban || isDemo);
 		const showMarketing = allowedViewSet.has("marketing") && allowMarketingSection && (featureFlags.hasMarketingModule || isDemo);
 		const showLab = allowedViewSet.has("lab") && (featureFlags.hasDentalLab || isDemo);
 		const showInventory = allowedViewSet.has("inventory") && (featureFlags.hasInventoryModule || isDemo);
-		const showAnalytics = allowedViewSet.has("analytics") && (featureFlags.hasAnalyticsModule || isDemo);
+		const showAnalytics =
+			allowedViewSet.has("analytics") &&
+			(featureFlags.hasAnalyticsModule || isDemo || isOneChairOrSolo);
 		const showScanner = allowedViewSet.has("scanner") && (featureFlags.hasCsoScanner || isDemo);
 
 		const list = [

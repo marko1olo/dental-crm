@@ -1,6 +1,7 @@
 import { Camera, MoveHorizontal, Paperclip, QrCode, Sparkles } from "lucide-react";
 import type React from "react";
 import { useRef } from "react";
+import { navigateToStudio } from "../../../lib/clinicEventBus";
 
 export interface VisitDiaryPhotoActionsToolbarProps {
 	isLocked: boolean;
@@ -35,7 +36,15 @@ export function VisitDiaryPhotoActionsToolbar({
 
 	const handleCameraClick = () => {
 		if (isUploading) return;
-		if (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches) {
+		const isDesktopViewport =
+			typeof window !== "undefined" &&
+			window.innerWidth >= 1024 &&
+			!document.documentElement.classList.contains("mobile-touch-shell");
+		if (
+			typeof window !== "undefined" &&
+			!isDesktopViewport &&
+			window.matchMedia("(pointer: coarse)").matches
+		) {
 			cameraInputRef.current?.click();
 			return;
 		}
@@ -45,7 +54,7 @@ export function VisitDiaryPhotoActionsToolbar({
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-2">
 			<div className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[var(--muted)]">
-				<Camera className="w-4 h-4 text-[var(--bad-fg)]" />
+				<Camera className="w-4 h-4 text-[var(--ink-muted)]" />
 				<span>Вложения (Фотографии)</span>
 			</div>
 
@@ -65,7 +74,7 @@ export function VisitDiaryPhotoActionsToolbar({
 							className="cursor-pointer text-xs min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] flex items-center gap-1.5 active:scale-[0.98]"
 							title="Сравнить снимки До/После (интерактивная шторка для экрана пациента)"
 						>
-							<MoveHorizontal className="w-4 h-4 text-[var(--accent)]" />
+							<MoveHorizontal className="w-4 h-4 shrink-0" />
 							<span>До / После</span>
 						</button>
 					)}
@@ -74,11 +83,11 @@ export function VisitDiaryPhotoActionsToolbar({
 						<button
 							type="button"
 							onClick={onQrBridgeOpen}
-							className="cursor-pointer text-xs min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--teal)] flex items-center gap-1.5 active:scale-[0.98]"
+							className="cursor-pointer text-xs min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] flex items-center gap-1.5 active:scale-[0.98]"
 							title="Загрузка фото со смартфона врача через динамический QR-код (Chairside QR Bridge)"
 							data-testid="btn-visit-diary-qr-bridge"
 						>
-							<QrCode className="w-4 h-4" />
+							<QrCode className="w-4 h-4 shrink-0" />
 							<span>Телефон (QR)</span>
 						</button>
 					)}
@@ -88,15 +97,15 @@ export function VisitDiaryPhotoActionsToolbar({
 						onClick={() => {
 							if (onDsdOpen) {
 								onDsdOpen();
-							} else if (typeof window !== "undefined") {
-								window.dispatchEvent(new CustomEvent("dente:open-dsd", { detail: { dsd: true } }));
+							} else {
+								navigateToStudio({ kind: "photo_protocol", mode: "dsd" });
 							}
 						}}
-						className="cursor-pointer text-xs min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-teal-600 dark:text-teal-400 flex items-center gap-1.5 active:scale-[0.98]"
+						className="cursor-pointer text-xs min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] flex items-center gap-1.5 active:scale-[0.98]"
 						title="Digital Smile Design (DSD): эстетический дизайн улыбки и золотое сечение"
 						data-testid="btn-visit-diary-open-dsd"
 					>
-						<Sparkles className="w-4 h-4 text-teal-500" />
+						<Sparkles className="w-4 h-4 shrink-0" />
 						<span>DSD Эстетика</span>
 					</button>
 
@@ -108,7 +117,7 @@ export function VisitDiaryPhotoActionsToolbar({
 						}`}
 						title="Сделать снимок с интраоральной USB/UVC камеры или веб-камеры (WebRTC захват, на мобильном — камера планшета)"
 					>
-						<Camera className="w-4 h-4 text-[var(--accent)]" />
+						<Camera className="w-4 h-4 shrink-0" />
 						<span>{isUploading ? "Сжатие..." : "Снимок с камеры"}</span>
 					</button>
 

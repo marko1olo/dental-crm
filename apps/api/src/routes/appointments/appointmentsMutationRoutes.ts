@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, notInArray, sql } from "drizzle-orm";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	createAppointmentInDb,
 	getAppointmentByIdInDb,
@@ -60,6 +61,7 @@ import {
 import type {
 	AppointmentIdParams,
 	AppointmentOptionalIdParams,
+	AppointmentQueryParams,
 } from "./types.js";
 
 function schedulePostCommitRecallSync(
@@ -158,7 +160,13 @@ export const createAppointmentHandler = async (
 	if (!context) return reply;
 	const orgId = context.organizationId;
 
-	const txOutcome = await withTenantWriteCtx(orgId, async (tx) => {
+	type CreateOutcome =
+		| { kind: "validation_error" }
+		| { kind: "lab_conflict"; dueIso: string | undefined; dueRu: string | undefined; orderId: string }
+		| { kind: "created"; created: Awaited<ReturnType<typeof createAppointmentInDb>> }
+		| { kind: "rejected"; rejection: Awaited<ReturnType<typeof appointmentRejectionResponse>> };
+
+	const txOutcome = await withTenantWriteCtx(orgId, async (tx): Promise<CreateOutcome> => {
 		const zone = (await clinicTimeZone(orgId, tx)) || DEFAULT_SCHEDULE_TIMEZONE;
 		const rawBody = await prepareCreateAppointmentRawBody(
 			orgId,
@@ -192,7 +200,9 @@ export const createAppointmentHandler = async (
 		);
 		if (labCollisionCheck.hasCollision && labCollisionCheck.conflictingOrder) {
 			const dueIso = labCollisionCheck.conflictingOrder.dueDate?.toISOString();
-			const dueRu = labCollisionCheck.conflictingOrder.dueDate?.toLocaleDateString("ru-RU");
+			const dueRu = labCollisionCheck.conflictingOrder.dueDate?.toLocaleDateString("ru-RU", {
+				timeZone: zone,
+			});
 			return {
 				kind: "lab_conflict" as const,
 				dueIso,
@@ -329,7 +339,14 @@ export const updateAppointmentHandler = async (
 	if (!context) return reply;
 	const orgId = context.organizationId;
 
-	const txOutcome = await withTenantWriteCtx(orgId, async (tx) => {
+	type UpdateOutcome =
+		| { kind: "validation_error" }
+		| { kind: "not_found" }
+		| { kind: "lab_conflict"; dueIso: string | undefined; dueRu: string | undefined; orderId: string }
+		| { kind: "updated"; updatedAppt: Awaited<ReturnType<typeof updateAppointmentInDb>> }
+		| { kind: "rejected"; rejection: Awaited<ReturnType<typeof appointmentRejectionResponse>> };
+
+	const txOutcome = await withTenantWriteCtx(orgId, async (tx): Promise<UpdateOutcome> => {
 		const zone = (await clinicTimeZone(orgId, tx)) || DEFAULT_SCHEDULE_TIMEZONE;
 		const rawBody =
 			(await prepareUpdateAppointmentRawBody(orgId, request.body, tx, zone)) ??
@@ -366,7 +383,9 @@ export const updateAppointmentHandler = async (
 			);
 			if (labCollisionCheck.hasCollision && labCollisionCheck.conflictingOrder) {
 				const dueIso = labCollisionCheck.conflictingOrder.dueDate?.toISOString();
-				const dueRu = labCollisionCheck.conflictingOrder.dueDate?.toLocaleDateString("ru-RU");
+				const dueRu = labCollisionCheck.conflictingOrder.dueDate?.toLocaleDateString("ru-RU", {
+					timeZone: zone,
+				});
 				return {
 					kind: "lab_conflict" as const,
 					dueIso,
@@ -549,7 +568,15 @@ export const createNextStageAppointmentHandler = async (
 	if (!context) return reply;
 	const orgId = context.organizationId;
 
-	const txOutcome = await withTenantWriteCtx(orgId, async (tx) => {
+	type NextStageOutcome =
+		| { kind: "missing_parent_id" }
+		| { kind: "parent_not_found" }
+		| { kind: "validation_error" }
+		| { kind: "lab_conflict"; dueIso: string | undefined; dueRu: string | undefined; orderId: string }
+		| { kind: "created"; created: Awaited<ReturnType<typeof createAppointmentInDb>> }
+		| { kind: "rejected"; rejection: Awaited<ReturnType<typeof appointmentRejectionResponse>> };
+
+	const txOutcome = await withTenantWriteCtx(orgId, async (tx): Promise<NextStageOutcome> => {
 		const params = request.params;
 		const appointmentId = params?.appointmentId || params?.id;
 		if (!appointmentId || !APPOINTMENT_ID_UUID_PATTERN.test(appointmentId)) {
@@ -561,16 +588,52 @@ export const createNextStageAppointmentHandler = async (
 			return { kind: "parent_not_found" as const };
 		}
 
+		const zone = (await clinicTimeZone(orgId, tx)) || DEFAULT_SCHEDULE_TIMEZONE;
 		const rawBody =
 			request.body && typeof request.body === "object"
 				? { ...(request.body as Record<string, unknown>) }
 				: {};
 
-		const createPayload = buildNextStageCreatePayload(parent, rawBody);
+		const mergedNextStageRaw = buildNextStageCreatePayload(parent, rawBody);
+		const preparedRawBody = await prepareCreateAppointmentRawBody(
+			orgId,
+			mergedNextStageRaw,
+			tx,
+			zone,
+		);
 
-		const input = parseSchedulePayload(createAppointmentSchema, createPayload);
+		const input = parseSchedulePayload(
+			createAppointmentSchema,
+			preparedRawBody ?? mergedNextStageRaw,
+		);
 		if (!input) {
 			return { kind: "validation_error" as const };
+		}
+
+		const allowOverride = Boolean(
+			input.allowLabCollisionOverride ||
+				input.allowEmergencyOverride ||
+				input.allowOverbooking,
+		);
+		const labCollisionCheck = await checkLabOrderScheduleCollision(
+			orgId,
+			input.patientId,
+			input.startsAt,
+			allowOverride,
+			request.log,
+			tx,
+		);
+		if (labCollisionCheck.hasCollision && labCollisionCheck.conflictingOrder) {
+			const dueIso = labCollisionCheck.conflictingOrder.dueDate?.toISOString();
+			const dueRu = labCollisionCheck.conflictingOrder.dueDate?.toLocaleDateString("ru-RU", {
+				timeZone: zone,
+			});
+			return {
+				kind: "lab_conflict" as const,
+				dueIso,
+				dueRu,
+				orderId: labCollisionCheck.conflictingOrder.id,
+			};
 		}
 
 		try {
@@ -661,6 +724,15 @@ export const createNextStageAppointmentHandler = async (
 			message: appointmentCreateValidationMessage,
 		});
 	}
+	if (txOutcome.kind === "lab_conflict") {
+		return reply.code(409).send({
+			code: "AppointmentLabOrderConflict",
+			conflictType: "lab_order_not_ready",
+			message: `Заказ-наряд ЗТЛ еще не готов: плановый срок сдачи ${txOutcome.dueRu}. Выберите время позже готовности или подтвердите приём с наложением.`,
+			suggestedStartsAt: txOutcome.dueIso,
+			orderId: txOutcome.orderId,
+		});
+	}
 	if (txOutcome.kind === "rejected") {
 		return sendAppointmentRejection(reply, txOutcome.rejection);
 	}
@@ -678,52 +750,127 @@ export const createNextStageAppointmentHandler = async (
 	});
 };
 
-const appointmentMutationOptions = {
-	config: {
-		tenantTxSelfManaged: true,
-	},
-	schema: {
-		description: "Appointment mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-		headers: {
-			type: "object",
-			properties: {
-				"idempotency-key": { type: "string" },
-				"x-idempotency-key": { type: "string" },
-				organizationid: { type: "string" },
-				"x-organization-id": { type: "string" },
-			},
-		},
-	},
-} as const;
-
 export async function registerAppointmentsRoutes(app: FastifyInstance) {
-	const selfManagedRouteOpts = { config: { tenantTxSelfManaged: true } } as const;
-	app.get("/api/appointments", selfManagedRouteOpts, handleGetAppointments);
-	app.get("/api/appointments/next-free-slots", selfManagedRouteOpts, handleGetNextFreeSlots);
-	app.get("/api/schedule", selfManagedRouteOpts, handleGetAppointments);
-	app.get("/api/appointments/:appointmentId", selfManagedRouteOpts, handleGetAppointmentById);
-	app.post("/api/appointments", selfManagedRouteOpts, createAppointmentHandler);
-	app.post(
-		"/api/appointments/:appointmentId/next-stage",
-		selfManagedRouteOpts,
-		createNextStageAppointmentHandler,
-	);
-	app.post(
-		"/api/schedule/appointments/:appointmentId/next-stage",
-		selfManagedRouteOpts,
-		createNextStageAppointmentHandler,
-	);
-	app.patch("/api/appointments/:appointmentId", selfManagedRouteOpts, updateAppointmentHandler);
-	app.put("/api/appointments/:appointmentId", selfManagedRouteOpts, updateAppointmentHandler);
+	const authOptions = {
+		allowClinicTokenWithoutStaff: true,
+		allowAdminSecretBypass: true,
+	} as const;
+
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/appointments",
+		permission: "schedule.read",
+		authOptions,
+		handler: async ({ request, reply }) =>
+			handleGetAppointments(
+				request as FastifyRequest<{ Querystring: AppointmentQueryParams }>,
+				reply,
+			),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/appointments/next-free-slots",
+		permission: "schedule.read",
+		authOptions,
+		handler: async ({ request, reply }) => handleGetNextFreeSlots(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/schedule",
+		permission: "schedule.read",
+		authOptions,
+		handler: async ({ request, reply }) =>
+			handleGetAppointments(
+				request as FastifyRequest<{ Querystring: AppointmentQueryParams }>,
+				reply,
+			),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/appointments/:appointmentId",
+		permission: "schedule.read",
+		authOptions,
+		handler: async ({ request, reply }) =>
+			handleGetAppointmentById(
+				request as FastifyRequest<{ Params: AppointmentOptionalIdParams }>,
+				reply,
+			),
+	});
+
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/appointments",
+		permission: "schedule.write",
+		authOptions,
+		handler: async ({ request, reply }) => createAppointmentHandler(request, reply),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/appointments/:appointmentId/next-stage",
+		permission: "schedule.write",
+		authOptions,
+		handler: async ({ request, reply }) =>
+			createNextStageAppointmentHandler(
+				request as FastifyRequest<{ Params: AppointmentOptionalIdParams }>,
+				reply,
+			),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/schedule/appointments/:appointmentId/next-stage",
+		permission: "schedule.write",
+		authOptions,
+		handler: async ({ request, reply }) =>
+			createNextStageAppointmentHandler(
+				request as FastifyRequest<{ Params: AppointmentOptionalIdParams }>,
+				reply,
+			),
+	});
+	defineStreamRoute(app, {
+		method: "PATCH",
+		path: "/api/appointments/:appointmentId",
+		permission: "schedule.write",
+		authOptions,
+		handler: async ({ request, reply }) =>
+			updateAppointmentHandler(
+				request as FastifyRequest<{ Params: AppointmentOptionalIdParams }>,
+				reply,
+			),
+	});
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/appointments/:appointmentId",
+		permission: "schedule.write",
+		authOptions,
+		handler: async ({ request, reply }) =>
+			updateAppointmentHandler(
+				request as FastifyRequest<{ Params: AppointmentOptionalIdParams }>,
+				reply,
+			),
+	});
+
 	registerAppointmentStatusRoutes(app, updateAppointmentHandler);
-	app.put(
-		"/api/schedule/appointments/:appointmentId",
-		appointmentMutationOptions,
-		updateAppointmentHandler,
-	);
-	app.patch(
-		"/api/schedule/appointments/:appointmentId",
-		appointmentMutationOptions,
-		updateAppointmentHandler,
-	);
+
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/schedule/appointments/:appointmentId",
+		permission: "schedule.write",
+		authOptions,
+		handler: async ({ request, reply }) =>
+			updateAppointmentHandler(
+				request as FastifyRequest<{ Params: AppointmentOptionalIdParams }>,
+				reply,
+			),
+	});
+	defineStreamRoute(app, {
+		method: "PATCH",
+		path: "/api/schedule/appointments/:appointmentId",
+		permission: "schedule.write",
+		authOptions,
+		handler: async ({ request, reply }) =>
+			updateAppointmentHandler(
+				request as FastifyRequest<{ Params: AppointmentOptionalIdParams }>,
+				reply,
+			),
+	});
 }

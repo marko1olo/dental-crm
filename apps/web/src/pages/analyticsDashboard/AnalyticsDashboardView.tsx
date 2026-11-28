@@ -117,6 +117,7 @@ export function AnalyticsDashboardView() {
 				onRetry={retry}
 				onOpenMarketingRoi={() => setIsMarketingRoiOpen(true)}
 				onOpenFinancialAnalytics={() => setIsFinancialAnalyticsOpen(true)}
+				onOpenExecutiveStudio={() => setIsAnalyticsStudioOpen(true)}
 			/>
 
 			<AnalyticsSubDashboards

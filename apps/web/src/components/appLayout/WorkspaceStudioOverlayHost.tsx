@@ -15,6 +15,7 @@ import type { WorkspaceOverlayStudio } from "@dental/shared";
 import { lazyWithRetry } from "../../lib/lazyWithRetry.js";
 import {
 	consumePendingStudioNavigation,
+	navigateToStudio,
 	subscribeLegacyStudioEvents,
 	useClinicEvent,
 } from "../../lib/clinicEventBus.js";
@@ -127,7 +128,7 @@ const TomorrowRemindersModal = lazyWithRetry(() =>
 	import("../schedule/TomorrowRemindersModal.js").then((m) => ({ default: m.TomorrowRemindersModal })),
 );
 const StandaloneClinicalBundlesHost = lazyWithRetry(() =>
-	import("./modalsContainerModules/standalone/clinical/StandaloneClinicalBundlesHost.js").then((m) => ({
+	import("../visit/StandaloneClinicalBundlesHost.js").then((m) => ({
 		default: m.StandaloneClinicalBundlesHost,
 	})),
 );
@@ -647,7 +648,27 @@ export const WorkspaceStudioOverlayHost: React.FC = () => {
 				/>
 			)}
 			{studio.kind === "recalls" && (
-				<PatientRecallsHubModal key={remountKey} isOpen={true} onClose={handleClose} clinicName={clinicName} />
+				<PatientRecallsHubModal
+					key={remountKey}
+					isOpen={true}
+					onClose={handleClose}
+					clinicName={clinicName}
+					onBookAppointment={(candidate) => {
+						navigateToStudio(
+							{
+								kind: "quick_booking",
+								patientId: candidate.patientId,
+								...(candidate.attendingDoctorId
+									? { doctorId: candidate.attendingDoctorId }
+									: {}),
+								...(candidate.dueDate
+									? { slotIso: `${candidate.dueDate}T10:00:00` }
+									: {}),
+							},
+							{ kind: "recalls" },
+						);
+					}}
+				/>
 			)}
 			{studio.kind === "warranty" && (
 				<WarrantyPassportModal

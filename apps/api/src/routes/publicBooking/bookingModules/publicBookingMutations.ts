@@ -1,7 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { formatDateKeyInTimeZone } from "@dental/shared";
-import { onTenantTxCommit, withTenantWriteCtx, type TenantDb } from "../../../db/rls.js";
+import { onTenantTxCommit, runDetachedInTenantCtx, withTenantWriteCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	clinics,
 	crmLeads,
@@ -9,6 +9,7 @@ import {
 	organizations,
 	users,
 } from "../../../db/schema.js";
+import { syncRecallOnAppointmentCreated } from "../../../services/patients/recallSyncService.js";
 import { TelegramReferralLoyaltyService } from "../../../services/telegram/TelegramReferralLoyaltyService.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import {
@@ -243,6 +244,8 @@ export async function handleBookAppointment(
 			.select({
 				id: users.id,
 				fullName: users.fullName,
+				role: users.role,
+				specialties: users.specialties,
 				workingHours: users.workingHours,
 			})
 			.from(users)
@@ -250,13 +253,28 @@ export async function handleBookAppointment(
 				and(
 					eq(users.id, doctorId),
 					eq(users.organizationId, organizationId),
-					eq(users.role, "doctor"),
+					inArray(users.role, ["doctor", "owner", "head_doctor", "chief_doctor"]),
 					eq(users.isActive, true),
 				),
 			)
 			.limit(1);
 
-		if (!doctor) {
+		const [bookingOrg] = await tenantTx
+			.select({
+				clinicSchedule: organizations.clinicSchedule,
+				clinicMode: organizations.clinicMode,
+			})
+			.from(organizations)
+			.where(eq(organizations.id, organizationId))
+			.limit(1);
+
+		const isBookableOwner =
+			doctor?.role !== "owner" ||
+			bookingOrg?.clinicMode === "solo_doctor" ||
+			bookingOrg?.clinicMode === "one_chair" ||
+			(Array.isArray(doctor?.specialties) && doctor.specialties.length > 0);
+
+		if (!doctor || !isBookableOwner) {
 			return reply.status(404).send({ error: "Врач не найден" });
 		}
 
@@ -269,11 +287,6 @@ export async function handleBookAppointment(
 			})
 			.from(clinics)
 			.where(eq(clinics.organizationId, organizationId))
-			.limit(1);
-		const [bookingOrg] = await tenantTx
-			.select({ clinicSchedule: organizations.clinicSchedule })
-			.from(organizations)
-			.where(eq(organizations.id, organizationId))
 			.limit(1);
 
 		const orgSchedule = bookingOrg?.clinicSchedule as Record<string, unknown> | null;
@@ -446,6 +459,23 @@ export async function handleBookAppointment(
 
 			const createdAppointment =
 				"appointment" in result ? result.appointment : undefined;
+			if (createdAppointment?.id && createdAppointment.patientId) {
+				onTenantTxCommit(() => {
+					void runDetachedInTenantCtx(organizationId, async () =>
+						syncRecallOnAppointmentCreated(organizationId, {
+							id: createdAppointment.id,
+							patientId: createdAppointment.patientId,
+							doctorUserId: createdAppointment.doctorUserId,
+							reason: createdAppointment.reason,
+						}),
+					).catch((recallErr: unknown) => {
+						request.log.warn(
+							{ err: recallErr, appointmentId: createdAppointment.id, organizationId },
+							"[publicBooking] Failed to sync recall after public booking appointment creation",
+						);
+					});
+				});
+			}
 			const referenceNumber = createdAppointment?.id
 				? `BK-${createdAppointment.id.slice(0, 8).toUpperCase()}`
 				: `BK-${Date.now().toString(36).toUpperCase()}`;
@@ -454,6 +484,7 @@ export async function handleBookAppointment(
 				success: true,
 				status: bookingStatus,
 				bookingStatus,
+				requiresConfirmation: !isConfirmed,
 				isPreliminary: !isConfirmed,
 				unconfirmed: !isConfirmed,
 				referenceNumber,
@@ -465,6 +496,7 @@ export async function handleBookAppointment(
 					clinicName: clinicRow?.name ?? "Стоматологическая клиника",
 					clinicAddress: clinicRow?.address ?? null,
 					status: bookingStatus,
+					requiresConfirmation: !isConfirmed,
 					isPreliminary: !isConfirmed,
 				},
 			};

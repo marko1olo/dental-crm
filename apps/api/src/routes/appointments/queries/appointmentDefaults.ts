@@ -72,7 +72,8 @@ export async function resolveDefaultChairForCreate(
 }
 
 /**
- * Резолвит дефолтного врача для создания записи (первый активный врач или администратор/владелец).
+ * Резолвит дефолтного активного врача клинической роли для создания записи.
+ * Никакого тихого подбора случайного неактивного/неклинического пользователя (Мандат 8e/8n).
  */
 export async function resolveDefaultDoctorForCreate(
 	tx: DbClientOrTransaction = db,
@@ -93,37 +94,19 @@ export async function resolveDefaultDoctorForCreate(
 		return firstActiveDoctor.id;
 	}
 
-	const [anyDoctor] = await tx
-		.select({ id: users.id })
-		.from(users)
-		.where(and(eq(users.organizationId, orgId), eq(users.role, "doctor")))
-		.limit(1);
-	if (anyDoctor) {
-		return anyDoctor.id;
-	}
-
-	const [firstActiveOwnerOrAdmin] = await tx
+	const [firstActiveClinicalLead] = await tx
 		.select({ id: users.id })
 		.from(users)
 		.where(
 			and(
 				eq(users.organizationId, orgId),
 				eq(users.isActive, true),
-				inArray(users.role, ["owner", "admin"]),
+				inArray(users.role, ["head_doctor", "chief_doctor", "owner"]),
 			),
 		)
 		.limit(1);
-	if (firstActiveOwnerOrAdmin) {
-		return firstActiveOwnerOrAdmin.id;
-	}
-
-	const [anyOrgUser] = await tx
-		.select({ id: users.id })
-		.from(users)
-		.where(eq(users.organizationId, orgId))
-		.limit(1);
-	if (anyOrgUser) {
-		return anyOrgUser.id;
+	if (firstActiveClinicalLead) {
+		return firstActiveClinicalLead.id;
 	}
 
 	return undefined;

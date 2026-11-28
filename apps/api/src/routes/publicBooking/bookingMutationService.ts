@@ -1,11 +1,14 @@
 import { and, eq, gt, ilike, inArray, lt, notInArray, or } from "drizzle-orm";
+import { computePayloadHash } from "@dental/shared";
 import { withSavepoint } from "../../db/rls.js";
 import {
 	appointments,
 	chairs,
+	idempotencyKeys,
 	patientArchiveReasonsAndBlacklists,
 	patientConsents,
 	patients,
+	scheduleSlotLeases,
 	users,
 } from "../../db/schema.js";
 import { isPatientBookingBlocked } from "../../db/patientArchiveReasonsAndBlacklistsQuery.js";
@@ -81,6 +84,52 @@ export async function executeBookingTransaction(
 		comment,
 	} = params;
 
+	// 0. DB-backed idempotency replay (replaces fragile comment marker)
+	const idempotencyDbKey = params.idempotencyKey
+		? `public-booking:${params.idempotencyKey}`
+		: null;
+	if (idempotencyDbKey) {
+		const [existingIdemp] = await tx
+			.select({
+				status: idempotencyKeys.status,
+				responseBody: idempotencyKeys.responseBody,
+			})
+			.from(idempotencyKeys)
+			.where(
+				and(
+					eq(idempotencyKeys.clinicId, organizationId),
+					eq(idempotencyKeys.key, idempotencyDbKey),
+				),
+			)
+			.limit(1);
+
+		const cachedApptId =
+			existingIdemp?.status === "completed" &&
+			existingIdemp.responseBody &&
+			typeof existingIdemp.responseBody.appointmentId === "string"
+				? existingIdemp.responseBody.appointmentId
+				: null;
+		if (cachedApptId) {
+			const [cachedAppt] = await tx
+				.select()
+				.from(appointments)
+				.where(
+					and(
+						eq(appointments.organizationId, organizationId),
+						eq(appointments.id, cachedApptId),
+					),
+				)
+				.limit(1);
+			if (cachedAppt) {
+				return {
+					conflict: false as const,
+					appointment: cachedAppt,
+					patientId: cachedAppt.patientId ?? undefined,
+				};
+			}
+		}
+	}
+
 	// 1. Canonical Resource Lock Hierarchy: Advisory -> Chairs (all active, sorted) -> Doctor -> Patient
 	// Lock all active chairs before Doctor/Patient so alternate-chair fallback never inverts lock order (40P01).
 	const activeChairs = await tx
@@ -115,9 +164,32 @@ export async function executeBookingTransaction(
 			.for("update");
 	}
 
+	const activeLeases = await tx
+		.select({
+			chairId: scheduleSlotLeases.chairId,
+			doctorUserId: scheduleSlotLeases.doctorUserId,
+		})
+		.from(scheduleSlotLeases)
+		.where(
+			and(
+				eq(scheduleSlotLeases.organizationId, organizationId),
+				gt(scheduleSlotLeases.expiresAt, new Date()),
+				lt(scheduleSlotLeases.startsAt, endDate),
+				gt(scheduleSlotLeases.endsAt, startDate),
+			),
+		);
+
+	if (activeLeases.some((l) => l.doctorUserId === doctorId)) {
+		return { conflict: true as const };
+	}
+	const leasedChairIds = new Set(
+		activeLeases.map((l) => l.chairId).filter((id): id is string => Boolean(id)),
+	);
+
 	let selectedChairId: string | null = null;
 	if (sortedChairs.length > 0) {
 		for (const chair of sortedChairs) {
+			if (leasedChairIds.has(chair.id)) continue;
 			const reserved = await findConflictingTimeReservation(tx, organizationId, {
 				startsAt: startDate,
 				endsAt: endDate,
@@ -443,19 +515,14 @@ export async function executeBookingTransaction(
 
 	if (overlapping.length > 0) {
 		const existing = overlapping[0];
-		// Double-click guard & idempotency check (Mandates 8e, 8n):
-		// Match only when idempotencyKey matches (if present on existing) or same patient + doctor + exact timestamp
-		const existingIdempMatch =
-			!params.idempotencyKey ||
-			!existing?.comment?.includes("[idempotency:") ||
-			existing.comment.includes(`[idempotency:${params.idempotencyKey}]`);
+		// Double-click guard (Mandates 8e, 8n):
+		// Same patient + doctor + exact timestamp when no conflicting idempotencyKey
 		if (
 			existing &&
 			patientId &&
 			existing.patientId === patientId &&
 			existing.doctorUserId === doctorId &&
-			new Date(existing.startsAt).getTime() === startDate.getTime() &&
-			existingIdempMatch
+			new Date(existing.startsAt).getTime() === startDate.getTime()
 		) {
 			return { conflict: false as const, appointment: existing, patientId };
 		}
@@ -466,7 +533,7 @@ export async function executeBookingTransaction(
 		const isPatientConflict = Boolean(patientId && existing?.patientId === patientId);
 
 		if (!isDoctorConflict && !isPatientConflict && sortedChairs.length > 1) {
-			const otherChairs = sortedChairs.filter((c) => c.id !== selectedChairId);
+			const otherChairs = sortedChairs.filter((c) => c.id !== selectedChairId && !leasedChairIds.has(c.id));
 
 			let alternateChairFound = false;
 			for (const altChair of otherChairs) {
@@ -507,12 +574,9 @@ export async function executeBookingTransaction(
 		}
 	}
 
-	const appointmentComment = [
-		comment ? `[Онлайн-запись] ${comment}` : "Онлайн-запись через виджет на сайте",
-		params.idempotencyKey ? `[idempotency:${params.idempotencyKey}]` : null,
-	]
-		.filter(Boolean)
-		.join(" ");
+	const appointmentComment = comment
+		? `[Онлайн-запись] ${comment}`
+		: "Онлайн-запись через виджет на сайте";
 
 	const [created] = await tx
 		.insert(appointments)
@@ -529,5 +593,27 @@ export async function executeBookingTransaction(
 		})
 		.returning();
 	if (!created) throw new Error("appointment_insert_failed");
+
+	if (idempotencyDbKey) {
+		await tx
+			.insert(idempotencyKeys)
+			.values({
+				clinicId: organizationId,
+				key: idempotencyDbKey,
+				status: "completed",
+				payloadHash: computePayloadHash({
+					doctorId,
+					startsAt: startDate.toISOString(),
+					endsAt: endDate.toISOString(),
+					patientPhone: phoneDigits,
+				}),
+				responseBody: { appointmentId: created.id },
+				responseCode: 200,
+			})
+			.onConflictDoNothing({
+				target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+			});
+	}
+
 	return { conflict: false as const, appointment: created, patientId };
 }

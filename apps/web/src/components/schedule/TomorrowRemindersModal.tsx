@@ -41,17 +41,36 @@ export function TomorrowRemindersModal({
 		logic.setIsDispatching(true);
 		logic.setDispatchProgress({ current: 0, total: logic.summary.dispatchableCount ?? 0 });
 		try {
-			await dispatchBatchReminders(
+			const batchResult = await dispatchBatchReminders(
 				logic.summary.reminders,
 				{
 					onProgress: (current, total) => logic.setDispatchProgress({ current, total }),
 					allowQuietHoursOverride: logic.allowQuietHoursOverride,
+					dateIso: logic.summary.targetDateIso,
+					clinicTimeZone: dashboard?.clinicSettings?.profile?.timezone || "Europe/Moscow",
 				},
 			);
-			showToast(`Отправлено ${logic.summary.dispatchableCount ?? 0} напоминаний`, "success");
+			const failedResults = batchResult.results.filter((r) => r.status === "error");
+			if (failedResults.length > 0) {
+				const firstErr = failedResults[0]?.error;
+				showToast(
+					firstErr || `Не удалось отправить ${failedResults.length} напоминаний`,
+					"error",
+				);
+				return;
+			}
+			if (batchResult.dispatched === 0 && batchResult.skippedQuietHours > 0) {
+				showToast(
+					`Отложено из-за режима «Тихий час»: ${batchResult.skippedQuietHours}`,
+					"info",
+				);
+				return;
+			}
+			showToast(`Отправлено ${batchResult.dispatched} напоминаний`, "success");
 			onClose();
-		} catch {
-			showToast("Ошибка пакетной отправки напоминаний", "error");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Ошибка пакетной отправки напоминаний";
+			showToast(msg, "error");
 		} finally {
 			logic.setIsDispatching(false);
 			logic.setDispatchProgress(null);

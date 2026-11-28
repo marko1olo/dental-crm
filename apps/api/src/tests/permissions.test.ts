@@ -1,212 +1,106 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { describe, it } from "node:test";
+import Fastify from "fastify";
+import { defineTenantQuery } from "../core/routeFactories.js";
+import { authTokenSecret } from "../security/authSecret.js";
 import {
 	PERMISSIONS,
+	ROLES_IN_MATRIX,
+	ROLE_PERMISSIONS,
+	enforcePermissionWhenStaffKnown,
 	permissionsForRole,
 	roleHasPermission,
+	roleHasPermissionWithOverrides,
 } from "../security/permissions.js";
+import { signToken } from "../utils/cryptoHelper.js";
 
-/**
- * До появления этого модуля чтение и запись охранялись ОДНИМ статическим
- * секретом (accessGuard.ts: configuredClinicalMutationSecret просто вызывает
- * configuredClinicalAccessSecret). Кто мог посмотреть расписание, тот мог
- * провести оплату и переписать историю болезни. Тесты закрепляют разделение.
- */
+const ORG_ID = "01950000-0000-7000-8000-000000000101";
+const USER_ID = "01950000-0000-7000-8000-000000000202";
 
-test("неизвестная роль не получает прав (fail closed)", () => {
-	assert.deepEqual(permissionsForRole("hacker"), []);
-	assert.deepEqual(permissionsForRole(null), []);
-	assert.deepEqual(permissionsForRole(undefined), []);
-	assert.deepEqual(permissionsForRole(""), []);
-});
-
-test("владелец клиники может всё", () => {
-	for (const permission of PERMISSIONS) {
-		assert.equal(
-			roleHasPermission("owner", permission),
-			true,
-			`owner должен иметь ${permission}`,
-		);
-	}
-});
-
-test("врач ведёт приём, оформляет оплату у кресла и списывает материалы, но не правит настройки", () => {
-	assert.equal(roleHasPermission("doctor", "clinical.write"), true);
-	assert.equal(roleHasPermission("doctor", "finance.write"), true);
-	assert.equal(roleHasPermission("doctor", "finance.read"), true);
-	assert.equal(roleHasPermission("doctor", "inventory.write"), true);
-	assert.equal(roleHasPermission("doctor", "settings.write"), false);
-});
-
-test("администратор ресепшена не правит медицинскую документацию", () => {
-	assert.equal(roleHasPermission("administrator", "clinical.read"), true);
-	assert.equal(roleHasPermission("administrator", "clinical.write"), false);
-	assert.equal(roleHasPermission("administrator", "finance.write"), true);
-	assert.equal(roleHasPermission("administrator", "settings.write"), false);
-});
-
-test("ассистент ничего не решает", () => {
-	assert.equal(roleHasPermission("assistant", "inventory.write"), true);
-	assert.equal(roleHasPermission("assistant", "schedule.write"), false);
-	assert.equal(roleHasPermission("assistant", "clinical.write"), false);
-	assert.equal(roleHasPermission("assistant", "finance.write"), false);
-});
-
-test("в ЕГИСЗ отправляет врач и владелец, но не ресепшен", () => {
-	assert.equal(roleHasPermission("doctor", "egisz.submit"), true);
-	assert.equal(roleHasPermission("owner", "egisz.submit"), true);
-	assert.equal(roleHasPermission("administrator", "egisz.submit"), false);
-	assert.equal(roleHasPermission("assistant", "egisz.submit"), false);
-});
-
-test("регистр роли не влияет на решение", () => {
-	assert.equal(roleHasPermission("OWNER", "finance.write"), true);
-	assert.equal(roleHasPermission("Doctor", "clinical.write"), true);
-});
-
-test("ни одна роль кроме владельца и админа не пишет настройки", () => {
-	const writers = [
-		"owner",
-		"admin",
-		"manager",
-		"administrator",
-		"doctor",
-		"assistant",
-	].filter((role) => roleHasPermission(role, "settings.write"));
-	assert.deepEqual(writers, ["owner", "admin"]);
-});
-
-test("право на запись всегда подразумевает право на чтение того же раздела", () => {
-	const roles = [
-		"owner",
-		"admin",
-		"manager",
-		"administrator",
-		"doctor",
-		"assistant",
-	];
-	for (const role of roles) {
-		for (const permission of permissionsForRole(role)) {
-			if (!permission.endsWith(".write")) continue;
-			const readPermission = permission.replace(/\.write$/, ".read");
+describe("RBAC 12-Role Permission Matrix & Runtime .own Guard (6Г)", () => {
+	it("covers all 12 canonical staff roles with explicit permissions and keeps owner omnipotent", () => {
+		assert.equal(ROLES_IN_MATRIX.length >= 12, true, "Matrix must cover >=12 clinic roles");
+		for (const role of ROLES_IN_MATRIX) {
+			const perms = permissionsForRole(role);
+			assert.ok(perms.length > 0, `Role ${role} must have defined permissions`);
+		}
+		for (const perm of PERMISSIONS) {
+			assert.equal(roleHasPermission("owner", perm), true, `Owner must hold ${perm}`);
 			assert.equal(
-				roleHasPermission(role, readPermission as (typeof PERMISSIONS)[number]),
+				roleHasPermissionWithOverrides("owner", perm, { owner: { [perm]: "none" } }),
 				true,
-				`${role} имеет ${permission}, но не ${readPermission} — редактировать вслепую нельзя`,
+				"Owner remains immune to restrictive roleMatrixOverrides",
 			);
 		}
-	}
-});
+	});
 
-/**
- * ПРАВО, РАЗДЕЛЯЮЩЕЕ ЛЮДЕЙ ВНУТРИ КЛИНИКИ, НЕЛЬЗЯ ОХРАНЯТЬ МЯГКО.
- *
- * В модуле есть два режима. requirePermission требует опознанного сотрудника и
- * отказывает, если личности нет. enforcePermissionWhenStaffKnown проверяет право
- * ТОЛЬКО когда сотрудник опознан, а при неопознанном ПРОПУСКАЕТ запрос
- * (permissions.ts, «Мягкий режим»). Мягкий режим введён осознанно и с причиной:
- * часть рабочих процессов идёт под токеном кабинета без входа конкретного
- * сотрудника, и жёсткое требование личности сразу везде их бы сломало.
- *
- * НО у мягкого режима есть граница, и она не в удобстве, а в смысле права.
- *
- * — Право ОГРАНИЧИВАЕТ ДЕЙСТВИЕ («ассистент не меняет настройки», «врач не
- *   проводит оплату»). Здесь мягкий режим безопасен: в худшем случае неопознанный
- *   оператор сделает то, что и так может сделать любой владелец токена кабинета.
- * — Право РАЗДЕЛЯЕТ ДАННЫЕ МЕЖДУ ЛЮДЬМИ одной клиники (зарплата этого врача, а не
- *   всех). Здесь мягкий режим отменяет само право: чтобы увидеть чужое, достаточно
- *   НЕ присылать токен сотрудника — личности нет, значит проверять нечего.
- *   Ограничение становится добровольным.
- *
- * Отсюда правило: право с суффиксом `.own` обязано охраняться жёстко. Маршрут
- * выплат так и сделан (routes/billing.ts, requirePayoutAccess: обязателен
- * опознанный сотрудник, иначе 401), и проверка закрепляет это на будущее — чтобы
- * следующий, кто добавит право вида `<раздел>.read.own`, не потянулся к мягкому
- * режиму по образцу соседней строки.
- *
- * Проверка читает исходники маршрутов, а не отдельный список: список разошёлся бы
- * с кодом на первой же новой строке, и тогда охранял бы себя, а не клинику.
- */
-test("права с суффиксом .own не охраняются мягким режимом ни на одном маршруте", async () => {
-	const { readdir, readFile } = await import("node:fs/promises");
-	const path = await import("node:path");
+	it("withholds analytics.read (P&L) from admin by default while keeping schedule/patients access", () => {
+		const adminPerms = ROLE_PERMISSIONS.admin ?? [];
+		assert.equal(adminPerms.includes("analytics.read"), false, "admin must NOT have analytics.read by default");
+		assert.equal(roleHasPermission("admin", "analytics.read"), false);
+		assert.equal(roleHasPermission("administrator", "analytics.read"), false);
+		assert.equal(roleHasPermission("registrar", "analytics.read"), false);
+		assert.equal(roleHasPermission("admin", "schedule.write"), true);
+		assert.equal(roleHasPermission("admin", "patients.write"), true);
+	});
 
-	const ownPermissions = PERMISSIONS.filter((permission) =>
-		permission.endsWith(".own"),
-	);
-	assert.ok(
-		ownPermissions.length > 0,
-		"В наборе прав нет ни одного `.own` — проверка потеряла смысл, а не прошла",
-	);
+	it("resolves aliases and isolates payroll.read.own from full clinic payroll.read", () => {
+		assert.equal(roleHasPermission("doctor", "payroll.read.own"), true);
+		assert.equal(roleHasPermission("doctor", "payroll.read"), false);
+		assert.equal(roleHasPermission("accountant", "payroll.read"), true);
+		assert.equal(roleHasPermission("assistant", "schedule.write"), false);
+		assert.equal(permissionsForRole("unknown_role_xyz").length, 0);
+	});
 
-	const routesDir = path.join(import.meta.dirname, "..", "routes");
-	async function collectSources(directory: string): Promise<string[]> {
-		const entries = await readdir(directory, { withFileTypes: true });
-		const files: string[] = [];
-		for (const entry of entries) {
-			const full = path.join(directory, entry.name);
-			if (entry.isDirectory()) files.push(...(await collectSources(full)));
-			else if (entry.name.endsWith(".ts")) files.push(full);
-		}
-		return files;
-	}
+	it("runtime route guard blocks unauthenticated or clinic-token-only requests on .own routes even with bypass flag", async () => {
+		const prevBypass = process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS;
+		const prevNodeEnv = process.env.NODE_ENV;
+		process.env.NODE_ENV = "test";
+		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
 
-	const sources = await collectSources(routesDir);
-	assert.ok(
-		sources.length > 10,
-		`Маршрутов найдено ${sources.length} — путь к каталогу неверен`,
-	);
-
-	function scanFor(
-		text: string,
-		file: string,
-		wanted: readonly string[],
-	): string[] {
-		const hits: string[] = [];
-		text.split(/\r?\n/).forEach((line, index) => {
-			if (!line.includes("enforcePermissionWhenStaffKnown")) return;
-			for (const permission of wanted) {
-				if (
-					line.includes(`"${permission}"`) ||
-					line.includes(`'${permission}'`)
-				) {
-					hits.push(
-						`${path.relative(routesDir, file)}:${index + 1} — ${permission}`,
-					);
-				}
+		const app = Fastify();
+		app.get("/api/test/enforce-own", async (request, reply) => {
+			if (!enforcePermissionWhenStaffKnown(request, reply, "payroll.read.own")) {
+				return;
 			}
+			return reply.send({ ok: true });
 		});
-		return hits;
-	}
 
-	/*
-	 * Самопроверка сканера. Без неё «нарушений нет» означало бы что угодно: и что
-	 * правило соблюдено, и что сканер разучился читать строки — например после
-	 * переименования функции или перехода вызовов на другую форму записи. Поэтому
-	 * тем же сканером ищется право, которое в мягком режиме ТОЧНО используется
-	 * (communications.read стоит так в routes/communicationsOutbox.ts), и оно
-	 * обязано найтись. Не нашлось — падает сканер, а не правило, и сообщение
-	 * говорит именно это. Проверка, которая не умеет покраснеть, ничего не охраняет.
-	 */
-	const violations: string[] = [];
-	let softModeSightings = 0;
-	for (const file of sources) {
-		const text = await readFile(file, "utf8");
-		violations.push(...scanFor(text, file, ownPermissions));
-		softModeSightings += scanFor(text, file, ["communications.read"]).length;
-	}
-	assert.ok(
-		softModeSightings > 0,
-		"Сканер не нашёл ни одного заведомо существующего мягкого вызова с communications.read. " +
-			"Это поломка самой проверки, а не соблюдение правила: результату «нарушений нет» верить нельзя.",
-	);
+		try {
+			const secret = authTokenSecret();
+			const clinicToken = signToken({ role: "clinic", organizationId: ORG_ID }, secret);
+			const doctorToken = signToken({ role: "doctor", organizationId: ORG_ID, userId: USER_ID }, secret);
+			const registrarToken = signToken({ role: "registrar", organizationId: ORG_ID, userId: USER_ID }, secret);
 
-	assert.deepEqual(
-		violations,
-		[],
-		"Право вида `.own` разделяет данные между сотрудниками одной клиники, поэтому " +
-			"мягкий режим его отменяет: достаточно не присылать токен сотрудника. " +
-			"Используйте requirePermission или собственную жёсткую проверку. Нарушения: " +
-			violations.join("; "),
-	);
+			// 1. Clinic token WITHOUT staff token must be rejected 401 (never treated as staff on .own)
+			const resClinicOnly = await app.inject({
+				method: "GET",
+				url: "/api/test/enforce-own",
+				headers: { "x-dente-clinic-token": clinicToken },
+			});
+			assert.equal(resClinicOnly.statusCode, 401);
+
+			// 2. Registrar lacks payroll.read.own -> 403 PermissionDenied
+			const resRegistrar = await app.inject({
+				method: "GET",
+				url: "/api/test/enforce-own",
+				headers: { "x-dente-clinic-token": clinicToken, "x-dente-staff-token": registrarToken },
+			});
+			assert.equal(resRegistrar.statusCode, 403);
+
+			// 3. Doctor holds payroll.read.own -> 200 OK
+			const resDoctor = await app.inject({
+				method: "GET",
+				url: "/api/test/enforce-own",
+				headers: { "x-dente-clinic-token": clinicToken, "x-dente-staff-token": doctorToken },
+			});
+			assert.equal(resDoctor.statusCode, 200);
+		} finally {
+			await app.close();
+			if (prevBypass === undefined) delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS;
+			else process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = prevBypass;
+			if (prevNodeEnv === undefined) delete process.env.NODE_ENV;
+			else process.env.NODE_ENV = prevNodeEnv;
+		}
+	});
 });

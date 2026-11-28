@@ -8,6 +8,7 @@ import {
 	chairs,
 	clinics,
 	doctorShiftRosters,
+	scheduleSlotLeases,
 	scheduleTimeReservations,
 	users,
 } from "../../db/schema.js";
@@ -291,6 +292,23 @@ export async function handleGetNextFreeSlots(
 				),
 			);
 
+		const activeLeases = await tx
+			.select({
+				doctorUserId: scheduleSlotLeases.doctorUserId,
+				chairId: scheduleSlotLeases.chairId,
+				startsAt: scheduleSlotLeases.startsAt,
+				endsAt: scheduleSlotLeases.endsAt,
+			})
+			.from(scheduleSlotLeases)
+			.where(
+				and(
+					eq(scheduleSlotLeases.organizationId, orgId),
+					gt(scheduleSlotLeases.expiresAt, now),
+					lt(scheduleSlotLeases.startsAt, scanRangeEnd),
+					gt(scheduleSlotLeases.endsAt, scanRangeStart),
+				),
+			);
+
 		const resolveDoctorIntervalsForDate = (
 			dateIso: string,
 			dayOfWeek: number,
@@ -370,16 +388,23 @@ export async function handleGetNextFreeSlots(
 
 						if (slotStart.getTime() < minLeadTimeMs) continue;
 
-						// Проверка занятости врача приёмами
-						const doctorBusy = existingAppts.some(
-							(a) =>
-								a.doctorUserId === doctorId &&
-								a.startsAt < slotEnd &&
-								a.endsAt > slotStart,
-						);
+						// Проверка занятости врача приёмами и активными лизами
+						const doctorBusy =
+							existingAppts.some(
+								(a) =>
+									a.doctorUserId === doctorId &&
+									a.startsAt < slotEnd &&
+									a.endsAt > slotStart,
+							) ||
+							activeLeases.some(
+								(l) =>
+									l.doctorUserId === doctorId &&
+									l.startsAt < slotEnd &&
+									l.endsAt > slotStart,
+							);
 						if (doctorBusy) continue;
 
-						// Проверка доступного кресла и отсутствия блокировок scheduleTimeReservations
+						// Проверка доступного кресла, активных лизов и блокировок scheduleTimeReservations
 						let chosenChair: { id: string; name: string } | null = null;
 
 						if (activeChairs.length > 0) {
@@ -398,6 +423,14 @@ export async function handleGetNextFreeSlots(
 										a.endsAt > slotStart,
 								);
 								if (chairBusyByAppt) return false;
+
+								const chairBusyByLease = activeLeases.some(
+									(l) =>
+										l.chairId === ch.id &&
+										l.startsAt < slotEnd &&
+										l.endsAt > slotStart,
+								);
+								if (chairBusyByLease) return false;
 
 								const chairLockedByReservation = reservations.some((r) => {
 									if (!doesReservationMatchChair(r.chairName, ch)) return false;

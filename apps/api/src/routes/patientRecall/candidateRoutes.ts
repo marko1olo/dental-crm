@@ -1,7 +1,5 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { requireClinicalReadContext } from "../../accessGuard.js";
-import { defineStreamRoute } from "../../core/routeFactories.js";
-import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
+import type { FastifyInstance } from "fastify";
+import { defineTenantQuery } from "../../core/routeFactories.js";
 import {
 	findRecallCandidates,
 	type RecallOptions,
@@ -9,49 +7,63 @@ import {
 import { badRequest, listQuerySchema, type RecallReport } from "./types.js";
 
 export function registerCandidateRoutes(app: FastifyInstance) {
-	const handler = async (request: FastifyRequest, reply: FastifyReply) => {
-		const context = await requireClinicalReadContext(
+	const routeSpec = {
+		method: "GET" as const,
+		permission: "patients.read" as const,
+		authOptions: {
+			allowClinicTokenWithoutStaff: true,
+			allowAdminSecretBypass: true,
+		},
+		handler: async ({
+			organizationId,
 			request,
 			reply,
-			"recall candidates",
-		);
-		if (!context) return;
-		if (!enforcePermissionWhenStaffKnown(request, reply, "patients.read"))
-			return;
+		}: {
+			organizationId: string;
+			request: import("fastify").FastifyRequest;
+			reply: import("fastify").FastifyReply;
+		}) => {
+			const parsed = listQuerySchema.safeParse(request.query);
+			if (!parsed.success) {
+				return badRequest(
+					reply,
+					"Проверьте параметры: срок в месяцах, полосу (band) и предел списка.",
+				);
+			}
 
-		const parsed = listQuerySchema.safeParse(request.query);
-		if (!parsed.success)
-			return badRequest(
-				reply,
-				"Проверьте параметры: срок в месяцах, полосу (band) и предел списка.",
+			const options: RecallOptions = {
+				...(parsed.data.minMonths !== undefined
+					? { minMonths: parsed.data.minMonths }
+					: {}),
+				...(parsed.data.minDays !== undefined
+					? { minDays: parsed.data.minDays }
+					: {}),
+				...(parsed.data.limit !== undefined
+					? { limit: parsed.data.limit }
+					: {}),
+				...(parsed.data.includeNeverArrived !== undefined
+					? { includeNeverArrived: parsed.data.includeNeverArrived }
+					: {}),
+				...(parsed.data.band !== undefined ? { band: parsed.data.band } : {}),
+				...(parsed.data.filterBand !== undefined
+					? { filterBand: parsed.data.filterBand }
+					: {}),
+			};
+
+			const report: RecallReport = await findRecallCandidates(
+				organizationId,
+				options,
 			);
-
-		const options: RecallOptions = {
-			...(parsed.data.minMonths !== undefined ? { minMonths: parsed.data.minMonths } : {}),
-			...(parsed.data.minDays !== undefined ? { minDays: parsed.data.minDays } : {}),
-			...(parsed.data.limit !== undefined ? { limit: parsed.data.limit } : {}),
-			...(parsed.data.includeNeverArrived !== undefined ? { includeNeverArrived: parsed.data.includeNeverArrived } : {}),
-			...(parsed.data.band !== undefined ? { band: parsed.data.band } : {}),
-			...(parsed.data.filterBand !== undefined ? { filterBand: parsed.data.filterBand } : {}),
-		};
-
-		const report: RecallReport = await findRecallCandidates(
-			context.organizationId,
-			options,
-		);
-		return reply.code(200).send(report);
+			return reply.code(200).send(report);
+		},
 	};
 
-	defineStreamRoute(app, {
-		method: "GET",
+	defineTenantQuery(app, {
+		...routeSpec,
 		path: "/api/patients/recall-candidates",
-		permission: "public",
-		handler: async ({ request, reply }) => handler(request, reply),
 	});
-	defineStreamRoute(app, {
-		method: "GET",
+	defineTenantQuery(app, {
+		...routeSpec,
 		path: "/api/recalls/candidates",
-		permission: "public",
-		handler: async ({ request, reply }) => handler(request, reply),
 	});
 }

@@ -124,12 +124,17 @@ export function detectPointerCategory(): PointerCategory {
 		return mockPlatformCapabilities.pointer;
 	}
 
-	if (typeof window !== "undefined" && window.matchMedia) {
-		if (window.matchMedia("(pointer: fine)").matches) {
+	if (typeof window !== "undefined") {
+		if (typeof window.innerWidth === "number" && window.innerWidth >= 1024) {
 			return "fine";
 		}
-		if (window.matchMedia("(pointer: coarse)").matches) {
-			return "coarse";
+		if (window.matchMedia) {
+			if (window.matchMedia("(pointer: fine)").matches) {
+				return "fine";
+			}
+			if (window.matchMedia("(pointer: coarse)").matches) {
+				return "coarse";
+			}
 		}
 	}
 

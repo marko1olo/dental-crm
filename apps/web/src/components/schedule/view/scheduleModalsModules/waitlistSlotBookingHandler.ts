@@ -82,7 +82,12 @@ export async function handleBookWaitlistSlot({
         defaultDocFromStore ||
         filterDocFromStore ||
         dashboard?.clinicSettings?.staff?.find(
-          (s: { id: string; role?: string }) => s.role === "doctor" || s.role === "dentist",
+          (s: { id: string; role?: string }) =>
+            s.role === "doctor" ||
+            s.role === "dentist" ||
+            s.role === "owner" ||
+            s.role === "head_doctor" ||
+            s.role === "chief_doctor",
         )?.id ||
         (dashboard?.appointments as Array<{ doctorUserId?: string | null }> | undefined)?.[0]?.doctorUserId ||
         auth?.activeWorkspaceProfile?.id ||

@@ -69,7 +69,8 @@ const ALL: Permission[] = [...PERMISSIONS];
  */
 export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 	owner: ALL,
-	admin: ALL,
+	// Администратор клиники: полный операционный доступ (настройки, смены, касса), но без P&L аналитики (analytics.read -> finance.reports_pnl) по умолчанию (Мандат 8n).
+	admin: ALL.filter((perm) => perm !== "analytics.read"),
 
 	// Главный врач: клинический надзор, ЭМК, протоколы, ЕГИСЗ, аудит качества, расписание
 	head_doctor: [

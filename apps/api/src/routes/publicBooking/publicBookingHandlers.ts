@@ -1,9 +1,18 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { and, eq, sql } from "drizzle-orm";
-import { isValidUuid } from "@dental/shared";
+import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { computePayloadHash, isValidUuid, normalizePhone } from "@dental/shared";
 import { definePublicRoute } from "../../core/routeFactories.js";
 import { withSuperuserBypass, withTenantWriteCtx } from "../../db/rls.js";
-import { appointmentWaitlists, clinics, organizations, patientConsents, patients, users } from "../../db/schema.js";
+import {
+	appointmentWaitlists,
+	clinics,
+	idempotencyKeys,
+	organizations,
+	patientConsents,
+	patients,
+	users,
+} from "../../db/schema.js";
+import { normalizePhoneDigits } from "./slotAvailabilityEngine.js";
 import {
 	defaultClinicQuerySchema,
 	doctorSlotParamsSchema,
@@ -32,6 +41,25 @@ import {
 } from "./smsVerificationAndSpamGate.js";
 
 export { handleSlotsQuery };
+
+function formatClinicWorkHours(schedule: unknown): string | null {
+	if (!schedule || typeof schedule !== "object") return null;
+	const s = schedule as Record<string, unknown>;
+	if (typeof s.workHours === "string" && s.workHours.trim()) {
+		return s.workHours.trim();
+	}
+	const days = s.days as Record<string, { enabled?: boolean; isWorking?: boolean; start?: string; end?: string }> | undefined;
+	if (days && typeof days === "object") {
+		const mon = days.monday ?? days.mon;
+		if (mon && (mon.enabled !== false && mon.isWorking !== false) && mon.start && mon.end) {
+			return `Пн–Пт ${mon.start}–${mon.end}`;
+		}
+	}
+	const open = typeof s.open === "string" ? s.open : typeof s.start === "string" ? s.start : null;
+	const close = typeof s.close === "string" ? s.close : typeof s.end === "string" ? s.end : null;
+	if (open && close) return `${open} – ${close}`;
+	return null;
+}
 
 export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 	// Root health/discovery endpoint
@@ -183,6 +211,8 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 							name: organizations.name,
 							address: clinics.address,
 							phone: clinics.phone,
+							licenseNumber: organizations.medicalLicenseNumber,
+							clinicSchedule: organizations.clinicSchedule,
 						})
 						.from(organizations)
 						.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
@@ -191,7 +221,14 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 				});
 
 				if (clinicRow) {
-					return reply.send(clinicRow);
+					return reply.send({
+						organizationId: clinicRow.organizationId,
+						name: clinicRow.name,
+						address: clinicRow.address,
+						phone: clinicRow.phone,
+						licenseNumber: clinicRow.licenseNumber ?? null,
+						workHours: formatClinicWorkHours(clinicRow.clinicSchedule),
+					});
 				}
 			} else if (allowDefault === "1" || allowDefault === "true") {
 				const clinicRows = await withSuperuserBypass(async (tx) => {
@@ -201,6 +238,8 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 							name: organizations.name,
 							address: clinics.address,
 							phone: clinics.phone,
+							licenseNumber: organizations.medicalLicenseNumber,
+							clinicSchedule: organizations.clinicSchedule,
 						})
 						.from(organizations)
 						.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
@@ -208,7 +247,15 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 				});
 
 				if (clinicRows.length === 1 && clinicRows[0]) {
-					return reply.send(clinicRows[0]);
+					const clinicRow = clinicRows[0];
+					return reply.send({
+						organizationId: clinicRow.organizationId,
+						name: clinicRow.name,
+						address: clinicRow.address,
+						phone: clinicRow.phone,
+						licenseNumber: clinicRow.licenseNumber ?? null,
+						workHours: formatClinicWorkHours(clinicRow.clinicSchedule),
+					});
 				}
 			}
 
@@ -238,6 +285,8 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 						name: organizations.name,
 						address: clinics.address,
 						phone: clinics.phone,
+						licenseNumber: organizations.medicalLicenseNumber,
+						clinicSchedule: organizations.clinicSchedule,
 					})
 					.from(organizations)
 					.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
@@ -247,7 +296,14 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			if (!clinicRow) {
 				return reply.status(404).send({ error: "ClinicNotFound", message: "Клиника не найдена." });
 			}
-			return clinicRow;
+			return {
+				organizationId: clinicRow.organizationId,
+				name: clinicRow.name,
+				address: clinicRow.address,
+				phone: clinicRow.phone,
+				licenseNumber: clinicRow.licenseNumber ?? null,
+				workHours: formatClinicWorkHours(clinicRow.clinicSchedule),
+			};
 		},
 	});
 
@@ -376,14 +432,54 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			});
 		}
 
-		const cleanPhone = body.patientPhone.trim();
+		const rawPhone = body.patientPhone.trim();
+		const normalizedPhone = normalizePhone(rawPhone) ?? rawPhone;
 		const cleanName = body.patientName.trim();
 		const preferredDoctor = body.preferredDoctorId || body.doctorId || null;
 		const comment = body.comment || body.notes || "";
 
 		const waitlistResult = await withTenantWriteCtx(organizationId, async (tx) => {
+			// 0. Check DB-backed idempotency key if supplied
+			const waitlistIdempKey = idempotencyKey ? `public-waitlist:${idempotencyKey}` : null;
+			if (waitlistIdempKey) {
+				const [existingIdemp] = await tx
+					.select({
+						status: idempotencyKeys.status,
+						responseBody: idempotencyKeys.responseBody,
+					})
+					.from(idempotencyKeys)
+					.where(
+						and(
+							eq(idempotencyKeys.clinicId, organizationId),
+							eq(idempotencyKeys.key, waitlistIdempKey),
+						),
+					)
+					.limit(1);
+				const cachedWaitlistId =
+					existingIdemp?.status === "completed" &&
+					existingIdemp.responseBody &&
+					typeof existingIdemp.responseBody.waitlistId === "string"
+						? existingIdemp.responseBody.waitlistId
+						: null;
+				if (cachedWaitlistId) {
+					const [cachedEntry] = await tx
+						.select()
+						.from(appointmentWaitlists)
+						.where(
+							and(
+								eq(appointmentWaitlists.organizationId, organizationId),
+								eq(appointmentWaitlists.id, cachedWaitlistId),
+							),
+						)
+						.limit(1);
+					if (cachedEntry) {
+						return { waitlist: cachedEntry, isReplayed: true };
+					}
+				}
+			}
+
 			// 1. Transaction-scoped advisory lock by phone digits to prevent concurrent double-booking races
-			const phoneDigits = cleanPhone.replace(/\D/g, "");
+			const phoneDigits = normalizePhoneDigits(rawPhone);
 			if (phoneDigits) {
 				await tx.execute(
 					sql`SELECT pg_advisory_xact_lock(hashtext(${phoneDigits}))`,
@@ -405,7 +501,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 				if (!ownedPatient) {
 					return { patientNotFound: true as const };
 				}
-				const ownedDigits = (ownedPatient.phone ?? "").replace(/\D/g, "");
+				const ownedDigits = normalizePhoneDigits(ownedPatient.phone ?? "");
 				const incomingLast10 = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : phoneDigits;
 				const ownedLast10 = ownedDigits.length >= 10 ? ownedDigits.slice(-10) : ownedDigits;
 				if (!incomingLast10 || !ownedLast10 || incomingLast10 !== ownedLast10) {
@@ -413,16 +509,30 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 				}
 				patientId = ownedPatient.id;
 			} else {
-				const [existing] = await tx
-					.select({ id: patients.id })
+				const last10 = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : "";
+				const phoneCandidates = await tx
+					.select({ id: patients.id, phone: patients.phone })
 					.from(patients)
 					.where(
 						and(
 							eq(patients.organizationId, organizationId),
-							eq(patients.phone, cleanPhone),
+							or(
+								eq(patients.phone, rawPhone),
+								...(normalizedPhone !== rawPhone ? [eq(patients.phone, normalizedPhone)] : []),
+								...(phoneDigits.length >= 5 ? [eq(patients.phone, phoneDigits)] : []),
+								...(last10 ? [ilike(patients.phone, `%${last10}%`)] : []),
+							),
 						),
 					)
-					.limit(1);
+					.limit(10);
+
+				const existing =
+					phoneCandidates.find((c) => {
+						const cDigits = normalizePhoneDigits(c.phone ?? "");
+						return last10 && cDigits.length >= 10
+							? cDigits.slice(-10) === last10
+							: c.phone === rawPhone || c.phone === normalizedPhone;
+					}) ?? phoneCandidates[0];
 
 				if (existing) {
 					patientId = existing.id;
@@ -432,7 +542,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 						.values({
 							organizationId,
 							fullName: cleanName,
-							phone: cleanPhone,
+							phone: normalizedPhone,
 							status: "active",
 						})
 						.returning({ id: patients.id });
@@ -452,7 +562,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 					and(
 						eq(appointmentWaitlists.organizationId, organizationId),
 						eq(appointmentWaitlists.patientId, patientId),
-						eq(appointmentWaitlists.status, "waiting"),
+						inArray(appointmentWaitlists.status, ["waiting", "active"]),
 					),
 				)
 				.limit(1);
@@ -491,7 +601,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 					organizationId,
 					patientId,
 					patientName: cleanName,
-					patientPhone: cleanPhone,
+					patientPhone: normalizedPhone,
 					preferredDoctorId: preferredDoctor,
 					priorityLevel: "medium",
 					preferredTimeRanges: preferredRanges,
@@ -502,13 +612,33 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			await createCrmLeadFromPublicIntake(tx, {
 				organizationId,
 				patientName: cleanName,
-				patientPhone: cleanPhone,
+				patientPhone: normalizedPhone,
 				patientId,
 				source: "waitlist",
 				receiptStatus: "WAITLIST",
 				comment: `Заявка в лист ожидания на ${body.date || "ближайшее время"}: ${comment}`.trim(),
 				doctorId: preferredDoctor || undefined,
 			});
+
+			if (waitlistIdempKey && waitlistEntry?.id) {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: organizationId,
+						key: waitlistIdempKey,
+						status: "completed",
+						payloadHash: computePayloadHash({
+							patientPhone: phoneDigits,
+							date: body.date ?? null,
+							doctorId: preferredDoctor,
+						}),
+						responseBody: { waitlistId: waitlistEntry.id },
+						responseCode: 200,
+					})
+					.onConflictDoNothing({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					});
+			}
 
 			return { waitlist: waitlistEntry, isReplayed: false };
 		});

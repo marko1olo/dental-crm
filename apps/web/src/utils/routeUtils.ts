@@ -1,4 +1,4 @@
-import type { StaffRole } from "@dental/shared";
+import type { ClinicMode, StaffRole } from "@dental/shared";
 import { clientLogger } from "./logger.js";
 import { usePerspectiveStore } from "../store/perspectiveStore";
 
@@ -65,8 +65,40 @@ export const viewHints: Record<AppView, string> = {
 	marketing: "продвижение и отзывы",
 };
 
-export function getFilteredAppViews(role: StaffRole): AppView[] {
-	if (role === "doctor" || role === "head_doctor") {
+export interface FilteredAppViewsOptions {
+	readonly clinicMode?: ClinicMode | null | undefined;
+	readonly isSoloDoctor?: boolean | undefined;
+}
+
+export function getFilteredAppViews(
+	role: StaffRole,
+	options?: FilteredAppViewsOptions,
+): AppView[] {
+	const isSoloOrOneChair = Boolean(
+		options?.isSoloDoctor ||
+			options?.clinicMode === "solo_doctor" ||
+			options?.clinicMode === "one_chair",
+	);
+
+	if (role === "doctor") {
+		const baseViews: AppView[] = [
+			"shift",
+			"schedule",
+			"patients",
+			"pipeline",
+			"imaging",
+			"visit",
+			"documents",
+			...(isSoloOrOneChair ? (["finance", "analytics"] as AppView[]) : []),
+			"communications",
+			"inventory",
+			"lab",
+			"scanner",
+			"settings",
+		];
+		return baseViews;
+	}
+	if (role === "head_doctor") {
 		return [
 			"shift",
 			"schedule",
@@ -160,21 +192,26 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"patients",
 			"leads",
 			"communications",
-			"analytics",
 			"documents",
 			"shift",
 			"pipeline",
 			"imaging",
 		];
 	}
-	if (role === "owner" || role === "admin") {
+	if (role === "admin") {
+		return Array.from(appViews).filter((v) => v !== "analytics");
+	}
+	if (role === "owner") {
 		return Array.from(appViews);
 	}
 	return ["shift"];
 }
 
-export function getFallbackAppView(role: StaffRole): AppView {
-	const [firstAllowed] = getFilteredAppViews(role);
+export function getFallbackAppView(
+	role: StaffRole,
+	options?: FilteredAppViewsOptions,
+): AppView {
+	const [firstAllowed] = getFilteredAppViews(role, options);
 	return firstAllowed ?? "shift";
 }
 

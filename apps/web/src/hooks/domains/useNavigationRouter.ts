@@ -5,7 +5,10 @@ import {
 	viewFromHash,
 } from "../../AppHelpers";
 import { showToast } from "../../components/GlobalToast";
+import { resolveClinicMode } from "../../lib/clinicCapabilities";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { useAppStore } from "../../store/appStore";
+import { useSettingsStore } from "../../store/settingsStore";
 import {
 	type AppView,
 	getFallbackAppView,
@@ -46,17 +49,26 @@ export function useNavigationRouter(options: NavigationRouterOptions = {}) {
 	} = options;
 	const activeSettingsTabButtonRef = useRef<HTMLButtonElement | null>(null);
 	const [isQuickConsultLoading, setIsQuickConsultLoading] = useState(false);
+	const storeClinicMode = useSettingsStore((s) => s.clinicMode);
+	const dashboardClinicMode = useAppStore(
+		(s) => s.dashboard?.clinicSettings?.profile?.mode,
+	);
+	const dashboardLoaded = useAppStore((s) => Boolean(s.dashboard));
+	const effectiveClinicMode = resolveClinicMode(
+		storeClinicMode ?? dashboardClinicMode,
+	);
+	const isClinicModeKnown = effectiveClinicMode !== null || dashboardLoaded;
 
 	const allowedWorkspaceViews = useMemo(
-		() => getFilteredAppViews(selectedWorkspaceRole),
-		[selectedWorkspaceRole],
+		() => getFilteredAppViews(selectedWorkspaceRole, { clinicMode: effectiveClinicMode }),
+		[selectedWorkspaceRole, effectiveClinicMode],
 	);
 
 	const currentView: AppView = allowedWorkspaceViews.includes(
 		requestedWorkspaceView,
 	)
 		? requestedWorkspaceView
-		: getFallbackAppView(selectedWorkspaceRole);
+		: getFallbackAppView(selectedWorkspaceRole, { clinicMode: effectiveClinicMode });
 
 	useEffect(() => {
 		const syncView = () => {
@@ -72,10 +84,11 @@ export function useNavigationRouter(options: NavigationRouterOptions = {}) {
 	}, [setSettingsTab, setCurrentView]);
 
 	useEffect(() => {
+		if (!isClinicModeKnown) return;
 		if (requestedWorkspaceView === currentView) return;
 		setCurrentView(currentView);
 		window.location.hash = currentView;
-	}, [requestedWorkspaceView, currentView, setCurrentView]);
+	}, [isClinicModeKnown, requestedWorkspaceView, currentView, setCurrentView]);
 
 	const handleQuickConsult = useCallback(async () => {
 		if (isQuickConsultLoading) return;

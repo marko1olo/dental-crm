@@ -127,9 +127,21 @@ export function detectOmniEnvironment(): OmniEnvironment {
 export function detectPointerType(): PointerType {
 	if (typeof window === "undefined") return "fine";
 
+	// Защита ПК-моноблоков с сенсорным экраном (Мандат 8al): на десктопе >=1024px (без explicit mobile-touch-shell)
+	// проверяем (pointer: fine) РАНЬШЕ (pointer: coarse).
+	const isMobileTouchShell =
+		typeof document !== "undefined" &&
+		document.documentElement.classList.contains("mobile-touch-shell");
+	const isDesktopWidth = window.innerWidth >= 1024 && !isMobileTouchShell;
+
 	// 1. Standard CSS Media Query matchMedia
 	if (window.matchMedia) {
-		if (window.matchMedia("(pointer: coarse)").matches) {
+		if (window.matchMedia("(pointer: fine)").matches || isDesktopWidth) {
+			if (window.matchMedia("(pointer: fine)").matches) {
+				return "fine";
+			}
+		}
+		if (window.matchMedia("(pointer: coarse)").matches && !isDesktopWidth) {
 			return "coarse";
 		}
 		if (window.matchMedia("(pointer: fine)").matches) {
@@ -137,8 +149,8 @@ export function detectPointerType(): PointerType {
 		}
 	}
 
-	// 2. Fallback to navigator touch points
-	if (typeof navigator !== "undefined" && navigator.maxTouchPoints > 0) {
+	// 2. Fallback to navigator touch points (only on non-desktop viewports)
+	if (!isDesktopWidth && typeof navigator !== "undefined" && navigator.maxTouchPoints > 0) {
 		return "coarse";
 	}
 

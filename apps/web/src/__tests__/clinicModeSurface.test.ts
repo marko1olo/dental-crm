@@ -273,7 +273,7 @@ describe("состав рабочего экрана по режиму клин�
 			for (const role of roleFocusOrder) {
 				const hidden = getRailViewsHiddenByMode(role, mode);
 				const visible = getVisibleRailViews(role, mode);
-				const byRole = getFilteredAppViews(role);
+				const byRole = getFilteredAppViews(role, { clinicMode: mode });
 				assert.deepEqual(
 					[...hidden, ...visible].sort(),
 					[...byRole].sort(),

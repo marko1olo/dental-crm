@@ -3,6 +3,7 @@
  */
 
 export * from "./appointmentSchemas.js";
+export * from "./waitlistSchemas.js";
 export * from "./shiftCollisionEngine.js";
 export * from "./calDavTypes.js";
 export * from "./iCalGenerator.js";

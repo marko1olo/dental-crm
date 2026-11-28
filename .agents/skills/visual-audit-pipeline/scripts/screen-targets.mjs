@@ -699,7 +699,7 @@ export const SCREEN_TARGETS = [
 		waitFor: ".fixed.inset-0",
 		viewports: ["desktop", "mobile"],
 		themes: ["light", "dark"],
-		files: ["apps/web/src/components/appLayout/modalsContainerModules/standalone/clinical/StandaloneClinicalBundlesHost.tsx"],
+		files: ["apps/web/src/components/visit/StandaloneClinicalBundlesHost.tsx"],
 	},
 	{
 		id: "063",

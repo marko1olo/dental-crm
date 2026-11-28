@@ -66,14 +66,14 @@ export function viewsHiddenByFeatureFlags(flags: {
 }
 
 export function getVisibleRailViews(role: StaffRole, mode: ClinicMode | null): AppView[] {
-	const allowedByRole = getFilteredAppViews(role);
+	const allowedByRole = getFilteredAppViews(role, { clinicMode: mode });
 	if (hasCapability(mode, "marketingSection")) return allowedByRole;
 	return allowedByRole.filter((view) => view !== "marketing" && view !== "leads");
 }
 
 export function getRailViewsHiddenByMode(role: StaffRole, mode: ClinicMode | null): AppView[] {
 	const visible = getVisibleRailViews(role, mode);
-	return getFilteredAppViews(role).filter((view) => !visible.includes(view));
+	return getFilteredAppViews(role, { clinicMode: mode }).filter((view) => !visible.includes(view));
 }
 
 export const sidebarHints: Record<AppView, string> = {

@@ -41,7 +41,7 @@ export function ViewRouterContainer(props: AppViewRouterProps) {
 		(v) => !hiddenByModules.includes(v),
 	);
 	const isAllowedView = allowedViews.includes(currentView as AppView);
-	const fallbackView = allowedViews[0] ?? getFallbackAppView(effectiveRole);
+	const fallbackView = allowedViews[0] ?? getFallbackAppView(effectiveRole, { clinicMode });
 
 	useEffect(() => {
 		if (!isAllowedView) {

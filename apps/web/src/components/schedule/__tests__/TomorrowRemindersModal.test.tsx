@@ -3,6 +3,11 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { TomorrowRemindersModal } from "../TomorrowRemindersModal.js";
+import {
+	compileTomorrowReminders,
+	dispatchBatchReminders,
+	type TomorrowReminderItem,
+} from "../tomorrowRemindersEngine";
 import type { Dashboard, Appointment, Patient } from "@dental/shared";
 
 describe("TomorrowRemindersModal Component Suite", () => {
@@ -81,5 +86,109 @@ describe("TomorrowRemindersModal Component Suite", () => {
 		assert.ok(html.includes("Отправить напоминания"), "Renders cascade dispatch button");
 		assert.ok(html.includes("WhatsApp"), "Renders WhatsApp channel");
 		assert.ok(html.includes("SMS"), "Renders SMS channel");
+	});
+
+	it("compileTomorrowReminders buckets appointments by clinicTimezone rather than UTC slice(0,10)", () => {
+		const vladivostokDashboard = {
+			...mockDashboard,
+			clinicSettings: {
+				...mockDashboard.clinicSettings,
+				profile: {
+					...mockDashboard.clinicSettings.profile,
+					timezone: "Asia/Vladivostok",
+				},
+			},
+			appointments: [
+				{
+					id: "appt-tz-1",
+					patientId: "pat-1",
+					doctorUserId: "doc-1",
+					chairId: "chair-1",
+					// 2026-08-26T18:30:00Z = 2026-08-27 04:30 in Asia/Vladivostok (UTC+10)
+					startsAt: "2026-08-26T18:30:00.000Z",
+					endsAt: "2026-08-26T19:00:00.000Z",
+					status: "planned",
+					reason: "Осмотр",
+				} as unknown as Appointment,
+			],
+		} as unknown as Dashboard;
+
+		const summary = compileTomorrowReminders(vladivostokDashboard, "2026-08-27", {
+			timezone: "Asia/Vladivostok",
+		});
+		assert.equal(summary.totalAppointmentsCount, 1);
+		assert.equal(summary.reminders[0]?.appointmentId, "appt-tz-1");
+	});
+
+	it("dispatchBatchReminders fails honestly on 500 and reads server reason ?? details on mixed results", async () => {
+		const originalFetch = globalThis.fetch;
+		const sampleReminder: TomorrowReminderItem = {
+			appointmentId: "01950000-0000-7000-8000-000000000301",
+			patientId: "pat-1",
+			patientName: "Смирнова Анна",
+			patientPhone: "+79161234567",
+			telegramUsername: null,
+			startsAtIso: "2026-08-26T10:00:00.000Z",
+			timeFormatted: "13:00",
+			dateFormatted: "26.08.2026",
+			doctorName: "Иванов И.И.",
+			doctorSpecialty: "Терапевт",
+			chairName: "Каб 1",
+			treatmentReason: "Осмотр",
+			reminderText: "Напоминание",
+			preferredChannel: "whatsapp",
+			availableChannels: ["whatsapp", "sms"],
+			whatsAppUrl: null,
+			telegramUrl: null,
+			smsUrl: null,
+			confirmUrl: null,
+			rescheduleUrl: null,
+			status: "planned",
+			isCito: false,
+			hasAllergyWarning: false,
+			isQuietHours: false,
+		};
+
+		try {
+			globalThis.fetch = (async () =>
+				new Response(JSON.stringify({ message: "Шлюз уведомлений недоступен" }), {
+					status: 500,
+					headers: { "content-type": "application/json" },
+				})) as typeof fetch;
+
+			const failedBatch = await dispatchBatchReminders([sampleReminder], {
+				dateIso: "2026-08-26",
+				clinicTimeZone: "Europe/Moscow",
+			});
+			assert.equal(failedBatch.dispatched, 0);
+			assert.equal(failedBatch.results[0]?.status, "error");
+			assert.equal(failedBatch.results[0]?.error, "Шлюз уведомлений недоступен");
+
+			globalThis.fetch = (async () =>
+				new Response(
+					JSON.stringify({
+						data: {
+							results: [
+								{
+									appointmentId: "01950000-0000-7000-8000-000000000301",
+									status: "failed",
+									details: "SMS-провайдер отклонил номер",
+								},
+							],
+						},
+					}),
+					{ status: 200, headers: { "content-type": "application/json" } },
+				)) as typeof fetch;
+
+			const detailsBatch = await dispatchBatchReminders([sampleReminder], {
+				dateIso: "2026-08-26",
+				clinicTimeZone: "Europe/Moscow",
+			});
+			assert.equal(detailsBatch.dispatched, 0);
+			assert.equal(detailsBatch.results[0]?.status, "error");
+			assert.equal(detailsBatch.results[0]?.error, "SMS-провайдер отклонил номер");
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
 	});
 });

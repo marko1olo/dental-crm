@@ -1,4 +1,5 @@
 import { useEffect, useRef, type Dispatch, type SetStateAction } from "react";
+import { navigateToStudio } from "../../lib/clinicEventBus";
 import { showToast } from "../GlobalToast";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { clientLogger } from "../../services/logging/clientLogger";
@@ -171,7 +172,20 @@ export function useRecallHubActions({
 		if (onBookAppointment) {
 			onBookAppointment(candidate);
 		} else {
-			setBookingSlot(slot);
+			navigateToStudio(
+				{
+					kind: "quick_booking",
+					patientId: candidate.patientId,
+					...(candidate.attendingDoctorId
+						? { doctorId: candidate.attendingDoctorId }
+						: {}),
+					...(candidate.dueDate
+						? { slotIso: `${candidate.dueDate}T10:00:00` }
+						: {}),
+				},
+				{ kind: "recalls" },
+			);
+			setBookingSlot(null);
 		}
 	};
 

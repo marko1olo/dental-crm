@@ -46,14 +46,21 @@ describe("12 Clinic Roles RBAC & Accountant / Admin E2E Contracts", () => {
 		assert.ok(nurseViews.includes("scanner"));
 		assert.ok(nurseViews.includes("lab"));
 
-		// Curator -> includes leads & analytics
+		// Curator -> includes leads & schedule, NO P&L analytics by default (Mandate 8n)
 		const curatorViews = getFilteredAppViews("curator");
 		assert.ok(curatorViews.includes("leads"));
-		assert.ok(curatorViews.includes("analytics"));
+		assert.ok(!curatorViews.includes("analytics"), "curator must not have P&L analytics by default");
 		assert.ok(curatorViews.includes("schedule"));
 
-		// Reception roles must NOT have P&L analytics view, MUST have scanner
-		for (const receptionRole of ["administrator", "senior_admin", "registrar"] as const) {
+		// Doctor in standard clinic has NO analytics; in solo_doctor has BOTH finance and analytics
+		const standardDocViews = getFilteredAppViews("doctor", { clinicMode: "small_clinic" });
+		assert.ok(!standardDocViews.includes("analytics"), "standard doctor must not hit 403 analytics tab");
+		const soloDocViews = getFilteredAppViews("doctor", { clinicMode: "solo_doctor" });
+		assert.ok(soloDocViews.includes("finance"), "solo_doctor must have finance (cashbox)");
+		assert.ok(soloDocViews.includes("analytics"), "solo_doctor must have analytics");
+
+		// Reception & admin roles must NOT have P&L analytics view by default, MUST have scanner
+		for (const receptionRole of ["admin", "administrator", "senior_admin", "registrar"] as const) {
 			const rViews = getFilteredAppViews(receptionRole);
 			assert.ok(!rViews.includes("analytics"), `${receptionRole} must not have analytics view`);
 			assert.ok(rViews.includes("scanner"), `${receptionRole} must have scanner view`);

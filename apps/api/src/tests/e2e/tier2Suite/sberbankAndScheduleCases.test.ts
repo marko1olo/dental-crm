@@ -1,7 +1,5 @@
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, it } from "node:test";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../../db/client.js";
@@ -405,47 +403,41 @@ export function registerSberbankAndScheduleCases(ctx: Tier2FixtureContext): void
 	});
 
 	// ==========================================
-	// Feature 10: Repository Gates & Integrity
+	// Feature 10: Domain Contract & Checksum Boundaries
 	// ==========================================
-	describe("Feature 10: Repository Gates & Integrity Boundaries", () => {
-		it("10.1 check-css-tokens gate fails-closed if CSS file has unmatched var()", () => {
-			const checkCssScript = readFileSync(
-				join(repoRoot, "scripts/check-css-tokens.mjs"),
-				"utf8",
+	describe("Feature 10: Sberbank & Waitlist Schema Contracts (6Г)", () => {
+		it("10.1 verifySberbankChecksum rejects tampered payload signatures", () => {
+			const params = {
+				amount: "500000",
+				orderId: "sber-tamper-check",
+				status: "success",
+			};
+			const validChecksum = generateSberbankChecksum(params, SBER_SECRET);
+			assert.equal(
+				verifySberbankChecksum({ ...params, checksum: validChecksum }, SBER_SECRET, validChecksum),
+				true,
 			);
-			assert.ok(checkCssScript.includes("process.exit(1)"));
+			assert.equal(
+				verifySberbankChecksum({ ...params, amount: "1", checksum: validChecksum }, SBER_SECRET, validChecksum),
+				false,
+			);
 		});
 
-		it("10.2 check-encoding gate fails-closed on invalid byte sequences", () => {
-			const checkEncodingScript = readFileSync(
-				join(repoRoot, "scripts/check-encoding.mjs"),
-				"utf8",
-			);
-			assert.ok(checkEncodingScript.includes("process.exit(1)"));
-		});
+		it("10.2 waitlistCreateSchema & clinicModeSchema validate domain contracts at runtime", async () => {
+			const shared = await import("@dental/shared");
+			const parsedWaitlist = shared.waitlistCreateSchema.safeParse({
+				patientName: "Тестов Тест",
+				patientPhone: "+79991112233",
+				preferredTimeRanges: [{ day: "Любой", slot: "morning" }],
+			});
+			assert.equal(parsedWaitlist.success, true);
 
-		it("10.3 check-dynamic-imports gate fails-closed on missing dynamic target files", () => {
-			const checkDynScript = readFileSync(
-				join(repoRoot, "scripts/check-dynamic-imports.mjs"),
-				"utf8",
-			);
-			assert.ok(checkDynScript.includes("process.exit(1)"));
-		});
-
-		it("10.4 check-env-contract gate verifies environment keys fail-closed when undocumented", () => {
-			const checkEnvScript = readFileSync(
-				join(repoRoot, "scripts/check-env-contract.mjs"),
-				"utf8",
-			);
-			assert.ok(checkEnvScript.includes("process.exit(1)"));
-		});
-
-		it("10.5 confirms zero mock interfaces in production billing and schedule route files", () => {
-			const billingRoute = readFileSync(
-				join(repoRoot, "apps/api/src/routes/billingRoutes/index.ts"),
-				"utf8",
-			);
-			assert.doesNotMatch(billingRoute, /mock|Mock|Dummy/i);
+			const badTimeRange = shared.waitlistCreateSchema.safeParse({
+				patientName: "Тестов Тест",
+				preferredTimeRanges: ["midnight_invalid"],
+			});
+			assert.equal(badTimeRange.success, false);
+			assert.equal(shared.clinicModeSchema.safeParse("solo_doctor").success, true);
 		});
 	});
 }

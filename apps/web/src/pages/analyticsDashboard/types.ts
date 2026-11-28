@@ -101,6 +101,7 @@ export interface AnalyticsHeaderBarProps {
 	onRetry: () => void;
 	onOpenMarketingRoi: () => void;
 	onOpenFinancialAnalytics: () => void;
+	onOpenExecutiveStudio?: (() => void) | undefined;
 }
 
 export interface AnalyticsRevenueChartsProps {

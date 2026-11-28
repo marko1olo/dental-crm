@@ -123,11 +123,11 @@ export function parsePreferredWeekday(raw: unknown): number | null {
 
 	if (/^[0-6]$/.test(value)) return Number(value);
 
-	// Конкретная дата: «2026-07-29». Из неё день недели выводится однозначно.
+	// Конкретная дата: «2026-07-29». Из неё день недели выводится однозначно в UTC.
 	const asDate = /^\d{4}-\d{2}-\d{2}$/.test(value)
-		? new Date(`${value}T12:00:00`)
+		? new Date(`${value}T12:00:00Z`)
 		: null;
-	if (asDate && !Number.isNaN(asDate.getTime())) return asDate.getDay();
+	if (asDate && !Number.isNaN(asDate.getTime())) return asDate.getUTCDay();
 
 	return null;
 }
@@ -180,6 +180,19 @@ export function parsePreferredRanges(
 
 			// Форма из zod-схемы POST /api/waitlist: {day, slot}.
 			if (typeof record.slot === "string") {
+				const slotLower = record.slot.trim().toLowerCase();
+				if (slotLower === "morning") {
+					collected.push({ fromMinute: 8 * 60, toMinute: 13 * 60 });
+					continue;
+				}
+				if (slotLower === "day") {
+					collected.push({ fromMinute: 13 * 60, toMinute: 17 * 60 });
+					continue;
+				}
+				if (slotLower === "evening") {
+					collected.push({ fromMinute: 17 * 60, toMinute: 21 * 60 });
+					continue;
+				}
 				const asPair = fromPair(record.slot);
 				if (asPair) {
 					collected.push(asPair);
@@ -262,6 +275,7 @@ export async function loadActiveWaitlistRows(
 			futureAppointments: sql<number>`(
 				SELECT count(*) FROM ${appointments} a
 				WHERE a.patient_id = ${appointmentWaitlists}."patient_id"
+				  AND a.organization_id = ${appointmentWaitlists}."organization_id"
 				  AND a.starts_at > now()
 				  AND a.status IN ('planned', 'confirmed')
 			)`.as("future_appointments"),

@@ -1,9 +1,15 @@
-import { generateUuidV7 } from "@dental/shared";
+import { formatDateKeyInTimeZone, generateUuidV7 } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import type { BatchDispatchResult, ReminderChannel, TomorrowReminderItem } from "./types";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function readServerReason(srv: Record<string, unknown> | undefined): string | undefined {
+	if (typeof srv?.reason === "string" && srv.reason.trim()) return srv.reason;
+	if (typeof srv?.details === "string" && srv.details.trim()) return srv.details;
+	return undefined;
+}
 
 export async function dispatchBatchReminders(
 	reminders: TomorrowReminderItem[],
@@ -11,6 +17,7 @@ export async function dispatchBatchReminders(
 		allowQuietHoursOverride?: boolean;
 		channelOverride?: "auto" | ReminderChannel;
 		dateIso?: string;
+		clinicTimeZone?: string;
 		onProgress?: (index: number, total: number) => void;
 	},
 ): Promise<BatchDispatchResult> {
@@ -60,7 +67,17 @@ export async function dispatchBatchReminders(
 		return out;
 	}
 
-	const derivedDate = options?.dateIso ?? eligibleItems[0]?.startsAtIso?.slice(0, 10);
+	const firstStartsAtMs = eligibleItems[0]?.startsAtIso
+		? Date.parse(eligibleItems[0].startsAtIso)
+		: Number.NaN;
+	const derivedDate =
+		options?.dateIso ??
+		(Number.isFinite(firstStartsAtMs)
+			? formatDateKeyInTimeZone(
+					new Date(firstStartsAtMs),
+					options?.clinicTimeZone || "Europe/Moscow",
+				)
+			: undefined);
 	const validUuidIds = eligibleItems
 		.map((item) => item.appointmentId)
 		.filter((id) => UUID_REGEX.test(id));
@@ -126,6 +143,7 @@ export async function dispatchBatchReminders(
 			for (const item of eligibleItems) {
 				const srv = byApptId.get(item.appointmentId);
 				const srvStatus = typeof srv?.status === "string" ? srv.status : null;
+				const srvReason = readServerReason(srv);
 				if (srvStatus === "skipped_quiet_hours") {
 					out.skippedQuietHours++;
 					out.results.push({
@@ -133,7 +151,7 @@ export async function dispatchBatchReminders(
 						patientName: item.patientName,
 						channel: item.preferredChannel,
 						status: "skipped_quiet_hours",
-						...(typeof srv?.reason === "string" ? { error: srv.reason } : {}),
+						...(srvReason ? { error: srvReason } : {}),
 					});
 				} else if (srvStatus === "skipped_no_contact") {
 					out.skippedNoContact++;
@@ -142,7 +160,7 @@ export async function dispatchBatchReminders(
 						patientName: item.patientName,
 						channel: item.preferredChannel,
 						status: "skipped_no_contact",
-						...(typeof srv?.reason === "string" ? { error: srv.reason } : {}),
+						...(srvReason ? { error: srvReason } : {}),
 					});
 				} else if (srvStatus === "failed" || srvStatus === "error") {
 					out.results.push({
@@ -150,7 +168,7 @@ export async function dispatchBatchReminders(
 						patientName: item.patientName,
 						channel: item.preferredChannel,
 						status: "error",
-						error: typeof srv?.reason === "string" ? srv.reason : "Не удалось отправить напоминание",
+						error: srvReason ?? "Не удалось отправить напоминание",
 					});
 				} else {
 					out.dispatched++;

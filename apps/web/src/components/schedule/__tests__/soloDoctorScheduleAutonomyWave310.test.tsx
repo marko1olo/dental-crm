@@ -464,58 +464,72 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 		});
 	});
 
-	describe("4. CSS Invariants, Strict UTF-8 and Zero Emojis", () => {
-		it("schedule.css exists and enforces 36px toolbar density and status autonomy", () => {
-			const cssPath = path.join(webRoot, "src/components/schedule/schedule.css");
-			assert.ok(fs.existsSync(cssPath), "apps/web/src/components/schedule/schedule.css must exist");
+	describe("4. Runtime Rendered Structure and Zero Cartoon Emojis (6Г)", () => {
+		it("ScheduleUnifiedToolbar & QuickBookingDrawer render expected testids/classes without cartoon emojis", async () => {
+			const catalog = await import("../scheduleCatalogData");
+			const toolbarHtml = renderToString(
+				React.createElement(ScheduleUnifiedToolbar, {
+					scheduleDateFilter: "2026-09-24",
+					todayIso: "2026-09-24",
+					isSoloDoctor: true,
+					staffMembers: soloDoctorDashboard.clinicSettings.staff,
+					chairs: soloDoctorDashboard.clinicSettings.chairs,
+					onQuickBooking: () => {},
+					onOpenQuickBooking: () => {},
+				}),
+			);
+			assert.ok(
+				toolbarHtml.includes("schedule-filter-strip"),
+				"Toolbar must render .schedule-filter-strip class",
+			);
+			assert.ok(
+				toolbarHtml.includes("schedule-toolbar-primary-quick-booking-btn"),
+				"Toolbar must render primary quick-booking CTA class",
+			);
+			assert.equal(
+				CARTOON_EMOJI_REGEX.test(toolbarHtml),
+				false,
+				"Rendered ScheduleUnifiedToolbar must contain zero cartoon emojis",
+			);
 
-			const cssContent = fs.readFileSync(cssPath, "utf8");
-			assert.ok(
-				cssContent.includes(".schedule-filter-strip"),
-				"schedule.css must style .schedule-filter-strip",
+			const drawerHtml = renderToString(
+				React.createElement(QuickBookingDrawer, {
+					isOpen: true,
+					onClose: () => {},
+					dashboard: soloDoctorDashboard,
+				}),
 			);
-			assert.ok(
-				cssContent.includes("height: 36px"),
-				"schedule.css must enforce height: 36px",
+			assert.equal(
+				CARTOON_EMOJI_REGEX.test(drawerHtml),
+				false,
+				"Rendered QuickBookingDrawer must contain zero cartoon emojis",
 			);
-			assert.ok(
-				cssContent.includes(".schedule-toolbar-primary-quick-booking-btn"),
-				"schedule.css must style .schedule-toolbar-primary-quick-booking-btn",
-			);
-			assert.ok(
-				cssContent.includes("pointer-events: auto !important"),
-				"schedule.css must guarantee status buttons are never disabled",
-			);
+			assert.ok(catalog.APPOINTMENT_STATUS_OPTIONS.length >= 6);
 		});
 
-		it("schedule.css and components contain zero cartoon emojis (Mandate 8d item 7)", () => {
-			const cssPath = path.join(webRoot, "src/components/schedule/schedule.css");
-			const cssContent = fs.readFileSync(cssPath, "utf8");
-			assert.ok(
-				!CARTOON_EMOJI_REGEX.test(cssContent),
-				"schedule.css must contain zero cartoon emojis",
-			);
-
-			const filterStripPath = path.join(webRoot, "src/components/schedule/ScheduleUnifiedToolbar.tsx");
-			const filterStripContent = fs.readFileSync(filterStripPath, "utf8");
-			assert.ok(
-				!CARTOON_EMOJI_REGEX.test(filterStripContent),
-				"ScheduleUnifiedToolbar.tsx must contain zero cartoon emojis",
-			);
-
-			const quickDrawerPath = path.join(webRoot, "src/components/schedule/QuickBookingDrawer.tsx");
-			const quickDrawerContent = fs.readFileSync(quickDrawerPath, "utf8");
-			assert.ok(
-				!CARTOON_EMOJI_REGEX.test(quickDrawerContent),
-				"QuickBookingDrawer.tsx must contain zero cartoon emojis",
-			);
-
-			const modalPath = path.join(webRoot, "src/components/schedule/scheduleCatalogData.ts");
-			const modalContent = fs.readFileSync(modalPath, "utf8");
-			assert.ok(
-				!CARTOON_EMOJI_REGEX.test(modalContent),
-				"scheduleCatalogData.ts must contain zero cartoon emojis",
-			);
+		it("scheduleCatalogData statuses, reasons and chair presets contain zero cartoon emojis (Mandate 8d item 7)", async () => {
+			const catalog = await import("../scheduleCatalogData");
+			for (const opt of catalog.APPOINTMENT_STATUS_OPTIONS) {
+				assert.equal(
+					CARTOON_EMOJI_REGEX.test(`${opt.label} ${opt.code}`),
+					false,
+					`Status option ${opt.code} must contain zero cartoon emojis`,
+				);
+			}
+			for (const preset of catalog.QUICK_APPOINTMENT_REASONS) {
+				assert.equal(
+					CARTOON_EMOJI_REGEX.test(`${preset.label} ${preset.fullLabel} ${preset.reason}`),
+					false,
+					`Reason preset ${preset.label} must contain zero cartoon emojis`,
+				);
+			}
+			for (const chair of catalog.CHAIR_PRESETS) {
+				assert.equal(
+					CARTOON_EMOJI_REGEX.test(`${chair.name} ${chair.specialty} ${chair.roomNumber}`),
+					false,
+					`Chair preset ${chair.id} must contain zero cartoon emojis`,
+				);
+			}
 		});
 	});
 });

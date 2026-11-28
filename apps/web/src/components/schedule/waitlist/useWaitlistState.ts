@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { generateUuidV7, type Dashboard } from "@dental/shared";
 import type { AppLogicContextType } from "../../../contexts/AppLogicContext";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import type { TargetSlotInfo, WaitlistCandidateItem, WaitlistUrgency } from "./waitlistTypes";
 import { filterWaitlistCandidates, generateWaitlistOfferMessage } from "./waitlistTypes";
 
@@ -60,14 +61,10 @@ export function useWaitlistState(options: UseWaitlistOptions) {
     try {
       const headers: Record<string, string> = {
         Accept: "application/json",
+        ...getDenteAuthHeaders(),
       };
       if (auth?.denteClinicalReadHeaders) {
         Object.assign(headers, auth.denteClinicalReadHeaders());
-      } else if (typeof window !== "undefined") {
-        const cTok = localStorage.getItem("dente_clinic_token");
-        const sTok = localStorage.getItem("dente_staff_token");
-        if (cTok) headers["x-dente-clinic-token"] = cTok;
-        if (sTok) headers["x-dente-staff-token"] = sTok;
       }
       const res = await fetch("/api/waitlist", { headers });
       if (!res.ok) {
@@ -148,15 +145,11 @@ export function useWaitlistState(options: UseWaitlistOptions) {
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
           Accept: "application/json",
+          ...getDenteAuthHeaders(),
           "Idempotency-Key": generateUuidV7(),
         };
         if (auth?.denteClinicalMutationHeaders) {
           Object.assign(headers, auth.denteClinicalMutationHeaders());
-        } else if (typeof window !== "undefined") {
-          const cTok = localStorage.getItem("dente_clinic_token");
-          const sTok = localStorage.getItem("dente_staff_token");
-          if (cTok) headers["x-dente-clinic-token"] = cTok;
-          if (sTok) headers["x-dente-staff-token"] = sTok;
         }
 
         const payload = {
@@ -209,6 +202,7 @@ export function useWaitlistState(options: UseWaitlistOptions) {
     [
       newPatientId,
       newPatientName,
+      newPatientPhone,
       newDoctorId,
       newUrgency,
       newCategory,

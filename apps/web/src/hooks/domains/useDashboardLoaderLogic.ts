@@ -10,6 +10,8 @@ import {
 	setOfflineAutonomyMode,
 } from "../../lib/offlineStorage";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { resolveClinicMode } from "../../lib/clinicCapabilities";
+import { useSettingsStore } from "../../store/settingsStore";
 
 export interface DashboardLoaderLogicProps {
 	authRef: {
@@ -89,6 +91,9 @@ export function useDashboardLoaderLogic({
 				// актуальнее, этот молча игнорируем.
 				if (isStaleResponse()) return;
 				setDashboard(payload);
+				useSettingsStore
+					.getState()
+					.setClinicMode(resolveClinicMode(payload?.clinicSettings?.profile?.mode));
 				cacheClinicDashboard(payload);
 				setOfflineAutonomyMode(false);
 				setAccessUnlockRequired(false);
@@ -113,6 +118,11 @@ export function useDashboardLoaderLogic({
 					const cachedDashboard = getCachedClinicDashboard();
 					if (cachedDashboard) {
 						setDashboard(cachedDashboard);
+						useSettingsStore
+							.getState()
+							.setClinicMode(
+								resolveClinicMode(cachedDashboard?.clinicSettings?.profile?.mode),
+							);
 						setOfflineAutonomyMode(true);
 						showToast(
 							"Связь с сервером прервана. Включён автономный режим (Локальная сеть).",
@@ -123,6 +133,11 @@ export function useDashboardLoaderLogic({
 						// Если кэша ещё нет (первый запуск без сети) — создаём оффлайн-кабинет
 						const fallbackDashboard = createOfflineFallbackDashboard();
 						setDashboard(fallbackDashboard);
+						useSettingsStore
+							.getState()
+							.setClinicMode(
+								resolveClinicMode(fallbackDashboard?.clinicSettings?.profile?.mode),
+							);
 						setOfflineAutonomyMode(true);
 						showToast(
 							"Сервер клиники недоступен. Открыт автономный режим (Локальная сеть).",

@@ -322,31 +322,52 @@ describe("Schedule & Chair Roster Comprehensive Parity", () => {
 	});
 
 	describe("4. Canonical Component Exports & Integrity Verification", () => {
-		it("exports ScheduleView and renders safely", () => {
-			assert.ok(ScheduleView, "ScheduleView must be exported");
-			assert.ok(typeof ScheduleView === "function" || typeof ScheduleView === "object");
+		const minimalDashboard = {
+			clinicSettings: {
+				profile: { clinicName: "DENTE Demo Clinic", timezone: "Europe/Moscow" },
+				chairs: [
+					{ id: "chair-1", name: "Кресло 1", active: true, color: "#0d9488" },
+					{ id: "chair-2", name: "Кресло 2", active: true, color: "#3b82f6" },
+				],
+				staff: [],
+			},
+			appointments: [],
+			patients: [],
+		} as unknown as import("@dental/shared").Dashboard;
+
+		const appointmentLabels: Record<import("@dental/shared").Appointment["status"], string> = {
+			planned: "Запланирован",
+			confirmed: "Подтверждён",
+			arrived: "Пациент в клинике",
+			in_treatment: "В кресле",
+			completed: "Завершён",
+			cancelled: "Отменён",
+			no_show: "Не явился",
+		};
+
+		it("renders ScheduleView recovery surface cleanly inside AppLogicProvider", async () => {
+			const { AppLogicProvider } = await import("../../../contexts/AppLogicContext");
+			const html = renderToString(
+				React.createElement(
+					AppLogicProvider,
+					{
+						value: {
+							dashboard: null,
+							loadDashboard: async () => {},
+							appointments: [],
+							patients: [],
+						},
+					},
+					React.createElement(ScheduleView),
+				),
+			);
+			assert.ok(html.length > 0, "ScheduleView must render disconnected recovery markup");
 		});
 
-		it("exports ScheduleGrid and renders safely with chair grid layout", () => {
-			assert.ok(ScheduleGrid, "ScheduleGrid must be exported");
-			assert.ok(typeof ScheduleGrid === "function" || typeof ScheduleGrid === "object");
-
-			const mockDashboard: any = {
-				clinicSettings: {
-					profile: { clinicName: "DENTE Demo Clinic" },
-					chairs: [
-						{ id: "chair-1", name: "Кресло 1", active: true, color: "#0d9488" },
-						{ id: "chair-2", name: "Кресло 2", active: true, color: "#3b82f6" },
-					],
-					staff: [],
-				},
-				appointments: [],
-				patients: [],
-			};
-
+		it("renders ScheduleGrid cleanly with chair grid layout", () => {
 			const html = renderToString(
 				React.createElement(ScheduleGrid, {
-					dashboard: mockDashboard,
+					dashboard: minimalDashboard,
 					dateKey: "2026-09-08",
 					appointments: [],
 					onSlotClick: () => {},
@@ -354,16 +375,28 @@ describe("Schedule & Chair Roster Comprehensive Parity", () => {
 					patientName: () => "Тест",
 					formatTime: (t) => t,
 					toDateTimeLocalValue: (t) => t,
-					appointmentLabels: { planned: "Запланирован" } as any,
+					appointmentLabels,
 				}),
 			);
 
-			assert.ok(html.length > 0, "ScheduleGrid must render HTML output");
+			assert.ok(html.includes("Кресло 1"), "ScheduleGrid must render chair 1 header");
+			assert.ok(html.includes("Кресло 2"), "ScheduleGrid must render chair 2 header");
 		});
 
-		it("exports QuickBookingDrawer conforming to Mandate 8e (0 disabled buttons)", () => {
-			assert.ok(QuickBookingDrawer, "QuickBookingDrawer must be exported");
-			assert.equal(typeof QuickBookingDrawer, "function");
+		it("renders QuickBookingDrawer conforming to Mandate 8e (0 disabled status/CTA buttons)", () => {
+			const html = renderToString(
+				React.createElement(QuickBookingDrawer, {
+					isOpen: true,
+					onClose: () => {},
+					dashboard: minimalDashboard,
+				}),
+			);
+			assert.ok(html.includes("quick-status-btn-planned"), "QuickBookingDrawer must render status controls");
+			const submitIdx = html.indexOf('data-testid="quick-booking-submit-btn"');
+			if (submitIdx > -1) {
+				const chunk = html.slice(Math.max(0, submitIdx - 120), submitIdx + 160);
+				assert.equal(chunk.includes("disabled"), false, "QuickBookingDrawer Primary CTA must not be disabled");
+			}
 		});
 
 		it("ensures DEFAULT_SOLO_CHAIR has active=true and resilient fallback room and color", () => {
