@@ -175,7 +175,7 @@ describe("Red Team Finance, Cashbox, Refunds, IDENT Payroll & 1C PG18 Integratio
 			assert.equal(ledgerCheck.paidKopecks, 1000000);
 			assert.equal(ledgerCheck.balanceKopecks, 1000000);
 
-			// 3. Second visit payment with empty personal deposit and empty family group must fail with 402
+			// 3. Second visit payment with empty personal deposit and empty family group must fail with 400 InsufficientDepositBalance
 			const pay2 = await processCashboxPayment(orgId, {
 				patientId,
 				invoiceId: inv2Id,
@@ -184,12 +184,8 @@ describe("Red Team Finance, Cashbox, Refunds, IDENT Payroll & 1C PG18 Integratio
 				method: "deposit",
 				clientMutationId: randomUUID(),
 			});
-			assert.equal(pay2.statusCode, 402);
-			assert.ok(
-				pay2.body.error === "InsufficientDepositBalance" ||
-					pay2.body.error === "InsufficientFamilyBalance",
-				`Expected 402 deposit/family insufficient error, got ${String(pay2.body.error)}`,
-			);
+			assert.equal(pay2.statusCode, 400);
+			assert.equal(pay2.body.error, "InsufficientDepositBalance");
 		} finally {
 			await purgeFixtureOrganizations([orgId]);
 		}

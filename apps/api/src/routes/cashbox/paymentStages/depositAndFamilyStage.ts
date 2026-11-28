@@ -121,9 +121,6 @@ export async function processDepositAndFamilyStage(
 			(body.familyDepositAmountKopecks ?? 0) > 0 ||
 			(body.familyDepositAmountRub ?? 0) > 0 ||
 			explicitFamilySplit;
-		const isExplicitPersonalSplitField =
-			!isExplicitFamilyTarget &&
-			((body.depositAmountKopecks ?? 0) > 0 || (body.depositAmountRub ?? 0) > 0);
 
 		// Сначала проверяем личные размеченные авансы пациента (P0-2: личный депозит не перехватывается семейным пулом)
 		const preloadAdvanceRows = isExplicitFamilyTarget
@@ -157,12 +154,8 @@ export async function processDepositAndFamilyStage(
 		let targetFamilyGroupId: string | null = null;
 		if (isExplicitFamilyTarget) {
 			targetFamilyGroupId = body.familyGroupId || patientRow.familyGroupId || null;
-		} else if (
-			!isExplicitPersonalSplitField &&
-			preloadAdvanceTotalKop <= 0n &&
-			patientRow.familyGroupId
-		) {
-			// Legacy compatibility: when personal advance is empty and patient belongs to family group
+		} else if (preloadAdvanceTotalKop <= 0n && patientRow.familyGroupId) {
+			// Legacy/split compatibility: when personal advance is empty and patient belongs to family group
 			targetFamilyGroupId = patientRow.familyGroupId;
 		}
 
@@ -216,7 +209,17 @@ export async function processDepositAndFamilyStage(
 				)
 				.for("update")
 				.limit(1);
-			lockedFamilyGroup = fg ?? null;
+			if (fg) {
+				const fgBalanceKop =
+					fg.balanceKopecks != null &&
+					(Number(fg.balanceKopecks) !== 0 || !fg.balance || parseKopecks(fg.balance) === 0)
+						? BigInt(fg.balanceKopecks)
+						: BigInt(parseKopecks(fg.balance ?? 0));
+				// Если семейная группа выбрана неявно (фолбэк), не перехватываем пустым семейным пулом с 0 ₽ личный депозит
+				if (isExplicitFamilyTarget || fgBalanceKop > 0n) {
+					lockedFamilyGroup = fg;
+				}
+			}
 		}
 
 		if (

@@ -69,7 +69,7 @@ describe("Cashbox Operations — Mandate 8e & 54-FZ Invariants", () => {
 			// Mandate 8e: Even with unusual length, isValid MUST remain true for physical persons!
 			assert.equal(res.isValid, true);
 			assert.equal(res.isRequired, false);
-			assert.ok(res.errorRu?.includes("для 54-ФЗ поле опционально"));
+			assert.ok(res.errorRu?.includes("поле опционально и не блокирует чек и оплату"));
 		});
 
 		it("Legal entity (B2B) strictly requires 10-digit INN per 54-FZ", () => {

@@ -8,7 +8,7 @@
  */
 
 import { kopecksToRub, parseKopecks } from "@dental/shared";
-import { and, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import {
 	cashBoxes,
 	cashBoxShifts,
@@ -78,6 +78,7 @@ export async function applyCashBoxFiscalReceipt(
 		.select()
 		.from(cashBoxes)
 		.where(eq(cashBoxes.organizationId, orgId))
+		.orderBy(asc(cashBoxes.createdAt), asc(cashBoxes.id))
 		.for("update");
 
 	if (!allBoxes || allBoxes.length === 0) return;
@@ -101,7 +102,10 @@ export async function applyCashBoxFiscalReceipt(
 	if (!firstBox) return;
 
 	const mainBox = allBoxes.find((b) => b.isMain || b.type === "main") ?? firstBox;
-	const cashlessBox = allBoxes.find((b) => b.isCashless || b.type === "cashless") ?? mainBox;
+	const cashlessBox =
+		allBoxes.find((b) => b.type === "cashless") ??
+		allBoxes.find((b) => b.isCashless) ??
+		mainBox;
 	const chosenBox = data.cashBoxId
 		? (allBoxes.find((b) => b.id === data.cashBoxId) ?? mainBox)
 		: mainBox;
