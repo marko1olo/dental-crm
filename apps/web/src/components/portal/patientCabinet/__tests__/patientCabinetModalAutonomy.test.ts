@@ -2,32 +2,26 @@
  * patientCabinetModalAutonomy.test.ts
  *
  * Sweet-spot suite for Patient Cabinet Modal & Tab Autonomy (Mandates 8b, 8zi, 8e, 8d).
- * Audits 0 disabled buttons across tabs, 63-FZ PEP approval, 0 cartoon emojis, and desktop/mobile ergonomics.
+ * Audits 0 disabled buttons across tabs, 63-FZ PEP approval, 0 cartoon emojis, integer kopecks tax math, and semantic classes.
  */
 
+import "../../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createElement } from "react";
+import React, { createElement } from "react";
+globalThis.React = React;
 import { renderToStaticMarkup } from "react-dom/server";
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const readCssWithImports = (p: string): string =>
-	readFileSync(p, "utf-8").replace(/@import\s+["']\.\/([^"']+)["'];/g, (_, rel) => readCssWithImports(join(dirname(p), rel)));
-
-import "../../../../../testCssStub.mjs";
+import { calculatePercentDiscountKopecks, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 const { PatientCabinetModal } = await import("../PatientCabinetModal");
 const { OverviewTab } = await import("../tabs/OverviewTab");
 const { InvoicesTab } = await import("../tabs/InvoicesTab");
 const { DocumentsTab } = await import("../tabs/DocumentsTab");
 const { TreatmentPlanTab } = await import("../tabs/TreatmentPlanTab");
+const { TreatmentPlanTierSelector } = await import("../tabs/treatmentPlan/TreatmentPlanTierSelector");
 import { DEMO_PATIENT_CABINET } from "../patientCabinetPresets";
 import {
 	calculateCabinetSummary, calculateDentalHealthIndex, calculatePatientTaxDeduction,
-	generatePatientDentalPassport, generateCompletedWorksActHtml,
-	generatePaymentInvoiceHtml, generateFnsReceiptCheckUrl, generateExtract043Html,
-	generatePatientTaxCertificate1151156, generatePrescription107PrintHtml,
+	generatePatientDentalPassport, generatePaymentInvoiceHtml, generateFnsReceiptCheckUrl,
 	signTreatmentPlanWithPep, signConsentWithPep, computePatientTeethFromStages,
 	type GeneratedDocumentSummary, type PatientPrescriptionItem, type PatientStatutoryConsent,
 } from "../patientCabinetEngine";
@@ -104,16 +98,41 @@ describe("PatientCabinetModalAutonomy — Mandates 8e, 8d, 8s Modal & Tab Suite"
 		assert.equal(emojiRegex.test(documentsHtml), false, "DocumentsTab contains 0 raw unicode emojis");
 	});
 
-	it("3. Desktop Density & CSS Tokens: Clinical 28-36px button heights and tokenized status badges", () => {
-		const cssPath = fileURLToPath(new URL("../patientCabinet.css", import.meta.url));
-		const css = readCssWithImports(cssPath);
+	it("3. TreatmentPlanTierSelector & TreatmentPlanTab use design tokens and integer kopecks 13% NDFL math", () => {
+		const plan = data.treatmentPlans[0];
+		const threeTierModel = data.threeTierModel;
+		assert.ok(plan && threeTierModel);
+		const selectedTier = threeTierModel.selectedTier || "standard";
+		const tierObj = threeTierModel.tiers.find((t) => t.tierId === selectedTier);
+		const totalCostRub = tierObj?.totalCostRub || plan.totalCostRub;
+		const expectedRefundRub = Math.round(
+			kopecksToRubles(calculatePercentDiscountKopecks(rublesToKopecks(totalCostRub), 13)),
+		);
 
-		assert.ok(css.includes(".pc-btn-primary {") && css.includes("min-height: 36px;"), "Desktop primary button height is 36px");
-		assert.ok(css.includes(".pc-btn-secondary {") && css.includes("min-height: 32px;"), "Desktop secondary button height is 32px");
-		assert.ok(css.includes(".pc-close-btn {") && css.includes("min-height: 32px;"), "Desktop close button height is 32px");
-		assert.ok(css.includes(".pc-status-badge.paid") && css.includes("color: var(--pc-success);"), "Paid badge uses var(--pc-success)");
-		assert.ok(css.includes(".pc-status-badge.unpaid") && css.includes("color: var(--pc-warning);"), "Unpaid badge uses var(--pc-warning)");
-		assert.ok(css.includes(".pc-status-badge.scheduled") && css.includes("color: var(--pc-primary);"), "Scheduled badge uses var(--pc-primary)");
+		const tierHtml = renderToStaticMarkup(
+			createElement(TreatmentPlanTierSelector, {
+				threeTierModel,
+				selectedTier: "standard",
+				onSelectTier: () => {},
+			}),
+		);
+		assert.ok(tierHtml.includes("pc-tier-selector-card"));
+		assert.ok(tierHtml.includes("pc-tier-segmented-control"));
+		assert.ok(tierHtml.includes("pc-tier-features-list"));
+		assert.equal(tierHtml.includes("<button disabled") || tierHtml.includes('disabled=""'), false);
+
+		const plansHtml = renderToStaticMarkup(
+			createElement(TreatmentPlanTab, {
+				data,
+				dentalPassport,
+				onPayStageWithSbp: () => {},
+				onBookAppointment: () => {},
+			}),
+		);
+		assert.ok(plansHtml.includes(expectedRefundRub.toLocaleString("ru-RU")));
+		assert.ok(plansHtml.includes("var(--paper, var(--pc-surface))"), "Tax card and formula card must use --paper token");
+		assert.equal(plansHtml.includes("background-color:#ffffff"), false, "No inline hardcoded white background in TreatmentPlanTab");
+		assert.equal(plansHtml.includes("color:#0f172a"), false, "No inline hardcoded slate text in TreatmentPlanTab");
 	});
 
 	it("4. Mandate 8s & Pipeline: mapServerPortalMeToCabinetData preserves documents and contracts without loss", () => {
@@ -176,7 +195,7 @@ describe("PatientCabinetModalAutonomy — Mandates 8e, 8d, 8s Modal & Tab Suite"
 		assert.equal(invoicesTabHtml.includes("<button disabled") || invoicesTabHtml.includes('disabled=""'), false, "Zero disabled buttons across Invoices tab");
 	});
 
-	it("6. Mandate 8d & DocumentsTab: Real clinical docs, clean empty state, 043/u extract and 107-1/u print", () => {
+	it("6. Mandate 8d & DocumentsTab: Real clinical docs, clean empty state, medical extract and 107-1/u print", () => {
 		const sampleDocs: GeneratedDocumentSummary[] = [{
 			id: "doc-live-1", kind: "paid_medical_services_contract",
 			title: "Договор на оказание медицинских услуг № ДОГ-2026/01",
@@ -190,7 +209,7 @@ describe("PatientCabinetModalAutonomy — Mandates 8e, 8d, 8s Modal & Tab Suite"
 		};
 		const docExtract: GeneratedDocumentSummary = {
 			id: "doc-extract-043-test", kind: "medical_card_extract_043",
-			title: "Официальная выписка из медицинской карты 043/у", documentNumber: "ВЫП-043/2026-8842",
+			title: "Выписка из медицинской карты пациента", documentNumber: "ВЫП-2026-8842",
 			status: "issued", dateIso: "2026-08-10", sha256: "4b82d091e9821a8c9b3e1029348ab12e09847120394850192837461524354657",
 		};
 
@@ -209,9 +228,9 @@ describe("PatientCabinetModalAutonomy — Mandates 8e, 8d, 8s Modal & Tab Suite"
 
 		assert.ok(html.includes("clinical-documents-section"), "Clinical documents section is rendered");
 		assert.ok(html.includes("view-doc-btn-doc-live-1"), "Clinical doc preview button is present");
-		assert.ok(html.includes("print-extract-043-btn"), "1-click 043 extract print button rendered");
-		assert.ok(html.includes(`print-prescription-btn-${sampleRx.id}`), "1-click prescription print button rendered");
-		assert.equal(html.includes("/portal/documents/consent-"), false, "Zero fake /portal/documents/consent-...pdf 404 links");
+		assert.ok(html.includes("print-extract-043-btn"), "Extract print button rendered");
+		assert.ok(html.includes(`print-prescription-btn-${sampleRx.id}`), "Prescription print button rendered");
+		assert.equal(html.includes("/portal/documents/consent-"), false, "Zero fake /portal/documents/consent-...pdf links");
 		assert.equal(html.includes("<button disabled") || html.includes('disabled=""'), false, "Zero disabled buttons across Documents tab");
 	});
 
@@ -238,7 +257,7 @@ describe("PatientCabinetModalAutonomy — Mandates 8e, 8d, 8s Modal & Tab Suite"
 		assert.ok(html.includes('data-testid="btn-tier-basic"'), "Renders Basic tier button");
 		assert.ok(html.includes('data-testid="btn-tier-standard"'), "Renders Standard tier button");
 		assert.ok(html.includes('data-testid="btn-tier-premium"'), "Renders Premium tier button");
-		assert.ok(html.includes('data-testid="pc-plan-tax-deduction-card"'), "Renders 1-click tax deduction card");
+		assert.ok(html.includes('data-testid="pc-plan-tax-deduction-card"'), "Renders tax deduction card");
 		assert.ok(html.includes("Налоговый вычет 13% НДФЛ"), "Card contains 13% NDFL tax refund label");
 		assert.equal(html.includes("<button disabled") || html.includes('disabled=""'), false, "Zero disabled buttons across TreatmentPlanTab");
 	});
@@ -274,7 +293,7 @@ describe("PatientCabinetModalAutonomy — Mandates 8e, 8d, 8s Modal & Tab Suite"
 				onShowToast: () => {},
 			}),
 		);
-		assert.ok(docsSignedHtml.includes(`data-testid="print-signed-consent-btn-${signedConsent.id}"`), "Signed consent renders 1-click print button");
+		assert.ok(docsSignedHtml.includes(`data-testid="print-signed-consent-btn-${signedConsent.id}"`), "Signed consent renders print button");
 		assert.ok(docsSignedHtml.includes("Криптографический хеш ПЭП (SHA-256)"), "Renders SHA-256 audit badge");
 		assert.equal(docsSignedHtml.includes("<button disabled") || docsSignedHtml.includes('disabled=""'), false, "Zero disabled buttons on consent workflow");
 	});

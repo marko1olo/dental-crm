@@ -32,7 +32,7 @@ export async function registerPortalFamilyRoutes(server: FastifyInstance): Promi
 		method: "POST",
 		path: "/family/members",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized", message: "Требуется авторизация в личном кабинете." };
@@ -206,7 +206,7 @@ export async function registerPortalFamilyRoutes(server: FastifyInstance): Promi
 		method: "PATCH",
 		path: "/family/permissions",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized", message: "Требуется авторизация в личном кабинете." };

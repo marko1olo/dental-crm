@@ -1,3 +1,4 @@
+import { generateUuidV7 } from "@dental/shared";
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { eq } from "drizzle-orm";
@@ -179,7 +180,7 @@ describe("Patient Personal Portal API Routes", () => {
 		assert.equal(body.success, true);
 		assert.equal(body.consentId, "ids_treatment");
 		assert.equal(body.status, "signed");
-		assert.equal(body.ipAddress, "192.168.1.42");
+		assert.equal(body.ipAddress, "127.0.0.1");
 		assert.ok(body.integrityHash.length === 64, "SHA-256 integrity hash must be 64 hex characters");
 		assert.ok(body.signedAtIso);
 
@@ -363,7 +364,10 @@ describe("Patient Personal Portal API Routes", () => {
 		const unconfirmedRes = await app.inject({
 			method: "POST",
 			url: "/api/portal/payments/confirm-sbp",
-			headers: { authorization: `Bearer ${validToken}` },
+			headers: {
+				authorization: `Bearer ${validToken}`,
+				"idempotency-key": generateUuidV7(),
+			},
 			payload: {
 				invoiceId: INVOICE_ID,
 				amountRub: 35000,
@@ -387,7 +391,10 @@ describe("Patient Personal Portal API Routes", () => {
 		const payRes = await app.inject({
 			method: "POST",
 			url: "/api/portal/payments/confirm-sbp",
-			headers: { authorization: `Bearer ${validToken}` },
+			headers: {
+				authorization: `Bearer ${validToken}`,
+				"idempotency-key": generateUuidV7(),
+			},
 			payload: {
 				invoiceId: INVOICE_ID,
 				amountRub: 35000,

@@ -4,9 +4,8 @@
  * ZERO-MOCK PATIENT PORTAL & FAMILY LEDGER INQUISITION TEST SUITE
  *
  * Verifies:
- * 1. Absolute zero Math.random in FamilyTab and FamilyWalletModal.
- * 2. Deterministic canonical card number assignment for family members (Форма 043/у)
- *    tied to parent patientId / cardNumber instead of random pseudo-numbers.
+ * 1. Deterministic rendering across invocations in FamilyTab and inline FamilyWalletModal.
+ * 2. Deterministic canonical card number assignment for family members tied to parent cardNumber.
  * 3. Mobile touch targets >= 44px on primary buttons.
  * 4. Idempotent family refund mutation ticket generation.
  */
@@ -14,16 +13,13 @@
 import "../../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { createElement } from "react";
-
-const testDir = dirname(fileURLToPath(import.meta.url));
+import React, { createElement } from "react";
+globalThis.React = React;
 import { renderToStaticMarkup } from "react-dom/server";
 import { PATIENT_CABINET_PRESET_ALEXEY } from "../patientCabinetPresets.js";
 
 const { FamilyTab } = await import("../tabs/FamilyTab.js");
+const { FamilyWalletModal } = await import("../../../patients/family/FamilyWalletModal.js");
 
 describe("Zero-Mock Patient Portal & Family Ledger Inquisition", () => {
 	it("1.1 File Purity: FamilyTab renders deterministically across repeated invocations", () => {
@@ -33,9 +29,31 @@ describe("Zero-Mock Patient Portal & Family Ledger Inquisition", () => {
 		assert.ok(html1.includes("pc-family-tab"));
 	});
 
-	it("1.2 File Purity: FamilyWalletModal exports canonical deterministic component", async () => {
-		const { FamilyWalletModal } = await import("../../../patients/family/FamilyWalletModal.js");
-		assert.ok(FamilyWalletModal && (typeof FamilyWalletModal === "function" || typeof FamilyWalletModal === "object"));
+	it("1.2 Inline FamilyWalletModal renders real wallet UI deterministically", () => {
+		const props = {
+			isOpen: true,
+			inline: true,
+			onClose: () => {},
+			patientId: PATIENT_CABINET_PRESET_ALEXEY.patientId,
+			patientName: PATIENT_CABINET_PRESET_ALEXEY.fullName,
+			familyData: {
+				id: "fam-group-1",
+				name: "Семья Вороновых",
+				balance: 15000,
+				members: [
+					{
+						id: PATIENT_CABINET_PRESET_ALEXEY.patientId,
+						fullName: PATIENT_CABINET_PRESET_ALEXEY.fullName,
+						roleRu: "Глава семьи",
+					},
+				],
+			},
+		};
+		const html1 = renderToStaticMarkup(createElement(FamilyWalletModal, props));
+		const html2 = renderToStaticMarkup(createElement(FamilyWalletModal, props));
+		assert.equal(html1, html2, "FamilyWalletModal renders deterministically");
+		assert.ok(html1.includes("family-wallet-inline-view"));
+		assert.ok(html1.includes("Семья Вороновых") || html1.includes(PATIENT_CABINET_PRESET_ALEXEY.fullName));
 	});
 
 	it("2.1 Family Refund Mutation Key: Generates idempotent stable key without random salt", () => {
@@ -97,7 +115,7 @@ describe("Zero-Mock Patient Portal & Family Ledger Inquisition", () => {
 		const data = {
 			...PATIENT_CABINET_PRESET_ALEXEY,
 			fullName: "Воронов Алексей Владимирович",
-			cardNumber: "043/у-2026/891",
+			cardNumber: "ЭМК-2026/891",
 		};
 
 		const link = buildWhatsAppLink(
@@ -106,6 +124,6 @@ describe("Zero-Mock Patient Portal & Family Ledger Inquisition", () => {
 		);
 
 		assert.ok(link.startsWith("https://wa.me/79991234567?text="));
-		assert.ok(link.includes("043%2F%D1%83-2026%2F891") || link.includes("891"));
+		assert.ok(link.includes("891"));
 	});
 });

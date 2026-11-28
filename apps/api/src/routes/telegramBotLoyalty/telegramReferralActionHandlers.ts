@@ -9,6 +9,7 @@ import {
 } from "../../db/schema.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
+import { extractPortalPatient } from "../portal/portalAuthStore.js";
 import { TelegramReferralLoyaltyService } from "../../services/telegram/TelegramReferralLoyaltyService.js";
 import { TelegramTokenVault } from "../../services/telegram/TelegramTokenVault.js";
 import { isDbConnectionError } from "../../services/telegram/referralLoyalty/webAppValidator.js";
@@ -77,6 +78,32 @@ async function resolveAuthorizedOrg(
 			if (!ok) return null;
 		}
 		return { organizationId: identity.organizationId };
+	}
+
+	// A2. Авторизованный пациент Telegram WebApp / Портала (Bearer sessionToken)
+	if (options?.allowTelegramWebApp) {
+		const portalAuth = await extractPortalPatient(request);
+		if (portalAuth) {
+			if (options.requiredPatientId) {
+				const ok = await ensurePatientBelongsToOrg(portalAuth.organizationId, options.requiredPatientId, reply);
+				if (!ok) return null;
+				if (portalAuth.patientId !== options.requiredPatientId) {
+					const family = await TelegramReferralLoyaltyService.getFamilyProfile(
+						portalAuth.organizationId,
+						portalAuth.patientId,
+					);
+					const isFamilyMatch = family.members.some((m) => m.patientId === options.requiredPatientId);
+					if (!isFamilyMatch) {
+						reply.status(403).send({
+							error: "Forbidden",
+							message: "Доступ запрещен: данный профиль не принадлежит вам или вашей семейной группе.",
+						});
+						return null;
+					}
+				}
+			}
+			return { organizationId: portalAuth.organizationId };
+		}
 	}
 
 	// B. Пациент из Telegram WebApp с HMAC-SHA256 подписью

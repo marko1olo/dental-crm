@@ -241,8 +241,12 @@ export function resetPortalOtpRateLimitsForTesting(): void {
 
 /**
  * Извлекает валидную сессию пациента личного кабинета из заголовка Authorization.
+ * Проверяет подпись JWT, локальный BoundedTtlMap кэш отзыва и актуальность в PostgreSQL (`portal_revoked_tokens`).
  */
-export function extractPortalPatient(request: FastifyRequest): AuthenticatedPortalPatient | null {
+export async function extractPortalPatient(
+	request: FastifyRequest,
+	executor?: TenantDb,
+): Promise<AuthenticatedPortalPatient | null> {
 	const authHeader = request.headers.authorization;
 	if (!authHeader?.startsWith("Bearer ")) return null;
 	const token = authHeader.slice("Bearer ".length).trim();
@@ -261,6 +265,9 @@ export function extractPortalPatient(request: FastifyRequest): AuthenticatedPort
 	}
 	const revokedBefore = portalRevokedBeforeByPatient.get(payload.sub);
 	if (revokedBefore && typeof payload.iat === "number" && payload.iat <= revokedBefore) {
+		return null;
+	}
+	if (await isPortalTokenRevokedInDb(token, payload.organizationId, executor)) {
 		return null;
 	}
 	return { patientId: payload.sub, organizationId: payload.organizationId };

@@ -1,4 +1,4 @@
-import { generateQrCodeSvg, rublesToKopecks } from "@dental/shared";
+import { SbpQrEngine, generateQrCodeSvg, rublesToKopecks } from "@dental/shared";
 import type { PatientInvoiceItem, SbpBankMember, SbpQrPayload } from "./patientCabinetTypes.js";
 
 export const SBP_POPULAR_BANKS: readonly SbpBankMember[] = [
@@ -9,14 +9,35 @@ export const SBP_POPULAR_BANKS: readonly SbpBankMember[] = [
 	{ id: "sbp_generic", nameRu: "Другой банк (СБП)", schemaPrefix: "https://qr.nspk.ru/", brandColorHex: "#1a56db", popular: false },
 ];
 
+export function buildAvailableSbpBanks(
+	qrId: string,
+	sbpNspkPayloadString: string,
+): readonly SbpBankMember[] {
+	const encodedQrId = encodeURIComponent(qrId);
+	return SBP_POPULAR_BANKS.map((bank) => ({
+		...bank,
+		schemaPrefix:
+			bank.id === "sbp_generic"
+				? sbpNspkPayloadString
+				: `${bank.schemaPrefix}${encodedQrId}`,
+	}));
+}
+
 export function generateSbpQrPayload(
 	invoice: PatientInvoiceItem,
-	clinicDetails?: { legalName?: string; inn?: string; account?: string; bic?: string },
+	clinicDetails?: {
+		legalName?: string;
+		inn?: string;
+		account?: string;
+		bic?: string;
+		sbpBankId?: string;
+	},
 ): SbpQrPayload {
 	const recipientLegalName = clinicDetails?.legalName?.trim();
 	const recipientInn = clinicDetails?.inn?.trim();
 	const recipientAccount = clinicDetails?.account?.trim() || "";
 	const bankBic = clinicDetails?.bic?.trim() || "";
+	const sbpBankId = clinicDetails?.sbpBankId?.trim() || "";
 
 	if (!recipientLegalName || !recipientInn) {
 		throw new Error(
@@ -28,7 +49,19 @@ export function generateSbpQrPayload(
 	const qrId = `SBPA${Date.now().toString(36).toUpperCase()}${invoice.invoiceNumber.replace(/\D/g, "")}`;
 	const paymentPurpose = `Оплата стоматологических услуг по счету № ${invoice.invoiceNumber} (НДС не облагается)`;
 
-	const sbpNspkPayloadString = `https://qr.nspk.ru/${qrId}?type=02&bank=100000000111&sum=${amountKopecks}&cur=RUB&crc=84A2`;
+	const sbpNspkPayloadString = sbpBankId
+		? SbpQrEngine.buildNspkDynamicPayload({
+				operationId: qrId,
+				bankMemberId: sbpBankId,
+				amountKopecks,
+				currency: "RUB",
+			}).payloadUrl
+		: (() => {
+				const bicSegment = bankBic ? `&bic=${encodeURIComponent(bankBic)}` : "";
+				const baseQuery = `https://qr.nspk.ru/${qrId}?type=02${bicSegment}&sum=${amountKopecks}&cur=RUB`;
+				const crc16 = SbpQrEngine.computeCrc16Ccitt(baseQuery);
+				return `${baseQuery}&crc=${crc16}`;
+			})();
 	const qrSvg = generateQrCodeSvg(sbpNspkPayloadString, { size: 180 });
 
 	const expiresDate = new Date();
@@ -47,7 +80,7 @@ export function generateSbpQrPayload(
 		sbpNspkPayloadString,
 		qrSvg,
 		expiresAtIso: expiresDate.toISOString(),
-		availableBanks: SBP_POPULAR_BANKS,
+		availableBanks: buildAvailableSbpBanks(qrId, sbpNspkPayloadString),
 	};
 }
 

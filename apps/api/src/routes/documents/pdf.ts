@@ -57,7 +57,7 @@ export async function register(app: FastifyInstance) {
 					);
 			}
 			const { id } = parsedParams.data;
-			const portalPatient = extractPortalPatient(request);
+			const portalPatient = await extractPortalPatient(request);
 			const orgId = portalPatient ? portalPatient.organizationId : requireOrganizationId(request, reply);
 			if (!orgId) return reply;
 			const identity = getRequestIdentity(request);
@@ -190,7 +190,7 @@ export async function register(app: FastifyInstance) {
 		path: "/api/documents/:id/treatment-plan-pdf",
 		permission: "public",
 		handler: async ({ request, reply }) => {
-			const portalPatient = extractPortalPatient(request);
+			const portalPatient = await extractPortalPatient(request);
 			const orgId = portalPatient ? portalPatient.organizationId : requireOrganizationId(request, reply);
 			if (!orgId) return reply;
 			const parsedParams = documentPdfParamsSchema.safeParse(request.params);

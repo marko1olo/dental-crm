@@ -156,48 +156,19 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = (props) =
 		}
 	};
 
-	if (isSelfCheckinOpen) {
-		return (
-			<MobileSelfCheckinModal
-				isOpen={isSelfCheckinOpen}
-				onClose={() => setIsSelfCheckinOpen(false)}
-				patientId={data.patientId}
-				initialPhone={data.phone}
-				patientName={data.fullName}
-				doctorName={data.curatingDoctor}
-				onCheckinSuccess={({ somaticProfile }) => {
-					setIsSelfCheckinOpen(false);
-					setData((prev) => ({
-						...prev,
-						somaticAlerts: somaticProfile.alerts,
-						somaticRiskLevel: somaticProfile.riskLevel,
-						somaticRiskProfile: somaticProfile.profile,
-					}));
-				}}
-			/>
-		);
-	}
-
-	if (isTaxModalOpen) {
-		return (
-			<TaxDeductionCertificateModal
-				isOpen={isTaxModalOpen}
-				onClose={() => setIsTaxModalOpen(false)}
-				patientName={data.fullName}
-				patientBirthDate={data.birthDate}
-				patientInn={data.inn}
-				payments={taxDeductionPayments}
-				selectedYear={selectedTaxYear}
-				clinicName={data.clinicInfo?.legalName || data.clinicInfo?.nameRu || "Стоматология ДЕНТЕ"}
-				clinicInn={data.clinicInfo?.inn || "7701234567"}
-			/>
-		);
-	}
+	const isChildModalOpen = isSelfCheckinOpen || isTaxModalOpen;
 
 	return (
-		<div className="patient-cabinet-backdrop" onClick={onClose} role="dialog" aria-modal="true">
-			<AuthArtBackground overlayAlpha={0.4} />
-			<div className="patient-cabinet-modal" onClick={(e) => e.stopPropagation()}>
+		<>
+			<div
+				className="patient-cabinet-backdrop"
+				onClick={onClose}
+				role="dialog"
+				aria-modal="true"
+				style={isChildModalOpen ? { display: "none" } : undefined}
+			>
+				<AuthArtBackground overlayAlpha={0.4} />
+				<div className="patient-cabinet-modal" onClick={(e) => e.stopPropagation()}>
 				{/* Top Header HUD */}
 				<header className="pc-header">
 					<div className="pc-header-user">
@@ -492,7 +463,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = (props) =
 							boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
 							fontSize: "0.875rem",
 							fontWeight: 600,
-							zIndex: 9999,
+							zIndex: 200,
 							maxWidth: "90%",
 							textAlign: "center",
 						}}
@@ -500,8 +471,43 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = (props) =
 						{cabinetToastMessage}
 					</div>
 				)}
+				</div>
 			</div>
-		</div>
+
+			{isSelfCheckinOpen && (
+				<MobileSelfCheckinModal
+					isOpen={isSelfCheckinOpen}
+					onClose={() => setIsSelfCheckinOpen(false)}
+					patientId={data.patientId}
+					initialPhone={data.phone}
+					patientName={data.fullName}
+					doctorName={data.curatingDoctor}
+					onCheckinSuccess={({ somaticProfile }) => {
+						setIsSelfCheckinOpen(false);
+						setData((prev) => ({
+							...prev,
+							somaticAlerts: somaticProfile.alerts,
+							somaticRiskLevel: somaticProfile.riskLevel,
+							somaticRiskProfile: somaticProfile.profile,
+						}));
+					}}
+				/>
+			)}
+
+			{isTaxModalOpen && (
+				<TaxDeductionCertificateModal
+					isOpen={isTaxModalOpen}
+					onClose={() => setIsTaxModalOpen(false)}
+					patientName={data.fullName}
+					patientBirthDate={data.birthDate}
+					patientInn={data.inn}
+					payments={taxDeductionPayments}
+					selectedYear={selectedTaxYear}
+					clinicName={data.clinicInfo?.legalName || data.clinicInfo?.nameRu || ""}
+					clinicInn={data.clinicInfo?.inn || ""}
+				/>
+			)}
+		</>
 	);
 };
 

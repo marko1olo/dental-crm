@@ -1,18 +1,49 @@
-/* Treatment Plan 3-Tier Model Tab Buttons */
-.pc-three-tier-section {
-	background: var(--pc-surface);
-	border: 1px solid var(--pc-border);
-	border-radius: var(--pc-radius-md);
+/* Treatment Plan 3-Tier Model Tab Buttons & Segmented Control */
+.pc-three-tier-section,
+.pc-tier-selector-card {
+	background: var(--paper, var(--pc-surface));
+	border: 1px solid var(--line, var(--pc-border));
+	border-radius: var(--pc-radius-md, 12px);
 	padding: 16px;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
+	color: var(--ink, var(--pc-text-main));
+}
+
+.pc-tier-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.pc-tier-label {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--ink, var(--pc-text-main));
+}
+
+.pc-tier-current-badge {
+	font-size: 0.75rem;
+	color: var(--ink-muted, var(--pc-text-muted));
 }
 
 .pc-tier-tabs-row {
 	display: flex;
 	gap: 8px;
 	flex-wrap: wrap;
+}
+
+.pc-tier-segmented-control {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 4px;
+	padding: 4px;
+	background: var(--paper-soft, var(--pc-bg));
+	border: 1px solid var(--line, var(--pc-border));
+	border-radius: 12px;
 }
 
 .pc-tier-tab-btn {
@@ -22,10 +53,10 @@
 	gap: 10px;
 	padding: 8px 16px;
 	min-height: 44px;
-	border-radius: var(--pc-radius-sm);
-	background: var(--pc-bg);
-	color: var(--pc-text-main);
-	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-sm, 8px);
+	background: var(--paper, var(--pc-bg));
+	color: var(--ink, var(--pc-text-main));
+	border: 1.5px solid var(--line, var(--pc-border));
 	font-size: 0.8125rem;
 	font-weight: 600;
 	cursor: pointer;
@@ -35,39 +66,97 @@
 	min-width: 140px;
 }
 
+.pc-tier-segmented-control .pc-tier-tab-btn {
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	padding: 8px 10px;
+	min-width: 0;
+	text-align: center;
+	border: 1px solid transparent;
+	border-radius: 9px;
+	background: transparent;
+	color: var(--ink-muted, var(--pc-text-muted));
+}
+
 .pc-tier-tab-btn:hover {
-	border-color: var(--pc-primary);
+	border-color: var(--primary, var(--pc-primary));
+	color: var(--ink, var(--pc-text-main));
 }
 
 .pc-tier-tab-btn.active {
 	background: var(--pc-primary-light);
-	border-color: var(--pc-primary);
-	color: var(--pc-primary);
+	border-color: var(--primary, var(--pc-primary));
+	color: var(--primary, var(--pc-primary));
+}
+
+.pc-tier-segmented-control .pc-tier-tab-btn.active {
+	background: var(--paper, var(--pc-surface));
+	border-color: var(--line, var(--pc-border));
+	color: var(--ink, var(--pc-text-main));
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .pc-tier-name {
 	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
 }
 
 .pc-tier-price {
-	font-weight: 800;
-	color: var(--pc-text-main);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	color: var(--ink, var(--pc-text-main));
 }
 
 .pc-tier-tab-btn.active .pc-tier-price {
-	color: var(--pc-primary);
+	color: var(--primary, var(--pc-primary));
 }
 
 .pc-tier-details-box {
-	background: var(--pc-bg);
-	border: 1px solid var(--pc-border);
-	border-radius: var(--pc-radius-sm);
-	padding: 10px 14px;
+	background: var(--paper-soft, var(--pc-bg));
+	border: 1px solid var(--line, var(--pc-border));
+	border-radius: var(--pc-radius-sm, 10px);
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 }
 
 .pc-tier-summary {
 	margin: 0;
 	font-size: 0.8125rem;
-	color: var(--pc-text-muted);
+	color: var(--ink-muted, var(--pc-text-muted));
+	line-height: 1.45;
+}
+
+.pc-tier-features-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.pc-tier-feature-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	font-size: 0.8125rem;
+	color: var(--ink, var(--pc-text-main));
 	line-height: 1.4;
+}
+
+.pc-icon-success {
+	color: var(--success, var(--pc-success));
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+@media (max-width: 640px) {
+	.pc-tier-segmented-control .pc-tier-tab-btn {
+		padding: 8px 6px;
+		font-size: 0.75rem;
+	}
 }

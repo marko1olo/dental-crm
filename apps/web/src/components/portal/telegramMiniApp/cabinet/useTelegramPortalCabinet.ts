@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	calculatePercentDiscountKopecks,
 	generateUuidV7,
@@ -21,6 +21,42 @@ import {
 	type PatientImagingScan,
 	type TelegramCabinetTab,
 } from "./types";
+
+export interface SubmitTelegramConfirmParams {
+	readonly organizationId: string;
+	readonly parentPatientId: string;
+	readonly appointmentId: string;
+	readonly sessionToken?: string | null | undefined;
+	readonly initData?: string | undefined;
+	readonly fetchFn?: typeof fetch | undefined;
+}
+
+export async function submitTelegramAppointmentConfirmation(
+	params: SubmitTelegramConfirmParams,
+): Promise<{ ok: boolean; status: number }> {
+	const headers: Record<string, string> = {
+		"Content-Type": "application/json",
+		"Idempotency-Key": generateUuidV7(),
+	};
+	if (params.sessionToken) {
+		headers.Authorization = `Bearer ${params.sessionToken}`;
+	}
+	if (params.initData) {
+		headers["x-telegram-init-data"] = params.initData;
+	}
+	const doFetch = params.fetchFn ?? fetch;
+	const res = await doFetch("/api/telegram/webapp/family/confirm", {
+		method: "POST",
+		headers,
+		body: JSON.stringify({
+			organizationId: params.organizationId,
+			parentPatientId: params.parentPatientId,
+			appointmentId: params.appointmentId,
+			...(params.initData ? { initData: params.initData } : {}),
+		}),
+	});
+	return { ok: res.ok, status: res.status };
+}
 
 interface RawApiFamilyMember {
 	readonly patientId?: string | undefined;
@@ -81,7 +117,7 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 	const [appointmentFilter, setAppointmentFilter] = useState<"upcoming" | "past">("upcoming");
 
 	// Снимки пациента
-	const [imagingList] = useState<PatientImagingScan[]>(() =>
+	const [imagingList, setImagingList] = useState<PatientImagingScan[]>(() =>
 		isDemo ? DEMO_IMAGING_SCANS : [],
 	);
 
@@ -97,7 +133,7 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 
 	// Шторка заявления на налоговый вычет (13% НДФЛ)
 	const [isTaxSheetOpen, setIsTaxSheetOpen] = useState<boolean>(initialTaxSheetOpen);
-	const [taxYear, setTaxYear] = useState<number>(2025);
+	const [taxYear, setTaxYear] = useState<number>(() => new Date().getFullYear());
 	const [payerType, setPayerType] = useState<"self" | "child" | "spouse">("self");
 	const [payerInn, setPayerInn] = useState<string>(() => (isDemo ? "772481928301" : ""));
 	const [payerFullName, setPayerFullName] = useState<string>(() =>
@@ -109,6 +145,16 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 	const [serviceCode, setServiceCode] = useState<"1" | "2">("1"); // 1 - обычное, 2 - дорогостоящее
 	const [isTaxCertGenerated, setIsTaxCertGenerated] = useState<boolean>(false);
 	const [taxCopiedNotice, setTaxCopiedNotice] = useState<boolean>(false);
+	const taxNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (taxNoticeTimerRef.current) {
+				clearTimeout(taxNoticeTimerRef.current);
+				taxNoticeTimerRef.current = null;
+			}
+		};
+	}, []);
 
 	// Зубные жалобы FDI для вкладки "teeth"
 	const [toothComplaints, setToothComplaints] = useState<ToothComplaint[]>(() =>
@@ -144,7 +190,7 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 					},
 					body: JSON.stringify({
 						initData: initData || undefined,
-						organizationId: effectiveOrgId || "demo-clinic-org",
+						...(effectiveOrgId ? { organizationId: effectiveOrgId } : {}),
 						patientId: effectivePatientId || undefined,
 					}),
 				});
@@ -176,6 +222,46 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 						})
 						.catch((err) => {
 							clientLogger.warn("[useTelegramPortalCabinet] Ошибка загрузки профиля портала:", err);
+						});
+
+					// Гидратация снимков пациента из /api/portal/imaging
+					void fetch("/api/portal/imaging", {
+						headers: { Authorization: `Bearer ${data.token}` },
+					})
+						.then((r) => (r.ok ? r.json() : null))
+						.then((imgData: {
+							scans?: Array<{
+								id: string;
+								studyDateIso?: string;
+								modality?: string;
+								modalityLabel?: string;
+								toothFdi?: string[];
+								effectiveDoseMicrosv?: number | null;
+								imageUrl?: string;
+								diagnosticConclusion?: string;
+							}>;
+						} | null) => {
+							if (!isMounted || !imgData?.scans || imgData.scans.length === 0) return;
+							const mapped: PatientImagingScan[] = imgData.scans.map((s) => ({
+								id: s.id,
+								title: s.toothFdi?.length
+									? `${s.modalityLabel || "Снимок"} #${s.toothFdi.join(", ")}`
+									: s.modalityLabel || "Диагностический снимок",
+								scanType: s.modality === "cbct" ? "cbct_3d" : s.modality === "optg" ? "optg_pano" : "rvg_2d",
+								scanTypeLabel: s.modalityLabel || "Радиовизиография 2D",
+								dateStr: s.studyDateIso || "",
+								doctorName: "Лечащий врач",
+								radiationDoseMsv: typeof s.effectiveDoseMicrosv === "number" ? s.effectiveDoseMicrosv / 1000 : 0.002,
+								doctorNotes: s.diagnosticConclusion || "Заключение врача не добавлено",
+								diagnosisBadge: s.toothFdi?.length ? `Зуб ${s.toothFdi.join(", ")}` : "Диагностика",
+								downloadUrl: `/api/portal/scans/${encodeURIComponent(s.id)}/download`,
+								imageUrl: s.imageUrl,
+							}));
+							setImagingList(mapped);
+							setSelectedScanId((prev) => prev || mapped[0]?.id || "");
+						})
+						.catch((err) => {
+							clientLogger.warn("[useTelegramPortalCabinet] Ошибка загрузки снимков портала:", err);
 						});
 				}
 				if (Array.isArray(data.invoices) && data.invoices.length > 0) {
@@ -229,7 +315,7 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 							timeStr,
 							doctorName: app.doctorName || "Врач-стоматолог",
 							doctorRole: app.doctorSpecialty || "Стоматолог-терапевт",
-							cabinet: "Кабинет 1",
+							cabinet: app.cabinetName || app.roomName || (isDemo ? "Кабинет 1" : "—"),
 							procedureTitle: app.notes || "Консультация и осмотр полости рта",
 							durationMinutes: 60,
 							isConfirmed: app.status === "confirmed",
@@ -262,7 +348,7 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 							timeStr,
 							doctorName: visit.doctorName || "Лечащий врач",
 							doctorRole: visit.doctorSpecialty || "Врач-стоматолог",
-							cabinet: "Кабинет 1",
+							cabinet: visit.cabinetName || visit.roomName || (isDemo ? "Кабинет 1" : "—"),
 							procedureTitle: visit.diagnosis || "Стоматологический приём",
 							durationMinutes: 60,
 							isConfirmed: true,
@@ -295,38 +381,53 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 		};
 	}, [propOrganizationId, propPatientId, isDemo]);
 
-	// Подтверждение визита в 1 тап
+	// Подтверждение визита с честной авторизацией и откатом при ошибке сервера
 	const handleConfirmAppointment = useCallback(async (id: string) => {
 		triggerHaptic("medium");
+		let previousConfirmed = false;
 		setAppointments((prev) =>
-			prev.map((app) => (app.id === id ? { ...app, isConfirmed: true } : app)),
+			prev.map((app) => {
+				if (app.id !== id) return app;
+				previousConfirmed = app.isConfirmed;
+				return { ...app, isConfirmed: true };
+			}),
 		);
+
+		const rollbackConfirmation = () => {
+			setAppointments((prev) =>
+				prev.map((app) => (app.id === id ? { ...app, isConfirmed: previousConfirmed } : app)),
+			);
+		};
 
 		try {
 			const effectiveOrgId = propOrganizationId || (isDemo ? "demo-clinic-org" : "");
-			if (effectiveOrgId) {
-				const res = await fetch("/api/telegram/webapp/family/confirm", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"Idempotency-Key": generateUuidV7(),
-					},
-					body: JSON.stringify({
-						organizationId: effectiveOrgId,
-						parentPatientId: propPatientId || id,
-						appointmentId: id,
-					}),
-				});
-				if (!res.ok) {
-					clientLogger.warn("[useTelegramPortalCabinet] Сервер отклонил подтверждение визита:", res.status);
-					showToast("Не удалось подтвердить визит на сервере", "error");
-				}
+			if (!effectiveOrgId) {
+				rollbackConfirmation();
+				showToast("Не определена клиника для подтверждения визита", "error");
+				return;
+			}
+			const initData = typeof window !== "undefined" ? window.Telegram?.WebApp?.initData : undefined;
+			const token =
+				sessionToken ||
+				(typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null);
+			const result = await submitTelegramAppointmentConfirmation({
+				organizationId: effectiveOrgId,
+				parentPatientId: propPatientId || id,
+				appointmentId: id,
+				sessionToken: token,
+				initData,
+			});
+			if (!result.ok) {
+				rollbackConfirmation();
+				clientLogger.warn("[useTelegramPortalCabinet] Сервер отклонил подтверждение визита:", result.status);
+				showToast("Не удалось подтвердить визит на сервере", "error");
 			}
 		} catch (err) {
+			rollbackConfirmation();
 			clientLogger.warn("[useTelegramPortalCabinet] Ошибка подтверждения визита в Telegram:", err);
 			showToast("Ошибка сети при подтверждении визита", "error");
 		}
-	}, [propOrganizationId, propPatientId, isDemo, triggerHaptic]);
+	}, [propOrganizationId, propPatientId, isDemo, sessionToken, triggerHaptic]);
 
 	// Ориентировочный расчет социального налогового вычета 13% НДФЛ (ст. 219 НК РФ):
 	// Код 01 лимитирован (150 000 ₽ с 2024 г., 120 000 ₽ ранее), Код 02 без лимита
@@ -355,7 +456,8 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 	// Поделиться реферальной ссылкой
 	const handleShareReferral = useCallback(() => {
 		triggerHaptic("medium");
-		const link = `https://t.me/DenteClinicBot?start=ref_${propPatientId || "ivanov"}`;
+		const refSuffix = propPatientId ? `?start=ref_${encodeURIComponent(propPatientId)}` : "";
+		const link = `https://t.me/DenteClinicBot${refSuffix}`;
 		const shareText = "Дарю сертификат 1 000 ₽ на лечение и чистку в клинике DENTE! Запись на приём:";
 		const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`;
 
@@ -414,7 +516,13 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 			clientLogger.error("Failed to download tax certificate:", err);
 			showToast("Не удалось сформировать справку для налогового вычета", "error");
 		} finally {
-			setTimeout(() => setTaxCopiedNotice(false), 3000);
+			if (taxNoticeTimerRef.current) {
+				clearTimeout(taxNoticeTimerRef.current);
+			}
+			taxNoticeTimerRef.current = setTimeout(() => {
+				taxNoticeTimerRef.current = null;
+				setTaxCopiedNotice(false);
+			}, 3000);
 		}
 	}, [
 		triggerHaptic,

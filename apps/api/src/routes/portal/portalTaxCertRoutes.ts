@@ -70,7 +70,7 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
-		const auth = extractPortalPatient(request);
+		const auth = await extractPortalPatient(request);
 		if (!auth) {
 			reply.status(401);
 			return { error: "Unauthorized" };
@@ -127,7 +127,7 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
-		const auth = extractPortalPatient(request);
+		const auth = await extractPortalPatient(request);
 		if (!auth) {
 			reply.status(401);
 			return { error: "Unauthorized" };
@@ -189,7 +189,7 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
-		const auth = extractPortalPatient(request);
+		const auth = await extractPortalPatient(request);
 		if (!auth) {
 			reply.status(401);
 			return { error: "Unauthorized" };
@@ -259,7 +259,7 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 
 	// 13. Clinical Extract HTML Export (Чистый клинический стандарт без советского канцелярита)
 	const handleClinicalExtractHtml = async (request: FastifyRequest, reply: FastifyReply) => {
-		const auth = extractPortalPatient(request);
+		const auth = await extractPortalPatient(request);
 		if (!auth) {
 			reply.status(401);
 			return { error: "Unauthorized" };

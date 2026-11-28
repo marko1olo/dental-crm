@@ -31,7 +31,7 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 		method: "GET",
 		path: "/appointments",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
@@ -68,7 +68,7 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 		method: "POST",
 		path: "/appointments",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
@@ -372,7 +372,7 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 		method: "PATCH",
 		path: "/appointments/:id/cancel",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
@@ -458,7 +458,7 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 		method: "PATCH",
 		path: "/appointments/:id/reschedule",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
@@ -765,7 +765,7 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 		method: "GET",
 		path: "/doctors",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };

@@ -143,6 +143,11 @@
 * DEF-POR-05 [ЗАКРЫТО]: В `productionUiPurity.test.ts:28` ссылка на файл исправлена на канонический `PublicBookingPage.tsx`.
 * **DEF-POR-06 [ЗАКРЫТО]**: Формат талона киоска саморегистрации синхронизирован с приёмником регистратуры `documentsReceptionQr.ts` (`DENTE:CHECKIN:v1|...`).
 * DEF-POR-07 [ЗАКРЫТО]: Из `demoTreatmentPlan.ts` и `patientPortalTypes.ts` полностью удален сленг «804н», заменен на чистый `serviceCode`.
+* DEF-POR-08 [ЗАКРЫТО]: `extractPortalPatient` переведён в `async` с обязательной проверкой отзыва токена в PostgreSQL (`isPortalTokenRevokedInDb`) и в WebSocket-рукопожатии (`websocket.ts`), что исключает обход logout при холодном кэше/перезапуске.
+* DEF-POR-09 [ЗАКРЫТО]: `POST /api/portal/payments/confirm-sbp` требует валидный UUID `Idempotency-Key`; генерация СБП НСПК в `portalPaymentsHelpers.ts` и `patientCabinetSbpEngine.ts` использует канонический `SbpQrEngine` без фиктивного `bank=100000000111&crc=84A2` и передаёт `qrId` в банковские диплинки.
+* DEF-POR-10 [ЗАКРЫТО]: `PatientCabinetModal` рендерит дочерние модальные окна (`MobileSelfCheckinModal`, `TaxDeductionCertificateModal`) как сиблинги без размонтирования состояния вкладок (`Max Modal Depth = 1`), убран хардкод `"7701234567"`/`zIndex: 9999`, а `documentsTaxCertificate.ts` фильтрует платежи строго по `paidAtIso`.
+* DEF-POR-11 [ЗАКРЫТО]: `CabinetImagingTab` выполняет реальную загрузку с `/api/portal/scans/:id/download` (или PNG/SVG Blob fallback с `URL.revokeObjectURL`) и изолирует SVG-градиенты через `useId()`; `useTelegramPortalCabinet` отправляет `Authorization` + `x-telegram-init-data` и откатывает подтверждение визита при `!res.ok`, а `CabinetTaxSheet` строит годы `[year, year-1, year-2]` с мобильными тач-контролами `>= 44px`.
+* DEF-POR-12 [ЗАКРЫТО]: В `publicBudgetRoutes.ts` и `portalDocumentsRoutes.ts` для аудита используется проверенный `request.ip` вместо сырого `x-forwarded-for`; в `PublicBudgetSignPage.tsx` консолидированы эндпоинты `/api/v1/public/budgets/:token/*`, убраны `unescape`, `crypto.randomUUID` (заменён на `generateUuidV7`) и `disabled` блокировки на кнопках.
 
 ---
 

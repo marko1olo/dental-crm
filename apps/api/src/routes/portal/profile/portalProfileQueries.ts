@@ -24,10 +24,10 @@ export interface VerifiedPortalProfileAuth {
 /**
  * Проверка Bearer токена личного кабинета пациента с защитой от отозванных сессий (SSOT).
  */
-export function verifyPortalProfileRequest(
+export async function verifyPortalProfileRequest(
 	request: FastifyRequest,
 	reply: FastifyReply,
-): VerifiedPortalProfileAuth | null {
+): Promise<VerifiedPortalProfileAuth | null> {
 	const authHeader = request.headers.authorization;
 	if (!authHeader?.startsWith("Bearer ")) {
 		reply.status(401);
@@ -48,7 +48,7 @@ export function verifyPortalProfileRequest(
 		return null;
 	}
 
-	const auth = extractPortalPatient(request);
+	const auth = await extractPortalPatient(request);
 	if (!auth) {
 		reply.status(401);
 		reply.send({ error: "SessionRevoked", message: "Сессия недействительна или завершена. Войдите снова." });

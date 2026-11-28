@@ -1,134 +1,74 @@
+import "../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import test from "node:test";
+import React, { createElement } from "react";
+globalThis.React = React;
+import { renderToStaticMarkup } from "react-dom/server";
+import * as portalBarrel from "../index.js";
+import { calculateCabinetSummary, computePatientTeethFromStages } from "../patientCabinet/patientCabinetEngine.js";
+import { DEMO_PATIENT_CABINET } from "../patientCabinet/patientCabinetPresets.js";
+import { PatientCabinetModal } from "../patientCabinet/PatientCabinetModal.js";
+import { MobileSelfCheckinModal } from "../selfCheckin/index.js";
 
-test("Portal Domain SSOT Consolidation & Zero-Bloat Inquisition (Mandates 8s, 8d pt 7, 8e)", async (t) => {
-	const srcDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
-		? path.resolve(process.cwd(), "apps/web/src")
-		: path.resolve(process.cwd(), "src");
+test("Portal Domain SSOT Consolidation & Runtime Integrity (Mandates 8s, 8d pt 7, 8e)", async (t) => {
+	const emojiRegex = /(?:\p{Extended_Pictographic}|\p{Emoji_Presentation})/u;
 
-	const portalDir = path.resolve(srcDir, "components/portal");
-	const patientPortalDir = path.resolve(srcDir, "components/patient-portal");
+	await t.test("1. Canonical portal barrel exports functional runtime symbols and domain engines", () => {
+		const dual = portalBarrel.formatDualServiceName("A16.07.002.001", "Кариес");
+		assert.equal(dual.humanTitleRu, "Лечение кариеса и светоотверждаемая пломба");
+		assert.ok(dual.explanationRu.length > 10);
+		assert.ok(Array.isArray(portalBarrel.CLINIC_GUARANTEE_ITEMS) && portalBarrel.CLINIC_GUARANTEE_ITEMS.length > 0);
+		assert.ok(Array.isArray(portalBarrel.PATIENT_COMFORT_STANDARDS) && portalBarrel.PATIENT_COMFORT_STANDARDS.length > 0);
+		assert.ok(portalBarrel.SAMPLE_PORTAL_PROFILE.patientId.startsWith("PAT-"));
+		assert.ok(Array.isArray(portalBarrel.SAMPLE_VISIT_PROTOCOLS) && portalBarrel.SAMPLE_VISIT_PROTOCOLS.length > 0);
+		assert.ok(portalBarrel.SAMPLE_PORTAL_TREATMENT_PLAN.stages.length > 0);
+		assert.equal(portalBarrel.PatientPortalModal, PatientCabinetModal);
+	});
 
-	const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA00}-\u{1FAFF}]/u;
+	await t.test("2. PatientCabinetModal & MobileSelfCheckinModal render cleanly from canonical SSOT without errors", () => {
+		const cabinetHtml = renderToStaticMarkup(
+			createElement(PatientCabinetModal, {
+				isOpen: true,
+				onClose: () => {},
+				initialData: DEMO_PATIENT_CABINET,
+			}),
+		);
+		assert.ok(cabinetHtml.includes("patient-cabinet-backdrop"));
+		assert.ok(cabinetHtml.includes(DEMO_PATIENT_CABINET.fullName));
+		assert.equal(emojiRegex.test(cabinetHtml), false, "Rendered PatientCabinetModal contains 0 cartoon emojis");
 
-	await t.test(
-		"1. Canonical portal directory contains all required core modules as authoritative SSOT (Mandate 8s)",
-		() => {
-			const expectedFiles = [
-				"patientDualNamingEngine.ts",
-				"patientGuaranteesAndStandards.ts",
-				"patientPortalEngine.ts",
-				"patientPortalPresets.ts",
-				"patientPortalTypes.ts",
-				"index.ts",
-			];
+		const checkinHtml = renderToStaticMarkup(
+			createElement(MobileSelfCheckinModal, {
+				isOpen: true,
+				onClose: () => {},
+				patientName: DEMO_PATIENT_CABINET.fullName,
+				initialStep: "phone_auth",
+			}),
+		);
+		assert.ok(checkinHtml.includes("selfcheckin-modal-window"));
+		assert.equal(emojiRegex.test(checkinHtml), false, "Rendered MobileSelfCheckinModal contains 0 cartoon emojis");
+	});
 
-			for (const file of expectedFiles) {
-				const fullPath = path.join(portalDir, file);
-				assert.ok(
-					fs.existsSync(fullPath),
-					`Expected canonical SSOT file ${file} to exist in components/portal/`,
-				);
-			}
-		},
-	);
+	await t.test("3. Portal engine calculations preserve clinical integrity and FDI tooth formula", () => {
+		const summary = calculateCabinetSummary(DEMO_PATIENT_CABINET);
+		assert.ok(summary.totalPaidAmountRub >= 0);
+		const plan = DEMO_PATIENT_CABINET.treatmentPlans[0];
+		assert.ok(plan);
+		const teeth = computePatientTeethFromStages(plan.stages, DEMO_PATIENT_CABINET.warranties);
+		assert.equal(teeth.length, 32);
+	});
 
-	await t.test(
-		"2. components/portal/index.ts exports all modules directly with zero circular dependency on patient-portal",
-		() => {
-			const portalIndexSource = fs.readFileSync(
-				path.join(portalDir, "index.ts"),
-				"utf-8",
-			);
+	await t.test("4. Zero cartoon emojis in runtime portal preset texts and dual-naming outputs", () => {
+		const textsToVerify = [
+			portalBarrel.SAMPLE_PORTAL_PROFILE.fullName,
+			portalBarrel.SAMPLE_PORTAL_PROFILE.cardNumber,
+			JSON.stringify(portalBarrel.SAMPLE_VISIT_PROTOCOLS),
+			JSON.stringify(portalBarrel.SAMPLE_PORTAL_TREATMENT_PLAN),
+			JSON.stringify(portalBarrel.CLINIC_GUARANTEE_ITEMS),
+		];
 
-			assert.ok(
-				!portalIndexSource.includes('export * from "../patient-portal"'),
-				"portal/index.ts must not have backwards dependency on ../patient-portal",
-			);
-			assert.ok(
-				portalIndexSource.includes('export * from "./patientPortalEngine"'),
-				"portal/index.ts must export patientPortalEngine directly",
-			);
-			assert.ok(
-				portalIndexSource.includes('export * from "./patientDualNamingEngine"'),
-				"portal/index.ts must export patientDualNamingEngine directly",
-			);
-			assert.ok(
-				portalIndexSource.includes('export * from "./patientGuaranteesAndStandards"'),
-				"portal/index.ts must export patientGuaranteesAndStandards directly",
-			);
-			assert.ok(
-				!portalIndexSource.includes("./patientWebapp/"),
-				"portal/index.ts must not export dead patientWebapp",
-			);
-		},
-	);
-
-	await t.test(
-		"3. Legacy patient-portal/ and dead patientWebapp/ directories are completely removed and physically forbidden (Mandates 8s, 8ag, 8bj)",
-		() => {
-			assert.ok(
-				!fs.existsSync(patientPortalDir),
-				"Legacy components/patient-portal/ directory must NOT exist. It was unified into SSOT components/portal/",
-			);
-			assert.ok(
-				!fs.existsSync(path.join(portalDir, "patientWebapp")),
-				"Dead components/portal/patientWebapp/ directory must NOT exist (purged per Mandate 8bj)",
-			);
-		},
-	);
-
-	await t.test(
-		"4. PatientCabinetModal and patientCabinetEngine import from canonical local portal modules",
-		() => {
-			const modalSource = fs.readFileSync(
-				path.join(portalDir, "patientCabinet/PatientCabinetModal.tsx"),
-				"utf-8",
-			);
-			assert.ok(
-				!modalSource.includes("../../patient-portal/"),
-				"PatientCabinetModal must not import from ../../patient-portal/",
-			);
-
-			const engineSource = fs.readFileSync(
-				path.join(portalDir, "patientCabinet/patientCabinetEngine.ts"),
-				"utf-8",
-			);
-			assert.ok(
-				engineSource.includes('from "./patientDentalFormulaEngine.js"'),
-				"patientCabinetEngine must import from ./patientDentalFormulaEngine.js",
-			);
-			assert.ok(
-				!engineSource.includes("../../patient-portal/"),
-				"patientCabinetEngine must not import from ../../patient-portal/",
-			);
-		},
-	);
-
-	await t.test(
-		"5. Zero cartoon emojis in all portal canonical modules (Mandate 8d pt 7)",
-		() => {
-			const filesToCheck = [
-				path.join(portalDir, "patientDualNamingEngine.ts"),
-				path.join(portalDir, "patientGuaranteesAndStandards.ts"),
-				path.join(portalDir, "patientPortalEngine.ts"),
-				path.join(portalDir, "index.ts"),
-			];
-
-			for (const filePath of filesToCheck) {
-				const source = fs.readFileSync(filePath, "utf-8");
-				const lines = source.split("\n");
-				for (let i = 0; i < lines.length; i++) {
-					const line = lines[i];
-					if (line === undefined) continue;
-					assert.ok(
-						!emojiRegex.test(line),
-						`Found cartoon emoji in ${path.basename(filePath)}:${i + 1}: ${line.trim()}`,
-					);
-				}
-			}
-		},
-	);
+		for (const text of textsToVerify) {
+			assert.equal(emojiRegex.test(text), false, `Found cartoon emoji in portal runtime text: ${text.slice(0, 120)}`);
+		}
+	});
 });

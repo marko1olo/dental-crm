@@ -12,7 +12,7 @@ import {
 	ShieldAlert,
 	ShieldCheck,
 } from "lucide-react";
-import { formatKopecksToRub, rublesToKopecks } from "@dental/shared";
+import { formatKopecksToRub, generateUuidV7, rublesToKopecks } from "@dental/shared";
 import { PublicBudgetSignaturePad } from "./PublicBudgetSignaturePad";
 
 export interface BudgetItem {
@@ -173,18 +173,10 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 					headers["Authorization"] = `Bearer ${currentSession}`;
 				}
 
-				// Try /api/v1/public/budgets/:token first, fall back to /api/portal/budget/:token
-				let res = await fetch(`/api/v1/public/budgets/${targetToken}`, {
+				const res = await fetch(`/api/v1/public/budgets/${targetToken}`, {
 					method: "GET",
 					headers,
 				});
-
-				if (!res.ok && res.status === 404) {
-					res = await fetch(`/api/portal/budget/${targetToken}`, {
-						method: "GET",
-						headers,
-					});
-				}
 
 				if (!res.ok) {
 					if (res.status === 404) {
@@ -238,19 +230,11 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 		setVerifyError(null);
 
 		try {
-			let res = await fetch(`/api/v1/public/budgets/${token}/verify`, {
+			const res = await fetch(`/api/v1/public/budgets/${token}/verify`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ phoneDigits: digits }),
 			});
-
-			if (!res.ok && res.status === 404) {
-				res = await fetch(`/api/portal/budget/${token}/verify`, {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ phone_last4: digits, method: "phone_last4" }),
-				});
-			}
 
 			const data = await res.json().catch(() => ({}));
 
@@ -276,7 +260,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 		}
 	};
 
-	// Digital signature submission (supports both canvas PNG and 1-click PEP SVG DataURL)
+	// Digital signature submission (supports both canvas PNG and PEP SVG DataURL)
 	const buildQuickPepSignatureDataUrl = (name: string): string => {
 		const cleanName = (name || budget?.patientFirstName || "Пациент")
 			.trim()
@@ -286,8 +270,13 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 			.replace(/"/g, "&quot;");
 		const dateStr = new Date().toLocaleDateString("ru-RU");
 		const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="32" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">Электронная подпись пациента</text><text x="160" y="54" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">${cleanName} • ${dateStr}</text></svg>`;
-		if (typeof window !== "undefined" && typeof window.btoa === "function") {
-			return `data:image/svg+xml;base64,${window.btoa(unescape(encodeURIComponent(svg)))}`;
+		if (typeof window !== "undefined" && typeof window.btoa === "function" && typeof TextEncoder !== "undefined") {
+			const bytes = new TextEncoder().encode(svg);
+			let binary = "";
+			for (const b of bytes) {
+				binary += String.fromCharCode(b);
+			}
+			return `data:image/svg+xml;base64,${window.btoa(binary)}`;
 		}
 		return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 	};
@@ -296,7 +285,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 	const createDefaultSignatureSvg = buildQuickPepSignatureDataUrl;
 
 	const handleSignSubmit = async (data: { signaturePng: string; signerName: string }) => {
-		if (!token) return;
+		if (!token || isSubmittingSign) return;
 
 		setIsSubmittingSign(true);
 		setSignError(null);
@@ -310,13 +299,13 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 		try {
 			const headers: Record<string, string> = {
 				"Content-Type": "application/json",
-				"Idempotency-Key": crypto.randomUUID(),
+				"Idempotency-Key": generateUuidV7(),
 			};
 			if (sessionToken) {
 				headers["Authorization"] = `Bearer ${sessionToken}`;
 			}
 
-			let res = await fetch(`/api/v1/public/budgets/${token}/sign`, {
+			const res = await fetch(`/api/v1/public/budgets/${token}/sign`, {
 				method: "POST",
 				headers,
 				body: JSON.stringify({
@@ -325,18 +314,6 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 					selectedTierId,
 				}),
 			});
-
-			if (!res.ok && res.status === 404) {
-				res = await fetch(`/api/portal/budget/${token}/sign`, {
-					method: "POST",
-					headers,
-					body: JSON.stringify({
-						signaturePng: effectiveSignaturePng,
-						signerName: effectiveSignerName,
-						selectedTierId,
-					}),
-				});
-			}
 
 			const resJson = await res.json().catch(() => ({}));
 
@@ -505,8 +482,8 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 
 								<button
 									type="submit"
-									disabled={isVerifying || phoneDigits.length !== 4}
-									className="w-full min-h-[48px] py-3 px-4 rounded-xl font-medium text-sm bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-sm transition flex items-center justify-center gap-2"
+									aria-busy={isVerifying}
+									className="w-full min-h-[48px] py-3 px-4 rounded-xl font-medium text-sm bg-[var(--primary)] hover:bg-[var(--primary-hover)] aria-busy:opacity-60 text-white shadow-sm transition flex items-center justify-center gap-2"
 								>
 									{isVerifying ? (
 										<div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -711,8 +688,9 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 							<button
 								type="button"
 								data-testid="public-budget-quick-pep-btn"
-								disabled={isSubmittingSign}
+								aria-busy={isSubmittingSign}
 								onClick={() => {
+									if (isSubmittingSign) return;
 									const fallbackName = (signerName || budget.patientFirstName || "Пациент").trim();
 									void handleSignSubmit({
 										signaturePng: buildQuickPepSignatureDataUrl(fallbackName),

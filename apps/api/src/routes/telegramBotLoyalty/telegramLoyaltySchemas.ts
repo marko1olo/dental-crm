@@ -73,6 +73,7 @@ export const familyConfirmSchema = z
 		organizationId: z.string().uuid("Некорректный идентификатор организации (ожидается UUID)"),
 		parentPatientId: z.string().uuid("Некорректный идентификатор родителя (ожидается UUID)"),
 		appointmentId: z.string().uuid("Некорректный идентификатор записи (ожидается UUID)"),
+		initData: z.string().min(1).optional(),
 	})
 	.strict();
 

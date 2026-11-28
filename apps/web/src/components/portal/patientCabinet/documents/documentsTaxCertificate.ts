@@ -4,6 +4,7 @@ import {
 	type FnsFiscalReceiptItem,
 	type FnsTaxPayload,
 } from "@dental/shared";
+import { isDemoShowcaseMode } from "../../../../lib/demoMode.js";
 import type { PatientPersonalCabinetData } from "../patientCabinetEngine.js";
 import { downloadHtmlFile } from "./documentsDownloadUtils.js";
 
@@ -11,16 +12,18 @@ export function generatePatientTaxCertificate1151156(
 	data: PatientPersonalCabinetData,
 	taxYear = new Date().getFullYear(),
 ): string {
-	const nameParts = data.fullName.trim().split(/\s+/);
+	const isDemo = isDemoShowcaseMode();
+	const nameParts = data.fullName.trim().split(/\s+/).filter(Boolean);
 	const family = nameParts[0] || "Пациент";
-	const given = nameParts[1] || "Иван";
+	const given = nameParts[1] || "";
 	const patronymic = nameParts.slice(2).join(" ") || undefined;
 
 	const paidInvoices = data.invoices.filter((inv) => {
 		if (inv.status !== "paid") return false;
 		if (taxYear) {
-			const invYear = parseInt(inv.issueDateIso.slice(0, 4), 10);
-			return invYear === taxYear;
+			if (!inv.paidAtIso) return false;
+			const paidYear = parseInt(inv.paidAtIso.slice(0, 4), 10);
+			return paidYear === taxYear;
 		}
 		return true;
 	});
@@ -47,13 +50,24 @@ export function generatePatientTaxCertificate1151156(
 		}
 	}
 
-	const clinicName = data.clinicInfo?.legalName || data.clinicInfo?.nameRu || DEFAULT_CLINIC_LEGAL_REQUISITES.clinicFullName;
-	const clinicInn = data.clinicInfo?.inn || DEFAULT_CLINIC_LEGAL_REQUISITES.clinicInn;
-	const clinicKpp = data.clinicInfo?.kpp || DEFAULT_CLINIC_LEGAL_REQUISITES.clinicKpp;
-	const clinicOgrn = data.clinicInfo?.ogrn || DEFAULT_CLINIC_LEGAL_REQUISITES.clinicOgrn;
-	const clinicLicense = data.clinicInfo?.licenseNumber || DEFAULT_CLINIC_LEGAL_REQUISITES.medicalLicenseNumber;
-	const clinicPhone = data.clinicInfo?.phone || DEFAULT_CLINIC_LEGAL_REQUISITES.clinicPhone;
-	const clinicLicenseDate = data.clinicInfo?.licenseDate || DEFAULT_CLINIC_LEGAL_REQUISITES.medicalLicenseDate;
+	const clinicName =
+		data.clinicInfo?.legalName ||
+		data.clinicInfo?.nameRu ||
+		(isDemo ? DEFAULT_CLINIC_LEGAL_REQUISITES.clinicFullName : "");
+	const clinicInn =
+		data.clinicInfo?.inn || (isDemo ? DEFAULT_CLINIC_LEGAL_REQUISITES.clinicInn : "");
+	const clinicKpp =
+		data.clinicInfo?.kpp || (isDemo ? DEFAULT_CLINIC_LEGAL_REQUISITES.clinicKpp : "");
+	const clinicOgrn =
+		data.clinicInfo?.ogrn || (isDemo ? DEFAULT_CLINIC_LEGAL_REQUISITES.clinicOgrn : "");
+	const clinicLicense =
+		data.clinicInfo?.licenseNumber ||
+		(isDemo ? DEFAULT_CLINIC_LEGAL_REQUISITES.medicalLicenseNumber : "");
+	const clinicPhone =
+		data.clinicInfo?.phone || (isDemo ? DEFAULT_CLINIC_LEGAL_REQUISITES.clinicPhone : "");
+	const clinicLicenseDate =
+		data.clinicInfo?.licenseDate ||
+		(isDemo ? DEFAULT_CLINIC_LEGAL_REQUISITES.medicalLicenseDate : "");
 
 	const payerInn = data.inn || "";
 	const payerBirthDate = data.birthDate || data.birthDateIso || "";
@@ -75,7 +89,10 @@ export function generatePatientTaxCertificate1151156(
 			ogrn: clinicOgrn,
 			license: clinicLicense ? { number: clinicLicense, date: clinicLicenseDate } : undefined,
 			phone: clinicPhone,
-			directorName: data.curatingDoctor || DEFAULT_CLINIC_LEGAL_REQUISITES.chiefDoctorFullName || "",
+			directorName:
+				data.curatingDoctor ||
+				(isDemo ? DEFAULT_CLINIC_LEGAL_REQUISITES.chiefDoctorFullName : "") ||
+				"",
 		},
 		payer: {
 			fullName: { family, given, patronymic },

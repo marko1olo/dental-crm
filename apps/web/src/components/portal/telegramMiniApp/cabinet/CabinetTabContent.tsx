@@ -63,6 +63,7 @@ export const CabinetTabContent: React.FC<CabinetTabContentProps> = ({ c }) => {
 					onToggleDoctorNotes={() => c.setShowDoctorNotes((v) => !v)}
 					onShare={c.handleShareReferral}
 					onTriggerHaptic={c.triggerHaptic}
+					sessionToken={c.sessionToken}
 				/>
 			);
 		case "tax":

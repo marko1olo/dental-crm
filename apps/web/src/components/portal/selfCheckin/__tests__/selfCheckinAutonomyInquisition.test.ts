@@ -4,28 +4,13 @@ import { describe, it } from "node:test";
 import React, { createElement } from "react";
 globalThis.React = React;
 import { renderToStaticMarkup } from "react-dom/server";
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
-function readCssWithImports(filePath: string): string {
-	let css = readFileSync(filePath, "utf-8");
-	const dir = dirname(filePath);
-	const importMatches = [...css.matchAll(/@import\s+["']\.\/([^"']+)["'];/g)];
-	for (const match of importMatches) {
-		if (match[1]) {
-			css += "\n" + readCssWithImports(join(dir, match[1]));
-		}
-	}
-	return css;
-}
 
 const { MobileSelfCheckinModal } = await import("../MobileSelfCheckinModal");
+const { SelfCheckinTicketSection } = await import("../SelfCheckinTicketSection");
 import {
 	createPhysiologicalNormSomaticQuestionnaire,
 	evaluateSomaticRisks,
 	INITIAL_SOMATIC_QUESTIONNAIRE,
-	PHYSIOLOGICAL_NORM_SOMATIC_QUESTIONNAIRE,
 } from "../SomaticQuestionnaireEngine";
 
 describe("SelfCheckinAutonomyInquisition — Mandates 8c, 8d, 8e, 8s Audit", () => {
@@ -46,16 +31,11 @@ describe("SelfCheckinAutonomyInquisition — Mandates 8c, 8d, 8e, 8s Audit", () 
 				}),
 			);
 
-			// Must not contain any disabled attribute on button elements
 			const hasDisabledButton =
 				html.includes("<button disabled") ||
 				html.includes('disabled=""') ||
 				html.includes("<button disabled>");
-			assert.equal(
-				hasDisabledButton,
-				false,
-				`Step '${step}' must contain zero disabled buttons`,
-			);
+			assert.equal(hasDisabledButton, false, `Step '${step}' must contain zero disabled buttons`);
 		}
 	});
 
@@ -77,13 +57,7 @@ describe("SelfCheckinAutonomyInquisition — Mandates 8c, 8d, 8e, 8s Audit", () 
 				}),
 			);
 
-			assert.equal(
-				emojiRegex.test(html),
-				false,
-				`Step '${step}' contains 0 raw unicode cartoon emojis`,
-			);
-
-			// Unstyled cross symbol ✕ must be replaced by vector <X size={...} />
+			assert.equal(emojiRegex.test(html), false, `Step '${step}' contains 0 raw unicode cartoon emojis`);
 			assert.equal(
 				html.includes(">✕<") || html.includes(" ✕ "),
 				false,
@@ -93,8 +67,6 @@ describe("SelfCheckinAutonomyInquisition — Mandates 8c, 8d, 8e, 8s Audit", () 
 	});
 
 	it("3. Mandate 8s (Scale Sovereignty): Solo 1-chair clinic instant self-checkin works out of the box", () => {
-		let checkinResult: any = null;
-
 		const html = renderToStaticMarkup(
 			createElement(MobileSelfCheckinModal, {
 				isOpen: true,
@@ -103,36 +75,22 @@ describe("SelfCheckinAutonomyInquisition — Mandates 8c, 8d, 8e, 8s Audit", () 
 				patientName: "Самохвалов Олег Дмитриевич",
 				doctorName: "Д-р Петров В. И.",
 				appointmentTime: "Сегодня в 10:00 (Кабинет 1)",
-				onCheckinSuccess: (result) => {
-					checkinResult = result;
-				},
+				onCheckinSuccess: () => {},
 				initialStep: "phone_auth",
 			}),
 		);
 
-		// Express checkin button and phone inputs are available immediately without receptionist
-		assert.ok(
-			html.includes("kiosk-express-norm-btn"),
-			"Express norm checkin button is present for 1-tap arrival",
-		);
-		assert.ok(
-			html.includes("one-touch-phone-input"),
-			"4-digit phone confirmation is present",
-		);
-		assert.ok(
-			html.includes("one-touch-checkin-btn"),
-			"Arrival button is present and not locked",
-		);
+		assert.ok(html.includes("kiosk-express-norm-btn"));
+		assert.ok(html.includes("one-touch-phone-input"));
+		assert.ok(html.includes("one-touch-checkin-btn"));
 	});
 
 	it("4. Mandate 8e: Somatic Questionnaire Engine physiological norm and allergy sensitivity", () => {
-		// 1. Norm default
 		const normData = createPhysiologicalNormSomaticQuestionnaire();
 		const normResult = evaluateSomaticRisks(normData);
 		assert.equal(normResult.riskLevel, "low");
 		assert.equal(normResult.alerts.length, 0);
 
-		// 2. Sulfite allergy triggers clinical alert
 		const sulfiteData = {
 			...INITIAL_SOMATIC_QUESTIONNAIRE,
 			allergies: {
@@ -143,12 +101,8 @@ describe("SelfCheckinAutonomyInquisition — Mandates 8c, 8d, 8e, 8s Audit", () 
 		};
 		const sulfiteResult = evaluateSomaticRisks(sulfiteData);
 		assert.equal(sulfiteResult.riskLevel, "high");
-		assert.ok(
-			sulfiteResult.alerts.some((a) => a.id === "alert_sulfite_asthma"),
-			"Identifies sulfite risk and warns against epinephrine with metabisulfites",
-		);
+		assert.ok(sulfiteResult.alerts.some((a) => a.id === "alert_sulfite_asthma"));
 
-		// 3. Local anesthetics allergy triggers clinical alert
 		const anestheticData = {
 			...INITIAL_SOMATIC_QUESTIONNAIRE,
 			allergies: {
@@ -159,10 +113,7 @@ describe("SelfCheckinAutonomyInquisition — Mandates 8c, 8d, 8e, 8s Audit", () 
 		};
 		const anestheticResult = evaluateSomaticRisks(anestheticData);
 		assert.equal(anestheticResult.riskLevel, "high");
-		assert.ok(
-			anestheticResult.alerts.some((a) => a.id === "alert_local_anesthetic"),
-			"Identifies local anesthetic intolerance",
-		);
+		assert.ok(anestheticResult.alerts.some((a) => a.id === "alert_local_anesthetic"));
 	});
 
 	it("5. Mandate 8d pt 6 (Anti-Matryoshka Law): Single modal window surface without nested containers", () => {
@@ -174,42 +125,26 @@ describe("SelfCheckinAutonomyInquisition — Mandates 8c, 8d, 8e, 8s Audit", () 
 			}),
 		);
 
-		// Exactly one modal window root
 		const modalWindowMatches = html.match(/class="[^"]*selfcheckin-modal-window[^"]*"/g);
-		assert.equal(
-			modalWindowMatches?.length,
-			1,
-			"Exactly 1 modal window surface rendered (max depth = 1)",
-		);
-		assert.equal(
-			html.includes("patient-cabinet-modal"),
-			false,
-			"Does not nest inside other modal dialogs",
-		);
+		assert.equal(modalWindowMatches?.length, 1, "Exactly 1 modal window surface rendered (max depth = 1)");
+		assert.equal(html.includes("patient-cabinet-modal"), false, "Does not nest inside other modal dialogs");
 	});
 
-	it("6. CSS Design Tokens & Kiosk Ergonomics in selfCheckin.css", () => {
-		const cssPath = fileURLToPath(new URL("../selfCheckin.css", import.meta.url));
-		const css = readCssWithImports(cssPath);
-
-		// Tokens used
-		assert.ok(
-			css.includes("var(--paper") && css.includes("var(--ink"),
-			"selfCheckin.css uses --paper and --ink tokens",
-		);
-		assert.ok(
-			css.includes("var(--teal") || css.includes("var(--success"),
-			"selfCheckin.css uses --teal / --success design tokens",
-		);
-		assert.ok(
-			css.includes("var(--danger"),
-			"selfCheckin.css uses --danger design tokens",
+	it("6. SelfCheckinTicketSection renders queue ticket, doctor wait status, and unlocked finish action", () => {
+		const ticketHtml = renderToStaticMarkup(
+			createElement(SelfCheckinTicketSection, {
+				displayQueueTicket: "Талон № А-12",
+				patientName: "Самохвалов Олег Дмитриевич",
+				appointmentTime: "Сегодня в 14:30",
+				doctorWaitMessage: "Д-р Воронова Е. С. ожидает вас в кабинете №2",
+				checkinQrSvg: "<svg viewBox=\"0 0 80 80\"></svg>",
+				checkinCode: "CHK-A12",
+				onClose: () => {},
+			}),
 		);
 
-		// Kiosk Touch ergonomics
-		assert.ok(
-			css.includes("touch-action: manipulation;"),
-			"selfCheckin.css includes touch-action: manipulation",
-		);
+		assert.ok(ticketHtml.includes("Талон № А-12"));
+		assert.ok(ticketHtml.includes("Д-р Воронова Е. С."));
+		assert.equal(ticketHtml.includes("<button disabled") || ticketHtml.includes('disabled=""'), false);
 	});
 });

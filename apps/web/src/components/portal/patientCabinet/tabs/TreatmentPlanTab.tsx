@@ -1,6 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { Download, Layers, ReceiptText, ShieldCheck } from "lucide-react";
-import { generateUuidV7 } from "@dental/shared";
+import {
+	calculatePercentDiscountKopecks,
+	generateUuidV7,
+	kopecksToRubles,
+	rublesToKopecks,
+} from "@dental/shared";
 import type { PatientDentalPassport, PatientPersonalCabinetData, PatientTreatmentPlan, TreatmentPlanStage } from "../patientCabinetEngine.js";
 import {
 	computePatientTeethFromStages,
@@ -156,7 +161,10 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 
 	const completedStages = currentPlan.stages.filter((s) => s.status === "completed").length;
 	const nextStage = currentPlan.stages.find((s) => s.status !== "completed");
-	const estimatedTaxRefundRub = Math.round(currentPlan.totalCostRub * 0.13);
+	const totalPlanKopecks = rublesToKopecks(currentPlan.totalCostRub);
+	const estimatedTaxRefundRub = Math.round(
+		kopecksToRubles(calculatePercentDiscountKopecks(totalPlanKopecks, 13)),
+	);
 
 	return (
 		<div className="pc-tab-content-container" data-testid="pc-treatment-plan-tab">
@@ -168,15 +176,15 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 					<p className="pc-ai-desc">Анестезия современным карпульным препаратом (<strong>0 ₽</strong>), прицельные контрольные снимки радиовизиографом (<strong>0 ₽</strong>) и индивидуальный стерильный набор (<strong>0 ₽</strong>) уже включены в стоимость каждого этапа. Никаких скрытых доплат у кресла!</p>
 				</div>
 			</div>
-			{/* 1-Click Tax Deduction 13% NDFL Transparency Card (Mandates 8e, 8n) */}
+			{/* Tax Deduction 13% NDFL Transparency Card (Mandates 8e, 8n) */}
 			<div
 				className="pc-card pc-tax-refund-card"
 				data-testid="pc-plan-tax-deduction-card"
 				style={{
 					borderRadius: "12px",
 					padding: "14px 16px",
-					backgroundColor: "var(--pc-surface, #ffffff)",
-					border: "1px solid var(--pc-border, #e2e8f0)",
+					backgroundColor: "var(--paper, var(--pc-surface))",
+					border: "1px solid var(--line, var(--pc-border))",
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "space-between",
@@ -190,8 +198,8 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 							width: "36px",
 							height: "36px",
 							borderRadius: "10px",
-							backgroundColor: "var(--teal-soft, rgba(13, 148, 136, 0.1))",
-							color: "var(--teal, #0d9488)",
+							backgroundColor: "var(--primary-soft, var(--pc-primary-light))",
+							color: "var(--primary, var(--pc-primary))",
 							display: "flex",
 							alignItems: "center",
 							justifyContent: "center",
@@ -201,10 +209,10 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 						<ReceiptText size={20} />
 					</div>
 					<div>
-						<strong style={{ fontSize: "14px", color: "var(--pc-text-main, #0f172a)", display: "block" }}>
+						<strong style={{ fontSize: "14px", color: "var(--ink, var(--pc-text-main))", display: "block" }}>
 							Налоговый вычет 13% НДФЛ: возврат до {formatRubles(estimatedTaxRefundRub)}
 						</strong>
-						<p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--pc-text-muted, #64748b)" }}>
+						<p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--ink-muted, var(--pc-text-muted))" }}>
 							Справка об оплате медицинских услуг с QR-кодом для ФНС формируется автоматически
 						</p>
 					</div>
@@ -223,7 +231,7 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 					<span>Скачать справку 13% НДФЛ</span>
 				</button>
 			</div>
-			<div className="pc-card pc-formula-card" data-testid="pc-treatment-formula-section" style={{ borderRadius: "12px", padding: "16px", backgroundColor: "var(--pc-surface, #ffffff)", border: "1px solid var(--pc-border, #e2e8f0)" }}>
+			<div className="pc-card pc-formula-card" data-testid="pc-treatment-formula-section" style={{ borderRadius: "12px", padding: "16px", backgroundColor: "var(--paper, var(--pc-surface))", border: "1px solid var(--line, var(--pc-border))" }}>
 				<PatientPlanDentalFormula teeth={patientTeeth} showHealthIndex={true} />
 			</div>
 			{data.threeTierModel && <TreatmentPlanTierSelector threeTierModel={data.threeTierModel} selectedTier={selectedTier} onSelectTier={handleSelectTier} />}

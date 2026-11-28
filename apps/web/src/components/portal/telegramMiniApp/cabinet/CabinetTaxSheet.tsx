@@ -80,9 +80,14 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 }) => {
 	const certNum = certificateNumber || `СПР-${taxYear}/${payerInn ? payerInn.slice(-4) : "001"}`;
 	const certDate = issueDate || new Date().toLocaleDateString("ru-RU");
+	const availableTaxYears = useMemo(() => {
+		const currentYear = new Date().getFullYear();
+		const baseYears = [currentYear, currentYear - 1, currentYear - 2];
+		return baseYears.includes(taxYear) ? baseYears : [taxYear, ...baseYears];
+	}, [taxYear]);
 
 	const qrPayload = useMemo(() => {
-		const cleanClinicInn = clinicInn ? clinicInn.replace(/\D/g, "") : "7701234567";
+		const cleanClinicInn = clinicInn ? clinicInn.replace(/\D/g, "") : "";
 		const cleanPayerInn = payerInn ? payerInn.replace(/\D/g, "") : "";
 		return `FNS|KND1151156|${certNum}|${taxYear}|${cleanClinicInn}|${cleanPayerInn}|SUM:${totalYearExpense}`;
 	}, [certNum, taxYear, clinicInn, payerInn, totalYearExpense]);
@@ -112,7 +117,7 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 				<div className="tg-sheet-header">
 					<div>
 						<div className="tg-sheet-title">
-							<FileCheck2 size={18} className="text-teal-400" />
+							<FileCheck2 size={18} className="text-[var(--primary)]" />
 							<span>Справка для налогового вычета</span>
 						</div>
 						<div className="tg-sheet-subtitle">
@@ -121,7 +126,8 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 					</div>
 					<button
 						type="button"
-						className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center"
+						aria-label="Закрыть"
+						className="w-9 h-9 max-sm:h-11 max-sm:w-11 min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] rounded-full bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)] flex items-center justify-center shrink-0"
 						onClick={() => {
 							onClose();
 							onTriggerHaptic?.("light");
@@ -141,7 +147,7 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 									Налоговый период (год оплаты):
 								</label>
 								<div className="flex gap-2">
-									{[2025, 2024, 2023].map((y) => (
+									{availableTaxYears.map((y) => (
 										<button
 											key={y}
 											type="button"
@@ -180,7 +186,7 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 							</div>
 
 							{/* Поля реквизитов налогоплательщика */}
-							<div className="space-y-2.5 bg-slate-100 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
+							<div className="space-y-2.5 bg-[var(--paper-soft)] p-3 rounded-2xl border border-[var(--line)]">
 								<div>
 									<label className="tg-field-label">
 										ФИО налогоплательщика:
@@ -234,7 +240,7 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 											name="serviceCode"
 											checked={serviceCode === "1"}
 											onChange={() => onChangeServiceCode("1")}
-											className="mt-0.5 accent-teal-500"
+											className="mt-0.5 accent-[var(--primary)]"
 										/>
 										<div>
 											<div className="tg-radio-title">Код 1 — Медицинские услуги</div>
@@ -252,7 +258,7 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 											name="serviceCode"
 											checked={serviceCode === "2"}
 											onChange={() => onChangeServiceCode("2")}
-											className="mt-0.5 accent-teal-500"
+											className="mt-0.5 accent-[var(--primary)]"
 										/>
 										<div>
 											<div className="tg-radio-title">Код 2 — Дорогостоящее лечение</div>
@@ -266,16 +272,16 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 
 							{/* Сводка и итоговая кнопка */}
 							{totalYearExpense === 0 ? (
-								<div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs">
+								<div className="p-3 rounded-xl bg-[var(--warning-soft,rgba(245,158,11,0.12))] border border-[var(--warning,#f59e0b)]/30 text-[var(--ink)] text-xs">
 									За {taxYear} год оплат не зарегистрировано. Справка для налогового вычета формируется строго на основании фактических фискальных чеков.
 								</div>
 							) : null}
 
 							<div className="tg-deduction-summary-box">
-								<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+								<span className="text-xs font-bold text-[var(--ink)]">
 									Расчетная сумма вычета:
 								</span>
-								<span className="font-bold text-teal-600 dark:text-teal-300 text-sm">
+								<span className="font-bold text-[var(--primary)] text-sm font-mono tabular-nums">
 									+{calculatedDeduction.toLocaleString("ru-RU")} ₽
 								</span>
 							</div>
@@ -297,60 +303,61 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 						<div className="space-y-4">
 							<div className="tg-tax-cert-preview">
 								<div className="tg-cert-stamp-badge">
-									<ShieldCheck size={16} className="text-emerald-500" />
+									<ShieldCheck size={16} className="text-[var(--success)]" />
 									<span>Подписано УКЭП клиники</span>
 								</div>
 
 								<div className="text-center my-2">
-									<div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+									<div className="text-xs text-[var(--ink-muted)] font-medium">
 										Справка для налогового вычета (13% НДФЛ)
 									</div>
-									<div className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+									<div className="text-sm font-bold text-[var(--ink)] mt-0.5">
 										Справка об оплате медицинских услуг
 									</div>
-									<div className="text-[11px] text-slate-500 dark:text-slate-400">
+									<div className="text-[11px] text-[var(--ink-muted)]">
 										№ {certNum} от {certDate}
 									</div>
 								</div>
 
 								<div className="tg-cert-details-card space-y-1.5 my-3">
-									<div className="flex justify-between">
-										<span className="text-slate-500 dark:text-slate-400">Клиника:</span>
-										<span className="font-bold text-slate-900 dark:text-slate-200">{clinicName || "Стоматологическая клиника"}</span>
+									<div className="flex justify-between gap-2">
+										<span className="text-[var(--ink-muted)]">Клиника:</span>
+										<span className="font-bold text-[var(--ink)] text-right">{clinicName || "Стоматологическая клиника"}</span>
 									</div>
-									<div className="flex justify-between">
-										<span className="text-slate-500 dark:text-slate-400">ИНН / КПП:</span>
-										<span className="font-mono text-slate-900 dark:text-slate-200">{clinicInn ? `${clinicInn}${clinicKpp ? ` / ${clinicKpp}` : ""}` : "—"}</span>
+									<div className="flex justify-between gap-2">
+										<span className="text-[var(--ink-muted)]">ИНН / КПП:</span>
+										<span className="font-mono text-[var(--ink)]">{clinicInn ? `${clinicInn}${clinicKpp ? ` / ${clinicKpp}` : ""}` : "—"}</span>
 									</div>
-									<div className="flex justify-between">
-										<span className="text-slate-500 dark:text-slate-400">Лицензия:</span>
-										<span className="text-slate-900 dark:text-slate-200">{clinicLicense || "—"}</span>
+									<div className="flex justify-between gap-2">
+										<span className="text-[var(--ink-muted)]">Лицензия:</span>
+										<span className="text-[var(--ink)] text-right">{clinicLicense || "—"}</span>
 									</div>
-									<div className="flex justify-between">
-										<span className="text-slate-500 dark:text-slate-400">Налогоплательщик:</span>
-										<span className="font-bold text-slate-900 dark:text-slate-200">{payerFullName}</span>
+									<div className="flex justify-between gap-2">
+										<span className="text-[var(--ink-muted)]">Налогоплательщик:</span>
+										<span className="font-bold text-[var(--ink)] text-right">{payerFullName || "—"}</span>
 									</div>
-									<div className="flex justify-between">
-										<span className="text-slate-500 dark:text-slate-400">ИНН физлица:</span>
-										<span className="font-mono text-teal-600 dark:text-teal-300 font-bold">{payerInn}</span>
+									<div className="flex justify-between gap-2">
+										<span className="text-[var(--ink-muted)]">ИНН физлица:</span>
+										<span className="font-mono text-[var(--primary)] font-bold">{payerInn || "—"}</span>
 									</div>
-									<div className="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-700">
-										<span className="text-slate-700 dark:text-slate-300 font-bold">Сумма расходов:</span>
-										<span className="font-bold text-slate-900 dark:text-slate-100">
+									<div className="flex justify-between pt-1 border-t border-[var(--line)]">
+										<span className="text-[var(--ink)] font-bold">Сумма расходов:</span>
+										<span className="font-bold text-[var(--ink)] font-mono tabular-nums">
 											{totalYearExpense.toLocaleString("ru-RU")} ₽
 										</span>
 									</div>
 								</div>
 
 								{/* QR-код для Личного кабинета налогоплательщика */}
-								<div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+								<div className="flex items-center gap-3 bg-[var(--paper-soft)] p-2.5 rounded-xl border border-[var(--line)]">
 									<div
 										data-testid="tax-sheet-qr"
-										className="w-14 h-14 bg-white rounded-lg p-0.5 flex items-center justify-center flex-shrink-0 border border-slate-200 overflow-hidden"
+										data-preserve-white="true"
+										className="w-14 h-14 bg-white rounded-lg p-0.5 flex items-center justify-center flex-shrink-0 border border-[var(--line)] overflow-hidden"
 										dangerouslySetInnerHTML={{ __html: qrSvg }}
 									/>
-									<div className="text-[11px] text-slate-600 dark:text-slate-300 leading-tight">
-										<span className="font-bold text-teal-600 dark:text-teal-400 block mb-0.5">
+									<div className="text-[11px] text-[var(--ink-muted)] leading-tight">
+										<span className="font-bold text-[var(--primary)] block mb-0.5">
 											QR-код для быстрой загрузки:
 										</span>
 										Отсканируйте камерой в приложении «Налоги ФЛ» для мгновенной предзаполненной декларации.
@@ -374,7 +381,7 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 
 								<button
 									type="button"
-									className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-2 border border-slate-300 dark:border-slate-700"
+									className="w-full min-h-[44px] py-2.5 rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-bold text-xs flex items-center justify-center gap-2 border border-[var(--line)]"
 									onClick={() => {
 										onResetCert();
 										onTriggerHaptic?.("light");
@@ -386,7 +393,7 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 							</div>
 
 							{taxCopiedNotice && (
-								<div className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-600 dark:text-emerald-300 text-xs font-bold text-center">
+								<div className="p-2.5 rounded-xl bg-[var(--success-soft)] border border-[var(--success)]/40 text-[var(--success)] text-xs font-bold text-center">
 									✓ Справка для налогового вычета (13% НДФЛ) сформирована и готова к отправке в ФНС!
 								</div>
 							)}

@@ -81,7 +81,7 @@ async function authorizeWebAppPatientAction(
 		bodyInitData?: string | undefined;
 	},
 ): Promise<{ callerPatientId: string } | null> {
-	const portalAuth = extractPortalPatient(request);
+	const portalAuth = await extractPortalPatient(request);
 	let callerPatientId: string | null = null;
 
 	if (portalAuth) {

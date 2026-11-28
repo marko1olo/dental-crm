@@ -331,14 +331,7 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 			});
 		}
 
-		const forwardedHeader = request.headers["x-forwarded-for"];
-		const rawIp =
-			typeof forwardedHeader === "string"
-				? forwardedHeader
-				: Array.isArray(forwardedHeader) && forwardedHeader.length > 0 && typeof forwardedHeader[0] === "string"
-					? forwardedHeader[0]
-					: request.ip || "127.0.0.1";
-		const clientIp = rawIp.split(",")[0]?.trim() || "127.0.0.1";
+		const clientIp = request.ip || request.socket?.remoteAddress || "127.0.0.1";
 		const clientIpHash = hashIp(clientIp);
 
 		const now = Date.now();
@@ -545,14 +538,7 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 				}
 			}
 
-			const forwardedHeader = request.headers["x-forwarded-for"];
-			const rawIp =
-				typeof forwardedHeader === "string"
-					? forwardedHeader
-					: Array.isArray(forwardedHeader) && forwardedHeader.length > 0 && typeof forwardedHeader[0] === "string"
-						? forwardedHeader[0]
-						: request.ip || "127.0.0.1";
-			const clientIp = rawIp.split(",")[0]?.trim() || "127.0.0.1";
+			const clientIp = request.ip || request.socket?.remoteAddress || "127.0.0.1";
 			const clientIpHash = hashIp(clientIp);
 			const rawUserAgent = request.headers["user-agent"];
 			const userAgent = typeof rawUserAgent === "string" ? rawUserAgent : "unknown";

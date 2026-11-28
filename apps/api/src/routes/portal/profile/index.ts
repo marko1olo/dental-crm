@@ -25,7 +25,7 @@ import {
 export async function registerPortalPatientProfileRoutes(server: FastifyInstance): Promise<void> {
 	// 3. Get Patient Data (Protected: /me or /profile)
 	const handleGetPortalMe = async (request: FastifyRequest, reply: FastifyReply) => {
-		const auth = verifyPortalProfileRequest(request, reply);
+		const auth = await verifyPortalProfileRequest(request, reply);
 		if (!auth) return;
 
 		return withTenantReadCtx(auth.organizationId, async (tx) => {
@@ -104,7 +104,7 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 		method: "GET",
 		path: "/health-questionnaire",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
@@ -126,7 +126,7 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 		method: "POST",
 		path: "/health-questionnaire",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };

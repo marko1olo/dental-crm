@@ -39,6 +39,7 @@ import { wsBroker } from "../services/websocketBroker.js";
 import { verifyToken } from "../utils/cryptoHelper.js";
 import {
 	hashPortalToken,
+	isPortalTokenRevokedInDb,
 	portalRevokedBeforeByPatient,
 	revokedPortalTokenHashes,
 	revokedPortalTokens,
@@ -78,7 +79,7 @@ function identityFromTokens(clinicToken: unknown, staffToken: unknown) {
  * Проверяет подлинность токена пациента (портал / мобильный кабинет).
  * Гарантирует привязку сокета строго к verified organizationId и patientId из токена.
  */
-function verifyPortalAuthToken(token: unknown): { organizationId: string; patientId: string } | null {
+async function verifyPortalAuthToken(token: unknown): Promise<{ organizationId: string; patientId: string } | null> {
 	if (typeof token !== "string" || !token.trim()) return null;
 	const trimmed = token.trim();
 	if (revokedPortalTokens.has(trimmed) || revokedPortalTokenHashes.has(hashPortalToken(trimmed))) {
@@ -101,6 +102,9 @@ function verifyPortalAuthToken(token: unknown): { organizationId: string; patien
 	}
 	const revokedBefore = portalRevokedBeforeByPatient.get(payload.sub);
 	if (revokedBefore && typeof payload.iat === "number" && payload.iat <= revokedBefore) {
+		return null;
+	}
+	if (await isPortalTokenRevokedInDb(trimmed, payload.organizationId)) {
 		return null;
 	}
 	return { organizationId: payload.organizationId, patientId: payload.sub };
@@ -182,7 +186,7 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 								: null;
 
 				const portalAuth = portalTokenCandidate
-					? verifyPortalAuthToken(portalTokenCandidate)
+					? await verifyPortalAuthToken(portalTokenCandidate)
 					: null;
 
 				let verifiedOrgId: string | null = null;

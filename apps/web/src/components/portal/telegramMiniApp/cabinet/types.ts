@@ -37,6 +37,8 @@ export interface PatientImagingScan {
 	readonly targetTooth?: number | undefined;
 	readonly diagnosisBadge: string;
 	readonly markerCoords?: { x: number; y: number } | undefined;
+	readonly downloadUrl?: string | undefined;
+	readonly imageUrl?: string | undefined;
 }
 
 export interface TelegramPatientPortalCabinetProps {

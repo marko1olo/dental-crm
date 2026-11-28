@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import {
 	generateSbpQrPayload,
 	type PatientInvoiceItem,
@@ -10,15 +11,27 @@ import {
 export function useCabinetSbpState(
 	setData: React.Dispatch<React.SetStateAction<PatientPersonalCabinetData>>,
 	onInvoicePaid?: (inv: PatientInvoiceItem) => void,
+	clinicInfo?: PatientPersonalCabinetData["clinicInfo"],
 ) {
 	const [activeSbpInvoice, setActiveSbpInvoice] = useState<PatientInvoiceItem | null>(null);
 	const [activeSbpPayload, setActiveSbpPayload] = useState<SbpQrPayload | null>(null);
 	const [isCheckingSbpStatus, setIsCheckingSbpStatus] = useState(false);
 	const [sbpStatusMessage, setSbpStatusMessage] = useState<string | null>(null);
 	const inFlightSbpCheckRef = useRef(false);
+	const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (closeTimerRef.current) {
+				clearTimeout(closeTimerRef.current);
+				closeTimerRef.current = null;
+			}
+		};
+	}, []);
 
 	const handleStartSbpPayment = useCallback(async (invoice: PatientInvoiceItem) => {
 		setActiveSbpInvoice(invoice);
+		setActiveSbpPayload(null);
 		setIsCheckingSbpStatus(false);
 		setSbpStatusMessage("Генерация платёжного QR-кода СБП...");
 
@@ -26,9 +39,32 @@ export function useCabinetSbpState(
 		const headers: Record<string, string> = {
 			"Content-Type": "application/json",
 			Accept: "application/json",
-			"Idempotency-Key": crypto.randomUUID(),
+			"Idempotency-Key": generateUuidV7(),
 		};
 		if (token) headers.Authorization = `Bearer ${token}`;
+
+		const tryLocalFallback = (serverErrorMessage?: string) => {
+			const legalName = clinicInfo?.legalName || clinicInfo?.nameRu;
+			const inn = clinicInfo?.inn;
+			if (legalName && inn) {
+				try {
+					const fallbackPayload = generateSbpQrPayload(invoice, {
+						legalName,
+						inn,
+					});
+					setActiveSbpPayload(fallbackPayload);
+					setSbpStatusMessage(null);
+					return;
+				} catch {
+					// Fall through to explicit error message below
+				}
+			}
+			setActiveSbpPayload(null);
+			setSbpStatusMessage(
+				serverErrorMessage ||
+					"Банковские реквизиты клиники для приёма платежей через СБП не настроены. Обратитесь к администратору клиники.",
+			);
+		};
 
 		try {
 			const res = await fetch("/api/portal/payments/create-sbp-qr", {
@@ -40,24 +76,21 @@ export function useCabinetSbpState(
 				}),
 			});
 
-			if (res.ok) {
-				const json = await res.json().catch(() => null);
-				if (json?.sbpPayload) {
-					setActiveSbpPayload(json.sbpPayload);
-					setSbpStatusMessage(null);
-					return;
-				}
+			const json = (await res.json().catch(() => null)) as {
+				sbpPayload?: SbpQrPayload;
+				message?: string;
+			} | null;
+
+			if (res.ok && json?.sbpPayload) {
+				setActiveSbpPayload(json.sbpPayload);
+				setSbpStatusMessage(null);
+				return;
 			}
-			// Fallback if offline/demo or unconfigured bank details
-			const fallbackPayload = generateSbpQrPayload(invoice);
-			setActiveSbpPayload(fallbackPayload);
-			setSbpStatusMessage(null);
+			tryLocalFallback(json?.message);
 		} catch {
-			const fallbackPayload = generateSbpQrPayload(invoice);
-			setActiveSbpPayload(fallbackPayload);
-			setSbpStatusMessage(null);
+			tryLocalFallback();
 		}
-	}, []);
+	}, [clinicInfo]);
 
 	const handleCheckSbpPaymentStatus = useCallback(async () => {
 		if (!activeSbpInvoice || inFlightSbpCheckRef.current) return;
@@ -101,7 +134,11 @@ export function useCabinetSbpState(
 					}));
 					onInvoicePaid?.(updatedInvoice);
 					setSbpStatusMessage("Оплата успешно зачислена! Кассовый чек отправлен.");
-					setTimeout(() => {
+					if (closeTimerRef.current) {
+						clearTimeout(closeTimerRef.current);
+					}
+					closeTimerRef.current = setTimeout(() => {
+						closeTimerRef.current = null;
 						setActiveSbpInvoice(null);
 						setActiveSbpPayload(null);
 					}, 1500);
@@ -115,12 +152,19 @@ export function useCabinetSbpState(
 			inFlightSbpCheckRef.current = false;
 			setIsCheckingSbpStatus(false);
 		}
-	}, [activeSbpInvoice, activeSbpPayload, onInvoicePaid, setData]);
+	}, [activeSbpInvoice, onInvoicePaid, setData]);
 
 	const handleOpenBankApp = useCallback((bank: SbpBankMember) => {
-		if (!activeSbpPayload) return;
+		if (!activeSbpPayload || !activeSbpPayload.qrId) return;
+		const encodedQrId = encodeURIComponent(activeSbpPayload.qrId);
+		const targetUrl =
+			bank.id === "sbp_generic" || bank.schemaPrefix === "https://qr.nspk.ru/"
+				? activeSbpPayload.sbpNspkPayloadString || `https://qr.nspk.ru/${encodedQrId}`
+				: bank.schemaPrefix.includes(activeSbpPayload.qrId) || bank.schemaPrefix.includes(encodedQrId)
+					? bank.schemaPrefix
+					: `${bank.schemaPrefix}${encodedQrId}`;
 		setSbpStatusMessage(`Переход в приложение ${bank.nameRu}...`);
-		window.open(bank.schemaPrefix, "_blank");
+		window.open(targetUrl, "_blank", "noopener,noreferrer");
 	}, [activeSbpPayload]);
 
 	return {

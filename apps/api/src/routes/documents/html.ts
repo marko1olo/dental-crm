@@ -79,7 +79,7 @@ export async function register(app: FastifyInstance) {
 				return reply.code(400).send(apiError("Некорректные параметры запроса HTML-версии документа"));
 			}
 			const { id } = parsedParams.data;
-			const portalPatient = extractPortalPatient(request);
+			const portalPatient = await extractPortalPatient(request);
 			const orgId = portalPatient?.organizationId ?? requireOrganizationId(request, reply);
 			if (!orgId) return reply;
 

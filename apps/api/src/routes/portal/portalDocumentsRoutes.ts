@@ -35,7 +35,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 		method: "GET",
 		path: "/documents/:documentId/html",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
@@ -80,7 +80,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 		method: "GET",
 		path: "/consents",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
@@ -152,7 +152,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 		method: "POST",
 		path: "/consents/:consentId/sign",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
@@ -235,13 +235,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 		const defaultPepSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="32" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ЭЛЕКТРОННАЯ ПОДПИСЬ ПАЦИЕНТА</text><text x="160" y="52" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Подтверждено в личном кабинете пациента</text></svg>';
 		const effectiveSignatureSvg = signatureSvg || (signatureMethod === "paper_physical" ? defaultPaperSvg : defaultPepSvg);
 
-		const rawIp =
-			(request.headers["x-forwarded-for"] as string) ||
-			request.ip ||
-			request.socket?.remoteAddress ||
-			"127.0.0.1";
-		const clientIp =
-			typeof rawIp === "string" ? rawIp.split(",")[0]?.trim() || "127.0.0.1" : "127.0.0.1";
+		const clientIp = request.ip || request.socket?.remoteAddress || "127.0.0.1";
 		const now = new Date();
 		const signedAtIso = now.toISOString();
 
@@ -393,7 +387,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 		method: "GET",
 		path: "/treatment-plans",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
@@ -460,7 +454,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 		method: "POST",
 		path: "/treatment-plans/:planId/select-tier",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
@@ -564,7 +558,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 		method: "POST",
 		path: "/treatment-plans/:planId/approve",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
@@ -628,13 +622,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				return { error: "PlanNotFound", message: "План лечения не найден." };
 			}
 
-			const rawIp =
-				(request.headers["x-forwarded-for"] as string) ||
-				request.ip ||
-				request.socket?.remoteAddress ||
-				"127.0.0.1";
-			const clientIp =
-				typeof rawIp === "string" ? rawIp.split(",")[0]?.trim() || "127.0.0.1" : "127.0.0.1";
+			const clientIp = request.ip || request.socket?.remoteAddress || "127.0.0.1";
 			const now = new Date();
 			const signedAtIso = now.toISOString();
 

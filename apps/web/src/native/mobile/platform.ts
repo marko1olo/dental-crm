@@ -75,8 +75,8 @@ export function isPwaApp(): boolean {
 		) {
 			return true;
 		}
-	} catch {
-		// Ignore matchMedia errors in non-browser / test environments
+	} catch (err) {
+		console.warn("[platform] matchMedia check failed in current environment:", err);
 	}
 	const nav: (Navigator & { standalone?: boolean }) | undefined =
 		typeof navigator !== "undefined" ? navigator : undefined;

@@ -1,36 +1,24 @@
 import "../../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
-import { describe, it, beforeEach, afterEach } from "vitest";
+import { describe, it, beforeEach, afterEach } from "node:test";
 import React, { createElement } from "react";
 globalThis.React = React;
 import { renderToStaticMarkup } from "react-dom/server";
 
 import {
 	TelegramPatientPortalCabinet,
-	type TelegramCabinetTab,
-	type PatientAppointment,
-	type PatientImagingScan,
-	type TelegramPatientPortalCabinetProps,
 } from "../TelegramPatientPortalCabinet";
 
 import {
-	CabinetHeader,
-	CabinetAppointmentsTab,
 	CabinetImagingTab,
-	CabinetTaxTab,
 	CabinetTaxSheet,
-	CabinetFinanceTab,
-	CabinetTeethTab,
 	CabinetTreatmentPlansTab,
-	CabinetBillingTab,
-	CabinetBottomNav,
-	useTelegramPortalCabinet,
-	DEMO_APPOINTMENTS,
 	DEMO_IMAGING_SCANS,
+	submitTelegramAppointmentConfirmation,
+	triggerBlobDownload,
 } from "../cabinet";
 
 import {
-	isDemoShowcaseMode,
 	setRuntimeDemoMode,
 } from "../../../../utils/demoModeEngine.js";
 
@@ -43,19 +31,133 @@ describe("TelegramPatientPortalCabinet Decomposed Architecture Test Suite", () =
 		setRuntimeDemoMode(null);
 	});
 
-	it("1. Public API & Type contracts are 100% preserved", () => {
-		assert.equal(typeof TelegramPatientPortalCabinet, "object"); // React.memo wraps into object
-		assert.equal(typeof CabinetHeader, "object");
-		assert.equal(typeof CabinetAppointmentsTab, "object");
-		assert.equal(typeof CabinetImagingTab, "object");
-		assert.equal(typeof CabinetTaxTab, "object");
-		assert.equal(typeof CabinetTaxSheet, "object");
-		assert.equal(typeof CabinetFinanceTab, "object");
-		assert.equal(typeof CabinetTeethTab, "object");
-		assert.equal(typeof CabinetTreatmentPlansTab, "object");
-		assert.equal(typeof CabinetBillingTab, "object");
-		assert.equal(typeof CabinetBottomNav, "object");
-		assert.equal(typeof useTelegramPortalCabinet, "function");
+	it("1. Regression: CabinetImagingTab isolates SVG gradient IDs via useId() and triggers Blob download with URL cleanup", () => {
+		const firstScan = DEMO_IMAGING_SCANS[0];
+		const secondScan = DEMO_IMAGING_SCANS[1];
+		assert.ok(firstScan && secondScan);
+		const combinedHtml = renderToStaticMarkup(
+			createElement(
+				"div",
+				null,
+				createElement(CabinetImagingTab, {
+					imagingList: DEMO_IMAGING_SCANS,
+					selectedScanId: firstScan.id,
+					onSelectScanId: () => {},
+					zoomLevel: 1,
+					onZoomChange: () => {},
+					isInverted: false,
+					onToggleInvert: () => {},
+					showDoctorNotes: true,
+					onToggleDoctorNotes: () => {},
+					onShare: () => {},
+				}),
+				createElement(CabinetImagingTab, {
+					imagingList: DEMO_IMAGING_SCANS,
+					selectedScanId: secondScan.id,
+					onSelectScanId: () => {},
+					zoomLevel: 1,
+					onZoomChange: () => {},
+					isInverted: false,
+					onToggleInvert: () => {},
+					showDoctorNotes: true,
+					onToggleDoctorNotes: () => {},
+					onShare: () => {},
+				}),
+			),
+		);
+
+		const idMatches = [...combinedHtml.matchAll(/id="([^"]*-boneGlow)"/g)].map((m) => m[1]);
+		assert.equal(idMatches.length, 2, "Both imaging viewers must render scoped boneGlow gradient IDs");
+		assert.notEqual(idMatches[0], idMatches[1], "Multiple CabinetImagingTab instances must never share identical SVG gradient IDs");
+		assert.ok(combinedHtml.includes(`url(#${idMatches[0]})`), "Fill attribute must reference scoped gradient ID");
+		assert.ok(combinedHtml.includes(`url(#${idMatches[1]})`), "Second fill attribute must reference distinct scoped gradient ID");
+
+		// Test triggerBlobDownload cleanup cleanly
+		const origDoc = Object.getOwnPropertyDescriptor(globalThis, "document");
+		const origCreateObj = URL.createObjectURL;
+		const origRevokeObj = URL.revokeObjectURL;
+		let clicked = false;
+		let revokedUrl = "";
+		try {
+			const fakeEl = { href: "", download: "", click: () => { clicked = true; } };
+			Object.defineProperty(globalThis, "document", {
+				value: {
+					createElement: () => fakeEl,
+					body: { appendChild: () => {}, removeChild: () => {} },
+				},
+				writable: true,
+				configurable: true,
+			});
+			URL.createObjectURL = () => "blob:dente-test-scan";
+			URL.revokeObjectURL = (url: string) => { revokedUrl = url; };
+			triggerBlobDownload(new Blob(["scan"], { type: "image/png" }), "scan_16.png");
+			assert.equal(clicked, true);
+			assert.equal(fakeEl.download, "scan_16.png");
+			assert.equal(revokedUrl, "blob:dente-test-scan");
+		} finally {
+			if (origDoc) {
+				Object.defineProperty(globalThis, "document", origDoc);
+			} else {
+				Reflect.deleteProperty(globalThis, "document");
+			}
+			URL.createObjectURL = origCreateObj;
+			URL.revokeObjectURL = origRevokeObj;
+		}
+	});
+
+	it("1b. Regression: submitTelegramAppointmentConfirmation forwards auth headers + initData and surfaces 401 failure", async () => {
+		let capturedHeaders = new Headers();
+		let capturedBody: unknown = null;
+
+		const res = await submitTelegramAppointmentConfirmation({
+			organizationId: "org-1",
+			parentPatientId: "pat-1",
+			appointmentId: "appt-1",
+			sessionToken: "portal-jwt-abc",
+			initData: "query_id=1&hash=xyz",
+			fetchFn: async (_url, init) => {
+				capturedHeaders = new Headers(init?.headers);
+				capturedBody = JSON.parse(String(init?.body ?? "{}"));
+				return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+			},
+		});
+
+		assert.equal(capturedHeaders.get("Authorization"), "Bearer portal-jwt-abc");
+		assert.equal(capturedHeaders.get("x-telegram-init-data"), "query_id=1&hash=xyz");
+		assert.ok(capturedHeaders.get("Idempotency-Key"));
+		assert.deepEqual(capturedBody, {
+			organizationId: "org-1",
+			parentPatientId: "pat-1",
+			appointmentId: "appt-1",
+			initData: "query_id=1&hash=xyz",
+		});
+		assert.equal(res.ok, false);
+		assert.equal(res.status, 401);
+	});
+
+	it("1c. Regression: CabinetTaxSheet renders dynamic years and zero hardcoded demo INN", () => {
+		const curYear = new Date().getFullYear();
+		const sheetHtml = renderToStaticMarkup(
+			createElement(CabinetTaxSheet, {
+				isOpen: true,
+				onClose: () => {},
+				taxYear: curYear,
+				onTaxYearChange: () => {},
+				taxpayerFullName: "Пациент",
+				onTaxpayerFullNameChange: () => {},
+				taxpayerInn: "",
+				onTaxpayerInnChange: () => {},
+				serviceCode: "1",
+				onServiceCodeChange: () => {},
+				calculatedDeduction: 0,
+				taxNotice: null,
+				onGenerateTaxPdf: () => {},
+			}),
+		);
+		assert.ok(sheetHtml.includes(String(curYear)));
+		assert.ok(sheetHtml.includes(String(curYear - 1)));
+		assert.ok(sheetHtml.includes(String(curYear - 2)));
+		assert.equal(sheetHtml.includes("7701234567"), false);
 	});
 
 	it("2. Renders appointments tab by default with header and bottom navigation", () => {

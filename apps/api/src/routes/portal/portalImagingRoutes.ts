@@ -159,7 +159,7 @@ export async function registerPortalImagingRoutes(server: FastifyInstance): Prom
 		method: "GET",
 		path: "/imaging",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
@@ -231,7 +231,7 @@ export async function registerPortalImagingRoutes(server: FastifyInstance): Prom
 		method: "GET",
 		path: "/scans/:scanId/download",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
@@ -252,7 +252,7 @@ export async function registerPortalImagingRoutes(server: FastifyInstance): Prom
 		method: "GET",
 		path: "/scans/:scanId/view",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };

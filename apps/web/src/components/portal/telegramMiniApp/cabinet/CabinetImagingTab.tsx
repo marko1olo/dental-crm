@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from "react";
+import React, { memo, useCallback, useId, useMemo, useRef, useState } from "react";
 import {
 	Download,
 	Eye,
@@ -8,6 +8,9 @@ import {
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
+import { isValidUuid } from "@dental/shared";
+import { clientLogger } from "../../../../services/logging/clientLogger";
+import { showToast } from "../../../GlobalToast";
 import type { PatientImagingScan } from "./types";
 
 export interface CabinetImagingTabProps {
@@ -22,6 +25,65 @@ export interface CabinetImagingTabProps {
 	readonly onToggleDoctorNotes: () => void;
 	readonly onShare: () => void;
 	readonly onTriggerHaptic?: (style?: "light" | "medium" | "heavy") => void;
+	readonly sessionToken?: string | null | undefined;
+	readonly onDownloadScan?: ((scan: PatientImagingScan) => void | Promise<void>) | undefined;
+}
+
+export function triggerBlobDownload(blob: Blob, filename: string): void {
+	const objectUrl = URL.createObjectURL(blob);
+	try {
+		const link = document.createElement("a");
+		link.href = objectUrl;
+		link.download = filename;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+	} finally {
+		URL.revokeObjectURL(objectUrl);
+	}
+}
+
+async function svgElementToPngOrSvgBlob(
+	svgEl: SVGSVGElement,
+): Promise<{ blob: Blob; ext: "png" | "svg" }> {
+	const serialized = new XMLSerializer().serializeToString(svgEl);
+	const svgBlob = new Blob([serialized], { type: "image/svg+xml;charset=utf-8" });
+	if (typeof document === "undefined" || typeof Image === "undefined") {
+		return { blob: svgBlob, ext: "svg" };
+	}
+	const canvas = document.createElement("canvas");
+	const ctx = typeof canvas.getContext === "function" ? canvas.getContext("2d") : null;
+	if (!ctx) {
+		return { blob: svgBlob, ext: "svg" };
+	}
+
+	const width = 720;
+	const height = 520;
+	canvas.width = width;
+	canvas.height = height;
+
+	const svgUrl = URL.createObjectURL(svgBlob);
+	try {
+		const pngBlob = await new Promise<Blob | null>((resolve) => {
+			const img = new Image();
+			img.onload = () => {
+				try {
+					ctx.drawImage(img, 0, 0, width, height);
+					canvas.toBlob((out) => resolve(out), "image/png");
+				} catch {
+					resolve(null);
+				}
+			};
+			img.onerror = () => resolve(null);
+			img.src = svgUrl;
+		});
+		if (pngBlob && pngBlob.size > 0) {
+			return { blob: pngBlob, ext: "png" };
+		}
+		return { blob: svgBlob, ext: "svg" };
+	} finally {
+		URL.revokeObjectURL(svgUrl);
+	}
 }
 
 export const CabinetImagingTab: React.FC<CabinetImagingTabProps> = memo(({
@@ -36,11 +98,81 @@ export const CabinetImagingTab: React.FC<CabinetImagingTabProps> = memo(({
 	onToggleDoctorNotes,
 	onShare,
 	onTriggerHaptic,
+	sessionToken,
+	onDownloadScan,
 }) => {
+	const svgUid = useId().replace(/:/g, "");
+	const boneGlowId = `${svgUid}-boneGlow`;
+	const toothGradientId = `${svgUid}-toothGradient`;
+	const pulpGradientId = `${svgUid}-pulpGradient`;
+
+	const svgRef = useRef<SVGSVGElement | null>(null);
+	const [isDownloading, setIsDownloading] = useState(false);
+
 	const activeScan = useMemo(
 		() => imagingList.find((s) => s.id === selectedScanId) ?? imagingList[0] ?? null,
 		[imagingList, selectedScanId],
 	);
+
+	const handleDownloadClick = useCallback(async () => {
+		if (!activeScan || isDownloading) return;
+		onTriggerHaptic?.("light");
+		if (onDownloadScan) {
+			await onDownloadScan(activeScan);
+			return;
+		}
+		setIsDownloading(true);
+		try {
+			const safeSlug = activeScan.title
+				.replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]+/g, "_")
+				.replace(/^_+|_+$/g, "") || activeScan.id;
+
+			const serverDownloadUrl =
+				activeScan.downloadUrl ||
+				(sessionToken && isValidUuid(activeScan.id)
+					? `/api/portal/scans/${encodeURIComponent(activeScan.id)}/download`
+					: null);
+
+			if (serverDownloadUrl) {
+				const headers: Record<string, string> = {};
+				const effectiveToken =
+					sessionToken ||
+					(typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null);
+				if (effectiveToken) {
+					headers.Authorization = `Bearer ${effectiveToken}`;
+				}
+				const res = await fetch(serverDownloadUrl, { headers });
+				if (!res.ok) {
+					throw new Error(`HTTP ${res.status}`);
+				}
+				const serverBlob = await res.blob();
+				if (serverBlob.size > 0) {
+					const ext = serverBlob.type.includes("dicom")
+						? "dcm"
+						: serverBlob.type.includes("jpeg")
+							? "jpg"
+							: serverBlob.type.includes("svg")
+								? "svg"
+								: "png";
+					triggerBlobDownload(serverBlob, `${safeSlug}.${ext}`);
+					showToast("Снимок сохранён на устройство", "success");
+					return;
+				}
+			}
+
+			if (!svgRef.current) {
+				throw new Error("Изображение снимка недоступно для экспорта");
+			}
+			const { blob, ext } = await svgElementToPngOrSvgBlob(svgRef.current);
+			triggerBlobDownload(blob, `${safeSlug}.${ext}`);
+			showToast("Снимок сохранён в формате " + ext.toUpperCase(), "success");
+		} catch (err: unknown) {
+			clientLogger.warn("[CabinetImagingTab] Failed to download scan:", err);
+			showToast("Не удалось скачать снимок. Попробуйте ещё раз.", "error");
+		} finally {
+			setIsDownloading(false);
+		}
+	}, [activeScan, isDownloading, onDownloadScan, onTriggerHaptic, sessionToken]);
 
 	return (
 		<main className="tg-tab-content">
@@ -56,9 +188,9 @@ export const CabinetImagingTab: React.FC<CabinetImagingTabProps> = memo(({
 			{/* Горизонтальная карусель выбора снимка или честный EmptyState */}
 			{imagingList.length === 0 ? (
 				<div className="tg-empty-card">
-					<Eye size={32} className="text-slate-400 mb-2" />
+					<Eye size={32} className="text-[var(--ink-muted)] mb-2" />
 					<div className="text-sm font-bold">Снимки отсутствуют</div>
-					<div className="text-xs text-slate-400 mt-1">
+					<div className="text-xs text-[var(--ink-muted)] mt-1">
 						После проведения радиовизиографии или КТ врач прикрепит диагностические снимки к вашей карте
 					</div>
 				</div>
@@ -98,7 +230,7 @@ export const CabinetImagingTab: React.FC<CabinetImagingTabProps> = memo(({
 					<div className="tg-viewer-toolbar">
 						<div className="flex items-center gap-1.5">
 							<span className="tg-viewer-badge">{activeScan.scanTypeLabel}</span>
-							<span className="text-[11px] text-slate-400">
+							<span className="text-[11px] text-[var(--ink-muted)]">
 								Доза: {activeScan.radiationDoseMsv} мЗв
 							</span>
 						</div>
@@ -150,31 +282,32 @@ export const CabinetImagingTab: React.FC<CabinetImagingTabProps> = memo(({
 							className={`tg-scan-display ${isInverted ? "inverted" : ""}`}
 							style={{ transform: `scale(${zoomLevel})` }}
 						>
-							{/* Симуляция рентгенограммы анатомически достоверной структуры */}
+							{/* Анатомическая рентгенограмма с изолированными градиентами (useId) */}
 							<svg
+								ref={svgRef}
 								viewBox="0 0 360 260"
 								className="w-full h-auto tg-radiology-svg"
 								xmlns="http://www.w3.org/2000/svg"
 							>
 								<defs>
-									<radialGradient id="boneGlow" cx="50%" cy="50%" r="50%">
+									<radialGradient id={boneGlowId} cx="50%" cy="50%" r="50%">
 										<stop offset="0%" stopColor="#2a384c" />
 										<stop offset="70%" stopColor="#141c27" />
 										<stop offset="100%" stopColor="#080c12" />
 									</radialGradient>
-									<linearGradient id="toothGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+									<linearGradient id={toothGradientId} x1="0%" y1="0%" x2="0%" y2="100%">
 										<stop offset="0%" stopColor="#dce7f5" />
 										<stop offset="50%" stopColor="#9fb4ce" />
 										<stop offset="100%" stopColor="#5d728e" />
 									</linearGradient>
-									<linearGradient id="pulpGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+									<linearGradient id={pulpGradientId} x1="0%" y1="0%" x2="0%" y2="100%">
 										<stop offset="0%" stopColor="#37475d" />
 										<stop offset="100%" stopColor="#1c2533" />
 									</linearGradient>
 								</defs>
 
 								{/* Фон рентген-детектора */}
-								<rect width="360" height="260" fill="url(#boneGlow)" rx="12" />
+								<rect width="360" height="260" fill={`url(#${boneGlowId})`} rx="12" />
 
 								{/* Трабекулярная сетка костной ткани */}
 								<g opacity="0.35" stroke="#718ba7" strokeWidth="0.5" strokeDasharray="2,3">
@@ -207,27 +340,27 @@ export const CabinetImagingTab: React.FC<CabinetImagingTabProps> = memo(({
 										{/* Коронковая часть */}
 										<path
 											d="M 15 45 Q 50 20 85 45 Q 95 90 80 120 L 20 120 Q 5 90 15 45 Z"
-											fill="url(#toothGradient)"
+											fill={`url(#${toothGradientId})`}
 											stroke="#cbd5e1"
 											strokeWidth="1.5"
 										/>
 										{/* Корни (медиальный и дистальный) */}
 										<path
 											d="M 20 120 Q 15 170 30 205 Q 38 205 42 170 L 48 120 Z"
-											fill="url(#toothGradient)"
+											fill={`url(#${toothGradientId})`}
 											stroke="#94a3b8"
 											strokeWidth="1.2"
 										/>
 										<path
 											d="M 52 120 L 58 170 Q 62 205 70 205 Q 85 170 80 120 Z"
-											fill="url(#toothGradient)"
+											fill={`url(#${toothGradientId})`}
 											stroke="#94a3b8"
 											strokeWidth="1.2"
 										/>
 										{/* Пульповая камера и каналы */}
 										<path
 											d="M 35 60 Q 50 50 65 60 Q 62 90 50 100 Q 38 90 35 60 Z"
-											fill="url(#pulpGradient)"
+											fill={`url(#${pulpGradientId})`}
 										/>
 										<path d="M 40 100 L 32 195" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" />
 										<path d="M 60 100 L 68 195" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" />
@@ -262,10 +395,10 @@ export const CabinetImagingTab: React.FC<CabinetImagingTabProps> = memo(({
 					<div className="tg-viewer-footer">
 						<div className="flex items-center justify-between mb-1.5">
 							<div className="tg-doctor-name flex items-center gap-1.5">
-								<FileText size={13} className="text-teal-400" />
+								<FileText size={13} className="text-[var(--primary)]" />
 								<span>Заключение: {activeScan.doctorName}</span>
 							</div>
-							<span className="text-[11px] font-bold text-teal-400">
+							<span className="text-[11px] font-bold text-[var(--primary)]">
 								{activeScan.diagnosisBadge}
 							</span>
 						</div>
@@ -277,17 +410,20 @@ export const CabinetImagingTab: React.FC<CabinetImagingTabProps> = memo(({
 						<div className="mt-3 flex gap-2">
 							<button
 								type="button"
-								className="flex-1 py-2.5 px-3 rounded-xl bg-teal-600/15 border border-teal-500/30 text-teal-600 dark:text-teal-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
-								onClick={() => onTriggerHaptic?.("light")}
+								data-testid="tg-imaging-download-btn"
+								aria-busy={isDownloading}
+								className="flex-1 min-h-[44px] py-2.5 px-3 rounded-xl bg-[var(--primary)]/15 border border-[var(--primary)]/30 text-[var(--primary)] text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+								onClick={() => void handleDownloadClick()}
 							>
 								<Download size={14} />
-								<span>Скачать снимок (DICOM/PNG)</span>
+								<span>{isDownloading ? "Сохранение…" : "Скачать снимок (DICOM/PNG)"}</span>
 							</button>
 							<button
 								type="button"
-								className="py-2.5 px-3 rounded-xl bg-teal-600/15 border border-teal-500/30 text-teal-600 dark:text-teal-300 text-xs font-bold flex items-center justify-center transition-all"
+								className="min-h-[44px] min-w-[44px] py-2.5 px-3 rounded-xl bg-[var(--primary)]/15 border border-[var(--primary)]/30 text-[var(--primary)] text-xs font-bold flex items-center justify-center transition-all"
 								onClick={onShare}
 								title="Поделиться"
+								aria-label="Поделиться снимком"
 							>
 								<Share2 size={14} />
 							</button>

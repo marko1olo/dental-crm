@@ -112,7 +112,7 @@ export async function registerQuery(app: FastifyInstance) {
 		path: "/api/documents",
 		permission: "public",
 		handler: async ({ request, reply }) => {
-			const portalPatient = extractPortalPatient(request);
+			const portalPatient = await extractPortalPatient(request);
 			if (!portalPatient) {
 				if (!(await requireClinicalReadAccess(request, reply, "documents list"))) {
 					return reply;
@@ -251,7 +251,7 @@ export async function registerQuery(app: FastifyInstance) {
 		path: "/api/documents/:id",
 		permission: "public",
 		handler: async ({ request, reply }) => {
-			const portalPatient = extractPortalPatient(request);
+			const portalPatient = await extractPortalPatient(request);
 			if (!portalPatient) {
 				if (!(await requireClinicalReadAccess(request, reply, "document read"))) {
 					return reply;

@@ -172,6 +172,7 @@ export const PublicBudgetSignaturePad: React.FC<PublicBudgetSignaturePadProps> =
 	};
 
 	const handleSubmit = () => {
+		if (isSubmitting) return;
 		if (!canvasRef.current || !hasStrokes || pointsCount < 15) {
 			setLocalError("Пожалуйста, поставьте полноценную личную подпись в поле выше (не менее 15 точек росчерка).");
 			return;
@@ -278,12 +279,12 @@ export const PublicBudgetSignaturePad: React.FC<PublicBudgetSignaturePadProps> =
 				</div>
 			)}
 
-			{/* Primary CTA (Natural Thumb Zone, touch target >= 44px, Mandate 8e: never disabled for missing stroke) */}
+			{/* Primary CTA (Natural Thumb Zone, touch target >= 44px, Mandate 8e: never disabled) */}
 			<button
 				type="button"
 				onClick={handleSubmit}
-				disabled={isSubmitting}
-				className="w-full min-h-[50px] py-3.5 px-4 rounded-xl font-medium text-sm bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-sm transition flex items-center justify-center gap-2"
+				aria-busy={isSubmitting}
+				className="w-full min-h-[50px] py-3.5 px-4 rounded-xl font-medium text-sm bg-[var(--primary)] hover:bg-[var(--primary-hover)] aria-busy:opacity-60 text-white shadow-sm transition flex items-center justify-center gap-2"
 			>
 				{isSubmitting ? (
 					<div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { kopecksToRubles, parseKopecks } from "@dental/shared";
+import { SbpQrEngine, kopecksToRubles, parseKopecks } from "@dental/shared";
 import type { sberbankTransactions } from "../../db/schema.js";
 
 export function readHeaderString(value: string | string[] | undefined): string | undefined {
@@ -32,6 +32,7 @@ function readOptionalStringField(record: Record<string, unknown>, keys: readonly
 export function extractBankRequisites(bankDetails?: string | null): {
 	account?: string | undefined;
 	bic?: string | undefined;
+	sbpBankId?: string | undefined;
 } {
 	if (!bankDetails) return {};
 	try {
@@ -47,9 +48,15 @@ export function extractBankRequisites(bankDetails?: string | null): {
 				"settlementAccount",
 			]);
 			const bic = readOptionalStringField(record, ["bic", "bankBic"]);
+			const sbpBankId = readOptionalStringField(record, [
+				"sbpBankId",
+				"bankMemberId",
+				"sbpMemberId",
+			]);
 			return {
 				...(account ? { account } : {}),
 				...(bic ? { bic } : {}),
+				...(sbpBankId ? { sbpBankId } : {}),
 			};
 		}
 	} catch {
@@ -61,6 +68,28 @@ export function extractBankRequisites(bankDetails?: string | null): {
 		...(accountMatch?.[1] ? { account: accountMatch[1] } : {}),
 		...(bicMatch?.[1] ? { bic: bicMatch[1] } : {}),
 	};
+}
+
+export function buildPortalSbpNspkPayload(params: {
+	qrId: string;
+	amountKopecks: number;
+	sbpBankId?: string | undefined;
+	bic?: string | undefined;
+}): string {
+	const cleanBankId = params.sbpBankId?.trim();
+	if (cleanBankId) {
+		return SbpQrEngine.buildNspkDynamicPayload({
+			operationId: params.qrId,
+			bankMemberId: cleanBankId,
+			amountKopecks: params.amountKopecks,
+			currency: "RUB",
+		}).payloadUrl;
+	}
+	const cleanBic = params.bic?.trim();
+	const bicSegment = cleanBic ? `&bic=${encodeURIComponent(cleanBic)}` : "";
+	const baseQuery = `https://qr.nspk.ru/${params.qrId}?type=02${bicSegment}&sum=${params.amountKopecks}&cur=RUB`;
+	const crc16 = SbpQrEngine.computeCrc16Ccitt(baseQuery);
+	return `${baseQuery}&crc=${crc16}`;
 }
 
 export type SbpAmountCheckResult =

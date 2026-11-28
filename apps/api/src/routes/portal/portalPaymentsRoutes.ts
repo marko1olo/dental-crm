@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { kopecksToRubles, parseKopecks, rublesToKopecks, sumKopecks } from "@dental/shared";
+import { isValidUuid, kopecksToRubles, parseKopecks, rublesToKopecks, sumKopecks } from "@dental/shared";
 import { and, desc, eq, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { definePublicRoute } from "../../core/routeFactories.js";
@@ -20,6 +20,7 @@ import { generateDeterministicQrSvg } from "./portalUtils.js";
 import {
 	buildAvailablePortalSbpBanks,
 	buildIdempotentSbpReply,
+	buildPortalSbpNspkPayload,
 	deriveDeterministicSbpOrderId,
 	extractBankRequisites,
 	readHeaderString,
@@ -43,7 +44,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 		method: "POST",
 		path: "/payments/create-sbp-qr",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
@@ -211,7 +212,12 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				reply.header("X-Idempotency-Key", idempotencyKey);
 			}
 
-			const sbpNspkPayloadString = `https://qr.nspk.ru/${qrId}?type=02&bank=100000000111&sum=${amountKopecks}&cur=RUB&crc=84A2`;
+			const sbpNspkPayloadString = buildPortalSbpNspkPayload({
+				qrId,
+				amountKopecks,
+				sbpBankId: requisites.sbpBankId,
+				bic: bankBic,
+			});
 			const qrSvg = generateDeterministicQrSvg(sbpNspkPayloadString, 180);
 			const expiresAt = new Date(Date.now() + 72 * 3600 * 1000).toISOString();
 
@@ -243,7 +249,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 		method: "POST",
 		path: "/payments/create-card-order",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				return reply.status(401).send({ error: "Unauthorized" });
 			}
@@ -368,11 +374,23 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 		method: "POST",
 		path: "/payments/confirm-sbp",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
 			}
+
+			const idempotencyKey =
+				readHeaderString(request.headers["idempotency-key"]) ??
+				readHeaderString(request.headers["x-idempotency-key"]);
+			if (!idempotencyKey || !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "IdempotencyKeyRequired",
+					message: "Для подтверждения оплаты СБП требуется валидный заголовок Idempotency-Key (UUIDv7).",
+				});
+			}
+			reply.header("Idempotency-Key", idempotencyKey);
+			reply.header("X-Idempotency-Key", idempotencyKey);
 
 			const parsedBody = confirmSbpBodySchema.safeParse(request.body ?? {});
 			if (!parsedBody.success) {
@@ -705,7 +723,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 		method: "GET",
 		path: "/payments/status",
 		handler: async ({ request, reply }) => {
-			const auth = extractPortalPatient(request);
+			const auth = await extractPortalPatient(request);
 			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
