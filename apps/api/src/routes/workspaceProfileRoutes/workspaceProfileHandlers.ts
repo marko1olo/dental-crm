@@ -10,8 +10,7 @@
 import { eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { isDemoShowcaseMode } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantCtx, withTenantReadCtx, withTenantWriteCtx, type TenantDb } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
@@ -223,6 +222,30 @@ export const defaultResponseSchema = {
 	500: { type: "object", additionalProperties: true },
 };
 
+export async function fetchWorkspaceProfileFlags(
+	tx: TenantDb,
+	organizationId: string,
+): Promise<WorkspaceFeatureFlags> {
+	const [organization] = await tx
+		.select({ flags: schema.organizations.workspaceFeatureFlags })
+		.from(schema.organizations)
+		.where(eq(schema.organizations.id, organizationId))
+		.limit(1);
+
+	return workspaceFlagsFromStorage(organization?.flags);
+}
+
+export async function fetchWorkspaceChairs(
+	tx: TenantDb,
+	organizationId: string,
+): Promise<Array<{ id: string; name: string }>> {
+	return tx
+		.select({ id: schema.chairs.id, name: schema.chairs.name })
+		.from(schema.chairs)
+		.where(eq(schema.chairs.organizationId, organizationId))
+		.orderBy(schema.chairs.name);
+}
+
 /**
  * GET /api/workspace/profile — какие модули включены у ЭТОЙ клиники.
  */
@@ -235,13 +258,11 @@ export async function getWorkspaceProfileHandler(
 		if (!organizationId)
 			return reply.code(401).send({ error: "Unauthorized" });
 
-		const [organization] = await db
-			.select({ flags: schema.organizations.workspaceFeatureFlags })
-			.from(schema.organizations)
-			.where(eq(schema.organizations.id, organizationId))
-			.limit(1);
+		const flags = await withTenantReadCtx(organizationId, (tx) =>
+			fetchWorkspaceProfileFlags(tx, organizationId),
+		);
 
-		return reply.send(workspaceFlagsFromStorage(organization?.flags));
+		return reply.send(flags);
 	} catch (error) {
 		req.log.error({ err: error }, "Failed to get workspace profile");
 		return reply.code(500).send({ error: "Internal Server Error" });
@@ -260,17 +281,84 @@ export async function getWorkspaceChairsHandler(
 		if (!organizationId)
 			return reply.code(401).send({ error: "Unauthorized" });
 
-		const chairs = await db
-			.select({ id: schema.chairs.id, name: schema.chairs.name })
-			.from(schema.chairs)
-			.where(eq(schema.chairs.organizationId, organizationId))
-			.orderBy(schema.chairs.name);
+		const chairs = await withTenantReadCtx(organizationId, (tx) =>
+			fetchWorkspaceChairs(tx, organizationId),
+		);
 
 		return reply.send({ success: true, data: chairs });
 	} catch (error) {
 		req.log.error({ err: error }, "Failed to get workspace chairs");
 		return reply.code(500).send({ error: "Internal Server Error" });
 	}
+}
+
+export async function executeWorkspaceProfileUpdateTx(
+	tx: TenantDb,
+	organizationId: string,
+	req: FastifyRequest,
+	reply: FastifyReply,
+) {
+	const idempotencyKey = extractIdempotencyKey(req);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
+	const rawBody = req.body;
+	const bodyCandidate =
+		rawBody === undefined || rawBody === null ? {} : rawBody;
+	const parsedBody = workspaceProfileBodySchema.safeParse(bodyCandidate);
+	if (!parsedBody.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message:
+				"Проверьте тело запроса: нужен JSON-объект с признаками модулей клиники (не массив и не строка).",
+		});
+	}
+	const incoming = parsedBody.data;
+
+	const [existing] = await tx
+		.select({ flags: schema.organizations.workspaceFeatureFlags })
+		.from(schema.organizations)
+		.where(eq(schema.organizations.id, organizationId))
+		.for("update")
+		.limit(1);
+	if (!existing) {
+		return reply.code(404).send({
+			error: "OrganizationNotFound",
+			message: "Клиника не найдена. Войдите в рабочий кабинет заново.",
+		});
+	}
+
+	const existingRaw =
+		existing.flags &&
+		typeof existing.flags === "object" &&
+		!Array.isArray(existing.flags)
+			? (existing.flags as Record<string, unknown>)
+			: {};
+
+	const merged = workspaceFlagsFromStorage({
+		...workspaceFlagsFromStorage(existing.flags),
+		...incoming,
+	});
+
+	await tx
+		.update(schema.organizations)
+		.set({
+			workspaceFeatureFlags: {
+				...existingRaw,
+				...merged,
+			},
+			updatedAt: new Date(),
+		})
+		.where(eq(schema.organizations.id, organizationId));
+
+	return { ok: true, ...merged };
 }
 
 /**
@@ -285,108 +373,105 @@ export async function updateWorkspaceProfileHandler(
 		if (!organizationId)
 			return reply.code(401).send({ error: "Unauthorized" });
 
-		const idempotencyKey = extractIdempotencyKey(req);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
-			});
-		}
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-
-		/*
-		 * Order (AUTH-first DoD, same as diary/preset):
-		 *   1) auth → 401
-		 *   2) body safeParse → 400 ValidationError RU (before any DB)
-		 *   3) org lookup → 404
-		 *   4) merge + write
-		 * Body BEFORE org: inject tests use a signed token whose org is not in DB;
-		 * if lookup ran first, array/string bodies returned 404 and hid the Zod
-		 * guard. Arrays are typeof object in JS — bare guard used to accept [].
-		 *
-		 * ЧТО БЫЛО. Здесь из тела разбирались семнадцать признаков — и не писался
-		 * НИ ОДИН: `.set({ updatedAt: new Date() })`, после чего ответ { ok: true }.
-		 * То есть «Сохранить» на вкладке «Модули» и выбор в мастере первого запуска
-		 * уходили в пустоту, а программа отвечала, что всё сохранено.
-		 *
-		 * ЧТО СТАЛО. Признаки сливаются с уже сохранённым набором и пишутся в
-		 * organizations.workspace_feature_flags. Слияние, а не замена: клиент
-		 * присылает Partial (WorkspaceFeaturesSelector отправляет один
-		 * переключённый признак), и замена целиком сбросила бы остальные к
-		 * умолчаниям — то есть включила бы обратно всё, что клиника выключила.
-		 *
-		 * Тело проходит через workspaceFlagsFromStorage: неизвестные ключи в базу не
-		 * попадают, а значения не того типа отбрасываются. Иначе одна строка вместо
-		 * true легла бы в базу и вернулась на клиент, где признак читается как
-		 * булев.
-		 */
-		// AUTH already passed. Non-object body (array/string/number) → 400 RU.
-		// null/undefined → empty partial (no-op merge is valid gameplay).
-		const rawBody = req.body;
-		const bodyCandidate =
-			rawBody === undefined || rawBody === null ? {} : rawBody;
-		const parsedBody = workspaceProfileBodySchema.safeParse(bodyCandidate);
-		if (!parsedBody.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message:
-					"Проверьте тело запроса: нужен JSON-объект с признаками модулей клиники (не массив и не строка).",
-			});
-		}
-		const incoming = parsedBody.data;
-
-		const profileResult = await withTenantCtx(organizationId, async (tx) => {
-			const [existing] = await tx
-				.select({ flags: schema.organizations.workspaceFeatureFlags })
-				.from(schema.organizations)
-				.where(eq(schema.organizations.id, organizationId))
-				.for("update")
-				.limit(1);
-			if (!existing) {
-				return { notFound: true as const };
-			}
-
-			const existingRaw =
-				existing.flags &&
-				typeof existing.flags === "object" &&
-				!Array.isArray(existing.flags)
-					? (existing.flags as Record<string, unknown>)
-					: {};
-
-			const merged = workspaceFlagsFromStorage({
-				...workspaceFlagsFromStorage(existing.flags),
-				...incoming,
-			});
-
-			await tx
-				.update(schema.organizations)
-				.set({
-					workspaceFeatureFlags: {
-						...existingRaw,
-						...merged,
-					},
-					updatedAt: new Date(),
-				})
-				.where(eq(schema.organizations.id, organizationId));
-
-			return { notFound: false as const, merged };
-		});
-
-		if (profileResult.notFound) {
-			return reply.code(404).send({
-				error: "OrganizationNotFound",
-				message: "Клиника не найдена. Войдите в рабочий кабинет заново.",
-			});
-		}
-
-		// Возвращаем сохранённый набор: клиент видит, что именно легло в базу.
-		return reply.send({ ok: true, ...profileResult.merged });
+		const result = await withTenantWriteCtx(organizationId, (tx) =>
+			executeWorkspaceProfileUpdateTx(tx, organizationId, req, reply),
+		);
+		if (reply.sent) return reply;
+		return reply.send(result);
 	} catch (error) {
 		req.log.error({ err: error }, "Failed to update workspace profile");
 		return reply.code(500).send({ error: "Internal Server Error" });
 	}
+}
+
+export async function executeWorkspacePresetApplyTx(
+	tx: TenantDb,
+	organizationId: string,
+	presetName: PresetName,
+	req: FastifyRequest,
+	reply: FastifyReply,
+) {
+	const idempotencyKey = extractIdempotencyKey(req);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
+	const flags =
+		WORKSPACE_PRESETS[presetName as Exclude<PresetName, "custom">];
+	if (!flags) {
+		return reply
+			.code(400)
+			.send({ error: `Unknown preset: ${presetName}` });
+	}
+
+	const rawBody = req.body;
+	const bodyCandidate =
+		rawBody === undefined || rawBody === null ? {} : rawBody;
+	const parsedBody = workspacePresetBodySchema.safeParse(bodyCandidate);
+	if (!parsedBody.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message:
+				"Тело запроса должно быть JSON-объектом с опциональными numberOfChairs (целое > 0) и hasPediatricMode (boolean).",
+		});
+	}
+
+	const finalFlags = { ...flags };
+	if (parsedBody.data.hasPediatricMode !== undefined) {
+		finalFlags.hasPediatricMode = parsedBody.data.hasPediatricMode;
+	}
+
+	const [existing] = await tx
+		.select({ flags: schema.organizations.workspaceFeatureFlags })
+		.from(schema.organizations)
+		.where(eq(schema.organizations.id, organizationId))
+		.for("update")
+		.limit(1);
+	if (!existing) {
+		return reply.code(404).send({
+			error: "OrganizationNotFound",
+			message: "Клиника не найдена. Войдите в рабочий кабинет заново.",
+		});
+	}
+	const existingRaw =
+		existing.flags &&
+		typeof existing.flags === "object" &&
+		!Array.isArray(existing.flags)
+			? (existing.flags as Record<string, unknown>)
+			: {};
+	const savedFlags = workspaceFlagsFromStorage({
+		...workspaceFlagsFromStorage(existing.flags),
+		...finalFlags,
+		workspacePreset: presetName,
+	});
+
+	await tx
+		.update(schema.organizations)
+		.set({
+			workspaceFeatureFlags: {
+				...existingRaw,
+				...savedFlags,
+			},
+			updatedAt: new Date(),
+		})
+		.where(eq(schema.organizations.id, organizationId));
+
+	const numberOfChairs = parsedBody.data.numberOfChairs;
+	setImmediate(() => {
+		seedDemoDataForPreset(
+			organizationId,
+			presetName,
+			numberOfChairs,
+		).catch((e) => req.log.error({ err: e }, "Workspace preset demo seeding failed"));
+	});
+
+	return { ok: true, preset: presetName, flags: savedFlags };
 }
 
 /**
@@ -404,112 +489,18 @@ export async function applyWorkspacePresetHandler(
 		if (!organizationId)
 			return reply.code(401).send({ error: "Unauthorized" });
 
-		const idempotencyKey = extractIdempotencyKey(req);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
-			});
-		}
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-
 		const presetName = req.params.name as PresetName;
-		const flags =
-			WORKSPACE_PRESETS[presetName as Exclude<PresetName, "custom">];
-		if (!flags)
-			return reply
-				.code(400)
-				.send({ error: `Unknown preset: ${presetName}` });
-
-		// Body optional: missing/undefined → empty overrides. Non-object / bad types → 400.
-		const rawBody = req.body;
-		const bodyCandidate =
-			rawBody === undefined || rawBody === null ? {} : rawBody;
-		const parsedBody = workspacePresetBodySchema.safeParse(bodyCandidate);
-		if (!parsedBody.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message:
-					"Тело запроса должно быть JSON-объектом с опциональными numberOfChairs (целое > 0) и hasPediatricMode (boolean).",
-			});
-		}
-
-		const finalFlags = { ...flags };
-		if (parsedBody.data.hasPediatricMode !== undefined) {
-			finalFlags.hasPediatricMode = parsedBody.data.hasPediatricMode;
-		}
-
-		/*
-		 * ЧТО БЫЛО. `.set({ ...finalFlags, updatedAt })` — признаки пресета
-		 * раскладывались так, будто это КОЛОНКИ таблицы organizations. Колонок с
-		 * такими именами нет; drizzle собирает SET только из известных колонок, а
-		 * остальные ключи молча отбрасывает. То есть применение пресета не меняло
-		 * ничего, кроме updatedAt, и отвечало { ok: true, preset, flags } — клиент
-		 * видел выбранный пресет, база о нём не знала.
-		 *
-		 * Ошибку не поймали типы: значения WORKSPACE_PRESETS описаны свободно, и
-		 * проверка типов на этом выражении проходит.
-		 *
-		 * Признаки складываются с уже сохранёнными: пресет задаёт не все, а
-		 * незаданные не должны сбрасываться к умолчаниям. Имя пресета пишется тем же
-		 * значением, что вернётся клиенту.
-		 */
-		const presetResult = await withTenantCtx(organizationId, async (tx) => {
-			const [existing] = await tx
-				.select({ flags: schema.organizations.workspaceFeatureFlags })
-				.from(schema.organizations)
-				.where(eq(schema.organizations.id, organizationId))
-				.for("update")
-				.limit(1);
-			if (!existing) {
-				return { notFound: true as const };
-			}
-			const existingRaw =
-				existing.flags &&
-				typeof existing.flags === "object" &&
-				!Array.isArray(existing.flags)
-					? (existing.flags as Record<string, unknown>)
-					: {};
-			const savedFlags = workspaceFlagsFromStorage({
-				...workspaceFlagsFromStorage(existing.flags),
-				...finalFlags,
-				workspacePreset: presetName,
-			});
-
-			await tx
-				.update(schema.organizations)
-				.set({
-					workspaceFeatureFlags: {
-						...existingRaw,
-						...savedFlags,
-					},
-					updatedAt: new Date(),
-				})
-				.where(eq(schema.organizations.id, organizationId));
-
-			return { notFound: false as const, savedFlags };
-		});
-
-		if (presetResult.notFound) {
-			return reply.code(404).send({
-				error: "OrganizationNotFound",
-				message: "Клиника не найдена. Войдите в рабочий кабинет заново.",
-			});
-		}
-
-		const savedFlags = presetResult.savedFlags;
-
-		// Async seeding — don't block response
-		seedDemoDataForPreset(
-			organizationId,
-			presetName,
-			parsedBody.data.numberOfChairs,
-		).catch((e) => req.log.error({ err: e }, "Workspace preset demo seeding failed"));
-
-		// Отдаём то, что легло в базу, а не то, что было в справочнике пресетов.
-		return reply.send({ ok: true, preset: presetName, flags: savedFlags });
+		const result = await withTenantWriteCtx(organizationId, (tx) =>
+			executeWorkspacePresetApplyTx(
+				tx,
+				organizationId,
+				presetName,
+				req,
+				reply,
+			),
+		);
+		if (reply.sent) return reply;
+		return reply.send(result);
 	} catch (error) {
 		req.log.error({ err: error }, "Failed to apply workspace preset");
 		return reply.code(500).send({ error: "Internal Server Error" });

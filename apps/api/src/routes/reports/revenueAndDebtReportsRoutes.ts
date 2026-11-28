@@ -4,8 +4,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
-import { defineStreamRoute } from "../../core/routeFactories.js";
-import { withTenantReadCtx } from "../../db/rls.js";
+import { defineTenantQuery } from "../../core/routeFactories.js";
 import { requireExecutiveAccess } from "../analytics/executiveAccessGuard.js";
 import {
 	appointmentFunnel,
@@ -23,14 +22,28 @@ import {
 	withTenantReportScope,
 } from "./reportsShared.js";
 
+const EXECUTIVE_AUTH_OPTIONS = {
+	allowAdminSecretBypass: true,
+	allowClinicTokenWithoutStaff: true,
+	allowUnverifiedHeaderRead: true,
+} as const;
+
+const executivePermission = {
+	customCheck: async (
+		_principal: unknown,
+		request: Parameters<typeof requireExecutiveAccess>[0],
+		reply: Parameters<typeof requireExecutiveAccess>[1],
+	) => Boolean(await requireExecutiveAccess(request, reply)),
+};
+
 export async function registerRevenueAndDebtReportsRoutes(app: FastifyInstance) {
 	/**
 	 * Динамика выручки за выбранный период с детализацией по дням, неделям или месяцам.
 	 */
-	defineStreamRoute(app, {
-		method: "GET",
+	defineTenantQuery(app, {
 		path: "/api/reports/revenue",
-		permission: "public",
+		permission: executivePermission,
+		authOptions: EXECUTIVE_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => {
 			return withTenantReportScope(
 				request,
@@ -56,10 +69,10 @@ export async function registerRevenueAndDebtReportsRoutes(app: FastifyInstance) 
 	 * Сводный финансовый пульт руководителя: Выручка за период, наряды, средний чек и
 	 * разбивка по реальным типам оплат (Наличные, Банковские карты, СБП QR, Депозиты).
 	 */
-	defineStreamRoute(app, {
-		method: "GET",
+	defineTenantQuery(app, {
 		path: "/api/reports/financial-summary",
-		permission: "public",
+		permission: executivePermission,
+		authOptions: EXECUTIVE_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => {
 			return withTenantReportScope(
 				request,
@@ -81,14 +94,11 @@ export async function registerRevenueAndDebtReportsRoutes(app: FastifyInstance) 
 	/**
 	 * Дебиторская задолженность пациентов на текущую дату отчёта.
 	 */
-	defineStreamRoute(app, {
-		method: "GET",
+	defineTenantQuery(app, {
 		path: "/api/reports/receivables",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const organizationId = await requireExecutiveAccess(request, reply);
-			if (!organizationId) return;
-
+		permission: executivePermission,
+		authOptions: EXECUTIVE_AUTH_OPTIONS,
+		handler: async ({ tx, organizationId, request, reply }) => {
 			const parsed = periodQuerySchema.safeParse(request.query);
 			if (!parsed.success)
 				return badRequest(reply, "Проверьте параметры отчёта.");
@@ -98,19 +108,17 @@ export async function registerRevenueAndDebtReportsRoutes(app: FastifyInstance) 
 				options.minDebtRub = parsed.data.minDebtRub;
 			if (parsed.data.limit !== undefined) options.limit = parsed.data.limit;
 
-			return withTenantReadCtx(organizationId, (tx) =>
-				receivables(organizationId, options, tx),
-			);
+			return receivables(organizationId, options, tx);
 		},
 	});
 
 	/**
 	 * Единая сводка для руководителя: ключевые показатели клиники одним запросом.
 	 */
-	defineStreamRoute(app, {
-		method: "GET",
+	defineTenantQuery(app, {
 		path: "/api/reports/summary",
-		permission: "public",
+		permission: executivePermission,
+		authOptions: EXECUTIVE_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => {
 			return withTenantReportScope(
 				request,

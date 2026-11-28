@@ -8,7 +8,9 @@ import { createApiLogger, safeLogError } from "../../observability/index.js";
 import {
 	type BackupResult,
 	backupsDirectory,
+	CLUSTER_BACKUP_MAGIC,
 	ENCRYPTION_ALGORITHM,
+	GCM_AUTH_TAG_LENGTH,
 	IV_LENGTH,
 	pruneOldBackups,
 	removePartialFile,
@@ -107,8 +109,8 @@ function rejectHollowBackup(
 	stats: DumpContentStats,
 	sizeBytes: number,
 ): string | null {
-	if (sizeBytes <= IV_LENGTH) {
-		return "копия состоит из одного вектора инициализации: pg_dump не отдал ни байта.";
+	if (sizeBytes <= CLUSTER_BACKUP_MAGIC.length + IV_LENGTH + GCM_AUTH_TAG_LENGTH) {
+		return "копия состоит из одного заголовка шифрования: pg_dump не отдал ни байта.";
 	}
 	if (stats.unterminatedCopy) {
 		return `копия оборвана внутри секции COPY (секций ${stats.copyBlocks}, строк данных ${stats.dataRows}): восстановить её нельзя.`;
@@ -268,6 +270,7 @@ export async function createEncryptedBackup(): Promise<BackupResult> {
 			iv,
 		);
 		const writeStream = fs.createWriteStream(filePath, { mode: 0o600 });
+		writeStream.write(CLUSTER_BACKUP_MAGIC);
 		writeStream.write(iv);
 
 		const serverMajor = await serverMajorVersion();
@@ -306,7 +309,7 @@ export async function createEncryptedBackup(): Promise<BackupResult> {
 			logger.warn({ stderr: text.trim() }, "pg_dump stderr stream warning");
 		});
 
-		pgDump.stdout.pipe(inspector).pipe(cipher).pipe(writeStream);
+		pgDump.stdout.pipe(inspector).pipe(cipher).pipe(writeStream, { end: false });
 
 		const outcome = await new Promise<BackupResult>((resolve) => {
 			let settled = false;
@@ -315,6 +318,19 @@ export async function createEncryptedBackup(): Promise<BackupResult> {
 				settled = true;
 				resolve(result);
 			};
+
+			cipher.once("end", () => {
+				try {
+					const authTag = cipher.getAuthTag();
+					writeStream.end(authTag);
+				} catch (tagErr) {
+					writeStream.destroy();
+					settle({
+						success: false,
+						error: `Ошибка финализации AuthTag: ${tagErr instanceof Error ? tagErr.message : String(tagErr)}`,
+					});
+				}
+			});
 
 			pgDump.on("error", (error) => {
 				writeStream.destroy();

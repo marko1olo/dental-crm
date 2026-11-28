@@ -12,7 +12,7 @@ export const LEGACY_OFFLINE_STAFF_AUDIT_KEY = "dente_offline_staff_audit_buffer"
 export const MAX_OFFLINE_STAFF_EVENTS = 200;
 export const AUTO_FLUSH_INTERVAL_MS = 10_000;
 export const BATCH_SIZE_THRESHOLD = 10;
-export const STAFF_AUDIT_IDB_NAME = "dente_staff_audit_db";
+export const STAFF_AUDIT_IDB_NAME = "dente_clinic_outbox_v1";
 export const STAFF_AUDIT_IDB_STORE = "staff_events";
 
 export interface RecordStaffActionInput {

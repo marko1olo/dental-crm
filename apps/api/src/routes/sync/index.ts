@@ -3,13 +3,7 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import {
-	requireClinicalMutationAccess,
-	requireClinicalReadAccess,
-	requireResolvedOrganizationId,
-} from "../../accessGuard.js";
 import { defineStreamRoute } from "../../core/routeFactories.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { SyncStreamTransport } from "../../services/sync/syncGateway/syncStreamTransport.js";
 import { SyncGatewayService } from "../../services/sync/syncGatewayService.js";
 import { SyncAdministrativeHandlers } from "./syncAdministrativeHandlers.js";
@@ -23,6 +17,19 @@ const syncPullQuerySchema = z
 	})
 	.strict();
 
+const SYNC_AUTH_OPTIONS = {
+	allowAdminSecretBypass: true,
+	allowClinicTokenWithoutStaff: true,
+} as const;
+
+const SYNC_WRITE_PERMISSION = {
+	anyOf: ["clinical.write" as const, "schedule.write" as const, "patients.write" as const],
+};
+
+const SYNC_READ_PERMISSION = {
+	anyOf: ["clinical.read" as const, "schedule.read" as const, "patients.read" as const],
+};
+
 export async function registerSyncRoutes(app: FastifyInstance) {
 	/**
 	 * Главный шлюз синхронизации офлайн-очереди (Push Batch).
@@ -31,24 +38,12 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sync/gateway",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			if (
-				!(await requireClinicalMutationAccess(
-					request,
-					reply,
-					"sync gateway push",
-				))
-			) {
-				return;
+		permission: SYNC_WRITE_PERMISSION,
+		authOptions: SYNC_AUTH_OPTIONS,
+		handler: async ({ principal, organizationId, request, reply }) => {
+			if (!organizationId) {
+				return reply.code(401).send({ error: "AuthRequired" });
 			}
-
-			const orgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"sync gateway push",
-			);
-			if (!orgId) return;
 
 			const parsed = syncPushBatchRequestSchema.safeParse(request.body);
 			if (!parsed.success) {
@@ -60,11 +55,10 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const identity = getRequestIdentity(request);
 			const result = await SyncGatewayService.processPushBatch(
-				orgId,
+				organizationId,
 				parsed.data,
-				identity.userId || undefined,
+				principal?.userId || undefined,
 				{ logger: request.log },
 			);
 
@@ -78,24 +72,12 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sync/push",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			if (
-				!(await requireClinicalMutationAccess(
-					request,
-					reply,
-					"sync push",
-				))
-			) {
-				return;
+		permission: SYNC_WRITE_PERMISSION,
+		authOptions: SYNC_AUTH_OPTIONS,
+		handler: async ({ principal, organizationId, request, reply }) => {
+			if (!organizationId) {
+				return reply.code(401).send({ error: "AuthRequired" });
 			}
-
-			const orgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"sync push",
-			);
-			if (!orgId) return;
 
 			const parsed = syncPushBatchRequestSchema.safeParse(request.body);
 			if (!parsed.success) {
@@ -107,11 +89,10 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const identity = getRequestIdentity(request);
 			const result = await SyncGatewayService.processPushBatch(
-				orgId,
+				organizationId,
 				parsed.data,
-				identity.userId || undefined,
+				principal?.userId || undefined,
 				{ logger: request.log },
 			);
 
@@ -125,24 +106,12 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/sync/pull",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			if (
-				!(await requireClinicalReadAccess(
-					request,
-					reply,
-					"sync pull",
-				))
-			) {
-				return;
+		permission: SYNC_READ_PERMISSION,
+		authOptions: SYNC_AUTH_OPTIONS,
+		handler: async ({ organizationId, request, reply }) => {
+			if (!organizationId) {
+				return reply.code(401).send({ error: "AuthRequired" });
 			}
-
-			const orgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"sync pull",
-			);
-			if (!orgId) return;
 
 			const parsed = syncPullQuerySchema.safeParse(request.query ?? {});
 			if (!parsed.success) {
@@ -153,7 +122,7 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const result = await SyncStreamTransport.pullChanges(orgId, parsed.data.since, {
+			const result = await SyncStreamTransport.pullChanges(organizationId, parsed.data.since, {
 				limit: parsed.data.limit,
 				cursor: parsed.data.cursor,
 			});
@@ -164,24 +133,12 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sync/pull",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			if (
-				!(await requireClinicalReadAccess(
-					request,
-					reply,
-					"sync pull post",
-				))
-			) {
-				return;
+		permission: SYNC_READ_PERMISSION,
+		authOptions: SYNC_AUTH_OPTIONS,
+		handler: async ({ organizationId, request, reply }) => {
+			if (!organizationId) {
+				return reply.code(401).send({ error: "AuthRequired" });
 			}
-
-			const orgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"sync pull post",
-			);
-			if (!orgId) return;
 
 			const parsed = syncPullQuerySchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
@@ -191,7 +148,7 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 					issues: parsed.error.issues,
 				});
 			}
-			const result = await SyncStreamTransport.pullChanges(orgId, parsed.data.since, {
+			const result = await SyncStreamTransport.pullChanges(organizationId, parsed.data.since, {
 				limit: parsed.data.limit,
 				cursor: parsed.data.cursor,
 			});
@@ -205,31 +162,36 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/sync/admin/queue/stats",
-		permission: "public",
+		permission: "settings.read",
+		authOptions: SYNC_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => SyncAdministrativeHandlers.getQueueStats(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/sync/admin/dlq",
-		permission: "public",
+		permission: "settings.read",
+		authOptions: SYNC_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => SyncAdministrativeHandlers.getDeadLetterQueue(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sync/admin/replay",
-		permission: "public",
+		permission: "settings.write",
+		authOptions: SYNC_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => SyncAdministrativeHandlers.replaySyncJob(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/sync/admin/vectors",
-		permission: "public",
+		permission: "settings.read",
+		authOptions: SYNC_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => SyncAdministrativeHandlers.getEntityVectorsAudit(request, reply),
 	});
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sync/admin/recover-stale",
-		permission: "public",
+		permission: "settings.write",
+		authOptions: SYNC_AUTH_OPTIONS,
 		handler: async ({ request, reply }) => SyncAdministrativeHandlers.recoverStaleTasks(request, reply),
 	});
 }

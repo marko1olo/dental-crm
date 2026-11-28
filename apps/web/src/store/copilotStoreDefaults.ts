@@ -49,13 +49,14 @@ export function detectRuntimeEnvironment(): CopilotRuntimeEnvironment {
 	}
 	const isCoarse = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
 	const isTouch = (typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints && navigator.maxTouchPoints > 0)) || ("ontouchstart" in window);
-	const isPhoneScreen = typeof window.innerWidth === "number" && window.innerWidth > 0 && window.innerWidth < 768;
-	const isSmallScreen = typeof window.innerWidth === "number" && window.innerWidth <= 1024;
+	const viewportWidth = typeof window.innerWidth === "number" ? window.innerWidth : 0;
+	const isPhoneScreen = viewportWidth > 0 && viewportWidth < 768;
+	const isTabletScreen = viewportWidth >= 768 && viewportWidth < 1024;
 
 	if ((isCoarse || isTouch) && isPhoneScreen) {
 		return "mobile_tablet";
 	}
-	if (isCoarse || (isTouch && isSmallScreen)) {
+	if ((isCoarse || isTouch) && isTabletScreen) {
 		return "chairside_tablet";
 	}
 	return "web_browser";

@@ -44,9 +44,7 @@ export function useScheduleRealtime(
 	onScheduleChanged: (() => void) | undefined,
 ) {
 	const wsUrl = (() => {
-		const configured = (
-			import.meta as unknown as { env?: Record<string, string> }
-		).env?.VITE_WS_URL;
+		const configured = import.meta.env?.VITE_WS_URL;
 		if (configured) return configured;
 		if (typeof window === "undefined") return "";
 		// Через хост страницы, а не жёстко на :4100: так работает и прокси

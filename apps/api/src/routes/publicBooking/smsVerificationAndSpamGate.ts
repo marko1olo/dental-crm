@@ -12,6 +12,7 @@ import { namedDevelopmentModeActive } from "../../accessGuard.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { organizations, patients, portalOtpCodes } from "../../db/schema.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { hashCredential, verifyCredential } from "../../utils/cryptoHelper.js";
 import { resolveChannelCredentials, sendThroughChannel } from "../../services/communications/channelRouter.js";
 import { RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS } from "./types.js";
@@ -55,7 +56,11 @@ export async function resolveDefaultOrganizationId(targetOrgId?: string): Promis
 }
 
 // 1. General IP request limiter for endpoints
-const ipRequestCounts = new Map<string, { count: number; resetAt: number }>();
+const ipRequestCounts = new BoundedTtlMap<string, { count: number; resetAt: number }>({
+	maxEntries: 10_000,
+	ttlMs: RATE_LIMIT_WINDOW_MS,
+	touchOnGet: false,
+});
 
 export function isRateLimited(ip: string): boolean {
 	const now = Date.now();
@@ -75,8 +80,16 @@ export function resetRateLimitsForTesting(): void {
 
 // 2. Specialized OTP Rate Limiter & Engine
 export class BookingVerificationEngine {
-	private otpChallenges = new Map<string, OtpChallenge>();
-	private ipOtpRequests = new Map<string, { count: number; windowStart: number }>();
+	private otpChallenges = new BoundedTtlMap<string, OtpChallenge>({
+		maxEntries: 10_000,
+		ttlMs: OTP_PHONE_WINDOW_MS,
+		touchOnGet: false,
+	});
+	private ipOtpRequests = new BoundedTtlMap<string, { count: number; windowStart: number }>({
+		maxEntries: 10_000,
+		ttlMs: OTP_PHONE_WINDOW_MS,
+		touchOnGet: false,
+	});
 
 	private checkAndRecordIp(clientIp: string, now: number): { allowed: boolean; message?: string } {
 		const ipEntry = this.ipOtpRequests.get(clientIp);

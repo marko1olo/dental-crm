@@ -415,10 +415,32 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		});
 	};
 
+	const lanAuthOptions = {
+		allowAdminSecretBypass: true,
+		allowClinicTokenWithoutStaff: true,
+	} as const;
+	const lanReadPermission = {
+		anyOf: [
+			"workstation.read" as const,
+			"clinical.read" as const,
+			"schedule.read" as const,
+			"settings.read" as const,
+		],
+	};
+	const lanWritePermission = {
+		anyOf: [
+			"workstation.write" as const,
+			"clinical.write" as const,
+			"schedule.write" as const,
+			"settings.write" as const,
+		],
+	};
+
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/network/pair/generate",
-		permission: "public",
+		permission: lanWritePermission,
+		authOptions: lanAuthOptions,
 		handler: handlePairGenerate,
 	});
 
@@ -426,10 +448,9 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * POST /api/network/pair/verify
 	 * Validates the scanned pairing token from iPad/tablet with single-use nonce guarantee and optional PIN check.
 	 */
-	defineStreamRoute(app, {
+	definePublicRoute(app, {
 		method: "POST",
 		path: "/api/network/pair/verify",
-		permission: "public",
 		handler: async ({ request, reply }) => {
 		const parseRes = verifyPairSchema.safeParse(request.body);
 		if (!parseRes.success) {
@@ -635,7 +656,8 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/network/lan-mesh/handshake",
-		permission: "public",
+		permission: lanReadPermission,
+		authOptions: lanAuthOptions,
 		handler: async ({ request, reply }) => {
 			const context = await requireClinicalReadContext(request, reply, "lan mesh handshake read");
 			if (!context) return;
@@ -660,7 +682,8 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/network/lan-mesh/handshake",
-		permission: "public",
+		permission: lanWritePermission,
+		authOptions: lanAuthOptions,
 		schema: {
 			description: "LAN mesh handshake with mandatory RFC 9562 Idempotency-Key",
 			headers: {
@@ -704,7 +727,8 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/network/lan-mesh/status",
-		permission: "public",
+		permission: lanReadPermission,
+		authOptions: lanAuthOptions,
 		handler: async ({ request, reply }) => {
 			const context = await requireClinicalReadContext(request, reply, "lan mesh status");
 			if (!context) return;
@@ -730,7 +754,8 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/network/lan-mesh/mutations",
-		permission: "public",
+		permission: lanWritePermission,
+		authOptions: lanAuthOptions,
 		handler: async ({ request, reply }) => {
 		const context = await requireClinicalMutationContext(request, reply, "lan mesh mutations");
 		if (!context) return;
@@ -857,7 +882,8 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/sync/mesh/exchange",
-		permission: "public",
+		permission: lanWritePermission,
+		authOptions: lanAuthOptions,
 		handler: async ({ request, reply }) => {
 		const context = await requireClinicalMutationContext(request, reply, "lan mesh exchange");
 		if (!context) return;
@@ -986,7 +1012,8 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/lan/p2p/dispatch",
-		permission: "public",
+		permission: lanWritePermission,
+		authOptions: lanAuthOptions,
 		handler: async ({ request, reply }) => {
 		const context = await requireClinicalMutationContext(request, reply, "lan p2p dispatch");
 		if (!context) return;
@@ -1047,7 +1074,8 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/network/lan-mesh/discover",
-		permission: "public",
+		permission: lanWritePermission,
+		authOptions: lanAuthOptions,
 		handler: async ({ request, reply }) => {
 			const context = await requireClinicalMutationContext(request, reply, "lan mesh discover");
 			if (!context) return;
@@ -1076,7 +1104,8 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/network/mesh/auto-join/status",
-		permission: "public",
+		permission: lanReadPermission,
+		authOptions: lanAuthOptions,
 		handler: async ({ request, reply }) => {
 			const context = await requireClinicalReadContext(request, reply, "lan mesh auto-join status");
 			if (!context) return;
@@ -1097,7 +1126,8 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/network/mesh/auto-join/rotate",
-		permission: "public",
+		permission: lanWritePermission,
+		authOptions: lanAuthOptions,
 		handler: async ({ request, reply }) => {
 			const context = await requireClinicalMutationContext(
 				request,

@@ -1,6 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { defineStreamRoute } from "../../core/routeFactories.js";
-import { withTenantReadCtx } from "../../db/rls.js";
+import { defineTenantQuery } from "../../core/routeFactories.js";
 import { requireExecutiveAccess } from "./executiveAccessGuard.js";
 import {
 	calculateCohortLtv,
@@ -12,18 +11,20 @@ export type { CohortCalculationResult, CohortLtvItem };
 export { calculateCohortLtv };
 
 export async function registerCohortRoutes(app: FastifyInstance) {
-	defineStreamRoute(app, {
-		method: "GET",
+	defineTenantQuery(app, {
 		path: "/api/analytics/cohorts",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const orgId = await requireExecutiveAccess(request, reply);
-			if (!orgId) return;
-
+		permission: {
+			customCheck: async (_principal, request, reply) =>
+				Boolean(await requireExecutiveAccess(request, reply)),
+		},
+		authOptions: {
+			allowAdminSecretBypass: true,
+			allowClinicTokenWithoutStaff: true,
+			allowUnverifiedHeaderRead: true,
+		},
+		handler: async ({ tx, organizationId: orgId, request, reply }) => {
 			try {
-				const result = await withTenantReadCtx(orgId, (tx) =>
-					calculateCohortLtv(orgId, new Date(), tx),
-				);
+				const result = await calculateCohortLtv(orgId, new Date(), tx);
 				return { success: true, data: result };
 			} catch (e) {
 				request.log.error({ err: e }, "Не удалось рассчитать когортный анализ");

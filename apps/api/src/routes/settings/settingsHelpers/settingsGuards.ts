@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { unguardedBypassAllowed } from "../../../accessGuard.js";
+import { configuredClinicalAccessSecret, unguardedBypassAllowed } from "../../../accessGuard.js";
 import { withSuperuserBypass } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import { getRequestIdentity, verifyActiveStaffSession } from "../../../security/identity.js";
@@ -62,9 +62,37 @@ export function settingsUnguardedMutationsAllowed(): boolean {
  * обработчика, до него не выполнено ни одного запроса на запись, и откладывать
  * фиксацию нечего.
  */
+export interface SettingsAccessOptions {
+	/** Запрещает доступ по голому clinicToken без личного staffToken (если не передан админ-секрет). */
+	requireStaffSessionForVerifiedClinic?: boolean;
+}
+
+function hasValidSettingsAdminSecret(request: FastifyRequest): boolean {
+	const providedSecret = request.headers[denteAdminSecretHeader];
+	const normalizedProvidedSecret = Array.isArray(providedSecret)
+		? providedSecret[0]
+		: providedSecret;
+	const candidate =
+		typeof normalizedProvidedSecret === "string"
+			? normalizedProvidedSecret
+			: null;
+	if (!candidate) return false;
+
+	const settingsSecret = configuredSettingsAdminSecret();
+	if (settingsSecret && timingSafeSecretEqual(candidate, settingsSecret)) {
+		return true;
+	}
+	const clinicalSecret = configuredClinicalAccessSecret();
+	if (clinicalSecret && timingSafeSecretEqual(candidate, clinicalSecret)) {
+		return true;
+	}
+	return false;
+}
+
 export async function requireSettingsAccess(
 	request: FastifyRequest,
 	reply: FastifyReply,
+	options?: SettingsAccessOptions,
 ): Promise<string | null> {
 	// Авторизация сотрудника / кабинета клиники по подписанному токену сессии
 	const identity = getRequestIdentity(request);
@@ -78,6 +106,19 @@ export async function requireSettingsAccess(
 				identity.sessionId,
 			);
 			if (!sessionOk) return null;
+			return identity.organizationId;
+		}
+		if (
+			options?.requireStaffSessionForVerifiedClinic &&
+			!hasValidSettingsAdminSecret(request) &&
+			!settingsUnguardedMutationsAllowed()
+		) {
+			reply.code(401).send({
+				error: "StaffAuthRequired",
+				message:
+					"Требуется личная авторизация сотрудника (x-dente-staff-token) или секрет администратора клиники.",
+			});
+			return null;
 		}
 		return identity.organizationId;
 	}
@@ -179,7 +220,9 @@ export async function requireSettingsMutationAccess(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<string | null> {
-	const orgId = await requireSettingsAccess(request, reply);
+	const orgId = await requireSettingsAccess(request, reply, {
+		requireStaffSessionForVerifiedClinic: true,
+	});
 	if (!orgId) return null;
 
 	const identity = getRequestIdentity(request);
@@ -244,7 +287,9 @@ export async function requireSettingsSensitiveReadAccess(
 	if (!enforcePermissionWhenStaffKnown(request, reply, "settings.read")) {
 		return null;
 	}
-	return requireSettingsAccess(request, reply);
+	return requireSettingsAccess(request, reply, {
+		requireStaffSessionForVerifiedClinic: true,
+	});
 }
 
 export type SettingsPermission = Permission;

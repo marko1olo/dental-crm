@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowRight, Building2, Eye, EyeOff, KeyRound, Mail, Phone, Sparkles } from "lucide-react";
+import { ArrowRight, Building2, Compass, Eye, EyeOff, KeyRound, Mail, Phone } from "lucide-react";
 import type { IdentityType } from "../authSmartIdentity";
 
 interface UserLoginFormFieldsProps {
@@ -106,7 +106,7 @@ export function UserLoginFormFields({
 				disabled={loading}
 				className="auth-demo-btn"
 			>
-				<Sparkles size={16} /> Быстрый вход в Демо-тур (Без пароля)
+				<Compass size={16} /> Быстрый вход в Демо-тур (Без пароля)
 			</button>
 		</form>
 	);

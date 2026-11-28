@@ -18,6 +18,7 @@ import {
 	clearPaymentMemoryCache,
 	enqueueOfflinePayment,
 } from "../offline/offlinePaymentQueue";
+import { backupStaffEventsToIndexedDb } from "../services/logging/telemetry/batchTransport";
 import { openMediaVaultDb } from "../services/media/offlineMediaVault";
 import { OFFLINE_DB_NAME } from "../services/offline/storage/constants";
 import {
@@ -182,7 +183,7 @@ describe("Unified Offline Outbox SSOT & 4MB Chunked Upload", () => {
 		globalThis.fetch = originalFetch;
 	});
 
-	it("opens strictly one SSOT IndexedDB ('dente-crm-offline-outbox') across all subsystems and leaks 0 schedule/payment keys into localStorage", async () => {
+	it("opens strictly one SSOT IndexedDB ('dente_clinic_outbox_v1') across all subsystems and leaks 0 schedule/payment keys into localStorage", async () => {
 		const openedDbNames: string[] = [];
 		const idbMock = createTrackingIndexedDbMock(openedDbNames);
 		const localStorageMock = createLocalStorageMock();
@@ -201,6 +202,17 @@ describe("Unified Offline Outbox SSOT & 4MB Chunked Upload", () => {
 		await saveToothStatesToIndexedDb("pat-unified-1", [
 			{ toothNumber: 16, state: "Caries", surfaces: ["O"] },
 		]);
+		backupStaffEventsToIndexedDb([
+			{
+				id: "audit-unified-1",
+				organizationId: "org-1",
+				actionType: "emr_open",
+				entityType: "patient",
+				entityId: "pat-unified-1",
+				occurredAt: new Date().toISOString(),
+				details: {},
+			},
+		]);
 
 		const voiceQueue = new VoiceOfflineQueue({
 			autoSyncIntervalMs: 0,
@@ -214,7 +226,7 @@ describe("Unified Offline Outbox SSOT & 4MB Chunked Upload", () => {
 
 		const uniqueDbNames = Array.from(new Set(openedDbNames));
 		assert.deepEqual(uniqueDbNames, [OFFLINE_DB_NAME]);
-		assert.equal(uniqueDbNames[0], "dente-crm-offline-outbox");
+		assert.equal(uniqueDbNames[0], "dente_clinic_outbox_v1");
 
 		// Cache 40 days of schedules -> bounded at 31 and 0 localStorage leaks
 		for (let i = 1; i <= 40; i++) {

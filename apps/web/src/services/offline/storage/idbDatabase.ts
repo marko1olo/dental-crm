@@ -7,6 +7,7 @@ import {
 	DICOM_WORKBENCH_DRAFTS_STORE_NAME,
 	DRAFTS_STORE_NAME,
 	ICD10_CACHE_STORE_NAME,
+	LEGACY_OFFLINE_DB_NAME,
 	MEDIA_BLOBS_STORE_NAME,
 	MEDIA_ITEMS_STORE_NAME,
 	MPR_WORKBENCH_DRAFTS_STORE_NAME,
@@ -19,6 +20,7 @@ import {
 	PENDING_VISIT_SAVES_STORE_NAME,
 	PRICELIST_CACHE_STORE_NAME,
 	SCHEDULES_CACHE_STORE_NAME,
+	STAFF_AUDIT_STORE_NAME,
 	VOICE_TRANSCRIPTIONS_STORE_NAME,
 } from "./constants";
 import { clearInMemoryOfflineStorage } from "./idbMemory";
@@ -42,6 +44,82 @@ function getIndexedDbFactory(): IDBFactory | null {
 		return globalThis.indexedDB;
 	}
 	return null;
+}
+
+const LEGACY_MIGRATION_DONE_KEY = "dente_clinic_outbox_v1_migrated";
+
+async function migrateLegacyOutboxIfPresent(
+	idb: IDBFactory,
+	targetDb: IDBDatabase,
+): Promise<void> {
+	if (
+		typeof localStorage !== "undefined" &&
+		localStorage.getItem(LEGACY_MIGRATION_DONE_KEY) === "1"
+	) {
+		return;
+	}
+	if (typeof idb.databases !== "function") return;
+	const dbs = await idb.databases();
+	if (!dbs.some((d) => d.name === LEGACY_OFFLINE_DB_NAME)) {
+		return;
+	}
+	await new Promise<void>((resolve) => {
+		const legacyReq = idb.open(LEGACY_OFFLINE_DB_NAME);
+		legacyReq.onerror = () => resolve();
+		legacyReq.onsuccess = () => {
+			const legacyDb = legacyReq.result;
+			const stores = Array.from(legacyDb.objectStoreNames).filter((name) =>
+				targetDb.objectStoreNames.contains(name),
+			);
+			if (stores.length === 0) {
+				legacyDb.close();
+				if (typeof localStorage !== "undefined") {
+					localStorage.setItem(LEGACY_MIGRATION_DONE_KEY, "1");
+				}
+				resolve();
+				return;
+			}
+			let idx = 0;
+			const copyNext = () => {
+				if (idx >= stores.length) {
+					legacyDb.close();
+					if (typeof localStorage !== "undefined") {
+						localStorage.setItem(LEGACY_MIGRATION_DONE_KEY, "1");
+					}
+					resolve();
+					return;
+				}
+				const storeName = stores[idx++];
+				if (!storeName) {
+					copyNext();
+					return;
+				}
+				try {
+					const rTx = legacyDb.transaction(storeName, "readonly");
+					const rStore = rTx.objectStore(storeName);
+					const getAllReq = rStore.getAll();
+					getAllReq.onsuccess = () => {
+						const rows = Array.isArray(getAllReq.result) ? getAllReq.result : [];
+						if (rows.length === 0) {
+							copyNext();
+							return;
+						}
+						const wTx = targetDb.transaction(storeName, "readwrite");
+						const wStore = wTx.objectStore(storeName);
+						for (const row of rows) {
+							wStore.put(row);
+						}
+						wTx.oncomplete = () => copyNext();
+						wTx.onerror = () => copyNext();
+					};
+					getAllReq.onerror = () => copyNext();
+				} catch {
+					copyNext();
+				}
+			};
+			copyNext();
+		};
+	});
 }
 
 /**
@@ -257,6 +335,13 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 
 				// 18. Media Vault Blobs Store (explicit keyPut/keyGet)
 				ensureObjectStore(MEDIA_BLOBS_STORE_NAME);
+
+				// 19. Staff Audit Telemetry Store (unified into dente_clinic_outbox_v1)
+				const staffAuditStore = ensureObjectStore(STAFF_AUDIT_STORE_NAME, { keyPath: "id" });
+				if (staffAuditStore) {
+					safeCreateIndex(staffAuditStore, "occurredAt", "occurredAt");
+					safeCreateIndex(staffAuditStore, "organizationId", "organizationId");
+				}
 			};
 
 			request.onsuccess = () => {
@@ -268,7 +353,13 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 				db.onclose = () => {
 					dbPromiseInstance = null;
 				};
-				resolve(db);
+				void migrateLegacyOutboxIfPresent(idb, db)
+					.catch((err) => {
+						logger.warn("[OfflineStorage] Legacy outbox migration skipped:", err);
+					})
+					.finally(() => {
+						resolve(db);
+					});
 			};
 
 			request.onerror = () => {

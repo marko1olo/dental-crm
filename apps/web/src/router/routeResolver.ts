@@ -514,7 +514,14 @@ function resolveStudioOverlay(
 	}
 
 	// 15. Shift close
-	if (key === "shift-close" || key === "shift_closing" || key === "z-report" || isTruthyParam(params, "shift_close")) {
+	if (
+		key === "shift-close" ||
+		key === "shift-closing" ||
+		key === "shift_close" ||
+		key === "shift_closing" ||
+		key === "z-report" ||
+		isTruthyParam(params, "shift_close", "shift_closing", "z_report", "z-report")
+	) {
 		return {
 			preferredView: "shift",
 			studio: { kind: "shift_close", shiftId: getOptionalParam(params, "shiftId") },

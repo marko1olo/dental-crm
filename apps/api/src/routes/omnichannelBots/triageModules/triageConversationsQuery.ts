@@ -1,5 +1,5 @@
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantReadCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	communicationEvents,
 	crmLeads,
@@ -27,12 +27,15 @@ interface InboundRawPayload {
 	[key: string]: unknown;
 }
 
-/**
- * Получение списка активных диалогов во всех мессенджерах (Telegram, VK, WhatsApp, MAX).
- */
-export async function fetchInboxConversations(orgId: string): Promise<{ conversations: InboxConversation[] }> {
+type ClinicPatientRecord = {
+	id: string;
+	fullName: string;
+	phone: string | null;
+};
+
+async function loadInboxDataFromTx(tx: TenantDb, orgId: string) {
 	// 1. Получаем входящие события мессенджеров за последнее время
-	const inboundEvents = await db
+	const inboundEvents = await tx
 		.select()
 		.from(messengerInboundEvents)
 		.where(eq(messengerInboundEvents.organizationId, orgId))
@@ -40,7 +43,7 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 		.limit(200);
 
 	// 2. Получаем исходящие события коммуникаций
-	const outboundEvents = await db
+	const outboundEvents = await tx
 		.select()
 		.from(communicationEvents)
 		.where(
@@ -62,7 +65,7 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 	}
 
 	// Загружаем активные связки Telegram-чатов организации
-	const chatLinks = await db
+	const chatLinks = await tx
 		.select({
 			subjectId: denteTelegramChatLinks.subjectId,
 			chatTransportRef: denteTelegramChatLinks.chatTransportRef,
@@ -95,18 +98,12 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 		}
 	}
 
-	type ClinicPatientRecord = {
-		id: string;
-		fullName: string;
-		phone: string | null;
-	};
-
 	const patientIdList = Array.from(patientIds);
 	const phoneList = Array.from(searchPhones);
 	let clinicPatients: ClinicPatientRecord[] = [];
 
 	if (patientIdList.length > 0) {
-		const byIds = await db
+		const byIds = await tx
 			.select({
 				id: patients.id,
 				fullName: patients.fullName,
@@ -123,7 +120,7 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 	}
 
 	if (phoneList.length > 0) {
-		const byPhones = await db
+		const byPhones = await tx
 			.select({
 				id: patients.id,
 				fullName: patients.fullName,
@@ -168,7 +165,7 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 	}[] = [];
 
 	if (phoneList.length > 0) {
-		leads = await db
+		leads = await tx
 			.select({
 				id: crmLeads.id,
 				name: crmLeads.name,
@@ -187,6 +184,36 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 				),
 			);
 	}
+
+	return {
+		inboundEvents,
+		outboundEvents,
+		chatRefToPatientId,
+		patientIdToChatRef,
+		patientMap,
+		patientPhoneMap,
+		leads,
+	};
+}
+
+/**
+ * Получение списка активных диалогов во всех мессенджерах (Telegram, VK, WhatsApp, MAX).
+ */
+export async function fetchInboxConversations(
+	orgId: string,
+	existingTx?: TenantDb,
+): Promise<{ conversations: InboxConversation[] }> {
+	const {
+		inboundEvents,
+		outboundEvents,
+		chatRefToPatientId,
+		patientIdToChatRef,
+		patientMap,
+		patientPhoneMap,
+		leads,
+	} = existingTx
+		? await loadInboxDataFromTx(existingTx, orgId)
+		: await withTenantReadCtx(orgId, (tx) => loadInboxDataFromTx(tx, orgId));
 
 	const leadPhoneMap = new Map<string, (typeof leads)[0]>();
 	for (const l of leads) {

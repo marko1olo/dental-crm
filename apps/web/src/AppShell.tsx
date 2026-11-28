@@ -3,7 +3,6 @@ import { lazyWithRetry } from "./lib/lazyWithRetry";
 import { GlobalToast } from "./components/GlobalToast";
 import { Omnibar } from "./components/Omnibar";
 import { CopilotGlobalHost } from "./components/copilot/CopilotGlobalHost";
-import { DirectShiftLauncher } from "./components/shift/DirectShiftLauncher";
 import { ThemeBackground } from "./components/theme";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useAppStore } from "./store/appStore";
@@ -94,7 +93,6 @@ export function AppShell() {
 			>
 				<DentalWorkspace />
 			</Suspense>
-			<DirectShiftLauncher />
 			<GlobalToast />
 			<CopilotGlobalHost />
 			<Omnibar />

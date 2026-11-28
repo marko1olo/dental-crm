@@ -5,7 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "node --max-old-space-size=2048 ../../node_modules/tsx/dist/cli.mjs watch --ignore .data/** --ignore scratch/** --ignore dist/** src/server.ts",
-		"start": "node dist/server.js",
+		"start": "node --max-old-space-size=1536 dist/server.js",
 		"build": "tsc -p tsconfig.json",
 		"check:contract-breach": "node ../../scripts/contract-breach-analysis.mjs",
 		"typecheck": "node --max-old-space-size=3072 ../../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",

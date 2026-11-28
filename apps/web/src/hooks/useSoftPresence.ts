@@ -48,9 +48,7 @@ export interface UseSoftPresenceResult {
 }
 
 function resolveWsUrl(): string {
-	const configured = (
-		import.meta as unknown as { env?: Record<string, string> }
-	).env?.VITE_WS_URL;
+	const configured = import.meta.env?.VITE_WS_URL;
 	if (configured) return configured;
 	if (typeof window === "undefined") return "";
 	const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";

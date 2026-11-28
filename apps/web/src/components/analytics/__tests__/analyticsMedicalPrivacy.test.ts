@@ -4,42 +4,40 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const analyticsDir = path.resolve(__dirname, "..");
-
+import React from "react";
+import { renderToString } from "react-dom/server";
 import { formatInitialsOnly, maskRussianPhone } from "@dental/shared";
+import { PnlActionFooter } from "../../finance/pnl/dashboardModules/PnlActionFooter";
 
 test("Analytics domain enforces patient initials only, masked phone, and medical secrecy (152-ФЗ)", () => {
-	assert.equal(typeof formatInitialsOnly, "function");
-	assert.equal(typeof maskRussianPhone, "function");
-
 	const initials = formatInitialsOnly("Иванов Иван Иванович");
 	assert.equal(initials, "Иванов И. И.");
 
 	const maskedPhone = maskRussianPhone("+79998887766");
 	assert.ok(maskedPhone.includes("•••") || maskedPhone.includes("***"), "Phone must be masked for patient privacy");
+	assert.equal(maskedPhone.includes("8887766"), false, "Raw phone middle/suffix digits must not leak");
 });
 
-test("ManagerialPnlDashboardModal enforces medical privacy notice and strictly impersonal accounting aggregates", () => {
-	const filePath = path.resolve(analyticsDir, "../finance/pnl/dashboardModules/PnlActionFooter.tsx");
-	const content = fs.readFileSync(filePath, "utf8");
+test("PnlActionFooter renders medical secrecy notice and strictly impersonal accounting aggregates", () => {
+	const html = renderToString(
+		React.createElement(PnlActionFooter, {
+			report: null,
+			onOpenQuickExpense: () => {},
+			periodLabel: "Март 2026",
+		}),
+	);
 
 	assert.ok(
-		content.includes('data-testid="financial-privacy-note"'),
-		"ManagerialPnlDashboardModal must display medical secrecy compliance notice",
+		html.includes('data-testid="financial-privacy-note"'),
+		"PnlActionFooter must render data-testid=financial-privacy-note",
 	);
 	assert.ok(
-		content.includes("врачебной тайны"),
-		"Must explicitly mention medical secrecy / privacy protection",
+		html.includes("врачебной тайны"),
+		"Rendered footer must display medical secrecy compliance notice",
 	);
 	assert.ok(
-		content.includes("агрегированными кассовыми суммами"),
-		"Must explicitly state that accounting operates strictly on aggregated financial figures",
+		html.includes("агрегированными кассовыми суммами"),
+		"Rendered footer must state accounting operates strictly on aggregated figures",
 	);
 });

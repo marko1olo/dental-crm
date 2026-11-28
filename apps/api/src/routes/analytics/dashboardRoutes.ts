@@ -2,8 +2,7 @@ import { and, eq, gte, inArray, lte, sql, type Column } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
-import { defineStreamRoute } from "../../core/routeFactories.js";
-import { withTenantReadCtx } from "../../db/rls.js";
+import { defineTenantQuery } from "../../core/routeFactories.js";
 import {
 	isIncomePaymentRowSql,
 	paymentAbsKopecksSql,
@@ -44,22 +43,18 @@ const dashboardQuerySchema = z
 	.strict();
 
 export async function registerDashboardRoutes(app: FastifyInstance) {
-	defineStreamRoute(app, {
-		method: "GET",
+	defineTenantQuery(app, {
 		path: "/api/analytics/dashboard",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			// БЫЛО: `const orgId = await requireClinicalReadAccess(...)` — этот guard
-			// возвращает Promise<boolean> (проверка секрета), а не идентификатор
-			// организации. При успешной проверке orgId === true, поэтому условие
-			// `typeof orgId !== "string"` срабатывало ВСЕГДА и обработчик выходил до
-			// первого запроса к базе: весь дашборд молча отдавал пустой ответ.
-			// Типизация это не ловит — сравнение typeof у boolean легально.
-			// Теперь два шага явно разделены: гейт по секрету и получение арендатора
-			// из подписанного токена.
-			const orgId = await requireExecutiveAccess(request, reply);
-			if (!orgId) return;
-
+		permission: {
+			customCheck: async (_principal, request, reply) =>
+				Boolean(await requireExecutiveAccess(request, reply)),
+		},
+		authOptions: {
+			allowAdminSecretBypass: true,
+			allowClinicTokenWithoutStaff: true,
+			allowUnverifiedHeaderRead: true,
+		},
+		handler: async ({ tx, organizationId: orgId, request, reply }) => {
 			const queryParse = dashboardQuerySchema.safeParse(request.query ?? {});
 			if (!queryParse.success) {
 				return reply.code(400).send({
@@ -81,7 +76,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 				else if (range === "quarter" || range === "last_3_months") mappedPeriod = "quarter";
 				else if (range === "year" || range === "this_year") mappedPeriod = "year";
 
-				const data = await withTenantReadCtx(orgId, async (tx) => {
+				const data = await (async () => {
 				const timeZone = await clinicTimeZone(orgId, tx);
 				let startDate: Date | undefined;
 
@@ -451,7 +446,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 						Number(revenueRow?.totalKopecks ?? 0) === 0 &&
 						Number(apptCountRow?.count ?? 0) === 0,
 				};
-			});
+			})();
 
 			return { success: true, data };
 			} catch (e) {

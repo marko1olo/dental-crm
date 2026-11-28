@@ -8,19 +8,15 @@ import { z } from "zod";
 import { defineStreamRoute } from "../../core/routeFactories.js";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
 import { requireDatabaseUrl } from "../../db/client.js";
-import { withTenantWriteCtx } from "../../db/rls.js";
 import { safeLogError } from "../../observability/logger.js";
 import { getRequestIdentity } from "../../security/identity.js";
+import { requireSettingsSensitiveReadAccess } from "./settingsHelpers/settingsGuards.js";
 import {
 	backupsDirectory,
 	createTenantEncryptedBackup,
 	resolveEncryptionKey,
 	restoreTenantSnapshotStreaming,
 } from "../../services/backupWorker.js";
-import {
-	requireSettingsMutationAccess,
-	requireSettingsSensitiveReadAccess,
-} from "./helpers.js";
 
 const createBackupBodySchema = z
 	.object({
@@ -89,16 +85,23 @@ async function mapWithConcurrency<T, R>(
 }
 
 export function registerBackupRoutes(app: FastifyInstance): void {
+	const backupAuthOptions = {
+		requireStaffToken: true,
+		allowAdminSecretBypass: true,
+	} as const;
+
 	/**
 	 * Получить список реальных зашифрованных копий на диске с SHA-256 и точным размером в байтах.
 	 */
 	defineStreamRoute(app, {
 		method: "GET",
 		path: "/api/settings/backup/list",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const orgId = await requireSettingsSensitiveReadAccess(request, reply);
-			if (!orgId) return;
+		permission: "settings.read",
+		authOptions: backupAuthOptions,
+		handler: async ({ organizationId, request, reply }) => {
+			const guardedOrgId = await requireSettingsSensitiveReadAccess(request, reply);
+			if (!guardedOrgId || reply.sent) return;
+			const orgId = organizationId ?? guardedOrgId;
 
 			try {
 				const dir = backupsDirectory();
@@ -170,10 +173,14 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 	defineStreamRoute(app, {
 		method: "POST",
 		path: "/api/settings/backup/create",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const orgId = await requireSettingsMutationAccess(request, reply);
-			if (!orgId) return;
+		permission: "settings.write",
+		authOptions: backupAuthOptions,
+		handler: async ({ principal, organizationId, runWriteTx, request, reply }) => {
+			const orgId = organizationId;
+			if (!orgId) {
+				reply.code(401);
+				return { error: "StaffAuthRequired" };
+			}
 
 			const bodyParsed = createBackupBodySchema.safeParse(request.body);
 			if (!bodyParsed.success) {
@@ -185,7 +192,9 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 			}
 
 			const identity = getRequestIdentity(request);
-			if (identity.userId && identity.role !== "owner") {
+			const actorRole = principal?.role ?? identity.role;
+			const actorUserId = principal?.userId ?? identity.userId;
+			if (actorUserId && actorRole !== "owner") {
 				reply.code(403);
 				return {
 					error: "PermissionDenied",
@@ -227,14 +236,14 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 			const sha256 = await computeFileSha256Stream(finalPath);
 
 			try {
-				await withTenantWriteCtx(orgId, async (tx) =>
+				await runWriteTx(async (tx) =>
 					recordAuditEventInDb(
 						orgId,
 						{
 							entityType: "backup",
 							entityId: finalFilename,
 							action: "BACKUP_CREATED",
-							actorUserId: identity.userId,
+							actorUserId,
 							reason: `sizeBytes=${stat.size}, sha256=${sha256.slice(0, 16)}`,
 						},
 						tx,
@@ -267,12 +276,16 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 	 * Потоково восстановить клинику из локальной зашифрованной резервной копии
 	 * (`DENTETB2` или legacy `DENTETB1`) с проверкой GCM AuthTag до `COMMIT`.
 	 */
-	app.post(
-		"/api/settings/backup/restore",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request, reply) => {
-			const orgId = await requireSettingsMutationAccess(request, reply);
-			if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/settings/backup/restore",
+		permission: "settings.write",
+		authOptions: backupAuthOptions,
+		handler: async ({ principal, organizationId, runWriteTx, request, reply }) => {
+			const orgId = organizationId;
+			if (!orgId) {
+				return reply.code(401).send({ error: "StaffAuthRequired" });
+			}
 
 			const bodyParsed = restoreBackupBodySchema.safeParse(request.body);
 			if (!bodyParsed.success) {
@@ -283,7 +296,9 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 			}
 
 			const identity = getRequestIdentity(request);
-			if (identity.userId && identity.role !== "owner") {
+			const actorRole = principal?.role ?? identity.role;
+			const actorUserId = principal?.userId ?? identity.userId;
+			if (actorUserId && actorRole !== "owner") {
 				return reply.code(403).send({
 					error: "PermissionDenied",
 					message:
@@ -342,14 +357,14 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 				});
 
 				try {
-					await withTenantWriteCtx(orgId, async (tx) =>
+					await runWriteTx(async (tx) =>
 						recordAuditEventInDb(
 							orgId,
 							{
 								entityType: "backup",
 								entityId: filename,
 								action: "BACKUP_RESTORED",
-								actorUserId: identity.userId,
+								actorUserId,
 								reason: `format=${result.format}, tables=${result.restoredTables}, rows=${result.restoredRows}`,
 							},
 							tx,
@@ -397,5 +412,5 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 				}
 			}
 		},
-	);
+	});
 }

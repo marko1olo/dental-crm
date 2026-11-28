@@ -72,12 +72,13 @@
 
 .auth-segmented-btn.active {
 	color: #ffffff;
-	background: var(--teal, #0d9488);
+	background: #0d9488;
 	font-weight: 600;
 	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
 }
 
 .auth-segmented-btn--highlight.active {
-	background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%);
-	box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35);
+	color: #ffffff;
+	background: #0d9488;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
 }

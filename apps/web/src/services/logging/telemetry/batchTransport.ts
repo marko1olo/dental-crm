@@ -16,11 +16,11 @@ import {
 	type StaffActionAuditEntry,
 } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders.js";
+import { openOfflineOutboxDb } from "../../offline/storage/idbDatabase.js";
 import {
 	LEGACY_OFFLINE_STAFF_AUDIT_KEY,
 	LOCAL_STORAGE_STAFF_EVENTS_KEY,
 	MAX_OFFLINE_STAFF_EVENTS,
-	STAFF_AUDIT_IDB_NAME,
 	STAFF_AUDIT_IDB_STORE,
 	type TelemetryLoggerBridge,
 } from "./types.js";
@@ -117,35 +117,23 @@ export function clearStaffEventsFromStorage(): void {
  * Асинхронный бэкап в IndexedDB для предотвращения потери данных при сбросе кэша
  */
 export function backupStaffEventsToIndexedDb(events: StaffActionAuditEntry[]): void {
-	if (typeof window === "undefined" || !window.indexedDB) return;
-	try {
-		const req = window.indexedDB.open(STAFF_AUDIT_IDB_NAME, 1);
-		req.onupgradeneeded = (e) => {
-			const idb = (e.target as IDBOpenDBRequest).result;
-			if (!idb.objectStoreNames.contains(STAFF_AUDIT_IDB_STORE)) {
-				idb.createObjectStore(STAFF_AUDIT_IDB_STORE, { keyPath: "id" });
-			}
-		};
-		req.onsuccess = (e) => {
+	if (typeof window === "undefined" || events.length === 0) return;
+	void openOfflineOutboxDb()
+		.then((idb) => {
 			try {
-				const idb = (e.target as IDBOpenDBRequest).result;
+				if (!idb.objectStoreNames.contains(STAFF_AUDIT_IDB_STORE)) return;
 				const tx = idb.transaction(STAFF_AUDIT_IDB_STORE, "readwrite");
 				const store = tx.objectStore(STAFF_AUDIT_IDB_STORE);
 				for (const item of events) {
 					store.put(item);
 				}
-				tx.oncomplete = () => idb.close();
-				tx.onerror = () => idb.close();
 			} catch (err) {
 				activeLoggerBridge?.warn("[StaffTelemetry] IDB write failed", err);
 			}
-		};
-		req.onerror = () => {
-			activeLoggerBridge?.warn("[StaffTelemetry] IDB open failed", req.error);
-		};
-	} catch (err) {
-		activeLoggerBridge?.warn("[StaffTelemetry] IDB backup setup failed", err);
-	}
+		})
+		.catch((err) => {
+			activeLoggerBridge?.warn("[StaffTelemetry] IDB open failed", err);
+		});
 }
 
 /**

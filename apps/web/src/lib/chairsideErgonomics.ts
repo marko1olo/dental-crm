@@ -27,16 +27,21 @@ let audioCtx: AudioContext | null = null;
 function getErgonomicsAudioContext(): AudioContext | null {
 	if (typeof window === "undefined") return null;
 	try {
-		const AudioContextClass =
-			window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+		interface WindowWithWebkitAudio extends Window {
+			AudioContext?: typeof AudioContext;
+			webkitAudioContext?: typeof AudioContext;
+		}
+		const win: WindowWithWebkitAudio = window;
+		const AudioContextClass = win.AudioContext || win.webkitAudioContext;
 		if (!AudioContextClass) return null;
-		if (!audioCtx) {
-			audioCtx = new AudioContextClass();
+		const activeCtx = audioCtx ?? new AudioContextClass();
+		audioCtx = activeCtx;
+		if (activeCtx.state === "suspended") {
+			void activeCtx.resume().catch((err: unknown) => {
+				console.warn("[chairsideErgonomics] Failed to resume AudioContext", err);
+			});
 		}
-		if (audioCtx.state === "suspended") {
-			audioCtx.resume().catch(() => {});
-		}
-		return audioCtx;
+		return activeCtx;
 	} catch {
 		return null;
 	}

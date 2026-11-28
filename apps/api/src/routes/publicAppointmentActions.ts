@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyBaseLogger, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { definePublicRoute } from "../core/routeFactories.js";
 import { type TenantDb, withSavepoint, withTenantWriteCtx } from "../db/rls.js";
+import { BoundedTtlMap } from "../lib/boundedTtlMap.js";
 import {
 	appointments,
 	clinics,
@@ -19,17 +20,16 @@ import { wsBroker } from "../services/websocketBroker.js";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 30;
-const requestCounts = new Map<string, { count: number; resetAt: number }>();
+const requestCounts = new BoundedTtlMap<string, { count: number; resetAt: number }>({
+	maxEntries: 5000,
+	ttlMs: RATE_LIMIT_WINDOW_MS,
+	touchOnGet: false,
+});
 
 function isRateLimited(ip: string, now = Date.now()): boolean {
 	const entry = requestCounts.get(ip);
 	if (!entry || entry.resetAt <= now) {
 		requestCounts.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-		if (requestCounts.size > 5000) {
-			for (const [key, value] of requestCounts) {
-				if (value.resetAt <= now) requestCounts.delete(key);
-			}
-		}
 		return false;
 	}
 	entry.count += 1;

@@ -1,6 +1,10 @@
-import { inflateRawSync, inflateSync } from "node:zlib";
+import { promisify } from "node:util";
+import { inflate, inflateRaw } from "node:zlib";
 import type { ExtractedDocument } from "./types.js";
 import { decodeText, looksTabular, normalizeText } from "./zipReader.js";
+
+const inflateAsync = promisify(inflate);
+const inflateRawAsync = promisify(inflateRaw);
 
 const textDecoder = new TextDecoder("utf-8", { fatal: false });
 const utf16LeDecoder = new TextDecoder("utf-16le", { fatal: false });
@@ -94,7 +98,7 @@ export function parsePdfStreamOperators(contentBuffer: Buffer): string {
 	return normalizeText(lines.join("\n"));
 }
 
-export function extractPdfStreams(buffer: Buffer): string[] {
+export async function extractPdfStreams(buffer: Buffer): Promise<string[]> {
 	const extractedChunks: string[] = [];
 	let searchPos = 0;
 	let streamCount = 0;
@@ -141,13 +145,13 @@ export function extractPdfStreams(buffer: Buffer): string[] {
 
 		let decompressed: Buffer | null = null;
 		try {
-			decompressed = inflateSync(streamData, {
+			decompressed = await inflateAsync(streamData, {
 				maxOutputLength: 5 * 1024 * 1024,
 			});
 		} catch (zlibErr: unknown) {
 			void zlibErr;
 			try {
-				decompressed = inflateRawSync(streamData, {
+				decompressed = await inflateRawAsync(streamData, {
 					maxOutputLength: 5 * 1024 * 1024,
 				});
 			} catch (rawErr: unknown) {
@@ -199,10 +203,10 @@ export function extractPdfHexText(source: string): string[] {
 	return output;
 }
 
-export function extractPdf(buffer: Buffer): ExtractedDocument {
+export async function extractPdf(buffer: Buffer): Promise<ExtractedDocument> {
 	try {
 		// 1. Декомпрессия FlateDecode потоков контента (95%+ реальных PDF)
-		const streamTexts = extractPdfStreams(buffer);
+		const streamTexts = await extractPdfStreams(buffer);
 
 		// 2. Извлечение литералов и шестнадцатеричных блоков из незашифрованного тела
 		const latinSource = buffer.toString("latin1");

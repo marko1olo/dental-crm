@@ -92,14 +92,15 @@ export function useVisiographHotFolder(): UseVisiographHotFolderResult {
 		}
 
 		try {
-			type WindowWithPicker = Window & {
+			interface WindowWithPicker extends Window {
 				showDirectoryPicker?: (options?: {
 					id?: string;
 					mode?: "read" | "readwrite";
 					startIn?: "desktop" | "documents" | "downloads" | "music" | "pictures" | "videos";
 				}) => Promise<FileSystemDirectoryHandle>;
-			};
-			const win = typeof window !== "undefined" ? (window as unknown as WindowWithPicker) : undefined;
+			}
+			const win: WindowWithPicker | undefined =
+				typeof window !== "undefined" ? window : undefined;
 			if (typeof win?.showDirectoryPicker !== "function") return false;
 			const dirHandle = await win.showDirectoryPicker({
 				id: "dente-rvg-hotfolder",

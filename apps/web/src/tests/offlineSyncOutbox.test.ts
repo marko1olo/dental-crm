@@ -175,9 +175,9 @@ class MockIDBDatabase {
 		};
 	}
 
-	createObjectStore(name: string, options: { keyPath: string }) {
+	createObjectStore(name: string, options?: { keyPath?: string }) {
 		const storeData: MockStoreData = {
-			keyPath: options.keyPath,
+			keyPath: options?.keyPath ?? "",
 			indexes: new Map(),
 			records: new Map(),
 		};

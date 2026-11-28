@@ -13,7 +13,7 @@ import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	syncEntityVectors,
 	syncIdempotencyRecords,
@@ -124,7 +124,7 @@ export class SyncAdministrativeHandlers {
 		});
 
 		// Also fetch recent rejected idempotency records for complete audit
-		const rejectedRecords = await withTenantCtx(orgId, async (tx) => {
+		const rejectedRecords = await withTenantReadCtx(orgId, async (tx) => {
 			return await tx
 				.select()
 				.from(syncIdempotencyRecords)
@@ -234,7 +234,7 @@ export class SyncAdministrativeHandlers {
 		const entityKind = queryParsed.data.entityKind;
 		const entityId = queryParsed.data.entityId;
 
-		const vectors = await withTenantCtx(orgId, async (tx) => {
+		const vectors = await withTenantReadCtx(orgId, async (tx) => {
 			const conditions = [eq(syncEntityVectors.organizationId, orgId)];
 			if (entityKind) {
 				conditions.push(eq(syncEntityVectors.entityKind, entityKind));

@@ -1,34 +1,32 @@
 import type { FastifyInstance } from "fastify";
-import {
-	requireClinicalMutationAccess,
-	requireResolvedOrganizationId,
-} from "../../accessGuard.js";
-import { defineStreamRoute } from "../../core/routeFactories.js";
-import { withTenantReadCtx } from "../../db/rls.js";
+import { defineTenantMutation, defineTenantQuery } from "../../core/routeFactories.js";
 import { fetchCuratorAnalyticsPayload } from "./curatorQuery.js";
 import { persistCuratorStageInDb } from "./curatorStageHandler.js";
-import {
-	type UpdateCuratorStagePayload,
-	updateCuratorStagePayloadSchema,
-} from "./curatorTypes.js";
+import { updateCuratorStagePayloadSchema } from "./curatorTypes.js";
 import { requireExecutiveAccess } from "./executiveAccessGuard.js";
+
+const CURATOR_AUTH_OPTIONS = {
+	allowAdminSecretBypass: true,
+	allowClinicTokenWithoutStaff: true,
+} as const;
 
 /**
  * ФИЧА #27 — ВЫДЕЛЕННАЯ РОЛЬ «КУРАТОР ПАЦИЕНТОВ» И АНАЛИТИКА ВОРОНКИ
  */
 export async function registerCuratorRoutes(app: FastifyInstance) {
-	defineStreamRoute(app, {
-		method: "GET",
+	defineTenantQuery(app, {
 		path: "/api/analytics/curators",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const orgId = await requireExecutiveAccess(request, reply);
-			if (!orgId) return;
-
+		permission: {
+			customCheck: async (_principal, request, reply) =>
+				Boolean(await requireExecutiveAccess(request, reply)),
+		},
+		authOptions: {
+			...CURATOR_AUTH_OPTIONS,
+			allowUnverifiedHeaderRead: true,
+		},
+		handler: async ({ tx, organizationId: orgId, request, reply }) => {
 			try {
-				const data = await withTenantReadCtx(orgId, (tx) =>
-					fetchCuratorAnalyticsPayload(orgId, undefined, tx),
-				);
+				const data = await fetchCuratorAnalyticsPayload(orgId, undefined, tx);
 				return { success: true, data };
 			} catch (e) {
 				request.log.error({ err: e }, "Не удалось загрузить аналитику кураторов");
@@ -41,17 +39,15 @@ export async function registerCuratorRoutes(app: FastifyInstance) {
 		},
 	});
 
-	defineStreamRoute(app, {
+	defineTenantMutation(app, {
 		method: "PATCH",
 		path: "/api/analytics/curators/stage",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const writeAllowed = await requireClinicalMutationAccess(request, reply, "update curator stage");
-			if (!writeAllowed) return;
-
-			const orgId = await requireResolvedOrganizationId(request, reply, "update curator stage");
-			if (!orgId) return;
-
+		permission: {
+			anyOf: ["analytics.read", "clinical.write", "schedule.write"],
+		},
+		authOptions: CURATOR_AUTH_OPTIONS,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId: orgId, request, reply }) => {
 			const parseResult = updateCuratorStagePayloadSchema.safeParse(request.body);
 			if (!parseResult.success) {
 				return reply.code(400).send({
@@ -65,7 +61,7 @@ export async function registerCuratorRoutes(app: FastifyInstance) {
 			const body = parseResult.data;
 
 			try {
-				const result = await persistCuratorStageInDb(orgId, body);
+				const result = await persistCuratorStageInDb(orgId, body, tx);
 				if (!result.success) {
 					return reply.code(404).send({
 						success: false,

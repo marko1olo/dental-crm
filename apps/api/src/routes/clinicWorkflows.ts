@@ -1,11 +1,8 @@
 import { and, eq } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { requireResolvedOrganizationId } from "../accessGuard.js";
-import { defineStreamRoute } from "../core/routeFactories.js";
-import { withTenantReadCtx, withTenantWriteCtx } from "../db/rls.js";
+import { defineTenantMutation, defineTenantQuery } from "../core/routeFactories.js";
 import { clinicWorkflows } from "../db/schema.js";
-import { requirePermission } from "../security/permissions.js";
 import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 
 const createWorkflowSchema = z
@@ -42,48 +39,27 @@ function serializeWorkflow(wf: typeof clinicWorkflows.$inferSelect) {
 }
 
 export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
-	const workflowMutationOptions = {
-		config: {
-			tenantTxSelfManaged: true,
-		},
-		schema: {
-			description: "Clinic workflow mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-			headers: {
-				type: "object",
-				properties: {
-					"idempotency-key": { type: "string" },
-					"x-idempotency-key": { type: "string" },
-					organizationid: { type: "string" },
-					"x-organization-id": { type: "string" },
-				},
-			},
-		},
+	const workflowAuthOptions = {
+		allowAdminSecretBypass: true,
+		allowClinicTokenWithoutStaff: true,
 	} as const;
 
 	/**
 	 * GET /api/clinic/workflows
 	 * List workflows for organization (settings.read permission required).
 	 */
-	defineStreamRoute(app, {
-		method: "GET",
+	defineTenantQuery(app, {
 		path: "/api/clinic/workflows",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const organizationId = await requireResolvedOrganizationId(request, reply);
-			if (!organizationId) return;
+		permission: "settings.read",
+		authOptions: workflowAuthOptions,
+		handler: async ({ tx, organizationId }) => {
+			const rows = await tx
+				.select()
+				.from(clinicWorkflows)
+				.where(eq(clinicWorkflows.organizationId, organizationId))
+				.orderBy(clinicWorkflows.createdAt);
 
-			const perm = await requirePermission(request, reply, "settings.read");
-			if (!perm) return;
-
-			const rows = await withTenantReadCtx(organizationId, async (tx) =>
-				tx
-					.select()
-					.from(clinicWorkflows)
-					.where(eq(clinicWorkflows.organizationId, organizationId))
-					.orderBy(clinicWorkflows.createdAt),
-			);
-
-			return reply.status(200).send({ workflows: rows.map(serializeWorkflow) });
+			return { workflows: rows.map(serializeWorkflow) };
 		},
 	});
 
@@ -92,44 +68,43 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 	 * Create workflow expecting body { name: string, definition: string | object, trigger?: string }
 	 * (settings.write permission required, default trigger to "manual" if omitted/falsy).
 	 */
-	app.post("/api/clinic/workflows", workflowMutationOptions, async (request: FastifyRequest, reply: FastifyReply) => {
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
-			});
-		}
-
-		const organizationId = await requireResolvedOrganizationId(request, reply);
-		if (!organizationId) return;
-
-		const perm = await requirePermission(request, reply, "settings.write");
-		if (!perm) return;
-
-		const parsed = createWorkflowSchema.safeParse(request.body);
-		if (!parsed.success) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: parsed.error.issues.map((i) => i.message).join("; "),
-			});
-		}
-
-		const { name, definition, trigger: rawTrigger, active } = parsed.data;
-
-		let parsedDefinition: unknown = definition;
-		if (typeof definition === "string") {
-			try {
-				parsedDefinition = JSON.parse(definition);
-			} catch {
-				parsedDefinition = definition;
+	defineTenantMutation(app, {
+		method: "POST",
+		path: "/api/clinic/workflows",
+		permission: "settings.write",
+		authOptions: workflowAuthOptions,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId, request, reply }) => {
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+				});
 			}
-		}
 
-		const trigger = rawTrigger && rawTrigger.trim() ? rawTrigger.trim() : "manual";
+			const parsed = createWorkflowSchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: parsed.error.issues.map((i) => i.message).join("; "),
+				});
+			}
 
-		const [created] = await withTenantWriteCtx(organizationId, async (tx) =>
-			tx
+			const { name, definition, trigger: rawTrigger, active } = parsed.data;
+
+			let parsedDefinition: unknown = definition;
+			if (typeof definition === "string") {
+				try {
+					parsedDefinition = JSON.parse(definition);
+				} catch {
+					parsedDefinition = definition;
+				}
+			}
+
+			const trigger = rawTrigger && rawTrigger.trim() ? rawTrigger.trim() : "manual";
+
+			const [created] = await tx
 				.insert(clinicWorkflows)
 				.values({
 					organizationId,
@@ -138,21 +113,22 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 					definition: parsedDefinition,
 					active: active ?? false,
 				})
-				.returning(),
-		);
+				.returning();
 
-		if (!created) {
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Не удалось создать сценарий автоматизации.",
-			});
-		}
+			if (!created) {
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Не удалось создать сценарий автоматизации.",
+				});
+			}
 
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
 
-		return reply.status(201).send({ workflow: serializeWorkflow(created) });
+			reply.status(201);
+			return { workflow: serializeWorkflow(created) };
+		},
 	});
 
 	/**
@@ -160,40 +136,39 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 	 * Toggle active boolean field for workflow matching :id and organization
 	 * (settings.write permission required).
 	 */
-	app.post("/api/clinic/workflows/:id/toggle", workflowMutationOptions, async (request: FastifyRequest, reply: FastifyReply) => {
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
-			});
-		}
+	defineTenantMutation(app, {
+		method: "POST",
+		path: "/api/clinic/workflows/:id/toggle",
+		permission: "settings.write",
+		authOptions: workflowAuthOptions,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId, request, reply }) => {
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+				});
+			}
 
-		const organizationId = await requireResolvedOrganizationId(request, reply);
-		if (!organizationId) return;
+			const params = workflowParamsSchema.safeParse(request.params);
+			if (!params.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный ID сценария.",
+				});
+			}
 
-		const perm = await requirePermission(request, reply, "settings.write");
-		if (!perm) return;
+			const body = toggleWorkflowBodySchema.safeParse(request.body ?? {});
+			if (!body.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры переключения сценария.",
+					details: body.error.format(),
+				});
+			}
+			const requestedActive = body.data?.active;
 
-		const params = workflowParamsSchema.safeParse(request.params);
-		if (!params.success) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: "Некорректный ID сценария.",
-			});
-		}
-
-		const body = toggleWorkflowBodySchema.safeParse(request.body ?? {});
-		if (!body.success) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: "Некорректные параметры переключения сценария.",
-				details: body.error.format(),
-			});
-		}
-		const requestedActive = body.data?.active;
-
-		const toggleResult = await withTenantWriteCtx(organizationId, async (tx) => {
 			const [existing] = await tx
 				.select()
 				.from(clinicWorkflows)
@@ -207,7 +182,10 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 				.limit(1);
 
 			if (!existing) {
-				return { kind: "not_found" as const };
+				return reply.status(404).send({
+					error: "WorkflowNotFound",
+					message: "Сценарий автоматизации не найден.",
+				});
 			}
 
 			const nextActive = typeof requestedActive === "boolean" ? requestedActive : !existing.active;
@@ -227,24 +205,18 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 				.returning();
 
 			if (!updated) {
-				return { kind: "not_found" as const };
+				return reply.status(404).send({
+					error: "WorkflowNotFound",
+					message: "Сценарий автоматизации не найден.",
+				});
 			}
 
-			return { kind: "ok" as const, workflow: updated };
-		});
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
 
-		if (toggleResult.kind === "not_found") {
-			return reply.status(404).send({
-				error: "WorkflowNotFound",
-				message: "Сценарий автоматизации не найден.",
-			});
-		}
-
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-
-		return reply.status(200).send({ workflow: serializeWorkflow(toggleResult.workflow) });
+			return { workflow: serializeWorkflow(updated) };
+		},
 	});
 
 	/**
@@ -252,23 +224,22 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 	 * Delete workflow matching :id and organization
 	 * (settings.write permission required).
 	 */
-	app.delete("/api/clinic/workflows/:id", workflowMutationOptions, async (request: FastifyRequest, reply: FastifyReply) => {
-		const organizationId = await requireResolvedOrganizationId(request, reply);
-		if (!organizationId) return;
+	defineTenantMutation(app, {
+		method: "DELETE",
+		path: "/api/clinic/workflows/:id",
+		permission: "settings.write",
+		authOptions: workflowAuthOptions,
+		idempotency: "exempt_idempotent_put_or_delete",
+		handler: async ({ tx, organizationId, request, reply }) => {
+			const params = workflowParamsSchema.safeParse(request.params);
+			if (!params.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный ID сценария.",
+				});
+			}
 
-		const perm = await requirePermission(request, reply, "settings.write");
-		if (!perm) return;
-
-		const params = workflowParamsSchema.safeParse(request.params);
-		if (!params.success) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: "Некорректный ID сценария.",
-			});
-		}
-
-		const [deleted] = await withTenantWriteCtx(organizationId, async (tx) =>
-			tx
+			const [deleted] = await tx
 				.delete(clinicWorkflows)
 				.where(
 					and(
@@ -276,16 +247,16 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 						eq(clinicWorkflows.organizationId, organizationId),
 					),
 				)
-				.returning({ id: clinicWorkflows.id }),
-		);
+				.returning({ id: clinicWorkflows.id });
 
-		if (!deleted) {
-			return reply.status(404).send({
-				error: "WorkflowNotFound",
-				message: "Сценарий автоматизации не найден.",
-			});
-		}
+			if (!deleted) {
+				return reply.status(404).send({
+					error: "WorkflowNotFound",
+					message: "Сценарий автоматизации не найден.",
+				});
+			}
 
-		return reply.status(200).send({ ok: true, deleted: true, id: deleted.id });
+			return { ok: true, deleted: true, id: deleted.id };
+		},
 	});
 }

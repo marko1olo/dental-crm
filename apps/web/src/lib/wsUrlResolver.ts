@@ -29,8 +29,7 @@ export interface ResolveWsUrlOptions {
 
 function readImportMetaEnvValue(key: "VITE_WS_URL" | "VITE_API_ORIGIN"): string | undefined {
 	try {
-		const meta = import.meta as unknown as { env?: Record<string, string | undefined> };
-		const raw = meta?.env?.[key];
+		const raw = import.meta.env?.[key];
 		return typeof raw === "string" && raw.trim() ? raw.trim() : undefined;
 	} catch {
 		return undefined;

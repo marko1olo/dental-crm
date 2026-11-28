@@ -5,8 +5,10 @@ import { createApiLogger, safeLogError } from "../../observability/index.js";
 
 const logger = createApiLogger("backupWorker");
 
-export const ENCRYPTION_ALGORITHM = "aes-256-cbc";
-export const IV_LENGTH = 16;
+export const ENCRYPTION_ALGORITHM = "aes-256-gcm";
+export const IV_LENGTH = 12;
+export const GCM_AUTH_TAG_LENGTH = 16;
+export const CLUSTER_BACKUP_MAGIC = Buffer.from("DENTECL2", "ascii");
 export const REQUIRED_KEY_BYTES = 32;
 export const TENANT_BACKUP_FORMAT = "DENTE_TENANT_BACKUP_V1";
 export const PUBLIC_SAMPLE_KEY = "DUMMY_SAMPLE_KEY_NOT_A_REAL_SECRET";

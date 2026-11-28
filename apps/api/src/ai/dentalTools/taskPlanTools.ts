@@ -18,14 +18,18 @@ import {
 	updateTaskPlanItemStatus,
 } from "@dental/shared";
 import { z } from "zod";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import {
 	type DentalToolContext,
 	type DentalToolEntry,
 	createOpenAIToolDefinition,
 } from "./types.js";
 
-// Локальное in-memory хранилище активных планов по сессиям
-const activePlansStore = new Map<string, TaskPlan>();
+// Локальное ограниченное хранилище активных планов по сессиям
+const activePlansStore = new BoundedTtlMap<string, TaskPlan>({
+	maxEntries: 500,
+	ttlMs: 4 * 60 * 60 * 1000,
+});
 
 /**
  * Возвращает уникальный ключ контекста для хранения плана сессии

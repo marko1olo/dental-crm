@@ -242,38 +242,18 @@ describe("Shift Studio & Fiscal Z-Report SSOT Suite", () => {
 	// =========================================================================
 	// 4. DIRECT SHIFT LAUNCHER & LIVE UI MOUNTING (MANDATE 8aq)
 	// =========================================================================
-	describe("4. DirectShiftLauncher & Live UI Mounting (Mandate 8aq)", () => {
+	describe("4. 3-Shell Shift Routing & Live Studio Integration (Mandate 8aq)", () => {
 		it("renders null on SSR when no URL hash or search parameter is present", () => {
 			const html = renderToString(<DirectShiftLauncher />);
 			assert.equal(html, "");
 		});
 
-		it("verifies DirectShiftLauncher is mounted in AppShell.tsx", () => {
-			const appShellPath = path.join(webSrcDir, "AppShell.tsx");
-			const code = fs.readFileSync(appShellPath, "utf-8");
-			assert.ok(code.includes("DirectShiftLauncher"), "AppShell.tsx must import DirectShiftLauncher");
-			assert.ok(code.includes("<DirectShiftLauncher />"), "AppShell.tsx must render <DirectShiftLauncher />");
-		});
-
-		it("verifies DirectShiftLauncher is mounted in SpecializedAdministrativeLaunchers.tsx", () => {
-			const specializedPath = path.join(
-				webSrcDir,
-				"components/appLayout/modalsContainerModules/standalone/SpecializedAdministrativeLaunchers.tsx",
-			);
-			const code = fs.readFileSync(specializedPath, "utf-8");
-			assert.ok(code.includes("DirectShiftLauncher"), "SpecializedAdministrativeLaunchers must import DirectShiftLauncher");
-			assert.ok(code.includes("#shift"), "SpecializedAdministrativeLaunchers must handle #shift");
-			assert.ok(code.includes("#z-report"), "SpecializedAdministrativeLaunchers must handle #z-report");
-		});
-
-		it("verifies DirectShiftLauncher is mounted in administrativeLaunchersRegistry.tsx", () => {
-			const registryPath = path.join(
-				webSrcDir,
-				"components/appLayout/modalsContainerModules/standalone/administrativeLaunchersRegistry.tsx",
-			);
-			const code = fs.readFileSync(registryPath, "utf-8");
-			assert.ok(code.includes("DirectShiftLauncher"), "administrativeLaunchersRegistry must import DirectShiftLauncher");
-			assert.ok(code.includes("shift-studio"), "administrativeLaunchersRegistry must include shift-studio entry");
+		it("resolves shift-closing, z-report, and query flags through canonical routeResolver SSOT", async () => {
+			const { resolveClinicRoute } = await import("../../../router/routeResolver.js");
+			assert.equal(resolveClinicRoute("", "#shift-closing").studio?.kind, "shift_close");
+			assert.equal(resolveClinicRoute("", "#z-report").studio?.kind, "shift_close");
+			assert.equal(resolveClinicRoute("?shift_closing=1", "").studio?.kind, "shift_close");
+			assert.equal(resolveClinicRoute("?z_report=1", "").studio?.kind, "shift_close");
 		});
 
 		it("renders zeroed live shift state in ShiftStudioModal when outside demo mode (no ACTIVE_SHIFT_PRESET leak)", () => {

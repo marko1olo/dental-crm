@@ -338,12 +338,16 @@ async function ensureManagedApiStarted(options = {}) {
 
 	let earlyExitInfo = null;
 	try {
-		const child = spawnFn(options.nodeExecPath || process.execPath, [apiEntryPath], {
-			env: childEnv,
-			cwd: path.dirname(apiEntryPath),
-			stdio: ["ignore", "pipe", "pipe"],
-			windowsHide: true,
-		});
+		const child = spawnFn(
+			options.nodeExecPath || process.execPath,
+			["--max-old-space-size=1536", apiEntryPath],
+			{
+				env: childEnv,
+				cwd: path.dirname(apiEntryPath),
+				stdio: ["ignore", "pipe", "pipe"],
+				windowsHide: true,
+			},
+		);
 		supervisorState.apiChildProcess = child;
 
 		if (child.stderr && typeof child.stderr.on === "function") {

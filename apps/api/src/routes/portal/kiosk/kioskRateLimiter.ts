@@ -5,10 +5,16 @@
  * (Мандат 8ap: Никаких утечек персональных данных на экране холла клиники).
  */
 
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
+
 // Rate limiting store for public kiosk requests (anti brute-force / phone scraping)
-export const kioskIpRequestCounts = new Map<string, { count: number; resetAt: number }>();
 export const KIOSK_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000; // 5 минут
 export const KIOSK_MAX_ATTEMPTS_PER_IP = 25;
+export const kioskIpRequestCounts = new BoundedTtlMap<string, { count: number; resetAt: number }>({
+	maxEntries: 5000,
+	ttlMs: KIOSK_RATE_LIMIT_WINDOW_MS,
+	touchOnGet: false,
+});
 
 export function resetKioskRateLimitsForTesting(): void {
 	kioskIpRequestCounts.clear();

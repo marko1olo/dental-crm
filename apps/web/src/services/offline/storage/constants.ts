@@ -20,8 +20,10 @@ export {
 	setGlobalClockSkew,
 };
 
-export const OFFLINE_DB_NAME = "dente-crm-offline-outbox";
-export const OFFLINE_DB_VERSION = 4;
+export const OFFLINE_DB_NAME = "dente_clinic_outbox_v1";
+export const LEGACY_OFFLINE_DB_NAME = "dente-crm-offline-outbox";
+export const OFFLINE_DB_VERSION = 5;
+export const STAFF_AUDIT_STORE_NAME = "staff_events";
 export const MUTATIONS_STORE_NAME = "mutations";
 export const DRAFTS_STORE_NAME = "drafts";
 export const CLINICAL_CACHE_STORE_NAME = "clinical_cache";

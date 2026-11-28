@@ -318,6 +318,17 @@ const LEGACY_EVENT_MAPPERS: ReadonlyArray<{
 			patientId: typeof d?.patientId === "string" ? d.patientId : undefined,
 		}),
 	},
+	{
+		events: ["dente:open-z-report", "dente:open-shift-close"],
+		mapToStudio: () => ({ kind: "shift_close" }),
+	},
+	{
+		events: ["dente:open-shift", "dente-open-shift"],
+		mapToStudio: (d) =>
+			d?.tab === "closing"
+				? { kind: "shift_close" }
+				: { kind: "cashbox", mode: "shift" },
+	},
 ];
 
 /**

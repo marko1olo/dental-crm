@@ -445,7 +445,11 @@ export async function cachedApiFetch<T = unknown>(
 		if (contentType.includes("application/json")) {
 			data = (await response.json()) as T;
 		} else {
-			data = (await response.text()) as unknown as T;
+			const text = await response.text();
+			if (!coerceTextResponse<T>(text)) {
+				throw new Error(`Unexpected non-string response for ${rawUrl}`);
+			}
+			data = text;
 		}
 
 		// Сохраняем только при успехе, если кэш не обойден и scope не сменился за время запроса
@@ -472,6 +476,10 @@ export async function cachedApiFetch<T = unknown>(
 			deleteInFlightRequest(scopedKey);
 		}
 	}
+}
+
+function coerceTextResponse<T>(value: string): value is string & T {
+	return typeof value === "string";
 }
 
 /**

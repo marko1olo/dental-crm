@@ -1,13 +1,8 @@
 import { and, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import {
-	requireClinicalMutationAccess,
-	requireClinicalReadAccess,
-	requireResolvedOrganizationId,
-} from "../../accessGuard.js";
-import { defineStreamRoute } from "../../core/routeFactories.js";
-import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
+import { defineTenantMutation, defineTenantQuery } from "../../core/routeFactories.js";
+import { requireExecutiveAccess } from "./executiveAccessGuard.js";
 import {
 	appointments,
 	chairs,
@@ -55,25 +50,23 @@ const rebookingQuerySchema = z
  * ====================================================================
  */
 export async function registerRebookingRoutes(app: FastifyInstance) {
-	defineStreamRoute(app, {
-		method: "GET",
+	const executiveAuthOptions = {
+		allowAdminSecretBypass: true,
+		allowClinicTokenWithoutStaff: true,
+	} as const;
+	const executivePermission = {
+		customCheck: async (
+			_principal: unknown,
+			request: Parameters<typeof requireExecutiveAccess>[0],
+			reply: Parameters<typeof requireExecutiveAccess>[1],
+		) => Boolean(await requireExecutiveAccess(request, reply)),
+	};
+
+	defineTenantQuery(app, {
 		path: "/api/analytics/rebooking-conversion",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const readAllowed = await requireClinicalReadAccess(
-				request,
-				reply,
-				"rebooking conversion analytics",
-			);
-			if (!readAllowed) return;
-
-			const orgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"rebooking conversion analytics",
-			);
-			if (!orgId) return;
-
+		permission: executivePermission,
+		authOptions: executiveAuthOptions,
+		handler: async ({ tx, organizationId: orgId, request, reply }) => {
 			const queryParse = rebookingQuerySchema.safeParse(request.query ?? {});
 			if (!queryParse.success) {
 				return reply.code(400).send({
@@ -114,7 +107,7 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 				let endDate: Date | undefined;
 
 				const { storedRules, completedVisits, appointmentsPool, soloResolved } =
-					await withTenantReadCtx(orgId, async (tx) => {
+					await (async () => {
 						const timeZone = await clinicTimeZone(orgId, tx);
 						const now = new Date();
 
@@ -282,7 +275,7 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 						appointmentsPool: apptsRows,
 						soloResolved: soloFlag,
 					};
-				});
+				})();
 			isSoloDoctor = soloResolved;
 
 			// 4. Анализируем завершённые визиты и вычисляем конверсию по окну 15 минут
@@ -610,25 +603,13 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 	 * POST /api/analytics/rebooking-conversion
 	 * Явная фиксация правила конверсии повторной записи в БД.
 	 */
-	defineStreamRoute(app, {
+	defineTenantMutation(app, {
 		method: "POST",
 		path: "/api/analytics/rebooking-conversion",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const mutationAllowed = await requireClinicalMutationAccess(
-				request,
-				reply,
-				"rebooking conversion record",
-			);
-			if (!mutationAllowed) return;
-
-			const orgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"rebooking conversion record",
-			);
-			if (!orgId) return;
-
+		permission: executivePermission,
+		authOptions: executiveAuthOptions,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId: orgId, request, reply }) => {
 			try {
 				const parseRes = rebookingConversionBodySchema.safeParse(request.body);
 				if (!parseRes.success) {
@@ -647,7 +628,6 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 				const appointmentDate =
 					body.appointmentDate?.trim() || new Date().toISOString().slice(0, 10);
 
-				const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 				let isSoloDoctor = body.isSoloDoctor;
 				if (isSoloDoctor === undefined) {
 					const [orgRecord] = await tx
@@ -721,13 +701,8 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 					},
 				};
 
-				return {
-					code: 201,
-					body: responsePayload,
-				};
-			});
-
-			return reply.code(txResult.code).send(txResult.body);
+				reply.code(201);
+				return responsePayload;
 			} catch (e) {
 				request.log.error({ err: e }, "Не удалось сохранить правило повторной записи");
 				return reply.code(500).send({

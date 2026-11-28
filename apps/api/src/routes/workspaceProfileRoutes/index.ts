@@ -13,76 +13,94 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { defineTenantMutation, defineTenantQuery } from "../../core/routeFactories.js";
+import type { PresetName } from "./types.js";
 import {
-	applyWorkspacePresetHandler,
-	defaultResponseSchema,
-	getWorkspaceChairsHandler,
-	getWorkspaceProfileHandler,
-	updateWorkspaceProfileHandler,
+	executeWorkspacePresetApplyTx,
+	executeWorkspaceProfileUpdateTx,
+	fetchWorkspaceChairs,
+	fetchWorkspaceProfileFlags,
 } from "./workspaceProfileHandlers.js";
+
+const WORKSPACE_READ_PERMISSIONS = {
+	anyOf: [
+		"settings.read" as const,
+		"schedule.read" as const,
+		"clinical.read" as const,
+		"patients.read" as const,
+		"finance.read" as const,
+		"inventory.read" as const,
+	],
+};
+
+const WORKSPACE_AUTH_OPTIONS = {
+	allowClinicTokenWithoutStaff: true,
+	allowAdminSecretBypass: true,
+};
 
 export async function workspaceProfileRoutes(
 	fastify: FastifyInstance,
 ): Promise<void> {
 	// GET /api/workspace/profile — какие модули включены у ЭТОЙ клиники
-	fastify.get(
-		"/api/workspace/profile",
-		{
-			config: { tenantTxSelfManaged: true },
-			schema: {
-				response: defaultResponseSchema,
-			},
-		},
-		getWorkspaceProfileHandler,
-	);
+	defineTenantQuery(fastify, {
+		path: "/api/workspace/profile",
+		permission: WORKSPACE_READ_PERMISSIONS,
+		authOptions: WORKSPACE_AUTH_OPTIONS,
+		handler: async ({ tx, organizationId }) =>
+			fetchWorkspaceProfileFlags(tx, organizationId),
+	});
 
 	// GET /api/workspace/chairs — список кресел клиники
-	fastify.get(
-		"/api/workspace/chairs",
-		{
-			config: { tenantTxSelfManaged: true },
-			schema: {
-				response: defaultResponseSchema,
-			},
-		},
-		getWorkspaceChairsHandler,
-	);
+	defineTenantQuery(fastify, {
+		path: "/api/workspace/chairs",
+		permission: WORKSPACE_READ_PERMISSIONS,
+		authOptions: WORKSPACE_AUTH_OPTIONS,
+		handler: async ({ tx, organizationId }) => ({
+			success: true,
+			data: await fetchWorkspaceChairs(tx, organizationId),
+		}),
+	});
 
 	// POST /api/workspace/profile — сохранить частичные признаки модулей
-	fastify.post(
-		"/api/workspace/profile",
-		{
-			config: { tenantTxSelfManaged: true },
-			schema: {
-				response: defaultResponseSchema,
-			},
-		},
-		updateWorkspaceProfileHandler,
-	);
+	defineTenantMutation(fastify, {
+		method: "POST",
+		path: "/api/workspace/profile",
+		permission: "settings.write",
+		authOptions: WORKSPACE_AUTH_OPTIONS,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId, request, reply }) =>
+			executeWorkspaceProfileUpdateTx(tx, organizationId, request, reply),
+	});
 
 	// PATCH /api/workspace/profile — обновить признаки модулей (alias)
-	fastify.patch(
-		"/api/workspace/profile",
-		{
-			config: { tenantTxSelfManaged: true },
-			schema: {
-				response: defaultResponseSchema,
-			},
-		},
-		updateWorkspaceProfileHandler,
-	);
+	defineTenantMutation(fastify, {
+		method: "PATCH",
+		path: "/api/workspace/profile",
+		permission: "settings.write",
+		authOptions: WORKSPACE_AUTH_OPTIONS,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId, request, reply }) =>
+			executeWorkspaceProfileUpdateTx(tx, organizationId, request, reply),
+	});
 
 	// POST /api/workspace/preset/:name — применить именованный пресет и засеять данные
-	fastify.post(
-		"/api/workspace/preset/:name",
-		{
-			config: { tenantTxSelfManaged: true },
-			schema: {
-				response: defaultResponseSchema,
-			},
+	defineTenantMutation(fastify, {
+		method: "POST",
+		path: "/api/workspace/preset/:name",
+		permission: "settings.write",
+		authOptions: WORKSPACE_AUTH_OPTIONS,
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId, request, reply }) => {
+			const presetName = ((request.params as { name?: string })?.name ?? "") as PresetName;
+			return executeWorkspacePresetApplyTx(
+				tx,
+				organizationId,
+				presetName,
+				request,
+				reply,
+			);
 		},
-		applyWorkspacePresetHandler,
-	);
+	});
 }
 
 // 100% Re-export public contracts

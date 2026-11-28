@@ -428,3 +428,6 @@ that ships without them is a tenant leak, and 0160 is the receipt for what that 
    * Exact Kopeck Integrity: 10 конкурентных оплат по 123.45 ₽ безналичной картой дают строгое увеличение баланса кассы на 1 234.50 ₽ (123 450 копеек) без float drift.
    * Приоритет кассовых счетов клиники: строгое сопоставление эквайрингового безналичного счета (`type: "cashless"`) перед страховыми счетами ДМС (`type: "dms"`), исключая ошибочное зачисление оплат картой на счета страховых компаний.
    * Error Hardening RFC 7807: несуществующий инвойс возвращает структурированный JSON `404 Not Found` (`InvoiceNotFound`) с нулевой утечкой стектрейсов и внутренних путей файловой системы хоста.
+6. Infra RLS & AEAD Backup Hardening (`infraP1SecurityAndRlsProof.test.ts`, `autoBackupVaultRunner.test.mjs`):
+   * `workspaceProfileHandlers` и `omnichannelBots/triageModules/triageConversationsQuery.ts` переведены с прямых неконтекстных вызовов `db.select()` на `withTenantReadCtx`/`withTenantWriteCtx` (верифицировано под `DENTE_STRICT_TENANT_DB_TRAP=1` против `FORCE ROW LEVEL SECURITY`).
+   * Кластерный `pgDumpClusterBackup.ts` и десктопный `autoBackupVaultRunner.cjs` используют AEAD `aes-256-gcm` с 12-байтным IV и 16-байтным `AuthTag` (с fail-closed отказом при отсутствии `CLINIC_ENCRYPTION_KEY`).

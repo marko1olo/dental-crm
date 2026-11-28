@@ -1,57 +1,66 @@
 import assert from "node:assert/strict";
 import { describe, test as it } from "node:test";
+import React from "react";
+import { renderToString } from "react-dom/server";
 import {
 	createTelephonyCallActions,
 	createCallLineManagementActions,
-	createCallAudioStreamActions,
 	createCallTransferAndDtmfActions,
 } from "../store/telephonyModules/telephonyCallActions";
 import { TelephonyAudioStreamManager } from "../store/telephonyModules/telephonyAudioStreamManager";
 import {
 	usePatientMutations,
-	usePatientCoreSave,
-	usePatientAdministrativeSave,
 } from "../hooks/domains/patientLogicModules/usePatientMutations";
+import { usePatientStore } from "../store/patientStore";
+import type { TelephonyState } from "../store/telephonyModules/telephonyTypes";
+
+function makeTelephonyHarness() {
+	let state: TelephonyState = {
+		activeLineId: 1,
+		line1: { lineId: 1, state: "idle", call: null, durationSeconds: 0, isMuted: false },
+		line2: { lineId: 2, state: "idle", call: null, durationSeconds: 0, isMuted: false },
+		callHistory: [],
+		activeCall: null,
+		isHeld: false,
+		isMuted: false,
+		transferState: { isTransferring: false, targetExtension: "", transferType: "blind", status: "idle" },
+	} as unknown as TelephonyState;
+
+	const set = (updater: Partial<TelephonyState> | ((prev: TelephonyState) => Partial<TelephonyState>)) => {
+		const patch = typeof updater === "function" ? updater(state) : updater;
+		state = { ...state, ...patch };
+	};
+	const get = () => state;
+	return { getState: get, actions: createTelephonyCallActions(set as never, get as never) };
+}
 
 describe("Telephony & Patient Mutations Architecture Invariants (Mandate 8b & Mandate 8e)", () => {
-	it("1.1. Telephony Call Actions Facade exports and binds all submodules correctly", () => {
-		const mockSetCalls: any[] = [];
-		const mockSet = (...args: any[]) => mockSetCalls.push(args);
-		const mockGet = () => ({
-			activeLineId: 1,
-			line1: { lineId: 1, state: "idle", call: null, durationSeconds: 0, isMuted: false },
-			line2: { lineId: 2, state: "idle", call: null, durationSeconds: 0, isMuted: false },
-			callHistory: [],
-			activeCall: null,
-			isHeld: false,
-			isMuted: false,
-			transferState: { isTransferring: false, targetExtension: "", transferType: "blind", status: "idle" },
-		});
+	it("1.1. Telephony Call Actions execute incoming call, answer, hold/unhold, transfer, and end call lifecycle", () => {
+		const harness = makeTelephonyHarness();
+		const { actions, getState } = harness;
 
-		const actions = createTelephonyCallActions(mockSet as any, mockGet as any);
+		actions.triggerIncomingCall({
+			id: "call-1",
+			phone: "+79991112233",
+			direction: "inbound",
+			patientName: "Иванов И.И.",
+		} as never);
+		assert.ok(getState().activeCall !== null);
 
-		// Проверяем наличие всех контрактов Линий и Удержания (callLineManagement)
-		assert.strictEqual(typeof actions.switchLine, "function");
-		assert.strictEqual(typeof actions.holdCall, "function");
-		assert.strictEqual(typeof actions.unholdCall, "function");
-		assert.strictEqual(typeof actions.toggleHold, "function");
-		assert.strictEqual(typeof actions.triggerIncomingCall, "function");
+		actions.answerCall();
+		actions.holdCall();
+		assert.equal(getState().isHeld, true);
+		actions.unholdCall();
+		assert.equal(getState().isHeld, false);
 
-		// Проверяем наличие всех контрактов Аудио и Ответа (callAudioStreamActions)
-		assert.strictEqual(typeof actions.answerCall, "function");
-		assert.strictEqual(typeof actions.connectCall, "function");
-		assert.strictEqual(typeof actions.acceptCall, "function");
-		assert.strictEqual(typeof actions.rejectCall, "function");
-		assert.strictEqual(typeof actions.dismissCall, "function");
+		actions.startCallTransfer("102", "blind");
+		assert.equal(getState().transferState.isTransferring, true);
+		assert.equal(getState().transferState.targetExtension, "102");
+		actions.cancelCallTransfer();
+		assert.equal(getState().transferState.isTransferring, false);
 
-		// Проверяем наличие всех контрактов Трансфера и Завершения (callTransferAndDtmf)
-		assert.strictEqual(typeof actions.endCall, "function");
-		assert.strictEqual(typeof actions.recordCallOutcome, "function");
-		assert.strictEqual(typeof actions.logAcutePainCall, "function");
-		assert.strictEqual(typeof actions.startCallTransfer, "function");
-		assert.strictEqual(typeof actions.completeCallTransfer, "function");
-		assert.strictEqual(typeof actions.cancelCallTransfer, "function");
-		assert.strictEqual(typeof actions.fetchCallHistory, "function");
+		actions.endCall();
+		assert.equal(getState().activeCall, null);
 	});
 
 	it("1.2. Call Line Management switches lines and updates hold states cleanly", () => {
@@ -172,9 +181,30 @@ describe("Telephony & Patient Mutations Architecture Invariants (Mandate 8b & Ma
 		}
 	});
 
-	it("2.1. Patient Mutations Facade and modules export correctly", () => {
-		assert.strictEqual(typeof usePatientMutations, "function");
-		assert.strictEqual(typeof usePatientCoreSave, "function");
-		assert.strictEqual(typeof usePatientAdministrativeSave, "function");
+	it("2.1. Patient Mutations hook initializes core and administrative draft updaters inside React runtime", () => {
+		let captured: ReturnType<typeof usePatientMutations> | null = null;
+		const Harness: React.FC = () => {
+			captured = usePatientMutations({
+				dashboard: null,
+				setDashboard: () => {},
+				setError: () => {},
+				auth: null,
+				selectedPatient: undefined,
+				setSelectedPatientId: () => {},
+				setQuery: () => {},
+			} as never);
+			return React.createElement("div", null, "ok");
+		};
+		const html = renderToString(React.createElement(Harness));
+		assert.ok(html.includes("ok"));
+		assert.ok(captured !== null);
+		captured.updatePatientCoreDraft("fullName", "Тестов Тест");
+		assert.equal(usePatientStore.getState().patientCoreDraft.fullName, "Тестов Тест");
+		assert.equal(usePatientStore.getState().patientCoreDirty, true);
+		captured.updatePatientAdministrativeProfileDraft("referralSource", "recommendation");
+		assert.equal(
+			usePatientStore.getState().patientAdministrativeProfileDraft.referralSource,
+			"recommendation",
+		);
 	});
 });

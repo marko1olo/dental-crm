@@ -7,7 +7,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadAccess } from "../../../accessGuard.js";
-import { withTenantReadCtx } from "../../../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import { requireOrganizationId } from "../../../security/identity.js";
 import { formatOutboxRowForJournal } from "./outboxRowFormatter.js";
@@ -23,10 +23,16 @@ export async function handleEgiszJournalQuery(
 	request: FastifyRequest,
 	reply: FastifyReply,
 	actionName: string,
+	existingTx?: TenantDb,
+	resolvedOrgId?: string,
 ) {
-	if (!(await requireClinicalReadAccess(request, reply, actionName))) return;
-	const orgId = requireOrganizationId(request, reply);
-	if (!orgId) return;
+	let orgId = resolvedOrgId;
+	if (!orgId) {
+		if (!(await requireClinicalReadAccess(request, reply, actionName))) return;
+		const resolved = requireOrganizationId(request, reply);
+		if (!resolved) return;
+		orgId = resolved;
+	}
 
 	const queryParsed = egiszJournalQuerySchema.safeParse(request.query ?? {});
 	if (!queryParsed.success) {
@@ -57,7 +63,7 @@ export async function handleEgiszJournalQuery(
 		}
 	}
 
-	const rows = await withTenantReadCtx(orgId, async (tx) =>
+	const runQuery = (tx: TenantDb) =>
 		tx
 			.select({
 				id: schema.egiszOutbox.id, visitId: schema.egiszOutbox.visitId, documentId: schema.egiszOutbox.documentId,
@@ -89,8 +95,11 @@ export async function handleEgiszJournalQuery(
 			.leftJoin(schema.organizations, eq(schema.egiszOutbox.organizationId, schema.organizations.id))
 			.where(and(...conditions))
 			.orderBy(desc(schema.egiszOutbox.createdAt))
-			.limit(limit),
-	);
+			.limit(limit);
+
+	const rows = existingTx
+		? await runQuery(existingTx)
+		: await withTenantReadCtx(orgId, runQuery);
 
 	const items = rows.map(formatOutboxRowForJournal);
 	return reply.status(200).send({ success: true, items, totalCount: items.length });

@@ -219,7 +219,13 @@ if (app && app.whenReady) {
 			});
 
 			await createWindow();
-			backupScheduler = createAutoBackupScheduler({ userDataDir: getUserDataDir() });
+			backupScheduler = createAutoBackupScheduler({
+				userDataDir: getUserDataDir(),
+				apiBaseUrl: () => getLoopbackBaseUrl(),
+				authToken: () =>
+					process.env.DENTE_VAULT_AUTH_TOKEN || process.env.DENTE_STAFF_TOKEN || "",
+				encryptionKey: process.env.CLINIC_ENCRYPTION_KEY,
+			});
 			backupScheduler.start();
 
 			app.on("activate", () => {

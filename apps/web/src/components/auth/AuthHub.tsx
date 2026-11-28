@@ -1,6 +1,6 @@
 import {
+	Compass,
 	KeyRound,
-	Sparkles,
 	UserPlus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -115,7 +115,7 @@ export function AuthHub({ onSuccess }: AuthHubProps) {
 							className={`auth-segmented-btn auth-segmented-btn--highlight ${activeTab === "demo" ? "active" : ""}`}
 							title="Ознакомительный тур по 5 клиническим ролям"
 						>
-							<Sparkles size={14} className="auth-nav-icon" />
+							<Compass size={14} className="auth-nav-icon" />
 							<span>Демо-тур</span>
 						</button>
 					</div>

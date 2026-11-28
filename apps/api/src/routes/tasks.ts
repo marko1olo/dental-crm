@@ -6,15 +6,14 @@
  * - Автономия врача: быстрая смена статуса без обязательного ввода комментариев
  * - Полный жизненный цикл задач (GET /api/tasks, POST /api/tasks, PUT /api/tasks/:id)
  */
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { clinicalTaskStatusSchema } from "@dental/shared";
 import {
-	requireClinicalMutationAccess,
-	requireClinicalReadAccess,
-} from "../accessGuard.js";
-import { defineStreamRoute } from "../core/routeFactories.js";
-import { withTenantReadCtx, withTenantWriteCtx } from "../db/rls.js";
+	defineTenantMutation,
+	defineTenantQuery,
+	type TenantMutationContext,
+} from "../core/routeFactories.js";
 import {
 	createPatientTaskTicketInDb,
 	deleteTaskTicketByIdInDb,
@@ -22,7 +21,6 @@ import {
 	type PatientTaskTicketStatus,
 	setTaskTicketStatusByIdInDb,
 } from "../db/patientTaskTicketsQuery.js";
-import { requireOrganizationId } from "../security/identity.js";
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -155,36 +153,38 @@ export const taskIdempotencyMutationOptionsWithOrgIdContext = {
 
 export const taskMutationRouteOptions = taskIdempotencyMutationOptionsWithOrgIdContext;
 
+const TASKS_AUTH_OPTIONS = {
+	allowAdminSecretBypass: true,
+	allowClinicTokenWithoutStaff: true,
+} as const;
+
+const TASKS_READ_PERMISSION = {
+	anyOf: ["clinical.read" as const, "schedule.read" as const, "patients.read" as const],
+};
+
+const TASKS_WRITE_PERMISSION = {
+	anyOf: ["clinical.write" as const, "schedule.write" as const, "patients.write" as const],
+};
+
 export async function registerTasksRoutes(app: FastifyInstance) {
 	/**
 	 * Получение канонических шаблонов стоматологических задач (Мандат 8k).
 	 */
-	defineStreamRoute(app, {
-		method: "GET",
+	defineTenantQuery(app, {
 		path: "/api/tasks/presets",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			if (!(await requireClinicalReadAccess(request, reply, "tasks presets read")))
-				return;
-			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
-			return reply.code(200).send(CANONICAL_DENTAL_TASK_PRESETS);
-		},
+		permission: TASKS_READ_PERMISSION,
+		authOptions: TASKS_AUTH_OPTIONS,
+		handler: async () => CANONICAL_DENTAL_TASK_PRESETS,
 	});
 
 	/**
 	 * Получение списка задач CRM по организации.
 	 */
-	defineStreamRoute(app, {
-		method: "GET",
+	defineTenantQuery(app, {
 		path: "/api/tasks",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			if (!(await requireClinicalReadAccess(request, reply, "tasks read")))
-				return;
-			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
-
+		permission: TASKS_READ_PERMISSION,
+		authOptions: TASKS_AUTH_OPTIONS,
+		handler: async ({ tx, organizationId: orgId, request, reply }) => {
 			const queryParsed = getTasksQuerySchema.safeParse(request.query ?? {});
 			if (!queryParsed.success) {
 				return reply.code(400).send({
@@ -215,10 +215,8 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 				if (assignedToId) filters.assignedToId = assignedToId;
 				if (status) filters.status = status;
 
-				const tasks = await withTenantReadCtx(orgId, async (tx) =>
-					getAllTaskTicketsFromDb(orgId, filters, tx),
-				);
-				return reply.code(200).send(tasks);
+				const tasks = await getAllTaskTicketsFromDb(orgId, filters, tx);
+				return tasks;
 			} catch (error: unknown) {
 				request.log.error(error);
 				return reply.status(500).send({
@@ -232,30 +230,30 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 	/**
 	 * Создание задачи CRM.
 	 */
-	app.post("/api/tasks", taskIdempotencyMutationOptionsWithOrgIdContext, async (request, reply) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "tasks write")))
-			return;
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+	defineTenantMutation(app, {
+		method: "POST",
+		path: "/api/tasks",
+		permission: TASKS_WRITE_PERMISSION,
+		authOptions: TASKS_AUTH_OPTIONS,
+		idempotency: "optional_header",
+		handler: async ({ tx, principal, organizationId: orgId, request, reply }) => {
+			const parsed = createTaskBodySchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: parsed.error.issues[0]?.message ?? "Ошибка валидации задачи.",
+				});
+			}
 
-		const parsed = createTaskBodySchema.safeParse(request.body ?? {});
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: parsed.error.issues[0]?.message ?? "Ошибка валидации задачи.",
-			});
-		}
+			const body = parsed.data;
+			// Если assignedToId не передан, берем текущего пользователя (соло-врач автономия)
+			const currentUserId = principal.userId ?? request.user?.id;
+			const effectiveAssignedToId =
+				body.assignedToId ??
+				(currentUserId && UUID_REGEX.test(currentUserId) ? currentUserId : null);
 
-		const body = parsed.data;
-		// Если assignedToId не передан, берем текущего пользователя (соло-врач автономия)
-		const currentUserId = request.user?.id;
-		const effectiveAssignedToId =
-			body.assignedToId ??
-			(currentUserId && UUID_REGEX.test(currentUserId) ? currentUserId : null);
-
-		try {
-			const task = await withTenantWriteCtx(orgId, async (tx) =>
-				createPatientTaskTicketInDb(
+			try {
+				const task = await createPatientTaskTicketInDb(
 					orgId,
 					body.patientId,
 					{
@@ -265,31 +263,29 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 						priority: body.priority,
 					},
 					tx,
-				),
-			);
+				);
 
-			return reply.code(201).send(task);
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Не удалось создать задачу.",
-			});
-		}
+				reply.code(201);
+				return task;
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Не удалось создать задачу.",
+				});
+			}
+		},
 	});
 
 	/**
 	 * Закрытие или смена статуса задачи (Мандат 8e).
 	 */
-	const handleStatusUpdate = async (
-		request: FastifyRequest,
-		reply: FastifyReply,
-	) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "tasks write")))
-			return;
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-
+	const handleStatusUpdate = async ({
+		tx,
+		organizationId: orgId,
+		request,
+		reply,
+	}: TenantMutationContext<undefined, undefined, undefined>) => {
 		const paramsParsed = taskIdParamSchema.safeParse(request.params ?? {});
 		if (!paramsParsed.success) {
 			return reply.code(400).send({
@@ -308,13 +304,11 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			const updated = await withTenantWriteCtx(orgId, async (tx) =>
-				setTaskTicketStatusByIdInDb(
-					orgId,
-					id,
-					parsed.data.status,
-					tx,
-				),
+			const updated = await setTaskTicketStatusByIdInDb(
+				orgId,
+				id,
+				parsed.data.status,
+				tx,
 			);
 			if (!updated) {
 				return reply.code(404).send({
@@ -323,7 +317,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 				});
 			}
 
-			return reply.code(200).send(updated);
+			return updated;
 		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({
@@ -333,48 +327,60 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 		}
 	};
 
-	app.patch("/api/tasks/:id", taskIdempotencyMutationOptionsWithOrgIdContext, handleStatusUpdate);
-	app.put("/api/tasks/:id", taskIdempotencyMutationOptionsWithOrgIdContext, handleStatusUpdate);
+	defineTenantMutation(app, {
+		method: "PATCH",
+		path: "/api/tasks/:id",
+		permission: TASKS_WRITE_PERMISSION,
+		authOptions: TASKS_AUTH_OPTIONS,
+		idempotency: "optional_header",
+		handler: handleStatusUpdate,
+	});
+	defineTenantMutation(app, {
+		method: "PUT",
+		path: "/api/tasks/:id",
+		permission: TASKS_WRITE_PERMISSION,
+		authOptions: TASKS_AUTH_OPTIONS,
+		idempotency: "exempt_idempotent_put_or_delete",
+		handler: handleStatusUpdate,
+	});
 
 	/**
 	 * Удаление задачи.
 	 * door-validation: none — удаление задачи по URL-параметру :id без тела запроса
 	 */
-	app.delete("/api/tasks/:id", taskIdempotencyMutationOptionsWithOrgIdContext, async (request, reply) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "tasks delete")))
-			return;
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-
-		const paramsParsed = taskIdParamSchema.safeParse(request.params ?? {});
-		if (!paramsParsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Идентификатор задачи должен быть UUID.",
-			});
-		}
-		const { id } = paramsParsed.data;
-
-		try {
-			const deleted = await withTenantWriteCtx(orgId, async (tx) =>
-				deleteTaskTicketByIdInDb(orgId, id, tx),
-			);
-			if (!deleted) {
-				return reply.code(404).send({
-					error: "TaskNotFound",
-					message: "Задача не найдена.",
+	defineTenantMutation(app, {
+		method: "DELETE",
+		path: "/api/tasks/:id",
+		permission: TASKS_WRITE_PERMISSION,
+		authOptions: TASKS_AUTH_OPTIONS,
+		idempotency: "exempt_idempotent_put_or_delete",
+		handler: async ({ tx, organizationId: orgId, request, reply }) => {
+			const paramsParsed = taskIdParamSchema.safeParse(request.params ?? {});
+			if (!paramsParsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Идентификатор задачи должен быть UUID.",
 				});
 			}
+			const { id } = paramsParsed.data;
 
-			const deletePayload = { success: true, id };
+			try {
+				const deleted = await deleteTaskTicketByIdInDb(orgId, id, tx);
+				if (!deleted) {
+					return reply.code(404).send({
+						error: "TaskNotFound",
+						message: "Задача не найдена.",
+					});
+				}
 
-			return reply.code(200).send(deletePayload);
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Не удалось удалить задачу.",
-			});
-		}
+				return { success: true, id };
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Не удалось удалить задачу.",
+				});
+			}
+		},
 	});
 }

@@ -175,7 +175,7 @@ export async function extractByKind(
 				parserNotes: ["RTF controls stripped with built-in parser."],
 			};
 		}
-		if (kind === "pdf") return extractPdf(buffer);
+		if (kind === "pdf") return await extractPdf(buffer);
 		if (kind === "docx") return await extractDocx(buffer);
 		if (kind === "xlsx") return await extractXlsx(buffer);
 		if (kind === "pptx") return await extractPptx(buffer);

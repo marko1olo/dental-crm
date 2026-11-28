@@ -115,7 +115,7 @@ describe("LAN Discovery & Tablet QR Pairing Security Routes", () => {
 
 		assert.strictEqual(res.statusCode, 401);
 		const json = res.json();
-		assert.strictEqual(json.error, "Unauthorized");
+		assert.strictEqual(json.error, "AuthRequired");
 	});
 
 	it("5. POST /api/network/pair/generate: validates targetIp against physical LAN interfaces (anti-SSRF/open-redirect)", async () => {

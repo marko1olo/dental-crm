@@ -1,4 +1,4 @@
-import { readDenteClinicToken } from "../../lib/safeLocalStorage";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { compressCameraFile } from "./cameraCaptureCompressor";
@@ -23,7 +23,6 @@ export async function processCameraPhotoCapture({
 		const { uploadBlob, cleanup } = await compressCameraFile(file);
 		cleanupFn = cleanup;
 
-		const clinicToken = readDenteClinicToken() || null;
 		const formData = new FormData();
 		formData.append("file", uploadBlob, "chairside_camera.webp");
 		formData.append("entityType", "patient");
@@ -35,9 +34,7 @@ export async function processCameraPhotoCapture({
 				`/api/files/patients/${encodeURIComponent(activePatientId)}/attachments`,
 				{
 					method: "POST",
-					headers: {
-						...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-					},
+					headers: denteClinicalMutationHeaders(),
 					body: formData,
 				},
 			);
@@ -55,10 +52,9 @@ export async function processCameraPhotoCapture({
 
 		const studyRes = await fetch("/api/imaging/studies", {
 			method: "POST",
-			headers: {
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
-				...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-			},
+			}),
 			body: JSON.stringify({
 				patientId: activePatientId,
 				visitId: activeAppointmentId || undefined,
