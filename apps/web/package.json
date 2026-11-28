@@ -46,7 +46,7 @@
         "@capacitor/android": "^8.6.3",
         "@capacitor/cli": "^8.6.3",
         "@playwright/test": "^1.51.0",
-        "@tailwindcss/vite": "^4.3.3",
+        "@tailwindcss/vite": "^4.3.5",
         "@types/gl-matrix": "^2.4.5",
         "@types/react": "^19.2.15",
         "@types/react-dom": "^19.1.5",
