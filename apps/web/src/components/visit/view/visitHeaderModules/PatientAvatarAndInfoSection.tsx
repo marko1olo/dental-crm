@@ -48,17 +48,17 @@ export function PatientAvatarAndInfoSection({
 	const somaticText = consolidatedSomaticChip || (somaticBadges[0] ? `Риск: ${somaticBadges[0].shortLabel}` : null);
 
 	return (
-		<div className="flex items-center gap-1.5 shrink-0 min-w-0">
+		<div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden">
 			<PatientAvatar
 				fullName={activePatient?.fullName}
 				size={22}
 				className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px] shrink-0"
 			/>
-			<span className="font-bold text-xs sm:text-sm text-[var(--ink)] shrink-0 whitespace-nowrap" title={fullName}>
+			<span className="font-bold text-xs sm:text-sm text-[var(--ink)] min-w-0 shrink whitespace-nowrap truncate" title={fullName}>
 				<span className="sm:hidden font-bold">{shortName}</span>
-				<span className="hidden sm:inline truncate max-w-[160px] xl:max-w-[220px]">{fullName}</span>
+				<span className="hidden sm:inline-block truncate max-w-[260px] align-bottom">{fullName}</span>
 			</span>
-			{patientAge && <span className="text-xs text-[var(--muted)] shrink-0 hidden xs:inline">· {patientAge}</span>}
+			{patientAge && <span className="text-xs text-[var(--muted)] shrink-0 hidden xs:inline whitespace-nowrap">· {patientAge}</span>}
 			<span className="hidden sm:inline-flex shrink-0">
 				<VisitTimer createdAt={(() => {
 					const raw = activeAppointment?.startTime || activeAppointment?.startAt || activeAppointment?.createdAt;
@@ -66,19 +66,19 @@ export function PatientAvatarAndInfoSection({
 					return raw instanceof Date ? raw.toISOString() : String(raw);
 				})()} />
 			</span>
-			<SoftPresenceIndicator activePeers={activePeers} summaryText={summaryText ?? null} className="hidden sm:inline-flex shrink-0" />
+			<SoftPresenceIndicator activePeers={activePeers} summaryText={summaryText ?? null} className="hidden sm:inline-flex min-w-0 shrink" />
 
 			{/* 1. Суверенный бейдж аллергии: ТОЛЬКО реальные аллергены */}
 			{hasAllergy ? (
 				<span
-					className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 font-medium text-xs shadow-xs shrink-0 whitespace-nowrap"
+					className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 font-medium text-xs shadow-xs min-w-0 shrink-0 whitespace-nowrap"
 					data-testid="visit-focus-allergy-alert"
 					role="alert"
 					title={allergyBadges.map((b) => b.title).join(" | ") || "Отягощенный аллергоанамнез"}
 				>
 					<AlertTriangle size={13} className="text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
-					<span className="sm:hidden text-[10px] whitespace-nowrap">{allergyText.replace(/^Аллергия:\s*/i, "")}</span>
-					<span className="hidden sm:inline whitespace-nowrap truncate max-w-[160px] xl:max-w-[220px]">{allergyText}</span>
+					<span className="sm:hidden text-[10px] whitespace-nowrap truncate max-w-[90px]">{allergyText.replace(/^Аллергия:\s*/i, "")}</span>
+					<span className="hidden sm:inline-block whitespace-nowrap truncate max-w-[240px] align-bottom">{allergyText}</span>
 				</span>
 			) : (
 				<span
@@ -97,14 +97,14 @@ export function PatientAvatarAndInfoSection({
 			{/* 2. Суверенный бейдж соматического риска (АГ, ССЗ, ЭКС, СД, Астма, Беременность) */}
 			{somaticText && (
 				<span
-					className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-900 dark:text-rose-200 font-medium text-xs shadow-xs shrink-0 whitespace-nowrap"
+					className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-900 dark:text-rose-200 font-medium text-xs shadow-xs min-w-0 shrink whitespace-nowrap"
 					data-testid="visit-focus-somatic-alert"
 					role="alert"
 					title={somaticBadges.map((b) => b.title).join(" | ") || "Соматический статус"}
 				>
 					<HeartPulse size={13} className="text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
-					<span className="sm:hidden text-[10px] whitespace-nowrap">{somaticText.replace(/^Риск:\s*/i, "")}</span>
-					<span className="hidden sm:inline whitespace-nowrap truncate max-w-[160px] xl:max-w-[200px]">{somaticText}</span>
+					<span className="sm:hidden text-[10px] whitespace-nowrap truncate max-w-[90px]">{somaticText.replace(/^Риск:\s*/i, "")}</span>
+					<span className="hidden sm:inline-block whitespace-nowrap truncate max-w-[220px] align-bottom">{somaticText}</span>
 				</span>
 			)}
 

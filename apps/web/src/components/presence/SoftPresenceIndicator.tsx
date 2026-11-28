@@ -49,7 +49,7 @@ export const SoftPresenceIndicator: React.FC<SoftPresenceIndicatorProps> = ({
 
 	return (
 		<div
-			className={`relative inline-flex items-center shrink-0 ${className}`}
+			className={`relative inline-flex items-center min-w-0 shrink max-w-full ${className}`}
 			data-testid="soft-presence-indicator"
 		>
 			<button
@@ -57,7 +57,7 @@ export const SoftPresenceIndicator: React.FC<SoftPresenceIndicatorProps> = ({
 				onClick={() => setIsTooltipOpen((prev) => !prev)}
 				onMouseEnter={() => setIsTooltipOpen(true)}
 				onMouseLeave={() => setIsTooltipOpen(false)}
-				className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-sky-400/30 bg-sky-50/60 dark:bg-sky-950/40 text-sky-800 dark:text-sky-200 text-[11px] font-medium transition-all hover:bg-sky-100/70 dark:hover:bg-sky-900/40 cursor-pointer select-none"
+				className="inline-flex items-center gap-1.5 min-w-0 max-w-full px-2 py-0.5 rounded-full border border-sky-400/30 bg-sky-50/60 dark:bg-sky-950/40 text-sky-800 dark:text-sky-200 text-xs font-medium transition-all hover:bg-sky-100/70 dark:hover:bg-sky-900/40 cursor-pointer select-none"
 				aria-label={summaryText || "Коллега просматривает эту карту"}
 				title={summaryText || "Коллега просматривает эту карту"}
 			>
@@ -68,7 +68,7 @@ export const SoftPresenceIndicator: React.FC<SoftPresenceIndicatorProps> = ({
 
 				<Eye className="w-3 h-3 text-sky-600 dark:text-sky-300 shrink-0" aria-hidden="true" />
 
-				<span className="truncate max-w-[140px] sm:max-w-[200px]">
+				<span className="truncate max-w-[220px]">
 					{activePeers.length === 1
 						? `${roleLabelRu}: ${primaryPeer.staffName}`
 						: `${roleLabelRu}: ${primaryPeer.staffName} +${activePeers.length - 1}`}

@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
 	calculateAutoVisitConsumables,
 	executeAutoVisitBomDeduction,
+	reconcileOverdraftOnReceipt,
 } from "@dental/shared";
 
 const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
@@ -104,11 +105,21 @@ describe("RED TEAM INQUISITOR: Auto-BOM & Soft Overdraft (Part 1)", () => {
 	});
 
 	it("автоматически погашает дефицит при последующем поступлении накладной", () => {
-		let stockBalance = -2;
-		const incomingQty = 10;
-		stockBalance += incomingQty;
+		const fullRecovery = reconcileOverdraftOnReceipt(-2, 10);
+		assert.equal(fullRecovery.previousStock, -2);
+		assert.equal(fullRecovery.clearedDeficit, 2);
+		assert.equal(fullRecovery.newStockQuantity, 8);
+		assert.equal(fullRecovery.overdraftResolved, true);
 
-		assert.equal(stockBalance, 8);
-		assert.ok(stockBalance > 0);
+		const partialRecovery = reconcileOverdraftOnReceipt(-5, 3);
+		assert.equal(partialRecovery.previousStock, -5);
+		assert.equal(partialRecovery.clearedDeficit, 3);
+		assert.equal(partialRecovery.newStockQuantity, -2);
+		assert.equal(partialRecovery.overdraftResolved, false);
+
+		const noDeficit = reconcileOverdraftOnReceipt(4, 10);
+		assert.equal(noDeficit.clearedDeficit, 0);
+		assert.equal(noDeficit.newStockQuantity, 14);
+		assert.equal(noDeficit.overdraftResolved, true);
 	});
 });

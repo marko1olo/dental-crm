@@ -39,6 +39,7 @@ import {
 	getFranklVectorIcon,
 	type FranklRating,
 } from "../components/pediatric/FranklBehaviorBadge";
+import { resolveSmartDentitionMode } from "../components/visit/odontogramTab/useVisitOdontogramDentition";
 
 const EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
 
@@ -47,35 +48,30 @@ describe("Pediatric Smart Dentition & Federal Law No. 323-FZ Art. 54", () => {
 	// 1. SMART DENTITION MODE CALCULATION BY AGE
 	// ─────────────────────────────────────────────────────────────────────────
 	describe("1. Smart Initial Dentition Selection by Patient Age", () => {
-		function getSmartDentitionMode(patientAge: number | null): "adult" | "pediatric" | "mixed" {
-			if (patientAge === null) return "adult";
-			if (patientAge < 6) return "pediatric";
-			if (patientAge < 12) return "mixed";
-			return "adult";
-		}
-
 		it("selects primary dentition (FDI 51–85) for child under 6 years old", () => {
-			assert.strictEqual(getSmartDentitionMode(3), "pediatric");
-			assert.strictEqual(getSmartDentitionMode(4), "pediatric");
-			assert.strictEqual(getSmartDentitionMode(5), "pediatric");
+			assert.strictEqual(resolveSmartDentitionMode(3), "pediatric");
+			assert.strictEqual(resolveSmartDentitionMode(4), "pediatric");
+			assert.strictEqual(resolveSmartDentitionMode(5), "pediatric");
 		});
 
 		it("selects mixed dentition (24 teeth) for child between 6 and 11 years old", () => {
-			assert.strictEqual(getSmartDentitionMode(6), "mixed");
-			assert.strictEqual(getSmartDentitionMode(7), "mixed");
-			assert.strictEqual(getSmartDentitionMode(8), "mixed");
-			assert.strictEqual(getSmartDentitionMode(10), "mixed");
-			assert.strictEqual(getSmartDentitionMode(11), "mixed");
+			assert.strictEqual(resolveSmartDentitionMode(6), "mixed");
+			assert.strictEqual(resolveSmartDentitionMode(7), "mixed");
+			assert.strictEqual(resolveSmartDentitionMode(8), "mixed");
+			assert.strictEqual(resolveSmartDentitionMode(10), "mixed");
+			assert.strictEqual(resolveSmartDentitionMode(11), "mixed");
 		});
 
 		it("selects adult dentition (FDI 11–48) for patient 12 years old and above", () => {
-			assert.strictEqual(getSmartDentitionMode(12), "adult");
-			assert.strictEqual(getSmartDentitionMode(15), "adult");
-			assert.strictEqual(getSmartDentitionMode(30), "adult");
+			assert.strictEqual(resolveSmartDentitionMode(12), "adult");
+			assert.strictEqual(resolveSmartDentitionMode(15), "adult");
+			assert.strictEqual(resolveSmartDentitionMode(30), "adult");
 		});
 
-		it("defaults safely to adult dentition when patient age is unknown / null", () => {
-			assert.strictEqual(getSmartDentitionMode(null), "adult");
+		it("defaults safely to adult dentition when patient age is unknown / null / NaN", () => {
+			assert.strictEqual(resolveSmartDentitionMode(null), "adult");
+			assert.strictEqual(resolveSmartDentitionMode(undefined), "adult");
+			assert.strictEqual(resolveSmartDentitionMode(Number.NaN), "adult");
 		});
 
 		it("guarantees mixed dentition formula contains exactly 24 teeth (20 primary + 4 first molars 16, 26, 36, 46)", () => {

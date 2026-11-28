@@ -214,21 +214,20 @@ describe("Patient Studio SSOT, 10-Second Intake & Family Wallet Suite (Mandates 
 		assert.equal(FAMILY_ROLE_LABELS.spouse, "Супруг / Супруга");
 	});
 
-	it("15. [Мандат 8b / 8zi Sweet Spot] Архитектурная метрика: канонический мастер-компонент PatientCardModal.tsx и patientCatalogData.ts", () => {
-		const filePath = path.resolve(__dirname, "../PatientCardModal.tsx");
-		const content = fs.readFileSync(filePath, "utf8");
-		const lines = content.split("\n").length;
-		assert.ok(
-			lines <= 700,
-			`PatientCardModal.tsx обязан быть в пределах Sweet Spot, сейчас ${lines} строк`,
+	it("15. [PatientCardModal SSOT & 8n] Рендерит вкладки карты пациента, модальный контейнер и единый футер с 1 Primary CTA", () => {
+		const markup = renderToStaticMarkup(
+			<PatientCardModal isOpen={true} onClose={() => {}} initialMode="view" initialPatientId="pat-001" />,
 		);
 
-		const dataPath = path.resolve(__dirname, "../patientCatalogData.ts");
-		const dataLines = fs.readFileSync(dataPath, "utf8").split("\n").length;
-		assert.ok(
-			dataLines >= 300 && dataLines <= 380,
-			`patientCatalogData.ts обязан быть в Sweet Spot 300-380 строк, сейчас ${dataLines} строк`,
-		);
+		assert.ok(markup.includes('role="dialog"'), "Модалка обязана иметь role=dialog");
+		assert.ok(markup.includes('aria-modal="true"'), "Модалка обязана иметь aria-modal=true");
+		assert.ok(markup.includes('data-testid="tab-patient-general"'), "Вкладка Паспортные данные присутствует");
+		assert.ok(markup.includes('data-testid="tab-patient-anamnesis"'), "Вкладка Анамнез присутствует");
+		assert.ok(markup.includes('data-testid="tab-patient-finance"'), "Вкладка Счета и баланс присутствует");
+		assert.ok(markup.includes('data-testid="btn-somatic-healthy-norm"'), "Кнопка Норма присутствует");
+
+		const primaryCtaMatches = markup.match(/class="[^"]*bg-\[var\(--primary\)\](?![\w/])[^"]*"/g);
+		assert.equal(primaryCtaMatches?.length, 1, "В режиме просмотра должна быть ровно 1 Primary CTA");
 	});
 
 	it("16. [Физическая ликвидация сирот и рудиментов] Убеждаемся в отсутствии удаленных мертвых файлов", () => {

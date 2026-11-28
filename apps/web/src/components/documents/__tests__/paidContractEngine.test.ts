@@ -276,8 +276,80 @@ describe("Paid Contract Engine (Постановление Правительс�
 			assert.ok(text.includes("Иванов Дмитрий Сергеевич"));
 		});
 
-		test("printPaidContract736 is defined as a callable function", () => {
-			assert.strictEqual(typeof printPaidContract736, "function");
+		test("printPaidContract736 safely skips in SSR and writes valid A4 HTML to hidden iframe in DOM", () => {
+			const contract = createDefaultPaidContract({
+				patientFullName: "Ковалев Сергей Михайлович",
+				totalAmountKopecks: 1250050,
+			});
+
+			// 1. SSR mode (no window/document): must return cleanly without throwing
+			assert.doesNotThrow(() => {
+				printPaidContract736(contract);
+			});
+
+			// 2. Browser DOM mode: creates hidden print iframe and writes complete A4 contract HTML
+			const origWindow = (globalThis as Record<string, unknown>).window;
+			const origDocument = (globalThis as Record<string, unknown>).document;
+			let writtenHtml = "";
+			let openCount = 0;
+			let closeCount = 0;
+			let appendedId = "";
+
+			const mockIframe = {
+				id: "",
+				style: {} as Record<string, string>,
+				setAttribute: () => {},
+				remove: () => {},
+				contentWindow: {
+					document: {
+						open: () => {
+							openCount += 1;
+						},
+						write: (html: string) => {
+							writtenHtml += html;
+						},
+						close: () => {
+							closeCount += 1;
+						},
+					},
+					focus: () => {},
+					print: () => {},
+					onload: null as (() => void) | null,
+				},
+			};
+
+			(globalThis as Record<string, unknown>).window = {
+				print: () => {},
+			};
+			(globalThis as Record<string, unknown>).document = {
+				getElementById: () => null,
+				createElement: (tag: string) => {
+					assert.strictEqual(tag, "iframe");
+					return mockIframe;
+				},
+				body: {
+					appendChild: (node: { id?: string }) => {
+						appendedId = node.id ?? "";
+					},
+				},
+			};
+
+			try {
+				printPaidContract736(contract);
+			} finally {
+				if (origWindow === undefined) delete (globalThis as Record<string, unknown>).window;
+				else (globalThis as Record<string, unknown>).window = origWindow;
+
+				if (origDocument === undefined) delete (globalThis as Record<string, unknown>).document;
+				else (globalThis as Record<string, unknown>).document = origDocument;
+			}
+
+			assert.strictEqual(appendedId, "dente-contract-print-iframe");
+			assert.strictEqual(openCount, 1);
+			assert.strictEqual(closeCount, 1);
+			assert.ok(writtenHtml.includes("<!DOCTYPE html>"), "Printed iframe HTML must contain DOCTYPE");
+			assert.ok(writtenHtml.includes("Ковалев Сергей Михайлович"), "Printed HTML must contain patient full name");
+			assert.ok(writtenHtml.includes("12 500,50"), "Printed HTML must contain exact kopeck total");
 		});
 	});
 

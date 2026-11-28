@@ -168,7 +168,7 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = Rea
 					<X className="w-4 h-4 shrink-0" />
 				</button>
 
-				{/* Шапка действий: 1 контекстная Primary CTA + 1 Secondary + меню «... Ещё» */}
+				{/* Шапка действий: Secondary переходы + меню «... Ещё» (единственная Primary CTA — «Сохранить» в футере) */}
 				<div className="order-3 sm:order-2 flex items-center gap-2 shrink-0 w-full sm:w-auto">
 					{!isCreateMode ? (
 						<>
@@ -176,7 +176,7 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = Rea
 								type="button"
 								data-testid="btn-patient-open-emr-studio"
 								onClick={onOpenMedicalRecordStudio}
-								className="bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer max-sm:flex-1 sm:flex-none shrink-0 shadow-sm transition-colors"
+								className="bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer max-sm:flex-1 sm:flex-none shrink-0 shadow-xs transition-colors"
 								title="Открыть электронную карту (ЭМК)"
 							>
 								<ClipboardList className="w-4 h-4 shrink-0" />

@@ -1,80 +1,200 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-import type { DentalLabOrderData } from "../labMath";
-
-const __filename = fileURLToPath(import.meta.url);
-const labDir = path.resolve(path.dirname(__filename), "..");
-const webSrcDir = path.resolve(path.dirname(__filename), "../../../");
-const dentalLabOrderModalSectionPath = path.resolve(
-	labDir,
-	"../visit/view/viewModalsModules/DentalLabOrderModalSection.tsx",
-);
+import { describe, it, beforeEach, afterEach } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import {
+	calculateLabFinancialSplit,
+	type DentalLabOrderData,
+} from "../labMath";
+import { LabOrdersTableRow } from "../ordersView/LabOrdersTableRow";
+import {
+	parseBillingServicesList,
+	parseSingleBillingItem,
+} from "../../visit/billing/billingEventItemParser";
+import { VisitServiceBillingWidget } from "../../visit/VisitServiceBillingWidget";
+import { useVisitStore } from "../../../store/visitStore";
 
 describe("visitDentalLabOrder — Billing, Events & Codebase Wiring", () => {
-	it("Снятие слепка (A02.07.010) и includeImpressionBilling", () => {
-		const impressionService = {
-			serviceCode: "A02.07.010",
-			name: "Снятие слепка (оттиска) с одной челюсти",
-			price: 2500,
-			quantity: 1,
-		};
-		assert.equal(impressionService.serviceCode, "A02.07.010");
-		assert.equal(impressionService.price, 2500);
+	beforeEach(() => {
+		useVisitStore.getState().resetDraft();
+	});
 
-		const testOrder: Partial<DentalLabOrderData> = {
+	afterEach(() => {
+		useVisitStore.getState().resetDraft();
+	});
+
+	it("Снятие слепка (A02.07.010) парсится и отображается в биллинге визита", () => {
+		const parsed = parseSingleBillingItem({
+			code804n: "A02.07.010",
+			title: "Снятие слепка (оттиска) с одной челюсти",
+			priceRub: 2500,
+			quantity: 1,
+			toothNumber: 26,
+		});
+
+		assert.equal(parsed.code804n, "A02.07.010");
+		assert.equal(parsed.unitPriceRub, 2500);
+		assert.equal(parsed.toothCode, "26");
+
+		const html = renderToStaticMarkup(
+			React.createElement(VisitServiceBillingWidget, {
+				visitId: "visit-lab-1",
+				patientId: "pat-123",
+				initialServices: [parsed],
+			}),
+		);
+
+		assert.ok(html.includes("Снятие слепка (оттиска) с одной челюсти"));
+		assert.ok(html.includes("A02.07.010"));
+		assert.ok(html.includes("2\u00a0500") || html.includes("2 500"));
+	});
+
+	it("Добавление наряда ЗТЛ и слепка обновляет store визита и копеечный сплит", () => {
+		const parsedList = parseBillingServicesList([
+			{
+				code804n: "A16.07.004",
+				title: "Коронка ZrO2",
+				toothCode: "26",
+				priceKopecks: 1850000,
+				labCostRub: 7500,
+				labOrderId: "lab-xyz",
+				quantity: 1,
+			},
+			{
+				code804n: "A02.07.010",
+				title: "Снятие оттиска с челюсти",
+				toothCode: "26",
+				priceRub: 2500,
+				quantity: 1,
+			},
+		]);
+
+		assert.equal(parsedList.length, 2);
+		assert.equal(parsedList[0]?.unitPriceRub, 18500);
+		assert.equal(parsedList[0]?.labCostRub, 7500);
+
+		for (const item of parsedList) {
+			useVisitStore.getState().addCompletedService({
+				serviceId: item.id,
+				code804n: item.code804n,
+				toothCode: item.toothCode,
+				name: item.title,
+				priceRub: item.unitPriceRub,
+				quantity: item.quantity,
+				...(item.labCostRub ? { labCostRub: item.labCostRub } : {}),
+				...(item.labOrderId ? { labOrderId: item.labOrderId } : {}),
+			});
+		}
+
+		const completed = useVisitStore.getState().completedServices;
+		assert.equal(completed.length, 2);
+		assert.equal(completed[0]?.code804n, "A16.07.004");
+		assert.equal(completed[1]?.code804n, "A02.07.010");
+
+		const split = calculateLabFinancialSplit(18500, 40);
+		assert.equal(split.isBalanced, true);
+		assert.equal(split.totalKopecks, 1850000);
+	});
+
+	it("LabOrdersTableRow рендерит номер этапа плана лечения и данные заказа ЗТЛ", () => {
+		const order: DentalLabOrderData = {
+			id: "lab-order-303",
+			orderNumber: "ЗТЛ-0303",
 			patientId: "pat-123",
+			patientName: "Смирнова Е.В.",
+			toothFdi: "26",
+			constructionType: "Коронка полная анатомическая",
+			material: "Диоксид циркония (ZrO2)",
+			colorVita: "A2",
+			status: "in_lab",
+			priceRub: 18500,
 			treatmentPlanId: "plan-999",
 			stageNumber: 3,
 			includeImpressionBilling: true,
 		};
-		assert.equal(testOrder.includeImpressionBilling, true);
+
+		const html = renderToStaticMarkup(
+			React.createElement(
+				"table",
+				null,
+				React.createElement(
+					"tbody",
+					null,
+					React.createElement(LabOrdersTableRow, {
+						order,
+						openMenuOrderId: null,
+						setOpenMenuOrderId: () => {},
+						onSelectTimelineOrder: () => {},
+						onOpenReadyInClinicPrompt: () => {},
+						onOpenTracking: () => {},
+						getStatusBadge: (status) => React.createElement("span", null, status || "draft"),
+						onView3DScan: () => {},
+						onPayFromCashbox: () => {},
+						onMarkInstalled: () => {},
+						onAttach3DScan: () => {},
+						onAttachBitePhoto: () => {},
+						onTechnicianComment: () => {},
+						onOpenPrintOrder: () => {},
+						onRepeatFitting: () => {},
+						onReclamation: () => {},
+						onOpenEditOrder: () => {},
+						copyPortalLink: () => {},
+					}),
+				),
+			),
+		);
+
+		assert.ok(html.includes('data-testid="lab-order-table-row-lab-order-303"'));
+		assert.ok(html.includes("Этап 3"), "Таблица ЗТЛ обязана отображать бейдж этапа плана лечения");
+		assert.ok(html.includes("Смирнова Е.В."));
+		assert.ok(html.includes("№ 26"));
+		assert.ok(html.includes("A2"));
 	});
 
-	it("События браузера для смены статуса этапа и добавления услуги в чек", () => {
-		const eventDetail = {
-			planId: "plan-xyz",
-			stageNumber: 3,
-			status: "in_lab",
-			statusRu: "В работе в ЗТЛ",
-		};
-		assert.equal(eventDetail.status, "in_lab");
-		assert.equal(eventDetail.statusRu, "В работе в ЗТЛ");
+	it("VisitServiceBillingWidget отображает бейдж лабораторной себестоимости и скрывает его при нуле", () => {
+		const htmlWithLabCost = renderToStaticMarkup(
+			React.createElement(VisitServiceBillingWidget, {
+				visitId: "visit-lab-cost-1",
+				patientId: "pat-real-1",
+				initialServices: [
+					{
+						id: "svc-crown-1",
+						code804n: "A16.07.004",
+						title: "Коронка диоксид циркония",
+						toothCode: "36",
+						quantity: 1,
+						unitPriceRub: 22000,
+						discountPercent: 0,
+						discountRub: 0,
+						isWarranty: false,
+						labCostRub: 7500,
+					},
+				],
+			}),
+		);
 
-		const billingItemEventDetail = {
-			code: "A02.07.010",
-			priceRub: 2500,
-			quantity: 1,
-		};
-		assert.equal(billingItemEventDetail.code, "A02.07.010");
-		assert.equal(billingItemEventDetail.priceRub, 2500);
-	});
+		assert.ok(htmlWithLabCost.includes('data-testid="badge-total-lab-cost"'));
+		assert.ok(htmlWithLabCost.includes("7500"));
 
-	it("Сквозная связка VisitView, DentalLabOrdersView и VisitViewModals", () => {
-		const layoutPath = path.resolve(webSrcDir, "components/visit/view/VisitViewDesktopLayout.tsx");
-		const content = fs.existsSync(layoutPath)
-			? fs.readFileSync(layoutPath, "utf-8")
-			: fs.readFileSync(path.resolve(webSrcDir, "VisitView.tsx"), "utf-8");
-		assert.match(content, /loadedTreatmentPlan=\{(?:s\.)?loadedTreatmentPlan\s*\|\|\s*(?:s\.)?activePlan\}/);
+		const htmlWithoutLabCost = renderToStaticMarkup(
+			React.createElement(VisitServiceBillingWidget, {
+				visitId: "visit-lab-cost-2",
+				patientId: "pat-real-2",
+				initialServices: [
+					{
+						id: "svc-consult-1",
+						code804n: "B01.065.001",
+						title: "Консультация",
+						quantity: 1,
+						unitPriceRub: 1500,
+						discountPercent: 0,
+						discountRub: 0,
+						isWarranty: false,
+					},
+				],
+			}),
+		);
 
-		const ordersViewPath = path.resolve(labDir, "DentalLabOrdersView.tsx");
-		const ordersContent = fs.readFileSync(ordersViewPath, "utf-8");
-		assert.match(ordersContent, /order\.stageNumber\s*\?/);
-		assert.match(ordersContent, /Этап\s*\{order\.stageNumber\}/);
-	});
-
-	it("Лабораторная себестоимость в финансовой карточке визита", () => {
-		const content = fs.readFileSync(dentalLabOrderModalSectionPath, "utf-8");
-		assert.match(content, /rawLabCost\s*=/);
-		assert.match(content, /unitLabCost\s*=/);
-		assert.match(content, /labCostRub:\s*unitLabCost/);
-
-		const widgetPath = path.resolve(labDir, "../visit/VisitServiceBillingWidget.tsx");
-		const widgetContent = fs.readFileSync(widgetPath, "utf-8");
-		assert.match(widgetContent, /totalLabCostRub/);
-		assert.match(widgetContent, /badge-total-lab-cost/);
+		assert.ok(!htmlWithoutLabCost.includes('data-testid="badge-total-lab-cost"'));
 	});
 });

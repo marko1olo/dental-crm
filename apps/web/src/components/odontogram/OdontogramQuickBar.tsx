@@ -94,16 +94,16 @@ export const OdontogramQuickBar: React.FC<OdontogramQuickBarProps> = React.memo(
 
 				{/* Island 2: 1-Click Sanitation + QuickActions Dropdown + MoreMenu */}
 				<div className="odontogram-toolbar__island odontogram-toolbar__island--right">
-					{/* Mandate 8e: 1-click physiological norm. Strictly the ONLY Primary CTA button (#0d9488) */}
+					{/* Mandate 8e: 1-click physiological norm (Secondary inside Odontogram to keep 1 Primary CTA in VisitViewHeader) */}
 					{props.onQuickStateChange && (
 						<button
 							type="button"
 							onClick={props.handleMarkIntactDentition}
-							className="odontogram-toolbar__btn odontogram-toolbar__btn--primary-cta"
+							className="odontogram-toolbar__btn"
 							title="Физиологическая норма: вся зубная формула отмечается интактной"
 							data-testid="mark-intact-dentition-btn"
 						>
-							<ShieldCheck size={14} className="text-white shrink-0" />
+							<ShieldCheck size={14} className="text-[var(--ink-muted)] shrink-0" />
 							<span>Физиологическая норма</span>
 						</button>
 					)}

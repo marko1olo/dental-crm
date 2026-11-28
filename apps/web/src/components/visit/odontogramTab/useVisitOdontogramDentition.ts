@@ -2,6 +2,19 @@ import { useMemo } from "react";
 import { calculateAge } from "@dental/shared";
 import type { DentitionPhaseBadge, VisitOdontogramTabPatient } from "./visitOdontogramTabTypes";
 
+export type SmartDentitionMode = "adult" | "pediatric" | "mixed";
+
+export function resolveSmartDentitionMode(
+	patientAgeYears: number | null | undefined,
+): SmartDentitionMode {
+	if (typeof patientAgeYears !== "number" || !Number.isFinite(patientAgeYears) || patientAgeYears < 0) {
+		return "adult";
+	}
+	if (patientAgeYears < 6) return "pediatric";
+	if (patientAgeYears < 12) return "mixed";
+	return "adult";
+}
+
 export function useVisitOdontogramDentition(activePatient?: VisitOdontogramTabPatient | null) {
 	const patientAge = useMemo(() => {
 		return activePatient?.birthDate ? calculateAge(activePatient.birthDate) : null;
@@ -27,11 +40,8 @@ export function useVisitOdontogramDentition(activePatient?: VisitOdontogramTabPa
 		};
 	}, [patientAge]);
 
-	const smartDentitionMode = useMemo<"adult" | "pediatric" | "mixed">(() => {
-		if (patientAge === null) return "adult";
-		if (patientAge < 6) return "pediatric";
-		if (patientAge < 12) return "mixed";
-		return "adult";
+	const smartDentitionMode = useMemo<SmartDentitionMode>(() => {
+		return resolveSmartDentitionMode(patientAge);
 	}, [patientAge]);
 
 	const isPediatric = useMemo(() => {

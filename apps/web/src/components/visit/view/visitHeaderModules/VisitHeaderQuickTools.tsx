@@ -39,7 +39,7 @@ export function VisitHeaderQuickTools({
 			>
 				<FlaskConical className="w-4 h-4 text-[var(--ink-muted)] shrink-0" aria-hidden="true" />
 				<span className="hidden 2xl:inline">Наряд ЗТЛ</span>
-				<span className="2xl:hidden text-[11px]">ЗТЛ</span>
+				<span className="2xl:hidden">ЗТЛ</span>
 			</button>
 
 			<button
@@ -52,8 +52,7 @@ export function VisitHeaderQuickTools({
 				aria-label="Ассистент у кресла"
 			>
 				<Sparkles className="w-4 h-4 text-[var(--ink-muted)] shrink-0" aria-hidden="true" />
-				<span className="hidden 2xl:inline">Ассистент</span>
-				<span className="2xl:hidden text-[11px]">AI</span>
+				<span>Ассистент</span>
 			</button>
 
 			<button
@@ -67,7 +66,7 @@ export function VisitHeaderQuickTools({
 			>
 				<UserCheck className="w-4 h-4 text-[var(--ink-muted)] shrink-0" aria-hidden="true" />
 				<span className="hidden 2xl:inline">Очередь смены</span>
-				<span className="2xl:hidden text-[11px]">Очередь</span>
+				<span className="2xl:hidden">Очередь</span>
 			</button>
 		</div>
 	);

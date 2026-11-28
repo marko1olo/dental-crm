@@ -9,9 +9,12 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { mergeToothSurfaceStates } from "@dental/shared";
 import type { ToothData } from "../chart/types/toothRendererTypes";
 import { applyUpdatedStatesToTeeth } from "../syncModules/odontogramIndexedDbSync";
+import { PediatricToothContainer } from "../gate0/teeth/pediatric/PediatricToothContainer";
 
 describe("Odontogram Red Team Defect Invariants", () => {
 	it("[DEFECT-ODON-02]: preserves previously saved tooth surfaces when state changes with undefined surfacesOverride", () => {
@@ -108,20 +111,32 @@ describe("Odontogram Red Team Defect Invariants", () => {
 	});
 
 	it("[DEFECT-ODONT-02]: upper pediatric molars (54, 55, 64, 65) badge cy=8.0 clears apices at Y=14..18", () => {
-		// Verify badge default placement for upper molars in PediatricToothContainer
-		const toothNumber = 54;
-		const quadrant = Math.floor(toothNumber / 10);
-		const isTop = quadrant === 5 || quadrant === 6;
-		const isUpperMolar = isTop && (toothNumber % 10 === 4 || toothNumber % 10 === 5);
-		assert.equal(isUpperMolar, true, "Tooth 54 must be identified as upper pediatric molar");
+		for (const toothNumber of [54, 55, 64, 65]) {
+			const html = renderToStaticMarkup(
+				React.createElement(PediatricToothContainer, {
+					toothNumber,
+				}),
+			);
+			assert.ok(html.includes('viewBox="0 0 100 218"'), `Tooth ${toothNumber} must render standard 100x218 viewBox`);
+			assert.ok(html.includes(`data-tooth-number="${toothNumber}"`), `Tooth ${toothNumber} badge must be rendered`);
+			assert.ok(html.includes('cx="50" cy="8" r="8"'), `Upper pediatric molar ${toothNumber} must place badge at cy=8, r=8 to clear root apices`);
+		}
 
-		const r = isUpperMolar ? 8.0 : 14;
-		const cy = isUpperMolar ? 8.0 : 24.0;
-		assert.equal(r, 8.0);
-		assert.equal(cy, 8.0);
+		// Control: lower pediatric molar 74 uses lower badge geometry inside viewBox 0..218
+		const lowerHtml = renderToStaticMarkup(
+			React.createElement(PediatricToothContainer, {
+				toothNumber: 74,
+			}),
+		);
+		assert.ok(lowerHtml.includes('data-tooth-number="74"'));
+		assert.ok(lowerHtml.includes('cx="50" cy="176" r="14"'), "Lower pediatric molar 74 places badge at cy=176, r=14");
 
-		// Apices are at Y=14..18 (Palatal apex at Y=14, MB/DB at Y=18).
-		// Badge bottom edge is cy + r = 8.0 + 8.0 = 16.0 (below or at apex clearance, fully inside viewBox 0..218)
-		assert.ok(cy + r <= 18.0, "Badge bottom edge must not clip root apex halos at Y=18");
+		// Control: upper pediatric incisor 51 uses cy=24, r=14
+		const incisorHtml = renderToStaticMarkup(
+			React.createElement(PediatricToothContainer, {
+				toothNumber: 51,
+			}),
+		);
+		assert.ok(incisorHtml.includes('cx="50" cy="24" r="14"'), "Upper pediatric incisor 51 places badge at cy=24, r=14");
 	});
 });

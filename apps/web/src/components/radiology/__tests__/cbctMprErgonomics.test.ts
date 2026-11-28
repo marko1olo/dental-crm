@@ -6,8 +6,11 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
 	CBCT_QUICK_WL_PRESETS,
+	CbctViewportRulerToolbar,
 	formatRulerDistanceMm,
 	calculateRulerDistanceMm,
 	filterRulersByViewport,
@@ -15,11 +18,20 @@ import {
 } from "../mpr/CbctViewportsRuler";
 import {
 	getViewportOrientationLabels,
+	type CbctAngleMeasurement,
 	type CbctMeasurementRuler,
+	type CbctVoxelVolume,
 	type Point3D,
 	type CbctViewportType,
 } from "../cbctMprMath";
 import { handleCbctKeyDown } from "../useCbctKeyboardShortcuts";
+import { ViewportTopRightControls } from "../hud/ViewportTopRightControls";
+import { MprQuadWorkspace } from "../mpr/workspaces/MprQuadWorkspace";
+import { CbctViewportHud } from "../CbctViewportHud";
+import { CbctVolume3DTelemetryHud } from "../mpr/cbctVolume3D/CbctVolume3DTelemetryHud";
+import { CbctMprGridWorkspaceRenderer } from "../mpr/viewportsGrid/CbctMprGridWorkspaceRenderer";
+import type { CbctMprViewportsGridProps } from "../mpr/viewportsGrid/CbctMprGridProps";
+import { disposeSharedCbctGlContext, getSharedCbctGlContext } from "../mpr/webgl/CbctVolumeGlContext";
 
 describe("CBCT Clinical UI/UX Ergonomics & Measurement HUD Suite", () => {
 	describe("1. Screen Caliper Ruler HUD & Mathematical Precision", () => {
@@ -132,28 +144,51 @@ describe("CBCT Clinical UI/UX Ergonomics & Measurement HUD Suite", () => {
 			assert.equal(activeRulers[1]!.id, "ruler-cortical-plate");
 		});
 
-		it("supports 1-click clearing of measurements for a specific viewport or all viewports", () => {
-			let rulers: CbctMeasurementRuler[] = [
+		it("renders per-viewport clear measurement controls only when measurements exist on that plane", () => {
+			const rulers: CbctMeasurementRuler[] = [
 				{ id: "r1", plane: "axial", startMm: { x: 0, y: 0, z: 0 }, endMm: { x: 5, y: 0, z: 0 }, distanceMm: 5.0 },
 				{ id: "r2", plane: "coronal", startMm: { x: 0, y: 0, z: 0 }, endMm: { x: 0, y: 0, z: 11.4 }, distanceMm: 11.4 },
 				{ id: "r3", plane: "coronal", startMm: { x: 2, y: 0, z: 0 }, endMm: { x: 4.3, y: 0, z: 0 }, distanceMm: 2.3 },
 			];
+			const angles: CbctAngleMeasurement[] = [
+				{
+					id: "a1",
+					plane: "coronal",
+					p1Mm: { x: 0, y: 0, z: 0 },
+					vertexMm: { x: 5, y: 0, z: 0 },
+					p2Mm: { x: 5, y: 5, z: 0 },
+					angleDeg: 90,
+				},
+			];
 
-			// Clear only coronal rulers
-			const clearViewport = (plane: "axial" | "coronal" | "sagittal") => {
-				rulers = rulers.filter((r) => r.plane !== plane);
-			};
+			const coronalHtml = renderToStaticMarkup(
+				React.createElement(CbctViewportRulerToolbar, {
+					viewportType: "coronal",
+					rulers,
+					angles,
+					onClearRulers: () => {},
+					onClearAngles: () => {},
+				}),
+			);
+			assert.ok(coronalHtml.includes('data-testid="cbct-ruler-count-coronal"'));
+			assert.ok(coronalHtml.includes("2 зам."));
+			assert.ok(coronalHtml.includes("2.3 мм"));
+			assert.ok(coronalHtml.includes('data-testid="cbct-clear-rulers-btn-coronal"'));
+			assert.ok(coronalHtml.includes('data-testid="cbct-angle-count-coronal"'));
+			assert.ok(coronalHtml.includes("90°"));
+			assert.ok(coronalHtml.includes('data-testid="cbct-clear-angles-btn-coronal"'));
 
-			clearViewport("coronal");
-			assert.equal(rulers.length, 1);
-			assert.equal(rulers[0]?.plane, "axial");
-
-			// Clear all rulers
-			const clearAll = () => {
-				rulers = [];
-			};
-			clearAll();
-			assert.equal(rulers.length, 0);
+			const sagittalHtml = renderToStaticMarkup(
+				React.createElement(CbctViewportRulerToolbar, {
+					viewportType: "sagittal",
+					rulers,
+					angles,
+					onClearRulers: () => {},
+					onClearAngles: () => {},
+				}),
+			);
+			assert.ok(!sagittalHtml.includes('data-testid="cbct-clear-rulers-btn-sagittal"'));
+			assert.ok(!sagittalHtml.includes('data-testid="cbct-clear-angles-btn-sagittal"'));
 		});
 	});
 
@@ -245,26 +280,27 @@ describe("CBCT Clinical UI/UX Ergonomics & Measurement HUD Suite", () => {
 
 	describe("5. Compact Clinical Density & Zero-Bloat Invariants (Mandate 8k)", () => {
 		it("enforces compact 28–32px button heights for all desktop viewport HUD controls", () => {
-			// Test standard CSS class names used in CbctViewportsRuler and CbctViewportHud
-			const expectedHeightPatterns = ["h-7", "min-h-[28px]", "max-h-[28px]"];
-			const compactClassSample = "h-7 min-h-[28px] max-h-[28px] px-2 py-0.5 rounded-md text-xs";
+			const html = renderToStaticMarkup(
+				React.createElement(CbctViewportRulerToolbar, {
+					viewportType: "axial",
+					activeTool: "ruler",
+					onSelectTool: () => {},
+					showSharpenControl: true,
+					showEndoCanalControl: true,
+				}),
+			);
 
-			for (const pattern of expectedHeightPatterns) {
-				assert.ok(
-					compactClassSample.includes(pattern),
-					`Clinical HUD button must include '${pattern}' to guarantee 28px desktop height`,
-				);
-			}
-
-			// Prohibit 44x44px unconditional desktop sizes
-			assert.ok(!compactClassSample.includes("w-11 h-11"));
+			assert.ok(html.includes('data-testid="cbct-viewport-ruler-btn-axial"'));
+			assert.ok(html.includes('data-testid="cbct-viewport-angle-btn-axial"'));
+			assert.ok(html.includes('data-testid="cbct-viewport-endo-canal-btn-axial"'));
+			assert.ok(html.includes('data-testid="cbct-viewport-sharpen-btn-axial"'));
+			assert.ok(html.includes("h-7"));
+			assert.ok(html.includes("min-h-[28px]"));
+			assert.ok(html.includes("max-h-[28px]"));
+			assert.ok(!html.includes("w-11 h-11"), "Desktop buttons must not enforce 44x44px unconditionally");
 		});
 
-		it("verifies dual-mode touch targets for narrow mobile viewports without bloating desktop", async () => {
-			// On desktop: compact 28px; on mobile (<768px): expands to 44px tap target via max-md:h-11
-			const { ViewportTopRightControls } = await import("../hud/ViewportTopRightControls.js");
-			const React = await import("react");
-			const { renderToStaticMarkup } = await import("react-dom/server");
+		it("verifies dual-mode touch targets for narrow mobile viewports without bloating desktop", () => {
 			const html = renderToStaticMarkup(
 				React.createElement(ViewportTopRightControls, {
 					viewportType: "axial",
@@ -292,42 +328,83 @@ describe("CBCT Clinical UI/UX Ergonomics & Measurement HUD Suite", () => {
 
 	describe("7. Ez3D-i Clinical Telemetry & Orientation Invariants (Screenshots 222505, 222511, 222517)", () => {
 		it("enforces canonical Ez3D-i 4-quadrant layout order contract: Coronal (TL), Sagittal (TR), Axial (BL), 3D (BR)", () => {
-			// Ez3D-i standard: Top-Left=Coronal, Top-Right=Sagittal, Bottom-Left=Axial, Bottom-Right=3D Volume
-			const ez3dQuadOrder = ["coronal", "sagittal", "axial", "panoramic_or_volume3d"] as const;
-			assert.equal(ez3dQuadOrder[0], "coronal", "Quadrant 1 (Top-Left) must be Coronal in Ez3D-i");
-			assert.equal(ez3dQuadOrder[1], "sagittal", "Quadrant 2 (Top-Right) must be Sagittal in Ez3D-i");
-			assert.equal(ez3dQuadOrder[2], "axial", "Quadrant 3 (Bottom-Left) must be Axial in Ez3D-i");
-			assert.equal(ez3dQuadOrder[3], "panoramic_or_volume3d", "Quadrant 4 (Bottom-Right) must be 3D Volume/Pan in Ez3D-i");
+			const html = renderToStaticMarkup(
+				React.createElement(MprQuadWorkspace, {
+					volume: null,
+					viewLayout: "quad_view",
+					activeViewport: "axial",
+					setActiveViewport: () => {},
+					maximizedViewport: null,
+					handleToggleMaximize: () => {},
+					mobileActiveTab: "coronal",
+					renderers: {
+						renderCoronal: () => React.createElement("div", { "data-quad": "coronal" }),
+						renderSagittal: () => React.createElement("div", { "data-quad": "sagittal" }),
+						renderAxial: () => React.createElement("div", { "data-quad": "axial" }),
+						renderPanoramic: () => React.createElement("div", { "data-quad": "panoramic" }),
+						renderCrossSection: () => React.createElement("div", { "data-quad": "cross_section" }),
+						renderVolume3D: () => React.createElement("div", { "data-quad": "volume3d" }),
+					},
+				}),
+			);
+
+			assert.ok(html.includes('data-testid="cbct-mpr-quad-grid"'));
+			const coronalIdx = html.indexOf('data-quad="coronal"');
+			const sagittalIdx = html.indexOf('data-quad="sagittal"');
+			const axialIdx = html.indexOf('data-quad="axial"');
+			const vol3dIdx = html.indexOf('data-quad="volume3d"');
+
+			assert.ok(coronalIdx >= 0 && sagittalIdx > coronalIdx, "Q1 Coronal must precede Q2 Sagittal");
+			assert.ok(axialIdx > sagittalIdx, "Q2 Sagittal must precede Q3 Axial");
+			assert.ok(vol3dIdx > axialIdx, "Q3 Axial must precede Q4 3D Volume");
 		});
 
 		it("verifies bottom-right telemetry string formatting: TH, INT and Full Slice counter", () => {
-			const slabThicknessMm = 0.0;
-			const pixelSpacingMm = 0.5;
-			const sliceIndex = 85;
-			const totalSlices = 192;
+			const html = renderToStaticMarkup(
+				React.createElement(CbctViewportHud, {
+					viewportType: "axial",
+					slabThicknessMm: 0.0,
+					pixelSpacingMm: 0.5,
+					sliceIndex: 85,
+					totalSlices: 192,
+				}),
+			);
 
-			const thString = `TH [${slabThicknessMm.toFixed(1)}mm]`;
-			const intString = `INT [${pixelSpacingMm.toFixed(1)}mm]`;
-			const fullSliceString = `Полный срез (${sliceIndex + 1} / ${totalSlices})`;
-
-			assert.equal(thString, "TH [0.0mm]");
-			assert.equal(intString, "INT [0.5mm]");
-			assert.equal(fullSliceString, "Полный срез (86 / 192)");
+			assert.ok(html.includes('data-testid="cbct-bottom-telemetry-axial"'));
+			assert.ok(html.includes("TH"));
+			assert.ok(html.includes("0.0mm"));
+			assert.ok(html.includes("INT"));
+			assert.ok(html.includes("0.5mm"));
+			assert.ok(html.includes("86 / 192"));
 		});
 
 		it("calculates 3D physical FOV in millimeters and formats axis coordinates", () => {
-			// Dimensions 270 x 270 x 400 voxels with 0.20 mm spacing
-			const dimensions = { width: 270, height: 270, depth: 400 };
-			const spacingMm = { x: 0.20, y: 0.20, z: 0.20 };
-			const crosshairMm = { x: 1.2, y: -4.7, z: -7.7 };
+			const volume: CbctVoxelVolume = {
+				dimensions: { width: 270, height: 270, depth: 400 },
+				spacingMm: { x: 0.2, y: 0.2, z: 0.2 },
+				data: new Int16Array(0),
+				minHu: -1000,
+				maxHu: 3000,
+				modality: "CBCT",
+			};
+			const html = renderToStaticMarkup(
+				React.createElement(CbctVolume3DTelemetryHud, {
+					volume,
+					activePreset: "skull",
+					crosshairMm: { x: 1.2, y: -4.7, z: -7.7 },
+					yaw: 15,
+					pitch: -10,
+					hasActiveClipping: false,
+					effectiveHibernated: false,
+					isGpuActive: true,
+					isMarActive: false,
+				}),
+			);
 
-			const fovWidthMm = Math.round(dimensions.width * spacingMm.x);
-			const fovDepthMm = Math.round(dimensions.depth * spacingMm.z);
-			const fovString = `FOV [${fovWidthMm} × ${fovDepthMm} мм]`;
-			const axisString = `Ось [${crosshairMm.x.toFixed(1)}, ${crosshairMm.y.toFixed(1)}, ${crosshairMm.z.toFixed(1)}]`;
-
-			assert.equal(fovString, "FOV [54 × 80 мм]", "FOV matches Ez3D-i screenshot 222505 exactly");
-			assert.equal(axisString, "Ось [1.2, -4.7, -7.7]", "Axis coordinates match Ez3D-i telemetry");
+			assert.ok(html.includes('data-testid="cbct-3d-fov-telemetry"'));
+			assert.ok(html.includes("FOV [54 × 80 мм]"));
+			assert.ok(html.includes('data-testid="cbct-3d-axis-telemetry"'));
+			assert.ok(html.includes("[1.2, -4.7, -7.7]"));
 		});
 
 		it("enforces Ez3D-i cross-section orientation badges via getViewportOrientationLabels: Buccal (B) Left, Lingual (L) Right", () => {
@@ -344,15 +421,17 @@ describe("CBCT Clinical UI/UX Ergonomics & Measurement HUD Suite", () => {
 	});
 
 	describe("8. WebGL Deterministic Teardown & Context Disposal (Mandate 8wx & Frontend Rules)", () => {
-		it("provides disposeSharedCbctGlContext without throwing when called", async () => {
-			const { disposeSharedCbctGlContext, getSharedCbctGlContext } = await import("../mpr/webgl/CbctVolumeGlContext");
-			assert.equal(typeof disposeSharedCbctGlContext, "function");
-			assert.equal(typeof getSharedCbctGlContext, "function");
+		it("resets shared GL context state cleanly via disposeSharedCbctGlContext", () => {
+			const ctx = getSharedCbctGlContext();
+			ctx.setSharpenAmount(0.5);
+			assert.equal(ctx.getSharpenAmount(), 0.5);
 
-			// Calling dispose on empty or inactive shared context must be completely safe (no crash)
-			assert.doesNotThrow(() => {
-				disposeSharedCbctGlContext();
-			});
+			disposeSharedCbctGlContext();
+
+			const nextCtx = getSharedCbctGlContext();
+			assert.notStrictEqual(nextCtx, ctx, "Disposing must release old singleton instance");
+			assert.equal(nextCtx.getSharpenAmount(), 0, "Fresh shared GL context must start with clean sharpen state");
+			disposeSharedCbctGlContext();
 		});
 	});
 
@@ -390,13 +469,23 @@ describe("CBCT Clinical UI/UX Ergonomics & Measurement HUD Suite", () => {
 
 		it("standardizes 100% fullscreen expand and collapse button testids across all 6 clinical viewports", () => {
 			for (const vp of clinicalViewports) {
-				const expandTestId = `btn-viewport-expand-${vp}`;
-				const collapseTestId = `btn-viewport-collapse-${vp}`;
+				const expandHtml = renderToStaticMarkup(
+					React.createElement(ViewportTopRightControls, {
+						viewportType: vp,
+						isMaximized: false,
+						onToggleMaximize: () => {},
+					}),
+				);
+				assert.ok(expandHtml.includes(`data-testid="btn-viewport-expand-${vp}"`));
 
-				assert.ok(expandTestId.startsWith("btn-viewport-expand-"));
-				assert.ok(collapseTestId.startsWith("btn-viewport-collapse-"));
-				assert.equal(expandTestId.split("-").pop(), vp);
-				assert.equal(collapseTestId.split("-").pop(), vp);
+				const collapseHtml = renderToStaticMarkup(
+					React.createElement(ViewportTopRightControls, {
+						viewportType: vp,
+						isMaximized: true,
+						onToggleMaximize: () => {},
+					}),
+				);
+				assert.ok(collapseHtml.includes(`data-testid="btn-viewport-collapse-${vp}"`));
 			}
 		});
 
@@ -464,21 +553,93 @@ describe("CBCT Clinical UI/UX Ergonomics & Measurement HUD Suite", () => {
 			assert.equal(closeCallCount, 1, "onClose must be called once when in standard grid");
 		});
 
-		it("verifies double-click maximization trigger contract on all viewport containers", () => {
-			for (const vp of clinicalViewports) {
-				let maximizedViewport: string | null = null;
-				const handleToggleMaximize = (targetVp: string) => {
-					maximizedViewport = maximizedViewport === targetVp ? null : targetVp;
-				};
+		it("renders maximized single viewport container when maximizedViewport is set in CbctMprGridWorkspaceRenderer", () => {
+			const dummyRef = { current: null };
+			const baseProps: CbctMprViewportsGridProps = {
+				isSidebarOpen: false,
+				mobileActiveTab: "axial",
+				volume: null,
+				dicomLoadingStatus: null,
+				dicomProgress: 0,
+				maximizedViewport: null,
+				viewLayout: "quad_view",
+				studioMode: "diagnostic",
+				folderInputRef: dummyRef,
+				zipInputRef: dummyRef,
+				handleDicomFilesChange: () => {},
+				activeViewport: "axial",
+				setActiveViewport: () => {},
+				handleToggleMaximize: () => {},
+				axialBaseCanvasRef: dummyRef,
+				axialOverlayCanvasRef: dummyRef,
+				coronalBaseCanvasRef: dummyRef,
+				coronalOverlayCanvasRef: dummyRef,
+				sagittalBaseCanvasRef: dummyRef,
+				sagittalOverlayCanvasRef: dummyRef,
+				panoBaseCanvasRef: dummyRef,
+				panoOverlayCanvasRef: dummyRef,
+				crossSectionBaseCanvasRef: dummyRef,
+				crossSectionOverlayCanvasRef: dummyRef,
+				handleCanvasDoubleClick: () => {},
+				handleCanvasMouseDown: () => {},
+				handleCanvasMouseMove: () => {},
+				handleCanvasMouseUp: () => {},
+				handleCanvasWheel: () => {},
+				getCanvasCursor: () => "crosshair",
+				crosshairMm: { x: 0, y: 0, z: 0 },
+				currentVoxel: { x: 0, y: 0, z: 0 },
+				slabMode: "single",
+				slabThicknessMm: 1,
+				obliqueAngles: {
+					axialRollDeg: 0,
+					coronalTiltDeg: 0,
+					sagittalTiltDeg: 0,
+				},
+				setObliqueAngles: () => {},
+				handleFullResetViewport: () => {},
+				activeRotationHandle: null,
+				isShiftRotating: null,
+				hoveredHandle: null,
+				transforms: {
+					axial: { zoom: 1, panX: 0, panY: 0 },
+					coronal: { zoom: 1, panX: 0, panY: 0 },
+					sagittal: { zoom: 1, panX: 0, panY: 0 },
+					panoramic: { zoom: 1, panX: 0, panY: 0 },
+					cross_section: { zoom: 1, panX: 0, panY: 0 },
+					volume3d: { zoom: 1, panX: 0, panY: 0 },
+				},
+				windowWidth: 2500,
+				windowLevel: 500,
+				renderViewportOverlays: () => null,
+				handlePanoMouseDown: () => {},
+				handlePanoMouseMove: () => {},
+				handlePanoMouseUp: () => {},
+				handleCrossSectionMouseDown: () => {},
+				handleCrossSectionMouseMove: () => {},
+				handleCrossSectionMouseUp: () => {},
+				dragImplantPart: null,
+				hoveredImplantPart: null,
+				activeCrossSection: null,
+				activeCrossSectionIdx: 0,
+				crossSections: [],
+			};
 
-				// First double-click: expand to 100% fullscreen
-				handleToggleMaximize(vp);
-				assert.equal(maximizedViewport, vp, `First double-click on ${vp} must maximize it`);
+			const quadHtml = renderToStaticMarkup(React.createElement(CbctMprGridWorkspaceRenderer, baseProps));
+			assert.ok(quadHtml.includes('data-testid="cbct-mpr-quad-grid"'));
+			assert.ok(quadHtml.includes('data-testid="cbct-viewport-container-coronal"'));
+			assert.ok(quadHtml.includes('data-testid="cbct-viewport-container-sagittal"'));
+			assert.ok(quadHtml.includes('data-testid="cbct-viewport-container-axial"'));
+			assert.ok(quadHtml.includes('data-testid="cbct-viewport-container-volume3d"'));
 
-				// Second double-click: restore to standard grid
-				handleToggleMaximize(vp);
-				assert.equal(maximizedViewport, null, `Second double-click on ${vp} must restore layout`);
-			}
+			const maxAxialHtml = renderToStaticMarkup(
+				React.createElement(CbctMprGridWorkspaceRenderer, {
+					...baseProps,
+					maximizedViewport: "axial",
+				}),
+			);
+			assert.ok(maxAxialHtml.includes('data-testid="cbct-mpr-maximized-grid"'));
+			assert.ok(maxAxialHtml.includes('data-testid="cbct-viewport-container-axial"'));
+			assert.ok(!maxAxialHtml.includes('data-testid="cbct-viewport-container-coronal"'));
 		});
 	});
 });
