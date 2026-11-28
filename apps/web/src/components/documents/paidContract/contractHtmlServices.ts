@@ -3,6 +3,7 @@
  * HTML table renderer for contract services and total (Mandate 8b <= 120 lines)
  */
 
+import { escapeHtml } from "@dental/shared";
 import { formatKopecksToRubAndKop } from "./money";
 import type { PaidContractData } from "./contractDataTypes";
 
@@ -13,11 +14,11 @@ export function renderContractServicesTable(contract: PaidContractData): string 
 	const serviceRows = (contract.services && contract.services.length > 0)
 		? contract.services.map((s, idx) => `<tr>
         <td style="text-align:center;">${idx + 1}</td>
-        <td>${s.code ? `<code>${s.code}</code> ` : ""}${s.name}</td>
-        <td style="text-align:center;">${s.toothOrArea || "—"}</td>
-        <td style="text-align:center;">${s.quantity}</td>
-        <td style="text-align:right;">${formatKopecksToRubAndKop(s.unitPriceKopecks).formatted}</td>
-        <td style="text-align:right;"><strong>${formatKopecksToRubAndKop(s.totalKopecks).formatted}</strong></td>
+        <td>${s.code ? `<code>${escapeHtml(s.code)}</code> ` : ""}${escapeHtml(s.name)}</td>
+        <td style="text-align:center;">${escapeHtml(s.toothOrArea) || "—"}</td>
+        <td style="text-align:center;">${escapeHtml(s.quantity)}</td>
+        <td style="text-align:right;">${escapeHtml(formatKopecksToRubAndKop(s.unitPriceKopecks).formatted)}</td>
+        <td style="text-align:right;"><strong>${escapeHtml(formatKopecksToRubAndKop(s.totalKopecks).formatted)}</strong></td>
       </tr>`).join("")
 		: `<tr>
         <td style="text-align:center;">1</td>

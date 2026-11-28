@@ -8,7 +8,15 @@
  * Хэширование целостности подписи и генератор печати бланка А4.
  */
 
-import { calculatePercentDiscountKopecks, type DocumentKind, kopecksToRubles, resolveTaxDeductionCategoryShared } from "@dental/shared";
+import {
+	calculatePercentDiscountKopecks,
+	type DocumentKind,
+	escapeHtml,
+	kopecksToRubles,
+	resolveTaxDeductionCategoryShared,
+	sanitizeImageDataUrl,
+	sanitizeSignatureSvg,
+} from "@dental/shared";
 import type React from "react";
 import {
 	ClipboardList,
@@ -349,41 +357,50 @@ export function generateConsentPrintHtml(
 	context?: Partial<ConsentPartyContext>,
 	signature?: { status: ConsentSignStatus; signedAt?: string | undefined; signatureSvg?: string | undefined },
 ): string {
-	const pName = context?.patientName || "________________________________________________";
-	const bDate = context?.birthDate || "____.____.________";
-	const pass = context?.passport || "серия ______ № ________ выдан ________________________";
-	const cName = context?.clinicName || "Стоматологическая клиника «DENTE»";
-	const docName = context?.doctorName || "Лечащий врач-стоматолог";
-	const dateStr = context?.date || new Date().toLocaleDateString("ru-RU");
+	const pName = escapeHtml(context?.patientName) || "________________________________________________";
+	const bDate = escapeHtml(context?.birthDate) || "____.____.________";
+	const pass = escapeHtml(context?.passport) || "серия ______ № ________ выдан ________________________";
+	const cName = escapeHtml(context?.clinicName) || "Стоматологическая клиника «DENTE»";
+	const docName = escapeHtml(context?.doctorName) || "Лечащий врач-стоматолог";
+	const dateStr = escapeHtml(context?.date) || new Date().toLocaleDateString("ru-RU");
 	const status = signature?.status || doc.defaultStatus;
+	const signedAtStr = escapeHtml(signature?.signedAt) || dateStr;
 
 	const sectionsHtml = doc.sections
-		.map((s) => `<section class="sec"><h3>${s.title}</h3><p>${s.content}</p>${s.bullets?.length ? `<ul>${s.bullets.map((b) => `<li>${b}</li>`).join("")}</ul>` : ""}</section>`)
+		.map((s) => `<section class="sec"><h3>${escapeHtml(s.title)}</h3><p>${escapeHtml(s.content)}</p>${s.bullets?.length ? `<ul>${s.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>` : ""}</section>`)
 		.join("");
 
-	const signerName = context?.guardianName || pName;
-	let stampHtml = `<div class="sig-lines empty-stamp"><div class="row"><span>Подпись пациента: ________________ / ${pName} /</span></div>${context?.guardianName ? `<div class="row"><span>Законный представитель: ________________ / ${context.guardianName} /</span></div>` : ""}<div class="row"><span>Лечащий врач: ________________ / ${docName} /</span></div><div class="date-row">Дата оформления: «____» ________________ 202___ г. М.П.</div></div>`;
+	const safeGuardianName = escapeHtml(context?.guardianName);
+	const signerName = safeGuardianName || pName;
+	let stampHtml = `<div class="sig-lines empty-stamp"><div class="row"><span>Подпись пациента: ________________ / ${pName} /</span></div>${safeGuardianName ? `<div class="row"><span>Законный представитель: ________________ / ${safeGuardianName} /</span></div>` : ""}<div class="row"><span>Лечащий врач: ________________ / ${docName} /</span></div><div class="date-row">Дата оформления: «____» ________________ 202___ г. М.П.</div></div>`;
 	if (status === "signed_paper") {
-		stampHtml = `<div class="stamp paper"><strong>✓ ПОДПИСАНО НА БУМАЖНОМ НОСИТЕЛЕ</strong><div>Оригинал подписан пациентом собственноручно и хранится в архиве.</div><div class="meta">Дата: ${signature?.signedAt || dateStr} • Врач: ${docName}</div></div><div class="sig-lines"><div>Подпись пациента: ________________ / ${signerName} /</div><div>Подпись врача: ________________ / ${docName} /</div></div>`;
+		stampHtml = `<div class="stamp paper"><strong>✓ ПОДПИСАНО НА БУМАЖНОМ НОСИТЕЛЕ</strong><div>Оригинал подписан пациентом собственноручно и хранится в архиве.</div><div class="meta">Дата: ${signedAtStr} • Врач: ${docName}</div></div><div class="sig-lines"><div>Подпись пациента: ________________ / ${signerName} /</div><div>Подпись врача: ________________ / ${docName} /</div></div>`;
 	} else if (status === "signed_digital" && signature?.signatureSvg) {
 		const rawSig = signature.signatureSvg.trim();
-		const sigRender = rawSig.startsWith("<svg")
-			? rawSig
-			: `<img src="${signature.signatureSvg}" alt="Подпись" style="max-height: 48px; max-width: 240px; object-fit: contain; display: block;" />`;
-		stampHtml = `<div class="stamp digital"><strong>✓ ПОДПИСАНО ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (ПЭП)</strong><div>Подписано на планшете клиники. Юридическая сила подтверждена.</div><div class="meta">Дата: ${signature?.signedAt || dateStr} • Пациент: ${signerName}</div></div><div class="sig-svg">${sigRender}</div><div class="sig-lines"><div>ЭЦП врача: ________________ / ${docName} /</div></div>`;
+		const safeImgSrc = sanitizeImageDataUrl(rawSig);
+		const sigRender = /^<svg[\s>]/i.test(rawSig)
+			? sanitizeSignatureSvg(rawSig)
+			: safeImgSrc
+				? `<img src="${safeImgSrc}" alt="Подпись" style="max-height: 48px; max-width: 240px; object-fit: contain; display: block;" />`
+				: "";
+		stampHtml = `<div class="stamp digital"><strong>✓ ПОДПИСАНО ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (ПЭП)</strong><div>Подписано на планшете клиники. Юридическая сила подтверждена.</div><div class="meta">Дата: ${signedAtStr} • Пациент: ${signerName}</div></div><div class="sig-svg">${sigRender}</div><div class="sig-lines"><div>ЭЦП врача: ________________ / ${docName} /</div></div>`;
 	}
 
-	const guardianHtml = context?.guardianName
-		? `<div><strong>Законный представитель (родитель/опекун):</strong> ${context.guardianName}${context.guardianPassport ? ` • Паспорт: ${context.guardianPassport}` : ""}${context.guardianRelation ? ` (${context.guardianRelation})` : ""}</div>`
+	const safeGuardianPassport = escapeHtml(context?.guardianPassport);
+	const safeGuardianRelation = escapeHtml(context?.guardianRelation);
+	const guardianHtml = safeGuardianName
+		? `<div><strong>Законный представитель (родитель/опекун):</strong> ${safeGuardianName}${safeGuardianPassport ? ` • Паспорт: ${safeGuardianPassport}` : ""}${safeGuardianRelation ? ` (${safeGuardianRelation})` : ""}</div>`
 		: "";
-	const toothAreaHtml = context?.toothOrArea
-		? `<div><strong>Область вмешательства (зубы / челюсть):</strong> ${context.toothOrArea}</div>`
+	const safeToothOrArea = escapeHtml(context?.toothOrArea);
+	const toothAreaHtml = safeToothOrArea
+		? `<div><strong>Область вмешательства (зубы / челюсть):</strong> ${safeToothOrArea}</div>`
 		: "";
-	const diagnosisHtml = context?.diagnosisText
-		? `<div><strong>Клинический диагноз:</strong> ${context.diagnosisText}</div>`
+	const safeDiagnosisText = escapeHtml(context?.diagnosisText);
+	const diagnosisHtml = safeDiagnosisText
+		? `<div><strong>Клинический диагноз:</strong> ${safeDiagnosisText}</div>`
 		: "";
 
-	return `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>${doc.title} — ${pName}</title>
+	return `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>${escapeHtml(doc.title)} — ${pName}</title>
 <style>
 @page { size: A4 portrait; margin: 15mm; } * { box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 10pt; line-height: 1.45; color: #0f172a; background: #fff; margin: 0; }
@@ -403,7 +420,7 @@ h1 { font-size: 13pt; font-weight: 700; margin: 6px 0 2px; color: #0f172a; }
 .sig-svg { max-width: 260px; height: 60px; border-bottom: 1px solid #94a3b8; margin-bottom: 8px; display: flex; align-items: center; } .sig-svg svg, .sig-svg img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .date-row { margin-top: 10px; font-size: 9pt; color: #475569; }
 </style></head><body>
-<header class="header"><div class="c-info">${cName} • Медицинская документация</div><h1>${doc.title}</h1><div class="subtitle">${doc.subtitle}</div></header>
+<header class="header"><div class="c-info">${cName} • Медицинская документация</div><h1>${escapeHtml(doc.title)}</h1><div class="subtitle">${escapeHtml(doc.subtitle)}</div></header>
 <div class="meta-box"><div><strong>Пациент:</strong> ${pName} • Дата рождения: ${bDate}</div><div><strong>Паспорт:</strong> ${pass}</div>${guardianHtml}${toothAreaHtml}${diagnosisHtml}<div><strong>Лечащий врач:</strong> ${docName} • Дата: ${dateStr}</div></div>
 <div class="body">${sectionsHtml}</div><div class="sig-box">${stampHtml}</div>
 </body></html>`;
@@ -587,14 +604,19 @@ export function generateInformedConsentTemplate(
 	};
 	const cur = titles[subKind] || titles.therapy;
 	const city = extractCityFromAddress(ctx.clinic.address);
+	const patientName = ctx.patient.fullName?.trim() || "________________________________________________";
+	const birthDate = ctx.patient.birthDate?.trim() || "____.____.________";
+	const address = ctx.patient.address?.trim() || "________________________________________________";
+	const clinicName = ctx.clinic.name?.trim() || "________________________________________";
+	const doctorName = ctx.doctor.fullName?.trim() || "______________________";
 
 	return `ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ НА ${cur.label}
-К медицинской карте пациента: ${ctx.patient.fullName}
+К медицинской карте пациента: ${patientName}
 
 ${city ? `${city}                                                              ` : ""}Дата: ${ctx.documentDate}
 
-Я, ${ctx.patient.fullName}, ${ctx.patient.birthDate} г.р., проживающий по адресу: ${ctx.patient.address},
-уполномочиваю клинику «${ctx.clinic.name}» и лечащего врача ${ctx.doctor.fullName} провести стоматологическое вмешательство.
+Я, ${patientName}, ${birthDate} г.р., проживающий по адресу: ${address},
+уполномочиваю клинику «${clinicName}» и лечащего врача ${doctorName} провести стоматологическое вмешательство.
 
 1. СУТЬ И ЦЕЛЬ ВМЕШАТЕЛЬСТВА:
 ${cur.desc}
@@ -605,7 +627,7 @@ ${cur.risks}
 3. ОБЯЗАТЕЛЬСТВА ПАЦИЕНТА:
 Я обязуюсь строго выполнять клинические назначения врача, соблюдать рекомендации по уходу и являться на назначенные контрольные осмотры.
 
-Врач: _________________ / ${ctx.doctor.fullName} /          Пациент: _________________ / ${ctx.patient.fullName} /`;
+Врач: _________________ / ${doctorName} /          Пациент: _________________ / ${patientName} /`;
 }
 
 export function generateIntakePackageTemplate(ctx: DocumentLegalContext): string {

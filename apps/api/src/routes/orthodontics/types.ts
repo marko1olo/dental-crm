@@ -55,6 +55,7 @@ export const ligatureActivateSchema = z
 export const stageAdvanceSchema = z
 	.object({
 		nextStage: z.number().int().min(1).max(10),
+		completedStage: z.number().int().min(1).max(10).optional(),
 		stageTitle: z.string().max(120).optional(),
 		note: z.string().max(300).optional(),
 		visitId: z.string().uuid().optional(),

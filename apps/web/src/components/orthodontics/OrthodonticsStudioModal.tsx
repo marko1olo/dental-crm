@@ -8,7 +8,7 @@
  * нативный мобильный Bottom Sheet Apple HIG (390×844) с тач-таргетами >= 44x44px.
  */
 
-import React, { useState, useCallback, useMemo, useEffect, Suspense } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef, Suspense } from "react";
 import { X, Check, Sparkles, Activity, Layers, Clock, Smile, FileText, Camera, Calculator } from "lucide-react";
 import {
 	APPLIANCES_CATALOG, ORTHO_ACTIVATION_PRESETS, createDefaultOrthoProtocolState,
@@ -60,6 +60,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	patientName: propPatientName,
 	patientId,
 	doctorName: propDoctorName,
+	clinicName: propClinicName,
 	visitId,
 	treatmentPlanId,
 	totalSetupCostKopecks,
@@ -67,6 +68,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	const isDemo = isDemoShowcaseMode();
 	const patientName = (propPatientName && propPatientName.trim()) || (isDemo ? "Смирнова Екатерина Андреевна" : "Пациент не выбран");
 	const doctorName = (propDoctorName && propDoctorName.trim()) || (isDemo ? "Д-р Соколов А. В." : "Лечащий врач");
+	const resolvedClinicName = (propClinicName && propClinicName.trim()) || (isDemo ? "Стоматологическая клиника DENTE" : "Стоматологическая клиника");
 
 	const [protocol, setProtocol] = useState<OrthoProtocolState>(() => {
 		return initialProtocol ? { ...initialProtocol } : createDefaultOrthoProtocolState();
@@ -77,18 +79,41 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	const [selectedElasticSize, setSelectedElasticSize] = useState<string>("3/16 Medium");
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState<boolean>(false);
 	const [isCephModalOpen, setIsCephModalOpen] = useState<boolean>(false);
+	const [isSaving, setIsSaving] = useState<boolean>(false);
+	const isSavingRef = useRef<boolean>(false);
+	const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+
+	const clearAllTimers = useCallback(() => {
+		for (const timer of timersRef.current) {
+			clearTimeout(timer);
+		}
+		timersRef.current.clear();
+	}, []);
+
+	const scheduleTimeout = useCallback((fn: () => void, ms: number) => {
+		const timer = setTimeout(() => {
+			timersRef.current.delete(timer);
+			fn();
+		}, ms);
+		timersRef.current.add(timer);
+	}, []);
+
+	useEffect(() => () => clearAllTimers(), [clearAllTimers]);
 
 	// Zero-Leak Draft (Мандаты 8d/8zq, 8bn): сброс локального черновика при закрытии модалки
 	const handleClose = useCallback(() => {
+		clearAllTimers();
+		setFeedbackToast(null);
 		setProtocol(createDefaultOrthoProtocolState());
 		onClose();
-	}, [onClose]);
+	}, [clearAllTimers, onClose]);
 
 	useEffect(() => {
 		if (!isOpen) {
+			clearAllTimers();
 			setProtocol(initialProtocol ? { ...initialProtocol } : createDefaultOrthoProtocolState());
 		}
-	}, [isOpen, initialProtocol]);
+	}, [isOpen, initialProtocol, clearAllTimers]);
 
 	// Честная гидратация данных пациента из базы PostgreSQL 18 и ТРГ-синхронизация
 	const { cephStudy, setCephStudy } = useOrthodonticsStudioHydration(patientId, setProtocol);
@@ -103,7 +128,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 		const elastic = ELASTICS_CATALOG.find((e) => e.id === protocol.selectedElasticId);
 		const isPlate = protocol.applianceCategory === "plate";
 		return formatOrthodonticPatientMemo({
-			clinicName: "Стоматологическая клиника DENTE",
+			clinicName: resolvedClinicName,
 			doctorName,
 			patientName,
 			bracketSystem: protocol.applianceName,
@@ -118,7 +143,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 			totalAligners: protocol.alignerTracking.totalSteps || 24,
 			notes: protocol.clinicalNotes || protocol.notes,
 		});
-	}, [doctorName, patientName, protocol, selectedElasticSize]);
+	}, [resolvedClinicName, doctorName, patientName, protocol, selectedElasticSize]);
 
 	const handleApplyPreset = useCallback((preset: OrthoActivationPreset) => {
 		setProtocol((prev) => {
@@ -146,8 +171,8 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 			return updated;
 		});
 		setFeedbackToast(`Применён: «${preset.title}»`);
-		setTimeout(() => setFeedbackToast(null), 2200);
-	}, []);
+		scheduleTimeout(() => setFeedbackToast(null), 2200);
+	}, [scheduleTimeout]);
 
 	const handleToggleAction = useCallback((actionId: string) => {
 		setProtocol((prev) => {
@@ -160,8 +185,8 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	const handleSyncUpperToLower = useCallback(() => {
 		setProtocol((prev) => ({ ...prev, lowerAlloy: prev.upperAlloy, lowerSection: prev.upperSection }));
 		setFeedbackToast("Параметры дуги ВЧ скопированы на НЧ");
-		setTimeout(() => setFeedbackToast(null), 2000);
-	}, []);
+		scheduleTimeout(() => setFeedbackToast(null), 2000);
+	}, [scheduleTimeout]);
 
 	const handleAdvanceAlignerStep = useCallback(() => {
 		setProtocol((prev) => {
@@ -169,8 +194,8 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 			return { ...prev, alignerTracking: { ...prev.alignerTracking, currentStep: nextStep } };
 		});
 		setFeedbackToast("✓ Выдан следующий комплект кап");
-		setTimeout(() => setFeedbackToast(null), 2000);
-	}, []);
+		scheduleTimeout(() => setFeedbackToast(null), 2000);
+	}, [scheduleTimeout]);
 
 	const handleTogglePhotoSlot = useCallback((slotId: string) => {
 		setProtocol((prev) => ({
@@ -180,104 +205,47 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	}, []);
 
 	const handleSaveProtocol = useCallback(async () => {
-		const saved = await saveOrthodonticProtocolToApi({
-			protocol,
-			soapSummary,
-			skeletalClass: skeletalClassInfo.skeletalClass,
-			patientId,
-			visitId,
-			treatmentPlanId: treatmentPlanId ?? protocol.treatmentPlanId,
-			onSaveProtocol,
-		});
-		if (!saved) {
-			return;
-		}
+		if (isSavingRef.current) return;
+		isSavingRef.current = true;
+		setIsSaving(true);
+		try {
+			const saved = await saveOrthodonticProtocolToApi({
+				protocol,
+				soapSummary,
+				skeletalClass: skeletalClassInfo.skeletalClass,
+				patientId,
+				visitId,
+				treatmentPlanId: treatmentPlanId ?? protocol.treatmentPlanId,
+				onSaveProtocol,
+			});
+			if (!saved) {
+				return;
+			}
 
-		setFeedbackToast("✓ Активация этапа зафиксирована");
-		setTimeout(() => {
-			setFeedbackToast(null);
-			setProtocol(createDefaultOrthoProtocolState());
-			onClose();
-		}, 400);
-	}, [protocol, soapSummary, skeletalClassInfo.skeletalClass, patientId, visitId, treatmentPlanId, onSaveProtocol, onClose]);
+			setFeedbackToast("✓ Активация этапа зафиксирована");
+			scheduleTimeout(() => {
+				setFeedbackToast(null);
+				setProtocol(createDefaultOrthoProtocolState());
+				onClose();
+			}, 400);
+		} finally {
+			isSavingRef.current = false;
+			setIsSaving(false);
+		}
+	}, [protocol, soapSummary, skeletalClassInfo.skeletalClass, patientId, visitId, treatmentPlanId, onSaveProtocol, onClose, scheduleTimeout]);
 
 	const handleCopyText = useCallback((textToCopy: string, successMsg: string) => {
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
 			navigator.clipboard.writeText(textToCopy);
 			setFeedbackToast(successMsg);
-			setTimeout(() => setFeedbackToast(null), 2000);
+			scheduleTimeout(() => setFeedbackToast(null), 2000);
 		}
-	}, []);
+	}, [scheduleTimeout]);
 
 	if (!isOpen) return null;
 
-	if (isPhotoModalOpen) {
-		return (
-			<Suspense fallback={null}>
-				<ClinicalPhotoProtocolModal
-					key={patientId || "photo_protocol"}
-					isOpen={true}
-					onClose={() => setIsPhotoModalOpen(false)}
-					patientId={patientId || ""}
-					patientName={patientName}
-					doctorName={doctorName}
-					initialPresetId="orthodontic_8"
-					onSaveProtocol={(slots) => {
-						const slotKeys = Object.keys(slots);
-						if (slotKeys.length > 0) {
-							setProtocol((prev) => {
-								const updatedStatuses = { ...prev.photoStatuses };
-								slotKeys.forEach((slotId) => {
-									if (slots[slotId]?.imageUrl) {
-										updatedStatuses[slotId] = true;
-									}
-								});
-								return { ...prev, photoStatuses: updatedStatuses };
-							});
-							showToast("✓ Фотопротокол сохранён в ортодонтическую карту", "success");
-						}
-					}}
-					onPhotoSaved={(res) => {
-						const record = res as { slotId?: string } | undefined;
-						const slotId = record?.slotId;
-						if (slotId) {
-							setProtocol((prev) => ({
-								...prev,
-								photoStatuses: { ...prev.photoStatuses, [slotId]: true },
-							}));
-						}
-					}}
-				/>
-			</Suspense>
-		);
-	}
-
-	if (isCephModalOpen) {
-		return (
-			<Suspense fallback={null}>
-				<CephalometricAnalysisModal
-					key={patientId || "ceph_modal"}
-					isOpen={true}
-					onClose={() => setIsCephModalOpen(false)}
-					patientId={patientId || ""}
-					patientName={patientName}
-					initialImageUrl={cephStudy?.imageUrl ?? (isDemo ? SAMPLE_TRG_CEPHALOGRAM_URL : undefined)}
-					onApplyAnalysis={({ trgValues }) => {
-						setProtocol((prev) => ({
-							...prev,
-							trgValues: {
-								...(prev.trgValues || {}),
-								...trgValues,
-							},
-						}));
-						showToast("✓ Углы ТРГ применены в ортодонтический протокол", "success");
-					}}
-				/>
-			</Suspense>
-		);
-	}
-
 	return (
+		<>
 		<div className="ortho-studio-backdrop" role="dialog" aria-modal="true" data-testid="orthodontic-studio-modal">
 			<div className="ortho-studio-modal">
 				<div className="ortho-drag-handle-wrapper">
@@ -306,15 +274,15 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 				</header>
 
 				<div className="ortho-subbar">
-					<div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-						<div className="flex items-center gap-2 flex-wrap">
+					<div className="flex flex-wrap items-center justify-between gap-2 text-xs min-w-0">
+						<div className="flex items-center gap-2 flex-wrap min-w-0 max-w-full">
 							<select
 								value={protocol.applianceId}
 								onChange={(e) => {
 									const item = APPLIANCES_CATALOG.find((a) => a.id === e.target.value);
 									if (item) setProtocol((p) => ({ ...p, applianceId: item.id, applianceCategory: item.category, applianceName: item.name }));
 								}}
-								className="h-8 px-2 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer"
+								className="w-full sm:w-auto max-w-full min-w-0 h-8 px-2 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer"
 							>
 								{APPLIANCES_CATALOG.map((app) => (<option key={app.id} value={app.id}>{app.name}</option>))}
 							</select>
@@ -415,16 +383,79 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 						<button
 							type="button"
 							data-testid="save-ortho-protocol-button"
+							aria-busy={isSaving}
 							onClick={handleSaveProtocol}
 							className="ortho-primary-cta w-full sm:w-auto"
 						>
 							<Check className="w-4 h-4 shrink-0" />
-							<span>Зафиксировать активацию этапа</span>
+							<span>{isSaving ? "Сохранение..." : "Зафиксировать активацию этапа"}</span>
 						</button>
 					</div>
 				</footer>
 			</div>
 		</div>
+		{isPhotoModalOpen && (
+			<Suspense fallback={null}>
+				<ClinicalPhotoProtocolModal
+					key={patientId || "photo_protocol"}
+					isOpen={true}
+					onClose={() => setIsPhotoModalOpen(false)}
+					patientId={patientId || ""}
+					patientName={patientName}
+					doctorName={doctorName}
+					clinicName={resolvedClinicName}
+					initialPresetId="orthodontic_8"
+					onSaveProtocol={(slots) => {
+						const slotKeys = Object.keys(slots);
+						if (slotKeys.length > 0) {
+							setProtocol((prev) => {
+								const updatedStatuses = { ...prev.photoStatuses };
+								slotKeys.forEach((slotId) => {
+									if (slots[slotId]?.imageUrl) {
+										updatedStatuses[slotId] = true;
+									}
+								});
+								return { ...prev, photoStatuses: updatedStatuses };
+							});
+							showToast("✓ Фотопротокол сохранён в ортодонтическую карту", "success");
+						}
+					}}
+					onPhotoSaved={(res) => {
+						const record = res as { slotId?: string } | undefined;
+						const slotId = record?.slotId;
+						if (slotId) {
+							setProtocol((prev) => ({
+								...prev,
+								photoStatuses: { ...prev.photoStatuses, [slotId]: true },
+							}));
+						}
+					}}
+				/>
+			</Suspense>
+		)}
+		{isCephModalOpen && (
+			<Suspense fallback={null}>
+				<CephalometricAnalysisModal
+					key={patientId || "ceph_modal"}
+					isOpen={true}
+					onClose={() => setIsCephModalOpen(false)}
+					patientId={patientId || ""}
+					patientName={patientName}
+					initialImageUrl={cephStudy?.imageUrl ?? (isDemo ? SAMPLE_TRG_CEPHALOGRAM_URL : undefined)}
+					onApplyAnalysis={({ trgValues }) => {
+						setProtocol((prev) => ({
+							...prev,
+							trgValues: {
+								...(prev.trgValues || {}),
+								...trgValues,
+							},
+						}));
+						showToast("✓ Углы ТРГ применены в ортодонтический протокол", "success");
+					}}
+				/>
+			</Suspense>
+		)}
+		</>
 	);
 };
 

@@ -44,6 +44,7 @@ export interface SpecialtyModalsAppLogic {
 	readonly activePatient?: { id: string; fullName?: string; name?: string; birthDate?: string | null | undefined; cardNumber?: string; cardId?: string } | null | undefined;
 	readonly activeVisitPatient?: { id: string; fullName?: string; name?: string; birthDate?: string | null | undefined; cardNumber?: string; cardId?: string } | null | undefined;
 	readonly activeDoctor?: { id: string; fullName?: string; name?: string } | null | undefined;
+	readonly activeWorkspaceProfile?: { title?: string } | null | undefined;
 }
 
 interface AppDirectSpecialtyModalsProps {
@@ -53,9 +54,11 @@ interface AppDirectSpecialtyModalsProps {
 }
 
 export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: AppDirectSpecialtyModalsProps) {
-	const { activePatient, activeVisitPatient, activeDoctor } = appLogic;
+	const { activePatient, activeVisitPatient, activeDoctor, activeWorkspaceProfile } = appLogic;
 	const staffUser = sessionAuth.activeStaffUser;
 	const patient = activePatient || activeVisitPatient;
+	const isDemo = isDemoShowcaseMode();
+	const resolvedClinicName = (activeWorkspaceProfile?.title && activeWorkspaceProfile.title.trim()) || (isDemo ? "DENTE Clinic" : "");
 	const visitToothNumber = useVisitStore((s) => s.activeToothNumber);
 	const appActiveTooth = useAppStore((s) => s.activeTooth);
 	const activeToothNumber = visitToothNumber ?? (typeof appActiveTooth === "number" ? appActiveTooth : 11);
@@ -73,7 +76,8 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 						isOpen={true}
 						onClose={() => routing.setIsOrthoPhotoDirectModalOpen(false)}
 						patientName={patient?.fullName || patient?.name || "Пациент"}
-						patientId={patient?.id || "pat-demo-01"}
+						patientId={patient?.id || (isDemo ? "pat-demo-01" : undefined)}
+						clinicName={resolvedClinicName || undefined}
 						initialPresetId="orthodontic_8"
 					/>
 				</Suspense>
@@ -85,9 +89,9 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 						isOpen={true}
 						onClose={() => routing.setIsOrthoProtocolDirectModalOpen(false)}
 						patientName={patient?.fullName || patient?.name || "Пациент"}
-						patientId={patient?.id || "pat-demo-01"}
+						patientId={patient?.id || (isDemo ? "pat-demo-01" : undefined)}
 						doctorName={staffUser?.fullName || activeDoctor?.fullName || activeDoctor?.name || "Лечащий врач"}
-						clinicName="DENTE Clinic"
+						clinicName={resolvedClinicName || undefined}
 					/>
 				</Suspense>
 			)}
@@ -167,7 +171,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 						isOpen={true}
 						onClose={() => routing.setIsCtSelectorDirectModalOpen(false)}
 						patientName={patient?.fullName || patient?.name || "Пациент"}
-						cardNumber={patient?.cardNumber || patient?.cardId || "КТ-2026-0814"}
+						cardNumber={patient?.cardNumber || patient?.cardId || (isDemo ? "КТ-2026-0814" : "")}
 					/>
 				</Suspense>
 			)}
@@ -191,13 +195,13 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 						key={patient?.id || "consent_studio"}
 						isOpen={true}
 						onClose={() => routing.setIsConsentDirectModalOpen(false)}
-						patient={patient || (isDemoShowcaseMode() ? { fullName: "Иванов Иван Иванович", birthDate: "1988-04-12", id: "pat-demo-01" } : undefined)}
-						patientName={patient?.fullName || patient?.name || (isDemoShowcaseMode() ? "Иванов Иван Иванович" : "Пациент")}
+						patient={patient || (isDemo ? { fullName: "Иванов Иван Иванович", birthDate: "1988-04-12", id: "pat-demo-01" } : undefined)}
+						patientName={patient?.fullName || patient?.name || (isDemo ? "Иванов Иван Иванович" : "Пациент")}
 						patientContext={{
-							patientName: patient?.fullName || patient?.name || (isDemoShowcaseMode() ? "Иванов Иван Иванович" : "Пациент"),
-							birthDate: patient?.birthDate || (isDemoShowcaseMode() ? "12.04.1988" : ""),
+							patientName: patient?.fullName || patient?.name || (isDemo ? "Иванов Иван Иванович" : "Пациент"),
+							birthDate: patient?.birthDate || (isDemo ? "12.04.1988" : ""),
 							doctorName: staffUser?.fullName || activeDoctor?.fullName || "Лечащий врач",
-							clinicName: "Клиника «DENTE»",
+							clinicName: resolvedClinicName || (isDemo ? "Клиника «DENTE»" : ""),
 						}}
 					/>
 				</Suspense>

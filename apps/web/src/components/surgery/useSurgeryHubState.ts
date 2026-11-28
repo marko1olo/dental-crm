@@ -20,8 +20,9 @@ import type { ToothImplantSpec } from "./SurgeryImplantParametersSection";
 import type { SurgeryHubTab } from "./modules/SurgeryHubNavigation";
 import {
 	buildImplantBatchPayload, fetchSurgeryPatients, fetchSurgeryDoctors,
-	fetchSurgeryImplantStock, fetchPatientImplantContext, submitSurgeryToApi,
+	fetchSurgeryImplantStock, fetchPatientImplantContext, fetchSurgeryPricelist, submitSurgeryToApi,
 	type SurgeryPatientOption, type SurgeryDoctorOption, type StockImplantRecord, type BuildImplantBatchPayloadArgs,
+	type SurgeryPricelistEntry,
 } from "./surgeryHubApi";
 import {
 	buildSurgeryDiaryText, buildSurgeryPassportData,
@@ -117,9 +118,16 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 	const [guidedSleeveDiameterMm, setGuidedSleeveDiameterMm] = useState<number>(5.0);
 	const [guidedSleeveOffsetMm, setGuidedSleeveOffsetMm] = useState<number>(2.0);
 	const [surgicalGuideTemplateId, setSurgicalGuideTemplateId] = useState<string>("");
-	const [selectedGraft] = useState<string>(initialBoneGraft || SURGERY_GRAFT_CATALOG[0]?.name || "Костный материал");
-	const [selectedMembrane] = useState<string>(initialMembrane || SURGERY_MEMBRANE_CATALOG[0]?.name || "Мембрана");
-	const [selectedSuture] = useState<string>(initialSuture || SURGERY_SUTURE_CATALOG[0]?.name || "ПГА 4-0");
+	const [selectedGraft, setSelectedGraft] = useState<string>(
+		initialBoneGraft || (initialScenario === "sinus_gbr" ? (SURGERY_GRAFT_CATALOG[0]?.name || "") : ""),
+	);
+	const [selectedMembrane, setSelectedMembrane] = useState<string>(
+		initialMembrane || (initialScenario === "sinus_gbr" ? (SURGERY_MEMBRANE_CATALOG[0]?.name || "") : ""),
+	);
+	const [selectedSuture, setSelectedSuture] = useState<string>(
+		initialSuture || (initialScenario === "sinus_gbr" ? (SURGERY_SUTURE_CATALOG[0]?.name || "") : ""),
+	);
+	const [livePricelistMap, setLivePricelistMap] = useState<Map<string, SurgeryPricelistEntry>>(() => new Map());
 	const [stockImplants, setStockImplants] = useState<readonly StockImplantRecord[]>([]);
 	const [selectedInventoryItemId, setSelectedInventoryItemId] = useState<string | null>(null);
 	const [apiPassportData, setApiPassportData] = useState<Record<string, unknown> | null>(null);
@@ -155,6 +163,8 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 		void fetchSurgeryImplantStock()
 			.then((implants) => { if (!isCancelled && implants.length > 0) setStockImplants(implants); })
 			.catch((err) => { clientLogger.warn("[useSurgeryHubState] Ошибка загрузки остатков имплантов", err, { module: "useSurgeryHubState" }); });
+		void fetchSurgeryPricelist()
+			.then((map) => { if (!isCancelled && map.size > 0) setLivePricelistMap(map); });
 		return () => { isCancelled = true; };
 	}, [isOpen]);
 
@@ -308,14 +318,21 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 
 	const handleSelectScenario = useCallback((scen: SurgeryScenarioType) => {
 		setActiveScenario(scen);
-		if (scen === "implant") {
+		if (scen === "sinus_gbr") {
+			setSelectedGraft((prev) => prev || SURGERY_GRAFT_CATALOG[0]?.name || "");
+			setSelectedMembrane((prev) => prev || SURGERY_MEMBRANE_CATALOG[0]?.name || "");
+			setSelectedSuture((prev) => prev || SURGERY_SUTURE_CATALOG[0]?.name || "");
+		} else if (scen === "implant") {
+			if (!initialBoneGraft) setSelectedGraft("");
+			if (!initialMembrane) setSelectedMembrane("");
+			if (!initialSuture) setSelectedSuture("");
 			setSelectedTeeth((prev) => {
 				const permanent = prev.filter((t) => t < 51 || t > 85);
 				return permanent.length > 0 ? permanent : [46];
 			});
 			setToothFdi((prev) => (prev >= 51 && prev <= 85 ? 46 : prev));
 		}
-	}, []);
+	}, [initialBoneGraft, initialMembrane, initialSuture]);
 
 	const handleClose = useCallback(() => { resetDraftState(); onClose(); }, [resetDraftState, onClose]);
 
@@ -367,9 +384,16 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 		diameterMm, lengthMm, catalogArticle, lotNumber, torqueNcm, isqValue, boneDensity, capType, selectedSuture,
 	}), [activeScenario, scenarioConfig, toothFdi, selectedTeeth, getToothSpec, effectiveDoctor.name, effectivePatient.name, selectedBrand, diameterMm, lengthMm, catalogArticle, lotNumber, torqueNcm, isqValue, boneDensity, capType, selectedSuture]);
 
+	const liveScenarioEntry = livePricelistMap.get(scenarioConfig.serviceCode);
+
 	const financials = useMemo(() => calculateSurgeryFinancials({
-		scenario: activeScenario, implantBrand: selectedBrand, graftName: selectedGraft, membraneName: selectedMembrane, sutureName: selectedSuture,
-	}), [activeScenario, selectedBrand, selectedGraft, selectedMembrane, selectedSuture]);
+		scenario: activeScenario,
+		implantBrand: selectedBrand,
+		graftName: selectedGraft,
+		membraneName: selectedMembrane,
+		sutureName: selectedSuture,
+		overrideOperationPriceRub: liveScenarioEntry?.priceRub,
+	}), [activeScenario, selectedBrand, selectedGraft, selectedMembrane, selectedSuture, liveScenarioEntry?.priceRub]);
 
 	const passportData = useMemo(() => buildSurgeryPassportData({
 		apiPassportData, toothFdi, currentSystem, catalogArticle, diameterMm, lengthMm, torqueNcm,
@@ -395,7 +419,9 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 					implantBrandId: currentSystem.id, effectiveInventoryItemId, boneDensity, isGuidedSurgery,
 					guidedSleeveDiameterMm, guidedSleeveOffsetMm, surgicalGuideTemplateId,
 					selectedGraft, selectedMembrane, selectedSuture,
-					operationPriceRub: financials.operationPriceRub, operationPriceKopecks: financials.operationPriceKopecks,
+					...(liveScenarioEntry
+						? { operationPriceRub: liveScenarioEntry.priceRub, operationPriceKopecks: liveScenarioEntry.priceKopecks }
+						: {}),
 					diaryText, baseLot, dateIso, inventoryOverdraftActive,
 				});
 				if (!apiRes.ok) { showToast(apiRes.errorMessage || "Ошибка сохранения операции", "error"); return; }
@@ -405,7 +431,7 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 			onInsertIntoDiary?.(diaryText);
 			if (typeof window !== "undefined") {
 				window.dispatchEvent(new CustomEvent("dente:cart-add-items", {
-					detail: { items: teethToProcess.map((t) => ({ code: scenarioConfig.serviceCode, name: `${scenarioConfig.serviceNameRu} (#${t})`, priceRub: scenarioConfig.defaultPriceRub, quantity: 1 })) },
+					detail: { items: teethToProcess.map((t) => ({ code: scenarioConfig.serviceCode, name: `${scenarioConfig.serviceNameRu} (#${t})`, priceRub: liveScenarioEntry?.priceRub ?? scenarioConfig.defaultPriceRub, quantity: 1 })) },
 				}));
 				window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
 					detail: { soap: { treatmentDescription: diaryText }, text: diaryText, protocolText: diaryText, mode: "smart_append", tooth: toothFdi, teeth: teethToProcess, scenario: activeScenario },
@@ -419,7 +445,7 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 			isSavingRef.current = false;
 			setIsSaving(false);
 		}
-	}, [onSaveProtocol, activeScenario, toothFdi, selectedTeeth, passportData, diaryText, onInsertIntoDiary, scenarioConfig, inventoryOverdraftActive, currentSystem.id, lotNumber, boneDensity, selectedGraft, selectedMembrane, selectedSuture, financials, effectivePatient.id, effectivePatient.name, handleClose, effectiveInventoryItemId, getToothSpec, isGuidedSurgery, guidedSleeveDiameterMm, guidedSleeveOffsetMm, surgicalGuideTemplateId]);
+	}, [onSaveProtocol, activeScenario, toothFdi, selectedTeeth, passportData, diaryText, onInsertIntoDiary, scenarioConfig, inventoryOverdraftActive, currentSystem.id, lotNumber, boneDensity, selectedGraft, selectedMembrane, selectedSuture, liveScenarioEntry, effectivePatient.id, effectivePatient.name, handleClose, effectiveInventoryItemId, getToothSpec, isGuidedSurgery, guidedSleeveDiameterMm, guidedSleeveOffsetMm, surgicalGuideTemplateId]);
 
 	const memoText = useMemo(() => buildSurgicalPostOpMemoText(activeScenario, {
 		patientName: effectivePatient.name, toothFdi, doctorName: effectiveDoctor.name, implantBrand: selectedBrand, capType, hasSutures: true,
@@ -465,7 +491,8 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 		selectedBrand, diameterMm, lengthMm, torqueNcm, boneDensity, isqValue, capType, lotNumber, serialNumber, catalogArticle,
 		isGuidedSurgery, setIsGuidedSurgery, guidedSleeveDiameterMm, setGuidedSleeveDiameterMm,
 		guidedSleeveOffsetMm, setGuidedSleeveOffsetMm, surgicalGuideTemplateId, setSurgicalGuideTemplateId,
-		selectedSuture, diaryText, memoText, passportData, isSaving,
+		selectedGraft, setSelectedGraft, selectedMembrane, setSelectedMembrane,
+		selectedSuture, setSelectedSuture, diaryText, memoText, passportData, isSaving,
 		handleSelectScenario, handleSelectBrand, handleSelectTooth, handleSelectActiveEditingTooth,
 		updateActiveImplantSpec, handleApplyPhysiologicalNorm, handleSaveOperationAndCommit,
 		handleCopyMemo, handleShareWhatsAppMemo, handleShareTelegramMemo, handlePrintDocument, handleClose,

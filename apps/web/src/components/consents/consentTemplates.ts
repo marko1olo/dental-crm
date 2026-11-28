@@ -622,7 +622,7 @@ export const CONSENT_HEALTH_QUESTIONNAIRE: ConsentTemplate = {
 	title: "Анкета о состоянии соматического здоровья пациента",
 	subtitle: "Опросник общего анамнеза, хронических заболеваний и сопутствующей фармакотерапии",
 	category: "legal",
-	statutoryBasis: "Приказ Минздрава России № 804н",
+	statutoryBasis: "Клинический стандарт осмотра",
 	mandatoryPlaceholders: ["Ф.И.О. пациента", "Дата рождения пациента"],
 	sections: [
 		{

@@ -158,16 +158,18 @@ export function useDocumentsStudioModel(options: UseDocumentsStudioModelOptions)
 	const effectiveDoctorName = directDoctorFullName || directDoctorName || (isDemo ? "Смирнова Елена Сергеевна" : "______________________");
 
 	const clinicRequisites = useMemo(() => {
+		const fallbackName = isDemo ? DEFAULT_CLINIC_REQUISITES.name : "________________________________________";
+		const fallbackEmpty = isDemo ? undefined : "";
 		return {
-			name: clinicProfileDraft?.legalName || clinicProfileDraft?.clinicName || directClinicName || DEFAULT_CLINIC_REQUISITES.name,
-			inn: clinicProfileDraft?.inn || directClinicInn || DEFAULT_CLINIC_REQUISITES.inn,
-			kpp: clinicProfileDraft?.kpp || directClinicKpp || DEFAULT_CLINIC_REQUISITES.kpp,
-			ogrn: clinicProfileDraft?.ogrn || directClinicOgrn || DEFAULT_CLINIC_REQUISITES.ogrn,
-			license: clinicProfileDraft?.medicalLicenseNumber || directClinicLicenseNumber || DEFAULT_CLINIC_REQUISITES.license,
-			address: clinicProfileDraft?.address || directClinicAddress || DEFAULT_CLINIC_REQUISITES.address,
-			phone: clinicProfileDraft?.phone || DEFAULT_CLINIC_REQUISITES.phone,
+			name: clinicProfileDraft?.legalName || clinicProfileDraft?.clinicName || directClinicName || fallbackName,
+			inn: clinicProfileDraft?.inn || directClinicInn || (isDemo ? DEFAULT_CLINIC_REQUISITES.inn : (fallbackEmpty ?? "")),
+			kpp: clinicProfileDraft?.kpp || directClinicKpp || (isDemo ? DEFAULT_CLINIC_REQUISITES.kpp : (fallbackEmpty ?? "")),
+			ogrn: clinicProfileDraft?.ogrn || directClinicOgrn || (isDemo ? DEFAULT_CLINIC_REQUISITES.ogrn : (fallbackEmpty ?? "")),
+			license: clinicProfileDraft?.medicalLicenseNumber || directClinicLicenseNumber || (isDemo ? DEFAULT_CLINIC_REQUISITES.license : (fallbackEmpty ?? "")),
+			address: clinicProfileDraft?.address || directClinicAddress || (isDemo ? DEFAULT_CLINIC_REQUISITES.address : (fallbackEmpty ?? "")),
+			phone: clinicProfileDraft?.phone || (isDemo ? DEFAULT_CLINIC_REQUISITES.phone : (fallbackEmpty ?? "")),
 		};
-	}, [clinicProfileDraft, directClinicName, directClinicInn, directClinicKpp, directClinicOgrn, directClinicLicenseNumber, directClinicAddress]);
+	}, [clinicProfileDraft, directClinicName, directClinicInn, directClinicKpp, directClinicOgrn, directClinicLicenseNumber, directClinicAddress, isDemo]);
 
 	const paymentServices: readonly DocumentServiceItem[] = useMemo(() => {
 		if (Array.isArray(payments) && payments.length > 0) {
@@ -265,13 +267,14 @@ export function useDocumentsStudioModel(options: UseDocumentsStudioModelOptions)
 		epicrisis: epicrisisRu !== undefined ? epicrisisRu : (isDemo ? "Кариозная полость санирована, анатомия восстановлена. Гарантия клиники: 12 месяцев." : ""),
 	}), [diagnosisRu, anamnesisRu, epicrisisRu, isDemo]);
 
+	const currentYear = new Date().getFullYear();
 	const legalContext: DocumentLegalContext = useMemo(() => ({
 		clinic: clinicRequisites,
 		patient,
 		doctor: { fullName: effectiveDoctorName, specialty: "Врач-стоматолог терапевт" },
 		documentNumber: isDemo
-			? "КЛ-2026/894"
-			: (effectivePatientId ? `Д-2026/${effectivePatientId.slice(0, 6)}` : "БЛ-2026/001"),
+			? `КЛ-${currentYear}/894`
+			: (effectivePatientId ? `Д-${currentYear}/${effectivePatientId.slice(0, 6)}` : `БЛ-${currentYear}/001`),
 		documentDate: currentDate,
 		taxYear,
 		services: effectiveServices,

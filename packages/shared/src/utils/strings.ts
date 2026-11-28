@@ -64,6 +64,38 @@ export function escapeHtml(value: unknown): string {
 		.replace(/'/g, "&#39;");
 }
 
+/**
+ * Санитизация векторной подписи SVG перед вставкой в HTML: удаляет скрипты,
+ * foreignObject, обработчики on*=, javascript:/vbscript:/data:text/html.
+ */
+export function sanitizeSignatureSvg(rawSvg: string): string {
+	const trimmed = String(rawSvg ?? "").trim();
+	if (!/^<svg[\s>]/i.test(trimmed)) return "";
+	return trimmed
+		.replace(/<script[\s\S]*?<\/script>/gi, "")
+		.replace(/<script\b[^>]*\/?>/gi, "")
+		.replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, "")
+		.replace(/<foreignObject\b[^>]*\/?>/gi, "")
+		.replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+		.replace(/(?:href|xlink:href)\s*=\s*(?:"\s*(?:javascript|vbscript|data:text\/html)[^"]*"|'\s*(?:javascript|vbscript|data:text\/html)[^']*')/gi, "")
+		.replace(/(?:javascript|vbscript|data:text\/html)\s*:/gi, "blocked:");
+}
+
+/**
+ * Валидация и экранирование src для <img> подписи (data:image/png|jpeg|webp|svg+xml или безопасный https:/относительный путь).
+ */
+export function sanitizeImageDataUrl(rawUrl: string): string {
+	const trimmed = String(rawUrl ?? "").trim();
+	if (!trimmed) return "";
+	if (/^data:image\/(?:png|jpe?g|webp|gif|svg\+xml);base64,[A-Za-z0-9+/=\s]+$/i.test(trimmed)) {
+		return escapeHtml(trimmed);
+	}
+	if (/^https:\/\/[^\s"'<>]+$/i.test(trimmed) || /^\/[^/\s"'<>][^\s"'<>]*$/.test(trimmed)) {
+		return escapeHtml(trimmed);
+	}
+	return "";
+}
+
 export interface PassportStringPayload {
 	readonly passportSeries?: string | null | undefined;
 	readonly passportNumber?: string | null | undefined;

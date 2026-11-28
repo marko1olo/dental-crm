@@ -267,7 +267,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 								<button
 									type="button"
 									onClick={onOpenPhotoModal}
-									className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all flex items-center gap-1.5 min-h-[36px]"
+									className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all flex items-center gap-1.5 min-h-[36px] max-sm:min-h-[44px]"
 								>
 									<Camera className="w-3.5 h-3.5" />
 									<span>Фотопротокол (8 проекций)</span>
@@ -275,7 +275,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 								<button
 									type="button"
 									onClick={onOpenCephModal}
-									className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all flex items-center gap-1.5 min-h-[36px]"
+									className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all flex items-center gap-1.5 min-h-[36px] max-sm:min-h-[44px]"
 								>
 									<Activity className="w-3.5 h-3.5 text-[var(--primary)]" />
 									<span>Анализ ТРГ</span>
@@ -290,15 +290,20 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 										([key, val]) => Boolean(val) && isSlotMatching(key, slot.id),
 									);
 								return (
-									<div key={slot.id} onClick={() => handleTogglePhotoSlot(slot.id)} className={`ortho-photo-card cursor-pointer ${isVerified ? "verified" : ""}`}>
-										<div className="flex items-center justify-between">
+									<button
+										key={slot.id}
+										type="button"
+										onClick={() => handleTogglePhotoSlot(slot.id)}
+										className={`ortho-photo-card cursor-pointer text-left w-full ${isVerified ? "verified" : ""}`}
+									>
+										<span className="flex items-center justify-between w-full">
 											<span className="text-xs font-bold text-[var(--ink)]">{slot.titleRu}</span>
 											<span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${isVerified ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "bg-[var(--paper-soft)] text-[var(--ink-muted)]"}`}>
 												{isVerified ? "Зафиксировано" : "Ожидает"}
 											</span>
-										</div>
-										<p className="text-[11px] text-[var(--ink-muted)] leading-tight">{slot.descriptionRu}</p>
-									</div>
+										</span>
+										<span className="block text-[11px] text-[var(--ink-muted)] leading-tight">{slot.descriptionRu}</span>
+									</button>
 								);
 							})}
 						</div>

@@ -91,61 +91,71 @@ describe("Red Team Inquisitor 1: Anti-Mock & Zero-Stubs Verification Suite", () 
 	// 2. ORTHODONTICS: REAL CLINICAL API INTEGRATION
 	// =========================================================================
 	describe("2. Orthodontics Real Clinical API Integration", () => {
-		const orthoStudioPath = path.join(
-			webSrcDir,
-			"components/orthodontics/OrthodonticsStudioModal.tsx",
-		);
-		const orthoHydrationPath = path.join(
-			webSrcDir,
-			"components/orthodontics/useOrthodonticsStudioHydration.ts",
-		);
-		const orthoPersistencePath = path.join(
-			webSrcDir,
-			"components/orthodontics/orthodonticsStudioPersistence.ts",
-		);
+		it("saveOrthodonticProtocolToApi dispatches live authenticated aligners, archwire & stage advance calls", async () => {
+			const { saveOrthodonticProtocolToApi } = await import("../components/orthodontics/orthodonticsStudioPersistence.js");
+			const { createDefaultOrthoProtocolState } = await import("../components/orthodontics/orthodonticsCatalogData.js");
 
-		it("OrthodonticsStudioModal.tsx and its decomposed modules must physically exist on disk", () => {
-			assert.ok(fs.existsSync(orthoStudioPath), "OrthodonticsStudioModal.tsx not found");
-			assert.ok(fs.existsSync(orthoHydrationPath), "useOrthodonticsStudioHydration.ts not found");
-			assert.ok(fs.existsSync(orthoPersistencePath), "orthodonticsStudioPersistence.ts not found");
-		});
+			const calls: { url: string; method: string; headers: Record<string, string>; body: Record<string, unknown> }[] = [];
+			const origFetch = globalThis.fetch;
+			globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+				calls.push({
+					url: String(input),
+					method: init?.method || "GET",
+					headers: (init?.headers as Record<string, string>) || {},
+					body: init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {},
+				});
+				return new Response(JSON.stringify({ success: true }), { status: 200 });
+			}) as typeof fetch;
 
-		it("OrthodonticsStudioModal must synchronize progress and persist clinical actions", () => {
-			const content = [
-				fs.readFileSync(orthoStudioPath, "utf-8"),
-				fs.readFileSync(orthoHydrationPath, "utf-8"),
-				fs.readFileSync(orthoPersistencePath, "utf-8"),
-			].join("\n");
+			try {
+				const alignerProtocol = {
+					...createDefaultOrthoProtocolState(),
+					applianceCategory: "aligners" as const,
+				};
+				const okAligner = await saveOrthodonticProtocolToApi({
+					protocol: alignerProtocol,
+					soapSummary: "SOAP",
+					skeletalClass: "class_1",
+					patientId: "pat-ortho-1",
+				});
+				assert.equal(okAligner, true);
 
-			// Must fetch live progress
-			assert.ok(
-				content.includes("/api/orthodontics/") && content.includes("/progress"),
-				"OrthodonticsStudioModal missing live GET /api/orthodontics/:patientId/progress call",
-			);
+				const bracketProtocol = {
+					...createDefaultOrthoProtocolState(),
+					applianceCategory: "brackets" as const,
+					selectedActionIds: ["wire_change", "ligatures_activate"],
+				};
+				const okBrackets = await saveOrthodonticProtocolToApi({
+					protocol: bracketProtocol,
+					soapSummary: "SOAP",
+					skeletalClass: "class_1",
+					patientId: "pat-ortho-1",
+				});
+				assert.equal(okBrackets, true);
 
-			// Must persist aligner issuance
-			assert.ok(
-				content.includes("/aligners/issue-set"),
-				"OrthodonticsStudioModal missing live POST /api/orthodontics/:patientId/aligners/issue-set call",
-			);
+				const plateProtocol = {
+					...createDefaultOrthoProtocolState(),
+					applianceCategory: "plate" as const,
+					currentMonth: 2,
+				};
+				const okPlate = await saveOrthodonticProtocolToApi({
+					protocol: plateProtocol,
+					soapSummary: "SOAP",
+					skeletalClass: "class_1",
+					patientId: "pat-ortho-1",
+				});
+				assert.equal(okPlate, true);
 
-			// Must persist archwire changes
-			assert.ok(
-				content.includes("/archwire-change"),
-				"OrthodonticsStudioModal missing live POST /api/orthodontics/:patientId/archwire-change call",
-			);
-
-			// Must persist ligature/power chain activations
-			assert.ok(
-				content.includes("/ligatures-activate"),
-				"OrthodonticsStudioModal missing live POST /api/orthodontics/:patientId/ligatures-activate call",
-			);
-
-			// Must include clinical authorization headers
-			assert.ok(
-				content.includes("denteClinicalReadHeaders") && content.includes("denteClinicalMutationHeaders"),
-				"OrthodonticsStudio missing denteClinicalReadHeaders / denteClinicalMutationHeaders authorization",
-			);
+				assert.ok(calls.some((c) => c.url.includes("/api/orthodontics/pat-ortho-1/aligners/issue-set")));
+				assert.ok(calls.some((c) => c.url.includes("/api/orthodontics/pat-ortho-1/archwire-change")));
+				assert.ok(calls.some((c) => c.url.includes("/api/orthodontics/pat-ortho-1/ligatures-activate")));
+				const stageCall = calls.find((c) => c.url.includes("/api/orthodontics/pat-ortho-1/stages/advance"));
+				assert.ok(stageCall, "Plate protocol must persist via stages/advance");
+				assert.equal(stageCall.body.completedStage, 2);
+				assert.equal(stageCall.body.nextStage, 3);
+			} finally {
+				globalThis.fetch = origFetch;
+			}
 		});
 	});
 

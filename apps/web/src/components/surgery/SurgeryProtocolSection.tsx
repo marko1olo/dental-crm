@@ -221,7 +221,7 @@ export const SurgeryProtocolSection: React.FC<SurgeryProtocolSectionProps> = ({
 				</div>
 			) : null}
 
-			<div className="flex items-center justify-between p-3 rounded-xl bg-[var(--primary-soft,rgba(var(--primary-rgb),0.08))] border border-[var(--primary-soft,rgba(var(--primary-rgb),0.25))] gap-3">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-[var(--primary-soft,rgba(var(--primary-rgb),0.08))] border border-[var(--primary-soft,rgba(var(--primary-rgb),0.25))] gap-3">
 				<div className="text-xs min-w-0">
 					<div className="font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<ShieldCheck className="w-4 h-4 text-[var(--primary)] shrink-0" />
@@ -231,7 +231,7 @@ export const SurgeryProtocolSection: React.FC<SurgeryProtocolSectionProps> = ({
 						{scenarioConfig.subtitleRu}
 					</div>
 				</div>
-				<div className="flex items-center gap-2 shrink-0">
+				<div className="flex flex-wrap items-center gap-2 shrink-0">
 					{!showSelector && (
 						<button
 							type="button"
@@ -295,7 +295,7 @@ export const SurgeryProtocolSection: React.FC<SurgeryProtocolSectionProps> = ({
 						<span className="font-semibold text-[var(--ink)] truncate">
 							{capType === "fdm" ? "ФДМ" : "Заглушка"}
 						</span>
-						<span className="text-xs text-[var(--ink-muted)] truncate">{selectedSuture}</span>
+						<span className="text-xs text-[var(--ink-muted)] truncate">{selectedSuture || "Без шовного материала"}</span>
 					</div>
 				</div>
 			)}

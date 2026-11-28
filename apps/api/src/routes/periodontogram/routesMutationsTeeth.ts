@@ -1,8 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { defineStreamRoute } from "../../core/routeFactories.js";
-import { withTenantWriteCtx } from "../../db/rls.js";
+import { defineTenantMutation } from "../../core/routeFactories.js";
 import { periodontogramTeeth } from "../../db/schema.js";
 import {
 	batchUpsertTeeth,
@@ -19,17 +17,18 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 	 * 5. PATCH /api/periodontogram/snapshots/:id/teeth/:toothNumber
 	 * Сохранение параметров зуба (подвижность, фуркации, статус)
 	 */
-	defineStreamRoute(app, {
+	defineTenantMutation(app, {
 		method: "PATCH",
 		path: "/api/periodontogram/snapshots/:id/teeth/:toothNumber",
-		permission: "public",
-		handler: async ({ request: req, reply }) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
-				req,
-				reply,
-				"periodontogram tooth patch",
-			);
-			if (!orgId) return reply;
+		permission: "clinical.write",
+		authOptions: {
+			requireStaffToken: true,
+			allowAdminSecretBypass: true,
+		},
+		idempotency: "optional_header",
+		bodySchema: patchToothBodySchema,
+		validationErrorMessage: "Некорректные параметры зуба",
+		execute: async ({ tx, organizationId: orgId, body: data, request: req, reply }) => {
 			const rawParams = req.params;
 			const id =
 				typeof rawParams === "object" && rawParams !== null && "id" in rawParams && typeof rawParams.id === "string"
@@ -48,25 +47,13 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 			}
 			const rawIdem = req.headers["idempotency-key"] || req.headers["x-idempotency-key"];
 			const idempotencyKey = typeof rawIdem === "string" ? rawIdem : undefined;
-			if (idempotencyKey) {
-				if (!UUID_REGEX.test(idempotencyKey)) {
-					return reply.code(400).send({
-						error: "ValidationError",
-						message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
-					});
-				}
-				reply.header("Idempotency-Key", idempotencyKey);
-			}
-
-			const parsed = patchToothBodySchema.safeParse(req.body);
-			if (!parsed.success) {
+			if (idempotencyKey && !UUID_REGEX.test(idempotencyKey)) {
 				return reply.code(400).send({
 					error: "ValidationError",
-					message: "Некорректные параметры зуба",
-					details: parsed.error.format(),
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
 				});
 			}
-			const data = parsed.data;
+
 			const isPresent = data.isPresent ?? data.is_present;
 			const isImplant = data.isImplant ?? data.is_implant;
 			const furcationBuccal = data.furcationBuccal ?? data.furcation_buccal;
@@ -88,36 +75,28 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 			if (keratinizedGingivaMm !== undefined)
 				updateValues.keratinizedGingivaMm = keratinizedGingivaMm;
 
-			const txResult = await withTenantWriteCtx(orgId, async (tx) => {
-				const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply, tx);
-				if (!snapshot) return { kind: "snapshot_rejected" as const };
+			const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply, tx);
+			if (!snapshot) return undefined;
 
-				const [updatedTooth] = await tx
-					.update(periodontogramTeeth)
-					.set(updateValues)
-					.where(
-						and(
-							eq(periodontogramTeeth.snapshotId, id),
-							eq(periodontogramTeeth.toothNumber, toothNumber),
-						),
-					)
-					.returning();
+			const [updatedTooth] = await tx
+				.update(periodontogramTeeth)
+				.set(updateValues)
+				.where(
+					and(
+						eq(periodontogramTeeth.snapshotId, id),
+						eq(periodontogramTeeth.toothNumber, toothNumber),
+					),
+				)
+				.returning();
 
-				if (!updatedTooth) {
-					return { kind: "tooth_not_found" as const };
-				}
-				return { kind: "updated" as const, updatedTooth };
-			});
-
-			if (txResult.kind === "snapshot_rejected") return reply;
-			if (txResult.kind === "tooth_not_found") {
+			if (!updatedTooth) {
 				return reply.code(404).send({
 					error: "ToothNotFound",
 					message: `Зуб ${toothNumber} не найден в данном осмотре`,
 				});
 			}
 
-			return reply.send({ success: true, data: txResult.updatedTooth });
+			return { success: true, data: updatedTooth };
 		},
 	});
 
@@ -125,17 +104,18 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 	 * 5b. PATCH /api/periodontogram/snapshots/:id/teeth
 	 * Пакетное сохранение параметров нескольких зубов
 	 */
-	defineStreamRoute(app, {
+	defineTenantMutation(app, {
 		method: "PATCH",
 		path: "/api/periodontogram/snapshots/:id/teeth",
-		permission: "public",
-		handler: async ({ request: req, reply }) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
-				req,
-				reply,
-				"periodontogram batch teeth patch",
-			);
-			if (!orgId) return reply;
+		permission: "clinical.write",
+		authOptions: {
+			requireStaffToken: true,
+			allowAdminSecretBypass: true,
+		},
+		idempotency: "optional_header",
+		bodySchema: patchTeethPayloadSchema,
+		validationErrorMessage: "Некорректные параметры зубов",
+		execute: async ({ tx, organizationId: orgId, body: parsedData, request: req, reply }) => {
 			const { id } = req.params as { id: string };
 
 			if (!UUID_REGEX.test(id)) {
@@ -145,41 +125,25 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const idempotencyKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
-			if (idempotencyKey) {
-				if (!UUID_REGEX.test(idempotencyKey)) {
-					return reply.code(400).send({
-						error: "ValidationError",
-						message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
-					});
-				}
-				reply.header("Idempotency-Key", idempotencyKey);
-			}
-
-			const parsed = patchTeethPayloadSchema.safeParse(req.body);
-			if (!parsed.success) {
+			const rawIdem = req.headers["idempotency-key"] || req.headers["x-idempotency-key"];
+			const idempotencyKey = typeof rawIdem === "string" ? rawIdem : undefined;
+			if (idempotencyKey && !UUID_REGEX.test(idempotencyKey)) {
 				return reply.code(400).send({
 					error: "ValidationError",
-					message: "Некорректные параметры зубов",
-					details: parsed.error.format(),
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
 				});
 			}
-			const rawList = Array.isArray(parsed.data)
-				? parsed.data
-				: parsed.data.teeth;
 
-			const txResult = await withTenantWriteCtx(orgId, async (tx) => {
-				const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply, tx);
-				if (!snapshot) return { kind: "snapshot_rejected" as const };
-				if (rawList.length === 0) return { kind: "empty" as const };
-				const updatedList = await batchUpsertTeeth(tx, id, rawList);
-				return { kind: "updated" as const, updatedList };
-			});
+			const rawList = Array.isArray(parsedData)
+				? parsedData
+				: parsedData.teeth;
 
-			if (txResult.kind === "snapshot_rejected") return reply;
-			if (txResult.kind === "empty") return reply.send({ success: true, data: [] });
+			const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply, tx);
+			if (!snapshot) return undefined;
+			if (rawList.length === 0) return { success: true, data: [] };
+			const updatedList = await batchUpsertTeeth(tx, id, rawList);
 
-			return reply.send({ success: true, data: txResult.updatedList });
+			return { success: true, data: updatedList };
 		},
 	});
 }

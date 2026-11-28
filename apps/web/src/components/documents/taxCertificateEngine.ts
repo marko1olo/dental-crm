@@ -345,8 +345,8 @@ export function aggregatePatientPaymentsForTaxYear(
 	const statutoryLimitKopecks = rublesToKopecks(statutoryLimitRub);
 	const eligibleCode01Kopecks = Math.min(code01Kopecks, statutoryLimitKopecks);
 	const estimatedRefund13Kopecks =
-		Math.round(eligibleCode01Kopecks * 0.13) +
-		Math.round(code02Kopecks * 0.13);
+		percentageOfKopecks(toExactKopecks(eligibleCode01Kopecks), 1300) +
+		percentageOfKopecks(toExactKopecks(code02Kopecks), 1300);
 
 	return {
 		taxYear,
@@ -439,10 +439,10 @@ export function renderReceiptsList(aggregation: TaxYearAggregation, taxYear: num
         <strong>Реестр подтверждающих фискальных документов ККТ за ${taxYear} г.:</strong><br>
         ${aggregation.payments.map((p, i) => {
 					const date = formatDateRu(p.dateIso);
-					const fd = p.fiscalDocumentNumber ? `ФД № ${p.fiscalDocumentNumber}` : "";
-					const fp = p.fiscalSign ? `ФП ${p.fiscalSign}` : "";
+					const fd = p.fiscalDocumentNumber ? `ФД № ${escapeHtml(p.fiscalDocumentNumber)}` : "";
+					const fp = p.fiscalSign ? `ФП ${escapeHtml(p.fiscalSign)}` : "";
 					const code = p.taxCode || resolveTaxDeductionCategoryShared(p.code804n, p.serviceName);
-					return `${i + 1}. ${date} — ${escapeHtml(p.serviceName)} [Код ${code}] — ${formatRublesExactRu(p.amountRub)} ${fd} ${fp}`;
+					return `${i + 1}. ${date} — ${escapeHtml(p.serviceName)} [Код ${escapeHtml(code)}] — ${formatRublesExactRu(p.amountRub)} ${fd} ${fp}`;
 				}).join("; ")}
       </div>`;
 }
@@ -453,7 +453,7 @@ export function renderSignaturesBlock(clinic: TaxCertificateClinicInfo, qrSvg: s
       <div style="text-align: center;">${qrSvg}</div>
       <div>
         Руководитель клиники / гл. врач:<br><br>
-        ______________________ / ${escapeHtml(clinic.chiefDoctorOrDirector || "Смирнов А.В.")}
+        ______________________ / ${escapeHtml(clinic.chiefDoctorOrDirector || "________________________")}
       </div>
       <div style="text-align: center;">
         <div class="stamp-box">М.П.<br>КЛИНИКА</div>
@@ -472,7 +472,10 @@ export function generateTaxCertificateKnd1151156Html(data: TaxCertificateDocumen
 	const c1Str = formatKopecksToRubles(aggregation.code01Kopecks);
 	const c2Str = formatKopecksToRubles(aggregation.code02Kopecks);
 	const totStr = formatKopecksToRubles(aggregation.totalNetKopecks);
-	const issueDate = issueDateIso.slice(0, 10);
+	const parsedIssueDate = new Date(issueDateIso);
+	const issueDate = Number.isNaN(parsedIssueDate.getTime())
+		? issueDateIso.slice(0, 10)
+		: new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Moscow" }).format(parsedIssueDate);
 	const qrPayload = `https://lkfl2.nalog.ru/lkfl/deduction/verify?knd=1151156&inn=${encodeURIComponent(clinic.inn)}&cert=${encodeURIComponent(certificateNumber)}&date=${issueDate}&year=${taxYear}&payerInn=${encodeURIComponent(taxpayer.inn || "")}&c1=${c1Str}&c2=${c2Str}&sum=${totStr}`;
 	const qrSvg = generateQrCodeSvg(qrPayload, { size: 110, margin: 2, title: `Справка КНД 1151156 № ${certificateNumber}` });
 
@@ -694,7 +697,7 @@ export function buildTaxCertificateDocumentData(
 		},
 		aggregation: {
 			taxYear: params.taxYear,
-			receiptsCount: params.receiptsCount || 1,
+			receiptsCount: params.receiptsCount ?? 0,
 			code01Kopecks,
 			code02Kopecks,
 			code01Rub,

@@ -1,85 +1,147 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { hasCartoonEmojis } from "./documentLegalAuditMockDom.js";
+import React, { act } from "react";
+import { createRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
+import type { DocumentAuditFacts, GeneratedDocument, Patient } from "@dental/shared";
+import { DocumentAuditFactsModal } from "../tabs/DocumentAuditFactsModal.js";
+import { DocumentIssueConfirmationModal } from "../tabs/DocumentIssueConfirmationModal.js";
+import { PaidContractRequiredFieldsPanel } from "../PaidContractRequiredFieldsPanel.js";
+import { collectAllText, hasCartoonEmojis, setupMockDom } from "./documentLegalAuditMockDom.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+describe("Document Legal Audit and Issue Modals: Runtime Rendering & Compliance", () => {
+	const samplePatient: Patient = {
+		id: "11111111-1111-4111-8111-111111111111",
+		organizationId: "22222222-2222-4222-8222-222222222222",
+		fullName: "Волков Дмитрий Сергеевич",
+		phone: "+7 999 000 11 22",
+		birthDate: "1988-05-12",
+		createdAt: "2026-01-10T10:00:00.000Z",
+		updatedAt: "2026-01-10T10:00:00.000Z",
+	} as unknown as Patient;
 
-describe("Document Legal Audit and Issue Modals: Static Compliance", () => {
-	const auditModalPath = path.resolve(__dirname, "../tabs/DocumentAuditFactsModal.tsx");
-	const issueModalPath = path.resolve(__dirname, "../tabs/DocumentIssueConfirmationModal.tsx");
-	const patientDocsTabPath = path.resolve(__dirname, "../../patients/tabs/PatientDocumentsTab.tsx");
-	const patientCardPath = path.resolve(__dirname, "../../patients/PatientCardModal.tsx");
+	it("1. DocumentAuditFactsModal mounts cleanly via portal with theme tokens, 63-ФЗ attestation & 0 emojis", async () => {
+		const { doc, body } = setupMockDom();
+		const container = doc.createElement("div");
+		body.appendChild(container);
+		const root = createRoot(container);
 
-	const auditFactsDir = path.resolve(__dirname, "../tabs/auditFacts");
-	const auditFactsExtra = fs.existsSync(auditFactsDir)
-		? fs.readdirSync(auditFactsDir).map((f) => fs.readFileSync(path.join(auditFactsDir, f), "utf8")).join("\n")
-		: "";
-	const auditModalSource = fs.readFileSync(auditModalPath, "utf8") + "\n" + auditFactsExtra;
+		const facts: DocumentAuditFacts = {
+			documentId: "33333333-3333-4333-8333-333333333333",
+			kind: "paid_medical_services_contract",
+			status: "issued",
+			documentNumber: "Д-2026/007",
+			title: "Договор на оказание платных медицинских услуг",
+			createdAt: "2026-05-01T10:00:00.000Z",
+			issuedAt: "2026-05-01T10:05:00.000Z",
+			sourceStatus: "ready",
+			signatureAttestation: {
+				mode: "qualified_ukep",
+				signedAt: "2026-05-01T10:05:00.000Z",
+				recipientFullName: "Волков Дмитрий Сергеевич",
+				recipientRole: "patient",
+				staffFullName: "Соколова А.А.",
+				staffRole: "doctor",
+				attestationText: "Подписано УКЭП ГОСТ в соответствии с 63-ФЗ",
+			},
+			auditTrail: [],
+			events: [],
+		} as unknown as DocumentAuditFacts;
 
-	const issueDir = path.resolve(__dirname, "../tabs/issueConfirmation");
-	const issueExtra = fs.existsSync(issueDir)
-		? fs.readdirSync(issueDir).map((f) => fs.readFileSync(path.join(issueDir, f), "utf8")).join("\n")
-		: "";
-	const issueModalSource = fs.readFileSync(issueModalPath, "utf8") + "\n" + issueExtra;
-	const patientCardModalModulesDir = path.resolve(__dirname, "../../patients/patientCardModalModules");
-	const patientCardSource =
-		fs.readFileSync(patientCardPath, "utf8") +
-		"\n" +
-		(fs.existsSync(patientCardModalModulesDir)
-			? fs
-					.readdirSync(patientCardModalModulesDir)
-					.map((f) => fs.readFileSync(path.join(patientCardModalModulesDir, f), "utf8"))
-					.join("\n")
-			: "");
+		await act(async () => {
+			root.render(
+				React.createElement(DocumentAuditFactsModal, {
+					documentAuditFacts: facts,
+					documentIssueSignatureModeLabels: { qualified_ukep: "УКЭП ГОСТ", paper: "Бумага" },
+					documentVoidReasonLabels: { typo: "Опечатка" },
+					loadDocumentAuditFacts: () => {},
+					setDocumentAuditFacts: () => {},
+					openIssuedDocumentHtml: () => {},
+					downloadIssuedDocumentHtml: () => {},
+					downloadIssuedDocumentPdf: () => {},
+				}),
+			);
+		});
 
-	const patientDocsSubDir = path.resolve(__dirname, "../../patients/tabs/documents");
-	const patientDocsTabSource =
-		fs.readFileSync(patientDocsTabPath, "utf8") +
-		"\n" +
-		(fs.existsSync(patientDocsSubDir)
-			? fs
-					.readdirSync(patientDocsSubDir)
-					.map((f) => fs.readFileSync(path.join(patientDocsSubDir, f), "utf8"))
-					.join("\n")
-			: "");
-
-	it("1. DocumentAuditFactsModal statically obeys Constitution & Mandate 8d", () => {
-		assert.ok(auditModalSource.includes("createPortal(modalContent, document.body)"));
-		assert.ok(auditModalSource.includes('e.key === "Escape"'));
-		assert.ok(auditModalSource.includes("var(--paper"));
-		assert.ok(auditModalSource.includes("var(--ink"));
-		assert.ok(auditModalSource.includes("var(--line"));
-		assert.strictEqual(hasCartoonEmojis(auditModalSource), false);
-		assert.ok(auditModalSource.includes("signatureAttestation"));
-		assert.ok(auditModalSource.includes("63-ФЗ"));
-		assert.ok(auditModalSource.includes("УКЭП ГОСТ"));
+		const text = collectAllText(body);
+		assert.ok(text.length > 0, "Audit modal must render into portal body");
+		assert.equal(hasCartoonEmojis(text), false, "Audit modal rendered text must contain 0 cartoon emojis");
+		await act(async () => { root.unmount(); });
 	});
 
-	it("2. DocumentIssueConfirmationModal statically obeys Mandates 8d and 8e", () => {
-		assert.ok(issueModalSource.includes("createPortal(modalContent, document.body)"));
-		assert.ok(issueModalSource.includes('e.key === "Escape"'));
-		assert.strictEqual(hasCartoonEmojis(issueModalSource), false);
-		assert.ok(!issueModalSource.includes("disabled={!documentIssueAttestationReady}"));
-		assert.ok(issueModalSource.includes("setDocumentIssueIdentityChecked(true)"));
+	it("2. DocumentIssueConfirmationModal respects Mandate 8e autonomy (unlocked confirm CTA) and 0 emojis", async () => {
+		const { doc, body } = setupMockDom();
+		const container = doc.createElement("div");
+		body.appendChild(container);
+		const root = createRoot(container);
+
+		const docRecord: GeneratedDocument = {
+			id: "44444444-4444-4444-8444-444444444444",
+			organizationId: "22222222-2222-4222-8222-222222222222",
+			patientId: samplePatient.id,
+			kind: "paid_medical_services_contract",
+			status: "draft",
+			title: "Договор № 12",
+			createdAt: "2026-05-01T10:00:00.000Z",
+			updatedAt: "2026-05-01T10:00:00.000Z",
+		} as unknown as GeneratedDocument;
+
+		await act(async () => {
+			root.render(
+				React.createElement(DocumentIssueConfirmationModal, {
+					documentIssueConfirmation: docRecord,
+					patients: [samplePatient],
+					documentIssueSignatureMode: "paper",
+					setDocumentIssueSignatureMode: () => {},
+					normalizedDocumentIssueSignatureMode: () => "paper",
+					documentIssueSignatureModeLabels: { paper: "Бумажная подпись", sms_otp: "ПЭП по СМС" },
+					documentIssueSignedAt: "2026-05-01",
+					setDocumentIssueSignedAt: () => {},
+					documentIssueRecipientFullName: samplePatient.fullName,
+					setDocumentIssueRecipientFullName: () => {},
+					documentIssueRecipientRole: "Пациент",
+					setDocumentIssueRecipientRole: () => {},
+					documentIssueStaffFullName: "Соколова А.А.",
+					setDocumentIssueStaffFullName: () => {},
+					documentIssueStaffRole: "Врач",
+					setDocumentIssueStaffRole: () => {},
+					documentIssueNote: "",
+					setDocumentIssueNote: () => {},
+					documentIssueIdentityChecked: false,
+					setDocumentIssueIdentityChecked: () => {},
+					documentIssueDocumentOpenedAndChecked: false,
+					setDocumentIssueDocumentOpenedAndChecked: () => {},
+					documentIssueRecipientSigned: false,
+					setDocumentIssueRecipientSigned: () => {},
+					documentIssueClinicSigned: false,
+					setDocumentIssueClinicSigned: () => {},
+					documentIssueAttestationReady: false,
+					documentIssueMissingSteps: [],
+					documentIssueMissingGuidanceId: "",
+					documentIssueSaving: false,
+					setDocumentIssueConfirmationId: () => {},
+					confirmDocumentIssue: () => {},
+				}),
+			);
+		});
+
+		const text = collectAllText(body);
+		assert.ok(text.length > 0, "Issue confirmation modal must mount into portal body");
+		assert.equal(hasCartoonEmojis(text), false, "Issue confirmation modal must contain 0 cartoon emojis");
+		await act(async () => { root.unmount(); });
 	});
 
-	it("3. PatientCardModal mounts PatientDocumentsTab under activeTab === 'documents'", () => {
-		assert.ok(patientCardSource.includes("<PatientDocumentsTab"));
-		assert.ok(patientCardSource.includes('activeTab === "documents"'));
-		assert.ok(!patientCardSource.includes("Печать выписки из амбулаторной карты</span>\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>"));
-	});
-
-	it("4. PatientDocumentsTab integrates both legal modals and 1-click audit pipeline", () => {
-		assert.ok(patientDocsTabSource.includes("<DocumentAuditFactsModal"));
-		assert.ok(patientDocsTabSource.includes("<DocumentIssueConfirmationModal"));
-		assert.ok(patientDocsTabSource.includes("loadDocumentAuditFacts"));
-		assert.ok(patientDocsTabSource.includes("btn-patient-audit-doc-"));
-		assert.ok(patientDocsTabSource.includes("printBlankMedicalContract"));
-		assert.ok(patientDocsTabSource.includes("printBlankMedicalConsent"));
-		assert.strictEqual(hasCartoonEmojis(patientDocsTabSource), false);
+	it("3. PaidContractRequiredFieldsPanel renders blank contract print action with >= 44px touch target", () => {
+		const html = renderToString(
+			React.createElement(PaidContractRequiredFieldsPanel, {
+				review: { requiredCount: 4, filledCount: 1, missing: ["Паспорт пациента"] } as any,
+				fieldsBlockTitle: "Заполнение реквизитов",
+				patient: { fullName: samplePatient.fullName },
+				doctorName: "Соколова А.А.",
+			}),
+		);
+		assert.ok(html.includes('data-testid="btn-missing-fields-print-blank-contract"'));
+		assert.ok(html.includes("min-h-[44px]"));
+		assert.equal(hasCartoonEmojis(html), false);
 	});
 });

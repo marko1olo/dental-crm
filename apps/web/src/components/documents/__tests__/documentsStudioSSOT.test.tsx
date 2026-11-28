@@ -15,9 +15,6 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
@@ -43,9 +40,6 @@ import {
 } from "../DocumentsStudioModal";
 import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
 import { resolveClinicRoute } from "../../../router/routeResolver";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const webSrcDir = path.resolve(__dirname, "../../..");
 
 describe("🏛️ Documents & Informed Consents SSOT: Catalog & Legal Packages", () => {
 	it("1.1. Содержит ровно 4 канонических пакета клиники РФ без советского канцелярита", () => {
@@ -164,7 +158,7 @@ describe("🏛️ DocumentsStudioModal: Mandates 8e, 8am & Apple HIG", () => {
 		// Мандат 8am: Ровно 1 Primary CTA кнопка
 		const primaryMatches = html.match(/class="[^"]*dente-btn-primary-cta[^"]*"/g) || [];
 		assert.equal(primaryMatches.length, 1, `Должна быть ровно ОДНА Primary CTA кнопка, найдено: ${primaryMatches.length}`);
-		assert.ok(html.includes("✓ Распечатать пакет приёма и подписать"), "Текст кнопки должен отражать действие в 1 клик");
+		assert.ok(html.includes("Распечатать пакет приёма и подписать"), "Текст кнопки должен отражать действие без дев-жаргона и эмодзи");
 
 		// Мандат 8e: ZERO disabled кнопок
 		assert.ok(!html.includes("disabled"), "Кнопки сохранения и печати НИКОГДА не должны быть disabled");
@@ -202,11 +196,18 @@ describe("🏛️ Single-Shell Studio Mounting & Deep Links (Mandate 8aq)", () =
 		assert.equal(resolveClinicRoute("", "#consents").studio?.kind, "consents");
 	});
 
-	it("3.3. WorkspaceStudioOverlayHost смонтирован в AppModalsContainer.tsx", () => {
-		const modalsPath = path.join(webSrcDir, "components/appLayout/AppModalsContainer.tsx");
-		assert.ok(fs.existsSync(modalsPath), "AppModalsContainer.tsx должен существовать");
-		const content = fs.readFileSync(modalsPath, "utf-8");
-		assert.ok(content.includes("WorkspaceStudioOverlayHost"), "AppModalsContainer обязан монтировать WorkspaceStudioOverlayHost");
+	it("3.3. В боевом режиме (!isDemoShowcaseMode()) без переданного профиля клиники не подставляются фейковые реквизиты 7701234567", () => {
+		disableDemoShowcaseMode();
+		const html = renderToString(
+			<DocumentsStudioModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTemplate="intake"
+				patientContext={{ id: "pat-real-1", fullName: "Тестов Тест Тестович", birthDate: "1990-01-01" }}
+			/>,
+		);
+		assert.ok(!html.includes("7701234567"), "В боевом режиме без реквизитов клиники не должно быть хардкода ИНН 7701234567");
+		assert.ok(html.includes(String(new Date().getFullYear())), "Документ обязан использовать текущий год");
 	});
 });
 

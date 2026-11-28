@@ -96,7 +96,7 @@ export * from "./imaging/index.js";
 export * from "./onboarding/index.js";
 export * from "./omniPlatformAdapter.js";
 export { formatSnils, isValidSnils, normalizeSnils } from "./utils/snils.js";
-export { escapeHtml } from "./utils/index.js";
+export { escapeHtml, sanitizeSignatureSvg, sanitizeImageDataUrl } from "./utils/index.js";
 import { validateRussianSnils as canonicalValidateRussianSnils } from "./finance/taxDeduction.js";
 export const validateRussianSnils = canonicalValidateRussianSnils;
 export {
@@ -204,6 +204,17 @@ export * from "./lab/index.js";
 export { type RecallPriority } from "./communications/index.js";
 export * from "./communications/index.js";
 export * from "./schedule/index.js";
+export {
+	waitlistTimeRangeSchema,
+	waitlistCreateSchema,
+	waitlistUpdateSchema,
+	waitlistStatusSchema,
+	waitlistParamsSchema,
+	type WaitlistTimeRange,
+	type WaitlistCreateInput,
+	type WaitlistUpdateInput,
+	type WaitlistStatusInput,
+} from "./schedule/waitlistSchemas.js";
 export {
 	patientOperationalStatusSchema, patientShiftQueueTabSchema, waitSeveritySchema, chairDurationSeveritySchema,
 	queueActionRoleSchema, patientQueueActionIdSchema, patientQueueActionSchema, PATIENT_SHIFT_QUEUE_TABS_META,

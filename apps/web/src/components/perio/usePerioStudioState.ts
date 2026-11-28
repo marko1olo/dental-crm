@@ -10,7 +10,7 @@
  * Норматив размера: <= 500 строк (Мандат 8b).
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PerioChartSummary, PerioToothRecord } from "@dental/shared";
 import {
 	calculateOlearyFromPerioTeeth, calculateOhiSScore, calculatePerioIndices, calculatePmaScore,
@@ -93,6 +93,17 @@ export function usePerioStudioState({
 
 	const [teeth, setTeeth] = useState<PerioToothRecord[]>(() => normalizePerioDentition(initialTeeth));
 	const [screeningMap, setScreeningMap] = useState<PsrScreeningMap>(() => ({ ...DEFAULT_SEXTANTS_MAP }));
+	const activePatientIdRef = useRef<string | undefined>(patientId?.trim());
+	const hydratedPatientIdRef = useRef<string | null>(null);
+	const pendingPsrSyncRef = useRef<boolean>(false);
+
+	activePatientIdRef.current = patientId?.trim();
+
+	useEffect(() => {
+		if (!pendingPsrSyncRef.current) return;
+		pendingPsrSyncRef.current = false;
+		setScreeningMap(convertPsrResultsToScreeningMap(calculatePsrSextants(teeth)));
+	}, [teeth]);
 
 	const summary = useMemo(() => calculatePerioIndices(teeth), [teeth]);
 	const psrSummary = useMemo(() => computePsrSummary(screeningMap), [screeningMap]);
@@ -102,14 +113,10 @@ export function usePerioStudioState({
 	const pmaResult = useMemo(() => calculatePmaScore(hygieneAssessments), [hygieneAssessments]);
 	const probingSequence = useMemo(() => generateFullMouthProbingSequence(teeth), [teeth]);
 
-	// Автоматический пересчет секстантов PSR при зондировании
+	// Автоматический пересчет секстантов PSR при зондировании (без вложенных setState в updater)
 	const setTeethWithPsrSync: React.Dispatch<React.SetStateAction<PerioToothRecord[]>> = useCallback((action) => {
-		setTeeth((prev) => {
-			const next = typeof action === "function" ? action(prev) : action;
-			const psrResults = calculatePsrSextants(next);
-			setScreeningMap(convertPsrResultsToScreeningMap(psrResults));
-			return next;
-		});
+		pendingPsrSyncRef.current = true;
+		setTeeth(action);
 	}, []);
 
 	const {
@@ -164,11 +171,12 @@ export function usePerioStudioState({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, isModal, handleClose]);
 
-	// Debounced Draft Autosave (Мандат 8e / DEF-PERIO-03) — сохранение с дебаунсом 600мс в v2
+	// Debounced Draft Autosave (Мандат 8e / DEF-PERIO-03) — сохранение с дебаунсом 600мс строго для гидратированного пациента
 	useEffect(() => {
 		const cleanPatientId = patientId?.trim();
-		if (!cleanPatientId) return;
+		if (!cleanPatientId || hydratedPatientIdRef.current !== cleanPatientId) return;
 		const timer = setTimeout(() => {
+			if (activePatientIdRef.current !== cleanPatientId || hydratedPatientIdRef.current !== cleanPatientId) return;
 			safeLocalStorageSetItem(
 				`dente_perio_draft_v2_${cleanPatientId}`,
 				JSON.stringify({ teeth, screeningMap, selectedProtocolId, updatedAt: new Date().toISOString() }),
@@ -177,9 +185,15 @@ export function usePerioStudioState({
 		return () => clearTimeout(timer);
 	}, [patientId, teeth, screeningMap, selectedProtocolId]);
 
-	// Восстановление черновика из localStorage и синхронизация с Fastify бэкендом
+	// Восстановление черновика из localStorage и синхронизация с Fastify бэкендом (со сбросом при смене пациента)
 	useEffect(() => {
 		const cleanPatientId = patientId?.trim();
+		hydratedPatientIdRef.current = null;
+		pendingPsrSyncRef.current = false;
+		setTeeth(normalizePerioDentition(initialTeeth));
+		setScreeningMap({ ...DEFAULT_SEXTANTS_MAP });
+		setSelectedProtocolId("prophy_airflow_ultrasound");
+		setSyncStatus("idle");
 		if (!cleanPatientId) return;
 		const safePatientId = cleanPatientId;
 		let isCancelled = false;
@@ -203,6 +217,7 @@ export function usePerioStudioState({
 		} catch (err) {
 			clientLogger.warn("Failed to read from local draft/cache", err, { module: "usePerioStudioState" });
 		}
+		hydratedPatientIdRef.current = safePatientId;
 
 		async function fetchPerio() {
 			try {
@@ -270,11 +285,8 @@ export function usePerioStudioState({
 	}, []);
 
 	const applyPresetAndSync = useCallback((fn: (teeth: PerioToothRecord[]) => PerioToothRecord[], message: string) => {
-		setTeeth((p) => {
-			const updated = fn(p);
-			setScreeningMap(convertPsrResultsToScreeningMap(calculatePsrSextants(updated)));
-			return updated;
-		});
+		pendingPsrSyncRef.current = true;
+		setTeeth((p) => fn(p));
 		showToast(message, "success");
 	}, []);
 
@@ -433,16 +445,21 @@ export function usePerioStudioState({
 			if (isModal) handleClose();
 		} catch (err) {
 			clientLogger.error("Save failed", err, { module: "usePerioStudioState" });
-			syncPerioState();
-			showToast("Сетевой сбой при сохранении на сервере. Данные сохранены в локальный кэш (офлайн)", "warning", 5000, {
+			const cleanPatientId = patientId?.trim();
+			if (cleanPatientId) {
+				safeLocalStorageSetItem(
+					`dente_perio_draft_v2_${cleanPatientId}`,
+					JSON.stringify({ teeth, screeningMap, selectedProtocolId, updatedAt: new Date().toISOString() }),
+				);
+			}
+			setSyncStatus("idle");
+			showToast("Ошибка сохранения на сервере. Черновик сохранён локально, повторите отправку.", "error", 6000, {
 				label: "Повторить",
 				onAction: () => { void handleSave(); },
 			});
-			if (onSave) onSave(teeth, summary);
-			if (isModal) handleClose();
 		}
 	}, [
-		syncStatus, patientId, teeth, psrSummary, screeningMap, summary,
+		syncStatus, patientId, teeth, psrSummary, screeningMap, selectedProtocolId, summary,
 		dispatchPerioSoapSync, onSave, isModal, handleClose, visitId,
 	]);
 

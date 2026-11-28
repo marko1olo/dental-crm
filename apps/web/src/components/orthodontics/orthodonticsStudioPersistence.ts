@@ -98,8 +98,11 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 				...bitePayload,
 			}, generateUuidV7());
 		} else if (protocol.applianceCategory === "plate") {
+			const completedStage = Math.min(10, Math.max(1, protocol.currentMonth || 1));
+			const nextStage = Math.min(10, completedStage + 1);
 			await postOrthoEndpoint(`/api/orthodontics/${patientId}/stages/advance`, {
-				nextStage: Math.max(1, protocol.currentMonth || 1),
+				completedStage,
+				nextStage,
 				stageTitle: `Активация аппарата / винта: ${protocol.applianceName}`,
 				note: protocol.clinicalNotes || protocol.notes || "Контрольный осмотр и активация расширяющего винта пластинки",
 				visitId,

@@ -21,9 +21,8 @@ import {
 } from "@dental/shared";
 import { and, desc, eq, notInArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { defineStreamRoute } from "../../core/routeFactories.js";
-import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
+import { defineTenantMutation, defineTenantQuery } from "../../core/routeFactories.js";
+import { onTenantTxCommit, type TenantDb } from "../../db/rls.js";
 import { inventoryQuery } from "../../db/inventoryQuery.js";
 import {
 	patientInvoices,
@@ -34,9 +33,7 @@ import {
 	treatmentItems,
 	visits,
 } from "../../db/schema.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
-import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { TreatmentConsumablesService, type UnifiedStockDeductionResult } from "../../services/treatmentConsumablesService.js";
 
@@ -52,38 +49,54 @@ function resolveInvoiceTotalKopecks(invoice: {
 	return legacyKopecks;
 }
 
+async function resolveCatalogServicePriceKopecks(
+	tx: TenantDb,
+	orgId: string,
+	code: string,
+	fallbackKopecks: bigint,
+): Promise<bigint> {
+	if (!code) return fallbackKopecks;
+	const [catalogRow] = await tx
+		.select({
+			priceKopecks: serviceCatalogItems.priceKopecks,
+			priceRub: serviceCatalogItems.priceRub,
+		})
+		.from(serviceCatalogItems)
+		.where(
+			and(
+				eq(serviceCatalogItems.organizationId, orgId),
+				eq(serviceCatalogItems.code, code),
+				eq(serviceCatalogItems.isActive, true),
+			),
+		)
+		.limit(1);
+	if (!catalogRow) return fallbackKopecks;
+	const legacyKop = BigInt(rublesToKopecks(Number(catalogRow.priceRub ?? 0)));
+	if (typeof catalogRow.priceKopecks === "bigint" && (catalogRow.priceKopecks > 0n || legacyKop === 0n)) {
+		return catalogRow.priceKopecks;
+	}
+	return legacyKop;
+}
+
 export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void> {
 	/**
 	 * 1. GET /api/surgery/protocols/templates
 	 * Возвращает шаблоны хирургических протоколов с физиологической нормой по умолчанию
 	 * (Код услуги прейскуранта, Медицинская карта приёма, Мандаты 8e, 8i).
 	 */
-	defineStreamRoute(app, {
+	defineTenantQuery(app, {
 		method: "GET",
 		path: "/api/surgery/protocols/templates",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
-			if (!orgId) return reply;
-
-			const identity = getRequestIdentity(request);
-			const staffRole = identity.role ?? request.user?.role ?? null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "clinical.surgery.read",
-					role: staffRole,
-					message: `Отказ в доступе к шаблонам хирургических протоколов: ${evalAccess.reason}`,
-				});
-			}
-
-			return reply.send({
-				success: true,
-				count: CANONICAL_SURGICAL_OPERATION_NORMS.length,
-				templates: CANONICAL_SURGICAL_OPERATION_NORMS,
-			});
+		permission: "clinical.read",
+		authOptions: {
+			allowClinicTokenWithoutStaff: true,
+			allowAdminSecretBypass: true,
 		},
+		query: async () => ({
+			success: true,
+			count: CANONICAL_SURGICAL_OPERATION_NORMS.length,
+			templates: CANONICAL_SURGICAL_OPERATION_NORMS,
+		}),
 	});
 
 	/**
@@ -91,74 +104,57 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 	 * Регистрация протокола амбулаторной операции в медицинской карте приёма и дневнике приёма (Мандаты 8e, 8i).
 	 * Автоматически вносит дневник операции без бюрократических барьеров.
 	 */
-	defineStreamRoute(app, {
+	defineTenantMutation(app, {
 		method: "POST",
 		path: "/api/surgery/protocols",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
-			if (!orgId) return reply;
+		permission: "clinical.write",
+		authOptions: {
+			allowClinicTokenWithoutStaff: true,
+			allowAdminSecretBypass: true,
+		},
+		idempotency: "optional_header",
+		bodySchema: createSurgicalProtocolSchema,
+		validationErrorCode: "SurgicalProtocolValidationError",
+		validationErrorMessage: "Некорректные параметры хирургического протокола.",
+		execute: async ({ tx, principal, organizationId: orgId, body: input, request, reply }) => {
+			const targetPatientId = input.patientId;
 
-		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? request.user?.role ?? null;
-		const evalAccess = evaluateClinicalAccess(staffRole);
-		if (!evalAccess.hasClinicalAccess) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "clinical.surgery.write",
-				role: staffRole,
-				message: `Отказ в записи протокола операции: ${evalAccess.reason}`,
-			});
-		}
+			const SCENARIO_NORM_ALIASES: Record<string, string> = {
+				"scen-extraction": "surgery_extraction_simple",
+				"scen-resection": "surgery_periostotomy",
+				"scen-sinus-gbr": "surgery_sinus_lift_gbr",
+				"scen-implant": "surgery_implant_standard",
+			};
+			const effectiveNormId = SCENARIO_NORM_ALIASES[input.normId] || input.normId;
+			const norm = CANONICAL_SURGICAL_OPERATION_NORMS.find(
+				(n) => n.id === effectiveNormId || n.id === input.normId,
+			);
 
-		const parsed = createSurgicalProtocolSchema.safeParse(request.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "SurgicalProtocolValidationError",
-				message: "Некорректные параметры хирургического протокола.",
-				details: parsed.error.format(),
-			});
-		}
-		const input = parsed.data;
-		const targetPatientId = input.patientId;
+			const isImplant =
+				effectiveNormId.toLowerCase().includes("implant") || norm?.category === "implant";
 
-		const SCENARIO_NORM_ALIASES: Record<string, string> = {
-			"scen-extraction": "surgery_extraction_simple",
-			"scen-resection": "surgery_periostotomy",
-			"scen-sinus-gbr": "surgery_sinus_lift_gbr",
-			"scen-implant": "surgery_implant_standard",
-		};
-		const effectiveNormId = SCENARIO_NORM_ALIASES[input.normId] || input.normId;
-		const norm = CANONICAL_SURGICAL_OPERATION_NORMS.find(
-			(n) => n.id === effectiveNormId || n.id === input.normId,
-		);
-
-		const isImplant =
-			effectiveNormId.toLowerCase().includes("implant") || norm?.category === "implant";
-
-		// [SEV-1] Анатомический гейт: блокировка имплантации в молочные зубы (FDI 51–85)
-		const targetTeeth: number[] = [];
-		if (input.toothNumberFdi) {
-			targetTeeth.push(input.toothNumberFdi);
-		}
-		for (const t of input.teeth) {
-			if (!targetTeeth.includes(t)) {
-				targetTeeth.push(t);
+			// [SEV-1] Анатомический гейт: блокировка имплантации в молочные зубы (FDI 51–85)
+			const targetTeeth: number[] = [];
+			if (input.toothNumberFdi) {
+				targetTeeth.push(input.toothNumberFdi);
 			}
-		}
-
-		if (isImplant) {
-			for (const toothNum of targetTeeth) {
-				if (toothNum >= 51 && toothNum <= 85) {
-					return reply.code(422).send({
-						error: "DeciduousToothImplantForbidden",
-						message: `Установка дентального имплантата в область молочного зуба (#${toothNum}) категорически запрещена анатомическим протоколом`,
-					});
+			for (const t of input.teeth) {
+				if (!targetTeeth.includes(t)) {
+					targetTeeth.push(t);
 				}
 			}
-		}
 
-		const result = await withTenantWriteCtx(orgId, async (tx) => {
+			if (isImplant) {
+				for (const toothNum of targetTeeth) {
+					if (toothNum >= 51 && toothNum <= 85) {
+						return reply.code(422).send({
+							error: "DeciduousToothImplantForbidden",
+							message: `Установка дентального имплантата в область молочного зуба (#${toothNum}) категорически запрещена анатомическим протоколом`,
+						});
+					}
+				}
+			}
+
 			const [patient] = await tx
 				.select({ id: patients.id, fullName: patients.fullName })
 				.from(patients)
@@ -167,7 +163,10 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				.limit(1);
 
 			if (!patient) {
-				return { patientNotFound: true as const };
+				return reply.code(404).send({
+					error: "PatientNotFound",
+					message: "Пациент не найден в текущей клинике.",
+				});
 			}
 
 			let visitUpdated = false;
@@ -298,10 +297,11 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 
 			if (incomingServices && incomingServices.length > 0) {
 				for (const s of incomingServices) {
-					const unitPriceKopecks =
+					const fallbackKopecks =
 						s.priceKopecks != null
 							? BigInt(s.priceKopecks)
 							: BigInt(rublesToKopecks(Number(s.priceRub ?? s.suggestedPriceRub ?? 0)));
+					const unitPriceKopecks = await resolveCatalogServicePriceKopecks(tx, orgId, s.code, fallbackKopecks);
 					candidateServices.push({
 						code: s.code,
 						nameRu: s.nameRu ?? s.name ?? norm?.title ?? "Хирургическая манипуляция",
@@ -321,10 +321,11 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 
 				if (fallbackCatalog.length > 0) {
 					for (const s of fallbackCatalog) {
-						const unitPriceKopecks =
+						const fallbackKopecks =
 							s.priceKopecks != null
 								? BigInt(s.priceKopecks)
 								: BigInt(rublesToKopecks(Number(s.priceRub ?? s.suggestedPriceRub ?? 0)));
+						const unitPriceKopecks = await resolveCatalogServicePriceKopecks(tx, orgId, s.code, fallbackKopecks);
 						candidateServices.push({
 							code: s.code,
 							nameRu: s.nameRu ?? s.name ?? norm?.title ?? "Хирургическая манипуляция",
@@ -336,33 +337,14 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 					}
 				} else {
 					const targetCode = norm?.code804n ?? "A16.07.001";
-					const [catalogRow] = await tx
-						.select({
-							priceKopecks: serviceCatalogItems.priceKopecks,
-							priceRub: serviceCatalogItems.priceRub,
-						})
-						.from(serviceCatalogItems)
-						.where(
-							and(
-								eq(serviceCatalogItems.organizationId, orgId),
-								eq(serviceCatalogItems.code, targetCode),
-								eq(serviceCatalogItems.isActive, true),
-							),
-						)
-						.limit(1);
-					const catalogLegacyKopecks = BigInt(rublesToKopecks(Number(catalogRow?.priceRub ?? 0)));
-					const resolvedCatalogKopecks =
-						catalogRow && typeof catalogRow.priceKopecks === "bigint" && (catalogRow.priceKopecks > 0n || catalogLegacyKopecks === 0n)
-							? catalogRow.priceKopecks
-							: catalogRow
-								? catalogLegacyKopecks
-								: BigInt(
-										rublesToKopecks(
-											norm?.order804nServices?.[0]?.priceRub ??
-												norm?.catalogServices?.[0]?.priceRub ??
-												3500,
-										),
-									);
+					const fallbackKopecks = BigInt(
+						rublesToKopecks(
+							norm?.order804nServices?.[0]?.priceRub ??
+								norm?.catalogServices?.[0]?.priceRub ??
+								3500,
+						),
+					);
+					const resolvedCatalogKopecks = await resolveCatalogServicePriceKopecks(tx, orgId, targetCode, fallbackKopecks);
 					candidateServices.push({
 						code: targetCode,
 						nameRu: norm?.title ?? "Амбулаторная хирургическая операция",
@@ -503,6 +485,24 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				});
 			}
 
+			// Атомарное списание материалов в этой же транзакции при передаче bundleType / deductMaterials
+			let deductionResult: UnifiedStockDeductionResult | null = null;
+			if (input.deductMaterials || input.bundleType) {
+				const visitType: "therapy" | "surgery" | "implant" | "sinus_gbr" =
+					input.bundleType === "sinus_gbr"
+						? "sinus_gbr"
+						: input.bundleType === "implant"
+							? "implant"
+							: "surgery";
+				deductionResult = await TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+					organizationId: orgId,
+					visitType,
+					userId: principal.userId,
+					visitId: targetVisitId,
+					notes: `Списание по техкарте: ${norm?.title || effectiveNormId} #${targetTeeth.join(", #")}`,
+				});
+			}
+
 			const protocolResult = {
 				patientId: targetPatientId,
 				visitId: targetVisitId,
@@ -522,36 +522,28 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 			const responsePayload: Record<string, unknown> = {
 				success: true,
 				protocol: protocolResult,
+				...(deductionResult ? { deduction: deductionResult } : {}),
 			};
 
-			return { patientNotFound: false as const, protocol: protocolResult, responsePayload };
-		});
-
-		if (result.patientNotFound) {
-			return reply.code(404).send({
-				error: "PatientNotFound",
-				message: "Пациент не найден в текущей клинике.",
+			onTenantTxCommit(() => {
+				void auditMedicalAccessFromRequest(request, {
+					organizationId: orgId,
+					patientId: targetPatientId,
+					action: "RECORD_SURGICAL_OPERATION_PROTOCOL",
+					diagnosis: norm?.title || effectiveNormId,
+				});
+				wsBroker.broadcastToOrganization(orgId, {
+					type: "UPDATE_SURGICAL_PROTOCOL",
+					payload: {
+						patientId: targetPatientId,
+						toothNumberFdi: input.toothNumberFdi ?? targetTeeth[0] ?? null,
+						teeth: targetTeeth,
+						protocol: protocolResult,
+					},
+				});
 			});
-		}
 
-		await auditMedicalAccessFromRequest(request, {
-			organizationId: orgId,
-			patientId: targetPatientId,
-			action: "RECORD_SURGICAL_OPERATION_PROTOCOL",
-			diagnosis: norm?.title || effectiveNormId,
-		});
-
-		wsBroker.broadcastToOrganization(orgId, {
-			type: "UPDATE_SURGICAL_PROTOCOL",
-			payload: {
-				patientId: targetPatientId,
-				toothNumberFdi: input.toothNumberFdi ?? targetTeeth[0] ?? null,
-				teeth: targetTeeth,
-				protocol: result.protocol,
-			},
-		});
-
-		return reply.code(201).send(result.responsePayload);
+			return reply.code(201).send(responsePayload);
 		},
 	});
 
@@ -561,78 +553,57 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 	 * Пустые карпулы анестетиков — отходы Класса Б (СанПиН 3.3686-21) без комиссий.
 	 * Мягкий овердрафт склада: задержка накладной никогда не блокирует операцию врача!
 	 */
-	defineStreamRoute(app, {
+	defineTenantMutation(app, {
 		method: "POST",
 		path: "/api/surgery/materials/quick-deduct",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
-			if (!orgId) return reply;
-
-			const identity = getRequestIdentity(request);
-			const staffRole = identity.role ?? request.user?.role ?? null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "clinical.surgery.write",
-					role: staffRole,
-					message: `Отказ в списании хирургических материалов: ${evalAccess.reason}`,
+		permission: "clinical.write",
+		authOptions: {
+			allowClinicTokenWithoutStaff: true,
+			allowAdminSecretBypass: true,
+		},
+		idempotency: "optional_header",
+		bodySchema: surgicalQuickDeductSchema,
+		validationErrorCode: "SurgicalDeductValidationError",
+		validationErrorMessage: "Некорректные параметры списания расходных материалов.",
+		execute: async ({ tx, principal, organizationId: orgId, body: input }) => {
+			let res: UnifiedStockDeductionResult;
+			if (input.bundleType === "anesthesia_carpule") {
+				res = await TreatmentConsumablesService.quickWriteoffCarpules(tx, {
+					organizationId: orgId,
+					carpulesCount: input.carpulesCount,
+					drugName: input.drugBrandName,
+					userId: principal.userId,
+					visitId: input.visitId,
+					notes: input.notes ?? `Списание ${input.carpulesCount} карпул(ы) ${input.drugBrandName} (отходы Класса Б, СанПиН 3.3686-21, протокол по умолчанию)`,
 				});
-			}
-
-			const parsed = surgicalQuickDeductSchema.safeParse(request.body);
-			if (!parsed.success) {
-				return reply.code(400).send({
-					error: "SurgicalDeductValidationError",
-					message: "Некорректные параметры списания расходных материалов.",
-					details: parsed.error.format(),
-				});
-			}
-			const input = parsed.data;
-
-			const responsePayload = await withTenantWriteCtx(orgId, async (tx) => {
-				let res: UnifiedStockDeductionResult;
-				if (input.bundleType === "anesthesia_carpule") {
-					res = await TreatmentConsumablesService.quickWriteoffCarpules(tx, {
-						organizationId: orgId,
-						carpulesCount: input.carpulesCount,
-						drugName: input.drugBrandName,
-						userId: identity.userId,
-						visitId: input.visitId,
-						notes: input.notes ?? `Списание ${input.carpulesCount} карпул(ы) ${input.drugBrandName} (отходы Класса Б, СанПиН 3.3686-21, протокол по умолчанию)`,
-					});
+			} else {
+				let visitType: "therapy" | "surgery" | "implant" | "sinus_gbr" = "surgery";
+				if (input.bundleType === "implant") {
+					visitType = "implant";
+				} else if (input.bundleType === "sinus_gbr") {
+					visitType = "sinus_gbr";
 				} else {
-					let visitType: "therapy" | "surgery" | "implant" | "sinus_gbr" = "surgery";
-					if (input.bundleType === "implant") {
-						visitType = "implant";
-					} else if (input.bundleType === "sinus_gbr") {
-						visitType = "sinus_gbr";
-					} else {
-						visitType = "surgery";
-					}
-
-					res = await TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
-						organizationId: orgId,
-						visitType,
-						userId: identity.userId,
-						visitId: input.visitId,
-						notes: input.notes ?? `Списание набора «${visitType}»`,
-					});
+					visitType = "surgery";
 				}
 
-				return {
-					bundleType: input.bundleType,
-					success: res.success,
-					isOverdraft: res.isOverdraft,
-					deductedItemsCount: res.deductedItems.length,
-					messageRu: res.message,
-					deductedItems: res.deductedItems,
-					warnings: res.warnings,
-				};
-			});
+				res = await TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+					organizationId: orgId,
+					visitType,
+					userId: principal.userId,
+					visitId: input.visitId,
+					notes: input.notes ?? `Списание набора «${visitType}»`,
+				});
+			}
 
-			return reply.send(responsePayload);
+			return {
+				bundleType: input.bundleType,
+				success: res.success,
+				isOverdraft: res.isOverdraft,
+				deductedItemsCount: res.deductedItems.length,
+				messageRu: res.message,
+				deductedItems: res.deductedItems,
+				warnings: res.warnings,
+			};
 		},
 	});
 
@@ -641,27 +612,16 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 	 * Проверка статуса мягкого овердрафта хирургических материалов.
 	 * canProceed ВСЕГДА true — врач оперирует без искусственных блокировок.
 	 */
-	defineStreamRoute(app, {
+	defineTenantQuery(app, {
 		method: "GET",
 		path: "/api/surgery/materials/overdraft-status",
-		permission: "public",
-		handler: async ({ request, reply }) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
-			if (!orgId) return reply;
-
-			const identity = getRequestIdentity(request);
-			const staffRole = identity.role ?? request.user?.role ?? null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "clinical.surgery.read",
-					role: staffRole,
-					message: `Отказ в проверке складского статуса операции: ${evalAccess.reason}`,
-				});
-			}
-
-			const items = await withTenantReadCtx(orgId, (tx) => inventoryQuery.getInventoryItems(orgId, tx));
+		permission: "clinical.read",
+		authOptions: {
+			allowClinicTokenWithoutStaff: true,
+			allowAdminSecretBypass: true,
+		},
+		query: async ({ tx, organizationId: orgId }) => {
+			const items = await inventoryQuery.getInventoryItems(orgId, tx);
 
 			const overdraftItems = items
 				.filter((i) => Number(i.currentQty ?? i.stockQuantity ?? 0) <= 0)
@@ -672,13 +632,13 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				overdraftItems.length > 0,
 			);
 
-			return reply.send({
+			return {
 				success: true,
 				overdraftStatus: status,
 				overdraftItemsCount: overdraftItems.length,
 				overdraftItemNames: overdraftItems.slice(0, 10),
 				canProceed: true,
-			});
+			};
 		},
 	});
 }

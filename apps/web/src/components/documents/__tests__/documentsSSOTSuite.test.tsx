@@ -7,9 +7,6 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
@@ -26,8 +23,6 @@ import {
 import { DocumentsStudioModal } from "../DocumentsStudioModal";
 import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
 import { resolveClinicRoute } from "../../../router/routeResolver";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
 describe("🏛️ Documents SSOT Suite: Catalog Data, Legal Templates & Integer Kopecks", () => {
@@ -228,17 +223,20 @@ describe("🏛️ Documents Studio Modal & UI Architecture (Mandates 8am, 8e, Ap
 		assert.equal(resolveClinicRoute("", "#documents").view, "documents");
 	});
 
-	it("проверяет CSS файл на токены, Primary CTA #0d9488 и стили печати @media print", () => {
-		const cssPath = path.resolve(__dirname, "../documents.css");
-		assert.ok(fs.existsSync(cssPath), "Файл documents.css должен существовать");
-
-		const cssContent = fs.readFileSync(cssPath, "utf-8");
-		assert.ok(cssContent.includes("#0d9488"), "CSS должен содержать акцентный цвет Primary CTA #0d9488");
-		assert.ok(cssContent.includes("@media print"), "CSS должен содержать правила @media print для A4");
-		assert.ok(cssContent.includes("size: A4 portrait"), "CSS должен настраивать размер страницы A4 portrait");
-		assert.ok(cssContent.includes("var(--paper"), "CSS должен использовать design tokens var(--paper)");
-		assert.ok(cssContent.includes("var(--ink"), "CSS должен использовать design tokens var(--ink)");
-		assert.ok(cssContent.includes("var(--line"), "CSS должен использовать design tokens var(--line)");
-		assert.ok(cssContent.includes("dente-mobile-drag-handle"), "CSS должен содержать стили для мобильного drag handle");
+	it("рендерит A4 холст с data-preserve-white='true' и каноническими классами студии документов", async () => {
+		const { DocumentsA4Preview } = await import("../studio/DocumentsA4Preview.js");
+		const previewHtml = renderToString(
+			<DocumentsA4Preview
+				clinic={{ name: "Клиника", inn: "7707083893", license: "ЛО41", address: "Москва", phone: "+7999" }}
+				patient={{ fullName: "Тест Пациент", birthDate: "1990-01-01", passport: "", address: "", phone: "" }}
+				effectiveDoctorName="Доктор Тест"
+				currentDate="01.05.2026"
+				totalDisplayAmountKopecks={0}
+				renderedDocumentText="Текст документа"
+				effectiveHasSigned={false}
+			/>,
+		);
+		assert.ok(previewHtml.includes("dente-a4-paper-sheet"), "Должен присутствовать класс A4 листа");
+		assert.ok(previewHtml.includes('data-preserve-white="true"'), "A4 лист обязан сохранять data-preserve-white='true'");
 	});
 });

@@ -4,6 +4,7 @@
  * Канонический хук рисования подписи стилусом/пальцем на Canvas (Мандаты 8e, 8n).
  */
 
+import { escapeHtml, sanitizeImageDataUrl, sanitizeSignatureSvg } from "@dental/shared";
 import { useRef, useCallback } from "react";
 
 export function useCanvasSigner(onClear?: () => void) {
@@ -87,8 +88,10 @@ export function useCanvasSigner(onClear?: () => void) {
 export function renderSignatureElementHtml(sigStr: string | undefined, alt = "Подпись"): string {
 	if (!sigStr) return "";
 	const trimmed = sigStr.trim();
-	if (trimmed.startsWith("<svg")) {
-		return trimmed;
+	if (/^<svg[\s>]/i.test(trimmed)) {
+		return sanitizeSignatureSvg(trimmed);
 	}
-	return `<img src="${trimmed}" alt="${alt}" style="max-height: 48px; max-width: 240px; object-fit: contain; display: block;" />`;
+	const safeSrc = sanitizeImageDataUrl(trimmed);
+	if (!safeSrc) return "";
+	return `<img src="${safeSrc}" alt="${escapeHtml(alt)}" style="max-height: 48px; max-width: 240px; object-fit: contain; display: block;" />`;
 }

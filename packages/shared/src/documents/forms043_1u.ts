@@ -320,9 +320,9 @@ export const orthodonticAppliancePlanSchema = z.object({
 }).strict();
 export type OrthodonticAppliancePlan = z.infer<typeof orthodonticAppliancePlanSchema>;
 
-/** Полный структурированный Payload формы № 043-1/у */
+/** Полный структурированный Payload формы ортодонтической карты */
 export const orthodonticCard043_1uPayloadSchema = z.object({
-	formNumber: z.literal("043-1/у"),
+	formNumber: z.enum(["043-1/у", "ortho_card"]),
 	// Реквизиты медорганизации
 	clinicLegalName: z.string().trim().min(1).max(240),
 	clinicAddress: z.string().trim().max(240).nullable().optional(),

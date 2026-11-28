@@ -1,8 +1,5 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import {
 	validateRussianInn,
@@ -25,9 +22,6 @@ import {
 } from "../prescriptionPrintEngine";
 
 describe("Tax Certificates (FNS KND 1151156) & Form 107-1/у Prescriptions Zero-Mock Inquisition", () => {
-	const __filename = fileURLToPath(import.meta.url);
-	const __dirname = path.dirname(__filename);
-	const docsDir = path.resolve(__dirname, "..");
 
 	// --- 1. ТАКОВАЯ ПРОВЕРКА ИНН ПО ГОСТ / ФНС ВЕСОВЫМ КОЭФФИЦИЕНТАМ ---
 	describe("1. Russian INN Statutory Checksum Algorithm (FNS / GOST Weights)", () => {
@@ -443,47 +437,70 @@ describe("Tax Certificates (FNS KND 1151156) & Form 107-1/у Prescriptions Zero-
 		});
 	});
 
-	// --- 6. ПРОВЕРКА ЧИСТОТЫ ОТ МОКОВ И ЭМОДЗИ (MANDATES 8b, 8e, 8y) ---
-	describe("6. Zero Mocks & Zero Emojis Purity Inspection", () => {
-		const SCOPED_ENGINE_FILES = [
-			"taxCertificateEngine.ts",
-			"DocumentsStudioModal.tsx",
-			"prescriptionPrintEngine.ts",
-		];
-
-		const FORBIDDEN_MOCK_NAMES = [
-			"Иванов Иван Иванович",
-			"Петров Петр Петрович",
-			"Сидоров Сидор",
-			"Test Testov",
-			"John Doe",
-		];
-
-		for (const fileName of SCOPED_ENGINE_FILES) {
-			test(`Absence of synthetic mock names in ${fileName}`, () => {
-				const fullPath = path.join(docsDir, fileName);
-				assert.ok(fs.existsSync(fullPath), `File must exist: ${fileName}`);
-				const content = fs.readFileSync(fullPath, "utf-8");
-
-				for (const mockName of FORBIDDEN_MOCK_NAMES) {
-					assert.ok(
-						!content.includes(mockName),
-						`File ${fileName} must NOT contain synthetic mock name '${mockName}'`,
-					);
-				}
+	// --- 6. ЧЕСТНЫЕ БЛАНКИ КНД И ЗАЩИТА ОТ XSS (CONTOUR 3 REGRESSION TESTS) ---
+	describe("6. Tax Certificate Blank Honesty, Exact Kopecks & XSS Protection", () => {
+		test("buildTaxCertificateDocumentData preserves receiptsCount=0 and does NOT hardcode 'Смирнов А.В.'", async () => {
+			const { buildTaxCertificateDocumentData } = await import("../taxCertificateEngine.js");
+			const blankData = buildTaxCertificateDocumentData({
+				documentNumber: "СПР-2026-00",
+				issueDateIso: "2026-05-10",
+				taxYear: 2026,
+				receiptsCount: 0,
+				totalAmountKopecks: 0,
+				clinicName: "ООО Клиника",
+				clinicInn: "7707083893",
+				clinicOgrn: "1027700132195",
+				clinicAddress: "Москва",
+				clinicLicense: "ЛО41",
+				doctorFullName: "",
+				patient: {
+					fullName: "Тестов Иван",
+					birthDate: "1990-01-01",
+					passport: "4500 123456",
+				},
 			});
+			assert.strictEqual(blankData.aggregation.receiptsCount, 0, "receiptsCount=0 must not fall back to 1");
+			const html = generateTaxCertificateKnd1151156Html(blankData);
+			assert.ok(!html.includes("Смирнов А.В."), "Must not hardcode 'Смирнов А.В.' when doctorFullName/chiefDoctorOrDirector is empty");
+		});
 
-			test(`Absence of raw cartoon emojis in ${fileName} (Mandate 8d pt 7)`, () => {
-				const fullPath = path.join(docsDir, fileName);
-				const content = fs.readFileSync(fullPath, "utf-8");
-
-				// Check for common cartoon emojis
-				const emojiRegex = /[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-				assert.ok(
-					!emojiRegex.test(content),
-					`File ${fileName} must NOT contain cartoon emojis`,
-				);
+		test("generateTaxCertificateKnd1151156Html escapes XSS payloads in fiscalDocumentNumber, fiscalSign & clinic chief", () => {
+			const agg = aggregatePatientPaymentsForTaxYear(
+				[
+					{
+						id: "xss-1",
+						dateIso: "2025-05-01T10:00:00.000Z",
+						serviceName: '<img src=x onerror="alert(1)">',
+						code804n: "A16.07.002",
+						amountRub: 10000,
+						fiscalDocumentNumber: '"><script>alert(2)</script>',
+						fiscalSign: "<svg onload=alert(3)>",
+					},
+				],
+				2025,
+			);
+			const html = generateTaxCertificateKnd1151156Html({
+				certificateNumber: "СПР-2025-XSS",
+				issueDateIso: "2025-05-02T22:30:00.000Z",
+				taxYear: 2025,
+				clinic: {
+					legalName: "ООО Дента",
+					inn: "7707083893",
+					kpp: "770101001",
+					ogrn: "1027700132195",
+					address: "Москва",
+					licenseNumber: "ЛО41",
+					chiefDoctorOrDirector: '<script>evil()</script>',
+				},
+				taxpayer: { fullName: "Иванов И.И.", relationship: "patient" },
+				patient: { fullName: "Иванов И.И.", birthDate: "1990-01-01" },
+				aggregation: agg,
 			});
-		}
+			assert.ok(!html.includes("<script>alert(2)</script>"));
+			assert.ok(!html.includes("<svg onload=alert(3)>"));
+			assert.ok(!html.includes("<script>evil()</script>"));
+			assert.ok(!html.includes('<img src=x onerror="alert(1)">'));
+			assert.ok(html.includes("&lt;script&gt;"), "XSS payloads must be HTML-escaped");
+		});
 	});
 });

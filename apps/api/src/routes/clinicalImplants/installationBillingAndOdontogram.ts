@@ -53,19 +53,9 @@ export async function linkBillingAndOdontogram(
 	protocol: string,
 ) {
 	let operationPriceKopecks: bigint | null = null;
-	if (input.operationPriceKopecks !== undefined && input.operationPriceKopecks !== null) {
-		try {
-			operationPriceKopecks = BigInt(input.operationPriceKopecks);
-		} catch {
-			operationPriceKopecks = null;
-		}
-	}
 
-	if (operationPriceKopecks === null && input.operationPriceRub !== undefined && input.operationPriceRub !== null) {
-		operationPriceKopecks = BigInt(rublesToKopecks(Number(input.operationPriceRub)));
-	}
-
-	if (operationPriceKopecks === null && input.catalogItemId) {
+	// Приоритет live-прайскуранта клиники в PostgreSQL (service_catalog_items) над клиентским дефолтом
+	if (input.catalogItemId) {
 		const [catalogItem] = await tx
 			.select()
 			.from(serviceCatalogItems)
@@ -95,6 +85,18 @@ export async function linkBillingAndOdontogram(
 		if (implantService) {
 			operationPriceKopecks = resolveCatalogPriceKopecks(implantService);
 		}
+	}
+
+	if (operationPriceKopecks === null && input.operationPriceKopecks !== undefined && input.operationPriceKopecks !== null) {
+		try {
+			operationPriceKopecks = BigInt(input.operationPriceKopecks);
+		} catch {
+			operationPriceKopecks = null;
+		}
+	}
+
+	if (operationPriceKopecks === null && input.operationPriceRub !== undefined && input.operationPriceRub !== null) {
+		operationPriceKopecks = BigInt(rublesToKopecks(Number(input.operationPriceRub)));
 	}
 
 	if (operationPriceKopecks === null) {

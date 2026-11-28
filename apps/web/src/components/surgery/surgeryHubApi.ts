@@ -4,7 +4,7 @@
  * живой список пациентов/врачей/склада с распаковкой конверта { success, data } (Мандаты 8bm, 8bo, 8z).
  */
 
-import { generateUuidV7, type ImplantBatchToothSpec } from "@dental/shared";
+import { generateUuidV7, kopecksToRubles, type ImplantBatchToothSpec } from "@dental/shared";
 import {
 	denteClinicalMutationHeaders,
 	denteClinicalReadHeaders,
@@ -57,8 +57,8 @@ export interface BuildImplantBatchPayloadArgs {
 	readonly selectedGraft: string;
 	readonly selectedMembrane: string;
 	readonly selectedSuture: string;
-	readonly operationPriceRub: number;
-	readonly operationPriceKopecks: bigint | number;
+	readonly operationPriceRub?: number | undefined;
+	readonly operationPriceKopecks?: bigint | number | undefined;
 	readonly diaryText: string;
 	readonly idempotencyKey: string;
 	readonly dateIso: string;
@@ -86,6 +86,11 @@ export function buildImplantBatchPayload(args: BuildImplantBatchPayloadArgs) {
 		dateIso,
 	} = args;
 
+	const optGraft = selectedGraft.trim() || null;
+	const optMembrane = selectedMembrane.trim() || null;
+	const optSuture = selectedSuture.trim() || null;
+	const hasOpPrice = typeof operationPriceRub === "number" && operationPriceKopecks !== undefined;
+
 	const installations: ImplantBatchToothSpec[] = teethToProcess.map((tooth) => {
 		const spec = getToothSpec(tooth);
 		return {
@@ -104,11 +109,7 @@ export function buildImplantBatchPayload(args: BuildImplantBatchPayloadArgs) {
 			finalInsertionTorqueNcm: spec.torqueNcm,
 			baselineIsqMesiodistal: spec.isqValue,
 			baselineIsqBuccolingual: spec.isqValue,
-			boneGraftMaterial: selectedGraft,
-			membraneUsed: selectedMembrane,
-			sutureMaterial: selectedSuture,
-			operationPriceRub,
-			operationPriceKopecks: operationPriceKopecks.toString(),
+			...(hasOpPrice ? { operationPriceRub, operationPriceKopecks: operationPriceKopecks.toString() } : {}),
 			notes: diaryText,
 		};
 	});
@@ -121,15 +122,65 @@ export function buildImplantBatchPayload(args: BuildImplantBatchPayloadArgs) {
 		isGuidedSurgery,
 		...(isGuidedSurgery ? { guidedSleeveDiameterMm, guidedSleeveOffsetMm } : {}),
 		...(isGuidedSurgery && surgicalGuideTemplateId ? { surgicalGuideTemplateId } : {}),
-		boneGraftMaterial: selectedGraft,
-		membraneUsed: selectedMembrane,
-		sutureMaterial: selectedSuture,
-		operationPriceRub,
-		operationPriceKopecks: operationPriceKopecks.toString(),
+		boneGraftMaterial: optGraft,
+		membraneUsed: optMembrane,
+		sutureMaterial: optSuture,
+		...(hasOpPrice ? { operationPriceRub, operationPriceKopecks: operationPriceKopecks.toString() } : {}),
 		notes: diaryText,
 		installations,
 		idempotencyKey,
 	};
+}
+
+export interface SurgeryPricelistEntry {
+	readonly code: string;
+	readonly priceRub: number;
+	readonly priceKopecks: number;
+}
+
+export async function fetchSurgeryPricelist(): Promise<Map<string, SurgeryPricelistEntry>> {
+	const map = new Map<string, SurgeryPricelistEntry>();
+	try {
+		const res = await fetch("/api/pricelist", { headers: denteClinicalReadHeaders() });
+		if (!res.ok) return map;
+		const raw = (await res.json()) as {
+			data?: { items?: unknown } | unknown[];
+			items?: unknown;
+		};
+		const envelope = raw && typeof raw === "object" && "data" in raw ? raw.data : raw;
+		const list = Array.isArray(envelope)
+			? envelope
+			: envelope && typeof envelope === "object" && Array.isArray((envelope as { items?: unknown }).items)
+				? (envelope as { items: unknown[] }).items
+				: Array.isArray(raw?.items)
+					? raw.items
+					: [];
+		for (const row of list) {
+			if (!row || typeof row !== "object") continue;
+			const rec = row as Record<string, unknown>;
+			if (rec.isActive === false) continue;
+			const code = typeof rec.code === "string" ? rec.code.trim() : "";
+			if (!code) continue;
+			const kopRaw = rec.priceKopecks ?? rec.price_kopecks;
+			const rubRaw = rec.priceRub ?? rec.price_rub ?? rec.price;
+			const kopecks =
+				typeof kopRaw === "number" && Number.isFinite(kopRaw)
+					? Math.round(kopRaw)
+					: typeof kopRaw === "string" && /^\d+$/.test(kopRaw.trim())
+						? Number(kopRaw.trim())
+						: Math.round(Number(rubRaw ?? 0) * 100);
+			const priceRub =
+				typeof rubRaw === "number" && Number.isFinite(rubRaw) && rubRaw > 0
+					? rubRaw
+					: kopecksToRubles(kopecks);
+			if (kopecks > 0 || priceRub > 0) {
+				map.set(code, { code, priceRub, priceKopecks: kopecks });
+			}
+		}
+	} catch (err) {
+		clientLogger.warn("[surgeryHubApi] Ошибка загрузки прайскуранта", err, { module: "surgeryHubApi" });
+	}
+	return map;
 }
 
 export async function fetchSurgeryPatients(searchQuery: string): Promise<SurgeryPatientOption[]> {
@@ -298,8 +349,8 @@ export async function submitSurgeryToApi(params: {
 	readonly selectedGraft: string;
 	readonly selectedMembrane: string;
 	readonly selectedSuture: string;
-	readonly operationPriceRub: number;
-	readonly operationPriceKopecks: bigint | number;
+	readonly operationPriceRub?: number | undefined;
+	readonly operationPriceKopecks?: bigint | number | undefined;
 	readonly diaryText: string;
 	readonly baseLot: string;
 	readonly dateIso: string;
@@ -310,6 +361,11 @@ export async function submitSurgeryToApi(params: {
 		"Content-Type": "application/json",
 		"Idempotency-Key": idempKey,
 	});
+	const optGraft = params.selectedGraft.trim() || null;
+	const optMembrane = params.selectedMembrane.trim() || null;
+	const optSuture = params.selectedSuture.trim() || null;
+	const hasLiveOpPrice =
+		typeof params.operationPriceRub === "number" && params.operationPriceKopecks !== undefined;
 
 	if (params.activeScenario === "implant") {
 		if (params.teethToProcess.length > 1) {
@@ -378,11 +434,15 @@ export async function submitSurgeryToApi(params: {
 				finalInsertionTorqueNcm: spec.torqueNcm,
 				baselineIsqMesiodistal: spec.isqValue,
 				baselineIsqBuccolingual: spec.isqValue,
-				boneGraftMaterial: params.selectedGraft,
-				membraneUsed: params.selectedMembrane,
-				sutureMaterial: params.selectedSuture,
-				operationPriceRub: params.operationPriceRub,
-				operationPriceKopecks: params.operationPriceKopecks.toString(),
+				boneGraftMaterial: optGraft,
+				membraneUsed: optMembrane,
+				sutureMaterial: optSuture,
+				...(hasLiveOpPrice
+					? {
+						operationPriceRub: params.operationPriceRub,
+						operationPriceKopecks: params.operationPriceKopecks?.toString(),
+					}
+					: {}),
 				notes: params.diaryText,
 				idempotencyKey: idempKey,
 			}),
@@ -398,6 +458,11 @@ export async function submitSurgeryToApi(params: {
 		return { ok: true };
 	}
 
+	const servicePriceRub =
+		typeof params.operationPriceRub === "number" && Number.isFinite(params.operationPriceRub)
+			? params.operationPriceRub
+			: params.scenarioConfig.defaultPriceRub;
+
 	const protoRes = await fetch("/api/surgery/protocols", {
 		method: "POST",
 		headers,
@@ -411,7 +476,7 @@ export async function submitSurgeryToApi(params: {
 				code: params.scenarioConfig.serviceCode,
 				nameRu: `${params.scenarioConfig.serviceNameRu} (#${currentTooth})`,
 				name: params.scenarioConfig.serviceNameRu,
-				priceRub: params.scenarioConfig.defaultPriceRub,
+				priceRub: servicePriceRub,
 				quantity: 1,
 				toothNumber: currentTooth,
 			})),
@@ -421,6 +486,8 @@ export async function submitSurgeryToApi(params: {
 				quantity: m.quantity,
 				isWarehouseCritical: Boolean(m.isWarehouseCritical),
 			})),
+			bundleType: params.activeScenario === "sinus_gbr" ? "sinus_gbr" : "surgery",
+			deductMaterials: true,
 			isOverdraftActive: Boolean(params.inventoryOverdraftActive),
 			notes: params.scenarioConfig.defaultRecommendationsRu,
 		}),
@@ -431,20 +498,10 @@ export async function submitSurgeryToApi(params: {
 			errorMessage: await readErrorFromResponse(protoRes, `Ошибка сохранения протокола (${protoRes.status})`),
 		};
 	}
-	const protoRaw = await parseSurgeryJsonLogged<{ data?: unknown }>(protoRes, "surgery:protocols");
-	void protoRaw?.data;
-
-	const deductRes = await fetch("/api/surgery/materials/quick-deduct", {
-		method: "POST",
-		headers: denteClinicalMutationHeaders({
-			"Content-Type": "application/json",
-			"Idempotency-Key": generateUuidV7(),
-		}),
-		body: JSON.stringify({
-			bundleType: params.activeScenario === "sinus_gbr" ? "sinus_gbr" : "surgery",
-			toothNumberFdi: params.toothFdi,
-			notes: `Списание по техкарте: ${params.scenarioConfig.titleRu} #${params.teethToProcess.join(", #")}`,
-		}),
-	});
-	return { ok: true, deductDeferred: !deductRes.ok };
+	const protoRaw = await parseSurgeryJsonLogged<{ data?: { deduction?: { success?: boolean } }; deduction?: { success?: boolean } }>(
+		protoRes,
+		"surgery:protocols",
+	);
+	const deductOk = protoRaw?.data?.deduction?.success ?? protoRaw?.deduction?.success ?? true;
+	return { ok: true, deductDeferred: !deductOk };
 }

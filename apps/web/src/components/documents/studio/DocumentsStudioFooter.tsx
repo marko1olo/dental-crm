@@ -39,7 +39,7 @@ export const DocumentsStudioFooter: React.FC<DocumentsStudioFooterProps> = ({
 
 	return (
 		<footer className="dente-docs-footer-bar" data-testid="documents-studio-footer">
-			<div className="dente-docs-footer-secondary-actions flex items-center gap-2 flex-wrap">
+			<div className="dente-docs-footer-secondary-actions flex items-center gap-2 sm:flex-wrap">
 				{onDownloadTxt && (
 					<button
 						type="button"
@@ -146,8 +146,8 @@ export const DocumentsStudioFooter: React.FC<DocumentsStudioFooterProps> = ({
 							: isConsent
 								? "Подписать пакет согласий и распечатать"
 								: hasSigned
-									? "✓ Распечатать подписанный пакет приёма"
-									: "✓ Распечатать пакет приёма и подписать"}
+									? "Распечатать подписанный пакет приёма"
+									: "Распечатать пакет приёма и подписать"}
 					</span>
 					<span className="sm:hidden">
 						{isTax ? "Печать справки (А4)" : isConsent ? "Подписать пакет" : "Распечатать"}

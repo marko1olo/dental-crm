@@ -236,7 +236,10 @@ export function renderInformedConsent1051nHtml(
 
 	const doctorName = payload.attendingDoctorFullName || payload.doctorFullName || "Врач-стоматолог";
 	const doctorSpecialty = payload.attendingDoctorSpecialty || payload.doctorSpecialty || "Врач-стоматолог";
-	const consentDate = payload.consentDate || new Date().toISOString().slice(0, 10);
+	const tz = (payload as { clinicTimezone?: string }).clinicTimezone || "Europe/Moscow";
+	const consentDate =
+		payload.consentDate ||
+		new Intl.DateTimeFormat("sv-SE", { timeZone: tz }).format(new Date());
 
 	const title = payload.consentTitle || "ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ НА МЕДИЦИНСКОЕ ВМЕШАТЕЛЬСТВО";
 	const diagnosis = payload.diagnosisOrIndication || payload.diagnosisIcd || "Стоматологическое обследование и лечение";

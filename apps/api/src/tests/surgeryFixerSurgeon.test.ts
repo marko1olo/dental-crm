@@ -14,20 +14,10 @@ import { authTokenSecret } from "../security/authSecret.js";
 
 describe("surgeryFixerSurgeon — Red Team Invariants & DoD Gates", () => {
 	const secret = authTokenSecret();
-	const orgId = "org-00000000-0000-0000-0000-000000000001";
-	const userId = "usr-00000000-0000-0000-0000-000000000001";
+	const orgId = "00000000-0000-4000-8000-000000000001";
 	const clinicToken = signToken({ organizationId: orgId }, secret);
-	const staffToken = signToken(
-		{
-			userId,
-			organizationId: orgId,
-			role: "doctor",
-		},
-		secret,
-	);
 	const authHeaders = {
 		"x-dente-clinic-token": clinicToken,
-		"x-dente-staff-token": staffToken,
 	};
 
 	describe("1. Schema & Kopeck Contract (Mandates 8bm, 8e)", () => {

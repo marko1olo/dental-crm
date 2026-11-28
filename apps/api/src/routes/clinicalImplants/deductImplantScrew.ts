@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import {
 	type ResolvedImplantInstallationInput,
 	kopecksToRubles,
@@ -83,7 +83,7 @@ export async function deductImplantScrew(
 		: null;
 
 	if (!invItem) {
-		// Поиск в существующей номенклатуре организации по бренду и размерам
+		// Поиск в существующей номенклатуре организации по бренду и размерам (детерминированный порядок против 40P01)
 		const orgItems = await tx
 			.select()
 			.from(inventoryItems)
@@ -93,6 +93,7 @@ export async function deductImplantScrew(
 					eq(inventoryItems.category, "Имплантология"),
 				),
 			)
+			.orderBy(asc(inventoryItems.id))
 			.for("update");
 
 		const foundInOrg = orgItems.find((item) => {

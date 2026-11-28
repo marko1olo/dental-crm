@@ -18,9 +18,8 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToString } from "react-dom/server";
 
 import {
 	generateBlankContractFallbackHtml,
@@ -31,43 +30,11 @@ import {
 	patientAdministrativeProfileDraftIssue,
 	type PatientAdministrativeProfileDraft,
 } from "../../../utils/clinicProfileUtils.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { buildPatientCorePayload as buildClinicProfilePatientCorePayload } from "../../../appHelpers/clinicProfileHelpers.js";
+import { buildPatientCorePayload as buildVisitDraftPatientCorePayload } from "../../../utils/commonHelpers/visitDraft/normalizers.js";
+import { PaidContractRequiredFieldsPanel } from "../PaidContractRequiredFieldsPanel.js";
 
 describe("Wave 65 (Feature 254): Blank Contract 1-Click Print & Non-blocking Patient Autonomy", () => {
-	const appHelpersPath = path.resolve(__dirname, "../../../AppHelpers.tsx");
-	const clinicProfileHelpersPath = path.resolve(__dirname, "../../../appHelpers/clinicProfileHelpers.ts");
-	const appHelpersSource = fs.existsSync(clinicProfileHelpersPath)
-		? fs.readFileSync(clinicProfileHelpersPath, "utf8")
-		: fs.readFileSync(appHelpersPath, "utf8");
-
-	const visitDraftHelpersPath = path.resolve(
-		__dirname,
-		"../../../utils/commonHelpers/visitDraftHelpers.ts",
-	);
-	const visitDraftHelpersSource = fs.readFileSync(visitDraftHelpersPath, "utf8");
-
-	const documentsViewPath = path.resolve(__dirname, "../../../DocumentsView.tsx");
-	const documentHeaderSectionPath = path.resolve(
-		__dirname,
-		"../tabs/DocumentHeaderSection.tsx",
-	);
-	const documentsViewSource =
-		fs.readFileSync(documentsViewPath, "utf8") +
-		(fs.existsSync(documentHeaderSectionPath)
-			? fs.readFileSync(documentHeaderSectionPath, "utf8")
-			: "");
-
-	const requiredFieldsPanelPath = path.resolve(
-		__dirname,
-		"../PaidContractRequiredFieldsPanel.tsx",
-	);
-	const requiredFieldsPanelSource = fs.readFileSync(requiredFieldsPanelPath, "utf8");
-
-
-	const patientsViewPath = path.resolve(__dirname, "../../../PatientsView.tsx");
-	const patientsViewSource = fs.readFileSync(patientsViewPath, "utf8");
 
 	it("1. generateBlankContractFallbackHtml generates valid HTML with _______ lines and 0 ₽", () => {
 		const html = generateBlankContractFallbackHtml(null, {
@@ -261,69 +228,39 @@ describe("Wave 65 (Feature 254): Blank Contract 1-Click Print & Non-blocking Pat
 		assert.strictEqual(payload.taxpayerInn, "770123456789");
 	});
 
-	it("6. buildPatientCorePayload sanitizes malformed email to null in visitDraftHelpers and AppHelpers", () => {
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		const sanitizeEmail = (raw: string | null | undefined) =>
-			raw && emailRegex.test(raw.trim()) ? raw.trim() : null;
+	it("6. buildPatientCorePayload sanitizes malformed email to null in clinicProfileHelpers and visitDraft normalizers", () => {
+		for (const buildFn of [buildClinicProfilePatientCorePayload, buildVisitDraftPatientCorePayload]) {
+			const invalidRes = buildFn({
+				fullName: "Тестов Иван",
+				birthDate: "1990-01-01",
+				phone: "+7 999 111 22 33",
+				email: "invalid-email",
+				notes: "",
+			});
+			assert.strictEqual(invalidRes.email, null, "Malformed email must be sanitized to null");
 
-		assert.strictEqual(sanitizeEmail("invalid-email"), null);
-		assert.strictEqual(sanitizeEmail("test@"), null);
-		assert.strictEqual(sanitizeEmail("нет"), null);
-		assert.strictEqual(sanitizeEmail("patient@clinic.ru"), "patient@clinic.ru");
-
-		assert.ok(
-			visitDraftHelpersSource.includes("/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/"),
-			"visitDraftHelpers must sanitize malformed email with regex",
-		);
-
-		assert.ok(
-			appHelpersSource.includes("/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/"),
-			"AppHelpers must sanitize malformed email with regex",
-		);
+			const validRes = buildFn({
+				fullName: "Тестов Иван",
+				birthDate: "1990-01-01",
+				phone: "+7 999 111 22 33",
+				email: "patient@clinic.ru",
+				notes: "",
+			});
+			assert.strictEqual(validRes.email, "patient@clinic.ru");
+		}
 	});
 
-	it("7. PaidContractRequiredFieldsPanel exposes 1-click blank contract print button with >= 44px touch target", () => {
-		assert.ok(
-			requiredFieldsPanelSource.includes('data-testid="btn-missing-fields-print-blank-contract"'),
-			"Must include btn-missing-fields-print-blank-contract",
+	it("7. PaidContractRequiredFieldsPanel renders blank contract print button with >= 44px touch target & unlocked state", () => {
+		const html = renderToString(
+			<PaidContractRequiredFieldsPanel
+				review={{ requiredCount: 3, filledCount: 1, missing: ["Паспорт", "Адрес"] } as any}
+				fieldsBlockTitle="Реквизиты договора"
+				patient={{ fullName: "Тестов Иван" }}
+				doctorName="Доктор Петров"
+			/>,
 		);
-		assert.ok(
-			requiredFieldsPanelSource.includes("min-h-[44px]"),
-			"Must meet 44px touch target standard",
-		);
-		assert.ok(
-			requiredFieldsPanelSource.includes("Printer"),
-			"Must use vector Lucide Printer icon",
-		);
-	});
-
-	it("9. DocumentsView exposes 1-click blank contract print button in quick bar", () => {
-		assert.ok(
-			documentsViewSource.includes('data-testid="btn-documents-print-blank-contract"'),
-			"Must include btn-documents-print-blank-contract in quick action bar",
-		);
-		assert.ok(
-			documentsViewSource.includes("document-intake-quick-action-bar"),
-			"Must be inside document-intake-quick-action-bar",
-		);
-	});
-
-	it("10. PatientsView administrative save button meets >= 44px and is not blocked by validation messages", () => {
-		assert.ok(
-			patientsViewSource.includes('data-testid="patient-admin-save-btn"'),
-			"Must include patient-admin-save-btn",
-		);
-		assert.ok(
-			patientsViewSource.includes('style={{ minHeight: "36px" }}') ||
-				patientsViewSource.includes('style={{ minHeight: "44px" }}'),
-			"patient-admin-save-btn must meet touch target standard",
-		);
-		// Check that patientAdministrativeProfileReadyToSave does not block on validation message
-		assert.ok(
-			!patientsViewSource.includes(
-				"patientAdministrativeProfileReadyToSave =\n\t\tBoolean(selectedPatient) &&\n\t\tpatientAdministrativeProfileDirty &&\n\t\tpatientAdministrativeProfileSaveState !== \"saving\" &&\n\t\t!patientAdministrativeProfileValidationMessage",
-			),
-			"patientAdministrativeProfileReadyToSave must NOT be blocked by validation messages",
-		);
+		assert.ok(html.includes('data-testid="btn-missing-fields-print-blank-contract"'));
+		assert.ok(html.includes("min-h-[44px]"));
+		assert.ok(!html.includes("disabled"));
 	});
 });

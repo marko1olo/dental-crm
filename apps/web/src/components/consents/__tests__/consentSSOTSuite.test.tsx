@@ -8,8 +8,6 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -186,19 +184,49 @@ describe("Red Team Inquisition: Consents & Legal Documents SSOT", () => {
 
 	it("3.1. WorkspaceStudioOverlayHost mounts cleanly and routes consents deep-links", () => {
 		const html = renderToStaticMarkup(<WorkspaceStudioOverlayHost />);
-		assert.equal(typeof html, "string");
+		assert.ok(html !== undefined && !html.includes("undefined"));
 		assert.equal(resolveClinicRoute("?consents=1", "#consents").studio?.kind, "consents");
 	});
 
-	it("3.2. Mandate 8aq: WorkspaceStudioOverlayHost is mounted in AppModalsContainer.tsx and App.tsx", () => {
-		const cwd = process.cwd();
-		const appModalsPath = [
-			path.resolve(cwd, "src/components/appLayout/AppModalsContainer.tsx"),
-			path.resolve(cwd, "apps/web/src/components/appLayout/AppModalsContainer.tsx"),
-		].find((p) => fs.existsSync(p));
-		assert.ok(appModalsPath, "AppModalsContainer.tsx must exist");
-		const content = fs.readFileSync(appModalsPath, "utf-8");
-		assert.ok(content.includes("WorkspaceStudioOverlayHost"), "AppModalsContainer must mount WorkspaceStudioOverlayHost");
+	it("3.2. XSS safety & blank underscores in consent HTML/text generators and zero '804н' in questionnaire", async () => {
+		const { generateInformedConsentTemplate } = await import("../consentCatalogData.js");
+		const { CONSENT_HEALTH_QUESTIONNAIRE } = await import("../consentTemplates.js");
+
+		assert.ok(!CONSENT_HEALTH_QUESTIONNAIRE.statutoryBasis.includes("804н"), "UI template must not display 804н");
+
+		const blankText = generateInformedConsentTemplate(
+			{
+				clinic: { name: "", inn: "", ogrn: "", address: "", license: "", phone: "" },
+				patient: { fullName: "", birthDate: "", passport: "", address: "", phone: "" },
+				doctor: { fullName: "", specialty: "" },
+				documentNumber: "БЛ-1",
+				documentDate: "01.05.2026",
+				services: [],
+				totalAmountKopecks: 0,
+			},
+			"therapy",
+		);
+		assert.ok(blankText.includes("________________"), "Empty patient/doctor fields must render underscore blanks");
+
+		const doc = getConsentDocumentById("therapy")!;
+		const maliciousHtml = generateConsentPrintHtml(
+			doc,
+			{
+				patientName: '<script>alert("xss")</script>',
+				diagnosisText: '<img src=x onerror="alert(2)">',
+			},
+			{
+				status: "signed_digital",
+				signedAt: "2026-05-01",
+				signatureSvg: '<svg viewBox="0 0 100 50" onload="alert(3)"><script>steal()</script><path d="M0 0 L10 10" onclick="hack()"/></svg>',
+			},
+		);
+		assert.ok(!maliciousHtml.includes('<script>alert("xss")</script>'));
+		assert.ok(!maliciousHtml.includes("<script>steal()</script>"));
+		assert.ok(!maliciousHtml.includes('onload="alert(3)"'));
+		assert.ok(!maliciousHtml.includes('onclick="hack()"'));
+		assert.ok(!maliciousHtml.includes('onerror="alert(2)"'));
+		assert.ok(maliciousHtml.includes("<path d=\"M0 0 L10 10\""));
 	});
 
 	it("4.1. Verifies testids for automation: consent-studio-modal, consent-signature-pad, print buttons", () => {

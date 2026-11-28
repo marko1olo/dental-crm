@@ -173,7 +173,7 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 			if (!onChangeRef.current) return;
 
 			const payload: OrthodonticCard043_1uPayload = {
-				formNumber: "043-1/у",
+				formNumber: "ortho_card",
 				clinicLegalName: initialPayload?.clinicLegalName ?? "Стоматологическая клиника",
 				clinicAddress: initialPayload?.clinicAddress ?? null,
 				clinicOgrn: initialPayload?.clinicOgrn ?? null,

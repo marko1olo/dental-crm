@@ -154,7 +154,7 @@ export const SurgeryGeneralProtocolSection: React.FC<SurgeryGeneralProtocolSecti
 						<span className="font-semibold text-[var(--ink)] truncate">
 							{capType === "fdm" ? "ФДМ" : "Заглушка"}
 						</span>
-						<span className="text-[10px] text-[var(--muted)] truncate">{selectedSuture}</span>
+						<span className="text-[10px] text-[var(--muted)] truncate">{selectedSuture || "Без шовного материала"}</span>
 					</div>
 				</div>
 			)}

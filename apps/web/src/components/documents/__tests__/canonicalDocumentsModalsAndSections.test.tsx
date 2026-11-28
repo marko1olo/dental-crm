@@ -1,19 +1,12 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import "../../../../testCssStub.mjs";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { MedicalRecordStudioModal } from "../../emr/MedicalRecordStudioModal.js";
-import { ConsentStudioModal, FnsTaxCertificateModal } from "../DocumentsStudioModal.js";
+import { ConsentStudioModal, DocumentsStudioModal, FnsTaxCertificateModal } from "../DocumentsStudioModal.js";
 import type { Patient, GeneratedDocument } from "@dental/shared";
 import { PrescriptionModal } from "../../prescriptions/PrescriptionModal.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const docsDir = path.resolve(__dirname, "..");
 
 const mockPatient: Patient = {
 	id: "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
@@ -139,37 +132,27 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		assert.ok(html.includes("Печать рецепта"), "Must render print button");
 	});
 
-	it("guarantees zero raw emojis in all 3 canonical components", () => {
+	it("guarantees zero raw emojis and zero dev jargon in rendered canonical modals", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-		const files = [
-			"DocumentsStudioModal.tsx",
-			"ProfessionalDocumentA4Sheet.tsx",
-		];
-
-		for (const file of files) {
-			const content = fs.readFileSync(path.resolve(docsDir, file), "utf8");
-			assert.strictEqual(
-				emojiRegex.test(content),
-				false,
-				`File ${file} must have 0 emojis (Mandate 8d pt 7)`,
-			);
-		}
-	});
-
-	it("guarantees zero dev jargon ('в 1 клик', 'авто-генерация') in canonical components", () => {
 		const jargonRegex = /(в 1 клик|1-клик|авто-генерация|автогенерация)/i;
-		const files = [
-			"DocumentsStudioModal.tsx",
-			"ProfessionalDocumentA4Sheet.tsx",
-		];
 
-		for (const file of files) {
-			const content = fs.readFileSync(path.resolve(docsDir, file), "utf8");
-			assert.strictEqual(
-				jargonRegex.test(content),
-				false,
-				`File ${file} must have 0 dev jargon (Directive 4)`,
-			);
+		const studioHtml = renderToString(
+			<DocumentsStudioModal isOpen={true} onClose={() => {}} patient={mockPatient} initialTemplate="intake" />,
+		);
+		const taxHtml = renderToString(
+			<FnsTaxCertificateModal isOpen={true} onClose={() => {}} patient={mockPatient} />,
+		);
+		const rxHtml = renderToString(
+			<PrescriptionModal isOpen={true} onClose={() => {}} patient={mockPatient} doctorName="Воронов А.В." />,
+		);
+
+		for (const [label, rendered] of [
+			["DocumentsStudioModal", studioHtml],
+			["TaxDeductionCertificateModal", taxHtml],
+			["PrescriptionModal", rxHtml],
+		] as const) {
+			assert.strictEqual(emojiRegex.test(rendered), false, `${label} rendered UI must have 0 cartoon emojis`);
+			assert.strictEqual(jargonRegex.test(rendered), false, `${label} rendered UI must have 0 dev jargon`);
 		}
 	});
 });

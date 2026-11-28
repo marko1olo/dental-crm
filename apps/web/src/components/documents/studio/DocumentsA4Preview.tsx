@@ -39,6 +39,7 @@ export const DocumentsA4Preview: React.FC<DocumentsA4PreviewProps> = ({
 			<div
 				className="dente-a4-paper-sheet print-paper-sheet"
 				data-paper-sheet
+				data-preserve-white="true"
 				data-testid="dente-a4-paper-sheet"
 			>
 				{/* Шапка бланка А4 */}

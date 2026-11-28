@@ -7,10 +7,9 @@ import {
 	createImplantInstallationSchema,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { defineStreamRoute } from "../../core/routeFactories.js";
-import { onTenantTxCommit, withTenantWriteCtx } from "../../db/rls.js";
+import type { FastifyInstance } from "fastify";
+import { defineTenantMutation } from "../../core/routeFactories.js";
+import { onTenantTxCommit } from "../../db/rls.js";
 import {
 	implantCatalogItems,
 	implantIsqMeasurements,
@@ -19,8 +18,6 @@ import {
 	visits,
 	warrantyCertificates,
 } from "../../db/schema.js";
-import { getRequestIdentity } from "../../security/identity.js";
-import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { deductConsumables } from "./deductConsumables.js";
 import { deductImplantScrew } from "./deductImplantScrew.js";
@@ -194,147 +191,167 @@ function buildToothSpecsToProcess(
 }
 
 export function registerInstallationRoute(app: FastifyInstance) {
-	const handleInstallation = async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
-		if (!orgId) return;
-
-		const identity = getRequestIdentity(request);
-		const staffRole = identity.role ?? request.user?.role ?? null;
-		const evalAccess = evaluateClinicalAccess(staffRole);
-		if (!evalAccess.hasClinicalAccess) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "clinical.implants.write",
-				role: staffRole,
-				message: `Отказ в регистрации протокола имплантации: ${evalAccess.reason}`,
-			});
-		}
-
-		// Нормализация наименования бренда для устойчивости к пробелам и регистрам
-		const rawBody: Record<string, unknown> =
-			typeof request.body === "object" && request.body !== null
-				? { ...(request.body as Record<string, unknown>) }
-				: {};
-		if (typeof rawBody.implantBrand === "string") {
-			rawBody.implantBrand = normalizeBrandString(rawBody.implantBrand);
-		}
-		for (const key of ["installations", "teethSpecs"] as const) {
-			const list = rawBody[key];
-			if (Array.isArray(list)) {
-				rawBody[key] = list.map((item) => {
-					if (item && typeof item === "object") {
-						const clone = { ...(item as Record<string, unknown>) };
-						if (typeof clone.implantBrand === "string") {
-							clone.implantBrand = normalizeBrandString(clone.implantBrand);
-						}
-						return clone;
+	const registerRoute = (path: string) => {
+		defineTenantMutation(app, {
+			method: "POST",
+			path,
+			permission: "clinical.write",
+			authOptions: {
+				allowClinicTokenWithoutStaff: true,
+				allowAdminSecretBypass: true,
+			},
+			idempotency: "optional_header",
+			execute: async ({ tx, principal, organizationId: orgId, request, reply }) => {
+				// Нормализация наименования бренда для устойчивости к пробелам и регистрам
+				const rawBody: Record<string, unknown> =
+					typeof request.body === "object" && request.body !== null
+						? { ...(request.body as Record<string, unknown>) }
+						: {};
+				if (typeof rawBody.implantBrand === "string") {
+					rawBody.implantBrand = normalizeBrandString(rawBody.implantBrand);
+				}
+				for (const key of ["installations", "teethSpecs"] as const) {
+					const list = rawBody[key];
+					if (Array.isArray(list)) {
+						rawBody[key] = list.map((item) => {
+							if (item && typeof item === "object") {
+								const clone = { ...(item as Record<string, unknown>) };
+								if (typeof clone.implantBrand === "string") {
+									clone.implantBrand = normalizeBrandString(clone.implantBrand);
+								}
+								return clone;
+							}
+							return item;
+						});
 					}
-					return item;
-				});
-			}
-		}
+				}
 
-		// Поддержка множественной имплантации (All-on-4 / пакетная установка)
-		const targetTeeth = collectCandidateTeeth(rawBody);
+				// Поддержка множественной имплантации (All-on-4 / пакетная установка)
+				const targetTeeth = collectCandidateTeeth(rawBody);
 
-		// [SEV-1] Анатомический гейт: блокировка имплантации в молочные зубы (FDI 51–85)
-		for (const toothNum of targetTeeth) {
-			if (toothNum >= 51 && toothNum <= 85) {
-				return reply.code(422).send({
-					error: "DeciduousToothImplantForbidden",
-					message: `Установка дентального имплантата в область молочного зуба (#${toothNum}) категорически запрещена анатомическим протоколом`,
-				});
-			}
-		}
+				// [SEV-1] Анатомический гейт: блокировка имплантации в молочные зубы (FDI 51–85)
+				for (const toothNum of targetTeeth) {
+					if (toothNum >= 51 && toothNum <= 85) {
+						return reply.code(422).send({
+							error: "DeciduousToothImplantForbidden",
+							message: `Установка дентального имплантата в область молочного зуба (#${toothNum}) категорически запрещена анатомическим протоколом`,
+						});
+					}
+				}
 
-		const parsed = createImplantInstallationSchema.safeParse(rawBody);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ImplantInstallationValidationError",
-				message: "Некорректные параметры протокола установки имплантата.",
-				details: parsed.error.format(),
-			});
-		}
-		const input = parsed.data;
-		const specsToProcess = buildToothSpecsToProcess(input, targetTeeth);
-		const firstSpec = specsToProcess[0];
-		if (!firstSpec) {
-			return reply.code(400).send({
-				error: "ImplantInstallationValidationError",
-				message: "Не указан ни один зуб для установки имплантата.",
-			});
-		}
-		const teethToProcess = specsToProcess.map((s) => s.toothNumberFdi);
-		const targetPatientId = input.patientId;
-		const effectiveInput = firstSpec;
+				const parsed = createImplantInstallationSchema.safeParse(rawBody);
+				if (!parsed.success) {
+					return reply.code(400).send({
+						error: "ImplantInstallationValidationError",
+						message: "Некорректные параметры протокола установки имплантата.",
+						details: parsed.error.format(),
+					});
+				}
+				const input = parsed.data;
+				const specsToProcess = buildToothSpecsToProcess(input, targetTeeth);
+				const firstSpec = specsToProcess[0];
+				if (!firstSpec) {
+					return reply.code(400).send({
+						error: "ImplantInstallationValidationError",
+						message: "Не указан ни один зуб для установки имплантата.",
+					});
+				}
+				const teethToProcess = specsToProcess.map((s) => s.toothNumberFdi);
+				const targetPatientId = input.patientId;
+				const effectiveInput = firstSpec;
 
-		const { isqMean, isqAnisotropyDelta } = ImplantStabilityCalculator.calculateMeanIsq(
-			effectiveInput.baselineIsqMesiodistal,
-			effectiveInput.baselineIsqBuccolingual,
-			effectiveInput.baselineIsqDistopalatal,
-		);
-		const { protocol, decisionRationale } = ImplantStabilityCalculator.evaluateLoadingProtocol(
-			isqMean,
-			effectiveInput.finalInsertionTorqueNcm,
-			0,
-		);
-		const isImmediateLoadingFeasible =
-			(isqMean !== null ? isqMean >= 70 : false) &&
-			effectiveInput.finalInsertionTorqueNcm >= 35 &&
-			effectiveInput.finalInsertionTorqueNcm <= 55;
-
-		// Единая неделимая ACID транзакция для всех имплантатов пакета (Мандаты 8bo, All-on-4)
-		const txResult = await withTenantWriteCtx(orgId, async (tx) => {
-			const [patient] = await tx
-				.select({ id: patients.id })
-				.from(patients)
-				.where(and(eq(patients.id, targetPatientId), eq(patients.organizationId, orgId)))
-				.for("update")
-				.limit(1);
-
-			if (!patient) {
-				return { patientNotFound: true as const };
-			}
-
-			const installationResults: unknown[] = [];
-			const allDeductions: unknown[] = [];
-			let primaryFinancials: unknown = null;
-			let firstInstallationRecord: typeof patientImplantInstallations.$inferSelect | null = null;
-			let firstInventoryDeduction: unknown = null;
-			let batchInvoiceId: string | undefined = input.invoiceId ?? undefined;
-
-			for (const specItem of specsToProcess) {
-				const toothNum = specItem.toothNumberFdi;
-				const currentItemInput: ResolvedImplantInstallationInput = {
-					...specItem,
-					...(batchInvoiceId ? { invoiceId: batchInvoiceId } : {}),
-				};
-				const toothStability = ImplantStabilityCalculator.calculateMeanIsq(
-					currentItemInput.baselineIsqMesiodistal,
-					currentItemInput.baselineIsqBuccolingual,
-					currentItemInput.baselineIsqDistopalatal,
+				const { isqMean, isqAnisotropyDelta } = ImplantStabilityCalculator.calculateMeanIsq(
+					effectiveInput.baselineIsqMesiodistal,
+					effectiveInput.baselineIsqBuccolingual,
+					effectiveInput.baselineIsqDistopalatal,
 				);
-				const toothIsqMean = toothStability.isqMean;
-				const toothIsqDelta = toothStability.isqAnisotropyDelta;
-				const toothEval = ImplantStabilityCalculator.evaluateLoadingProtocol(
-					toothIsqMean,
-					currentItemInput.finalInsertionTorqueNcm,
+				const { protocol, decisionRationale } = ImplantStabilityCalculator.evaluateLoadingProtocol(
+					isqMean,
+					effectiveInput.finalInsertionTorqueNcm,
 					0,
 				);
-				const toothProtocol = toothEval.protocol;
-				const toothDecisionRationale = toothEval.decisionRationale;
-				const toothImmediateLoadingFeasible =
-					(toothIsqMean !== null ? toothIsqMean >= 70 : false) &&
-					currentItemInput.finalInsertionTorqueNcm >= 35 &&
-					currentItemInput.finalInsertionTorqueNcm <= 55;
+				const isImmediateLoadingFeasible =
+					(isqMean !== null ? isqMean >= 70 : false) &&
+					effectiveInput.finalInsertionTorqueNcm >= 35 &&
+					effectiveInput.finalInsertionTorqueNcm <= 55;
 
-				const screw = await deductImplantScrew(tx, orgId, identity.userId ?? null, currentItemInput);
-				const { deductedMaterials, consumablesCostTotalKopecksBigInt } = await deductConsumables(
-					tx,
-					orgId,
-					identity.userId ?? null,
-					currentItemInput,
-				);
+				const [patient] = await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(and(eq(patients.id, targetPatientId), eq(patients.organizationId, orgId)))
+					.for("update")
+					.limit(1);
+
+				if (!patient) {
+					return reply.code(404).send({
+						error: "PatientNotFound",
+						message: "Пациент не найден в вашей клинике.",
+					});
+				}
+
+				const explicitSpecs = input.installations ?? input.teethSpecs;
+				const installationResults: unknown[] = [];
+				const allDeductions: unknown[] = [];
+				let primaryFinancials: unknown = null;
+				let firstInstallationRecord: typeof patientImplantInstallations.$inferSelect | null = null;
+				let firstInventoryDeduction: unknown = null;
+				let batchInvoiceId: string | undefined = input.invoiceId ?? undefined;
+
+				for (let specIdx = 0; specIdx < specsToProcess.length; specIdx++) {
+					const specItem = specsToProcess[specIdx];
+					if (!specItem) continue;
+					const toothOverride = explicitSpecs?.[specIdx];
+					const toothNum = specItem.toothNumberFdi;
+					// Операционные расходники (графт/мембрана/шов) списываем ОДИН РАЗ на операцию, а не N раз в пакете (если не указан персональный оверрайд на зуб)
+					const consumableInput: ResolvedImplantInstallationInput =
+						specIdx === 0
+							? specItem
+							: {
+									...specItem,
+									boneGraftMaterial:
+										toothOverride?.boneGraftMaterial !== undefined ? toothOverride.boneGraftMaterial : null,
+									boneGraftItemId:
+										toothOverride?.boneGraftItemId !== undefined ? toothOverride.boneGraftItemId : null,
+									membraneUsed:
+										toothOverride?.membraneUsed !== undefined ? toothOverride.membraneUsed : null,
+									membraneItemId:
+										toothOverride?.membraneItemId !== undefined ? toothOverride.membraneItemId : null,
+									sutureMaterial:
+										toothOverride?.sutureMaterial !== undefined ? toothOverride.sutureMaterial : null,
+									sutureItemId:
+										toothOverride?.sutureItemId !== undefined ? toothOverride.sutureItemId : null,
+								};
+
+					const currentItemInput: ResolvedImplantInstallationInput = {
+						...specItem,
+						...(batchInvoiceId ? { invoiceId: batchInvoiceId } : {}),
+					};
+					const toothStability = ImplantStabilityCalculator.calculateMeanIsq(
+						currentItemInput.baselineIsqMesiodistal,
+						currentItemInput.baselineIsqBuccolingual,
+						currentItemInput.baselineIsqDistopalatal,
+					);
+					const toothIsqMean = toothStability.isqMean;
+					const toothIsqDelta = toothStability.isqAnisotropyDelta;
+					const toothEval = ImplantStabilityCalculator.evaluateLoadingProtocol(
+						toothIsqMean,
+						currentItemInput.finalInsertionTorqueNcm,
+						0,
+					);
+					const toothProtocol = toothEval.protocol;
+					const toothDecisionRationale = toothEval.decisionRationale;
+					const toothImmediateLoadingFeasible =
+						(toothIsqMean !== null ? toothIsqMean >= 70 : false) &&
+						currentItemInput.finalInsertionTorqueNcm >= 35 &&
+						currentItemInput.finalInsertionTorqueNcm <= 55;
+
+					const screw = await deductImplantScrew(tx, orgId, principal.userId ?? null, currentItemInput);
+					const { deductedMaterials, consumablesCostTotalKopecksBigInt } = await deductConsumables(
+						tx,
+						orgId,
+						principal.userId ?? null,
+						consumableInput,
+					);
 				const itemDeductions = [
 					{
 						name: screw.invItem.name,
@@ -408,7 +425,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 					.values({
 						organizationId: orgId,
 						patientId: currentItemInput.patientId,
-						surgeonDoctorId: identity.userId ?? null,
+						surgeonDoctorId: principal.userId ?? null,
 						visitId: currentItemInput.visitId ?? null,
 						catalogItemId: resolvedImplantCatalogItemId,
 						toothNumberFdi: toothNum,
@@ -465,7 +482,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 					await tx.insert(implantIsqMeasurements).values({
 						organizationId: orgId,
 						installationId: installation.id,
-						measuredByDoctorId: identity.userId ?? null,
+						measuredByDoctorId: principal.userId ?? null,
 						visitId: currentItemInput.visitId ?? null,
 						daysPostOp: 0,
 						isqMesiodistal: currentItemInput.baselineIsqMesiodistal,
@@ -625,37 +642,11 @@ export function registerInstallationRoute(app: FastifyInstance) {
 				});
 			});
 
-			return {
-				patientNotFound: false as const,
-				firstInstallationRecord,
-				firstInventoryDeduction,
-				installationResults,
-				allDeductions,
-				primaryFinancials,
-				responsePayload,
-			};
+				return reply.code(201).send(responsePayload);
+			},
 		});
-
-		if (txResult.patientNotFound) {
-			return reply.code(404).send({
-				error: "PatientNotFound",
-				message: "Пациент не найден в вашей клинике.",
-			});
-		}
-
-		return reply.code(201).send(txResult.responsePayload);
 	};
 
-	defineStreamRoute(app, {
-		method: "POST",
-		path: "/api/clinical/implants/installations",
-		permission: "public",
-		handler: async ({ request, reply }) => handleInstallation(request, reply),
-	});
-	defineStreamRoute(app, {
-		method: "POST",
-		path: "/api/clinical/implants/installations/batch",
-		permission: "public",
-		handler: async ({ request, reply }) => handleInstallation(request, reply),
-	});
+	registerRoute("/api/clinical/implants/installations");
+	registerRoute("/api/clinical/implants/installations/batch");
 }

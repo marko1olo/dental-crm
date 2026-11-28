@@ -346,26 +346,51 @@ export function calculateSurgeryFinancials(params: {
 	graftName?: string;
 	membraneName?: string;
 	sutureName?: string;
+	overrideOperationPriceRub?: number | undefined;
 }): SurgeryFinancialBreakdown {
 	const scenario = SURGERY_SCENARIOS[params.scenario];
-	const priceRub = scenario?.defaultPriceRub ?? 45000;
+	const priceRub =
+		typeof params.overrideOperationPriceRub === "number" && Number.isFinite(params.overrideOperationPriceRub)
+			? params.overrideOperationPriceRub
+			: (scenario?.defaultPriceRub ?? 45000);
 	if (params.scenario === "implant") {
 		const sys = getImplantSystemById(params.implantBrand || "Osstem");
 		const implantCostRub = sys.unitCostRub || 12500;
 		const implantCostKopecks = sys.implantCostKopecks ? Number(sys.implantCostKopecks) : rublesToKopecks(implantCostRub);
-		const suture = SURGERY_SUTURE_CATALOG.find((s) =>
-			s.name === params.sutureName ||
-			(params.sutureName && (
-				s.id === params.sutureName ||
-				params.sutureName.toLowerCase().includes("prolene") ||
-				params.sutureName.toLowerCase().includes("викрил") ||
-				params.sutureName.toLowerCase().includes("пга") ||
-				params.sutureName.toLowerCase().includes("монофиламент")
-			))
-		);
-		const sutureCost = suture?.unitPriceRub ?? 950;
+		const sutureTrimmed = params.sutureName?.trim() || "";
+		const suture = sutureTrimmed
+			? SURGERY_SUTURE_CATALOG.find((s) =>
+					s.name === sutureTrimmed ||
+					s.id === sutureTrimmed ||
+					sutureTrimmed.toLowerCase().includes("prolene") ||
+					sutureTrimmed.toLowerCase().includes("викрил") ||
+					sutureTrimmed.toLowerCase().includes("пга") ||
+					sutureTrimmed.toLowerCase().includes("монофиламент"),
+				)
+			: undefined;
+		const graftTrimmed = params.graftName?.trim() || "";
+		const graft = graftTrimmed
+			? SURGERY_GRAFT_CATALOG.find((g) =>
+					g.name === graftTrimmed ||
+					g.id === graftTrimmed ||
+					graftTrimmed.toLowerCase().includes("bio-oss") ||
+					graftTrimmed.toLowerCase().includes("ксено"),
+				)
+			: undefined;
+		const membraneTrimmed = params.membraneName?.trim() || "";
+		const membrane = membraneTrimmed
+			? SURGERY_MEMBRANE_CATALOG.find((m) =>
+					m.name === membraneTrimmed ||
+					m.id === membraneTrimmed ||
+					membraneTrimmed.toLowerCase().includes("bio-gide") ||
+					membraneTrimmed.toLowerCase().includes("коллаген"),
+				)
+			: undefined;
+		const sutureCost = suture ? suture.unitPriceRub : 0;
+		const graftCost = graft ? graft.unitPriceRub : 0;
+		const membraneCost = membrane ? membrane.unitPriceRub : 0;
 		const baseKitCost = CANONICAL_SURGERY_BASE_KIT_COST_RUB;
-		const consumablesCostRub = sutureCost + baseKitCost;
+		const consumablesCostRub = sutureCost + graftCost + membraneCost + baseKitCost;
 		const consumablesCostKopecks = rublesToKopecks(consumablesCostRub);
 		const operationPriceKopecks = rublesToKopecks(priceRub);
 		const totalDirectCostKopecks = implantCostKopecks + consumablesCostKopecks;
@@ -386,34 +411,37 @@ export function calculateSurgeryFinancials(params: {
 	}
 	let consumablesCostRub = CANONICAL_EXTRACTION_CONSUMABLES_COST_RUB;
 	if (params.scenario === "sinus_gbr") {
-		const graft = SURGERY_GRAFT_CATALOG.find((g) =>
-			g.name === params.graftName ||
-			(params.graftName && (
-				g.id === params.graftName ||
-				params.graftName.toLowerCase().includes("bio-oss") ||
-				params.graftName.toLowerCase().includes("ксено")
-			))
-		) || SURGERY_GRAFT_CATALOG[0];
+		const graftTrimmed = params.graftName?.trim() || "";
+		const graft = graftTrimmed
+			? SURGERY_GRAFT_CATALOG.find((g) =>
+					g.name === graftTrimmed ||
+					g.id === graftTrimmed ||
+					graftTrimmed.toLowerCase().includes("bio-oss") ||
+					graftTrimmed.toLowerCase().includes("ксено"),
+				)
+			: SURGERY_GRAFT_CATALOG[0];
 
-		const membrane = SURGERY_MEMBRANE_CATALOG.find((m) =>
-			m.name === params.membraneName ||
-			(params.membraneName && (
-				m.id === params.membraneName ||
-				params.membraneName.toLowerCase().includes("bio-gide") ||
-				params.membraneName.toLowerCase().includes("коллаген")
-			))
-		) || SURGERY_MEMBRANE_CATALOG[0];
+		const membraneTrimmed = params.membraneName?.trim() || "";
+		const membrane = membraneTrimmed
+			? SURGERY_MEMBRANE_CATALOG.find((m) =>
+					m.name === membraneTrimmed ||
+					m.id === membraneTrimmed ||
+					membraneTrimmed.toLowerCase().includes("bio-gide") ||
+					membraneTrimmed.toLowerCase().includes("коллаген"),
+				)
+			: SURGERY_MEMBRANE_CATALOG[0];
 
-		const suture = SURGERY_SUTURE_CATALOG.find((s) =>
-			s.name === params.sutureName ||
-			(params.sutureName && (
-				s.id === params.sutureName ||
-				params.sutureName.toLowerCase().includes("prolene") ||
-				params.sutureName.toLowerCase().includes("викрил") ||
-				params.sutureName.toLowerCase().includes("пга") ||
-				params.sutureName.toLowerCase().includes("монофиламент")
-			))
-		);
+		const sutureTrimmed = params.sutureName?.trim() || "";
+		const suture = sutureTrimmed
+			? SURGERY_SUTURE_CATALOG.find((s) =>
+					s.name === sutureTrimmed ||
+					s.id === sutureTrimmed ||
+					sutureTrimmed.toLowerCase().includes("prolene") ||
+					sutureTrimmed.toLowerCase().includes("викрил") ||
+					sutureTrimmed.toLowerCase().includes("пга") ||
+					sutureTrimmed.toLowerCase().includes("монофиламент"),
+				)
+			: undefined;
 		consumablesCostRub = (graft?.unitPriceRub ?? 8500) + (membrane?.unitPriceRub ?? 9800) + (suture?.unitPriceRub ?? 950) + CANONICAL_SURGERY_BASE_KIT_COST_RUB;
 	} else if (params.scenario === "resection_periostotomy") {
 		consumablesCostRub = CANONICAL_RESECTION_CONSUMABLES_COST_RUB;

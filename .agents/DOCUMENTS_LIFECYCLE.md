@@ -455,6 +455,20 @@ graph LR
 
 ---
 
+20. Red Team Fixer 4A: Контур 3 — XSS-санитизация, разблокировка чистых бланков, точность КНД 1151156 и A4 Dark-Mode изоляция (Мандаты 8e, 8bm, 8d, 8am, 8az):
+    * **Единая XSS/SVG-санитизация в `@dental/shared` (`packages/shared/src/utils/strings.ts`):**
+      Внедрены и экспортированы `escapeHtml`, `sanitizeSignatureSvg` (удаляет `<script>`, `on*` атрибуты и `javascript:` URI, оставляя валидный SVG-росчерк) и `sanitizeImageDataUrl` (`data:image/png|jpeg|webp` + безопасный HTTP(S)). Применены во всех клиентских HTML-генераторах: `paidContract/{contractHtmlGenerator,contractHtmlServices,contractHtmlRequisites}.ts`, `consents/consentCatalogData.ts`, `documents/studio/{generateA4PrintHtml,useCanvasSigner}.ts` и `taxCertificateEngine.ts` (включая `fiscalDocumentNumber`, `fiscalSign`, `code`, `chiefDoctorOrDirector`).
+    * **Разблокировка пустых бланков (`apps/api/src/documents/renderDocument.ts`):**
+      Флаги `isBlankPaidContract` и `isBlankInformedConsent` вычисляются до проверки заполненности реквизитов клиники — регистратор может мгновенно распечатать чистый типовой бланк договора или ИДС даже при незаполненном юрпрофиле; в `generateInformedConsentTemplate` и `consentTemplates.ts` пустые поля оформляются строками подчёркивания `____`.
+    * **Честный движок КНД 1151156 (`taxCertificateEngine.ts`, `DocumentsStudioModal.tsx`, `consentTextRenderer.ts`):**
+      Расчёт налогового вычета 13% переведён на целочисленные копейки (`percentageOfKopecks(..., 1300)` вместо `* 0.13`); удалены фейковый подписант `"Смирнов А.В."` (заменён на `"________________________"`) и `receiptsCount || 1` (`receiptsCount ?? 0`); даты рендерятся в часовом поясе клиники (`Europe/Moscow` / `Intl.DateTimeFormat("sv-SE")`) вместо UTC `toISOString().slice(0, 10)`. В `DocumentsStudioModal` добавлен `key={modalPatientKey}` для сброса черновиков при смене пациента, динамический `new Date().getFullYear()`, и удалён fallback `DEFAULT_CLINIC_REQUISITES` в боевом режиме (`!isDemo`).
+    * **A4 Dark Mode и Mobile HIG (`documentsStudio.css`, `DocumentsStudioFooter.tsx`):**
+      Лист `.dente-a4-paper-sheet` защищён атрибутом `data-preserve-white="true"` (белая бумага `#ffffff` и контрастный текст `#0f172a` даже в Dark Mode), `z-index` снижен с `100000` до канонического `100`, на мобильных `<=768px` нижняя панель отступает на высоту таб-бара (`64px`) с однострочным скроллом вторичных кнопок (`flex-nowrap`).
+    * **Переписанные честные runtime-тесты 6Г (`11` наборов web + `renderDocument.test.ts` API):**
+      Полностью искоренены `readFileSync`/`existsSync`/`typeof`/size-assert заглушки в 11 web-наборах (`documentsSSOTSuite`, `documentsStudioSSOT`, `canonicalDocumentsModalsAndSections`, `clinicalVisitPackageDecomposition`, `documentLegalAuditStatic`, `patientBlankContractAndProfileAutonomyWave65`, `taxCertificateAndPrescriptionZeroMock`, `consentSSOTSuite`, `periodontalMandateSizeAndGate`, `surgeryInlineTab`, `redTeamAntiMockZeroStubsInquisition`), добавлены регрессионные проверки на XSS, `receiptsCount === 0`, разблокировку пустых бланков и `data-preserve-white="true"`.
+
+---
+
 ## 🔗 6. Перекрестные ссылки на архитектурные документы
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главный индекс документации DENTE CRM.

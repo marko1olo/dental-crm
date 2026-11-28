@@ -1,9 +1,8 @@
 import { SEPA_SITE_CODES, type SepaSiteCode } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply } from "fastify";
-import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { defineStreamRoute } from "../../core/routeFactories.js";
-import { type TenantDb, withTenantWriteCtx } from "../../db/rls.js";
+import { defineTenantMutation } from "../../core/routeFactories.js";
+import { type TenantDb } from "../../db/rls.js";
 import {
 	periodontogramSites,
 	periodontogramSnapshots,
@@ -68,17 +67,18 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 	 * 6. PATCH /api/periodontogram/snapshots/:id/sites
 	 * Пакетное или одиночное сохранение сайтов зондирования
 	 */
-	defineStreamRoute(app, {
+	defineTenantMutation(app, {
 		method: "PATCH",
 		path: "/api/periodontogram/snapshots/:id/sites",
-		permission: "public",
-		handler: async ({ request: req, reply }) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
-				req,
-				reply,
-				"periodontogram sites patch",
-			);
-			if (!orgId) return reply;
+		permission: "clinical.write",
+		authOptions: {
+			requireStaffToken: true,
+			allowAdminSecretBypass: true,
+		},
+		idempotency: "optional_header",
+		bodySchema: patchSitesPayloadSchema,
+		validationErrorMessage: "Некорректные параметры сайтов зондирования",
+		execute: async ({ tx, organizationId: orgId, body: parsedData, request: req, reply }) => {
 			const rawParams = req.params;
 			const id =
 				typeof rawParams === "object" && rawParams !== null && "id" in rawParams && typeof rawParams.id === "string"
@@ -94,56 +94,38 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 
 			const rawIdem = req.headers["idempotency-key"] || req.headers["x-idempotency-key"];
 			const idempotencyKey = typeof rawIdem === "string" ? rawIdem : undefined;
-			if (idempotencyKey) {
-				if (!UUID_REGEX.test(idempotencyKey)) {
-					return reply.code(400).send({
-						error: "ValidationError",
-						message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
-					});
-				}
-				reply.header("Idempotency-Key", idempotencyKey);
-			}
-
-			const parsed = patchSitesPayloadSchema.safeParse(req.body);
-			if (!parsed.success) {
+			if (idempotencyKey && !UUID_REGEX.test(idempotencyKey)) {
 				return reply.code(400).send({
 					error: "ValidationError",
-					message: "Некорректные параметры сайтов зондирования",
-					details: parsed.error.format(),
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
 				});
 			}
 
-			const rawList = Array.isArray(parsed.data)
-				? parsed.data
-				: "sites" in parsed.data
-					? parsed.data.sites
-					: [parsed.data];
+			const rawList = Array.isArray(parsedData)
+				? parsedData
+				: "sites" in parsedData
+					? parsedData.sites
+					: [parsedData];
 
-			const txResult = await withTenantWriteCtx(orgId, async (tx) => {
-				const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply, tx);
-				if (!snapshot) return { kind: "snapshot_rejected" as const };
-				if (rawList.length === 0) return { kind: "empty" as const };
+			const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply, tx);
+			if (!snapshot) return undefined;
+			if (rawList.length === 0) return { success: true, data: [] };
 
-				const teethRows = await tx
-					.select({
-						id: periodontogramTeeth.id,
-						toothNumber: periodontogramTeeth.toothNumber,
-					})
-					.from(periodontogramTeeth)
-					.where(eq(periodontogramTeeth.snapshotId, id));
+			const teethRows = await tx
+				.select({
+					id: periodontogramTeeth.id,
+					toothNumber: periodontogramTeeth.toothNumber,
+				})
+				.from(periodontogramTeeth)
+				.where(eq(periodontogramTeeth.snapshotId, id));
 
-				const toothIdMap = new Map<number, string>(
-					teethRows.map((t) => [t.toothNumber, t.id]),
-				);
+			const toothIdMap = new Map<number, string>(
+				teethRows.map((t) => [t.toothNumber, t.id]),
+			);
 
-				const savedSites = await batchUpsertSites(tx, id, rawList, toothIdMap);
-				return { kind: "saved" as const, savedSites };
-			});
+			const savedSites = await batchUpsertSites(tx, id, rawList, toothIdMap);
 
-			if (txResult.kind === "snapshot_rejected") return reply;
-			if (txResult.kind === "empty") return reply.send({ success: true, data: [] });
-
-			return reply.send({ success: true, data: txResult.savedSites });
+			return { success: true, data: savedSites };
 		},
 	});
 
@@ -151,17 +133,18 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 	 * 6b. PATCH /api/periodontogram/snapshots/:id/teeth/:toothNumber/sites/:siteCode
 	 * Одиночное сохранение сайта зондирования по REST-пути
 	 */
-	defineStreamRoute(app, {
+	defineTenantMutation(app, {
 		method: "PATCH",
 		path: "/api/periodontogram/snapshots/:id/teeth/:toothNumber/sites/:siteCode",
-		permission: "public",
-		handler: async ({ request: req, reply }) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
-				req,
-				reply,
-				"periodontogram single site patch",
-			);
-			if (!orgId) return reply;
+		permission: "clinical.write",
+		authOptions: {
+			requireStaffToken: true,
+			allowAdminSecretBypass: true,
+		},
+		idempotency: "optional_header",
+		bodySchema: siteItemSchema,
+		validationErrorMessage: "Некорректные параметры сайта зондирования",
+		execute: async ({ tx, organizationId: orgId, body: parsedData, request: req, reply }) => {
 			const rawParams = req.params;
 			const id =
 				typeof rawParams === "object" && rawParams !== null && "id" in rawParams && typeof rawParams.id === "string"
@@ -178,15 +161,13 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 
 			const rawIdem = req.headers["idempotency-key"] || req.headers["x-idempotency-key"];
 			const idempotencyKey = typeof rawIdem === "string" ? rawIdem : undefined;
-			if (idempotencyKey) {
-				if (!UUID_REGEX.test(idempotencyKey)) {
-					return reply.code(400).send({
-						error: "ValidationError",
-						message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
-					});
-				}
-				reply.header("Idempotency-Key", idempotencyKey);
+			if (idempotencyKey && !UUID_REGEX.test(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+				});
 			}
+
 			const toothNumber = Number.parseInt(rawTn, 10);
 			const rawSiteCode = (siteCode || "").toUpperCase();
 			const normalizedSiteCode =
@@ -205,44 +186,30 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const parsed = siteItemSchema.safeParse(req.body);
-			if (!parsed.success) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Некорректные параметры сайта зондирования",
-					details: parsed.error.format(),
-				});
-			}
+			const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply, tx);
+			if (!snapshot) return undefined;
 
-			const txResult = await withTenantWriteCtx(orgId, async (tx) => {
-				const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply, tx);
-				if (!snapshot) return { kind: "snapshot_rejected" as const };
+			const [tooth] = await tx
+				.select({ id: periodontogramTeeth.id })
+				.from(periodontogramTeeth)
+				.where(
+					and(
+						eq(periodontogramTeeth.snapshotId, id),
+						eq(periodontogramTeeth.toothNumber, toothNumber),
+					),
+				)
+				.limit(1);
 
-				const [tooth] = await tx
-					.select({ id: periodontogramTeeth.id })
-					.from(periodontogramTeeth)
-					.where(
-						and(
-							eq(periodontogramTeeth.snapshotId, id),
-							eq(periodontogramTeeth.toothNumber, toothNumber),
-						),
-					)
-					.limit(1);
+			const saved = await upsertSingleSiteRecord(
+				tx,
+				id,
+				tooth?.id ?? null,
+				toothNumber,
+				normalizedSiteCode,
+				parsedData,
+			);
 
-				const saved = await upsertSingleSiteRecord(
-					tx,
-					id,
-					tooth?.id ?? null,
-					toothNumber,
-					normalizedSiteCode,
-					parsed.data,
-				);
-				return { kind: "saved" as const, saved };
-			});
-
-			if (txResult.kind === "snapshot_rejected") return reply;
-
-			return reply.send({ success: true, data: txResult.saved });
+			return { success: true, data: saved };
 		},
 	});
 }

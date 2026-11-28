@@ -640,4 +640,63 @@ describe("Бланки договора и ИДС с 0 ₽ и без врача 
 		});
 		assert.strictEqual(blockReason, null);
 	});
+
+	test("Пустой типовой бланк договора и ИДС не блокируется при неполном профиле клиники (Контур 3 P0)", () => {
+		const blankContractIssuedLike: GeneratedDocument = {
+			id: randomUUID(),
+			organizationId: "11111111-1111-4111-8111-111111111111",
+			patientId: samplePatient.id,
+			kind: "paid_medical_services_contract",
+			title: "Типовой бланк договора",
+			status: "ready",
+			visitId: null,
+			totalAmountRub: null,
+			issuedAt: null,
+			payload: {
+				paidMedicalServicesContract: {
+					contractNumber: "БЛ-01",
+					doctorFullName: "",
+					estimatedTotalRub: 0,
+				} as any,
+			},
+		};
+		const blankConsentIssuedLike: GeneratedDocument = {
+			id: randomUUID(),
+			organizationId: "11111111-1111-4111-8111-111111111111",
+			patientId: samplePatient.id,
+			kind: "informed_consent",
+			title: "Типовой бланк ИДС",
+			status: "ready",
+			visitId: null,
+			totalAmountRub: null,
+			issuedAt: null,
+			payload: {
+				informedConsent: {
+					intervention: "Осмотр",
+					toothOrArea: "по показаниям",
+					diagnosisOrIndication: "по показаниям",
+					expectedBenefit: "санация",
+					doctorFullName: "",
+					consentConfirmedAt: "2026-09-03 10:00",
+					explainedRisks: ["риск"],
+					alternatives: ["отказ"],
+					aftercareRequirements: ["рекомендации"],
+					patientQuestionsAnswered: true,
+					patientUnderstandsRisks: true,
+					patientMayWithdrawBeforeIntervention: true,
+				},
+			},
+		};
+
+		assert.strictEqual(
+			documentIssueBlockReason(blankContractIssuedLike, samplePatient, { clinicProfile: {} as any }),
+			null,
+			"Blank paid contract must never be blocked by incomplete clinicProfile",
+		);
+		assert.strictEqual(
+			documentIssueBlockReason(blankConsentIssuedLike, samplePatient, { clinicProfile: {} as any }),
+			null,
+			"Blank informed consent must never be blocked by incomplete clinicProfile",
+		);
+	});
 });

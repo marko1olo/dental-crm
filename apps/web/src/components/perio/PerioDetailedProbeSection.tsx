@@ -102,7 +102,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 				<span>{label}</span>
 				<span className="text-[10px] font-normal text-[var(--ink-muted)]">Глубина / BOP</span>
 			</div>
-			<div className="grid grid-cols-8 sm:grid-cols-16 gap-1 overflow-x-auto pb-0.5">
+			<div className="grid grid-cols-4 sm:grid-cols-8 lg:grid-cols-16 gap-1 pb-0.5">
 				{toothNumbers.map((num) => {
 					const t = teethByNumber.get(num);
 					const isSelected = selectedToothNum === num;
@@ -117,7 +117,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 							onClick={() => onSelectToothNum(num)}
 							data-testid={`perio-tooth-btn-${num}`}
 							title={isMissing ? `Зуб #${num} удален. Зондирование заблокировано` : `Зуб #${num}: макс. карман ${maxDepth || 2} мм${hasBop ? ", кровоточивость BOP+" : ""}${mobility ? `, подвижность ${mobility}` : ""}`}
-							className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[40px] sm:min-w-[38px] px-1 py-1 rounded-xl text-center flex flex-col items-center justify-between cursor-pointer transition-all border ${
+							className={`touch-manipulation w-full min-h-[44px] sm:min-h-[40px] sm:min-w-[38px] px-1 py-1 rounded-xl text-center flex flex-col items-center justify-between cursor-pointer transition-all border ${
 								isMissing
 									? "opacity-50 bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)]"
 									: isSelected

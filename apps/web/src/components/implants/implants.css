@@ -8,7 +8,7 @@
 .implant-passport-modal-backdrop {
 	position: fixed;
 	inset: 0;
-	z-index: 10050;
+	z-index: 100;
 	background: var(--backdrop, rgba(0, 0, 0, 0.6));
 	backdrop-filter: blur(8px);
 	display: flex;
@@ -293,7 +293,7 @@
 		align-items: stretch !important;
 		padding: 0 !important;
 		overflow: hidden !important;
-		z-index: 10050 !important;
+		z-index: 100 !important;
 	}
 
 	.implant-passport-card-container {

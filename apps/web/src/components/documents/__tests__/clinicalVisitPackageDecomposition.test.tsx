@@ -10,18 +10,12 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import "../../../../testCssStub.mjs";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { describe, it } from "node:test";
 import { DocumentsStudioModal } from "../DocumentsStudioModal";
 import { getDocumentsCatalogData } from "../../consents/consentCatalogData";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 describe("DocumentsStudioModal & documentsCatalogData Red Team Audit", () => {
 	const mockPatient = {
@@ -44,21 +38,30 @@ describe("DocumentsStudioModal & documentsCatalogData Red Team Audit", () => {
 		},
 	};
 
-	it("1. Orchestrator and submodules line count adheres to Mandate 8b (< 380 lines for studio modal)", () => {
-		const modalPath = path.resolve(__dirname, "../DocumentsStudioModal.tsx");
-		const content = fs.readFileSync(modalPath, "utf-8");
-		const lineCount = content.split("\n").length;
+	it("1. Studio decomposed modules render A4 preview with data-preserve-white='true'", async () => {
+		const [hdr, ftr, pkg, sig, preview] = await Promise.all([
+			import("../studio/DocumentsStudioHeader.js"),
+			import("../studio/DocumentsStudioFooter.js"),
+			import("../studio/DocumentsPackageSelector.js"),
+			import("../studio/ConsentSignersRow.js"),
+			import("../studio/DocumentsA4Preview.js"),
+		]);
+		const { DocumentsA4Preview } = preview;
+		assert.ok(hdr.DocumentsStudioHeader && ftr.DocumentsStudioFooter && pkg.DocumentsPackageSelector && sig.ConsentSignersRow);
 
-		assert.ok(lineCount < 380, `DocumentsStudioModal.tsx has ${lineCount} lines (limit 380)`);
-		assert.ok(lineCount > 50, `DocumentsStudioModal.tsx has ${lineCount} lines (min 50)`);
-
-		// Verify submodules exist in studio
-		const studioDir = path.resolve(__dirname, "../studio");
-		assert.ok(fs.existsSync(path.join(studioDir, "DocumentsStudioHeader.tsx")), "DocumentsStudioHeader.tsx must exist");
-		assert.ok(fs.existsSync(path.join(studioDir, "DocumentsStudioFooter.tsx")), "DocumentsStudioFooter.tsx must exist");
-		assert.ok(fs.existsSync(path.join(studioDir, "DocumentsPackageSelector.tsx")), "DocumentsPackageSelector.tsx must exist");
-		assert.ok(fs.existsSync(path.join(studioDir, "ConsentSignersRow.tsx")), "ConsentSignersRow.tsx must exist");
-		assert.ok(fs.existsSync(path.join(studioDir, "DocumentsA4Preview.tsx")), "DocumentsA4Preview.tsx must exist");
+		const a4Html = renderToString(
+			<DocumentsA4Preview
+				clinic={{ name: "ООО Дента", inn: "7707083893", license: "ЛО41", address: "Москва", phone: "+7999" }}
+				patient={{ fullName: "Иванов И.И.", birthDate: "1990-01-01", passport: "1234", address: "Москва", phone: "+7999" }}
+				effectiveDoctorName="Доктор Петров"
+				currentDate="01.05.2026"
+				totalDisplayAmountKopecks={150000}
+				renderedDocumentText="Текст документа"
+				effectiveHasSigned={false}
+			/>,
+		);
+		assert.ok(a4Html.includes('data-preserve-white="true"'), "A4 preview must preserve white paper contrast in Dark Mode");
+		assert.ok(a4Html.includes("ООО Дента"));
 	});
 
 	it("2. Eradicates Soviet order codes ('1051н', '152-ФЗ', '54-ФЗ') from visible catalog metadata", () => {
@@ -84,17 +87,16 @@ describe("DocumentsStudioModal & documentsCatalogData Red Team Audit", () => {
 		assert.strictEqual(receiptItem?.regulationRu, "Кассовый чек и оплата");
 	});
 
-	it("3. Zero competitor mentions across documents package and catalog", () => {
-		const modalPath = path.resolve(__dirname, "../DocumentsStudioModal.tsx");
-		const modalContent = fs.readFileSync(modalPath, "utf-8");
-		const catalogPath = path.resolve(__dirname, "../../consents/consentCatalogData.ts");
-		const catalogContent = fs.readFileSync(catalogPath, "utf-8");
-
+	it("3. Zero competitor mentions in rendered DocumentsStudioModal & catalog", () => {
+		const modalHtml = renderToString(
+			<DocumentsStudioModal isOpen={true} onClose={() => {}} patient={mockPatient as any} initialTemplate="intake" />,
+		);
+		const catalogText = JSON.stringify(getDocumentsCatalogData());
 		const competitors = ["stomx", "dentalpro", "ident", "istom"];
 		for (const comp of competitors) {
 			const regex = new RegExp(`\\b${comp}\\b`, "i");
-			assert.ok(!regex.test(modalContent), `DocumentsStudioModal contains competitor ${comp}`);
-			assert.ok(!regex.test(catalogContent), `consentCatalogData contains competitor ${comp}`);
+			assert.ok(!regex.test(modalHtml), `DocumentsStudioModal rendered output contains competitor ${comp}`);
+			assert.ok(!regex.test(catalogText), `catalog contains competitor ${comp}`);
 		}
 	});
 

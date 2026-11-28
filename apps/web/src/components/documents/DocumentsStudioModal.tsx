@@ -89,7 +89,7 @@ const DocumentsStudioModalContent: React.FC<DocumentsStudioModalProps> = ({
 	const [activeConsentSubKind, setActiveConsentSubKind] = useState<ConsentSubKind>(
 		(initialDocId as ConsentSubKind) || "therapy",
 	);
-	const [taxYear, setTaxYear] = useState<number>(selectedYear || initialYear || 2026);
+	const [taxYear, setTaxYear] = useState<number>(selectedYear || initialYear || new Date().getFullYear());
 	const [isSignPadOpen, setIsSignPadOpen] = useState<boolean>(false);
 	const [hasSigned, setHasSigned] = useState<boolean>(false);
 	const [toastNotice, setToastNotice] = useState<string | null>(null);
@@ -328,9 +328,17 @@ const DocumentsStudioModalContent: React.FC<DocumentsStudioModalProps> = ({
 
 export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = (props) => {
 	if (!props.isOpen) return null;
+	const directPatientObj = props.directPatient as { id?: unknown } | null | undefined;
+	const directPatientObjId = typeof directPatientObj?.id === "string" ? directPatientObj.id : undefined;
+	const modalPatientKey = String(
+		props.patientContext?.id ||
+		directPatientObjId ||
+		props.directPatientId ||
+		"no-patient",
+	);
 	return (
 		<DenteQueryClientProvider>
-			<DocumentsStudioModalContent {...props} />
+			<DocumentsStudioModalContent key={modalPatientKey} {...props} />
 		</DenteQueryClientProvider>
 	);
 };

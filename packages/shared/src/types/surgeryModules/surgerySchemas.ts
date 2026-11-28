@@ -272,6 +272,8 @@ export const createSurgicalProtocolSchema = z
 		services: z.array(surgicalServiceItemSchema).default([]),
 		services804n: z.array(surgicalServiceItemSchema).default([]),
 		materialsUsed: z.array(surgicalMaterialItemSchema).default([]),
+		bundleType: z.enum(["surgery", "implant", "sinus_gbr"]).optional(),
+		deductMaterials: z.boolean().optional(),
 		isOverdraftActive: z.boolean().default(false),
 		notes: z.string().optional().nullable(),
 	})

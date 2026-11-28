@@ -56,7 +56,13 @@ export function OrthopedicPassportA4Modal({ isOpen, onClose, passport }: Orthope
 
 	const modalContent = (
 		<div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto max-sm:items-end" role="dialog" aria-modal="true" data-testid="orthopedic-passport-modal">
-			<style>{`@media print { .no-print { display: none !important; } #orthopedic-passport-print-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 12mm 15mm !important; background: #fff !important; color: #0f172a !important; box-shadow: none !important; border: none !important; } }`}</style>
+			<style>{`@media print {
+				body > *:not([data-testid="orthopedic-passport-modal"]) { display: none !important; }
+				[data-testid="orthopedic-passport-modal"] { position: static !important; inset: auto !important; background: transparent !important; backdrop-filter: none !important; padding: 0 !important; overflow: visible !important; height: auto !important; display: block !important; }
+				[data-testid="orthopedic-passport-modal"] > div { position: static !important; max-width: none !important; max-height: none !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; overflow: visible !important; background: #fff !important; }
+				.no-print { display: none !important; }
+				#orthopedic-passport-print-area { position: static !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 12mm 15mm !important; background: #fff !important; color: #0f172a !important; box-shadow: none !important; border: none !important; }
+			}`}</style>
 			<div className="relative w-full max-w-4xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh] sm:max-h-[92vh]">
 				<div className="sm:hidden w-9 h-1.5 bg-[var(--line)] rounded-full mx-auto mt-2.5 mb-1 shrink-0 no-print" aria-hidden="true" />
 				<div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] no-print shrink-0">

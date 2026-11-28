@@ -247,11 +247,22 @@ export function documentIssueBlockReasonRaw(
 		return "Документ должен быть связан с конкретным визитом перед выдачей.";
 	}
 
+	const isBlankPaidContract =
+		document.kind === "paid_medical_services_contract" &&
+		(Number(document.payload?.paidMedicalServicesContract?.estimatedTotalRub || 0) === 0 ||
+			!document.payload?.paidMedicalServicesContract?.doctorFullName?.trim() ||
+			!financialDocumentTreatmentItems(document, context).length);
+	const isBlankInformedConsent =
+		document.kind === "informed_consent" &&
+		!document.payload?.informedConsent?.doctorFullName?.trim();
+
 	const isDraftOrBlank =
 		document.status === "draft" ||
 		Boolean((document.payload as Record<string, unknown> | undefined)?.isDraft) ||
 		Boolean((document.payload as Record<string, unknown> | undefined)?.isBlank) ||
-		Boolean(context.isDraft);
+		Boolean(context.isDraft) ||
+		isBlankPaidContract ||
+		isBlankInformedConsent;
 
 	if (documentRequiresClinicLegalProfile(document.kind) && !isDraftOrBlank) {
 		const missingClinicFields = clinicLegalProfileMissingFields(
@@ -382,15 +393,6 @@ export function documentIssueBlockReasonRaw(
 
 	const taxBlockReason = taxDocumentBlockReason(document, patient, context);
 	if (taxBlockReason) return taxBlockReason;
-
-	const isBlankPaidContract =
-		document.kind === "paid_medical_services_contract" &&
-		(Number(document.payload?.paidMedicalServicesContract?.estimatedTotalRub || 0) === 0 ||
-			!document.payload?.paidMedicalServicesContract?.doctorFullName?.trim() ||
-			!financialDocumentTreatmentItems(document, context).length);
-	const isBlankInformedConsent =
-		document.kind === "informed_consent" &&
-		!document.payload?.informedConsent?.doctorFullName?.trim();
 
 	const html = renderDocumentHtml(document, patient, context);
 	const isDraftOrBlankDoc =

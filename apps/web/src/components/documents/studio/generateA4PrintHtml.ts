@@ -4,6 +4,7 @@
  * Генератор профессионального HTML-документа формата А4 для прямой печати через iframe/диалог (Мандат 8e).
  * Чистая типографика, строгая сетка и нулевой визуальный шум.
  */
+import { escapeHtml } from "@dental/shared";
 import { formatKopecksToRubles, type PatientRequisites } from "../../consents/consentCatalogData";
 
 export interface GenerateA4PrintHtmlOptions {
@@ -24,13 +25,6 @@ export interface GenerateA4PrintHtmlOptions {
 }
 
 export function generateA4PrintHtml(options: GenerateA4PrintHtmlOptions): string {
-	const escapeHtml = (str: string) =>
-		(str || "")
-			.replace(/&/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;")
-			.replace(/"/g, "&quot;");
-
 	return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -57,8 +51,8 @@ export function generateA4PrintHtml(options: GenerateA4PrintHtmlOptions): string
       <div class="clinic-sub">Лицензия: ${escapeHtml(options.clinic.license)}</div>
     </div>
     <div class="date-badge">
-      <div>Дата: ${options.currentDate}</div>
-      <div class="total-cost">Сумма: ${formatKopecksToRubles(options.totalAmountKopecks)}</div>
+      <div>Дата: ${escapeHtml(options.currentDate)}</div>
+      <div class="total-cost">Сумма: ${escapeHtml(formatKopecksToRubles(options.totalAmountKopecks))}</div>
     </div>
   </div>
   <div class="doc-content">${escapeHtml(options.documentText)}</div>
@@ -72,7 +66,7 @@ export function generateA4PrintHtml(options: GenerateA4PrintHtmlOptions): string
       <div style="font-weight: 600;">Пациент:</div>
       <div>${escapeHtml(options.patient.fullName || "______________________")}</div>
       <div style="margin-top: 18px; color: #64748b;">
-        ${options.hasSigned ? `Подписано пациентом ${options.signedAtTimeStr ? `в ${options.signedAtTimeStr} ` : ""}[OK]` : "Подпись: ______________________"}
+        ${options.hasSigned ? `Подписано пациентом ${options.signedAtTimeStr ? `в ${escapeHtml(options.signedAtTimeStr)} ` : ""}[OK]` : "Подпись: ______________________"}
       </div>
     </div>
   </div>

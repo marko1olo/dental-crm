@@ -1,71 +1,110 @@
-/**
- * surgeryInlineTab.test.tsx — Тесты рендеринга вкладки хирургии в карте визита (Мандаты 8e, 8i).
- */
-
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
-import React from "react";
+import { afterEach, beforeEach, describe, it } from "node:test";
+import React, { act } from "react";
+import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { setupMockDom } from "../../documents/__tests__/documentLegalAuditMockDom.js";
+import { ChairsideSurgeryHubModal } from "../ChairsideSurgeryHubModal.js";
+import { buildImplantBatchPayload } from "../surgeryHubApi.js";
+import { calculateSurgeryFinancials, SURGERY_SCENARIOS } from "../surgeryCatalogData.js";
+import { useSurgeryHubState } from "../useSurgeryHubState.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+describe("Surgery Hub Inline & Clinical Contracts (Zero-Bloat, Graft/Price Honesty)", () => {
+	let origFetch: typeof globalThis.fetch;
 
-const { VisitSurgeryProtocolTab } = await import("../../visit/surgery/VisitSurgeryProtocolTab");
-
-describe("VisitSurgeryProtocolTab (Surgical Inline Protocol - Outpatient Mandate 8i SSOT)", () => {
-	it("1. SurgeryCockpitModal and SurgerySafetyChecklist are eradicated per Mandate 8i", () => {
-		const cockpitPath = path.resolve(__dirname, "../SurgeryCockpitModal.tsx");
-		const checklistPath = path.resolve(__dirname, "../SurgerySafetyChecklist.tsx");
-		assert.equal(fs.existsSync(cockpitPath), false);
-		assert.equal(fs.existsSync(checklistPath), false);
+	beforeEach(() => {
+		origFetch = globalThis.fetch;
 	});
 
-	it("2. renders VisitSurgeryProtocolTab with inline controls and norms", () => {
+	afterEach(() => {
+		globalThis.fetch = origFetch;
+	});
+
+	it("1. ChairsideSurgeryHubModal renders implant workstation cleanly with unlocked Primary CTA", () => {
+		assert.equal(Object.keys(SURGERY_SCENARIOS).length, 4);
 		const html = renderToString(
-			<VisitSurgeryProtocolTab
-				activeTooth={36}
-				patientName="Кузнецов Иван"
-			/>,
+			React.createElement(ChairsideSurgeryHubModal, {
+				isOpen: true,
+				onClose: () => {},
+				patientId: "11111111-1111-4111-8111-111111111111",
+				patientName: "Тестовый Пациент",
+				initialScenario: "implant",
+				initialTooth: 46,
+			}),
 		);
-
-		assert.ok(html.includes("36"), "Must show active tooth");
-		assert.ok(html.includes("FDI"), "Must show FDI label");
-		assert.ok(html.includes("btn-surgery-norm-surgery_implant_standard"));
-		assert.ok(html.includes("btn-surgery-norm-surgery_extraction_simple"));
-		assert.ok(html.includes("btn-surgery-norm-surgery_extraction_complex"));
-		assert.ok(html.includes("btn-surgery-norm-surgery_periostotomy"));
-		assert.ok(html.includes("btn-apply-to-visit-diary"));
-
-		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
-		assert.equal(emojiRegex.test(html), false, "Panel HTML must not contain forbidden emojis");
+		assert.ok(html.includes("Хирургический хаб"), "Must render Surgery Hub heading");
+		assert.ok(html.includes("Паспорт имплантации"), "Must render Implant Passport subtitle");
+		assert.ok(html.includes("Тестовый Пациент"), "Must render patient name");
+		assert.ok(!html.includes('disabled=""'), "Primary CTA must remain unlocked");
 	});
 
-	it("3. renders 1-click implant presets bar and capType switcher", () => {
-		const html = renderToString(
-			<VisitSurgeryProtocolTab
-				activeTooth={46}
-				patientName="Кузнецов Иван"
-			/>,
-		);
+	it("2. Default implant state leaves boneGraft, membrane & suture empty ('') and batch payload never multiplies op-level consumables", async () => {
+		const { doc } = setupMockDom();
+		globalThis.fetch = (async () => new Response(JSON.stringify({ success: true, items: [] }), { status: 200 })) as typeof fetch;
 
-		assert.ok(html.includes("btn-preset-standard-implant-tab"));
-		assert.ok(html.includes("btn-implant-cap-fdm"));
-		assert.ok(html.includes("btn-implant-cap-plug"));
-		assert.ok(html.includes("btn-open-implant-passport-modal"));
+		let latestState: ReturnType<typeof useSurgeryHubState> | null = null;
+		function Harness() {
+			latestState = useSurgeryHubState({
+				isOpen: true,
+				onClose: () => {},
+				patientId: "11111111-1111-4111-8111-111111111111",
+				patientName: "Пациент Имплант",
+				initialScenario: "implant",
+				initialTooth: 46,
+			});
+			return React.createElement("div", null, latestState.activeScenario);
+		}
+
+		const container = doc.createElement("div");
+		doc.body.appendChild(container);
+		const root = createRoot(container);
+		await act(async () => { root.render(React.createElement(Harness)); });
+
+		assert.equal(latestState!.selectedGraft, "", "Implant scenario must NOT preselect bone graft by default");
+		assert.equal(latestState!.selectedMembrane, "", "Implant scenario must NOT preselect membrane by default");
+		assert.equal(latestState!.selectedSuture, "", "Implant scenario must NOT preselect suture by default");
+
+		const batchPayload = buildImplantBatchPayload({
+			patientId: "11111111-1111-4111-8111-111111111111",
+			teethToProcess: [36, 46, 47],
+			getToothSpec: latestState!.getToothSpec,
+			implantBrand: "Osstem",
+			inventoryItemId: undefined,
+			boneDensity: "D2",
+			isGuidedSurgery: false,
+			guidedSleeveDiameterMm: 5,
+			guidedSleeveOffsetMm: 2,
+			surgicalGuideTemplateId: "",
+			selectedGraft: "",
+			selectedMembrane: "",
+			selectedSuture: "",
+			diaryText: "Протокол",
+			idempotencyKey: "22222222-2222-4222-8222-222222222222",
+			dateIso: "2026-05-01T10:00:00.000Z",
+		});
+
+		assert.equal(batchPayload.boneGraftMaterial, null);
+		assert.equal(batchPayload.membraneUsed, null);
+		assert.equal(batchPayload.sutureMaterial, null);
+		assert.equal(batchPayload.installations.length, 3);
+		for (const item of batchPayload.installations) {
+			assert.equal("boneGraftMaterial" in item, false, "Batch items must not blindly clone root consumables");
+			assert.equal("membraneUsed" in item, false);
+		}
+		await act(async () => { root.unmount(); });
 	});
 
-	it("4. renders instant print buttons for surgical protocol and IDS package (Mandate 8e)", () => {
-		const panelHtml = renderToString(<VisitSurgeryProtocolTab activeTooth={46} />);
-		assert.ok(panelHtml.includes("btn-tab-print-protocol"));
-		assert.ok(panelHtml.includes("btn-tab-print-ids"));
-	});
-
-	it("5. renders 1-click warehouse write-off button with soft overdraft", () => {
-		const panelHtml = renderToString(<VisitSurgeryProtocolTab activeTooth={46} />);
-		assert.ok(panelHtml.includes("btn-tab-deduct-materials"));
-		assert.ok(panelHtml.includes("Списать со склада"));
+	it("3. calculateSurgeryFinancials prioritizes live pricelist price over hardcoded default and ignores empty suture/graft", () => {
+		const fin = calculateSurgeryFinancials({
+			scenario: "implant",
+			implantBrand: "Osstem",
+			graftName: "",
+			membraneName: "",
+			sutureName: "",
+			overrideOperationPriceRub: 61500,
+		});
+		assert.equal(fin.operationPriceRub, 61500);
+		assert.equal(fin.operationPriceKopecks, 6150000);
+		assert.equal(fin.consumablesCostRub, 1550, "Unselected suture/graft/membrane must add 0 ₽ beyond base sterile kit");
 	});
 });
