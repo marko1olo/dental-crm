@@ -31,6 +31,26 @@ export function getDefaultQuestProgress(): QuestProgressState {
 	};
 }
 
+function isQuestTrackId(value: unknown): value is QuestTrackId {
+	return value === "solo_doctor" || value === "reception_admin" || value === "imaging_diagnostics";
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseTrackProgressEntry(raw: unknown): QuestTrackProgress {
+	if (!isPlainObject(raw)) {
+		return { completed: false, completedStepIds: [] };
+	}
+	return {
+		completed: Boolean(raw.completed),
+		completedStepIds: Array.isArray(raw.completedStepIds)
+			? raw.completedStepIds.filter((id): id is string => typeof id === "string")
+			: [],
+	};
+}
+
 export function loadQuestProgress(): QuestProgressState {
 	if (typeof window === "undefined" || !window.localStorage) {
 		return getDefaultQuestProgress();
@@ -58,20 +78,27 @@ export function loadQuestProgress(): QuestProgressState {
 			return initial;
 		}
 
-		const parsed = JSON.parse(raw) as Partial<QuestProgressState>;
+		const parsed: unknown = JSON.parse(raw);
+		if (!isPlainObject(parsed)) {
+			return getDefaultQuestProgress();
+		}
+		const tracksRaw = isPlainObject(parsed.tracksProgress) ? parsed.tracksProgress : {};
 		return {
-			activeTrackId: parsed.activeTrackId || "solo_doctor",
+			activeTrackId: isQuestTrackId(parsed.activeTrackId) ? parsed.activeTrackId : "solo_doctor",
 			currentStepIndex: typeof parsed.currentStepIndex === "number" ? parsed.currentStepIndex : 0,
-			completedStepIds: Array.isArray(parsed.completedStepIds) ? parsed.completedStepIds : [],
+			completedStepIds: Array.isArray(parsed.completedStepIds)
+				? parsed.completedStepIds.filter((id): id is string => typeof id === "string")
+				: [],
 			isTourActive: Boolean(parsed.isTourActive),
 			isDismissedPermanently: Boolean(parsed.isDismissedPermanently || legacyDismissed),
-			tracksProgress: parsed.tracksProgress || {
-				solo_doctor: { completed: false, completedStepIds: [] },
-				reception_admin: { completed: false, completedStepIds: [] },
-				imaging_diagnostics: { completed: false, completedStepIds: [] },
+			tracksProgress: {
+				solo_doctor: parseTrackProgressEntry(tracksRaw.solo_doctor),
+				reception_admin: parseTrackProgressEntry(tracksRaw.reception_admin),
+				imaging_diagnostics: parseTrackProgressEntry(tracksRaw.imaging_diagnostics),
 			},
 		};
-	} catch {
+	} catch (err: unknown) {
+		clientLogger.warn("DENTE Quest Tour Engine: failed to load quest progress", err);
 		return getDefaultQuestProgress();
 	}
 }
@@ -86,11 +113,11 @@ export function saveQuestProgress(state: QuestProgressState): void {
 			window.localStorage.removeItem(DENTE_TOUR_STORAGE_KEY);
 		}
 		if (typeof window.dispatchEvent === "function") {
-			const evt =
-				typeof CustomEvent === "function"
-					? new CustomEvent("dente:quest-progress-updated", { detail: state })
-					: ({ type: "dente:quest-progress-updated", detail: state } as unknown as Event);
-			window.dispatchEvent(evt);
+			if (typeof CustomEvent === "function") {
+				window.dispatchEvent(new CustomEvent("dente:quest-progress-updated", { detail: state }));
+			} else if (typeof Event === "function") {
+				window.dispatchEvent(Object.assign(new Event("dente:quest-progress-updated"), { detail: state }));
+			}
 		}
 	} catch (e) {
 		clientLogger.warn("DENTE Quest Tour Engine: failed to persist quest progress", e);
@@ -113,8 +140,11 @@ export function startQuestTrack(
 ): QuestProgressState {
 	const current = loadQuestProgress();
 	const track =
-		CLINICAL_QUEST_TRACKS.find((t) => t.id === trackId) ||
-		CLINICAL_QUEST_TRACKS[0]!;
+		CLINICAL_QUEST_TRACKS.find((t) => t.id === trackId) ??
+		CLINICAL_QUEST_TRACKS[0];
+	if (!track) {
+		return current;
+	}
 
 	let nextStepIndex = 0;
 	if (!options.reset) {
@@ -145,8 +175,11 @@ export function startQuestTrack(
 
 export function advanceQuestStep(currentProgress: QuestProgressState): QuestProgressState {
 	const track =
-		CLINICAL_QUEST_TRACKS.find((t) => t.id === currentProgress.activeTrackId) ||
-		CLINICAL_QUEST_TRACKS[0]!;
+		CLINICAL_QUEST_TRACKS.find((t) => t.id === currentProgress.activeTrackId) ??
+		CLINICAL_QUEST_TRACKS[0];
+	if (!track) {
+		return currentProgress;
+	}
 
 	const step = track.steps[currentProgress.currentStepIndex];
 	const stepId = step ? step.id : "";
@@ -188,8 +221,11 @@ export function advanceQuestStep(currentProgress: QuestProgressState): QuestProg
 
 export function skipQuestStep(currentProgress: QuestProgressState): QuestProgressState {
 	const track =
-		CLINICAL_QUEST_TRACKS.find((t) => t.id === currentProgress.activeTrackId) ||
-		CLINICAL_QUEST_TRACKS[0]!;
+		CLINICAL_QUEST_TRACKS.find((t) => t.id === currentProgress.activeTrackId) ??
+		CLINICAL_QUEST_TRACKS[0];
+	if (!track) {
+		return currentProgress;
+	}
 
 	const isLastStep = currentProgress.currentStepIndex >= track.steps.length - 1;
 	const nextIndex = isLastStep ? currentProgress.currentStepIndex : currentProgress.currentStepIndex + 1;
@@ -218,7 +254,8 @@ export function dismissQuestTourPermanently(): QuestProgressState {
 export function getNextTrackId(currentTrackId: QuestTrackId): QuestTrackId | null {
 	const currentIndex = CLINICAL_QUEST_TRACKS.findIndex((t) => t.id === currentTrackId);
 	if (currentIndex >= 0 && currentIndex < CLINICAL_QUEST_TRACKS.length - 1) {
-		return CLINICAL_QUEST_TRACKS[currentIndex + 1]!.id;
+		const nextTrack = CLINICAL_QUEST_TRACKS[currentIndex + 1];
+		return nextTrack ? nextTrack.id : null;
 	}
 	return null;
 }

@@ -4,21 +4,32 @@ import type { ToothComplaint } from "./TelegramInteractiveToothPicker";
 import type { FamilyMember } from "./TelegramMiniAppTopHeader";
 import type { TelegramTab } from "./TelegramMiniAppView";
 
-interface TelegramWebAppWindow {
-	Telegram?: {
-		WebApp?: {
-			ready?: () => void;
-			expand?: () => void;
-			initDataUnsafe?: {
-				user?: {
-					first_name?: string;
-				};
-			};
-			HapticFeedback?: {
-				impactOccurred?: (style: "light" | "medium" | "heavy") => void;
-			};
-		};
-	};
+const VALID_TELEGRAM_TABS: ReadonlySet<string> = new Set([
+	"teeth",
+	"odontogram",
+	"booking",
+	"emr",
+	"cabinet",
+	"appointments",
+	"imaging",
+	"tax",
+	"finance",
+]);
+
+function isTelegramTab(value: string | null): value is TelegramTab {
+	return value !== null && VALID_TELEGRAM_TABS.has(value);
+}
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
+}
+
+function getTelegramWebApp(): Record<string, unknown> | undefined {
+	if (typeof window === "undefined") return undefined;
+	const tg: unknown = Reflect.get(window, "Telegram");
+	if (!isObjectRecord(tg)) return undefined;
+	const webApp: unknown = tg.WebApp;
+	return isObjectRecord(webApp) ? webApp : undefined;
 }
 
 export interface UseTelegramMiniAppStateOptions {
@@ -37,7 +48,8 @@ export function useTelegramMiniAppState(initialTab?: TelegramTab, options?: UseT
 		return new URLSearchParams(combined);
 	}, []);
 
-	const urlTab = (searchParams?.get("tab") as TelegramTab | null) ?? null;
+	const rawTabParam = searchParams?.get("tab") ?? null;
+	const urlTab: TelegramTab | null = isTelegramTab(rawTabParam) ? rawTabParam : null;
 	const isTaxSheetRequested = searchParams?.get("taxSheet") === "1" || searchParams?.get("taxSheet") === "true";
 	const [activeTab, setActiveTab] = useState<TelegramTab>(urlTab ?? initialTab ?? "cabinet");
 
@@ -50,17 +62,29 @@ export function useTelegramMiniAppState(initialTab?: TelegramTab, options?: UseT
 	const [npsSubmitted, setNpsSubmitted] = useState<boolean>(false);
 
 	useEffect(() => {
-		const tg = (window as unknown as TelegramWebAppWindow).Telegram?.WebApp;
+		const tg = getTelegramWebApp();
 		if (tg) {
-			tg.ready?.();
-			tg.expand?.();
-			if (tg.initDataUnsafe?.user?.first_name) setPatientName(tg.initDataUnsafe.user.first_name);
+			if (typeof tg.ready === "function") {
+				Reflect.apply(tg.ready, tg, []);
+			}
+			if (typeof tg.expand === "function") {
+				Reflect.apply(tg.expand, tg, []);
+			}
+			if (isObjectRecord(tg.initDataUnsafe) && isObjectRecord(tg.initDataUnsafe.user)) {
+				const firstName = tg.initDataUnsafe.user.first_name;
+				if (typeof firstName === "string" && firstName.length > 0) {
+					setPatientName(firstName);
+				}
+			}
 		}
 	}, []);
 
 	const triggerHaptic = useCallback((style: "light" | "medium" | "heavy" = "light") => {
 		try {
-			(window as unknown as TelegramWebAppWindow).Telegram?.WebApp?.HapticFeedback?.impactOccurred?.(style);
+			const tg = getTelegramWebApp();
+			if (tg && isObjectRecord(tg.HapticFeedback) && typeof tg.HapticFeedback.impactOccurred === "function") {
+				Reflect.apply(tg.HapticFeedback.impactOccurred, tg.HapticFeedback, [style]);
+			}
 		} catch (err) {
 			clientLogger.warn("[useTelegramMiniAppState] Haptic feedback unavailable:", err);
 		}

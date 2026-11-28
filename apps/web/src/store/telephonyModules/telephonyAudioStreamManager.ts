@@ -5,6 +5,12 @@ import type {
 	WebRtcAudioTrackState,
 } from "./telephonyClinicalTypes";
 
+declare global {
+	interface Window {
+		webkitAudioContext?: typeof AudioContext;
+	}
+}
+
 /**
  * WebRTC Audio Stream Manager for Clinical Telephony SIP/WebRTC Audio.
  * Handles microphone capture with DSP, RTCPeerConnection negotiation,
@@ -145,36 +151,41 @@ export class TelephonyAudioStreamManager {
 	public ensureAudioContext(): AudioContext | null {
 		if (typeof window === "undefined") return null;
 		if (!this.audioContext) {
-			const AudioContextClass =
-				window.AudioContext ||
-				(window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+			const AudioContextClass = window.AudioContext || window.webkitAudioContext;
 			if (AudioContextClass) {
 				try {
-					this.audioContext = new AudioContextClass();
-					this.gainNode = this.audioContext.createGain();
-					this.gainNode.gain.value = this.volume;
+					const ctx = new AudioContextClass();
+					this.audioContext = ctx;
+					const gain = ctx.createGain();
+					gain.gain.value = this.volume;
+					this.gainNode = gain;
 
 					// Output analyser for remote audio stream playback metering
-					this.outputAnalyser = this.audioContext.createAnalyser();
-					this.outputAnalyser.fftSize = 64;
-					this.outputAnalyser.smoothingTimeConstant = 0.8;
+					const outAnalyser = ctx.createAnalyser();
+					outAnalyser.fftSize = 64;
+					outAnalyser.smoothingTimeConstant = 0.8;
+					this.outputAnalyser = outAnalyser;
 
 					// Input analyser for local microphone audio level metering
-					this.inputAnalyser = this.audioContext.createAnalyser();
-					this.inputAnalyser.fftSize = 64;
-					this.inputAnalyser.smoothingTimeConstant = 0.8;
+					const inAnalyser = ctx.createAnalyser();
+					inAnalyser.fftSize = 64;
+					inAnalyser.smoothingTimeConstant = 0.8;
+					this.inputAnalyser = inAnalyser;
 
-					this.gainNode.connect(this.outputAnalyser);
-					this.outputAnalyser.connect(this.audioContext.destination);
+					gain.connect(outAnalyser);
+					outAnalyser.connect(ctx.destination);
 				} catch (err) {
 					logger.warn("[TelephonyAudioStreamManager] Failed to init AudioContext:", err);
 				}
 			}
 		}
-		if (this.audioContext && this.audioContext.state === "suspended") {
-			this.audioContext.resume().catch(() => {});
+		const activeCtx = this.audioContext;
+		if (activeCtx && activeCtx.state === "suspended") {
+			activeCtx.resume().catch((err: unknown) => {
+				logger.debug("[TelephonyAudioStreamManager] AudioContext resume skipped:", err);
+			});
 		}
-		return this.audioContext;
+		return activeCtx;
 	}
 
 	/**
@@ -215,7 +226,11 @@ export class TelephonyAudioStreamManager {
 			this.ensureAudioContext();
 			if (this.audioContext && this.inputAnalyser) {
 				if (this.inputSourceNode) {
-					try { this.inputSourceNode.disconnect(); } catch {}
+					try {
+						this.inputSourceNode.disconnect();
+					} catch (disconnectErr: unknown) {
+						logger.debug("[TelephonyAudioStreamManager] inputSourceNode disconnect skipped:", disconnectErr);
+					}
 				}
 				try {
 					this.inputSourceNode = this.audioContext.createMediaStreamSource(stream);
@@ -265,7 +280,11 @@ export class TelephonyAudioStreamManager {
 			this.localStream = null;
 		}
 		if (this.inputSourceNode) {
-			try { this.inputSourceNode.disconnect(); } catch {}
+			try {
+				this.inputSourceNode.disconnect();
+			} catch (err: unknown) {
+				logger.debug("[TelephonyAudioStreamManager] releaseLocalAudioStream disconnect skipped:", err);
+			}
 			this.inputSourceNode = null;
 		}
 		this.releaseAudioLock();
@@ -459,7 +478,11 @@ export class TelephonyAudioStreamManager {
 
 		if (this.audioContext && this.gainNode && this.outputAnalyser) {
 			if (this.remoteSourceNode) {
-				try { this.remoteSourceNode.disconnect(); } catch {}
+				try {
+					this.remoteSourceNode.disconnect();
+				} catch (err: unknown) {
+					logger.debug("[TelephonyAudioStreamManager] remoteSourceNode disconnect skipped:", err);
+				}
 			}
 			try {
 				this.remoteSourceNode = this.audioContext.createMediaStreamSource(stream);
@@ -481,7 +504,9 @@ export class TelephonyAudioStreamManager {
 		if (this.remoteAudioElement) {
 			this.remoteAudioElement.srcObject = stream;
 			this.remoteAudioElement.volume = this.volume;
-			this.remoteAudioElement.play().catch(() => {});
+			this.remoteAudioElement.play().catch((err: unknown) => {
+				logger.debug("[TelephonyAudioStreamManager] remoteAudioElement autoplay skipped:", err);
+			});
 			return this.remoteAudioElement;
 		}
 
@@ -497,10 +522,16 @@ export class TelephonyAudioStreamManager {
 			try {
 				this.remoteAudioElement.pause();
 				this.remoteAudioElement.srcObject = null;
-			} catch {}
+			} catch (err: unknown) {
+				logger.debug("[TelephonyAudioStreamManager] remoteAudioElement pause skipped:", err);
+			}
 		}
 		if (this.remoteSourceNode) {
-			try { this.remoteSourceNode.disconnect(); } catch {}
+			try {
+				this.remoteSourceNode.disconnect();
+			} catch (err: unknown) {
+				logger.debug("[TelephonyAudioStreamManager] detachRemoteAudio disconnect skipped:", err);
+			}
 			this.remoteSourceNode = null;
 		}
 		if (this.remoteStream) {
@@ -528,7 +559,8 @@ export class TelephonyAudioStreamManager {
 				}
 				const avg = sum / (bufferLength * 255);
 				return Math.min(1.0, Number(avg.toFixed(2)));
-			} catch {
+			} catch (err: unknown) {
+				logger.debug("[TelephonyAudioStreamManager] calculateInputLevel skipped:", err);
 				return 0;
 			}
 		}
@@ -552,7 +584,8 @@ export class TelephonyAudioStreamManager {
 				}
 				const avg = (sum / (bufferLength * 255)) * this.volume;
 				return Math.min(1.0, Number(avg.toFixed(2)));
-			} catch {
+			} catch (err: unknown) {
+				logger.debug("[TelephonyAudioStreamManager] calculateOutputLevel skipped:", err);
 				return 0;
 			}
 		}
@@ -579,7 +612,9 @@ export class TelephonyAudioStreamManager {
 					bars.push(Math.min(1.0, Number(normalized.toFixed(2))));
 				}
 				return bars;
-			} catch {}
+			} catch (err: unknown) {
+				logger.debug("[TelephonyAudioStreamManager] getAudioWaveform skipped:", err);
+			}
 		}
 
 		// When no audio stream is active, return pure silence (zeros) without artificial synthetic sine waves
@@ -598,17 +633,27 @@ export class TelephonyAudioStreamManager {
 				let roundTripTimeMs: number | undefined;
 				let codecName: string | undefined;
 
-				report.forEach((stat: Record<string, unknown>) => {
-					if (stat.type === "inbound-rtp" && stat.kind === "audio") {
-						if (typeof stat.jitter === "number") jitterMs = Math.round(stat.jitter * 1000);
-						if (typeof stat.packetsLost === "number") packetsLost = stat.packetsLost as number;
-						if (typeof stat.roundTripTime === "number") roundTripTimeMs = Math.round(stat.roundTripTime * 1000);
-					} else if (stat.type === "candidate-pair" && stat.state === "succeeded") {
-						if (typeof stat.currentRoundTripTime === "number") {
-							roundTripTimeMs = Math.round((stat.currentRoundTripTime as number) * 1000);
+				report.forEach((stat: unknown) => {
+					if (typeof stat !== "object" || stat === null) return;
+					const statType = Reflect.get(stat, "type");
+					const statKind = Reflect.get(stat, "kind");
+					if (statType === "inbound-rtp" && statKind === "audio") {
+						const jitter = Reflect.get(stat, "jitter");
+						const lost = Reflect.get(stat, "packetsLost");
+						const rtt = Reflect.get(stat, "roundTripTime");
+						if (typeof jitter === "number") jitterMs = Math.round(jitter * 1000);
+						if (typeof lost === "number") packetsLost = lost;
+						if (typeof rtt === "number") roundTripTimeMs = Math.round(rtt * 1000);
+					} else if (statType === "candidate-pair" && Reflect.get(stat, "state") === "succeeded") {
+						const curRtt = Reflect.get(stat, "currentRoundTripTime");
+						if (typeof curRtt === "number") {
+							roundTripTimeMs = Math.round(curRtt * 1000);
 						}
-					} else if (stat.type === "codec" && !codecName) {
-						codecName = (stat.mimeType as string) || (stat.codec as string);
+					} else if (statType === "codec" && !codecName) {
+						const mimeType = Reflect.get(stat, "mimeType");
+						const codec = Reflect.get(stat, "codec");
+						if (typeof mimeType === "string" && mimeType) codecName = mimeType;
+						else if (typeof codec === "string" && codec) codecName = codec;
 					}
 				});
 
@@ -656,28 +701,50 @@ export class TelephonyAudioStreamManager {
 				this.peerConnection.ontrack = null;
 				this.peerConnection.onconnectionstatechange = null;
 				this.peerConnection.close();
-			} catch {}
+			} catch (err: unknown) {
+				logger.debug("[TelephonyAudioStreamManager] peerConnection close skipped:", err);
+			}
 			this.peerConnection = null;
 		}
 
 		if (this.inputSourceNode) {
-			try { this.inputSourceNode.disconnect(); } catch {}
+			try {
+				this.inputSourceNode.disconnect();
+			} catch (err: unknown) {
+				logger.debug("[TelephonyAudioStreamManager] inputSourceNode dispose skipped:", err);
+			}
 			this.inputSourceNode = null;
 		}
 		if (this.remoteSourceNode) {
-			try { this.remoteSourceNode.disconnect(); } catch {}
+			try {
+				this.remoteSourceNode.disconnect();
+			} catch (err: unknown) {
+				logger.debug("[TelephonyAudioStreamManager] remoteSourceNode dispose skipped:", err);
+			}
 			this.remoteSourceNode = null;
 		}
 		if (this.inputAnalyser) {
-			try { this.inputAnalyser.disconnect(); } catch {}
+			try {
+				this.inputAnalyser.disconnect();
+			} catch (err: unknown) {
+				logger.debug("[TelephonyAudioStreamManager] inputAnalyser dispose skipped:", err);
+			}
 			this.inputAnalyser = null;
 		}
 		if (this.outputAnalyser) {
-			try { this.outputAnalyser.disconnect(); } catch {}
+			try {
+				this.outputAnalyser.disconnect();
+			} catch (err: unknown) {
+				logger.debug("[TelephonyAudioStreamManager] outputAnalyser dispose skipped:", err);
+			}
 			this.outputAnalyser = null;
 		}
 		if (this.gainNode) {
-			try { this.gainNode.disconnect(); } catch {}
+			try {
+				this.gainNode.disconnect();
+			} catch (err: unknown) {
+				logger.debug("[TelephonyAudioStreamManager] gainNode dispose skipped:", err);
+			}
 			this.gainNode = null;
 		}
 
@@ -691,12 +758,16 @@ export class TelephonyAudioStreamManager {
 		if (this.remoteAudioElement && this.remoteAudioElement.parentElement) {
 			try {
 				this.remoteAudioElement.parentElement.removeChild(this.remoteAudioElement);
-			} catch {}
+			} catch (err: unknown) {
+				logger.debug("[TelephonyAudioStreamManager] remoteAudioElement removal skipped:", err);
+			}
 			this.remoteAudioElement = null;
 		}
 
 		if (this.audioContext && this.audioContext.state !== "closed") {
-			this.audioContext.close().catch(() => {});
+			this.audioContext.close().catch((err: unknown) => {
+				logger.debug("[TelephonyAudioStreamManager] audioContext close skipped:", err);
+			});
 			this.audioContext = null;
 		}
 
@@ -704,7 +775,9 @@ export class TelephonyAudioStreamManager {
 		if (this.audioLockChannel) {
 			try {
 				this.audioLockChannel.close();
-			} catch {}
+			} catch (err: unknown) {
+				logger.debug("[TelephonyAudioStreamManager] audioLockChannel close skipped:", err);
+			}
 			this.audioLockChannel = null;
 		}
 		if (typeof window !== "undefined" && typeof window.removeEventListener === "function") {

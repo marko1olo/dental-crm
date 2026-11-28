@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { z } from "zod";
 import { generateUuidV7 } from "@dental/shared";
 import { isDemoShowcaseMode } from "../lib/demoMode";
 import { getDenteAuthHeaders } from "../lib/denteRequestHeaders";
@@ -126,6 +127,112 @@ const API_URL =
 		? rawMetaEnv.VITE_API_URL
 		: "/api";
 
+const leadStatusSchema = z.enum([
+	"new",
+	"contacted",
+	"consult_booked",
+	"showed_up",
+	"no_answer",
+	"trash",
+	"converted",
+]);
+
+const convertLeadResultSchema = z.object({
+	patient: z.unknown(),
+	appointment: z.unknown(),
+	hasAppointmentDates: z.boolean().optional(),
+});
+
+const createPatientFromLeadResultSchema = z.object({
+	success: z.boolean(),
+	patient: z.unknown(),
+	alreadyExisted: z.boolean().optional(),
+	message: z.string().optional(),
+});
+
+function unwrapApiData(raw: unknown): unknown {
+	return typeof raw === "object" && raw !== null && "data" in raw
+		? Reflect.get(raw, "data")
+		: raw;
+}
+
+function isLeadRecord(value: unknown): value is Lead {
+	if (typeof value !== "object" || value === null) return false;
+	const id = Reflect.get(value, "id");
+	const name = Reflect.get(value, "name");
+	const status = Reflect.get(value, "status");
+	return (
+		typeof id === "string" &&
+		typeof name === "string" &&
+		leadStatusSchema.safeParse(status).success
+	);
+}
+
+function extractPartialLeadPatch(value: unknown): Partial<Lead> {
+	if (typeof value !== "object" || value === null) return {};
+	const patch: Partial<Lead> = {};
+	const name = Reflect.get(value, "name");
+	if (typeof name === "string") patch.name = name;
+	const status = Reflect.get(value, "status");
+	const parsedStatus = leadStatusSchema.safeParse(status);
+	if (parsedStatus.success) patch.status = parsedStatus.data;
+	const phone = Reflect.get(value, "phone");
+	if (typeof phone === "string") patch.phone = phone;
+	const source = Reflect.get(value, "source");
+	if (typeof source === "string") patch.source = source;
+	const notes = Reflect.get(value, "notes");
+	if (typeof notes === "string" || notes === null) patch.notes = notes;
+	const expectedRevenue = Reflect.get(value, "expectedRevenue");
+	if (typeof expectedRevenue === "string") patch.expectedRevenue = expectedRevenue;
+	const assignedDoctorId = Reflect.get(value, "assignedDoctorId");
+	if (typeof assignedDoctorId === "string" || assignedDoctorId === null) {
+		patch.assignedDoctorId = assignedDoctorId;
+	}
+	const dropReason = Reflect.get(value, "dropReason");
+	if (typeof dropReason === "string" || dropReason === null) patch.dropReason = dropReason;
+	const priority = Reflect.get(value, "priority");
+	if (priority === "urgent" || priority === "high" || priority === "normal") {
+		patch.priority = priority;
+	}
+	return patch;
+}
+
+export function parseConvertLeadResult(raw: unknown): ConvertLeadResult {
+	const data = unwrapApiData(raw);
+	const parsed = convertLeadResultSchema.safeParse(data);
+	if (!parsed.success) {
+		throw new Error("Некорректный ответ сервера при записи лида на приём.");
+	}
+	return {
+		patient: parsed.data.patient,
+		appointment: parsed.data.appointment,
+		...(parsed.data.hasAppointmentDates !== undefined
+			? { hasAppointmentDates: parsed.data.hasAppointmentDates }
+			: {}),
+	};
+}
+
+export function parseCreatePatientFromLeadResult(raw: unknown): {
+	success: boolean;
+	patient: unknown;
+	alreadyExisted?: boolean;
+	message?: string;
+} {
+	const data = unwrapApiData(raw);
+	const parsed = createPatientFromLeadResultSchema.safeParse(data);
+	if (!parsed.success) {
+		throw new Error("Некорректный ответ сервера при создании карты пациента из лида.");
+	}
+	return {
+		success: parsed.data.success,
+		patient: parsed.data.patient,
+		...(parsed.data.alreadyExisted !== undefined
+			? { alreadyExisted: parsed.data.alreadyExisted }
+			: {}),
+		...(parsed.data.message !== undefined ? { message: parsed.data.message } : {}),
+	};
+}
+
 /**
  * MESSAGE-FIRST: prefer Cyrillic `payload.message` from API ValidationError
  * over hardcoded English ("Failed to …"). Same rule as convert's
@@ -139,14 +246,18 @@ async function leadsFailureMessage(
 	response: Response,
 	fallbackRu: string,
 ): Promise<string> {
-	let payload: { error?: unknown; message?: unknown } = {};
+	let serverMessage = "";
 	try {
-		payload = (await response.json()) as typeof payload;
-	} catch {
-		// body unreadable — status fallback below
+		const payload: unknown = await response.json();
+		if (typeof payload === "object" && payload !== null) {
+			const msg = Reflect.get(payload, "message");
+			if (typeof msg === "string") {
+				serverMessage = msg.trim();
+			}
+		}
+	} catch (err: unknown) {
+		logger.debug("[leadsStore] Failed to parse error response JSON:", err);
 	}
-	const serverMessage =
-		typeof payload.message === "string" ? payload.message.trim() : "";
 	if (
 		serverMessage &&
 		serverMessage !== "Internal Server Error" &&
@@ -189,20 +300,20 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 					),
 				);
 			}
-			const raw = await res.json();
-			const data = raw && typeof raw === "object" && "data" in raw ? (raw as { data: unknown }).data : raw;
-			const parsed = Array.isArray(data) ? (data as Lead[]) : [];
+			const raw: unknown = await res.json();
+			const data = unwrapApiData(raw);
+			const parsed = Array.isArray(data) ? data.filter(isLeadRecord) : [];
 			set({
 				leads:
 					parsed.length === 0 && isDemoShowcaseMode()
-						? (getDemoShowcaseLeads() as Lead[])
+						? getDemoShowcaseLeads()
 						: parsed,
 				isLoading: false,
 			});
 		} catch (e: unknown) {
 			if (isDemoShowcaseMode()) {
 				set({
-					leads: getDemoShowcaseLeads() as Lead[],
+					leads: getDemoShowcaseLeads(),
 					error: null,
 					isLoading: false,
 				});
@@ -311,14 +422,13 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 				);
 			}
 
-			const raw = await res.json();
-			const data = (
-				raw && typeof raw === "object" && "data" in raw
-					? (raw as { data: unknown }).data
-					: raw
-			) as { leads?: Lead[] };
-			if (data.leads && Array.isArray(data.leads)) {
-				const updatedMap = new Map(data.leads.map((l) => [l.id, l]));
+			const raw: unknown = await res.json();
+			const data = unwrapApiData(raw);
+			const rawLeads =
+				typeof data === "object" && data !== null ? Reflect.get(data, "leads") : undefined;
+			if (Array.isArray(rawLeads)) {
+				const validLeads = rawLeads.filter(isLeadRecord);
+				const updatedMap = new Map(validLeads.map((l) => [l.id, l]));
 				set({
 					leads: get().leads.map((l) => updatedMap.get(l.id) ?? l),
 				});
@@ -350,13 +460,12 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 					),
 				);
 			}
-			const raw = await res.json();
-			const lead = (
-				raw && typeof raw === "object" && "data" in raw
-					? (raw as { data: Lead }).data
-					: raw
-			) as Lead;
-			set({ leads: [...get().leads, lead] });
+			const raw: unknown = await res.json();
+			const leadCandidate = unwrapApiData(raw);
+			if (!isLeadRecord(leadCandidate)) {
+				throw new Error("Некорректный ответ сервера при создании лида.");
+			}
+			set({ leads: [...get().leads, leadCandidate] });
 		} catch (e: unknown) {
 			logger.error("addLead Error:", e);
 			if (e instanceof Error) throw e;
@@ -381,12 +490,11 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 					),
 				);
 			}
-			const raw = await res.json();
-			const updatedLead = (
-				raw && typeof raw === "object" && "data" in raw
-					? (raw as { data: Partial<Lead> }).data
-					: raw
-			) as Partial<Lead>;
+			const raw: unknown = await res.json();
+			const updatedData = unwrapApiData(raw);
+			const updatedLead = isLeadRecord(updatedData)
+				? updatedData
+				: extractPartialLeadPatch(updatedData);
 			set({
 				leads: get().leads.map((l) =>
 					l.id === id ? { ...l, ...updatedLead } : l,
@@ -416,10 +524,10 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 					),
 				);
 			}
-			const json = await res.json();
-			const result = ((json?.data ?? json) as unknown) as ConvertLeadResult;
+			const json: unknown = await res.json();
+			const result = parseConvertLeadResult(json);
 			const nextStatus: LeadStatus =
-				(result?.hasAppointmentDates ?? Boolean(payload.appointmentStart))
+				(result.hasAppointmentDates ?? Boolean(payload.appointmentStart))
 					? "consult_booked"
 					: "converted";
 			set({
@@ -483,12 +591,8 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 					),
 				);
 			}
-			const raw = await res.json();
-			const data = (
-				raw && typeof raw === "object" && "data" in raw
-					? (raw as { data: unknown }).data
-					: raw
-			) as Awaited<ReturnType<LeadsState["createPatientFromLead"]>>;
+			const raw: unknown = await res.json();
+			const data = parseCreatePatientFromLeadResult(raw);
 			set({
 				leads: get().leads.map((l) =>
 					l.id === id ? { ...l, status: "converted" } : l,

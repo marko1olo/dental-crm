@@ -31,8 +31,8 @@ export interface DocumentPackageDefinition {
 	category: "intake" | "treatment" | "finance" | "referral";
 }
 
-export const DOCUMENT_PACKAGES: Record<
-	DocumentPackageId,
+const BASE_DOCUMENT_PACKAGES: Record<
+	Exclude<DocumentPackageId, "hospital">,
 	DocumentPackageDefinition
 > = {
 	primary: {
@@ -258,12 +258,23 @@ export const DOCUMENT_PACKAGES: Record<
 			},
 		],
 	},
-} as unknown as Record<DocumentPackageId, DocumentPackageDefinition>;
+};
+
+export const DOCUMENT_PACKAGES: Record<
+	DocumentPackageId,
+	DocumentPackageDefinition
+> = {
+	...BASE_DOCUMENT_PACKAGES,
+	hospital: {
+		...BASE_DOCUMENT_PACKAGES.referral,
+		id: "hospital",
+	},
+};
 
 Object.defineProperty(DOCUMENT_PACKAGES, "hospital", {
 	get() {
 		return {
-			...this.referral,
+			...BASE_DOCUMENT_PACKAGES.referral,
 			id: "hospital",
 		};
 	},

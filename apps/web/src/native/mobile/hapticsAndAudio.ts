@@ -93,10 +93,15 @@ export function setClinicalAudioMuted(muted: boolean): void {
 	safeLocalStorageSetItem(MUTE_STORAGE_KEY, String(muted));
 }
 
+declare global {
+	interface Window {
+		webkitAudioContext?: typeof AudioContext;
+	}
+}
+
 function getOrCreateAudioContext(): AudioContext | null {
 	if (typeof window === "undefined") return null;
-	const AudioContextClass =
-		window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+	const AudioContextClass = window.AudioContext || window.webkitAudioContext;
 	if (!AudioContextClass) return null;
 
 	if (!audioContextInstance || audioContextInstance.state === "closed") {
@@ -107,12 +112,14 @@ function getOrCreateAudioContext(): AudioContext | null {
 			return null;
 		}
 	}
-	if (audioContextInstance.state === "suspended") {
-		audioContextInstance.resume().catch((err: unknown) => {
+	const activeCtx = audioContextInstance;
+	if (!activeCtx) return null;
+	if (activeCtx.state === "suspended") {
+		activeCtx.resume().catch((err: unknown) => {
 			logger.warn("[mobileBridge] audioContextInstance.resume failed:", err);
 		});
 	}
-	return audioContextInstance;
+	return activeCtx;
 }
 
 /**

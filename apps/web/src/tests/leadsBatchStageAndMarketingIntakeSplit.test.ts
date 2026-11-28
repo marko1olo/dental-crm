@@ -1,141 +1,105 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
+import { afterEach, describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { normalizeMarketingChannel } from "../components/leads/leadsFunnelTypes";
+import { MarketingFunnelStagesChart } from "../pages/marketingDashboardModules/MarketingFunnelStagesChart";
+import { useLeadsStore, type Lead } from "../store/leadsStore";
 
 /**
- * RED TEAM INQUISITION SUITE:
- * 1. Leads Batch Stage Transactional Protocol (Zero 400 Bad Request / No Broken Field Name)
- * 2. Elimination of Hardcoded Intake Split Mocks (42% / 58% Purged)
- *
- * Mandate 8n (Clinical Ergonomics, Zero Dead-Ends)
- * Mandate 8d (Quiet Telemetry & Real Data Integrity)
+ * RED TEAM INQUISITION SUITE (6G — Real SUT Execution):
+ * 1. Leads Batch Stage Transactional Protocol (useLeadsStore.batchUpdateStage -> POST /api/leads/batch-stage with toStage & rollback)
+ * 2. Marketing Dashboard Intake Split (real computation + MarketingFunnelStagesChart rendering)
  */
 
-describe("Leads Batch Stage Invariants (LeadsKanbanView & useLeadsStore)", () => {
-	const kanbanSource = readFileSync(
-		join(
-			dirname(fileURLToPath(import.meta.url)),
-			"..",
-			"components",
-			"leads",
-			"LeadsKanbanView.tsx",
-		),
-		"utf8",
-	);
+describe("Leads Batch Stage Invariants (useLeadsStore real SUT)", () => {
+	const originalFetch = globalThis.fetch;
 
-	const storeSource = readFileSync(
-		join(
-			dirname(fileURLToPath(import.meta.url)),
-			"..",
-			"store",
-			"leadsStore.ts",
-		),
-		"utf8",
-	);
-
-	it("LeadsKanbanView uses batchUpdateStage from useLeadsStore instead of manual broken fetch", () => {
-		// Verify that batchUpdateStage is destructured from store
-		assert.match(
-			kanbanSource,
-			/\bbatchUpdateStage\b/,
-			"LeadsKanbanView must destructure batchUpdateStage from useLeadsStore",
-		);
-
-		// Verify that broken payload { leadIds, stage: nextStatus } is purged
-		assert.ok(
-			!/body:\s*JSON\.stringify\(\s*\{\s*leadIds,\s*stage:\s*nextStatus\s*\}\s*\)/.test(
-				kanbanSource,
-			),
-			"CRITICAL: Found broken field name 'stage' instead of 'toStage' in LeadsKanbanView!",
-		);
-
-		// Verify that manual fetch /api/leads/batch-stage is removed from component in favor of store
-		assert.ok(
-			!kanbanSource.includes('fetch("/api/leads/batch-stage"'),
-			"LeadsKanbanView should not make manual un-encapsulated fetch calls to batch-stage",
-		);
+	afterEach(() => {
+		globalThis.fetch = originalFetch;
+		useLeadsStore.setState({ leads: [], isLoading: false, error: null });
 	});
 
-	it("useLeadsStore implements batchUpdateStage with toStage payload", () => {
-		// Must declare in interface
-		assert.match(
-			storeSource,
-			/batchUpdateStage:\s*\(\s*leadIds:\s*string\[\],\s*toStage:\s*LeadStatus/m,
-			"LeadsState interface must define batchUpdateStage with leadIds and toStage",
+	it("batchUpdateStage sends POST /api/leads/batch-stage with toStage + Idempotency-Key and updates state", async () => {
+		const initialLeads: Lead[] = [
+			{ id: "lead-1", name: "Анна", status: "new" },
+			{ id: "lead-2", name: "Иван", status: "new" },
+			{ id: "lead-3", name: "Ольга", status: "contacted" },
+		];
+		useLeadsStore.setState({ leads: initialLeads });
+
+		let capturedUrl = "";
+		let capturedMethod = "";
+		let capturedIdempotencyKey = "";
+		let capturedBody: Record<string, unknown> = {};
+
+		globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+			capturedUrl = String(input);
+			capturedMethod = init?.method ?? "";
+			const headers = new Headers(init?.headers);
+			capturedIdempotencyKey = headers.get("Idempotency-Key") ?? "";
+			if (typeof init?.body === "string") {
+				capturedBody = JSON.parse(init.body) as Record<string, unknown>;
+			}
+			return new Response(
+				JSON.stringify({
+					data: {
+						leads: [
+							{ id: "lead-1", name: "Анна", status: "consult_booked" },
+							{ id: "lead-2", name: "Иван", status: "consult_booked" },
+						],
+					},
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		};
+
+		await useLeadsStore.getState().batchUpdateStage(["lead-1", "lead-2"], "consult_booked", {
+			reason: "Подтверждена консультация",
+			assignedDoctorId: "doc-42",
+		});
+
+		assert.ok(capturedUrl.endsWith("/leads/batch-stage"));
+		assert.equal(capturedMethod, "POST");
+		assert.ok(capturedIdempotencyKey.length >= 16, "Idempotency-Key header must be sent");
+		assert.deepEqual(capturedBody.leadIds, ["lead-1", "lead-2"]);
+		assert.equal(capturedBody.toStage, "consult_booked");
+		assert.equal("stage" in capturedBody, false, "Must send toStage, never broken 'stage'");
+		assert.equal(capturedBody.assignedDoctorId, "doc-42");
+
+		const updated = useLeadsStore.getState().leads;
+		assert.equal(updated.find((l) => l.id === "lead-1")?.status, "consult_booked");
+		assert.equal(updated.find((l) => l.id === "lead-2")?.status, "consult_booked");
+		assert.equal(updated.find((l) => l.id === "lead-3")?.status, "contacted");
+	});
+
+	it("batchUpdateStage rolls back optimistic update and throws Russian error on server failure", async () => {
+		const initialLeads: Lead[] = [
+			{ id: "lead-10", name: "Мария", status: "new" },
+		];
+		useLeadsStore.setState({ leads: initialLeads });
+
+		globalThis.fetch = async (): Promise<Response> =>
+			new Response(
+				JSON.stringify({ message: "Проверьте статус лида." }),
+				{ status: 400, headers: { "Content-Type": "application/json" } },
+			);
+
+		await assert.rejects(
+			() => useLeadsStore.getState().batchUpdateStage(["lead-10"], "converted"),
+			/Проверьте статус лида\./,
 		);
 
-		// Must send toStage in body
-		assert.match(
-			storeSource,
-			/body:\s*JSON\.stringify\(\s*\{[\s\S]*?\btoStage\b[\s\S]*?\}\s*\)/,
-			"useLeadsStore.batchUpdateStage must send toStage conforming to batchUpdateLeadStageSchema",
-		);
-
-		// Must update leads state optimistically
-		assert.match(
-			storeSource,
-			/status:\s*toStage/,
-			"useLeadsStore.batchUpdateStage must perform optimistic status update",
+		assert.equal(
+			useLeadsStore.getState().leads[0]?.status,
+			"new",
+			"Optimistic status must roll back on HTTP error",
 		);
 	});
 });
 
-describe("Marketing Dashboard Intake Split (Zero Mocks & Real Computation)", () => {
-	const dashboardSource = readFileSync(
-		join(
-			dirname(fileURLToPath(import.meta.url)),
-			"..",
-			"pages",
-			"MarketingDashboardView.tsx",
-		),
-		"utf8",
-	);
-	const chartSource = readFileSync(
-		join(
-			dirname(fileURLToPath(import.meta.url)),
-			"..",
-			"pages",
-			"marketingDashboardModules",
-			"MarketingFunnelStagesChart.tsx",
-		),
-		"utf8",
-	);
-
-	it("Purged hardcoded 42% and 58% simulation mocks from MarketingDashboardView and modules", () => {
-		// Must not contain hardcoded 42% or 58% strong tags
-		assert.ok(
-			!dashboardSource.includes("<strong>42%</strong>") &&
-				!chartSource.includes("<strong>42%</strong>"),
-			"Found hardcoded mock '42%' in MarketingDashboardView or chart!",
-		);
-		assert.ok(
-			!dashboardSource.includes("<strong>58%</strong>") &&
-				!chartSource.includes("<strong>58%</strong>"),
-			"Found hardcoded mock '58%' in MarketingDashboardView or chart!",
-		);
-
-		// Must pass and render dynamic intakeSplit values in chart component
-		assert.match(
-			dashboardSource,
-			/\bintakeSplit=\{intakeSplit\}/,
-			"MarketingDashboardView must pass intakeSplit to MarketingFunnelStagesChart",
-		);
-		assert.match(
-			chartSource,
-			/\{intakeSplit\.onlinePercent\}%/,
-			"MarketingFunnelStagesChart must render dynamic onlinePercent",
-		);
-		assert.match(
-			chartSource,
-			/\{intakeSplit\.adminPercent\}%/,
-			"MarketingFunnelStagesChart must render dynamic adminPercent",
-		);
-	});
-
-	it("Accurately calculates intake split proportion from raw lead channels", () => {
+describe("Marketing Dashboard Intake Split (Real Computation & Render)", () => {
+	it("Computes dynamic intake split from raw channels and renders MarketingFunnelStagesChart without hardcoded mocks", () => {
 		const sampleLeads = [
 			{ id: "1", status: "new", source: "2gis_map" },
 			{ id: "2", status: "new", source: "https://clinic.ru/booking?utm_source=site" },
@@ -154,23 +118,37 @@ describe("Marketing Dashboard Intake Split (Zero Mocks & Real Computation)", () 
 			);
 		});
 
-		assert.equal(onlineLeads.length, 3, "3 out of 4 leads are online self-booking");
 		const onlinePercent = Math.round((onlineLeads.length / sampleLeads.length) * 100);
 		const adminPercent = 100 - onlinePercent;
 
-		assert.equal(onlinePercent, 75, "Online share should be 75%");
-		assert.equal(adminPercent, 25, "Reception / telephony share should be 25%");
-	});
+		assert.equal(onlinePercent, 75);
+		assert.equal(adminPercent, 25);
 
-	it("Handles empty leads list safely without division by zero or NaN", () => {
-		const emptyLeads: Array<{ id: string; status: string; source: string }> = [];
-		const total = emptyLeads.length;
-		const onlinePercent = total > 0 ? Math.round((0 / total) * 100) : 0;
-		const adminPercent = total > 0 ? 100 - onlinePercent : 0;
+		const html = renderToStaticMarkup(
+			React.createElement(MarketingFunnelStagesChart, {
+				stages: [
+					{
+						key: "new",
+						index: 0,
+						label: "Новые обращения",
+						shortLabel: "Новые",
+						color: "var(--teal)",
+						badgeColor: "var(--teal-soft)",
+						count: 4,
+						dropCount: 0,
+						dropRatePercent: 0,
+						conversionFromFirstPercent: 100,
+						conversionFromPrevPercent: 100,
+					},
+				],
+				intakeSplit: { onlinePercent, adminPercent },
+				onOpenDetailedAudit: () => {},
+			}),
+		);
 
-		assert.equal(onlinePercent, 0);
-		assert.equal(adminPercent, 0);
-		assert.ok(!Number.isNaN(onlinePercent));
-		assert.ok(!Number.isNaN(adminPercent));
+		assert.ok(html.includes("<strong>75%</strong>"), "Must render real calculated 75% online share");
+		assert.ok(html.includes("<strong>25%</strong>"), "Must render real calculated 25% admin share");
+		assert.ok(!html.includes("<strong>42%</strong>"), "Must not contain hardcoded 42%");
+		assert.ok(!html.includes("<strong>58%</strong>"), "Must not contain hardcoded 58%");
 	});
 });

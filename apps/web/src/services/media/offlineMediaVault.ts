@@ -147,14 +147,10 @@ export async function generateWebpThumbnail(
 				blob = fileData;
 			} else if (fileData instanceof ArrayBuffer) {
 				blob = new Blob([fileData], { type: mimeType });
-			} else if (fileData instanceof Uint8Array) {
-				const bufferCopy = fileData.buffer.slice(
-					fileData.byteOffset,
-					fileData.byteOffset + fileData.byteLength,
-				) as ArrayBuffer;
-				blob = new Blob([bufferCopy], { type: mimeType });
 			} else {
-				blob = new Blob([fileData as unknown as BlobPart], { type: mimeType });
+				const copy = new Uint8Array(fileData.byteLength);
+				copy.set(fileData);
+				blob = new Blob([copy], { type: mimeType });
 			}
 
 			// In browser with createImageBitmap support
@@ -305,7 +301,8 @@ export async function getMediaItemById(
 			req.onsuccess = () => resolve(req.result || null);
 			req.onerror = () => reject(req.error);
 		});
-	} catch {
+	} catch (err: unknown) {
+		logger.warn(`[OfflineMediaVault] getMediaItemById IDB read failed for ${mediaId}:`, err);
 		return memoryMediaItems.get(mediaId) || null;
 	}
 }
@@ -326,7 +323,8 @@ export async function getMediaOriginalBlob(
 			req.onsuccess = () => resolve(req.result || null);
 			req.onerror = () => reject(req.error);
 		});
-	} catch {
+	} catch (err: unknown) {
+		logger.warn(`[OfflineMediaVault] getMediaOriginalBlob IDB read failed for ${originalBlobKey}:`, err);
 		return memoryMediaBlobs.get(originalBlobKey) || null;
 	}
 }
@@ -354,7 +352,8 @@ export async function listPatientMedia(
 			return allItems.filter((item) => item.toothNumber === toothNumber);
 		}
 		return allItems.sort((a, b) => b.capturedAtMs - a.capturedAtMs);
-	} catch {
+	} catch (err: unknown) {
+		logger.warn(`[OfflineMediaVault] listPatientMedia IDB read failed for ${patientId}:`, err);
 		const items = Array.from(memoryMediaItems.values()).filter(
 			(item) => item.patientId === patientId,
 		);
@@ -392,7 +391,8 @@ export async function updateMediaSyncStatus(
 			tx.oncomplete = () => resolve();
 			tx.objectStore(MEDIA_ITEMS_STORE).put(item);
 		});
-	} catch {
+	} catch (err: unknown) {
+		logger.warn(`[OfflineMediaVault] updateMediaSyncStatus IDB write failed for ${mediaId}:`, err);
 		setBoundedMediaMap(memoryMediaItems, mediaId, item, MAX_MEMORY_MEDIA_ITEMS);
 	}
 
@@ -439,7 +439,8 @@ export async function getMediaVaultStorageEstimate(): Promise<MediaVaultQuotaInf
 			else if (it.syncStatus === "pending") pendingCount++;
 			if (!usageBytes) usageBytes += it.sizeBytes;
 		}
-	} catch {
+	} catch (err: unknown) {
+		logger.warn("[OfflineMediaVault] getMediaVaultStorageEstimate IDB read failed:", err);
 		const items = Array.from(memoryMediaItems.values());
 		totalMediaCount = items.length;
 		for (const it of items) {
@@ -511,7 +512,8 @@ export async function evictSyncedMediaCache(params: {
 			evictedCount++;
 			freedBytes += item.sizeBytes;
 		}
-	} catch {
+	} catch (err: unknown) {
+		logger.warn("[OfflineMediaVault] evictSyncedMediaCache IDB cleanup failed, falling back to memory:", err);
 		for (const item of memoryMediaItems.values()) {
 			if (item.syncStatus === "synced" && !item.evictedOriginal) {
 				memoryMediaBlobs.delete(item.originalBlobKey);

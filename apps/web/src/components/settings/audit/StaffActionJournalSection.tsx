@@ -6,9 +6,39 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { StaffActionAuditEntry } from "@dental/shared";
 import { History, RefreshCw } from "lucide-react";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import clientLogger from "../../../services/logging/clientLogger";
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function extractAuditLogsList(raw: unknown): Array<Record<string, unknown>> {
+	if (!isPlainRecord(raw)) return [];
+	const dataNode = isPlainRecord(raw.data) ? raw.data : raw;
+	const logs = dataNode.logs;
+	if (!Array.isArray(logs)) return [];
+	return logs.filter(isPlainRecord);
+}
+
+function staffAuditEntryToRecord(entry: StaffActionAuditEntry): Record<string, unknown> {
+	return {
+		id: entry.id,
+		actionType: entry.actionType,
+		entityType: entry.entityType,
+		entityId: entry.entityId,
+		patientId: entry.patientId,
+		actorUserId: entry.actorUserId,
+		actorRole: entry.actorRole,
+		actorName: entry.actorName,
+		details: entry.details,
+		reason: entry.reason,
+		organizationId: entry.organizationId,
+		clientTimestamp: entry.clientTimestamp,
+	};
+}
 import {
 	AuditLogFilterBar,
 	filterStaffAuditRows,
@@ -46,15 +76,15 @@ export function StaffActionJournalSection(): React.JSX.Element {
 			const rawList: Array<Record<string, unknown>> = [];
 
 			if (response.ok) {
-				const data = (await response.json()) as { logs?: Array<Record<string, unknown>> };
-				if (Array.isArray(data.logs)) {
-					rawList.push(...data.logs);
-				}
+				const data: unknown = await response.json();
+				rawList.push(...extractAuditLogsList(data));
 			}
 
 			// Add offline local records from clientLogger
 			const offline = clientLogger.getOfflineStaffAuditBuffer();
-			rawList.push(...(offline as unknown as Array<Record<string, unknown>>));
+			for (const entry of offline) {
+				rawList.push(staffAuditEntryToRecord(entry));
+			}
 
 			const mapped = rawList.map(normalizeAuditRow);
 			// Sort newest first
@@ -107,7 +137,7 @@ export function StaffActionJournalSection(): React.JSX.Element {
 			const d = new Date(iso);
 			return `${d.toLocaleDateString("ru-RU")} ${d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
 		} catch (err) {
-			console.warn("[StaffActionJournal] Failed to format audit timestamp:", err);
+			clientLogger.warn("[StaffActionJournal] Failed to format audit timestamp:", err);
 			return iso;
 		}
 	};

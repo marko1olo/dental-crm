@@ -59,7 +59,8 @@ export function isValidShellResponse(
 			urlStr,
 			typeof self !== "undefined" && self.location ? self.location.origin : "http://localhost",
 		).pathname;
-	} catch {
+	} catch (err: unknown) {
+		console.warn("[ServiceWorker] Invalid URL for shell cache check:", urlStr, err);
 		pathname = urlStr;
 	}
 
@@ -150,15 +151,16 @@ export async function recoverShellCacheForClientRefresh(): Promise<void> {
 
 	try {
 		await cache.addAll(SHELL_ASSETS);
-	} catch {
+	} catch (err: unknown) {
 		// Keep existing core fallbacks when the operator is already offline.
+		console.warn("[ServiceWorker] Shell cache refresh offline fallback:", err);
 	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Service Worker Lifecycle Events
 const swScope: ServiceWorkerGlobalScope | null =
-	typeof self !== "undefined" ? (self as unknown as ServiceWorkerGlobalScope) : null;
+	typeof self !== "undefined" ? self : null;
 
 if (swScope) {
 	swScope.addEventListener("install", (event: ExtendableEvent) => {
@@ -194,8 +196,10 @@ if (swScope) {
 		if (event.data?.type === "DENTE_CLEAR_SHELL_CACHE") {
 			event.waitUntil(
 				recoverShellCacheForClientRefresh().then(() => {
-					const source = event.source as Client | null;
-					source?.postMessage?.({ type: "DENTE_SHELL_CACHE_CLEARED" });
+					const source = event.source;
+					if (source && "postMessage" in source && typeof source.postMessage === "function") {
+						source.postMessage({ type: "DENTE_SHELL_CACHE_CLEARED" });
+					}
 				}),
 			);
 		}
@@ -298,8 +302,22 @@ interface SyncEvent extends ExtendableEvent {
 	readonly lastChance?: boolean;
 }
 
+interface PushNotificationPayload {
+	title: string;
+	body: string;
+	icon: string;
+	badge: string;
+	data: { url: string };
+	tag?: string | undefined;
+	renotify?: boolean | undefined;
+}
+
+interface ExtendedNotificationOptions extends NotificationOptions {
+	renotify?: boolean | undefined;
+}
+
 	swScope.addEventListener("push", (event: PushEvent) => {
-		let payload = {
+		let payload: PushNotificationPayload = {
 			title: "DENTE CRM",
 			body: "Новое клиническое уведомление",
 			icon: "/icon.svg",
@@ -309,23 +327,44 @@ interface SyncEvent extends ExtendableEvent {
 
 		if (event.data) {
 			try {
-				const parsed = event.data.json();
-				payload = { ...payload, ...parsed };
-			} catch {
+				const parsed: unknown = event.data.json();
+				if (typeof parsed === "object" && parsed !== null) {
+					const rawTitle = Reflect.get(parsed, "title");
+					const rawBody = Reflect.get(parsed, "body");
+					const rawIcon = Reflect.get(parsed, "icon");
+					const rawBadge = Reflect.get(parsed, "badge");
+					const rawTag = Reflect.get(parsed, "tag");
+					const rawRenotify = Reflect.get(parsed, "renotify");
+					const rawData = Reflect.get(parsed, "data");
+					const rawDataUrl =
+						typeof rawData === "object" && rawData !== null ? Reflect.get(rawData, "url") : undefined;
+
+					payload = {
+						title: typeof rawTitle === "string" ? rawTitle : payload.title,
+						body: typeof rawBody === "string" ? rawBody : payload.body,
+						icon: typeof rawIcon === "string" ? rawIcon : payload.icon,
+						badge: typeof rawBadge === "string" ? rawBadge : payload.badge,
+						data: { url: typeof rawDataUrl === "string" ? rawDataUrl : payload.data.url },
+						tag: typeof rawTag === "string" ? rawTag : undefined,
+						renotify: typeof rawRenotify === "boolean" ? rawRenotify : undefined,
+					};
+				}
+			} catch (parseErr: unknown) {
+				console.warn("[ServiceWorker] Push JSON parse fallback to text:", parseErr);
 				payload.body = event.data.text() || payload.body;
 			}
 		}
 
-		event.waitUntil(
-			swScope.registration.showNotification(payload.title, {
-				body: payload.body,
-				icon: payload.icon || "/icon.svg",
-				badge: payload.badge || "/icon.svg",
-				data: payload.data,
-				tag: ((payload as Record<string, unknown>).tag as string) || "dente-clinical-alert",
-				...((payload as Record<string, unknown>).renotify ? { renotify: true } : {}),
-			} as NotificationOptions),
-		);
+		const notificationOptions: ExtendedNotificationOptions = {
+			body: payload.body,
+			icon: payload.icon || "/icon.svg",
+			badge: payload.badge || "/icon.svg",
+			data: payload.data,
+			tag: payload.tag || "dente-clinical-alert",
+			...(payload.renotify ? { renotify: true } : {}),
+		};
+
+		event.waitUntil(swScope.registration.showNotification(payload.title, notificationOptions));
 	});
 
 	swScope.addEventListener("notificationclick", (event: NotificationEvent) => {
@@ -337,10 +376,10 @@ interface SyncEvent extends ExtendableEvent {
 				.matchAll({ type: "window", includeUncontrolled: true })
 				.then((clientList) => {
 					for (const client of clientList) {
-						if ("focus" in client) {
-							(client as WindowClient).focus();
-							if ("navigate" in client && targetUrl !== "/") {
-								(client as WindowClient).navigate(targetUrl);
+						if ("focus" in client && typeof client.focus === "function") {
+							client.focus();
+							if ("navigate" in client && typeof client.navigate === "function" && targetUrl !== "/") {
+								client.navigate(targetUrl);
 							}
 							return;
 						}
@@ -353,12 +392,14 @@ interface SyncEvent extends ExtendableEvent {
 	});
 
 	swScope.addEventListener("sync", (event: Event) => {
-		const syncEvent = event as SyncEvent;
+		const rawTag: unknown = Reflect.get(event, "tag");
+		const syncTag = typeof rawTag === "string" ? rawTag : "";
 		if (
-			syncEvent.tag === "dente-offline-sync" ||
-			syncEvent.tag === "dente-outbox-sync" ||
-			syncEvent.tag === "dente-patient-booking-sync"
+			syncTag === "dente-offline-sync" ||
+			syncTag === "dente-outbox-sync" ||
+			syncTag === "dente-patient-booking-sync"
 		) {
+			const syncEvent: SyncEvent = event as SyncEvent;
 			syncEvent.waitUntil(
 				swScope.clients
 					.matchAll({ type: "window", includeUncontrolled: true })
@@ -366,7 +407,7 @@ interface SyncEvent extends ExtendableEvent {
 						for (const client of clients) {
 							client.postMessage({
 								type: "DENTE_BACKGROUND_SYNC_TRIGGER",
-								tag: syncEvent.tag,
+								tag: syncTag,
 							});
 						}
 					}),

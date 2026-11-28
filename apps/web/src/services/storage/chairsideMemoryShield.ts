@@ -13,6 +13,11 @@
  */
 
 import { isLowSpecDevice } from "../../utils/lowSpecHdd/hardwareDetector.js";
+import { logger } from "../../utils/logger.js";
+
+interface CanvasWithInternalGl extends HTMLCanvasElement {
+	_gl?: WebGLRenderingContext | undefined;
+}
 
 export interface MemoryShieldConfig {
 	maxRvgCacheItems: number;
@@ -165,25 +170,30 @@ class ChairsideMemoryShieldService {
 	public purgeCanvasVram(canvas: HTMLCanvasElement): boolean {
 		if (!canvas) return false;
 		try {
-			const gl = canvas.getContext("webgl2") || canvas.getContext("webgl") ||
-				(canvas as unknown as { _gl?: WebGLRenderingContext })._gl;
-			if (gl && typeof (gl as WebGLRenderingContext).getExtension === "function") {
+			const canvasWithGl: CanvasWithInternalGl = canvas;
+			const gl = canvas.getContext("webgl2") || canvas.getContext("webgl") || canvasWithGl._gl;
+			if (gl && typeof gl.getExtension === "function") {
 				try {
-					const loseExt = (gl as WebGLRenderingContext).getExtension("WEBGL_lose_context");
+					const loseExt = gl.getExtension("WEBGL_lose_context");
 					loseExt?.loseContext?.();
-				} catch { /* ignore extension errors */ }
+				} catch (extErr: unknown) {
+					logger.debug("[ChairsideMemoryShield] WEBGL_lose_context skipped:", extErr);
+				}
 			}
 			try {
 				const ctx2d = canvas.getContext("2d");
 				ctx2d?.clearRect(0, 0, Math.max(canvas.width, 1), Math.max(canvas.height, 1));
-			} catch { /* ignore context conflict */ }
+			} catch (ctxErr: unknown) {
+				logger.debug("[ChairsideMemoryShield] 2D clearRect skipped:", ctxErr);
+			}
 
 			canvas.width = 1;
 			canvas.height = 1;
 			this.totalVramPurges++;
 			this.lastPurgeAt = Date.now();
 			return true;
-		} catch {
+		} catch (err: unknown) {
+			logger.warn("[ChairsideMemoryShield] purgeCanvasVram failed:", err);
 			return false;
 		}
 	}
@@ -335,7 +345,9 @@ class ChairsideMemoryShieldService {
 		if (item.objectUrl && typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
 			try {
 				URL.revokeObjectURL(item.objectUrl);
-			} catch { /* ignore */ }
+			} catch (revokeErr: unknown) {
+				logger.debug("[ChairsideMemoryShield] revokeObjectURL failed:", revokeErr);
+			}
 		}
 		item.blobOrBuffer = undefined;
 		item.objectUrl = undefined;
@@ -418,7 +430,9 @@ class ChairsideMemoryShieldService {
 		for (const listener of this.listeners) {
 			try {
 				listener(metrics);
-			} catch { /* ignore */ }
+			} catch (listenerErr: unknown) {
+				logger.warn("[ChairsideMemoryShield] Metrics listener error:", listenerErr);
+			}
 		}
 	}
 }

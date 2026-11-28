@@ -70,9 +70,13 @@ export function detectUniversalRuntime(): UniversalRuntime {
 	if (isDesktopApp()) return "desktop_exe";
 	if (isMobileApp()) return "android_apk";
 	if (typeof window !== "undefined") {
-		const win = window as unknown as { __DENTE_PWA__?: boolean; matchMedia?: (q: string) => { matches: boolean } };
+		const win: Window & { __DENTE_PWA__?: boolean } = window;
 		if (win.__DENTE_PWA__ === true) return "pwa_standalone";
-		if (win.matchMedia?.("(display-mode: standalone)").matches || win.matchMedia?.("(display-mode: minimal-ui)").matches) {
+		if (
+			typeof win.matchMedia === "function" &&
+			(win.matchMedia("(display-mode: standalone)").matches ||
+				win.matchMedia("(display-mode: minimal-ui)").matches)
+		) {
 			return "pwa_standalone";
 		}
 	}
@@ -325,6 +329,7 @@ export async function dispatchThermalLabelPrint(
 				};
 			}
 		} catch (err: unknown) {
+			logger.warn("[HardwareDispatcher] dispatchThermalLabelPrint failed:", err);
 			const message = err instanceof Error ? err.message : "Не удалось открыть окно печати";
 			return { success: false, error: message };
 		}
@@ -427,6 +432,7 @@ export async function dispatchEscPosReceiptPrint(
 				};
 			}
 		} catch (err: unknown) {
+			logger.warn("[HardwareDispatcher] dispatchEscPosReceiptPrint failed:", err);
 			const message = err instanceof Error ? err.message : "Не удалось открыть окно печати чека";
 			return { success: false, error: message };
 		}

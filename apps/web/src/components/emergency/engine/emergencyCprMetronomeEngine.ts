@@ -3,18 +3,26 @@
  * Synthesis for cardiac resuscitation compression rhythm (100–120 bpm / default 110 bpm).
  */
 
+import { logger } from "../../../utils/logger";
+
+declare global {
+	interface Window {
+		webkitAudioContext?: typeof AudioContext;
+	}
+}
+
 class CprMetronomeAudio {
 	private audioCtx: AudioContext | null = null;
 
 	private initContext(): AudioContext | null {
-		if (typeof window === 'undefined') return null;
+		if (typeof window === "undefined") return null;
 		if (!this.audioCtx) {
-			const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+			const AudioContextClass = window.AudioContext || window.webkitAudioContext;
 			if (AudioContextClass) {
 				this.audioCtx = new AudioContextClass();
 			}
 		}
-		if (this.audioCtx && this.audioCtx.state === 'suspended') {
+		if (this.audioCtx && this.audioCtx.state === "suspended") {
 			void this.audioCtx.resume();
 		}
 		return this.audioCtx;
@@ -28,7 +36,7 @@ class CprMetronomeAudio {
 			const osc = ctx.createOscillator();
 			const gain = ctx.createGain();
 
-			osc.type = isBreathBeep ? 'sine' : 'triangle';
+			osc.type = isBreathBeep ? "sine" : "triangle";
 			osc.frequency.setValueAtTime(isBreathBeep ? 880 : 520, ctx.currentTime);
 
 			gain.gain.setValueAtTime(0.3, ctx.currentTime);
@@ -39,8 +47,9 @@ class CprMetronomeAudio {
 
 			osc.start();
 			osc.stop(ctx.currentTime + (isBreathBeep ? 0.16 : 0.06));
-		} catch {
+		} catch (err: unknown) {
 			// AudioContext autoplay restrictions or mock environment safety
+			logger.warn("[CprMetronomeAudio] playClick failed:", err);
 		}
 	}
 }

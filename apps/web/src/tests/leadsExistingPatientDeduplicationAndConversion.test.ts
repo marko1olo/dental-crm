@@ -1,223 +1,255 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
+import { afterEach, describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { ColumnFocusTableRow } from "../components/leads/columnFocusModal/ColumnFocusTableRow";
+import { ExpandedColumnFocusModal } from "../components/leads/ExpandedColumnFocusModal";
+import { LeadCard } from "../components/leads/LeadCard";
+import { LeadConvertModal } from "../components/leads/LeadConvertModal";
+import {
+	parseConvertLeadResult,
+	parseCreatePatientFromLeadResult,
+	useLeadsStore,
+	type Lead,
+} from "../store/leadsStore";
 
 /**
- * RED TEAM INQUISITION SUITE:
- * Leads Deduplication, Existing Patient Badge, 1-Click Profile Transition,
- * and Zero Attribution / Clinical Loss during Conversion
- *
- * Mandate 8l (Marketing & Leads Intake SSOT)
- * Mandate 8e (Doctor Autonomy & Solo Doctor Defaults)
- * Mandate 8n (Clinical Ergonomics, Zero Dead-Ends & Scale Sovereignty)
- * Mandate 8s (SSOT Componentization & Zero Duplication)
+ * RED TEAM INQUISITION SUITE (6G — Real Component Rendering & Store Execution):
+ * Leads Deduplication, Existing Patient Badge, Patient Card Transition,
+ * and Zero Attribution / Clinical Loss during Conversion.
  */
 
-describe("Leads Existing Patient Deduplication & UI Invariants", () => {
-	const baseDir = dirname(fileURLToPath(import.meta.url));
-	const leadCardDir = join(baseDir, "..", "components", "leads");
-	const leadCardSubDir = join(leadCardDir, "card");
+describe("Leads Existing Patient Deduplication & Conversion (Real SUT)", () => {
+	const originalFetch = globalThis.fetch;
 
-	const leadCardSource = [
-		readFileSync(join(leadCardDir, "LeadCard.tsx"), "utf8"),
-		readFileSync(join(leadCardSubDir, "LeadCardBadges.tsx"), "utf8"),
-		readFileSync(join(leadCardSubDir, "LeadCardActionButtons.tsx"), "utf8"),
-		readFileSync(join(leadCardSubDir, "LeadCardHeader.tsx"), "utf8"),
-		readFileSync(join(leadCardSubDir, "LeadCardContactBar.tsx"), "utf8"),
-		readFileSync(join(leadCardSubDir, "LeadCardStageSelect.tsx"), "utf8"),
-	].join("\n");
+	afterEach(() => {
+		globalThis.fetch = originalFetch;
+		useLeadsStore.setState({ leads: [], isLoading: false, error: null });
+	});
 
-	const convertModalSource = [
-		readFileSync(
-			join(
-				dirname(fileURLToPath(import.meta.url)),
-				"..",
-				"components",
-				"leads",
-				"LeadConvertModal.tsx",
+	const existingPatientLead: Lead = {
+		id: "lead-existing-1",
+		name: "Волкова Екатерина",
+		phone: "+79161234567",
+		source: "2ГИС",
+		status: "new",
+		clinicalTags: ["Имплантация"],
+		notes: "Повторное обращение по 36 зубу",
+		existingPatient: {
+			id: "pat-777",
+			fullName: "Волкова Екатерина Сергеевна",
+		},
+	};
+
+	const freshPatientLead: Lead = {
+		id: "lead-new-1",
+		name: "Соколов Игорь",
+		phone: "+79269876543",
+		source: "Яндекс.Директ",
+		status: "contacted",
+	};
+
+	it("LeadCard renders existing-patient badge and 'Карточка пациента' button when existingPatient is present, and 'Создать' button for new leads", () => {
+		const existingHtml = renderToStaticMarkup(
+			React.createElement(LeadCard, {
+				lead: existingPatientLead,
+				isDragged: false,
+				creatingPatientLeadId: null,
+				borderColor: "var(--line)",
+				cardBg: "var(--paper)",
+				onDragStart: () => {},
+				onEdit: () => {},
+				onStatusChange: () => {},
+				onCreatePatient: () => {},
+				onSchedule: () => {},
+			}),
+		);
+
+		assert.ok(existingHtml.includes("lead-existing-patient-badge-lead-existing-1"));
+		assert.ok(existingHtml.includes("Постоянный пациент:"));
+		assert.ok(existingHtml.includes("open-patient-btn-lead-existing-1"));
+		assert.ok(existingHtml.includes("Карточка пациента"));
+		assert.ok(!existingHtml.includes("create-patient-btn-lead-existing-1"));
+
+		const freshHtml = renderToStaticMarkup(
+			React.createElement(LeadCard, {
+				lead: freshPatientLead,
+				isDragged: false,
+				creatingPatientLeadId: null,
+				borderColor: "var(--line)",
+				cardBg: "var(--paper)",
+				onDragStart: () => {},
+				onEdit: () => {},
+				onStatusChange: () => {},
+				onCreatePatient: () => {},
+				onSchedule: () => {},
+			}),
+		);
+
+		assert.ok(freshHtml.includes("create-patient-btn-lead-new-1"));
+		assert.ok(!freshHtml.includes("lead-existing-patient-badge-lead-new-1"));
+	});
+
+	it("LeadConvertModal renders existing patient alert, dynamic CTA wording, and clinical reason/comment inputs", () => {
+		const existingModalHtml = renderToStaticMarkup(
+			React.createElement(LeadConvertModal, {
+				isOpen: true,
+				onClose: () => {},
+				onSubmit: () => {},
+				staff: [{ id: "doc-1", fullName: "Смирнов А. В.", role: "doctor" }],
+				chairs: [{ id: "chair-1", name: "Кресло 1" }],
+				effectiveStaff: [{ id: "doc-1", fullName: "Смирнов А. В.", role: "doctor" }],
+				effectiveChairs: [{ id: "chair-1", name: "Кресло 1" }],
+				selectedDoctorId: "doc-1",
+				setSelectedDoctorId: () => {},
+				selectedChairId: "chair-1",
+				setSelectedChairId: () => {},
+				appointmentDate: "2026-11-30",
+				setAppointmentDate: () => {},
+				appointmentTime: "10:00",
+				setAppointmentTime: () => {},
+				isBooking: false,
+				lead: existingPatientLead,
+			}),
+		);
+
+		assert.ok(existingModalHtml.includes("lead-convert-existing-patient-alert"));
+		assert.ok(existingModalHtml.includes("Подтвердить запись на приём"));
+		assert.ok(existingModalHtml.includes("convert-lead-reason-input"));
+		assert.ok(existingModalHtml.includes("convert-lead-comment-input"));
+
+		const freshModalHtml = renderToStaticMarkup(
+			React.createElement(LeadConvertModal, {
+				isOpen: true,
+				onClose: () => {},
+				onSubmit: () => {},
+				staff: [{ id: "doc-1", fullName: "Смирнов А. В.", role: "doctor" }],
+				chairs: [{ id: "chair-1", name: "Кресло 1" }],
+				effectiveStaff: [{ id: "doc-1", fullName: "Смирнов А. В.", role: "doctor" }],
+				effectiveChairs: [{ id: "chair-1", name: "Кресло 1" }],
+				selectedDoctorId: "doc-1",
+				setSelectedDoctorId: () => {},
+				selectedChairId: "chair-1",
+				setSelectedChairId: () => {},
+				appointmentDate: "2026-11-30",
+				setAppointmentDate: () => {},
+				appointmentTime: "10:00",
+				setAppointmentTime: () => {},
+				isBooking: false,
+				lead: freshPatientLead,
+			}),
+		);
+
+		assert.ok(freshModalHtml.includes("Подтвердить запись и создать карту"));
+		assert.ok(!freshModalHtml.includes("lead-convert-existing-patient-alert"));
+	});
+
+	it("ExpandedColumnFocusModal and ColumnFocusTableRow render existing-patient anchors in cards and table views", () => {
+		const modalHtml = renderToStaticMarkup(
+			React.createElement(ExpandedColumnFocusModal, {
+				isOpen: true,
+				onClose: () => {},
+				column: { id: "new", label: "Новые", color: "var(--teal)", icon: null },
+				leads: [existingPatientLead],
+				staff: [{ id: "doc-1", fullName: "Смирнов А. В.", role: "doctor" }],
+				onStatusChange: () => {},
+				onBatchStatusChange: () => {},
+				onBatchAssignDoctor: () => {},
+				onEditLead: () => {},
+				onScheduleLead: () => {},
+				onCreatePatient: () => {},
+			}),
+		);
+
+		assert.ok(modalHtml.includes("expanded-existing-patient-badge-lead-existing-1"));
+		assert.ok(modalHtml.includes("expanded-open-patient-btn-lead-existing-1"));
+
+		const tableRowHtml = renderToStaticMarkup(
+			React.createElement(
+				"table",
+				null,
+				React.createElement(
+					"tbody",
+					null,
+					React.createElement(ColumnFocusTableRow, {
+						lead: existingPatientLead,
+						isSelected: false,
+						nextStageInfo: { status: "contacted", label: "Квалифицирован" },
+						onToggleSelectLead: () => {},
+						onEditLead: () => {},
+						onStatusChange: () => {},
+						onScheduleLead: () => {},
+						onCreatePatient: () => {},
+						onClose: () => {},
+					}),
+				),
 			),
-			"utf8",
-		),
-		readFileSync(
-			join(
-				dirname(fileURLToPath(import.meta.url)),
-				"..",
-				"components",
-				"leads",
-				"leadConvertModules",
-				"LeadConvertPatientFields.tsx",
-			),
-			"utf8",
-		),
-		readFileSync(
-			join(
-				dirname(fileURLToPath(import.meta.url)),
-				"..",
-				"components",
-				"leads",
-				"leadConvertModules",
-				"LeadConvertAppointmentFields.tsx",
-			),
-			"utf8",
-		),
-	].join("\n");
-
-	const expandedModalSource = readFileSync(
-		join(
-			dirname(fileURLToPath(import.meta.url)),
-			"..",
-			"components",
-			"leads",
-			"ExpandedColumnFocusModal.tsx",
-		),
-		"utf8",
-	);
-
-	const leadsStoreSource = readFileSync(
-		join(
-			dirname(fileURLToPath(import.meta.url)),
-			"..",
-			"store",
-			"leadsStore.ts",
-		),
-		"utf8",
-	);
-
-	const kanbanSource = readFileSync(
-		join(
-			dirname(fileURLToPath(import.meta.url)),
-			"..",
-			"components",
-			"leads",
-			"LeadsKanbanView.tsx",
-		),
-		"utf8",
-	);
-
-	it("LeadCard renders prominent 'Постоянный пациент' badge when lead has existingPatient", () => {
-		assert.ok(
-			leadCardSource.includes("lead.existingPatient"),
-			"LeadCard must check lead.existingPatient",
 		);
-		assert.ok(
-			leadCardSource.includes("lead-existing-patient-badge-"),
-			"LeadCard must render data-testid with lead-existing-patient-badge-",
-		);
-		assert.ok(
-			leadCardSource.includes("Постоянный пациент:"),
-			"LeadCard must include Cyrillic text 'Постоянный пациент:'",
-		);
+
+		assert.ok(tableRowHtml.includes("expanded-table-patient-badge-lead-existing-1"));
+		assert.ok(tableRowHtml.includes("expanded-table-open-patient-btn-lead-existing-1"));
 	});
 
-	it("LeadCard replaces 'Создать пациента' with 1-click 'Карточка пациента' button when patient already exists", () => {
-		assert.ok(
-			leadCardSource.includes("open-patient-btn-"),
-			"LeadCard must render open-patient-btn when lead.existingPatient exists",
-		);
-		assert.ok(
-			leadCardSource.includes("Карточка пациента"),
-			"LeadCard button text must be 'Карточка пациента' when lead.existingPatient exists",
-		);
-		assert.ok(
-			leadCardSource.includes("create-patient-btn-"),
-			"LeadCard must render create-patient-btn fallback when patient is new",
-		);
-		// Must use setSelectedPatientId and setCurrentView for 1-click jump
-		assert.ok(
-			leadCardSource.includes("setSelectedPatientId"),
-			"LeadCard must set selected patient in patientStore on click",
-		);
-		assert.ok(
-			leadCardSource.includes("setCurrentView(\"patients\")") ||
-			leadCardSource.includes("setCurrentView('patients')"),
-			"LeadCard must navigate to patients view on click",
-		);
-	});
+	it("useLeadsStore.convertLeadToAppointment and createPatientFromLead validate payloads with Zod and update lead status", async () => {
+		useLeadsStore.setState({ leads: [existingPatientLead, freshPatientLead] });
 
-	it("LeadCard includes direct 1-click link to existing patient profile", () => {
-		assert.ok(
-			leadCardSource.includes("lead-existing-patient-badge-") ||
-				leadCardSource.includes("handleOpenPatient"),
-			"LeadCard must provide lead-existing-patient-badge- or handleOpenPatient",
-		);
-	});
+		let capturedConvertBody: Record<string, unknown> = {};
+		globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+			const url = String(input);
+			if (url.endsWith("/convert")) {
+				capturedConvertBody = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
+				return new Response(
+					JSON.stringify({
+						data: {
+							patient: { id: "pat-777" },
+							appointment: { id: "apt-999" },
+							hasAppointmentDates: true,
+						},
+					}),
+					{ status: 200, headers: { "Content-Type": "application/json" } },
+				);
+			}
+			return new Response(
+				JSON.stringify({
+					data: {
+						success: true,
+						patient: { id: "pat-new-2" },
+						alreadyExisted: false,
+					},
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		};
 
-	it("LeadConvertModal warns operator about existing patient and dynamically adjusts button wording", () => {
-		assert.ok(
-			convertModalSource.includes("lead-convert-existing-patient-alert"),
-			"LeadConvertModal must render existing patient alert banner",
-		);
-		assert.ok(
-			convertModalSource.includes("Подтвердить запись на приём"),
-			"LeadConvertModal button must state 'Подтвердить запись на приём' when patient already exists",
-		);
-		assert.ok(
-			convertModalSource.includes("Подтвердить запись и создать карту"),
-			"LeadConvertModal button must state 'Подтвердить запись и создать карту' when patient is new",
-		);
-	});
+		const convertResult = await useLeadsStore.getState().convertLeadToAppointment(existingPatientLead.id, {
+			appointmentStart: "2026-11-30T10:00:00.000Z",
+			appointmentEnd: "2026-11-30T10:30:00.000Z",
+			reason: "Имплантация",
+			comment: "Повторное обращение по 36 зубу",
+		});
 
-	it("LeadConvertModal provides editable reason and clinical comment inputs for zero clinical loss", () => {
-		assert.ok(
-			convertModalSource.includes("convert-lead-reason-input"),
-			"LeadConvertModal must include convert-lead-reason-input",
+		assert.equal(capturedConvertBody.reason, "Имплантация");
+		assert.equal(capturedConvertBody.comment, "Повторное обращение по 36 зубу");
+		assert.equal(convertResult.hasAppointmentDates, true);
+		assert.equal(
+			useLeadsStore.getState().leads.find((l) => l.id === existingPatientLead.id)?.status,
+			"consult_booked",
 		);
-		assert.ok(
-			convertModalSource.includes("convert-lead-comment-input"),
-			"LeadConvertModal must include convert-lead-comment-input",
-		);
-		assert.ok(
-			convertModalSource.includes("reason:"),
-			"LeadConvertModal onSubmit must include reason",
-		);
-		assert.ok(
-			convertModalSource.includes("comment:"),
-			"LeadConvertModal onSubmit must include comment",
-		);
-	});
 
-	it("leadsStore.ts payload includes optional reason and comment for convertLeadToAppointment", () => {
-		assert.match(
-			leadsStoreSource,
-			/interface ConvertLeadToAppointmentPayload[\s\S]*?reason\?: string \| null/,
-			"ConvertLeadToAppointmentPayload must include optional reason",
+		const createRes = await useLeadsStore.getState().createPatientFromLead(freshPatientLead.id);
+		assert.equal(createRes.success, true);
+		assert.equal(
+			useLeadsStore.getState().leads.find((l) => l.id === freshPatientLead.id)?.status,
+			"converted",
 		);
-		assert.match(
-			leadsStoreSource,
-			/interface ConvertLeadToAppointmentPayload[\s\S]*?comment\?: string \| null/,
-			"ConvertLeadToAppointmentPayload must include optional comment",
-		);
-	});
 
-	it("ExpandedColumnFocusModal provides 1-click jump to patient profile in both cards and table views", () => {
-		assert.ok(
-			expandedModalSource.includes("expanded-existing-patient-badge-"),
-			"ExpandedColumnFocusModal cards view must have expanded-existing-patient-badge-",
+		assert.throws(
+			() => parseConvertLeadResult(null),
+			/Некорректный ответ сервера/,
 		);
-		assert.ok(
-			expandedModalSource.includes("expanded-open-patient-btn-"),
-			"ExpandedColumnFocusModal cards view must have expanded-open-patient-btn-",
-		);
-		assert.ok(
-			expandedModalSource.includes("expanded-table-patient-badge-"),
-			"ExpandedColumnFocusModal table view must have expanded-table-patient-badge-",
-		);
-		assert.ok(
-			expandedModalSource.includes("expanded-table-open-patient-btn-"),
-			"ExpandedColumnFocusModal table view must have expanded-table-open-patient-btn-",
-		);
-	});
-
-	it("LeadsKanbanView handles existing patient safely and passes clinical complaints during quick schedule", () => {
-		assert.ok(
-			kanbanSource.includes("onOpenPatientCard"),
-			"LeadsKanbanView must pass onOpenPatientCard callback to LeadCard",
-		);
-		assert.ok(
-			kanbanSource.includes("quickReason"),
-			"handleQuickSchedule must resolve and transfer clinical complaints / tags to appointment reason",
+		assert.throws(
+			() => parseCreatePatientFromLeadResult({ data: { patient: {} } }),
+			/Некорректный ответ сервера/,
 		);
 	});
 });

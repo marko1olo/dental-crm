@@ -12,6 +12,7 @@ import type { Lead } from "../../../store/leadsStore.js";
 import {
 	calculateChannelPerformance,
 	calculateClinicalFunnelMetrics,
+	calculateCohortRetention,
 	detectFunnelLeaks,
 } from "../leadsFunnelEngine.js";
 
@@ -141,6 +142,50 @@ describe("Leads Clinical Funnel Metrics & 4-Stage Conversion Engine (Mandate 8x,
 			assert.equal(leaks.length, 2);
 			assert.equal(leaks[0]?.leakType, "stale_new");
 			assert.equal(leaks[1]?.leakType, "unrecorded_drop_reason");
+		});
+	});
+
+	describe("4. calculateCohortRetention", () => {
+		it("computes cohort show-up, revenue, and repeat retention from followUpStatus and visitsCount", () => {
+			const cohortLeads = [
+				{
+					id: "coh-1",
+					name: "Пациент А",
+					status: "showed_up" as const,
+					createdAt: "2026-10-05T10:00:00.000Z",
+					actualRevenueRub: 45000,
+					isPaid: true,
+					visitsCount: 3,
+				},
+				{
+					id: "coh-2",
+					name: "Пациент Б",
+					status: "showed_up" as const,
+					createdAt: "2026-10-12T10:00:00.000Z",
+					followUpStatus: "closed_won",
+					visitsCount: 1,
+				},
+				{
+					id: "coh-3",
+					name: "Пациент В",
+					status: "consult_booked" as const,
+					createdAt: "2026-10-20T10:00:00.000Z",
+					visitsCount: 1,
+				},
+			];
+
+			const cohorts = calculateCohortRetention(cohortLeads, "month");
+			assert.equal(cohorts.length, 1);
+			const oct = cohorts[0];
+			assert.ok(oct);
+			assert.equal(oct.cohortId, "2026-10");
+			assert.equal(oct.totalLeads, 3);
+			assert.equal(oct.bookedCount, 3);
+			assert.equal(oct.showUpCount, 2);
+			assert.equal(oct.paidCount, 1);
+			assert.equal(oct.totalRevenueRub, 45000);
+			assert.equal(oct.repeatVisitsCount, 2);
+			assert.equal(oct.repeatRetentionRatePercent, 100);
 		});
 	});
 });

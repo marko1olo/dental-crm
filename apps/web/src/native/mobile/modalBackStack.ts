@@ -108,7 +108,7 @@ export function initHardwareBackButtonListener(): () => void {
 	isHardwareBackListenerInitialized = true;
 
 	// 1. Capacitor Native App backButton Event (Android .APK)
-	const capacitorApp = (window as unknown as { Capacitor?: { Plugins?: { App?: { addListener?: (event: string, callback: (data: { canGoBack: boolean }) => void) => { remove: () => void }; exitApp?: () => void } } } }).Capacitor?.Plugins?.App;
+	const capacitorApp = window.Capacitor?.Plugins?.App;
 	let capacitorListener: { remove: () => void } | undefined;
 	if (capacitorApp?.addListener) {
 		try {

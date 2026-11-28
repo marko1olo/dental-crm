@@ -21,8 +21,38 @@ import {
 	generate152FzAuditActHtml,
 } from '../auditTrailEngine';
 import { mapRawToAuditEntryParams } from './auditUtils';
+import type { StaffActionAuditEntry } from '@dental/shared';
 import { denteClinicalReadHeaders } from '../../../lib/denteRequestHeaders';
 import clientLogger from '../../../services/logging/clientLogger';
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function extractLogsArray(raw: unknown): Array<Record<string, unknown>> {
+	if (!isPlainRecord(raw)) return [];
+	const dataNode = isPlainRecord(raw.data) ? raw.data : raw;
+	const logs = dataNode.logs;
+	if (!Array.isArray(logs)) return [];
+	return logs.filter(isPlainRecord);
+}
+
+function staffAuditEntryToRawRecord(entry: StaffActionAuditEntry): Record<string, unknown> {
+	return {
+		id: entry.id,
+		actionType: entry.actionType,
+		entityType: entry.entityType,
+		entityId: entry.entityId,
+		patientId: entry.patientId,
+		actorUserId: entry.actorUserId,
+		actorRole: entry.actorRole,
+		actorName: entry.actorName,
+		details: entry.details,
+		reason: entry.reason,
+		organizationId: entry.organizationId,
+		clientTimestamp: entry.clientTimestamp,
+	};
+}
 
 export interface UseAuditTrailHubModalControllerParams {
 	readonly isOpen: boolean;
@@ -109,25 +139,19 @@ export function useAuditTrailHubModalController({
 
 				const rawEvents: Array<Record<string, unknown>> = [];
 				if (logsRes.status === 'fulfilled' && logsRes.value.ok) {
-					const raw = (await logsRes.value.json()) as {
-						data?: { logs?: Array<Record<string, unknown>> };
-						logs?: Array<Record<string, unknown>>;
-					};
-					const logs = raw?.data?.logs ?? raw?.logs;
-					if (Array.isArray(logs)) rawEvents.push(...logs);
+					const raw: unknown = await logsRes.value.json();
+					rawEvents.push(...extractLogsArray(raw));
 				}
 				if (medRes.status === 'fulfilled' && medRes.value.ok) {
-					const raw = (await medRes.value.json()) as {
-						data?: { logs?: Array<Record<string, unknown>> };
-						logs?: Array<Record<string, unknown>>;
-					};
-					const logs = raw?.data?.logs ?? raw?.logs;
-					if (Array.isArray(logs)) rawEvents.push(...logs);
+					const raw: unknown = await medRes.value.json();
+					rawEvents.push(...extractLogsArray(raw));
 				}
 
 				// Also include offline buffer from clientLogger
 				const offlineBuffer = clientLogger.getOfflineStaffAuditBuffer();
-				rawEvents.push(...(offlineBuffer as unknown as Array<Record<string, unknown>>));
+				for (const item of offlineBuffer) {
+					rawEvents.push(staffAuditEntryToRawRecord(item));
+				}
 
 				// Sort chronologically (oldest first for blockchain chain building)
 				rawEvents.sort((a, b) => {

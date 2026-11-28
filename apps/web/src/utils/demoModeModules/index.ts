@@ -22,6 +22,7 @@ import {
 	DEMO_SHOWCASE_ORG_ID,
 	DEMO_STUDY_INSTANCE_UID,
 } from "../demo/demoConstants.js";
+import { logger } from "../logger.js";
 
 let _runtimeDemoOverride: boolean | null = null;
 
@@ -37,8 +38,8 @@ export function setRuntimeDemoMode(enabled: boolean | null): void {
 			} else if (enabled === false) {
 				localStorage.removeItem("dente_demo_showcase");
 			}
-		} catch {
-			// restricted storage
+		} catch (err: unknown) {
+			logger.debug("[demoMode] localStorage unavailable when setting demo mode:", err);
 		}
 	}
 }
@@ -110,8 +111,8 @@ export function isDemoShowcaseMode(explicitOverride?: boolean): boolean {
 			if (localStorage.getItem("dente_demo_showcase") === "true") {
 				return true;
 			}
-		} catch {
-			// SSR or restricted storage
+		} catch (err: unknown) {
+			logger.debug("[demoMode] Window/storage demo mode check skipped:", err);
 		}
 	}
 
@@ -125,13 +126,13 @@ export function isDemoShowcaseMode(explicitOverride?: boolean): boolean {
 		}
 	}
 
-	if (typeof import.meta !== "undefined" && (import.meta as unknown as { env?: Record<string, string> }).env) {
-		const env = (import.meta as unknown as { env: Record<string, string> }).env;
+	const metaEnv = typeof import.meta !== "undefined" ? import.meta.env : undefined;
+	if (metaEnv) {
 		if (
-			env.IS_DEMO_SHOWCASE === "true" ||
-			env.VITE_DEMO_SHOWCASE === "true" ||
-			env.VITE_DEMO_MODE === "true" ||
-			env.MODE === "demo"
+			metaEnv.IS_DEMO_SHOWCASE === "true" ||
+			metaEnv.VITE_DEMO_SHOWCASE === "true" ||
+			metaEnv.VITE_DEMO_MODE === "true" ||
+			metaEnv.MODE === "demo"
 		) {
 			return true;
 		}

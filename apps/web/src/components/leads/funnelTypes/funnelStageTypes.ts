@@ -96,6 +96,8 @@ export interface FunnelLead
 	paidAmountKopecks?: number | undefined;
 	actualRevenueRub?: number | undefined;
 	stageReached?: LeadFunnelStageKey | undefined;
+	followUpStatus?: string | undefined;
+	visitsCount?: number | undefined;
 }
 
 export type FunnelTimePeriod =

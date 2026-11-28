@@ -29,10 +29,21 @@ export async function pruneStaleOfflineSnapshots(
 				const raw = safeLocalStorageGetItem(key);
 				if (raw) {
 					try {
-						const parsed = JSON.parse(raw);
-						const timestamp = parsed?.cachedAtMs || (parsed?.cachedAt ? Date.parse(parsed.cachedAt) : 0);
-						if (timestamp > 0 && nowMs - timestamp > maxAgeMs) keysToRemove.push(key);
-					} catch {}
+						const parsed: unknown = JSON.parse(raw);
+						if (typeof parsed === "object" && parsed !== null) {
+							const cachedAtMs = Reflect.get(parsed, "cachedAtMs");
+							const cachedAt = Reflect.get(parsed, "cachedAt");
+							const timestamp =
+								typeof cachedAtMs === "number"
+									? cachedAtMs
+									: typeof cachedAt === "string"
+										? Date.parse(cachedAt)
+										: 0;
+							if (timestamp > 0 && nowMs - timestamp > maxAgeMs) keysToRemove.push(key);
+						}
+					} catch (parseErr: unknown) {
+						logger.debug("[ClinicalCacheStorage] Skipping invalid cached snapshot JSON:", parseErr);
+					}
 				}
 			}
 			for (const key of keysToRemove) {
@@ -75,9 +86,8 @@ export function scheduleStoragePruneIdle(maxAgeMs?: number): void {
 		});
 	};
 
-	const win = window as unknown as { requestIdleCallback?: (cb: () => void, opt: { timeout: number }) => number };
-	if (typeof win.requestIdleCallback === "function") {
-		win.requestIdleCallback(() => runPrune(), { timeout: 10_000 });
+	if (typeof window.requestIdleCallback === "function") {
+		window.requestIdleCallback(() => runPrune(), { timeout: 10_000 });
 	} else {
 		setTimeout(runPrune, 5_000);
 	}

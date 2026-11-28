@@ -381,6 +381,11 @@ export function isHardwareScanBurst(
 
 export type BarcodeScanSubscriber = (event: UsbBarcodeScanEvent) => void;
 
+export interface KeyboardEventTargetLike {
+	addEventListener?: ((type: string, listener: (event: KeyboardEvent) => void, options?: boolean) => void) | undefined;
+	removeEventListener?: ((type: string, listener: (event: KeyboardEvent) => void, options?: boolean) => void) | undefined;
+}
+
 /**
  * Industrial USB HID Barcode & 2D DataMatrix Scanner Manager.
  */
@@ -392,7 +397,7 @@ export class UsbBarcodeScanner {
 	private lastScannedCode = "";
 	private lastScanTimestamp = 0;
 	private boundKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
-	private targetWindow: Window | null = null;
+	private targetWindow: KeyboardEventTargetLike | null = null;
 
 	constructor(config: Partial<UsbBarcodeScannerConfig> = {}) {
 		this.config = { ...DEFAULT_SCANNER_CONFIG, ...config };
@@ -401,9 +406,9 @@ export class UsbBarcodeScanner {
 	/**
 	 * Starts listening for global keyboard scanner events on the window.
 	 */
-	public start(win: Window | typeof globalThis = typeof window !== "undefined" ? window : (globalThis as unknown as Window)): void {
+	public start(win: KeyboardEventTargetLike | null = typeof window !== "undefined" ? window : null): void {
 		if (this.isListening || !win) return;
-		this.targetWindow = win as Window;
+		this.targetWindow = win;
 		this.buffer = [];
 		this.isListening = true;
 
@@ -561,13 +566,12 @@ export class UsbBarcodeScanner {
 			// Clean up focused input if scanner typed into it
 			if (isInputActive && this.config.protectActiveInput && activeElement) {
 				try {
-					const input = activeElement as HTMLInputElement | HTMLTextAreaElement;
-					if (input.value && input.value.includes(result.rawCode)) {
-						input.value = input.value.replace(result.rawCode, "").trim();
-						input.dispatchEvent(new Event("input", { bubbles: true }));
+					if (activeElement.value && activeElement.value.includes(result.rawCode)) {
+						activeElement.value = activeElement.value.replace(result.rawCode, "").trim();
+						activeElement.dispatchEvent(new Event("input", { bubbles: true }));
 					}
-				} catch {
-					// Ignore DOM exceptions in headless environments
+				} catch (err: unknown) {
+					logger.debug("[UsbBarcodeScanner] Input cleanup skipped:", err);
 				}
 			}
 		}

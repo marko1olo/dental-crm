@@ -4,14 +4,19 @@
  * с автоматическим освобождением AudioContext во избежание утечек памяти.
  */
 
+import { logger } from "../../utils/logger";
+
+declare global {
+	interface Window {
+		webkitAudioContext?: typeof AudioContext;
+	}
+}
+
 export function playCallingChime(): void {
 	if (typeof window === "undefined") return;
 
 	try {
-		const AudioCtx =
-			window.AudioContext ||
-			(window as unknown as { webkitAudioContext: typeof AudioContext })
-				.webkitAudioContext;
+		const AudioCtx = window.AudioContext || window.webkitAudioContext;
 		if (!AudioCtx) return;
 
 		const ctx = new AudioCtx();
@@ -47,11 +52,12 @@ export function playCallingChime(): void {
 				if (ctx.state !== "closed") {
 					void ctx.close();
 				}
-			} catch {
-				// контекст уже утилизирован
+			} catch (closeErr: unknown) {
+				logger.debug("[loungeChimeAudio] AudioContext already closed:", closeErr);
 			}
 		}, 1200);
-	} catch {
+	} catch (err: unknown) {
 		// AudioContext заблокирован браузером до первого жеста пользователя
+		logger.warn("[loungeChimeAudio] playCallingChime failed:", err);
 	}
 }

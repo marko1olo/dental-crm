@@ -172,18 +172,23 @@ function handleIncomingCrossTabEvent(rawEvent: unknown): void {
 	}
 }
 
+interface UnreffableBroadcastChannel extends BroadcastChannel {
+	unref?: (() => void) | undefined;
+}
+
 function initBroadcastChannel(): void {
 	if (broadcastChannelInstance) return;
 	if (typeof BroadcastChannel !== "undefined") {
 		try {
-			broadcastChannelInstance = new BroadcastChannel(CROSS_TAB_CHANNEL_NAME);
-			if (typeof (broadcastChannelInstance as unknown as { unref?: () => void }).unref === "function") {
-				(broadcastChannelInstance as unknown as { unref: () => void }).unref();
+			const channel: UnreffableBroadcastChannel = new BroadcastChannel(CROSS_TAB_CHANNEL_NAME);
+			broadcastChannelInstance = channel;
+			if (typeof channel.unref === "function") {
+				channel.unref();
 			}
-			broadcastChannelInstance.onmessage = (e: MessageEvent) => {
+			channel.onmessage = (e: MessageEvent) => {
 				handleIncomingCrossTabEvent(e.data);
 			};
-			broadcastChannelInstance.onmessageerror = (err) => {
+			channel.onmessageerror = (err) => {
 				logger.warn("[CrossTabSync] BroadcastChannel error:", err);
 			};
 		} catch (err) {
@@ -371,8 +376,8 @@ export function resetCrossTabSyncForTesting(): void {
 	if (broadcastChannelInstance) {
 		try {
 			broadcastChannelInstance.close();
-		} catch {
-			// ignore
+		} catch (err: unknown) {
+			logger.debug("[CrossTabSync] BroadcastChannel close skipped:", err);
 		}
 		broadcastChannelInstance = null;
 	}
