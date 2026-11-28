@@ -23,7 +23,7 @@ export function DentalLabOrdersMainContent({
 
 	return (
 		<main
-			className="w-full max-w-full space-y-2.5 overflow-hidden"
+			className="w-full max-w-full space-y-2.5 overflow-x-clip"
 			data-testid="dental-lab-orders-view"
 		>
 			<LabOrdersFilterBar

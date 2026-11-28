@@ -6,6 +6,8 @@ import { DentalLabOrdersView } from "../DentalLabOrdersView";
 import { LabOrderCard } from "../LabOrderCard";
 import { LabTrackingDrawer } from "../LabTrackingDrawer";
 import { LabOrdersTable, generateBatchRegistryPrintHtml } from "../ordersView/LabOrdersTable";
+import { formatLabOrderDisplayNumber } from "../ordersView/constants";
+import { MobileLabOrderCard } from "../mobile/MobileLabOrderCard";
 import { generateDentalLabOrderA4PrintBlank, A4_PRINT_BLANK_CSS } from "../dentalLabWorkflowExport";
 import { createDentalLabOrder } from "../dentalLabWorkflowEngine";
 import type { DentalLabOrderData } from "../labMath";
@@ -134,5 +136,40 @@ describe("Dental Lab Responsiveness, 32px Dense Registry, XSS Escaping & Print A
 		const html = generateDentalLabOrderA4PrintBlank(wfOrder);
 		assert.ok(html.includes("@media print"));
 		assert.ok(html.includes("break-inside: avoid !important"));
+	});
+
+	it("5. Enforces single Primary CTA (--primary), Secondary row buttons, unique order numbers, and left mobile call button", () => {
+		const viewHtml = renderToString(
+			React.createElement(DentalLabOrdersView, {
+				initialOrders: [
+					{ ...sampleOrder, id: "01a21400-0000-7000-8000-00000000aa11", orderNumber: "ЗТЛ-01A214", status: "in_progress" },
+					{ ...sampleOrder, id: "01a21400-0000-7000-8000-00000000bb22", orderNumber: "ЗТЛ-01A214", status: "ready_in_clinic" },
+				],
+			}),
+		);
+		assert.ok(viewHtml.includes("bg-[var(--primary)]"));
+		assert.equal(viewHtml.includes("bg-[var(--teal"), false, "Filter/Row buttons must not use acid --teal background");
+		assert.equal(viewHtml.includes("primary-button"), false, "Table rows must use secondary-button instead of primary-button");
+		assert.ok(viewHtml.includes("ЗТЛ-AA11"));
+		assert.ok(viewHtml.includes("ЗТЛ-BB22"));
+		assert.equal(
+			formatLabOrderDisplayNumber({ id: "01a21400-0000-7000-8000-00000000aa11", orderNumber: "ЗТЛ-01A214" }),
+			"ЗТЛ-AA11",
+		);
+		assert.equal(
+			formatLabOrderDisplayNumber({ id: "01a21400-0000-7000-8000-00000000cc33", orderNumber: "ЗТЛ-555" }),
+			"ЗТЛ-555",
+		);
+
+		const mobileCardHtml = renderToString(
+			React.createElement(MobileLabOrderCard, {
+				order: { ...sampleOrder, id: "01a21400-0000-7000-8000-00000000bb22", orderNumber: "ЗТЛ-01A214", status: "in_clinic" },
+				onSelect: () => {},
+			}),
+		);
+		const callIdx = mobileCardHtml.indexOf("mobile-lab-call-btn");
+		const infoIdx = mobileCardHtml.indexOf("mobile-lab-info-block");
+		assert.ok(callIdx > -1 && infoIdx > -1 && callIdx < infoIdx, "Call button must be on the left before info block");
+		assert.ok(mobileCardHtml.includes("Готово в клинике"));
 	});
 });

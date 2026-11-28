@@ -107,7 +107,7 @@ export function LabOrdersFilterBar({
 				<button
 					type="button"
 					onClick={onOpenNewOrder}
-					className="h-9 min-h-[36px] px-3.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-medium text-xs shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+					className="h-9 min-h-[36px] px-3.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-medium text-xs shadow-2xs transition-all inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 active:scale-95"
 					data-testid="lab-orders-new-order-btn"
 					title="Новый наряд в лабораторию"
 				>

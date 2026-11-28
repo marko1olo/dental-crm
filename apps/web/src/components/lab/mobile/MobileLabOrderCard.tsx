@@ -4,6 +4,7 @@ import type { DentalLabOrderData } from "../labMath";
 import { formatLabConstructionTitle } from "../../../pages/LabOrdersPage";
 import { SHADE_SWATCH_MAP } from "../labMath";
 import { money } from "../../../AppHelpers";
+import { formatLabOrderDisplayNumber } from "../ordersView/constants";
 import { formatMobileDeadlineAndTimer, getOrderStageIndex, MOBILE_LAB_STAGES } from "./mobileLabTimelineHelpers";
 
 export interface MobileLabOrderCardProps {
@@ -12,8 +13,7 @@ export interface MobileLabOrderCardProps {
 }
 
 export function MobileLabOrderCard({ order, onSelect }: MobileLabOrderCardProps): React.JSX.Element {
-	const rawOrderNum = String(order.orderNumber || (order.id ? (order.id.startsWith("ЗТЛ-") ? order.id : `ЗТЛ-${order.id.replace(/^[#a-zA-Z_-]+/, "") || order.id.slice(0, 6).toUpperCase()}`) : "ЗТЛ"));
-	const orderNum = rawOrderNum.startsWith("ЗТЛ-") ? rawOrderNum : `ЗТЛ-${rawOrderNum.replace(/^[#a-zA-Z_-]+/, "")}`;
+	const orderNum = formatLabOrderDisplayNumber(order);
 	const toothDisplay = order.toothFdi ? `Зуб ${order.toothFdi}` : order.selectedTeeth?.length ? `Зуб ${order.selectedTeeth.join(", ")}` : "Челюсть";
 	const constructionDisplay = formatLabConstructionTitle(order.constructionType, order.material ?? undefined);
 	const swatchBg = SHADE_SWATCH_MAP[order.colorVita?.toUpperCase() ?? ""]?.bg || "#f4eedb";
@@ -26,13 +26,13 @@ export function MobileLabOrderCard({ order, onSelect }: MobileLabOrderCardProps)
 
 	const statusBadge = (() => {
 		const st = (order.status || "").toLowerCase();
-		if (["ready", "ready_in_clinic", "shipped"].includes(st)) {
+		if (["ready", "ready_in_clinic", "in_clinic", "shipped", "delivered", "received"].includes(st)) {
 			return { label: "Готово в клинике", className: "bg-[var(--success-soft)] text-[var(--success-ink)] border-[var(--success-line)]" };
 		}
-		if (["fitting", "refitting", "try_in"].includes(st)) {
+		if (["fitting", "fitting_scheduled", "refitting", "try_in"].includes(st)) {
 			return { label: "Примерка", className: "bg-[var(--warning-soft)] text-[var(--warning-ink)] border-[var(--warning-line)]" };
 		}
-		if (["completed", "delivered_to_patient"].includes(st)) {
+		if (["completed", "delivered_to_patient", "fitted", "patient_fixation", "installed_completed", "seated", "installed"].includes(st)) {
 			return { label: "Сдано", className: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]" };
 		}
 		return { label: "В работе", className: "bg-[var(--primary)]/15 text-[var(--primary)] border-[var(--primary)]/30" };
@@ -51,6 +51,12 @@ export function MobileLabOrderCard({ order, onSelect }: MobileLabOrderCardProps)
 						>
 							{statusBadge.label}
 						</span>
+						{order.colorVita ? (
+							<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[10px] font-bold">
+								<span className="w-2 h-2 rounded-full border border-black/20 shrink-0" style={{ backgroundColor: swatchBg }} />
+								<span>{order.colorVita}</span>
+							</span>
+						) : null}
 					</div>
 				</div>
 				<div className="mobile-lab-fdi-chip">
@@ -61,22 +67,12 @@ export function MobileLabOrderCard({ order, onSelect }: MobileLabOrderCardProps)
 			</div>
 
 			<div className="mobile-lab-contact-row">
+				<a href={`tel:${labPhone.replace(/[^\d+]/g, "")}`} onClick={(e) => e.stopPropagation()} className="mobile-lab-call-btn" title={`Позвонить технику: ${labPhone}`} data-testid={`mobile-lab-call-btn-${order.id}`}>
+					<Phone size={17} />
+				</a>
 				<div className="mobile-lab-info-block">
 					<div className="mobile-lab-name-text">{labName}</div>
 					<div className="mobile-lab-tech-text">{techName}</div>
-				</div>
-				<div className="flex items-center gap-2">
-					<div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--paper)] border border-[var(--line-subtle)] text-[11px] font-bold">
-						{order.colorVita ? (
-							<>
-								<span className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0" style={{ backgroundColor: swatchBg }} />
-								<span>{order.colorVita}</span>
-							</>
-						) : <span className="text-[var(--muted)]">—</span>}
-					</div>
-					<a href={`tel:${labPhone.replace(/[^\d+]/g, "")}`} onClick={(e) => e.stopPropagation()} className="mobile-lab-call-btn" title={`Позвонить технику: ${labPhone}`} data-testid={`mobile-lab-call-btn-${order.id}`}>
-						<Phone size={17} />
-					</a>
 				</div>
 			</div>
 

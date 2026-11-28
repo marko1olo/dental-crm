@@ -130,7 +130,7 @@ export function LabOrdersTable(props: LabOrdersTableProps): React.JSX.Element {
 				data-testid="lab-orders-table-container"
 			>
 				<table
-					className="w-full text-left border-collapse table-fixed"
+					className="w-full min-w-[970px] text-left border-collapse table-fixed"
 					data-testid="lab-orders-dense-table"
 				>
 					<LabOrdersTableHeader

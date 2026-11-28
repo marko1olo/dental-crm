@@ -34,19 +34,19 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 
 		const filterTabs = useMemo(() => [
 			{ id: "all", label: "Все", count: orders.length },
-			{ id: "in_progress", label: "В работе", count: orders.filter((o) => ["in_progress", "sent", "sent_to_lab"].includes(o.status || "")).length },
-			{ id: "fitting", label: "Примерка", count: orders.filter((o) => ["fitting", "refitting", "try_in"].includes(o.status || "")).length },
-			{ id: "ready", label: "В клинике", count: orders.filter((o) => ["ready", "ready_in_clinic", "shipped"].includes(o.status || "")).length },
-			{ id: "completed", label: "Сдано", count: orders.filter((o) => ["completed", "delivered_to_patient"].includes(o.status || "")).length },
+			{ id: "in_progress", label: "В работе", count: orders.filter((o) => ["sent", "sent_to_lab", "impression_scan", "draft", "in_progress", "framework_fitting", "cad_modeling", "milling_casting", "milling_framework"].includes((o.status || "").toLowerCase())).length },
+			{ id: "fitting", label: "Примерка", count: orders.filter((o) => ["fitting", "fitting_scheduled", "refitting", "ceramic_layering", "try_in"].includes((o.status || "").toLowerCase())).length },
+			{ id: "ready", label: "В клинике", count: orders.filter((o) => ["ready", "ready_in_clinic", "in_clinic", "shipped", "delivered", "received"].includes((o.status || "").toLowerCase())).length },
+			{ id: "completed", label: "Сдано", count: orders.filter((o) => ["completed", "patient_fixation", "delivered_completed", "delivered_to_patient", "installed_completed", "fitted", "seated", "installed"].includes((o.status || "").toLowerCase())).length },
 		], [orders]);
 
 		const filteredOrders = useMemo(() => {
 			return orders.filter((o) => {
 				const status = (o.status || "").toLowerCase();
-				if (statusFilter === "in_progress" && !["in_progress", "sent", "sent_to_lab"].includes(status)) return false;
-				if (statusFilter === "fitting" && !["fitting", "refitting", "try_in"].includes(status)) return false;
-				if (statusFilter === "ready" && !["ready", "ready_in_clinic", "shipped"].includes(status)) return false;
-				if (statusFilter === "completed" && !["completed", "delivered_to_patient"].includes(status)) return false;
+				if (statusFilter === "in_progress" && !["sent", "sent_to_lab", "impression_scan", "draft", "in_progress", "framework_fitting", "cad_modeling", "milling_casting", "milling_framework"].includes(status)) return false;
+				if (statusFilter === "fitting" && !["fitting", "fitting_scheduled", "refitting", "ceramic_layering", "try_in"].includes(status)) return false;
+				if (statusFilter === "ready" && !["ready", "ready_in_clinic", "in_clinic", "shipped", "delivered", "received"].includes(status)) return false;
+				if (statusFilter === "completed" && !["completed", "patient_fixation", "delivered_completed", "delivered_to_patient", "installed_completed", "fitted", "seated", "installed"].includes(status)) return false;
 				if (searchQuery.trim()) {
 					const q = searchQuery.toLowerCase();
 					const pat = (o.patientName || "").toLowerCase();

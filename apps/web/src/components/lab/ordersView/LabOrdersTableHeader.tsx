@@ -22,7 +22,7 @@ export function LabOrdersTableHeader({
 	return (
 		<thead>
 			<tr className="h-8 min-h-[32px] max-h-[32px] bg-[var(--paper-soft)] border-b border-[var(--line)] text-[11px] font-semibold text-[var(--muted)] select-none">
-				<th className="px-2 py-0 whitespace-nowrap w-[36px] text-center" onClick={(e) => e.stopPropagation()}>
+				<th className="px-1 py-0 whitespace-nowrap w-[30px] text-center" onClick={(e) => e.stopPropagation()}>
 					{onToggleSelectAll ? (
 						<input
 							ref={checkboxRef}
@@ -30,19 +30,19 @@ export function LabOrdersTableHeader({
 							checked={isAllSelected}
 							onChange={onToggleSelectAll}
 							aria-label="Выбрать все наряды"
-							className="rounded border-[var(--line)] text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)] cursor-pointer w-3.5 h-3.5"
+							className="rounded border-[var(--line)] accent-[var(--primary)] text-[var(--primary)] focus:ring-[var(--primary)] cursor-pointer w-3.5 h-3.5"
 						/>
 					) : null}
 				</th>
-				<th className="px-2.5 py-0 whitespace-nowrap w-[80px]">№ Наряда</th>
-				<th className="px-2.5 py-0 whitespace-nowrap w-[150px]">Пациент</th>
-				<th className="px-2 py-0 whitespace-nowrap text-center w-[80px]">Зуб</th>
-				<th className="px-2.5 py-0 whitespace-nowrap w-[195px]">Конструкция / Материал</th>
-				<th className="px-2.5 py-0 whitespace-nowrap w-[50px]">VITA</th>
-				<th className="px-2.5 py-0 whitespace-nowrap w-[130px]">Статус ЗТЛ</th>
-				<th className="px-2.5 py-0 whitespace-nowrap w-[125px]">Срок</th>
-				<th className="px-2.5 py-0 whitespace-nowrap font-mono text-right w-[85px]">Стоимость</th>
-				<th className="px-3 py-0 whitespace-nowrap text-left w-[210px]">Действия</th>
+				<th className="px-1.5 py-0 whitespace-nowrap w-[74px]">№ Наряда</th>
+				<th className="px-1.5 py-0 whitespace-nowrap w-[126px]">Пациент</th>
+				<th className="px-1 py-0 whitespace-nowrap text-center w-[88px]">Зуб</th>
+				<th className="px-1.5 py-0 whitespace-nowrap">Конструкция / Материал</th>
+				<th className="px-1 py-0 whitespace-nowrap w-[44px]">VITA</th>
+				<th className="px-1 py-0 whitespace-nowrap w-[128px]">Статус ЗТЛ</th>
+				<th className="px-1 py-0 whitespace-nowrap w-[134px]">Срок</th>
+				<th className="px-1.5 py-0 whitespace-nowrap font-mono text-right w-[74px]">Стоимость</th>
+				<th className="px-1.5 py-0 whitespace-nowrap text-left w-[268px]">Действия</th>
 			</tr>
 		</thead>
 	);

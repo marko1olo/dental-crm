@@ -10,7 +10,7 @@
 	color: var(--ink);
 	overflow-x: clip;
 	position: relative;
-	padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+	padding-bottom: 0;
 }
 
 .mobile-lab-top-bar {

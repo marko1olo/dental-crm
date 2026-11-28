@@ -46,6 +46,20 @@ export const DENTAL_LAB_DETAILED_STAGE_KEYS: readonly DentalLabDetailedStageKey[
 	{ id: "patient_fixation", label: "Зафиксировано" },
 ];
 
+export function formatLabOrderDisplayNumber(order: {
+	readonly id?: string | null | undefined;
+	readonly orderNumber?: string | number | null | undefined;
+}): string {
+	const orderId = order.id ?? "";
+	const rawIdClean = orderId.replace(/^lab-?/i, "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+	const uuidV7AutoPrefix = orderId ? `ЗТЛ-${orderId.slice(0, 6).toUpperCase()}` : "";
+	const explicit = order.orderNumber != null ? String(order.orderNumber).trim() : "";
+	if (explicit && explicit !== uuidV7AutoPrefix) {
+		return explicit;
+	}
+	return rawIdClean ? `ЗТЛ-${rawIdClean.slice(-4)}` : "ЗТЛ";
+}
+
 export function getStatusBadge(status?: string): React.ReactNode {
 	switch (status) {
 		case "draft":
@@ -87,7 +101,7 @@ export function getStatusBadge(status?: string): React.ReactNode {
 		case "received":
 		case "in_clinic":
 			return (
-				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
+				<span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
 					Готов в клинике
 				</span>
 			);
@@ -98,19 +112,14 @@ export function getStatusBadge(status?: string): React.ReactNode {
 		case "installed_completed":
 		case "seated":
 			return (
-				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+				<span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
 					Установлен пациенту
 				</span>
 			);
 		case "warranty_rework":
 		case "rejected_remake":
 			return (
-				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
-					Гарантия / Переделка
-				</span>
-			);
-			return (
-				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+				<span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
 					Гарантия / Переделка
 				</span>
 			);

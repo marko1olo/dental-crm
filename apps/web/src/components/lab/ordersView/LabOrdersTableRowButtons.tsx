@@ -16,22 +16,34 @@ export function LabOrdersTableRowButtons(props: LabOrdersTableRowButtonsProps): 
 		order, openMenuOrderId, setOpenMenuOrderId, onOpenReadyInClinicPrompt,
 		onOpenPrintOrder, onOpenTracking, onView3DScan, ...menuHandlers
 	} = props;
-	const isReady = ["ready", "ready_in_clinic", "shipped", "delivered", "received"].includes(order.status || "");
+	const status = order.status || "";
+	const isCompletedOrInstalled = [
+		"completed",
+		"delivered_to_patient",
+		"fitted",
+		"patient_fixation",
+		"installed_completed",
+		"seated",
+		"installed",
+	].includes(status);
+	const isReady = ["ready", "ready_in_clinic", "in_clinic", "shipped", "delivered", "received"].includes(status);
 
 	return (
 		<div className="inline-flex items-center gap-1">
-			{isReady ? (
+			{isCompletedOrInstalled ? (
+				<button type="button" onClick={() => onOpenPrintOrder(order)} className="secondary-button h-7 min-h-[28px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink-secondary)] hover:text-[var(--ink)] font-semibold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap active:scale-[0.98]" title="Распечатать наряд в зуботехническую лабораторию" data-testid={`lab-order-table-print-btn-${order.id}`}>
+					<Printer className="w-3 h-3 text-[var(--muted)]" /><span>Печать</span>
+				</button>
+			) : isReady ? (
 				<>
 					<button type="button" onClick={() => onOpenReadyInClinicPrompt(order)} className="secondary-button h-7 min-h-[28px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink-secondary)] hover:text-[var(--ink)] font-semibold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap active:scale-[0.98]" title="Работа готова в клинике! Записать пациента на прием" data-testid={`lab-order-table-schedule-btn-${order.id}`}>
 						<CalendarCheck className="w-3 h-3 text-[var(--muted)]" /><span>Запись</span>
 					</button>
-					{order.status !== "completed" && order.status !== "installed" && (
-						<button type="button" onClick={() => menuHandlers.onMarkInstalled(order)} className="primary-button h-7 min-h-[28px] px-2.5 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap active:scale-[0.98]" title="Сдать работу пациенту и зафиксировать в полости рта" data-testid={`lab-order-table-install-btn-${order.id}`}>
-							<Sparkles className="w-3 h-3" /><span>Сдать</span>
-						</button>
-					)}
+					<button type="button" onClick={() => menuHandlers.onMarkInstalled(order)} className="secondary-button h-7 min-h-[28px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap active:scale-[0.98]" title="Сдать работу пациенту и зафиксировать в полости рта" data-testid={`lab-order-table-install-btn-${order.id}`}>
+						<Sparkles className="w-3 h-3 text-[var(--muted)]" /><span>Сдать</span>
+					</button>
 				</>
-			) : order.status === "refitting" ? (
+			) : status === "refitting" ? (
 				<>
 					<button type="button" onClick={() => menuHandlers.onRepeatFitting(order)} className="secondary-button h-7 min-h-[28px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink-secondary)] hover:text-[var(--ink)] font-semibold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap active:scale-[0.98]" title="Припасовка / Повторная примерка" data-testid={`lab-order-table-fitting-btn-${order.id}`}>
 						<RotateCcw className="w-3 h-3 text-[var(--muted)]" /><span>Припасовка</span>
@@ -42,8 +54,8 @@ export function LabOrdersTableRowButtons(props: LabOrdersTableRowButtonsProps): 
 				</>
 			) : (
 				<>
-					<button type="button" onClick={() => onOpenReadyInClinicPrompt(order)} className="primary-button h-7 min-h-[28px] px-2.5 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap active:scale-[0.98]" title="Принять готовую работу в клинику" data-testid={`lab-order-table-receive-btn-${order.id}`}>
-						<CheckCircle2 className="w-3 h-3" /><span>Принять</span>
+					<button type="button" onClick={() => onOpenReadyInClinicPrompt(order)} className="secondary-button h-7 min-h-[28px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap active:scale-[0.98]" title="Принять готовую работу в клинику" data-testid={`lab-order-table-receive-btn-${order.id}`}>
+						<CheckCircle2 className="w-3 h-3 text-[var(--muted)]" /><span>Принять</span>
 					</button>
 					<button type="button" onClick={() => onOpenPrintOrder(order)} className="secondary-button h-7 min-h-[28px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink-secondary)] hover:text-[var(--ink)] font-semibold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap active:scale-[0.98]" title="Распечатать наряд в зуботехническую лабораторию" data-testid={`lab-order-table-print-btn-${order.id}`}>
 						<Printer className="w-3 h-3 text-[var(--muted)]" /><span>Печать</span>

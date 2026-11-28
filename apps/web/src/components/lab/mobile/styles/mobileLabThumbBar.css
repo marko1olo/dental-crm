@@ -1,13 +1,13 @@
 /* mobileLabThumbBar.css — Зона большого пальца и шторка Bottom Sheet (Мандат 8b: <= 120 строк) */
 
 .mobile-lab-thumb-bar {
-	position: fixed;
-	bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+	position: sticky;
+	bottom: 0;
 	left: 0;
 	right: 0;
 	width: 100%;
-	z-index: 10000;
-	padding: 8px 16px;
+	z-index: 25;
+	padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
 	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
 	background: color-mix(in srgb, var(--paper-strong) 92%, transparent);
 	backdrop-filter: blur(20px);
@@ -23,7 +23,7 @@
 	height: 52px;
 	min-height: 52px;
 	border-radius: 16px;
-	background: var(--teal, #0d9488);
+	background: var(--primary);
 	color: #ffffff;
 	font-size: 15px;
 	font-weight: 800;
@@ -33,13 +33,13 @@
 	gap: 8px;
 	border: none;
 	cursor: pointer;
-	box-shadow: 0 4px 14px -2px color-mix(in srgb, var(--teal, #0d9488) 45%, transparent);
+	box-shadow: 0 4px 14px -2px color-mix(in srgb, var(--primary) 35%, transparent);
 	transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
 .mobile-lab-primary-cta:active {
 	transform: scale(0.98);
-	background: color-mix(in srgb, var(--teal, #0d9488) 85%, #000000);
+	background: var(--primary-hover);
 }
 
 .mobile-lab-sheet-backdrop {
