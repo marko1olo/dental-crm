@@ -3,7 +3,12 @@
  * Conforms to Mandate 8b (<= 120 lines).
  */
 
-import { extractGostCmsMetadata } from "@dental/shared";
+import {
+	extractGostCmsMetadata,
+	formatDateKeyInTimeZone,
+	resolveValidIanaTimeZone,
+	shiftCalendarDay,
+} from "@dental/shared";
 import type { electronicPrescriptionItems, electronicPrescriptions, organizations } from "../../db/schema.js";
 
 type Presc = typeof electronicPrescriptions.$inferSelect;
@@ -14,11 +19,15 @@ export function buildPrescriptionPrintPayload(params: {
 	presc: Presc;
 	org?: Org | null | undefined;
 	clinicPhone?: string | null | undefined;
+	clinicTimeZone?: string | null | undefined;
 	resolvedPatientAddress: string;
 	items: Item[];
 	withStampAndSignature: boolean;
 }) {
 	const { presc, org, clinicPhone, resolvedPatientAddress, items, withStampAndSignature } = params;
+	const resolvedTz = resolveValidIanaTimeZone(params.clinicTimeZone);
+	const issuedDateIso = formatDateKeyInTimeZone(presc.issuedAt || presc.createdAt, resolvedTz);
+	const validToIso = shiftCalendarDay(issuedDateIso, 365);
 
 	const snapshot = presc.safetyAuditSnapshotJson as {
 		ukepSignature?: {
@@ -51,7 +60,7 @@ export function buildPrescriptionPrintPayload(params: {
 		clinicInn: org?.inn || "—",
 		medicalLicenseNumber: org?.medicalLicenseNumber || "—",
 		prescriptionSeriesNumber: presc.prescriptionNumber,
-		prescriptionDate: presc.issuedAt?.toISOString().slice(0, 10) || presc.createdAt.toISOString().slice(0, 10),
+		prescriptionDate: issuedDateIso,
 		patientFullName: presc.patientFullName,
 		patientBirthDate: presc.patientBirthDate,
 		patientAddress: resolvedPatientAddress,
@@ -80,8 +89,8 @@ export function buildPrescriptionPrintPayload(params: {
 					doctorSnils: ukep?.doctorSnils || null,
 					certificateSerialNumber: certSerial || "СЕРТИФИКАТ_УКЭП_ДЕЙСТВИТЕЛЕН",
 					certificateIssuer: ukep?.certificateIssuer || "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
-					certificateValidFrom: ukep?.certificateValidFrom || presc.issuedAt?.toISOString().slice(0, 10) || presc.createdAt.toISOString().slice(0, 10),
-					certificateValidTo: ukep?.certificateValidTo || new Date((presc.issuedAt || presc.createdAt).getTime() + 365 * 86400000).toISOString().slice(0, 10),
+					certificateValidFrom: ukep?.certificateValidFrom || issuedDateIso,
+					certificateValidTo: ukep?.certificateValidTo || validToIso,
 					signedAt: ukep?.signedAt || presc.updatedAt.toISOString(),
 					cryptoSignaturePkcs7: presc.cryptoSignaturePkcs7,
 					signatureAlgorithm: ukep?.signatureAlgorithm || "ГОСТ Р 34.10-2012 (256 бит)",

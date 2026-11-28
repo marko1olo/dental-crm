@@ -1,5 +1,6 @@
 import { formatKopecksToRub, generateUuidV7, rublesToKopecks } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { showToast } from "../../../GlobalToast";
 import type { DentalLabOrderData } from "../../labMath";
 import { getMaterialMeta } from "../../dentalLabCatalogData";
@@ -58,7 +59,16 @@ export async function executeLabPayFromCashbox(
 		}),
 	});
 	if (!res.ok) {
-		const errData = await res.json().catch(() => null);
+		let errData: { message?: string } | null = null;
+		try {
+			errData = (await res.json()) as { message?: string } | null;
+		} catch (parseErr) {
+			clientLogger.warn("[labOrderActionHelpers] Pay error JSON parse failed", {
+				orderId: order.id,
+				status: res.status,
+				error: String(parseErr),
+			});
+		}
 		const errMsg = errData?.message || "Ошибка оплаты наряда из кассы";
 		showToast(errMsg, "error");
 		throw new Error(errMsg);

@@ -18,7 +18,7 @@
 		left: 0 !important;
 		right: 0 !important;
 		bottom: 0 !important;
-		z-index: 9999 !important;
+		z-index: 40 !important;
 		width: 100% !important;
 		max-width: 100vw !important;
 		height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
@@ -63,7 +63,13 @@
 	body:has([data-testid="patient-installments-overlay"]) .mobile-tab-bar,
 	body:has([data-testid="patient-installments-overlay"]) .dnt-bottom-nav,
 	body:has([data-testid="offline-sync-guard-modal"]) .mobile-tab-bar,
-	body:has([data-testid="offline-sync-guard-modal"]) .dnt-bottom-nav {
+	body:has([data-testid="offline-sync-guard-modal"]) .dnt-bottom-nav,
+	body:has([data-testid="egisz-certificates-hub-modal"]) .mobile-tab-bar,
+	body:has([data-testid="egisz-certificates-hub-modal"]) .dnt-bottom-nav,
+	body:has([data-testid="chairside-surgery-hub-modal"]) .mobile-tab-bar,
+	body:has([data-testid="chairside-surgery-hub-modal"]) .dnt-bottom-nav,
+	body:has([data-testid="modal-finance-invoices"]) .mobile-tab-bar,
+	body:has([data-testid="modal-finance-invoices"]) .dnt-bottom-nav {
 		display: none !important;
 	}
 

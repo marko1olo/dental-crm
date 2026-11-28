@@ -49,7 +49,13 @@ export class DicomCrawlerDaemon extends EventEmitter {
 	private config: DicomCrawlerDaemonConfig;
 	private intervalTimer: NodeJS.Timeout | null = null;
 	private fileWatchers: FSWatcher[] = [];
-	private pendingFileChecks = new Map<string, NodeJS.Timeout>();
+	private pendingFileChecks = new BoundedTtlMap<string, NodeJS.Timeout>({
+		maxEntries: 2000,
+		ttlMs: 10 * 60_000,
+		onEvict: (_path, timer) => {
+			clearTimeout(timer);
+		},
+	});
 	private isScanning = false;
 	private lastScanAt: Date | null = null;
 	private lastScanDurationMs = 0;
@@ -119,10 +125,11 @@ export class DicomCrawlerDaemon extends EventEmitter {
 		void this.scanNow();
 
 		const intervalMs = Math.max(60000, this.config.pollIntervalMinutes * 60 * 1000);
-		this.intervalTimer = setInterval(() => {
+		const timer = setInterval(() => {
 			void this.scanNow();
 		}, intervalMs);
-		this.intervalTimer.unref();
+		timer.unref();
+		this.intervalTimer = timer;
 
 		this.setupHotFolderWatchers();
 		this.emit("started");

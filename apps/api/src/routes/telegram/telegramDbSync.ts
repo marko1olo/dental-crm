@@ -1,40 +1,66 @@
-import type {
-	DenteTelegramBotSettings,
-	DenteTelegramChatLink,
-	DenteTelegramFeature,
-	DenteTelegramVisualCardUrls,
+import {
+	denteTelegramFeatureSchema,
+	type DenteTelegramBotSettings,
+	type DenteTelegramChatLink,
+	type DenteTelegramFeature,
+	type DenteTelegramVisualCardUrls,
 } from "@dental/shared";
-import type { FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
-import { withTenantCtx } from "../../db/rls.js";
+import type { FastifyRequest } from "fastify";
+import { z } from "zod";
 import { hydrateDomainStateFromDb } from "../../db/domainStateHydration.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { denteTelegramBotConfigs } from "../../db/schema/communications/channelsSchema.js";
+import { createApiLogger } from "../../observability/logger.js";
+import { isDbConnectionError } from "../../services/telegram/TelegramReferralLoyaltyService.js";
+import { upsertDenteTelegramChatLink } from "../../telegram/chatLinks.js";
 import type { DomainState } from "./telegramCanonicalStore.js";
 import {
 	inMemoryDomainState,
 	normalizePostVisitCheckupDelayHoursByTopic,
 } from "./telegramCanonicalStore.js";
 import { normalizeDenteTelegramVisualCardUrls } from "./telegramUrlHelpers.js";
-import { isDbConnectionError } from "../../services/telegram/TelegramReferralLoyaltyService.js";
-import { upsertDenteTelegramChatLink } from "../../telegram/chatLinks.js";
 import type { TelegramRuntimeContext } from "./types.js";
+
+const logger = createApiLogger("telegramDbSync");
+
+export interface TelegramDbSyncOptions {
+	/**
+	 * Явный DI-флаг для тестов: разрешает fallback в `inMemoryDomainState` при ошибке БД.
+	 */
+	inMemoryFallback?: boolean | undefined;
+}
+
+export function isTelegramInMemoryMode(inMemoryFallbackOverride?: boolean): boolean {
+	if (typeof inMemoryFallbackOverride === "boolean") {
+		return inMemoryFallbackOverride;
+	}
+	return process.env.DENTAL_STATE_PERSISTENCE === "off" || !process.env.DATABASE_URL;
+}
+
+const telegramFeaturesArraySchema = z.array(denteTelegramFeatureSchema);
+
+const reminderHoursArraySchema = z.array(z.number());
+const postVisitDelaysRecordSchema = z.record(z.string(), z.number());
 
 /**
  * Загружает срез клиники из базы (или возвращает in-memory при in-memory режиме)
  * и передает его в построители очереди отправок Telegram.
  */
 export async function hydrateTelegramDomainState(
-	_request: FastifyRequest,
+	request: FastifyRequest,
 	organizationId: string,
+	options?: TelegramDbSyncOptions,
 ): Promise<DomainState> {
 	try {
 		const { state } = await hydrateDomainStateFromDb(organizationId);
 		return state;
 	} catch (err) {
-		if (
-			isDbConnectionError(err) &&
-			(process.env.NODE_ENV === "test" || !process.env.DATABASE_URL)
-		) {
+		if (isDbConnectionError(err) && isTelegramInMemoryMode(options?.inMemoryFallback)) {
+			request.log.warn(
+				{ err, organizationId },
+				"[Telegram] DB unavailable in in-memory mode; falling back to inMemoryDomainState",
+			);
 			return inMemoryDomainState;
 		}
 		throw err;
@@ -78,6 +104,7 @@ export async function persistTelegramChatLinkToDatabase(
 export async function persistTelegramBotSettingsToDatabase(
 	settings: DenteTelegramBotSettings,
 	clinicId?: string | null,
+	options?: TelegramDbSyncOptions,
 ): Promise<void> {
 	try {
 		const orgId = settings.organizationId;
@@ -164,10 +191,11 @@ export async function persistTelegramBotSettingsToDatabase(
 			}
 		});
 	} catch (err) {
-		if (
-			isDbConnectionError(err) &&
-			(process.env.NODE_ENV === "test" || !process.env.DATABASE_URL)
-		) {
+		if (isDbConnectionError(err) && isTelegramInMemoryMode(options?.inMemoryFallback)) {
+			logger.warn(
+				{ err, organizationId: settings.organizationId },
+				"[Telegram] DB unavailable while persisting bot settings in in-memory mode",
+			);
 			return;
 		}
 		throw err;
@@ -179,6 +207,7 @@ export async function persistTelegramBotSettingsToDatabase(
  */
 export async function loadTelegramBotSettingsFromDatabase(
 	organizationId: string,
+	options?: TelegramDbSyncOptions,
 ): Promise<DenteTelegramBotSettings | null> {
 	try {
 		const row = await withTenantCtx(organizationId, async (tx) => {
@@ -199,31 +228,62 @@ export async function loadTelegramBotSettingsFromDatabase(
 
 		let enabledFeatures: DenteTelegramFeature[] = [];
 		try {
-			const parsed = JSON.parse(row.enabledFeaturesJson);
-			if (Array.isArray(parsed)) {
-				enabledFeatures = parsed as DenteTelegramFeature[];
+			const parsed = telegramFeaturesArraySchema.safeParse(JSON.parse(row.enabledFeaturesJson));
+			if (parsed.success) {
+				enabledFeatures = parsed.data;
+			} else {
+				logger.warn(
+					{ organizationId, issue: parsed.error.issues[0]?.message ?? "invalid_schema" },
+					"[Telegram] Invalid enabledFeaturesJson schema in DB, defaulting to empty array",
+				);
 			}
-		} catch {
+		} catch (err) {
+			logger.warn(
+				{ err, organizationId },
+				"[Telegram] Failed to parse enabledFeaturesJson, defaulting to empty array",
+			);
 			enabledFeatures = [];
 		}
 
 		let reminderHours: number[] = [24];
 		try {
-			const parsed = JSON.parse(row.appointmentReminderLeadTimesHoursJson);
-			if (Array.isArray(parsed)) {
-				reminderHours = parsed as number[];
+			const parsed = reminderHoursArraySchema.safeParse(
+				JSON.parse(row.appointmentReminderLeadTimesHoursJson),
+			);
+			if (parsed.success) {
+				reminderHours = parsed.data;
+			} else {
+				logger.warn(
+					{ organizationId, issue: parsed.error.issues[0]?.message ?? "invalid_schema" },
+					"[Telegram] Invalid appointmentReminderLeadTimesHoursJson schema in DB, defaulting to [24]",
+				);
 			}
-		} catch {
+		} catch (err) {
+			logger.warn(
+				{ err, organizationId },
+				"[Telegram] Failed to parse appointmentReminderLeadTimesHoursJson, defaulting to [24]",
+			);
 			reminderHours = [24];
 		}
 
 		let postVisitDelays: Record<string, number> = {};
 		try {
-			const parsed = JSON.parse(row.postVisitCheckupDelayHoursJson);
-			if (parsed && typeof parsed === "object") {
-				postVisitDelays = parsed as Record<string, number>;
+			const parsed = postVisitDelaysRecordSchema.safeParse(
+				JSON.parse(row.postVisitCheckupDelayHoursJson),
+			);
+			if (parsed.success) {
+				postVisitDelays = parsed.data;
+			} else {
+				logger.warn(
+					{ organizationId, issue: parsed.error.issues[0]?.message ?? "invalid_schema" },
+					"[Telegram] Invalid postVisitCheckupDelayHoursJson schema in DB, defaulting to {}",
+				);
 			}
-		} catch {
+		} catch (err) {
+			logger.warn(
+				{ err, organizationId },
+				"[Telegram] Failed to parse postVisitCheckupDelayHoursJson, defaulting to {}",
+			);
 			postVisitDelays = {};
 		}
 
@@ -254,10 +314,11 @@ export async function loadTelegramBotSettingsFromDatabase(
 		};
 		return settings;
 	} catch (err) {
-		if (
-			isDbConnectionError(err) &&
-			(process.env.NODE_ENV === "test" || !process.env.DATABASE_URL)
-		) {
+		if (isDbConnectionError(err) && isTelegramInMemoryMode(options?.inMemoryFallback)) {
+			logger.warn(
+				{ err, organizationId },
+				"[Telegram] DB unavailable while loading bot settings in in-memory mode",
+			);
 			return null;
 		}
 		throw err;

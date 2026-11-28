@@ -50,4 +50,10 @@
     padding: 0 20px;
     font-size: 14px;
   }
+
+  /* На мобильном расписании sticky-бар «+ Новая запись» и кнопка «В приём» в карточке не перекрываются FAB ИИ */
+  body:has(.schedule-mobile-agenda) .copilot-trigger-btn,
+  body:has(.schedule-mobile-bottom-bar) .copilot-trigger-btn {
+    display: none !important;
+  }
 }

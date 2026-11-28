@@ -4,7 +4,7 @@
  */
 
 import { Compass, Scissors } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { CbctVoxelVolume, Point3D } from "../../cbctMprMath";
 import { getVolume3DPreset, type Volume3DPresetId } from "../cbctVolume3DMath";
 

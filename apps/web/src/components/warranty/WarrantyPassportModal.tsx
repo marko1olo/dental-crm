@@ -56,7 +56,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 					<div className="warranty-header-left">
 						<div className="warranty-header-icon"><ShieldCheck size={22} /></div>
 						<div className="warranty-header-title">
-							<h3>Гарантийный паспорт & Сертификат качества</h3>
+							<h3>Гарантийный паспорт и сертификат качества</h3>
 							<p>Гарантия клиники и стандарты качества • Карта № {patient?.cardNumber || "б/н"}</p>
 						</div>
 					</div>

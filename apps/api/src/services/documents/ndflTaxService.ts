@@ -18,6 +18,7 @@
 import {
 	buildFnsKnd1151156Xml,
 	classifyNdflServiceCode,
+	formatDateKeyInTimeZone,
 	type FnsFiscalReceiptItem,
 	type FnsNdflPrintSigningOptions,
 	type FnsNdflXmlResult,
@@ -28,6 +29,7 @@ import {
 	isNonMedicalGood,
 	kopecksToNumericString,
 	parseKopecks,
+	resolveValidIanaTimeZone,
 	rublesFromKopecks,
 	rublesToKopecks,
 	sumKopecks,
@@ -42,6 +44,7 @@ import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { getDocumentsByPatientId } from "../../db/documentQuery.js";
 import { alreadyRefundedKopecksForPayment } from "../../documents/documentGuards/index.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { clinicTimeZone } from "../reports/managerReports/timezone.js";
 export class TaxPayerRequisitesRequiredError extends Error {
 	readonly statusCode = 422;
 	readonly code = "TaxPayerRequisitesRequiredError";

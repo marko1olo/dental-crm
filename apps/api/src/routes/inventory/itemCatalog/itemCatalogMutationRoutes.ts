@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { defineTenantMutation } from "../../../core/routeFactories.js";
 import {
 	handleCreateInventoryItem,
@@ -12,6 +13,30 @@ const INVENTORY_WRITE_AUTH = {
 	allowAdminSecretBypass: true,
 } as const;
 
+const orgOrAliasParamsSchema = z.object({
+	organizationId: z.union([z.literal("current"), z.literal("items"), z.string().uuid()]),
+});
+
+const orgIdBodyHintSchema = z
+	.object({
+		organizationId: z.string().uuid().optional(),
+	})
+	.passthrough();
+
+const orgCurrentItemParamsSchema = z.object({
+	organizationId: z.union([z.literal("current"), z.string().uuid()]),
+	itemId: z.string().min(1),
+});
+
+const orgAliasItemParamsSchema = z.object({
+	organizationId: z.union([z.literal("current"), z.literal("items"), z.string().uuid()]),
+	itemId: z.string().min(1),
+});
+
+const itemIdOnlyParamsSchema = z.object({
+	itemId: z.string().min(1),
+});
+
 export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 	// POST new inventory item (staff/admin only)
 	defineTenantMutation(server, {
@@ -21,7 +46,11 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "optional_header",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
+			const parsedParams = orgOrAliasParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			const { organizationId } = parsedParams.data;
 			const effectiveOrgId =
 				organizationId === "current" || organizationId === "items"
 					? resolvedOrgId
@@ -42,7 +71,11 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "optional_header",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
+			const parsedParams = orgOrAliasParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			const { organizationId } = parsedParams.data;
 			const effectiveOrgId =
 				organizationId === "current" || organizationId === "items"
 					? resolvedOrgId
@@ -63,8 +96,9 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "optional_header",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
+			const parsedBody = orgIdBodyHintSchema.safeParse(request.body ?? {});
 			const targetOrgId =
-				(request.body as { organizationId?: string })?.organizationId ||
+				(parsedBody.success ? parsedBody.data.organizationId : undefined) ||
 				resolvedOrgId;
 			if (targetOrgId !== resolvedOrgId) {
 				return reply.code(403).send({ error: "Forbidden" });
@@ -81,7 +115,11 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "exempt_idempotent_put_or_delete",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId, itemId } = request.params as { organizationId: string; itemId: string };
+			const parsedParams = orgCurrentItemParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректные параметры запроса" });
+			}
+			const { organizationId, itemId } = parsedParams.data;
 			const targetOrgId = organizationId === "current" ? resolvedOrgId : organizationId;
 			if (resolvedOrgId !== targetOrgId) {
 				return reply.code(403).send({ error: "Forbidden" });
@@ -99,7 +137,11 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "exempt_idempotent_put_or_delete",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId, itemId } = request.params as { organizationId: string; itemId: string };
+			const parsedParams = orgCurrentItemParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректные параметры запроса" });
+			}
+			const { organizationId, itemId } = parsedParams.data;
 			const targetOrgId = organizationId === "current" ? resolvedOrgId : organizationId;
 			if (resolvedOrgId !== targetOrgId) {
 				return reply.code(403).send({ error: "Forbidden" });
@@ -117,8 +159,11 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "exempt_idempotent_put_or_delete",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { itemId } = request.params as { itemId: string };
-			return handleUpdateInventoryItem(resolvedOrgId, itemId, request.body, reply, tx);
+			const parsedParams = itemIdOnlyParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Не указан itemId" });
+			}
+			return handleUpdateInventoryItem(resolvedOrgId, parsedParams.data.itemId, request.body, reply, tx);
 		},
 	});
 
@@ -130,7 +175,11 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "exempt_idempotent_put_or_delete",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId, itemId } = request.params as { organizationId: string; itemId: string };
+			const parsedParams = orgCurrentItemParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректные параметры запроса" });
+			}
+			const { organizationId, itemId } = parsedParams.data;
 			const targetOrgId = organizationId === "current" ? resolvedOrgId : organizationId;
 			if (resolvedOrgId !== targetOrgId) {
 				return reply.code(403).send({ error: "Forbidden" });
@@ -148,7 +197,11 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "exempt_idempotent_put_or_delete",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId, itemId } = request.params as { organizationId: string; itemId: string };
+			const parsedParams = orgCurrentItemParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректные параметры запроса" });
+			}
+			const { organizationId, itemId } = parsedParams.data;
 			const targetOrgId = organizationId === "current" ? resolvedOrgId : organizationId;
 			if (resolvedOrgId !== targetOrgId) {
 				return reply.code(403).send({ error: "Forbidden" });
@@ -166,8 +219,11 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "exempt_idempotent_put_or_delete",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { itemId } = request.params as { itemId: string };
-			return handleDeleteInventoryItem(resolvedOrgId, itemId, reply, tx);
+			const parsedParams = itemIdOnlyParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Не указан itemId" });
+			}
+			return handleDeleteInventoryItem(resolvedOrgId, parsedParams.data.itemId, reply, tx);
 		},
 	});
 
@@ -179,7 +235,11 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "optional_header",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId, itemId } = request.params as { organizationId: string; itemId: string };
+			const parsedParams = orgAliasItemParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректные параметры запроса" });
+			}
+			const { organizationId, itemId } = parsedParams.data;
 			const effectiveOrgId =
 				organizationId === "current" || organizationId === "items"
 					? resolvedOrgId
@@ -200,7 +260,11 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "optional_header",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId, itemId } = request.params as { organizationId: string; itemId: string };
+			const parsedParams = orgAliasItemParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректные параметры запроса" });
+			}
+			const { organizationId, itemId } = parsedParams.data;
 			const effectiveOrgId =
 				organizationId === "current" || organizationId === "items"
 					? resolvedOrgId
@@ -221,8 +285,11 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "optional_header",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { itemId } = request.params as { itemId: string };
-			return handlePatchInventoryItem(resolvedOrgId, itemId, request.body, reply, tx);
+			const parsedParams = itemIdOnlyParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Не указан itemId" });
+			}
+			return handlePatchInventoryItem(resolvedOrgId, parsedParams.data.itemId, request.body, reply, tx);
 		},
 	});
 };

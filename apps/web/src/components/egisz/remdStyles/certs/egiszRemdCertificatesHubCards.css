@@ -11,9 +11,9 @@
 	display: flex;
 	align-items: center;
 	gap: 6px;
-	background: var(--paper, #ffffff);
-	padding: 3px;
-	border-radius: 8px;
+	background: var(--paper-soft, #f8fafc);
+	padding: 4px;
+	border-radius: 12px;
 	border: 1px solid var(--line, #e2e8f0);
 }
 
@@ -30,8 +30,8 @@
 	padding: 6px 12px;
 	font-size: 0.8125rem;
 	font-weight: 600;
-	border: none;
-	border-radius: 6px;
+	border: 1px solid transparent;
+	border-radius: 8px;
 	background: transparent;
 	color: var(--muted, #64748b);
 	cursor: pointer;
@@ -48,8 +48,18 @@
 }
 
 .egisz-hub-tab.active {
-	background: var(--teal, #0d9488);
-	color: #ffffff;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border-color: var(--line, #e2e8f0);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .egisz-hub-tab.active,
+.dark .egisz-hub-tab.active {
+	background: rgba(255, 255, 255, 0.1);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 .egisz-hub-close-btn {

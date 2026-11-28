@@ -185,7 +185,7 @@ export function PriceImportModal({
 													filename: scannerFile.name,
 												});
 											}}
-											className="primary-button h-8 px-3 text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white rounded-lg shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer flex-1 sm:flex-initial"
+											className="primary-button h-8 px-3 text-xs font-bold bg-[var(--primary)] hover:opacity-95 text-white rounded-lg shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer flex-1 sm:flex-initial"
 										>
 											<Sparkles size={13} />
 											<span>
@@ -233,7 +233,7 @@ export function PriceImportModal({
 											filename: "pricelist_text.csv",
 										});
 									}}
-									className="primary-button h-8 px-3 text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white rounded-lg shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
+									className="primary-button h-8 px-3 text-xs font-bold bg-[var(--primary)] hover:opacity-95 text-white rounded-lg shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
 								>
 									<Sparkles size={13} />
 									<span>

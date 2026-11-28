@@ -5,6 +5,7 @@ import type { IncomingCallPayload } from "../../../store/telephonyTypes";
 import type { UseIncomingCallDataResult } from "../useIncomingCallData";
 import { generateAppointmentConfirmationMessage, openWhatsAppChat } from "../../../store/telephonyStore";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 export function useDrawerConfirmationActions(params: {
 	currentCall: IncomingCallPayload | null;
@@ -33,11 +34,16 @@ export function useDrawerConfirmationActions(params: {
 				body: JSON.stringify({ status: "confirmed" }),
 			});
 			if (!res.ok) {
-				const errJson = (await res.json().catch(() => null)) as {
+				let errJson: {
 					data?: { message?: string; error?: string };
 					message?: string;
 					error?: string;
-				} | null;
+				} | null = null;
+				try {
+					errJson = (await res.json()) as typeof errJson;
+				} catch (parseErr) {
+					clientLogger.warn("[useDrawerConfirmationActions] Failed to parse error JSON:", parseErr);
+				}
 				const errBody = errJson?.data ?? errJson;
 				const errMsg = errBody?.message || errBody?.error || "Не удалось подтвердить приём в расписании";
 				showToast(errMsg, "error");

@@ -1,5 +1,9 @@
 import { Readable } from "node:stream";
-import type { ServiceCatalogItem } from "@dental/shared";
+import {
+	resolveValidIanaTimeZone,
+	todayDateKeyInTimeZone,
+	type ServiceCatalogItem,
+} from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import {
 	requireClinicalMutationAccess,
@@ -11,6 +15,7 @@ import {
 	getServiceCatalogBatchForOrganization,
 	ServiceCatalogStorageDisabledError,
 } from "../../db/pricelistQuery.js";
+import { clinicTimeZone } from "../../services/reports/managerReports/timezone.js";
 import { formatPricelistCsvHeader, formatPricelistCsvRow } from "./spreadsheetImport.js";
 import {
 	batchRepriceBodySchema,
@@ -43,7 +48,6 @@ export async function handleExportPricelist(
 		...(query.activeOnly !== undefined ? { activeOnly: query.activeOnly } : {}),
 	};
 
-	const todayStr = new Date().toISOString().slice(0, 10);
 	if (query.format === "json") {
 		const items: ServiceCatalogItem[] = [];
 		let afterId: string | undefined;
@@ -66,6 +70,9 @@ export async function handleExportPricelist(
 		});
 	}
 
+	const todayStr = todayDateKeyInTimeZone(
+		resolveValidIanaTimeZone(await clinicTimeZone(orgId)),
+	);
 	reply.header("Content-Type", "text/csv; charset=utf-8");
 	reply.header("Content-Disposition", `attachment; filename="dente_pricelist_${todayStr}.csv"`);
 

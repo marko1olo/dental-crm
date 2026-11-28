@@ -102,8 +102,8 @@ export function ClinicControlPillView({
 					</span>
 				)}
 				<span
-					className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--primary-soft,rgba(13,148,136,0.1))] text-[var(--primary)] border border-[var(--line)] ml-0.5"
-					title={`Офлайн-буфер (IndexedDB, сохранено карт: ${l2PatientSnapshotsCount})`}
+					className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--primary-soft,rgba(15,118,110,0.1))] text-[var(--primary)] border border-[var(--line)] ml-0.5"
+					title={`Офлайн-буфер (локально, сохранено карт: ${l2PatientSnapshotsCount})`}
 					data-testid="header-l2-offline-buffer-badge"
 				>
 					<span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] inline-block" />

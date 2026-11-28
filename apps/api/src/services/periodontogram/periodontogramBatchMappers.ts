@@ -68,6 +68,7 @@ export interface UpsertPatientFullPeriodontogramParams {
 	autoClose?: boolean | undefined;
 	psrData?: Record<string, unknown> | undefined;
 	tx?: TenantDb | undefined;
+	demoOptions?: { readonly allowSyntheticDemoIds?: boolean | undefined } | undefined;
 }
 
 export async function upsertSingleSiteRecord(

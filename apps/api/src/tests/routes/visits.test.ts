@@ -183,6 +183,24 @@ describe("visits routes integration", () => {
 		assert.strictEqual(sent.body.reason, "visit_draft_rejected");
 	});
 
+	test("sendVisitDraftMutationError: ECONNREFUSED по умолчанию не маскируется под 404, но уважает явный DI", () => {
+		const dbErr = Object.assign(new Error("connect ECONNREFUSED 127.0.0.1:5432"), {
+			code: "ECONNREFUSED",
+		});
+
+		const prodCapture = captureReply();
+		sendVisitDraftMutationError(dbErr, prodCapture.reply, "accept");
+		assert.strictEqual(prodCapture.sent.statusCode, 409);
+		assert.strictEqual(prodCapture.sent.body.reason, "visit_draft_rejected");
+
+		const diCapture = captureReply();
+		sendVisitDraftMutationError(dbErr, diCapture.reply, "accept", {
+			treatDbUnavailableAsNotFound: true,
+		});
+		assert.strictEqual(diCapture.sent.statusCode, 404);
+		assert.strictEqual(diCapture.sent.body.reason, "visit_not_found");
+	});
+
 	/*
 	 * ОТКРЫТИЕ ПРИЁМА ПО ЗАПИСИ РАСПИСАНИЯ.
 	 *

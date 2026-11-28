@@ -15,7 +15,9 @@ import {
 import {
 	type DoctorCompletedServiceItem,
 	type DoctorRefundDeductionItem,
+	formatDateKeyInTimeZone,
 	multiplyKopecksFractional,
+	resolveValidIanaTimeZone,
 	rublesToKopecks,
 } from "@dental/shared";
 
@@ -512,26 +514,8 @@ export function formatDateIsoInTimeZone(
 	moment: Date,
 	timeZone: string | null | undefined,
 ): string {
-	const effectiveZone = timeZone?.trim() || DEFAULT_PAYROLL_TIMEZONE;
-	try {
-		return new Intl.DateTimeFormat("en-CA", {
-			timeZone: effectiveZone,
-			year: "numeric",
-			month: "2-digit",
-			day: "2-digit",
-		}).format(moment);
-	} catch {
-		try {
-			return new Intl.DateTimeFormat("en-CA", {
-				timeZone: DEFAULT_PAYROLL_TIMEZONE,
-				year: "numeric",
-				month: "2-digit",
-				day: "2-digit",
-			}).format(moment);
-		} catch {
-			return moment.toISOString().slice(0, 10);
-		}
-	}
+	const effectiveZone = resolveValidIanaTimeZone(timeZone, DEFAULT_PAYROLL_TIMEZONE);
+	return formatDateKeyInTimeZone(moment, effectiveZone);
 }
 
 function getTimeZoneOffsetMs(dateStr: string, timeZone: string): number {

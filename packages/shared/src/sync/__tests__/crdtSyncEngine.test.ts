@@ -601,4 +601,21 @@ describe("CRDT Sync Engine: Telemetry, Online/Offline & Event Subscriptions", ()
 		engine.setOnline(true);
 		assert.equal(events.length, 0); // No events after unsubscribe
 	});
+
+	test("CrdtSyncEngine autoSyncIntervalMs initializes unrefed timer and destroy() clears timer and listeners", () => {
+		const engine = new CrdtSyncEngine({
+			storageDriver: new MemoryCrdtStorageDriver(),
+			autoSyncIntervalMs: 50,
+		});
+		let observed = 0;
+		engine.subscribe(() => {
+			observed += 1;
+		});
+		engine.setOnline(false);
+		assert.equal(observed, 1);
+
+		engine.destroy();
+		engine.setOnline(true);
+		assert.equal(observed, 1);
+	});
 });

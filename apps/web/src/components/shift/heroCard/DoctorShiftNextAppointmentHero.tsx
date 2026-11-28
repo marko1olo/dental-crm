@@ -39,8 +39,8 @@ export const DoctorShiftNextAppointmentHero: React.FC<DoctorShiftNextAppointment
 		</div>
 		<div className="hero-actions" style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "10px" }}>
 			<button
-				className="primary-button"
-				style={{ fontSize: "13px", fontWeight: 600, padding: "0 16px", height: "36px", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+				className="secondary-button"
+				style={{ fontSize: "13px", fontWeight: 600, padding: "0 16px", height: "36px", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--paper)", border: "1px solid var(--line)", color: "var(--ink)" }}
 				type="button"
 				onClick={() => {
 					if (nextAppointmentPatient) {

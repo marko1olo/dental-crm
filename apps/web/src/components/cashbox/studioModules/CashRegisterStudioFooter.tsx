@@ -69,51 +69,50 @@ export const CashRegisterStudioFooter: React.FC<CashRegisterStudioFooterProps> =
 					Отмена
 				</button>
 
-				{activeTab === "checkout" && (
+				{(activeTab === "checkout" || activeTab === "shift") && (
 					<button
 						type="button"
-						data-testid={submitButtonTestId}
-						onClick={onExecutePayment}
+						data-testid={
+							activeTab === "checkout"
+								? submitButtonTestId
+								: isShiftActive
+									? "btn-close-shift-z-report"
+									: "btn-open-shift"
+						}
+						onClick={activeTab === "checkout" ? onExecutePayment : onToggleShift}
 						aria-busy={isSubmitting}
 						style={{ backgroundColor: "var(--primary)", color: "#ffffff" }}
 						className="primary-button cashier-primary-cta flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-[0.99] transition-all dente-btn-primary"
 					>
-						<Receipt className="w-4 h-4 shrink-0" />
-						<span className="whitespace-nowrap font-mono tabular-nums">
-							{isWarranty ? (
-								"Оформить по гарантии (0 ₽)"
-							) : effectiveTotalKopecks === 0n ? (
-								"Принять оплату"
-							) : (
-								`Принять оплату ${formatKopecksToRub(effectiveTotalKopecks)}`
-							)}
-						</span>
-						<span className="sr-only">Провести оплату и напечатать чек</span>
-						<span data-testid="btn-submit-checkout-54fz" className="sr-only" aria-hidden="true" />
-					</button>
-				)}
-
-				{activeTab === "shift" && (
-					<button
-						type="button"
-						data-testid={isShiftActive ? "btn-close-shift-z-report" : "btn-open-shift"}
-						onClick={onToggleShift}
-						aria-busy={isSubmitting}
-						style={{ backgroundColor: "var(--primary)", color: "#ffffff" }}
-						className="primary-button cashier-primary-cta flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-[0.99] transition-all dente-btn-primary"
-					>
-						<ShieldCheck className="w-4 h-4 shrink-0" />
-						<span data-testid="btn-close-shift-z-report-label" className="truncate">
-							{isShiftActive ? (
-								<>
-									<span className="hidden sm:inline">Закрыть смену и напечатать Z-отчёт</span>
-									<span className="sm:hidden">Снять Z-отчёт</span>
-								</>
-							) : (
-								"Открыть кассовую смену"
-							)}
-						</span>
-						<span data-testid="btn-confirm-close-shift-z-report" className="sr-only" aria-hidden="true" />
+						{activeTab === "checkout" ? (
+							<>
+								<Receipt className="w-4 h-4 shrink-0" />
+								<span className="whitespace-nowrap font-mono tabular-nums">
+									{isWarranty
+										? "Оформить по гарантии (0 ₽)"
+										: effectiveTotalKopecks === 0n
+											? "Принять оплату"
+											: `Принять оплату ${formatKopecksToRub(effectiveTotalKopecks)}`}
+								</span>
+								<span className="sr-only">Провести оплату и напечатать чек</span>
+								<span data-testid="btn-submit-checkout-54fz" className="sr-only" aria-hidden="true" />
+							</>
+						) : (
+							<>
+								<ShieldCheck className="w-4 h-4 shrink-0" />
+								<span data-testid="btn-close-shift-z-report-label" className="truncate">
+									{isShiftActive ? (
+										<>
+											<span className="hidden sm:inline">Закрыть смену и напечатать Z-отчёт</span>
+											<span className="sm:hidden">Снять Z-отчёт</span>
+										</>
+									) : (
+										"Открыть кассовую смену"
+									)}
+								</span>
+								<span data-testid="btn-confirm-close-shift-z-report" className="sr-only" aria-hidden="true" />
+							</>
+						)}
 					</button>
 				)}
 
@@ -121,8 +120,7 @@ export const CashRegisterStudioFooter: React.FC<CashRegisterStudioFooterProps> =
 					<button
 						type="button"
 						onClick={onCopyTape}
-						style={{ backgroundColor: "var(--primary)", color: "#ffffff" }}
-						className="primary-button cashier-primary-cta flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all dente-btn-primary"
+						className="dente-btn dente-btn-secondary secondary-button flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-semibold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer transition-all"
 					>
 						<Printer className="w-4 h-4 shrink-0" />
 						<span>Распечатать контрольную ленту</span>

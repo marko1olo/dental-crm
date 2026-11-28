@@ -71,8 +71,8 @@ export const DoctorShiftEncashmentControls: React.FC<DoctorShiftEncashmentContro
 				<button
 					type="button"
 					onClick={handleExecuteEncashment}
-					className={`primary-button ${encashmentCompleted ? "secondary-button" : ""}`}
-					style={{ fontSize: "13px", padding: "0 16px", minHeight: "36px", height: "36px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+					className="secondary-button"
+					style={{ fontSize: "13px", padding: "0 16px", minHeight: "36px", height: "36px", display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--paper)", border: "1px solid var(--line)", color: "var(--ink)" }}
 					data-testid="btn-execute-encashment"
 				>
 					{encashmentCompleted ? (

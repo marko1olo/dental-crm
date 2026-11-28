@@ -148,7 +148,7 @@ export const ReportA4PrintableSheet: React.FC<ReportA4PrintableSheetProps> = ({
 						>
 							{/* Above Legend Option */}
 							{settings.legendPlacement === "above" && frame.type === "image" && (
-								<div className="text-[9.5px] font-mono text-slate-700 py-1 px-2 truncate bg-white border-b border-slate-200">
+								<div className="text-[9.5px] font-mono text-[var(--ink-2)] print:text-slate-700 py-1 px-2 truncate bg-[var(--paper)] print:bg-white border-b border-[var(--line)] print:border-slate-200">
 									Зуб #{frame.toothFdi} · {frame.modalityLabel} · {frame.capturedAt} · {frame.dapDoseDgyCm2?.toFixed(3) || "0.024"} dGy*cm² [DAP]
 								</div>
 							)}
@@ -244,10 +244,10 @@ export const ReportA4PrintableSheet: React.FC<ReportA4PrintableSheetProps> = ({
 
 			{/* 5. Virtual Sheet Footer */}
 			{(settings.footer.showClinicName || settings.footer.showPhone || settings.footer.showAddress) && (
-				<div className="border-t border-slate-200 pt-2 mt-3 text-[9.5px] text-slate-500 flex items-center justify-between shrink-0">
+				<div className="border-t border-[var(--line)] print:border-slate-200 pt-2 mt-3 text-[9.5px] text-[var(--ink-muted)] print:text-slate-500 flex items-center justify-between shrink-0">
 					<div className="flex gap-3">
 						{settings.footer.showClinicName && (
-							<span className="font-semibold text-slate-800">{clinicName}</span>
+							<span className="font-semibold text-[var(--ink)] print:text-slate-800">{clinicName}</span>
 						)}
 						{settings.footer.showAddress && <span>{clinicAddress}</span>}
 					</div>

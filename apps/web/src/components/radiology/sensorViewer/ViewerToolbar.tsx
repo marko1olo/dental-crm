@@ -224,7 +224,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 					<button
 						type="button"
 						onClick={handleFinishLesionContour}
-						className="h-8 px-2.5 rounded-lg bg-[#f59e0b] hover:bg-[#d97706] text-black text-xs font-medium cursor-pointer transition-colors"
+						className="h-8 px-2.5 rounded-lg bg-[var(--primary)] hover:opacity-95 text-white text-xs font-medium cursor-pointer transition-colors"
 						title="Зафиксировать площадь очага деструкции (мм²)"
 						data-testid="btn-finish-lesion"
 					>

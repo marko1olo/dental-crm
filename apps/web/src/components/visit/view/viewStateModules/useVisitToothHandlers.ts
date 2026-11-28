@@ -20,10 +20,46 @@ import { dispatchOdontogramSoapAndBundle } from "../../../odontogram/odontogramM
 import type { ToothData, ToothState } from "../../../odontogram/ToothChart";
 import type { VisitToothUiState } from "../../../../store/visit/types";
 import type { VisitViewProps } from "../types";
-import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
 import { logger } from "../../../../utils/logger";
 import { toCanonicalDbToothState } from "../../../../utils/dentalFormulaFdi";
 import { triggerHaptic } from "../../../../native/mobileBridge";
+
+function createMutationIdempotencyKey(): string {
+	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+		return crypto.randomUUID();
+	}
+	return `tooth-batch-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+async function persistToothStateBatch(
+	patientId: string,
+	payload: {
+		toothNumbers: number[];
+		state: string;
+		surfaces?: string[];
+		resorptionStage?: string | number | undefined;
+		mobility?: number | undefined;
+		mobilityDegree?: number | undefined;
+	},
+	contextLabel: string,
+): Promise<void> {
+	try {
+		const res = await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				...denteClinicalMutationHeaders({ "Idempotency-Key": createMutationIdempotencyKey() }),
+			},
+			body: JSON.stringify(payload),
+		});
+		if (!res.ok) {
+			logger.warn(`[useVisitToothHandlers] ${contextLabel} returned HTTP ${res.status}`);
+		}
+	} catch (err: unknown) {
+		logger.warn(`[useVisitToothHandlers] ${contextLabel} failed:`, err);
+	}
+}
 
 export interface UseVisitToothHandlersParams {
 	activePatient: VisitViewProps["activePatient"];
@@ -52,14 +88,16 @@ export function useVisitToothHandlers({
 }: UseVisitToothHandlersParams) {
 	const appendToEMKField = useCallback((field: string, text: string) => {
 		if (typeof updateVisitNoteField === "function") {
-			const current = ((visitNoteForm as unknown) as Record<string, string | undefined>)?.[field] || "";
+			const rawValue = visitNoteForm?.[field];
+			const current = typeof rawValue === "string" ? rawValue : "";
 			updateVisitNoteField(field, current ? `${current}\n${text}` : text);
 		}
 	}, [updateVisitNoteField, visitNoteForm]);
 
 	useEffect(() => {
 		const handleInsert = (e: Event) => {
-			const text = (e as CustomEvent<{ text?: string }>)?.detail?.text;
+			const detail = e instanceof CustomEvent && typeof e.detail === "object" && e.detail !== null ? e.detail : null;
+			const text = detail && "text" in detail && typeof detail.text === "string" ? detail.text : "";
 			if (text) {
 				appendToEMKField("recommendations", text);
 			}
@@ -79,13 +117,9 @@ export function useVisitToothHandlers({
 				const canonicalState = toCanonicalDbToothState(activeStamp);
 				const existingTeeth = loadStoredTeethData(activePatient.id) ?? [];
 				const cachedTooth = existingTeeth.find((t) => t.toothNumber === num);
-				fetch(`/api/patients/${activePatient.id}/tooth-states/batch`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						...getDenteAuthHeaders(),
-					},
-					body: JSON.stringify({
+				void persistToothStateBatch(
+					activePatient.id,
+					{
 						toothNumbers: [num],
 						state: canonicalState,
 						...(cachedTooth?.rootResorptionStage !== undefined
@@ -96,10 +130,9 @@ export function useVisitToothHandlers({
 						...(cachedTooth?.mobility !== undefined
 							? { mobility: cachedTooth.mobility, mobilityDegree: cachedTooth.mobility }
 							: {}),
-					}),
-				}).catch((err) => {
-					logger.warn("[useVisitToothHandlers] Stamp batch sync failed:", err);
-				});
+					},
+					"Stamp batch sync",
+				);
 			}
 		} else {
 			setSelectedToothForMenu({ code, state: currentState });
@@ -108,23 +141,27 @@ export function useVisitToothHandlers({
 
 	useEffect(() => {
 		const handleToothStateUpdate = (e: Event) => {
-			const detail = (e as CustomEvent<{ toothNumber: number | string; state: string }>).detail;
-			if (detail?.toothNumber && detail?.state && typeof setToothState === "function") {
-				setToothState(String(detail.toothNumber), detail.state);
+			if (!(e instanceof CustomEvent) || typeof e.detail !== "object" || e.detail === null) return;
+			const detail: Record<string, unknown> = e.detail;
+			const toothNumber = detail.toothNumber;
+			const state = detail.state;
+			if ((typeof toothNumber === "string" || typeof toothNumber === "number") && typeof state === "string" && typeof setToothState === "function") {
+				setToothState(String(toothNumber), state);
 			}
 		};
 		const handleOpenToothClinicalModal = (e: Event) => {
-			const detail = (e as CustomEvent<{ toothNumber?: number | string; code?: string; state?: string }>).detail;
-			if (detail) {
-				const code = String(detail.code || detail.toothNumber || "");
-				if (code) {
-					const num = Number(code) || null;
-					useVisitStore.getState().setActiveToothNumber(num);
-					setSelectedToothForMenu({
-						code,
-						state: detail.state || (toothStateByCode as Record<string, string>)?.[code] || "Healthy",
-					});
-				}
+			if (!(e instanceof CustomEvent) || typeof e.detail !== "object" || e.detail === null) return;
+			const detail: Record<string, unknown> = e.detail;
+			const rawCode = detail.code ?? detail.toothNumber;
+			const code = typeof rawCode === "string" || typeof rawCode === "number" ? String(rawCode) : "";
+			if (code) {
+				const num = Number(code) || null;
+				useVisitStore.getState().setActiveToothNumber(num);
+				const stateStr = typeof detail.state === "string" ? detail.state : undefined;
+				setSelectedToothForMenu({
+					code,
+					state: stateStr || toothStateByCode?.[code] || "Healthy",
+				});
 			}
 		};
 		window.addEventListener("dente-update-tooth-state", handleToothStateUpdate);
@@ -182,16 +219,12 @@ export function useVisitToothHandlers({
 				// Async background persist to PostgreSQL with surfaces MODPV
 				const canonicalState = toCanonicalDbToothState(state);
 				const targetTooth = idx >= 0 ? updatedTeeth[idx] : undefined;
-				fetch(`/api/patients/${activePatient.id}/tooth-states/batch`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						...getDenteAuthHeaders(),
-					},
-					body: JSON.stringify({
+				void persistToothStateBatch(
+					activePatient.id,
+					{
 						toothNumbers: [toothNum],
 						state: canonicalState,
-						surfaces: selectedSurfaces.length > 0 ? selectedSurfaces : undefined,
+						...(selectedSurfaces.length > 0 ? { surfaces: selectedSurfaces } : {}),
 						...(targetTooth?.rootResorptionStage !== undefined
 							? { resorptionStage: targetTooth.rootResorptionStage }
 							: targetTooth?.rootResorption !== undefined
@@ -200,10 +233,9 @@ export function useVisitToothHandlers({
 						...(targetTooth?.mobility !== undefined
 							? { mobility: targetTooth.mobility, mobilityDegree: targetTooth.mobility }
 							: {}),
-					}),
-				}).catch((err) => {
-					logger.warn("[useVisitToothHandlers] Background tooth-state batch sync failed:", err);
-				});
+					},
+					"Background tooth-state batch sync",
+				);
 			}
 
 			if (text && field) {

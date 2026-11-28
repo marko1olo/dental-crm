@@ -51,19 +51,23 @@ export function useHardwareSettings() {
 	// Server synchronization with PostgreSQL 18 on mount
 	useEffect(() => {
 		let isMounted = true;
-		fetch("/api/hardware/devices?scope=configured", {
-				headers: denteClinicalReadHeaders(),
-			})
-			.then((res) => (res.ok ? res.json() : null))
-			.then((data: { success?: boolean; devices?: HardwareDeviceConfig[] } | null) => {
+		void (async () => {
+			try {
+				const res = await fetch("/api/hardware/devices?scope=configured", {
+					headers: denteClinicalReadHeaders(),
+				});
+				if (!res.ok) return;
+				const data = (await res.json()) as { success?: boolean; devices?: HardwareDeviceConfig[] } | null;
 				if (isMounted && data?.success && Array.isArray(data.devices) && data.devices.length > 0) {
 					setDevices(data.devices);
 					saveHardwareConfigs(data.devices);
 				}
-			})
-			.catch(() => {
-				// Offline or server unavailable fallback to localStorage
-			});
+			} catch (err: unknown) {
+				clientLogger.debug("Hardware settings load deferred to localStorage", err, {
+					module: "useHardwareSettings",
+				});
+			}
+		})();
 
 		return () => {
 			isMounted = false;
@@ -71,20 +75,29 @@ export function useHardwareSettings() {
 	}, []);
 
 	const syncDevicesToServer = useCallback((nextDevices: HardwareDeviceConfig[]) => {
-		fetch("/api/hardware/devices/sync", {
-			method: "POST",
-			headers: {
-				...denteClinicalMutationHeaders({
-					"Idempotency-Key": generateUuidV7(),
-				}),
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({ devices: nextDevices }),
-		}).catch((err: unknown) => {
-			clientLogger.debug("Background hardware settings sync deferred", err, {
-				module: "useHardwareSettings",
-			});
-		});
+		void (async () => {
+			try {
+				const res = await fetch("/api/hardware/devices/sync", {
+					method: "POST",
+					headers: {
+						...denteClinicalMutationHeaders({
+							"Idempotency-Key": generateUuidV7(),
+						}),
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ devices: nextDevices }),
+				});
+				if (!res.ok) {
+					clientLogger.debug("Background hardware settings sync returned HTTP", res.status, {
+						module: "useHardwareSettings",
+					});
+				}
+			} catch (err: unknown) {
+				clientLogger.debug("Background hardware settings sync deferred", err, {
+					module: "useHardwareSettings",
+				});
+			}
+		})();
 	}, []);
 
 	// Add new device from preset

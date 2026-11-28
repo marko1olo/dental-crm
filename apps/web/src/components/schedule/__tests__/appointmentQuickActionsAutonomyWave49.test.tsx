@@ -14,11 +14,8 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
 import { registerHooks } from "node:module";
-import path from "node:path";
-import { describe, it, beforeEach } from "node:test";
-import { fileURLToPath } from "node:url";
+import { describe, it, beforeEach, afterEach } from "node:test";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
@@ -46,9 +43,6 @@ if (typeof registerHooks === "function") {
 import { AppointmentQuickActions } from "../AppointmentQuickActions";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
 import { resolveOrAutoCreateSubmitPatient } from "../quickBookingInlinePatient";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Cartoon emoji detector per Mandate 8d п. 7
 const CARTOON_EMOJI_REGEX =
@@ -590,10 +584,8 @@ const mockLabels: Record<Appointment["status"], string> = {
 };
 
 describe("Wave 49 (Feature 232): Unblocked Communication Actions & Non-blocking Inline Patient", () => {
-	const quickActionsPath = path.resolve(__dirname, "../AppointmentQuickActions.tsx");
-	const quickActionsSource = fs.readFileSync(quickActionsPath, "utf8");
-
 	let mockDomEnv: ReturnType<typeof setupMockDom>;
+	const originalFetch = globalThis.fetch;
 
 	beforeEach(() => {
 		mockDomEnv = setupMockDom();
@@ -601,21 +593,38 @@ describe("Wave 49 (Feature 232): Unblocked Communication Actions & Non-blocking 
 		mockDomEnv.clearToastEvents();
 	});
 
+	afterEach(() => {
+		globalThis.fetch = originalFetch;
+	});
+
 	// ─────────────────────────────────────────────────────────────────────────────
 	// Suite 1: AppointmentQuickActions Communication Buttons Autonomy (Mandate 8e, 8k)
 	// ─────────────────────────────────────────────────────────────────────────────
 	describe("1. AppointmentQuickActions: Unblocked Communication Buttons", () => {
-		it("1.1. Source code no longer gates communication buttons with patientPhone", () => {
-			assert.equal(
-				quickActionsSource.includes("{patientPhone && startsAt && ("),
-				false,
-				"Must remove {patientPhone && startsAt && ( blocker condition",
+		it("1.1. Omits communication group only when startsAt is missing, regardless of patientPhone", () => {
+			const htmlNoTime = renderToString(
+				React.createElement(AppointmentQuickActions, {
+					appointmentId: "appt-no-time",
+					currentStatus: "planned",
+					patientName: "Алексеев Алексей",
+					patientPhone: "+7 (999) 111-22-33",
+					startsAt: undefined,
+					onStatusChange: () => {},
+				}),
 			);
-			assert.equal(
-				quickActionsSource.includes("{startsAt && ("),
-				true,
-				"Must render communication buttons when startsAt is present",
+			assert.equal(htmlNoTime.includes('data-testid="appointment-communication-actions"'), false);
+
+			const htmlWithTime = renderToString(
+				React.createElement(AppointmentQuickActions, {
+					appointmentId: "appt-with-time",
+					currentStatus: "planned",
+					patientName: "Алексеев Алексей",
+					patientPhone: null,
+					startsAt: "2026-09-09T14:00:00.000Z",
+					onStatusChange: () => {},
+				}),
 			);
+			assert.equal(htmlWithTime.includes('data-testid="appointment-communication-actions"'), true);
 		});
 
 		it("1.2. Renders SMS and WhatsApp buttons when patientPhone is null", () => {
@@ -690,12 +699,22 @@ describe("Wave 49 (Feature 232): Unblocked Communication Actions & Non-blocking 
 			assert.equal(smsMatch[0].includes("disabled"), false, "SMS button must not have disabled attribute");
 		});
 
-		it("1.6. Satisfies touch target floor >= 44x44px and zero cartoon emojis (Mandate 8c & 8d)", () => {
-			assert.ok(
-				quickActionsSource.includes("min-h-[44px] min-w-[44px]"),
-				"Communication buttons must enforce min-h-[44px] min-w-[44px] touch target floor",
+		it("1.6. Satisfies touch target floor >= 44x44px and zero cartoon emojis in rendered HTML (Mandate 8c & 8d)", () => {
+			const html = renderToString(
+				React.createElement(AppointmentQuickActions, {
+					appointmentId: "appt-touch-floor",
+					currentStatus: "planned",
+					patientName: "Васильев Василий",
+					patientPhone: "+7 (999) 123-45-67",
+					startsAt: "2026-09-09T14:00:00.000Z",
+					onStatusChange: () => {},
+				}),
 			);
-			assert.equal(hasCartoonEmojis(quickActionsSource), false, "Zero cartoon emojis allowed in source");
+			assert.ok(
+				html.includes("min-h-[44px] min-w-[44px]"),
+				"Communication buttons must render min-h-[44px] min-w-[44px] touch target floor",
+			);
+			assert.equal(hasCartoonEmojis(html), false, "Zero cartoon emojis allowed in rendered HTML");
 		});
 
 		it("1.7. Clicking WhatsApp button without patientPhone triggers warning toast and copies text to clipboard", async () => {
@@ -786,28 +805,190 @@ describe("Wave 49 (Feature 232): Unblocked Communication Actions & Non-blocking 
 	// Suite 2: QuickBooking Non-blocking Inline Patient Creation (Mandates 8e, 8k, 8n)
 	// ─────────────────────────────────────────────────────────────────────────────
 	describe("2. QuickBooking: Non-blocking Inline Patient Creation", () => {
-		it("2.1. QuickBookingDrawer source code guarantees non-blocking autonomous flow", () => {
-			const drawerPath = path.resolve(__dirname, "../QuickBookingDrawer.tsx");
-			const drawerSource = fs.readFileSync(drawerPath, "utf8");
-			assert.ok(fs.existsSync(drawerPath), "QuickBookingDrawer.tsx must exist");
-			assert.ok(
-				!drawerSource.includes("disabled:cursor-not-allowed"),
-				"Must not have disabled:cursor-not-allowed roadblock",
-			);
+		it("2.1. QuickBookingDrawer renders primary submit button without disabled:cursor-not-allowed", () => {
+			const emptyDashboard = {
+				patients: [],
+				staff: [{ id: "doc-1", fullName: "Д-р Смирнова", role: "doctor", active: true }],
+				appointments: [],
+				chairs: [{ id: "chair-1", name: "Кресло 1", active: true }],
+				clinicSettings: { profile: { clinicName: "ДЕНТЕ" } },
+			} as unknown as Dashboard;
+			const prevDoc = (globalThis as { document?: unknown }).document;
+			(globalThis as { document?: unknown }).document = undefined;
+			let html = "";
+			try {
+				html = renderToString(
+					React.createElement(QuickBookingDrawer, {
+						isOpen: true,
+						onClose: () => {},
+						initialDateIso: "2026-09-09",
+						initialTimeStr: "14:00",
+						dashboard: emptyDashboard,
+						denteClinicalMutationHeaders: () => ({}),
+						onSuccess: () => {},
+						showToast: () => {},
+					}),
+				);
+			} finally {
+				(globalThis as { document?: unknown }).document = prevDoc;
+			}
+			assert.ok(html.includes('data-testid="quick-booking-drawer"'));
+			assert.equal(html.includes("disabled:cursor-not-allowed"), false);
+			assert.equal(hasCartoonEmojis(html), false);
 		});
 
-		it("2.2. quickBookingInlinePatient source guarantees automatic fallback name creation", () => {
-			const inlinePath = path.resolve(__dirname, "../quickBookingInlinePatient.ts");
-			assert.ok(fs.existsSync(inlinePath), "quickBookingInlinePatient.ts must exist");
-			const inlineSource = fs.readFileSync(inlinePath, "utf8");
-			assert.ok(
-				inlineSource.includes("Пациент с острой болью"),
-				"Must support automatic fallback name for emergency acute pain",
+		it("2.2. resolveOrAutoCreateSubmitPatient resolves existing, emergency fallback, phone fallback, and 409 conflict", async () => {
+			const noopSelect = () => {};
+			const existing = await resolveOrAutoCreateSubmitPatient(
+				{
+					patientId: "pat-already",
+					newPatientFullName: "",
+					newPatientPhone: "",
+					newPatientBirthDate: "",
+					searchQuery: "",
+					setSelectedPatient: noopSelect,
+					setPatientId: noopSelect,
+				},
+				"planned",
 			);
-			assert.ok(
-				inlineSource.includes("Пациент ("),
-				"Must support automatic phone-based fallback name",
+			assert.equal(existing, "pat-already");
+
+			const emptyNonEmergency = await resolveOrAutoCreateSubmitPatient(
+				{
+					patientId: "",
+					newPatientFullName: "",
+					newPatientPhone: "",
+					newPatientBirthDate: "",
+					searchQuery: "",
+					setSelectedPatient: noopSelect,
+					setPatientId: noopSelect,
+				},
+				"planned",
 			);
+			assert.equal(emptyNonEmergency, null);
+
+			let createdEmergencyName = "";
+			const emergencyRes = await resolveOrAutoCreateSubmitPatient(
+				{
+					patientId: "",
+					newPatientFullName: "",
+					newPatientPhone: "",
+					newPatientBirthDate: "",
+					searchQuery: "",
+					setSelectedPatient: noopSelect,
+					setPatientId: noopSelect,
+					onQuickCreatePatient: async (payload) => {
+						createdEmergencyName = payload.fullName;
+						return { id: "pat-emerg-1" };
+					},
+				},
+				"emergency",
+			);
+			assert.equal(emergencyRes, "pat-emerg-1");
+			assert.equal(createdEmergencyName, "Пациент с острой болью (срочно)");
+
+			let createdPhoneName = "";
+			const phoneOnlyRes = await resolveOrAutoCreateSubmitPatient(
+				{
+					patientId: "",
+					newPatientFullName: "",
+					newPatientPhone: "+7 (999) 555-12-34",
+					newPatientBirthDate: "",
+					searchQuery: "",
+					setSelectedPatient: noopSelect,
+					setPatientId: noopSelect,
+					onQuickCreatePatient: async (payload) => {
+						createdPhoneName = payload.fullName;
+						return { id: "pat-phone-1" };
+					},
+				},
+				"planned",
+			);
+			assert.equal(phoneOnlyRes, "pat-phone-1");
+			assert.equal(createdPhoneName, "Пациент (+7 (999) 555-12-34)");
+
+			globalThis.fetch = (async () =>
+				new Response(
+					JSON.stringify({ existingPatient: { id: "pat-conflict-existing" } }),
+					{ status: 409, headers: { "Content-Type": "application/json" } },
+				)) as typeof fetch;
+
+			const conflictRes = await resolveOrAutoCreateSubmitPatient(
+				{
+					patientId: "",
+					newPatientFullName: "Дубль Пациент",
+					newPatientPhone: "+7 (999) 000-11-22",
+					newPatientBirthDate: "",
+					searchQuery: "",
+					setSelectedPatient: noopSelect,
+					setPatientId: noopSelect,
+					denteClinicalMutationHeaders: () => ({}),
+				},
+				"planned",
+			);
+			assert.equal(conflictRes, "pat-conflict-existing");
+
+			globalThis.fetch = (async () =>
+				new Response(JSON.stringify({ error: "DB down" }), {
+					status: 500,
+					headers: { "Content-Type": "application/json" },
+				})) as typeof fetch;
+			const httpFailedRes = await resolveOrAutoCreateSubmitPatient(
+				{
+					patientId: "",
+					newPatientFullName: "Ошибка Тест",
+					newPatientPhone: "",
+					newPatientBirthDate: "",
+					searchQuery: "",
+					setSelectedPatient: noopSelect,
+					setPatientId: noopSelect,
+				},
+				"planned",
+			);
+			assert.equal(httpFailedRes, null);
+
+			const errorToasts: Array<{ msg: string; type: string }> = [];
+			const prevWindow = (globalThis as { window?: unknown }).window;
+			const prevCustomEvent = (globalThis as { CustomEvent?: unknown }).CustomEvent;
+			globalThis.fetch = (async () => {
+				throw new Error("Network offline");
+			}) as typeof fetch;
+			(globalThis as { CustomEvent: unknown }).CustomEvent = class FakeCustomEvent {
+				type: string;
+				detail: unknown;
+				constructor(type: string, init?: { detail?: unknown }) {
+					this.type = type;
+					this.detail = init?.detail;
+				}
+			};
+			(globalThis as { window: unknown }).window = {
+				dispatchEvent: (evt: { type?: string; detail?: { text?: string; type?: string } }) => {
+					if (evt.type === "dente-toast" && evt.detail) {
+						errorToasts.push({ msg: evt.detail.text ?? "", type: evt.detail.type ?? "" });
+					}
+					return true;
+				},
+			};
+			try {
+				const failedRes = await resolveOrAutoCreateSubmitPatient(
+					{
+						patientId: "",
+						newPatientFullName: "Сеть Ошибка",
+						newPatientPhone: "",
+						newPatientBirthDate: "",
+						searchQuery: "",
+						setSelectedPatient: noopSelect,
+						setPatientId: noopSelect,
+					},
+					"planned",
+				);
+				assert.equal(failedRes, null);
+				assert.equal(errorToasts[0]?.type, "error");
+				assert.ok(errorToasts[0]?.msg.includes("проверьте сетевое соединение"));
+			} finally {
+				(globalThis as { window?: unknown }).window = prevWindow;
+				(globalThis as { CustomEvent?: unknown }).CustomEvent = prevCustomEvent;
+			}
 		});
 	});
 });

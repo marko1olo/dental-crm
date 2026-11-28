@@ -242,6 +242,64 @@ describe("EGISZ REMD Dental SEMD 108 & OIIS Gateway Client Tests", () => {
 		assert.ok(detachedSignatureSchema);
 		assert.ok(egiszRemdPackageSchema);
 	});
+
+	it("1.10 OiisGatewayClient does not silently enable sandbox via NODE_ENV=test and sends live fetch with AbortSignal", async () => {
+		const prevNodeEnv = process.env.NODE_ENV;
+		const prevSandbox = process.env.EGISZ_SANDBOX;
+		const originalFetch = globalThis.fetch;
+		process.env.NODE_ENV = "test";
+		delete process.env.EGISZ_SANDBOX;
+
+		let seenUrl = "";
+		let seenSignal: AbortSignal | undefined;
+		globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+			seenUrl = String(input);
+			seenSignal = init?.signal ?? undefined;
+			return new Response(
+				JSON.stringify({
+					transactionId: "live-tx-99",
+					status: "Registered",
+					remdDocumentId: "remd-live-99",
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		}) as typeof fetch;
+
+		try {
+			const client = new OiisGatewayClient({ baseUrl: "https://oiis.example.local/v1" });
+			assert.equal(client.getConfig().isSandbox, false);
+
+			const res = await client.sendRemdDocument({
+				documentId: "d1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
+				documentVersion: 1,
+				xmlCanonicalPayload: sampleXml,
+				doctorSignature: {
+					signatureBase64: "MIIBagYJKoZIhvcNAQcCoIIBWzCCAVcCAQExDzAN...",
+					certificateSerialNumber: "20267701001",
+					certificateSubject: "Врач",
+					signedAt: "2026-08-19T10:00:00.000Z",
+					algorithmOid: "1.2.643.7.1.1.1.1",
+				},
+				metadata: {
+					patientSnils: "11223344595",
+					clinicOid: "1.2.643.5.1.13.13.12.2.77.1001",
+					docTypeNsiCode: "108",
+				},
+			});
+
+			assert.equal(seenUrl, "https://oiis.example.local/v1/remd/documents");
+			assert.ok(seenSignal instanceof AbortSignal);
+			assert.equal(res.success, true);
+			assert.equal(res.transactionId, "live-tx-99");
+			assert.equal(res.status, "Registered");
+		} finally {
+			globalThis.fetch = originalFetch;
+			if (prevNodeEnv !== undefined) process.env.NODE_ENV = prevNodeEnv;
+			else delete process.env.NODE_ENV;
+			if (prevSandbox !== undefined) process.env.EGISZ_SANDBOX = prevSandbox;
+			else delete process.env.EGISZ_SANDBOX;
+		}
+	});
 });
 
 

@@ -1,8 +1,10 @@
+import { resolveValidIanaTimeZone, todayDateKeyInTimeZone } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { withTenantWriteCtx } from "../../../../db/rls.js";
 import { bactericidalEquipments } from "../../../../db/schema.js";
+import { clinicTimeZone } from "../../../../services/reports/managerReports/timezone.js";
 import {
 	createBactericidalEquipmentDtoSchema,
 	updateBactericidalEquipmentBodySchema,
@@ -89,9 +91,11 @@ export async function handleUpdateBactericidalEquipment(
 	const body = parsedBody.data;
 
 	if (body.action === "replace_lamps") {
-		const today = new Date().toISOString().slice(0, 10);
-		const [updated] = await withTenantWriteCtx(organizationId, async (tx) =>
-			tx
+		const [updated] = await withTenantWriteCtx(organizationId, async (tx) => {
+			const today = todayDateKeyInTimeZone(
+				resolveValidIanaTimeZone(await clinicTimeZone(organizationId, tx)),
+			);
+			return tx
 				.update(bactericidalEquipments)
 				.set({
 					totalOperatingHours: "0.00",
@@ -105,8 +109,8 @@ export async function handleUpdateBactericidalEquipment(
 						eq(bactericidalEquipments.organizationId, organizationId),
 					),
 				)
-				.returning(),
-		);
+				.returning();
+		});
 
 		if (!updated) {
 			return reply.code(404).send({

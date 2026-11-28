@@ -38,14 +38,14 @@ export const WarrantyItemFormInputs: React.FC<WarrantyItemFormInputsProps> = ({
 					/>
 				</div>
 				<div className="warranty-form-group">
-					<label className="warranty-label">Материал & Препарат</label>
+					<label className="warranty-label">Материал и препарат</label>
 					<input
 						type="text" className="warranty-input" value={currentMaterial}
 						onChange={(e) => onMaterialChange(e.target.value)} placeholder="IPS e.max Press, Katana Zirconia..."
 					/>
 				</div>
 				<div className="warranty-form-group">
-					<label className="warranty-label">Производитель & Страна</label>
+					<label className="warranty-label">Производитель и страна</label>
 					<input
 						type="text" className="warranty-input" value={currentManufacturer}
 						onChange={(e) => onManufacturerChange(e.target.value)} placeholder="Ivoclar Vivadent (Лихтенштейн)"

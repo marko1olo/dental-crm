@@ -3,6 +3,7 @@ import * as net from "node:net";
 import { eq } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import { organizations } from "../../../db/schema.js";
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
 import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 
 export interface TelephonyStructuredLogger {
@@ -77,11 +78,17 @@ export interface AsteriskAmiEventPayload {
 	readonly recordingUrl?: string | undefined;
 }
 
-const forcedFailoverMap = new Map<string, boolean>();
-const localPbxStatusCache = new Map<
+const forcedFailoverMap = new BoundedTtlMap<string, boolean>({
+	maxEntries: 2000,
+	ttlMs: 60 * 60_000,
+});
+const localPbxStatusCache = new BoundedTtlMap<
 	string,
 	{ online: boolean; latencyMs: number; expiresAt: number }
->();
+>({
+	maxEntries: 2000,
+	ttlMs: 60_000,
+});
 
 export function getDefaultAsteriskConfig(): LocalAsteriskPbxConfig {
 	const host = process.env.ASTERISK_HOST || "192.168.1.10";

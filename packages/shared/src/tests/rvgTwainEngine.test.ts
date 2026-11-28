@@ -69,7 +69,7 @@ describe("Wave 17: RVG TWAIN & Clinical Dental Radiology Hardware Suite", () => 
 		});
 
 		it("1.2 State machine transitions: Connect, Arm, Trigger Acquisition, Calibration and Disconnect", async () => {
-			const engine = new RvgTwainCaptureEngine("TWAIN_2_4");
+			const engine = new RvgTwainCaptureEngine("TWAIN_2_4", { allowSyntheticAcquisition: true });
 			assert.equal(engine.getState(), "DISCONNECTED");
 			assert.equal(engine.getActiveProtocol(), "TWAIN_2_4");
 
@@ -147,7 +147,15 @@ describe("Wave 17: RVG TWAIN & Clinical Dental Radiology Hardware Suite", () => 
 				await engine.triggerAcquisition();
 			}, /Датчик не взведён/);
 
-			// In production non-synthetic mode: triggerAcquisition without hardware frame must reject honestly (Zero-Mocks Mandate 11)
+			// By default (without allowSyntheticAcquisition: true), triggerAcquisition without hardware frame must reject honestly (Zero-Mocks Mandate 11)
+			const defaultProdEngine = new RvgTwainCaptureEngine("TWAIN_2_4");
+			await defaultProdEngine.connectSensor("vatech_ezsensor_hd_size1");
+			defaultProdEngine.armSensorForXRay();
+			await assert.rejects(async () => {
+				await defaultProdEngine.triggerAcquisition();
+			}, /аппаратный таймаут экспозиции/);
+
+			// Explicitly disabled synthetic acquisition also rejects honestly
 			const prodEngine = new RvgTwainCaptureEngine("TWAIN_2_4", { allowSyntheticAcquisition: false });
 			await prodEngine.connectSensor("vatech_ezsensor_hd_size1");
 			prodEngine.armSensorForXRay();
@@ -192,7 +200,7 @@ describe("Wave 17: RVG TWAIN & Clinical Dental Radiology Hardware Suite", () => 
 		});
 
 		it("1.5 DICOM metadata binding & FDI tooth validation (11-48, 51-85)", async () => {
-			const engine = new RvgTwainCaptureEngine();
+			const engine = new RvgTwainCaptureEngine("TWAIN_2_4", { allowSyntheticAcquisition: true });
 			await engine.connectSensor("vatech_ezsensor_hd_size1");
 			engine.armSensorForXRay();
 			const rawFrame = await engine.triggerAcquisition();

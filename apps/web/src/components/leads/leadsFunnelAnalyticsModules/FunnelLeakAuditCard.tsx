@@ -44,7 +44,7 @@ export function FunnelLeakAuditCard({
 				</div>
 				<div>
 					<div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>
-						Клиническое удержание & Детектор утечек (210+ дней)
+						Клиническое удержание и детектор утечек (210+ дней)
 					</div>
 					<div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
 						Контроль пациентов без визитов более 7 месяцев, брошенных планов

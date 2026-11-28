@@ -10,6 +10,7 @@ import { AlertCircle, Download, FileText, Loader2, Printer, RefreshCw, Users } f
 import React, { useCallback, useEffect, useState } from "react";
 import { money } from "../../../../AppHelpers";
 import { denteClinicalReadHeaders } from "../../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { useAppStore } from "../../../../store/appStore";
 import { showToast } from "../../../GlobalToast";
 import type { FamilyGroupDetails } from "./types";
@@ -166,8 +167,14 @@ export const FamilyWalletTaxSection: React.FC<FamilyWalletTaxSectionProps> =
 					},
 				);
 				if (!res.ok) {
-					const data = await res.json().catch(() => ({}));
-					throw new Error(data.message || `Ошибка сервера (${res.status})`);
+					let msg = `Ошибка сервера (${res.status})`;
+					try {
+						const data = (await res.json()) as { message?: string };
+						if (data?.message) msg = data.message;
+					} catch (parseErr) {
+						clientLogger.warn("[FamilyWalletTaxSection] Non-JSON error response:", parseErr);
+					}
+					throw new Error(msg);
 				}
 				const raw = await res.json();
 				const result = raw?.data ?? raw;
@@ -219,7 +226,7 @@ export const FamilyWalletTaxSection: React.FC<FamilyWalletTaxSectionProps> =
 								onClick={() => setSelectedYear(yr)}
 								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 rounded-lg text-xs font-bold transition-colors cursor-pointer select-none ${
 									selectedYear === yr
-										? "bg-[var(--teal)] text-white shadow-xs"
+										? "bg-[var(--primary)] text-white shadow-xs"
 										: "border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>

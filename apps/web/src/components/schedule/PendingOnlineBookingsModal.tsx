@@ -33,8 +33,22 @@ export const PendingOnlineBookingsModal: React.FC<PendingOnlineBookingsModalProp
         body: JSON.stringify({ status: "confirmed" }),
       });
       if (!res.ok) {
-        const errJson = await res.json().catch(() => null);
-        throw new Error(errJson?.message || errJson?.error || "Не удалось подтвердить запись");
+        let serverError: string | undefined;
+        try {
+          const errJson: unknown = await res.json();
+          if (errJson && typeof errJson === "object") {
+            if ("message" in errJson && typeof errJson.message === "string" && errJson.message) {
+              serverError = errJson.message;
+            } else if ("error" in errJson && typeof errJson.error === "string" && errJson.error) {
+              serverError = errJson.error;
+            }
+          }
+        } catch (parseErr) {
+          if (parseErr instanceof Error) {
+            serverError = undefined;
+          }
+        }
+        throw new Error(serverError || `Не удалось подтвердить запись (HTTP ${res.status})`);
       }
       showToast("Запись подтверждена! Слот зафиксирован в расписании.", "success");
       if (typeof loadDashboard === "function") await loadDashboard();
@@ -101,13 +115,6 @@ export const PendingOnlineBookingsModal: React.FC<PendingOnlineBookingsModalProp
 
         <div className="px-5 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between text-xs text-[var(--muted)] shrink-0">
           <span>Подтверждение блокирует слот и отправляет уведомление пациенту</span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-[var(--line)] hover:bg-[var(--line)]/80 text-[var(--ink)] font-semibold transition-colors cursor-pointer pointer-coarse:min-h-[44px]"
-          >
-            Закрыть
-          </button>
         </div>
       </div>
     </div>

@@ -13,7 +13,17 @@ import { DEFAULT_DOM_PAGE_SIZE, DEFAULT_DOM_CHUNK_STEP, sliceDomList } from "../
 import { saveStoredInvoices } from "../invoicesStorage.js";
 import { isUuid } from "../usePatientInstallmentsApi.js";
 import { showToast } from "../../GlobalToast.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import type { BillingInvoice, InvoiceFilterTab } from "../invoiceTypes.js";
+
+function extractErrorMessage(raw: unknown): string | null {
+	if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
+	const rec = raw as { data?: unknown; message?: unknown };
+	const inner = typeof rec.data === "object" && rec.data !== null && !Array.isArray(rec.data)
+		? (rec.data as { message?: unknown })
+		: rec;
+	return typeof inner.message === "string" && inner.message.trim() ? inner.message.trim() : null;
+}
 
 export function useInvoicesViewLogic(
 	invoices: BillingInvoice[],
@@ -98,12 +108,19 @@ export function useInvoicesViewLogic(
 					}),
 				});
 				if (!res.ok) {
-					const rawErr = (await res.json().catch(() => null)) as
-						| { data?: { message?: string }; message?: string }
-						| null;
-					const errJson = rawErr?.data ?? rawErr;
+					let errMessage: string | null = null;
+					try {
+						const errJson: unknown = await res.json();
+						const errPayload =
+							errJson && typeof errJson === "object" && "data" in errJson
+								? errJson.data
+								: errJson;
+						errMessage = extractErrorMessage(errPayload ?? errJson);
+					} catch (parseErr) {
+						clientLogger.warn("[useInvoicesViewLogic] Ошибка разбора ответа при гарантии 100%", parseErr, { module: "Billing" });
+					}
 					throw new Error(
-						errJson?.message ||
+						errMessage ||
 							`Не удалось перевести счёт в гарантийный статус (HTTP ${res.status})`,
 					);
 				}

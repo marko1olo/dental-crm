@@ -14,7 +14,7 @@ import {
 	Scissors,
 	Sparkles,
 } from "lucide-react";
-import type React from "react";
+import React from "react";
 import {
 	CbctSkullProjectionsToolbar,
 	type SkullProjectionKey,

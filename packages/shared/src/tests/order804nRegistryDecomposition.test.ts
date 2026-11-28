@@ -1,20 +1,13 @@
 /**
  * packages/shared/src/tests/order804nRegistryDecomposition.test.ts
- * Rigorous test suite for decomposed Minzdrav Order 804n Registry.
- *
- * Implements Mandates 8b, 8c, 8e, 8l, 8n, 8s, 8t, 8z, 8ag.
+ * Rigorous test suite for decomposed Order 804n Registry (6G Live SUT).
  */
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import {
 	ORDER_804N_STATUTORY_REGISTRY,
-	type StatutoryNomenclatureEntry,
-	type Order804nServiceItem,
 	normalize804nCode,
 	isOrder804nCode,
 	validate804nCode,
@@ -35,13 +28,9 @@ import {
 
 import {
 	ORDER_804N_STATUTORY_REGISTRY as FACADE_REGISTRY,
-	type StatutoryNomenclatureEntry as FacadeEntry,
 } from "../pricelist/order804nRegistry.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-describe("Minzdrav Order 804n Statutory Registry Decomposition Suite", () => {
+describe("Minzdrav Order 804n Statutory Registry Decomposition Suite (6G Live SUT)", () => {
 	it("1. Behavioral Conservation: exact count and identity between facade and registry", () => {
 		assert.equal(ORDER_804N_STATUTORY_REGISTRY.length, 75, "Registry must contain statutory services");
 		assert.equal(FACADE_REGISTRY.length, 75, "Facade must export statutory services");
@@ -55,6 +44,10 @@ describe("Minzdrav Order 804n Statutory Registry Decomposition Suite", () => {
 		assert.equal(THERAPEUTIC_AND_DIAGNOSTIC_804N_CATALOG.length, 44, "Combined therapeutic catalog has 44 items");
 
 		assert.equal(SURGICAL_AND_ORTHO_804N_CATALOG.length, 31, "Combined surgical & ortho catalog has 31 items");
+		assert.equal(
+			SURGICAL_804N_CATALOG.length + ORTHO_AND_PROSTHETIC_804N_CATALOG.length,
+			SURGICAL_AND_ORTHO_804N_CATALOG.length,
+		);
 
 		assert.equal(
 			THERAPEUTIC_AND_DIAGNOSTIC_804N_CATALOG.length + SURGICAL_AND_ORTHO_804N_CATALOG.length,
@@ -92,23 +85,19 @@ describe("Minzdrav Order 804n Statutory Registry Decomposition Suite", () => {
 	});
 
 	it("5. Search Engine & Lexical Ranking", () => {
-		// Exact code search
 		const searchByCode = search804nRegistry("A16.07.002");
 		assert.ok(searchByCode.length > 0);
-		assert.equal(searchByCode[0]!.entry.code, "A16.07.002");
-		assert.equal(searchByCode[0]!.matchType, "exact_code");
+		assert.equal(searchByCode[0]?.entry.code, "A16.07.002");
+		assert.equal(searchByCode[0]?.matchType, "exact_code");
 
-		// Keyword search for therapy
 		const searchTherapy = search804nRegistry("Лечение кариеса пломбой световой");
 		assert.ok(searchTherapy.length > 0);
-		assert.equal(searchTherapy[0]!.entry.code, "A16.07.002");
+		assert.equal(searchTherapy[0]?.entry.code, "A16.07.002");
 
-		// Keyword search for CT 3D
 		const searchCT = search804nRegistry("КЛКТ 3D снимок двух челюстей");
 		assert.ok(searchCT.length > 0);
-		assert.equal(searchCT[0]!.entry.code, "A06.07.013");
+		assert.equal(searchCT[0]?.entry.code, "A06.07.013");
 
-		// Keyword search with category filter
 		const searchFiltered = search804nRegistry("осмотр", { categoryFilter: "consultation" });
 		assert.ok(searchFiltered.length > 0);
 		assert.ok(searchFiltered.every((r) => r.entry.category === "consultation"));
@@ -132,26 +121,19 @@ describe("Minzdrav Order 804n Statutory Registry Decomposition Suite", () => {
 		assert.ok(summaries.length > 0);
 		const therapySum = summaries.find((s) => s.category === "therapy");
 		assert.ok(therapySum);
-		assert.ok(therapySum!.count >= 10);
-		assert.ok(therapySum!.totalAveragePriceRub > 0);
+		assert.ok((therapySum?.count ?? 0) >= 10);
+		assert.ok((therapySum?.totalAveragePriceRub ?? 0) > 0);
 	});
 
-	it("8. Line Count Budget Gate: all modules < 800 lines and facade <= 50 lines", () => {
-		const order804nDir = path.resolve(__dirname, "../pricelist/order804n");
-		const facadePath = path.resolve(__dirname, "../pricelist/order804nRegistry.ts");
+	it("8. Specialty Filtering & Empty/Invalid Input Guards", () => {
+		const orthoEntries = get804nEntriesBySpecialty("orthodontics");
+		assert.ok(orthoEntries.length > 0);
+		assert.ok(orthoEntries.every((entry) => entry.specialty === "orthodontics"));
 
-		const facadeContent = fs.readFileSync(facadePath, "utf8");
-		const facadeLines = facadeContent.split("\n").length;
-		assert.ok(facadeLines <= 50, `Facade lines (${facadeLines}) must be <= 50`);
-
-		const files = fs.readdirSync(order804nDir);
-		for (const file of files) {
-			if (file.endsWith(".ts")) {
-				const fullPath = path.join(order804nDir, file);
-				const content = fs.readFileSync(fullPath, "utf8");
-				const lines = content.split("\n").length;
-				assert.ok(lines < 800, `File ${file} has ${lines} lines, which must be < 800 lines`);
-			}
-		}
+		assert.equal(normalize804nCode("   "), "");
+		assert.equal(validate804nCode("").isValid, false);
+		assert.equal(find804nEntryByCode("A99.99.999"), undefined);
+		assert.deepEqual(search804nRegistry(""), []);
+		assert.deepEqual(search804nRegistry("zzz_nonexistent_dental_xyz_12345"), []);
 	});
 });

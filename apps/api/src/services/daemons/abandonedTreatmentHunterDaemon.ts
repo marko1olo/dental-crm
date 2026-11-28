@@ -10,7 +10,7 @@
  * with 1-click WhatsApp messaging approval for reception / care coordinators.
  */
 
-import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq, gte, lte, or } from "drizzle-orm";
 import type { TenantDb } from "../../db/client.js";
 import { withSuperuserBypass, withTenantReadCtx } from "../../db/rls.js";
 import {
@@ -18,6 +18,9 @@ import {
 	patients,
 	visits,
 } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("abandonedTreatmentHunterDaemon");
 
 export interface AbandonedTreatmentRecord {
 	readonly patientId: string;
@@ -249,7 +252,14 @@ export async function runWeeklyRetentionScan(options?: {
 		}
 
 		return summaries;
-	} catch {
-		return [];
+	} catch (err: unknown) {
+		logger.warn(
+			{
+				err: safeLogError(err),
+				organizationId: options?.organizationId ?? null,
+			},
+			"[abandonedTreatmentHunterDaemon] Weekly retention scan failed",
+		);
+		throw err;
 	}
 }

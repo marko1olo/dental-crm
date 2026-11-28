@@ -31,7 +31,7 @@ export const PendingCashierOrdersSection: React.FC<PendingCashierOrdersSectionPr
 				</span>
 			</div>
 			<div className="text-[11px] text-[var(--muted)] leading-tight">
-				Приёмы проведены врачом, наряды сформированы. Комиссия начисляется автоматически при оплате чека в кассе (54-ФЗ).
+				Приёмы проведены врачом, наряды сформированы. Комиссия начисляется автоматически при оплате чека в кассе.
 			</div>
 
 			<div className="hidden sm:block payroll-studio-table-container">

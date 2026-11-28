@@ -31,7 +31,7 @@ export function VisitEmkSomaticSummaryBar({
 							size={12}
 							className="text-[var(--primary)] shrink-0"
 						/>
-						<span>1. Осмотр & Одонтограмма</span>
+						<span>1. Осмотр и одонтограмма</span>
 					</button>
 					<ChevronRight
 						size={11}
@@ -92,7 +92,7 @@ export function VisitEmkSomaticSummaryBar({
 							size={12}
 							className="text-[var(--primary)] shrink-0"
 						/>
-						<span>4. Смета & Чек</span>
+						<span>4. Смета и чек</span>
 					</button>
 				</div>
 			</div>

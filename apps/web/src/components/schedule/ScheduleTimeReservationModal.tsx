@@ -7,6 +7,7 @@ import {
 	todayDateKeyInTimeZone,
 } from "@dental/shared";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { fromDateTimeLocalValue } from "../../utils/dateTimeUtils";
 import { showToast } from "../GlobalToast";
 
@@ -228,15 +229,28 @@ export function ScheduleTimeReservationModal({
 				}),
 			});
 			if (!res.ok) {
-				const errJson = (await res.json().catch(() => null)) as { message?: string } | null;
+				let errJson: { message?: string } | null = null;
+				try {
+					errJson = (await res.json()) as { message?: string } | null;
+				} catch (parseErr) {
+					clientLogger.warn("ScheduleTimeReservationModal error parse failed", {
+						status: res.status,
+						error: String(parseErr),
+					});
+				}
 				const msg = errJson?.message ?? `Ошибка сохранения резерва (${res.status})`;
 				setErrorText(msg);
 				showToast(msg, "error");
 				return;
 			}
-			const json = (await res.json().catch(() => null)) as {
-				data?: ScheduleTimeReservationItem;
-			} | null;
+			let json: { data?: ScheduleTimeReservationItem } | null = null;
+			try {
+				json = (await res.json()) as { data?: ScheduleTimeReservationItem } | null;
+			} catch (parseErr) {
+				clientLogger.warn("ScheduleTimeReservationModal response parse failed", {
+					error: String(parseErr),
+				});
+			}
 			const created = json?.data ?? null;
 			if (created) {
 				setDayReservations((prev) => [...prev, created]);

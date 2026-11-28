@@ -24,6 +24,7 @@
  */
 
 import { and, eq, inArray, sql } from "drizzle-orm";
+import { z } from "zod";
 import { communicationCampaigns } from "../../db/communicationsSchema.js";
 import {
 	type TenantDb,
@@ -34,6 +35,7 @@ import {
 	communicationOutbox,
 	communicationTemplates,
 } from "../../db/schema.js";
+import { createApiLogger } from "../../observability/logger.js";
 import {
 	type AudienceCostEstimate,
 	type AudienceCriteria,
@@ -50,15 +52,60 @@ import { isMachineDeliverableChannel } from "./channelRouter.js";
 import { type CommunicationIntentCode, enqueueMessage } from "./dispatcher.js";
 import { checkChannelFit, renderTemplate } from "./templateEngine/templateRenderer.js";
 
+const logger = createApiLogger("communicationCampaigns");
+
+const audienceCriteriaSchema = z.object({
+	status: z.enum(["active", "archived"]).optional(),
+	lastVisitBefore: z.string().optional(),
+	lastVisitAfter: z.string().optional(),
+	neverVisited: z.boolean().optional(),
+	hasFutureAppointment: z.boolean().optional(),
+	debtAtLeastRub: z.number().optional(),
+	birthdayWithinDays: z.number().optional(),
+	ageFrom: z.number().optional(),
+	ageTo: z.number().optional(),
+	patientIds: z.array(z.string()).optional(),
+});
+
+const communicationChannelSchema = z.enum([
+	"phone",
+	"sms",
+	"whatsapp",
+	"telegram",
+	"email",
+	"in_person",
+	"vk",
+	"max",
+]);
+
+const communicationConsentScopeSchema = z.enum(["service", "marketing"]);
+
+function resolveChannelCode(raw: string): CommunicationChannelCode {
+	const parsed = communicationChannelSchema.safeParse(raw);
+	return parsed.success ? parsed.data : "sms";
+}
+
+function resolveConsentScope(raw: string): CommunicationConsentScope {
+	const parsed = communicationConsentScopeSchema.safeParse(raw);
+	return parsed.success ? parsed.data : "service";
+}
+
 type CampaignRow = typeof communicationCampaigns.$inferSelect;
 
 export function parseAudienceCriteria(raw: string): AudienceCriteria {
 	try {
-		const parsed: unknown = JSON.parse(raw);
-		return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-			? (parsed as AudienceCriteria)
-			: {};
-	} catch {
+		const rawJson: unknown = JSON.parse(raw);
+		const parsed = audienceCriteriaSchema.safeParse(rawJson);
+		if (!parsed.success) {
+			logger.warn(
+				{ issue: parsed.error.issues[0]?.message ?? "invalid_schema" },
+				"[Campaigns] Invalid audienceJson criteria schema, falling back to {}",
+			);
+			return {};
+		}
+		return parsed.data;
+	} catch (err) {
+		logger.warn({ err }, "[Campaigns] Failed to parse audienceJson, falling back to {}");
 		return {};
 	}
 }
@@ -183,7 +230,8 @@ function parseVariables(raw: string): string[] {
 		return Array.isArray(parsed)
 			? parsed.filter((value): value is string => typeof value === "string")
 			: [];
-	} catch {
+	} catch (err) {
+		logger.warn({ err }, "[Campaigns] Failed to parse template variablesJson, falling back to []");
 		return [];
 	}
 }
@@ -214,8 +262,8 @@ export async function previewCampaign(
 		const criteria = parseAudienceCriteria(campaign.audienceJson);
 		const audience = await resolveAudience({
 			organizationId,
-			channel: campaign.channel as CommunicationChannelCode,
-			scope: campaign.scope as CommunicationConsentScope,
+			channel: resolveChannelCode(campaign.channel),
+			scope: resolveConsentScope(campaign.scope),
 			criteria,
 			tx,
 			...(options.now ? { now: options.now } : {}),
@@ -274,7 +322,7 @@ export async function previewCampaign(
 				),
 			},
 			cost: estimateAudienceCost({
-				channel: campaign.channel as CommunicationChannelCode,
+				channel: resolveChannelCode(campaign.channel),
 				recipients: audience.deliverable,
 				body: sampleText ?? "",
 			}),
@@ -356,8 +404,8 @@ export async function launchCampaign(input: {
 		if (!template.isActive)
 			return { ok: false, reason: "Шаблон рассылки отключён." };
 
-		const channel = campaign.channel as CommunicationChannelCode;
-		const scope = campaign.scope as CommunicationConsentScope;
+		const channel = resolveChannelCode(campaign.channel);
+		const scope = resolveConsentScope(campaign.scope);
 		const criteria = parseAudienceCriteria(campaign.audienceJson);
 		const audience = await resolveAudience({
 			organizationId: input.organizationId,
@@ -586,7 +634,11 @@ export async function campaignProgress(
 	if (campaign.audienceSnapshotJson) {
 		try {
 			snapshot = JSON.parse(campaign.audienceSnapshotJson);
-		} catch {
+		} catch (err) {
+			logger.warn(
+				{ err, organizationId, campaignId },
+				"[Campaigns] Failed to parse audienceSnapshotJson, returning null",
+			);
 			snapshot = null;
 		}
 	}

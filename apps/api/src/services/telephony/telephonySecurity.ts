@@ -18,6 +18,10 @@ import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
 
 const logger = createApiLogger("telephonySecurity");
 
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+	return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 export type { TelephonyWebhookPayload };
 
 export const UUID_REGEX =
@@ -44,11 +48,13 @@ export async function resolveOrgTelephonySecrets(organizationId: string): Promis
 				.where(eq(organizations.id, organizationId))
 				.limit(1),
 		);
-		const flags = (orgRows[0]?.flags as Record<string, unknown> | null) ?? {};
-		const telephony =
-			(flags.telephony as Record<string, unknown> | null) ??
-			(flags.telephonySettings as Record<string, unknown> | null) ??
-			{};
+		const rawFlags = orgRows[0]?.flags;
+		const flags = isPlainRecord(rawFlags) ? rawFlags : {};
+		const telephony = isPlainRecord(flags.telephony)
+			? flags.telephony
+			: isPlainRecord(flags.telephonySettings)
+				? flags.telephonySettings
+				: {};
 		return {
 			webhookSecret:
 				typeof flags.telephonyWebhookSecret === "string"
@@ -216,31 +222,34 @@ export async function authenticatePbxWebhook(
 
 	if (mangoSign && mangoKey && mangoSalt) {
 		let rawJsonStr: string | null = null;
-		const reqBody = request.body as Record<string, unknown> | string | undefined;
+		const reqBody = request.body;
 
 		if (typeof reqBody === "string") {
 			try {
 				const params = new URLSearchParams(reqBody);
 				rawJsonStr = params.get("json");
-			} catch {
-				// not urlencoded
+			} catch (parseErr: unknown) {
+				logger.warn(
+					{ err: safeLogError(parseErr), organizationId },
+					"[TelephonyAuth] Failed to parse urlencoded Mango body",
+				);
 			}
 			if (!rawJsonStr) {
 				rawJsonStr = reqBody;
 			}
-		} else if (reqBody && typeof reqBody === "object") {
-			if (typeof (reqBody as { json?: unknown }).json === "string") {
-				rawJsonStr = (reqBody as { json: string }).json;
-			} else if ((reqBody as { json?: unknown }).json && typeof (reqBody as { json?: unknown }).json === "object") {
-				rawJsonStr = JSON.stringify((reqBody as { json: object }).json);
+		} else if (isPlainRecord(reqBody)) {
+			if (typeof reqBody.json === "string") {
+				rawJsonStr = reqBody.json;
+			} else if (isPlainRecord(reqBody.json)) {
+				rawJsonStr = JSON.stringify(reqBody.json);
 			} else {
 				// If body has no explicit .json field, but has sign/vpbx_api_key mixed with fields,
 				// exclude sign, signature, vpbx_api_key, api_key from the json object
-				const clone = { ...reqBody };
-				delete (clone as Record<string, unknown>).sign;
-				delete (clone as Record<string, unknown>).signature;
-				delete (clone as Record<string, unknown>).vpbx_api_key;
-				delete (clone as Record<string, unknown>).api_key;
+				const clone: Record<string, unknown> = { ...reqBody };
+				delete clone.sign;
+				delete clone.signature;
+				delete clone.vpbx_api_key;
+				delete clone.api_key;
 				rawJsonStr = JSON.stringify(clone);
 			}
 		}
@@ -265,8 +274,8 @@ export async function authenticatePbxWebhook(
 		orgSecrets.sipuniSecret?.trim() ||
 		process.env.SIPUNI_API_SECRET?.trim() ||
 		primarySecret;
-	if (sipuniHash && sipuniSecret && request.body && typeof request.body === "object") {
-		const clone: Record<string, unknown> = { ...(request.body as Record<string, unknown>) };
+	if (sipuniHash && sipuniSecret && isPlainRecord(request.body)) {
+		const clone: Record<string, unknown> = { ...request.body };
 		delete clone.hash;
 		delete clone.sign;
 		delete clone.signature;
@@ -328,14 +337,13 @@ export async function authenticatePbxWebhook(
 	}
 
 	// Gravitel MD5 / HMAC Check
+	const payloadRecord = isPlainRecord(payload) ? payload : undefined;
 	const rawGravitelSign =
 		extractHeader(request, "x-gravitel-signature") ||
 		extractHeader(request, "x-gravitel-token") ||
-		(typeof (payload as Record<string, unknown>).sign === "string"
-			? ((payload as Record<string, unknown>).sign as string)
-			: undefined) ||
-		(typeof (payload as Record<string, unknown>).signature === "string"
-			? ((payload as Record<string, unknown>).signature as string)
+		(payloadRecord && typeof payloadRecord.sign === "string" ? payloadRecord.sign : undefined) ||
+		(payloadRecord && typeof payloadRecord.signature === "string"
+			? payloadRecord.signature
 			: undefined);
 	const gravitelSign = rawGravitelSign ? String(rawGravitelSign).trim() : null;
 	const gravitelSecret =
@@ -475,13 +483,22 @@ export function isForbiddenPrivateIp(ipAddress: string): boolean {
 	return false;
 }
 
+export interface ValidateSsrfRecordingUrlOptions {
+	allowTestExampleHosts?: boolean | undefined;
+	dnsLookup?:
+		| ((hostname: string) => Promise<ReadonlyArray<{ address: string }>>)
+		| undefined;
+}
+
 export async function validateSsrfSafeRecordingUrl(
 	rawUrl: string,
+	options?: ValidateSsrfRecordingUrlOptions,
 ): Promise<{ valid: boolean; error?: string; parsedUrl?: URL }> {
 	let parsedUrl: URL;
 	try {
 		parsedUrl = new URL(rawUrl);
-	} catch {
+	} catch (err) {
+		logger.warn({ err, rawUrl }, "validateSsrfSafeRecordingUrl rejected invalid URL syntax");
 		return { valid: false, error: "Invalid URL syntax" };
 	}
 
@@ -506,7 +523,9 @@ export async function validateSsrfSafeRecordingUrl(
 	}
 
 	try {
-		const lookupResults = await dns.lookup(hostname, { all: true });
+		const lookupResults = options?.dnsLookup
+			? await options.dnsLookup(hostname)
+			: await dns.lookup(hostname, { all: true });
 		if (!lookupResults || lookupResults.length === 0) {
 			return { valid: false, error: "Hostname cannot be resolved via DNS" };
 		}
@@ -519,13 +538,9 @@ export async function validateSsrfSafeRecordingUrl(
 				};
 			}
 		}
-	} catch (_dnsErr) {
-		const isTestEnv =
-			process.env.NODE_ENV === "test" ||
-			Boolean(process.env.NODE_TEST_CONTEXT) ||
-			Boolean(process.env.npm_lifecycle_event?.includes("test"));
+	} catch (dnsErr: unknown) {
 		if (
-			isTestEnv &&
+			options?.allowTestExampleHosts &&
 			(hostname.endsWith(".example.com") ||
 				hostname === "example.com" ||
 				hostname.endsWith(".test") ||
@@ -533,6 +548,10 @@ export async function validateSsrfSafeRecordingUrl(
 		) {
 			return { valid: true, parsedUrl };
 		}
+		logger.warn(
+			{ err: safeLogError(dnsErr), hostname },
+			"[telephonySecurity] DNS lookup failed for recording URL",
+		);
 		return { valid: false, error: `DNS lookup failed for host ${hostname}` };
 	}
 

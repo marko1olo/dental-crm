@@ -223,7 +223,11 @@ export async function measureNetworkRtt(
 			signal: controller ? controller.signal : null,
 		};
 
-		const response = await fetch(pingUrl, init).catch(async () => {
+		let response: Response;
+		try {
+			response = await fetch(pingUrl, init);
+		} catch (headErr) {
+			logger.debug("[NetworkConnectivity] HEAD ping failed, falling back to GET", headErr);
 			// If HEAD is not supported, try GET with light headers
 			const getInit: RequestInit = {
 				method: "GET",
@@ -231,8 +235,8 @@ export async function measureNetworkRtt(
 				headers: { "x-dente-ping": "rtt-probe" },
 				signal: controller ? controller.signal : null,
 			};
-			return await fetch(pingUrl, getInit);
-		});
+			response = await fetch(pingUrl, getInit);
+		}
 
 		if (timeoutId) clearTimeout(timeoutId);
 

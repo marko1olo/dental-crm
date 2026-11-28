@@ -72,7 +72,7 @@ export function FunnelModalHeaderBar({
 					<div>
 						<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 							<h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.01em" }}>
-								Сквозная Воронка & Маркетинг
+								Сквозная воронка и маркетинг
 							</h2>
 							<span style={titleBadgeStyle}>
 								CRM Intelligence

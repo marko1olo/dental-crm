@@ -139,9 +139,9 @@ describe("Red Team Inquisitor Delta — Schedule & Chair Grid Inquisition", () =
 
 			assert.ok(html.includes('data-testid="schedule-toolbar"'), "Должен присутствовать data-testid schedule-toolbar");
 			assert.ok(html.includes("role=\"toolbar\""), "Должен иметь ARIA role='toolbar'");
-			assert.ok(html.includes("sm:h-9"), "Высота тулбара должна быть ограничена 36px (sm:h-9)");
-			assert.ok(html.includes("sm:max-h-9"), "Максимальная высота тулбара должна быть ограничена 36px (sm:max-h-9)");
-			assert.ok(html.includes("flex-nowrap"), "Тулбар не должен переноситься на несколько строк (flex-nowrap)");
+			assert.ok(html.includes("flex-wrap"), "Тулбар должен переноситься без наложения чипов (flex-wrap)");
+			assert.ok(html.includes("overflow-visible"), "Тулбар не должен обрезать крайние кнопки (overflow-visible)");
+			assert.ok(!html.includes("flex-nowrap"), "Запрещён жёсткий flex-nowrap, вызывающий наложение кнопок");
 
 			// Strictly 1 Primary CTA button (+ Запись)
 			assert.ok(html.includes("data-testid=\"schedule-toolbar-primary-quick-booking-btn\""), "Primary CTA должна иметь testid schedule-toolbar-primary-quick-booking-btn");

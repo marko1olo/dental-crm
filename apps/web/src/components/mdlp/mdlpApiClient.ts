@@ -36,7 +36,15 @@ export async function submitMdlpBarcodeScan(
 			body: JSON.stringify({ rawBarcode, autoRegister }),
 		});
 		if (!res.ok) {
-			const err = await res.json().catch(() => null);
+			let err: { message?: string } | null = null;
+			try {
+				err = (await res.json()) as { message?: string } | null;
+			} catch (parseErr) {
+				logger.warn("[mdlpApiClient] scan error JSON parse failed", {
+					status: res.status,
+					error: String(parseErr),
+				});
+			}
 			return { success: false, error: err?.message || `Ошибка сканирования маркировки (${res.status})` };
 		}
 		const data = await res.json();
@@ -73,7 +81,8 @@ export async function fetchMdlpStatus(): Promise<{
 			pendingQueueCount: Number(data?.pendingQueueCount ?? 0),
 			lastCheckAt: data?.lastCheckAt ?? new Date().toISOString(),
 		};
-	} catch {
+	} catch (err: unknown) {
+		logger.warn("[MDLP ApiClient] fetchMdlpStatus failed:", err);
 		return {
 			status: "offline",
 			mode: "offline_autonomous",

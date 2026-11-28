@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { Transform, type TransformCallback } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
+import { BoundedStringSet } from "../../lib/boundedTtlMap.js";
 import { createApiLogger, safeLogError } from "../../observability/index.js";
 import {
 	type BackupResult,
@@ -33,7 +34,7 @@ export interface DumpContentStats {
 
 class DumpContentInspector extends Transform {
 	private readonly decoder = new StringDecoder("utf8");
-	private readonly populated = new Set<string>();
+	private readonly populated = new BoundedStringSet(2000);
 	private carry = "";
 	private insideCopy = false;
 	private currentTable = "";

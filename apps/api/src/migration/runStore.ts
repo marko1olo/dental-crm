@@ -407,8 +407,9 @@ export async function claimNextRun(): Promise<MigrationRunRow | null> {
             and (${migrationRuns.status} = 'queued'
              or (${migrationRuns.status} = 'loading'
                  and (${migrationRuns.heartbeatAt} is null or ${migrationRuns.heartbeatAt} < ${staleBefore})))
-          for update skip locked
+          order by ${migrationRuns.id} asc
           limit 1
+          for update skip locked
         )`,
 					),
 				)

@@ -74,7 +74,7 @@ export function LabTrackingRestorationSummary({
 			{/* Financial Breakdown */}
 			<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
 				<span className="text-xs font-semibold text-[var(--muted)] block">
-					Финансовый расчет (Копеечная точность)
+					Детальный расчёт стоимости
 				</span>
 				<div className="grid grid-cols-3 gap-3">
 					<div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)]">

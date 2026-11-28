@@ -1,3 +1,4 @@
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
 import type {
 	BotInstance,
 	BotPoolMetrics,
@@ -13,7 +14,10 @@ import type {
  * - Graceful shutdown при остановке ноды
  */
 export class TelegramBotInstancePool {
-	private static instances = new Map<string, BotInstance>();
+	private static instances = new BoundedTtlMap<string, BotInstance>({
+		maxEntries: 2000,
+		touchOnGet: false,
+	});
 
 	private static makeKey(organizationId: string, botConfigId = "default"): string {
 		return `${organizationId}:${botConfigId}`;

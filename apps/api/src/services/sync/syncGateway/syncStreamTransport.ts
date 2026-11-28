@@ -1,5 +1,6 @@
 import { type SQL, and, asc, eq, gt, gte, inArray, or, sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
 import { type TenantDb, withTenantCtx } from "../../../db/rls.js";
 import {
 	appointments,
@@ -118,11 +119,27 @@ export interface SyncStreamConnection {
  * Manages streaming data transport, batch chunking, and real-time node connections.
  */
 export class SyncStreamTransport {
-	private static activeConnections = new Map<string, SyncStreamConnection>();
-	private static nodeRegistry = new Map<string, SyncNodeInfo>();
+	private static activeConnections = new BoundedTtlMap<string, SyncStreamConnection>({
+		maxEntries: MAX_NODE_REGISTRY_ENTRIES,
+		touchOnGet: false,
+		onEvict: (_nodeId, connection, reason) => {
+			if (reason === "capacity") {
+				try {
+					connection.close();
+				} catch {
+					// socket may already be closed during eviction
+				}
+			}
+		},
+	});
+	private static nodeRegistry = new BoundedTtlMap<string, SyncNodeInfo>({
+		maxEntries: MAX_NODE_REGISTRY_ENTRIES,
+		ttlMs: NODE_REGISTRY_TTL_MS,
+	});
 
 	private static pruneNodeRegistry(nowMs = Date.now()): void {
-		for (const [nodeId, info] of this.nodeRegistry) {
+		this.nodeRegistry.pruneExpired(nowMs);
+		for (const [nodeId, info] of this.nodeRegistry.entries()) {
 			if (this.activeConnections.has(nodeId)) continue;
 			const lastSeenMs = Date.parse(info.lastSeenAt);
 			if (Number.isFinite(lastSeenMs) && nowMs - lastSeenMs > NODE_REGISTRY_TTL_MS) {
@@ -133,7 +150,7 @@ export class SyncStreamTransport {
 		while (this.nodeRegistry.size > MAX_NODE_REGISTRY_ENTRIES) {
 			let oldestKey: string | null = null;
 			let oldestTime = Number.POSITIVE_INFINITY;
-			for (const [nodeId, info] of this.nodeRegistry) {
+			for (const [nodeId, info] of this.nodeRegistry.entries()) {
 				if (this.activeConnections.has(nodeId)) continue;
 				const lastSeenMs = Date.parse(info.lastSeenAt);
 				const score = Number.isFinite(lastSeenMs) ? lastSeenMs : 0;

@@ -250,7 +250,11 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 					if (rawBal) {
 						try {
 							balanceRub = kopecksToRubles(parseKopecks(rawBal));
-						} catch {
+						} catch (err) {
+							request.log.warn(
+								{ err, rawBal, fullName },
+								"expressImport failed to parse patient balance, defaulting to 0",
+							);
 							balanceRub = 0;
 						}
 					}
@@ -339,7 +343,11 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 					if (rawPrice) {
 						try {
 							priceKopNum = Math.max(0, parseKopecks(rawPrice));
-						} catch {
+						} catch (err) {
+							request.log.warn(
+								{ err, rawPrice, rowIndex: idx },
+								"expressImport failed to parse service price, defaulting to 0",
+							);
 							priceKopNum = 0;
 						}
 					}

@@ -48,13 +48,21 @@ export function useInsuranceContractsController() {
 	const fetchContracts = useCallback(async () => {
 		setLoadState({ phase: "loading" });
 		try {
+			const lettersPromise = (async () => {
+				try {
+					return await fetch("/api/insurance/guarantee-letters", {
+						headers: denteClinicalReadHeaders(),
+					});
+				} catch (lettersFetchErr) {
+					logger.warn("[договоры ДМС] не удалось загрузить гарантийные письма", lettersFetchErr);
+					return null;
+				}
+			})();
 			const [res, lettersRes] = await Promise.all([
 				fetch("/api/insurance/contracts", {
 					headers: denteClinicalReadHeaders(),
 				}),
-				fetch("/api/insurance/guarantee-letters", {
-					headers: denteClinicalReadHeaders(),
-				}).catch(() => null),
+				lettersPromise,
 			]);
 			if (lettersRes?.ok) {
 				try {
@@ -62,8 +70,8 @@ export function useInsuranceContractsController() {
 					if (Array.isArray(lettersData)) {
 						setGuaranteeLetters(lettersData as GuaranteeLetterSummary[]);
 					}
-				} catch {
-					// non-blocking
+				} catch (parseErr) {
+					logger.warn("[договоры ДМС] некорректный JSON гарантийных писем", parseErr);
 				}
 			}
 			const raw = await res.text();

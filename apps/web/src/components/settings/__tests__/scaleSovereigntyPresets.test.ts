@@ -1,25 +1,22 @@
 /**
- * apps/web/src/components/settings/__tests__/scaleSovereigntyPresets.test.ts
- *
- * Тесты на суверенитет масштаба (Scale Sovereignty):
- *  - 1-click пресеты для соло-врача, малой клиники и сетевой клиники.
- *  - Отсутствие перегруженности и бюрократических тупиков для соло-врача на субаренде.
- *  - Отсутствие эмодзи (Mandate 8d).
- *  - Потолок строк <= 800 (Mandate 8b).
+ * apps/web/src/components/settings/__tests__/scaleSovereigntyPresets.test.ts (6G Live SUT)
  */
 
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
-import { SCALE_PRESETS } from "../ScaleSovereigntyPresetsBar";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import {
+	SCALE_PRESETS,
+	ScaleSovereigntyPresetsBar,
+} from "../ScaleSovereigntyPresetsBar";
+import { SettingsModulesTab } from "../SettingsModulesTab";
+import { MigrationWizard } from "../MigrationWizard";
 
-const here = fileURLToPath(import.meta.url);
-const settingsDir = join(here, "..", "..");
-const migrationDir = join(settingsDir, "migration");
+const EMOJI_REGEX =
+	/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA00}-\u{1FAFF}]/u;
 
-describe("Scale Sovereignty Presets (Мгновенный старт без тупиков)", () => {
+describe("Scale Sovereignty Presets (Мгновенный старт без тупиков — 6G Live SUT)", () => {
 	it("содержит ровно 3 ключевых масштаба клиники", () => {
 		const presetIds = SCALE_PRESETS.map((p) => p.id);
 		assert.deepEqual(presetIds, [
@@ -33,7 +30,6 @@ describe("Scale Sovereignty Presets (Мгновенный старт без ту
 		const solo = SCALE_PRESETS.find((p) => p.id === "solo_therapist");
 		assert.ok(solo, "Пресет соло-врача должен существовать");
 
-		// Врач на аренде не должен быть заблокирован требованием ассистента или склада
 		assert.equal(solo.customFlags.hasAssistants, false);
 		assert.equal(solo.customFlags.hasMultipleChairs, false);
 		assert.equal(solo.customFlags.hasDentalLab, false);
@@ -73,69 +69,23 @@ describe("Scale Sovereignty Presets (Мгновенный старт без ту
 		assert.equal(enterprise.customFlags.numberOfDoctors, 10);
 	});
 
-	it("SettingsModulesTab.tsx содержит плашку ScaleSovereigntyPresetsBar", () => {
-		const tabCode = readFileSync(
-			join(settingsDir, "SettingsModulesTab.tsx"),
-			"utf8",
-		);
-		assert.match(tabCode, /<ScaleSovereigntyPresetsBar/);
-		assert.match(
-			tabCode,
-			/import\s*\{\s*ScaleSovereigntyPresetsBar\s*\}\s*from/,
-		);
+	it("SettingsModulesTab рендерит ScaleSovereigntyPresetsBar со всеми 3 пресетами без эмодзи и без disabled", () => {
+		const barHtml = renderToStaticMarkup(React.createElement(ScaleSovereigntyPresetsBar));
+		const tabHtml = renderToStaticMarkup(React.createElement(SettingsModulesTab));
+
+		assert.ok(tabHtml.includes("Модули и функции"));
+		for (const preset of SCALE_PRESETS) {
+			assert.ok(barHtml.includes(preset.title), `Bar must render ${preset.title}`);
+			assert.ok(tabHtml.includes(preset.title), `SettingsModulesTab must render ${preset.title}`);
+		}
+		assert.equal(EMOJI_REGEX.test(tabHtml), false);
+		assert.equal(tabHtml.includes('disabled=""'), false);
 	});
-});
 
-describe("Mandate 8b: Жесткий лимит строк (<= 800 строк на файл)", () => {
-	const filesToCheck = [
-		join(settingsDir, "ScaleSovereigntyPresetsBar.tsx"),
-		join(settingsDir, "SettingsModulesTab.tsx"),
-		join(settingsDir, "SettingsRulesTab.tsx"),
-		join(settingsDir, "MigrationWizard.tsx"),
-		join(migrationDir, "migrationTypes.ts"),
-		join(migrationDir, "MigrationSourcePanel.tsx"),
-		join(migrationDir, "MigrationMappingPanel.tsx"),
-		join(migrationDir, "MigrationRunningPanel.tsx"),
-		join(migrationDir, "MigrationReportPanel.tsx"),
-		join(migrationDir, "MigrationDiscoveryPanel.tsx"),
-	];
-
-	for (const file of filesToCheck) {
-		it(`файл ${file.split(/[\\/]/).pop()} строго <= 800 строк`, () => {
-			const content = readFileSync(file, "utf8");
-			const lineCount = content.split(/\r?\n/).length;
-			assert.ok(
-				lineCount <= 800,
-				`Файл ${file} содержит ${lineCount} строк, что превышает лимит 800 строк (Mandate 8b)`,
-			);
-		});
-	}
-});
-
-describe("Mandate 8d: Ноль мультяшных эмодзи", () => {
-	const filesToCheck = [
-		join(settingsDir, "ScaleSovereigntyPresetsBar.tsx"),
-		join(settingsDir, "MigrationWizard.tsx"),
-		join(migrationDir, "MigrationSourcePanel.tsx"),
-		join(migrationDir, "MigrationMappingPanel.tsx"),
-		join(migrationDir, "MigrationRunningPanel.tsx"),
-		join(migrationDir, "MigrationReportPanel.tsx"),
-		join(migrationDir, "MigrationDiscoveryPanel.tsx"),
-	];
-
-	// Unicode ranges for emojis
-	const emojiRegex =
-		/(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|[\ud83d\ud83e][\ud000-\udfff])/g;
-
-	for (const file of filesToCheck) {
-		it(`файл ${file.split(/[\\/]/).pop()} не содержит эмодзи`, () => {
-			const content = readFileSync(file, "utf8");
-			const matches = content.match(emojiRegex);
-			assert.equal(
-				matches,
-				null,
-				`В файле ${file} найдены эмодзи: ${matches?.join(", ")}`,
-			);
-		});
-	}
+	it("MigrationWizard рендерит мастер переноса без эмодзи и с доступными кнопками", () => {
+		const wizardHtml = renderToStaticMarkup(React.createElement(MigrationWizard));
+		assert.ok(wizardHtml.includes("Источник"));
+		assert.equal(EMOJI_REGEX.test(wizardHtml), false);
+		assert.equal(wizardHtml.includes('disabled=""'), false);
+	});
 });

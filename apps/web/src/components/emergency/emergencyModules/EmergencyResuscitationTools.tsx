@@ -89,7 +89,7 @@ export function EmergencyResuscitationTools({
 				<div className="emergency-cpr-header">
 					<div className="emergency-cpr-title min-w-0">
 						<Heart size={18} style={{ color: 'var(--bad-fg)' }} />
-						<span className="truncate min-w-0">СТАНДАРТ БАЗОВОЙ СЛР (МИНЗДРАВ РФ & ФАР)</span>
+						<span className="truncate min-w-0">Стандарт базовой СЛР (Минздрав РФ и ФАР)</span>
 					</div>
 				</div>
 				<div className="emergency-cpr-guidelines-list">

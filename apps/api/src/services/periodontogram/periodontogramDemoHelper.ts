@@ -11,9 +11,27 @@ import { and, eq } from "drizzle-orm";
 import type { db } from "../../db/client.js";
 import { type TenantDb, withTenantCtx } from "../../db/rls.js";
 import { patients, users } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("periodontogramDemoHelper");
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export interface PerioDemoContextOptions {
+	/**
+	 * Explicit DI toggle allowing synthetic `demo*` / `sample_*` patient IDs in route tests.
+	 * Production routes leave this unset/`false`.
+	 */
+	readonly allowSyntheticDemoIds?: boolean | undefined;
+}
+
+function createPerioError(message: string, statusCode: number, code: string): Error & {
+	statusCode: number;
+	code: string;
+} {
+	return Object.assign(new Error(message), { statusCode, code });
+}
 
 export function deterministicUuid(seed: string): string {
 	const hash = crypto.createHash("sha256").update(seed).digest("hex");
@@ -30,13 +48,14 @@ export function isPerioDemoContext(
 	orgId?: string | null,
 	patientId?: string | null,
 	rawPatientId?: string | null,
+	options?: PerioDemoContextOptions,
 ): boolean {
 	if (process.env.DENTE_DEMO_MODE === "true" || process.env.IS_DEMO_SHOWCASE === "true") return true;
-	// Только для демо-организации клиники или в тестовом окружении допускается создание синтетических демо-профилей
+	// Только для демо-организации клиники или явного DI в тестовом маршруте допускается работа с демо-профилями
 	if (orgId && (isDemoOrganizationId(orgId) || orgId.toLowerCase().includes("demo"))) {
 		return true;
 	}
-	if (process.env.NODE_ENV === "test") {
+	if (options?.allowSyntheticDemoIds === true) {
 		if (patientId && (isDemoEntityId(patientId) || patientId.toLowerCase().startsWith("demo") || patientId.toLowerCase().startsWith("sample_"))) return true;
 		if (rawPatientId && (rawPatientId.toLowerCase().startsWith("demo") || rawPatientId.toLowerCase().startsWith("sample_"))) return true;
 	}
@@ -49,6 +68,7 @@ export async function ensurePerioPatientExists(
 	orgId: string,
 	patientId: string,
 	rawPatientId?: string | null,
+	options?: PerioDemoContextOptions,
 ) {
 	const [existing] = await executor
 		.select({ id: patients.id })
@@ -58,11 +78,8 @@ export async function ensurePerioPatientExists(
 	if (existing) return;
 
 	// В боевом режиме несуществующий пациент не должен создаваться втихую поддельным именем (Мандат 8z / 8wy)
-	if (!isPerioDemoContext(orgId, patientId, rawPatientId)) {
-		const err = new Error("Пациент не найден") as Error & { statusCode?: number; code?: string };
-		err.statusCode = 404;
-		err.code = "PatientNotFound";
-		throw err;
+	if (!isPerioDemoContext(orgId, patientId, rawPatientId, options)) {
+		throw createPerioError("Пациент не найден", 404, "PatientNotFound");
 	}
 
 	// Исключительно в изолированном демонстрационном режиме создаем витринного демо-пациента
@@ -86,19 +103,14 @@ export async function resolvePerioPatientId(
 	orgId: string,
 	rawPatientId?: string | null,
 	tx?: TenantDb,
+	options?: PerioDemoContextOptions,
 ): Promise<string> {
 	const trimmed = typeof rawPatientId === "string" ? rawPatientId.trim() : "";
 	if (!trimmed) {
-		if (isPerioDemoContext(orgId, null, rawPatientId)) {
+		if (isPerioDemoContext(orgId, null, rawPatientId, options)) {
 			return deterministicUuid(`${orgId}:default-perio-patient`);
 		}
-		const err = new Error("Некорректный идентификатор пациента") as Error & {
-			statusCode?: number;
-			code?: string;
-		};
-		err.statusCode = 400;
-		err.code = "InvalidPatientId";
-		throw err;
+		throw createPerioError("Некорректный идентификатор пациента", 400, "InvalidPatientId");
 	}
 
 	if (UUID_REGEX.test(trimmed)) {
@@ -118,31 +130,19 @@ export async function resolvePerioPatientId(
 		}
 
 		// Если пациент не найден в организации, проверяем демо-контекст
-		if (!isPerioDemoContext(orgId, trimmed, rawPatientId)) {
-			const err = new Error("Пациент не найден в данной организации") as Error & {
-				statusCode?: number;
-				code?: string;
-			};
-			err.statusCode = 404;
-			err.code = "PatientNotFound";
-			throw err;
+		if (!isPerioDemoContext(orgId, trimmed, rawPatientId, options)) {
+			throw createPerioError("Пациент не найден в данной организации", 404, "PatientNotFound");
 		}
 
 		return trimmed;
 	}
 
-	// Для не-UUID строковых идентификаторов (демо-режим / тесты)
-	if (isPerioDemoContext(orgId, null, rawPatientId)) {
+	// Для не-UUID строковых идентификаторов (демо-режим / явный DI в тестах)
+	if (isPerioDemoContext(orgId, null, rawPatientId, options)) {
 		return deterministicUuid(`${orgId}:${trimmed}`);
 	}
 
-	const err = new Error("Пациент не найден в данной организации") as Error & {
-		statusCode?: number;
-		code?: string;
-	};
-	err.statusCode = 404;
-	err.code = "PatientNotFound";
-	throw err;
+	throw createPerioError("Пациент не найден в данной организации", 404, "PatientNotFound");
 }
 
 /**
@@ -167,7 +167,11 @@ export async function resolveExistingPerioUserId(
 			return user?.id ?? null;
 		};
 		return tx ? await run(tx) : await withTenantCtx(orgId, run);
-	} catch {
+	} catch (err) {
+		logger.warn(
+			{ err: safeLogError(err), orgId },
+			"Failed to verify periodontogram recordedByUserId; falling back to null",
+		);
 		return null;
 	}
 }

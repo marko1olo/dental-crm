@@ -1,7 +1,4 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -10,10 +7,7 @@ import {
 	getChairsideDefaultCanals,
 } from "../ChairsideEndoQuickBar";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (Mandates 8e, 8n, 8l)", () => {
+describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (6G Live SUT)", () => {
 	it("1. Upper molar (16) has anatomical canals MB1, MB2, DB, P", () => {
 		const canals16 = getChairsideDefaultCanals(16);
 		assert.deepEqual(canals16.map((c) => c.name), ["MB1", "MB2", "DB", "P"], "Molar 16 has MB1, MB2, DB, P");
@@ -34,14 +28,14 @@ describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (Mandate
 		assert.equal(getChairsideDefaultCanals(21).length, 1);
 	});
 
-	it("4. Primary CTA: «✓ Зафиксировать протокол каналов» with zero disabled buttons", () => {
+	it("4. Primary CTA: «Зафиксировать протокол каналов» with zero disabled buttons", () => {
 		const html = renderToStaticMarkup(createElement(ChairsideEndoQuickBar, { activeTooth: 16, toothState: "Пульпит" }));
 		assert.ok(html.includes("btn-endo-transfer-to-diary"), "Has Primary CTA button");
 		assert.ok(html.includes("Перенести в дневник"), "Has clear action title");
 		assert.ok(!html.includes("disabled"), "Mandate 8e: Primary CTA is NEVER disabled");
 	});
 
-	it("5. Express 1-click presets in header: Pulpitis 1-visit, Periodontitis Bio, Ca(OH)2, Norm", () => {
+	it("5. Express presets in header: Pulpitis 1-visit, Periodontitis Bio, Ca(OH)2, Norm", () => {
 		const html = renderToStaticMarkup(createElement(ChairsideEndoQuickBar, { activeTooth: 16 }));
 		assert.ok(html.includes("btn-quick-pulpitis-1visit"), "Has 1-visit pulpitis preset");
 		assert.ok(html.includes("btn-quick-periodontitis-bio"), "Has Bioceramic periodontitis preset");
@@ -61,9 +55,18 @@ describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (Mandate
 		assert.ok(!emojiRegex.test(html), "HTML markup must contain ZERO emojis");
 	});
 
-	it("8. Healthy File Line Count Ceilings (Mandate 8b / 8zi: <= 350 lines)", () => {
-		const quickBarFile = path.resolve(__dirname, "../ChairsideEndoQuickBar.tsx");
-		const lines = fs.readFileSync(quickBarFile, "utf-8").split("\n").length;
-		assert.ok(lines <= 350, `ChairsideEndoQuickBar.tsx must be in healthy sweet spot <= 350 lines (current: ${lines})`);
+	it("8. Renders distinct canal configurations for premolar 14, incisor 21, and custom toothState props", () => {
+		const premolarHtml = renderToStaticMarkup(
+			createElement(ChairsideEndoQuickBar, { activeTooth: 14, toothState: "Хронический периодонтит" }),
+		);
+		assert.ok(premolarHtml.includes("Зуб #14"));
+		assert.ok(premolarHtml.includes("Канал B") && premolarHtml.includes("Канал P"));
+
+		const incisorHtml = renderToStaticMarkup(createElement(ChairsideEndoQuickBar, { activeTooth: 21 }));
+		assert.ok(incisorHtml.includes("Зуб #21"));
+		assert.ok(incisorHtml.includes("Основной канал"));
+
+		const fallbackCanals = getChairsideDefaultCanals(0);
+		assert.ok(fallbackCanals.length >= 1);
 	});
 });

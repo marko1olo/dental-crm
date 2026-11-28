@@ -20,6 +20,7 @@ import {
 	requireStaffIdentity,
 } from "../security/identity.js";
 import { verifyWebhookSecret } from "../security/webhookAuth.js";
+import { checkWebhookTimestampFreshness } from "../services/bots/webhookSecretAndReplay.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
 
 const ORG_A = "11111111-1111-1111-1111-111111111111";
@@ -363,17 +364,20 @@ test("вебхуки: дрейф времени > 300 секунд фиксир�
 	const futureTimestampSec = nowSec + 301;
 	const validTimestampSec = nowSec - 100;
 
-	assert.strictEqual(Math.abs(nowSec - staleTimestampSec) > 300, true);
-	assert.strictEqual(Math.abs(nowSec - futureTimestampSec) > 300, true);
-	assert.strictEqual(Math.abs(nowSec - validTimestampSec) <= 300, true);
+	assert.strictEqual(checkWebhookTimestampFreshness(staleTimestampSec, 300).fresh, false);
+	assert.strictEqual(checkWebhookTimestampFreshness(futureTimestampSec, 300).fresh, false);
+	assert.strictEqual(checkWebhookTimestampFreshness(validTimestampSec, 300).fresh, true);
 });
 
 test("вебхуки: нормализация миллисекунд в секунды для временных меток", () => {
 	const nowMs = Date.now();
 	const nowSec = Math.floor(nowMs / 1000);
 
-	const convertTs = (ts: number) => (ts > 1e11 ? Math.floor(ts / 1000) : ts);
+	const resMs = checkWebhookTimestampFreshness(nowMs, 300);
+	const resSec = checkWebhookTimestampFreshness(nowSec, 300);
 
-	assert.strictEqual(convertTs(nowMs), nowSec);
-	assert.strictEqual(convertTs(nowSec), nowSec);
+	assert.strictEqual(resMs.fresh, true);
+	assert.strictEqual(resMs.msgTsSec, nowSec);
+	assert.strictEqual(resSec.fresh, true);
+	assert.strictEqual(resSec.msgTsSec, nowSec);
 });

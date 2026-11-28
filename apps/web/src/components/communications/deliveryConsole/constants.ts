@@ -3,6 +3,7 @@
  */
 
 import { actionFailureToast } from "../../../lib/panelStateText";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 
 export const channelLabels: Record<string, string> = {
@@ -66,16 +67,19 @@ export function extractHttpStatus(error: unknown): number | null {
 }
 
 export async function readJson<T>(response: Response): Promise<T> {
-	const payload = (await response.json().catch((err: unknown) => {
+	let payload: unknown = null;
+	try {
+		payload = await response.json();
+	} catch (err: unknown) {
+		clientLogger.warn("[deliveryConsole] JSON parse failed", { status: response.status, error: String(err) });
 		showToast(
 			actionFailureToast(
 				"Ошибка ответа сервера",
-				extractHttpStatus(err),
+				extractHttpStatus(err) ?? response.status,
 			),
 			"error",
 		);
-		return null;
-	})) as unknown;
+	}
 	if (!response.ok) {
 		const message =
 			payload &&

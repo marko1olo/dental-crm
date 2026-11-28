@@ -24,10 +24,8 @@ export function PatientCockpit({
 					className="eyebrow"
 					style={{
 						margin: 0,
-						fontSize: "11px",
-						fontWeight: 700,
-						letterSpacing: "0.09em",
-						textTransform: "uppercase",
+						fontSize: "12px",
+						fontWeight: 600,
 						color: "var(--muted)",
 					}}
 				>

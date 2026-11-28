@@ -13,6 +13,7 @@ import {
 	ShieldCheck,
 } from "lucide-react";
 import { formatKopecksToRub, generateUuidV7, rublesToKopecks } from "@dental/shared";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { PublicBudgetSignaturePad } from "./PublicBudgetSignaturePad";
 
 export interface BudgetItem {
@@ -182,7 +183,15 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 					if (res.status === 404) {
 						setLoadError("Смета не найдена или срок действия ссылки истёк.");
 					} else {
-						const errJson = await res.json().catch(() => ({}));
+						let errJson: { message?: string } = {};
+						try {
+							errJson = (await res.json()) as { message?: string };
+						} catch (parseErr) {
+							clientLogger.warn("PublicBudgetSignPage error parse failed", {
+								status: res.status,
+								error: String(parseErr),
+							});
+						}
 						setLoadError(errJson.message || "Ошибка загрузки сметы.");
 					}
 					return;
@@ -236,7 +245,15 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 				body: JSON.stringify({ phoneDigits: digits }),
 			});
 
-			const data = await res.json().catch(() => ({}));
+			let data: { message?: string; sessionToken?: string } = {};
+			try {
+				data = (await res.json()) as { message?: string; sessionToken?: string };
+			} catch (parseErr) {
+				clientLogger.warn("PublicBudgetSignPage verify parse failed", {
+					status: res.status,
+					error: String(parseErr),
+				});
+			}
 
 			if (!res.ok) {
 				if (res.status === 429) {
@@ -315,7 +332,15 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 				}),
 			});
 
-			const resJson = await res.json().catch(() => ({}));
+			let resJson: { message?: string; signedAt?: string; error?: string } = {};
+			try {
+				resJson = (await res.json()) as { message?: string; signedAt?: string; error?: string };
+			} catch (parseErr) {
+				clientLogger.warn("PublicBudgetSignPage sign response parse failed", {
+					status: res.status,
+					error: String(parseErr),
+				});
+			}
 
 			if (!res.ok) {
 				setSignError(resJson.message || "Ошибка при сохранении цифровой подписи.");
@@ -416,7 +441,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 					{budget.clinicPhone && (
 						<a
 							href={`tel:${budget.clinicPhone}`}
-							className="no-print flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-cyan-700 dark:text-cyan-300 text-xs font-medium transition min-h-[44px]"
+							className="no-print flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--primary)] text-xs font-medium transition min-h-[44px]"
 						>
 							<Phone className="w-3.5 h-3.5" />
 							<span>{budget.clinicPhone}</span>
@@ -706,7 +731,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 								type="button"
 								data-testid="public-budget-print-btn"
 								onClick={() => window.print()}
-								className="min-h-[44px] py-2.5 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition flex items-center justify-center gap-2"
+								className="min-h-[44px] py-2.5 px-3.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] text-xs font-medium transition flex items-center justify-center gap-2"
 							>
 								<Printer className="w-4 h-4 shrink-0" />
 								<span>Печать сметы (А4)</span>
@@ -723,22 +748,22 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 						</div>
 
 						<div className="space-y-1">
-							<h2 className="text-lg font-bold text-slate-900 dark:text-white">Смета успешно согласована</h2>
-							<p className="text-xs text-slate-500 dark:text-slate-400">
+							<h2 className="text-lg font-bold text-[var(--ink)]">Смета успешно согласована</h2>
+							<p className="text-xs text-[var(--ink-muted)]">
 								Электронная подпись принята и внесена в медицинскую карту пациента.
 							</p>
 						</div>
 
-						<div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-xs space-y-2 text-left">
-							<div className="flex justify-between text-slate-500 dark:text-slate-400">
+						<div className="bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl p-4 text-xs space-y-2 text-left">
+							<div className="flex justify-between text-[var(--ink-muted)]">
 								<span>Дата подписания:</span>
-								<span className="text-slate-800 dark:text-slate-200 font-medium font-mono">{formatIsoDateTime(budget.signedAt)}</span>
+								<span className="text-[var(--ink)] font-medium font-mono">{formatIsoDateTime(budget.signedAt)}</span>
 							</div>
-							<div className="flex justify-between text-slate-500 dark:text-slate-400">
+							<div className="flex justify-between text-[var(--ink-muted)]">
 								<span>Подписант:</span>
-								<span className="text-slate-800 dark:text-slate-200 font-medium">{budget.signerName || "Пациент"}</span>
+								<span className="text-[var(--ink)] font-medium">{budget.signerName || "Пациент"}</span>
 							</div>
-							<div className="flex justify-between text-slate-500 dark:text-slate-400">
+							<div className="flex justify-between text-[var(--ink-muted)]">
 								<span>Согласованная сумма:</span>
 								<span className="text-[var(--primary)] font-semibold font-mono">
 									{formatKopecksToRub(
@@ -750,7 +775,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 								</span>
 							</div>
 							{budget.documentHash && (
-								<div className="pt-2 border-t border-slate-200 dark:border-slate-900 text-[10px] text-slate-400 dark:text-slate-500 break-all font-mono">
+								<div className="pt-2 border-t border-[var(--line)] text-[10px] text-[var(--ink-muted)] break-all font-mono">
 									Хеш документа: {budget.documentHash}
 								</div>
 							)}
@@ -760,7 +785,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 							<button
 								type="button"
 								onClick={() => window.print()}
-								className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-medium transition flex items-center justify-center gap-2"
+								className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] text-xs font-medium transition flex items-center justify-center gap-2"
 							>
 								<Printer className="w-4 h-4" />
 								<span>Сохранить копию / Распечатать</span>

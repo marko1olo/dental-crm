@@ -9,7 +9,7 @@
 	position: fixed;
 	inset: 0;
 	z-index: 100;
-	background: rgba(15, 23, 42, 0.75);
+	background: rgba(0, 0, 0, 0.65);
 	backdrop-filter: blur(8px);
 	-webkit-backdrop-filter: blur(8px);
 	display: flex;
@@ -151,7 +151,7 @@
 }
 
 .surgery-hub-content {
-	padding: 12px 16px;
+	padding: 12px 16px 20px 16px;
 	overflow-y: auto;
 	flex: 1 1 auto;
 	display: flex;
@@ -224,6 +224,13 @@ html.dark .surgery-hub-tabs-nav {
 	border-color: var(--line);
 }
 
+[data-theme="dark"] .surgery-hub-tab-btn.active,
+html.dark .surgery-hub-tab-btn.active {
+	background: rgba(13, 148, 136, 0.16);
+	border-color: var(--teal, #14b8a6);
+	color: #5eead4;
+}
+
 [data-theme="dark"] .surgery-scenario-chip,
 html.dark .surgery-scenario-chip {
 	background: var(--paper);
@@ -242,16 +249,16 @@ html.dark .surgery-scenario-chip.active {
    ========================================================================== */
 @media (max-width: 768px) {
 	.surgery-hub-modal-backdrop {
-		padding: 0 0 calc(64px + env(safe-area-inset-bottom, 0px)) 0 !important;
+		padding: 0 !important;
 		align-items: flex-end !important;
-		background: rgba(0, 0, 0, 0.55);
+		background: rgba(0, 0, 0, 0.72);
 	}
 
 	.surgery-hub-card-container {
 		width: 100vw !important;
 		max-width: 100vw !important;
 		height: auto;
-		max-height: calc(100dvh - 76px - env(safe-area-inset-bottom, 0px)) !important;
+		max-height: 92dvh !important;
 		border-radius: 24px 24px 0 0 !important;
 		border-bottom: none !important;
 		border-left: none !important;
@@ -294,24 +301,28 @@ html.dark .surgery-scenario-chip.active {
 	}
 
 	.surgery-hub-tabs-nav {
-		overflow-x: auto;
-		white-space: nowrap;
-		-webkit-overflow-scrolling: touch;
-		scrollbar-width: none;
-		padding: 6px 12px;
-	}
-
-	.surgery-hub-tabs-nav::-webkit-scrollbar {
-		display: none;
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 4px;
+		padding: 6px 10px;
+		overflow: visible;
 	}
 
 	.surgery-hub-tab-btn {
 		min-height: 44px;
-		flex-shrink: 0;
+		padding: 0 4px;
+		font-size: 11px;
+		justify-content: center;
+		min-width: 0;
+		white-space: nowrap;
+	}
+
+	.surgery-hub-tab-btn svg {
+		display: none;
 	}
 
 	.surgery-hub-content {
-		padding: 12px 14px;
+		padding: 12px 14px 28px 14px;
 		gap: 12px;
 		overflow-x: clip;
 		max-width: 100vw;

@@ -145,9 +145,13 @@ export const BOTTOM_TEETH_MIXED = MIXED_BOTTOM_TEETH;
 // 2. АНАТОМИЧЕСКИЕ ПРОВЕРКИ И ХЕЛПЕРЫ FDI
 // ============================================================================
 
+const ALL_FDI_TEETH_SET: ReadonlySet<number> = new Set<number>(ALL_FDI_TEETH);
+const PERMANENT_TEETH_SET: ReadonlySet<number> = new Set<number>(PERMANENT_TEETH);
+const DECIDUOUS_TEETH_SET: ReadonlySet<number> = new Set<number>(DECIDUOUS_TEETH);
+
 export function isValidFdiToothNumber(toothNumber: unknown): toothNumber is number {
 	if (typeof toothNumber !== "number" || !Number.isInteger(toothNumber)) return false;
-	return (ALL_FDI_TEETH as readonly number[]).includes(toothNumber);
+	return ALL_FDI_TEETH_SET.has(toothNumber);
 }
 
 export const isValidFdiTooth = isValidFdiToothNumber;
@@ -162,11 +166,11 @@ export function assertValidFdiToothNumber(toothNumber: unknown): asserts toothNu
 }
 
 export function isPermanentTooth(toothNumber: number): boolean {
-	return (PERMANENT_TEETH as readonly number[]).includes(toothNumber);
+	return PERMANENT_TEETH_SET.has(toothNumber);
 }
 
 export function isDeciduousTooth(toothNumber: number): boolean {
-	return (DECIDUOUS_TEETH as readonly number[]).includes(toothNumber);
+	return DECIDUOUS_TEETH_SET.has(toothNumber);
 }
 
 export const isPrimaryTooth = isDeciduousTooth;

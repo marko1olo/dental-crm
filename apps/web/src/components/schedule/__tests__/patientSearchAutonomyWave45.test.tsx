@@ -21,10 +21,7 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import type { Patient } from "@dental/shared";
@@ -33,11 +30,7 @@ import { PatientSearchModal } from "../PatientSearchModal";
 import {
 	parseSearchQueryForQuickPatient,
 	searchPatientsQuick,
-	type QuickPatientPrefill,
 } from "../patientSearchEngine";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Cartoon emoji detector per Mandate 8d п. 7
 export const CARTOON_EMOJI_REGEX =
@@ -96,27 +89,22 @@ const mockPatients: Patient[] = [
 ];
 
 describe("Wave 45: Patient Check-in & Reception Search Autonomy (Feature 224)", () => {
-	const modalFilePath = path.resolve(__dirname, "../PatientSearchModal.tsx");
-	const modalSource = fs.readFileSync(modalFilePath, "utf8");
-
-	const engineFilePath = path.resolve(__dirname, "../patientSearchEngine.ts");
-	const engineSource = fs.readFileSync(engineFilePath, "utf8");
-
 	// ─────────────────────────────────────────────────────────────────────────────
-	// Suite 1: Zero Dead-Ends & Quick Patient 1-Click Button (Mandates 8e, 8n)
+	// Suite 1: Zero Dead-Ends & Quick Patient Button (Mandates 8e, 8n)
 	// ─────────────────────────────────────────────────────────────────────────────
 	describe("1. Zero Dead-Ends: Quick Patient Button (Mandates 8e, 8n)", () => {
-		it("1.1. contains search-modal-quick-create-btn in source code with canonical label", () => {
-			assert.equal(
-				modalSource.includes('data-testid="search-modal-quick-create-btn"'),
-				true,
-				"Must contain button with data-testid='search-modal-quick-create-btn'",
+		it("1.1. renders search-modal-quick-create-btn with canonical label and Lucide icons", () => {
+			const html = renderToString(
+				<PatientSearchModal
+					isOpen={true}
+					patients={mockPatients}
+					onClose={() => {}}
+					onSelectPatientForBooking={() => {}}
+				/>,
 			);
-			assert.equal(
-				modalSource.includes("+ Быстрый пациент за 5 сек: ФИО + Телефон"),
-				true,
-				"Must contain label '+ Быстрый пациент за 5 сек: ФИО + Телефон'",
-			);
+			assert.equal(html.includes('data-testid="search-modal-quick-create-btn"'), true);
+			assert.equal(html.includes("+ Быстрый пациент за 5 сек: ФИО + Телефон"), true);
+			assert.ok(html.includes("<svg"), "Must render Lucide vector icons");
 		});
 
 		it("1.2. renders search-modal-quick-create-btn when search is empty", () => {
@@ -204,10 +192,18 @@ describe("Wave 45: Patient Check-in & Reception Search Autonomy (Feature 224)", 
 			assert.deepEqual(wsRes, { fullName: "", phone: "" });
 		});
 
-		it("2.7. exports parseSearchQueryForQuickPatient and QuickPatientPrefill from engine", () => {
-			assert.equal(typeof parseSearchQueryForQuickPatient, "function");
-			assert.equal(engineSource.includes("export function parseSearchQueryForQuickPatient"), true);
-			assert.equal(engineSource.includes("export interface QuickPatientPrefill"), true);
+		it("2.7. normalizes mixed cyrillic/latin queries and prioritizes exact phone matches in searchPatientsQuick", () => {
+			const combined = parseSearchQueryForQuickPatient("Козлов Петр 9161234567");
+			assert.equal(combined.fullName, "Козлов Петр");
+			assert.equal(combined.phone, "+7 (916) 123-45-67");
+
+			const phoneMatches = searchPatientsQuick(mockPatients, "925987");
+			assert.equal(phoneMatches.length, 1);
+			assert.equal(phoneMatches[0]?.patient.id, "patient-102");
+			assert.ok(phoneMatches[0]?.phoneHighlights.some((p) => p.isMatch));
+
+			const limited = searchPatientsQuick(mockPatients, "", 2);
+			assert.equal(limited.length, 2);
 		});
 	});
 
@@ -257,7 +253,7 @@ describe("Wave 45: Patient Check-in & Reception Search Autonomy (Feature 224)", 
 			assert.equal(html.includes("+ Записать на приём"), true);
 		});
 
-		it("3.3. WhatsApp button is disabled when patient has no phone", () => {
+		it("3.3. WhatsApp button remains active with guidance title when patient has no phone", () => {
 			const html = renderToString(
 				<PatientSearchModal
 					isOpen={true}
@@ -265,7 +261,9 @@ describe("Wave 45: Patient Check-in & Reception Search Autonomy (Feature 224)", 
 					onClose={() => {}}
 				/>,
 			);
-			assert.equal(html.includes('data-testid="quick-wa-patient-patient-103"'), true);
+			const btnMatch = html.match(/<button[^>]*data-testid="quick-wa-patient-patient-103"[^>]*>/);
+			assert.ok(btnMatch, "WhatsApp button must render for phone-less patient");
+			assert.equal(btnMatch[0].includes("disabled"), false);
 			assert.equal(html.includes("Номер телефона не указан"), true);
 		});
 
@@ -290,7 +288,6 @@ describe("Wave 45: Patient Check-in & Reception Search Autonomy (Feature 224)", 
 				/>,
 			);
 
-			// Count role="dialog" elements — must be exactly 1
 			const dialogMatches = html.match(/role="dialog"/g);
 			assert.equal(
 				dialogMatches?.length,
@@ -298,7 +295,6 @@ describe("Wave 45: Patient Check-in & Reception Search Autonomy (Feature 224)", 
 				`Modal depth must be strictly 1. Found ${dialogMatches?.length} dialog elements`,
 			);
 
-			// Count aria-modal="true" — must be exactly 1
 			const ariaModalMatches = html.match(/aria-modal="true"/g);
 			assert.equal(
 				ariaModalMatches?.length,
@@ -307,58 +303,64 @@ describe("Wave 45: Patient Check-in & Reception Search Autonomy (Feature 224)", 
 			);
 		});
 
-		it("4.2. Desktop Density: action buttons have height 32–36px and touch targets >= 44px", () => {
-			// Check source classes for height standards
-			assert.equal(
-				modalSource.includes("h-9") || modalSource.includes("min-h-[36px]"),
-				true,
-				"Action buttons must adhere to 32–36px desktop density (e.g. h-9 / min-h-[36px])",
-			);
-			assert.equal(
-				modalSource.includes("min-w-[44px]") || modalSource.includes("min-h-[44px]"),
-				true,
-				"Buttons must respect touch target floor (>= 44px)",
-			);
-		});
-
-		it("4.3. Zero Cartoon Emojis: guarantees 0 cartoon emojis in PatientSearchModal source & HTML", () => {
-			assert.equal(
-				hasCartoonEmojis(modalSource),
-				false,
-				"PatientSearchModal.tsx source code contains forbidden cartoon emojis!",
-			);
-
+		it("4.2. Desktop Density: rendered quick buttons expose 36px/44px ergonomic sizing", () => {
 			const html = renderToString(
 				<PatientSearchModal
 					isOpen={true}
 					patients={mockPatients}
 					onClose={() => {}}
+					onSelectPatientForBooking={() => {}}
+					onOpenPatientCard={() => {}}
 				/>,
 			);
 			assert.equal(
-				hasCartoonEmojis(html),
-				false,
-				"PatientSearchModal rendered HTML contains forbidden cartoon emojis!",
+				html.includes("h-9") || html.includes("min-h-[36px]"),
+				true,
+				"Rendered action buttons must adhere to 32–36px desktop density",
 			);
-		});
-
-		it("4.4. Zero Cartoon Emojis: guarantees 0 cartoon emojis in patientSearchEngine source", () => {
 			assert.equal(
-				hasCartoonEmojis(engineSource),
-				false,
-				"patientSearchEngine.ts source code contains forbidden cartoon emojis!",
+				html.includes("min-w-[44px]") || html.includes("min-h-[44px]"),
+				true,
+				"Rendered buttons must enforce touch target floor >= 44px",
 			);
 		});
 
-		it("4.5. verifies only Lucide vector icons are imported in PatientSearchModal", () => {
-			const lucideImportMatch = modalSource.match(/from "lucide-react";/);
-			assert.ok(lucideImportMatch, "Must import Lucide vector icons");
-			assert.equal(modalSource.includes("CalendarPlus"), true);
-			assert.equal(modalSource.includes("MessageSquare"), true);
-			assert.equal(modalSource.includes("FileText"), true);
-			assert.equal(modalSource.includes("Plus"), true);
-			assert.equal(modalSource.includes("UserPlus"), true);
-			assert.equal(modalSource.includes("Phone"), true);
+		it("4.3. Zero Cartoon Emojis: guarantees 0 cartoon emojis across populated and empty modal HTML", () => {
+			for (const list of [mockPatients, []]) {
+				const html = renderToString(
+					<PatientSearchModal
+						isOpen={true}
+						patients={list}
+						onClose={() => {}}
+					/>,
+				);
+				assert.equal(
+					hasCartoonEmojis(html),
+					false,
+					"PatientSearchModal rendered HTML contains forbidden cartoon emojis!",
+				);
+			}
+		});
+
+		it("4.4. Zero Cartoon Emojis: guarantees 0 cartoon emojis in searchPatientsQuick / prefill output", () => {
+			const prefill = parseSearchQueryForQuickPatient("Смирнова +7 925 987 65 43");
+			const results = searchPatientsQuick(mockPatients, "Смирнова");
+			const textBlob = JSON.stringify({ prefill, results });
+			assert.equal(hasCartoonEmojis(textBlob), false);
+		});
+
+		it("4.5. verifies SVG vector icons render for search, booking, WhatsApp, and patient card triggers", () => {
+			const html = renderToString(
+				<PatientSearchModal
+					isOpen={true}
+					patients={[mockPatients[0]!]}
+					onClose={() => {}}
+					onSelectPatientForBooking={() => {}}
+					onOpenPatientCard={() => {}}
+				/>,
+			);
+			const svgMatches = html.match(/<svg[^>]*>/g) ?? [];
+			assert.ok(svgMatches.length >= 4, `Expected >= 4 Lucide SVG icons, found ${svgMatches.length}`);
 		});
 	});
 });

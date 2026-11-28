@@ -1,5 +1,6 @@
 import { generateUuidV7 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders, type AppointmentScheduleDraft } from "../../../AppHelpers";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import { type Canonical5LabStatus, buildLabAppointmentDraft } from "../../lab/labMath";
 import type { LabOrder } from "../LabOrdersPanel";
@@ -34,7 +35,16 @@ export async function transitionLabOrderStatus(orderId: string, targetStatus: Ca
 			return;
 		}
 
-		const errData = await res.json().catch(() => null) as { error?: string; message?: string } | null;
+		let errData: { error?: string; message?: string } | null = null;
+		try {
+			errData = (await res.json()) as { error?: string; message?: string } | null;
+		} catch (parseErr) {
+			clientLogger.warn("[labOrderActions] transitionLabOrderStatus error JSON parse failed", {
+				orderId,
+				status: res.status,
+				error: String(parseErr),
+			});
+		}
 		const errorMessage = errData?.error || errData?.message;
 		if (res.status === 409) {
 			showToast(errorMessage || "Наряд уже зафиксирован (сдан) и заблокирован от изменений", "error");
@@ -101,7 +111,16 @@ export async function deleteLabOrder(id: string, onDone: () => void) {
 			onDone();
 			return;
 		}
-		const errData = await res.json().catch(() => null) as { error?: string; message?: string } | null;
+		let errData: { error?: string; message?: string } | null = null;
+		try {
+			errData = (await res.json()) as { error?: string; message?: string } | null;
+		} catch (parseErr) {
+			clientLogger.warn("[labOrderActions] transitionLabOrderStatus error JSON parse failed", {
+				orderId,
+				status: res.status,
+				error: String(parseErr),
+			});
+		}
 		const errorMessage = errData?.error || errData?.message;
 		if (res.status === 409) {
 			showToast(errorMessage || "Невозможно удалить завершенный или заблокированный наряд", "error");

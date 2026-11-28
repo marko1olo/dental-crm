@@ -1,3 +1,4 @@
+import { formatDateKeyInTimeZone, shiftCalendarDay } from "@dental/shared";
 import { and, asc, eq, gt, lt, ne } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -355,17 +356,17 @@ export async function handleGetNextFreeSlots(
 
 		for (const offsetDays of offsets) {
 			if (foundSlots.length >= 4) break;
-			const targetDateObj = new Date(baseUtcDay.getTime() + offsetDays * 86_400_000);
-			const targetDateStr = targetDateObj.toISOString().slice(0, 10);
+			const targetDateStr = shiftCalendarDay(todayClinicStr, offsetDays);
 
 			let matchedSlot: NextFreeSlotCandidate | null = null;
 
 			for (let lookahead = 0; lookahead <= 7 && !matchedSlot; lookahead++) {
-				const candidateDay = new Date(targetDateObj.getTime() + lookahead * 86_400_000);
-				const year = candidateDay.getUTCFullYear();
-				const month = candidateDay.getUTCMonth() + 1;
-				const day = candidateDay.getUTCDate();
-				const actualDateStr = candidateDay.toISOString().slice(0, 10);
+				const actualDateStr = shiftCalendarDay(targetDateStr, lookahead);
+				const [yearStr, monthStr, dayStr] = actualDateStr.split("-");
+				const year = Number(yearStr);
+				const month = Number(monthStr);
+				const day = Number(dayStr);
+				const candidateDay = new Date(Date.UTC(year, month - 1, day));
 				const dayOfWeek = candidateDay.getUTCDay() === 0 ? 7 : candidateDay.getUTCDay();
 
 				const intervals = resolveDoctorIntervalsForDate(actualDateStr, dayOfWeek);

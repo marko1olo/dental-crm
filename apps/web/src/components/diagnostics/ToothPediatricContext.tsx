@@ -157,7 +157,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 				<div className="dente-warm-tool-title-group">
 					<ToothDeciduous size={18} className="text-[var(--primary)]" />
 					<h3 className="dente-warm-tool-title">
-						Детский прием: Шкала Франкла & Резорбция (FDI #{toothNumber})
+						Детский прием: Шкала Франкла и резорбция (FDI #{toothNumber})
 					</h3>
 				</div>
 				<div

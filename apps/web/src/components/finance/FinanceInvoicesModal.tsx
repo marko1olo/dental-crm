@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { createPortal } from "react-dom";
 import { InvoicesView } from "../billing/InvoicesView.js";
 
 export interface FinanceInvoicesModalProps {
@@ -16,15 +17,15 @@ export function FinanceInvoicesModal({
 }: FinanceInvoicesModalProps) {
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div
-			className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-xs flex items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150"
+			className="fixed inset-0 z-[100] bg-black/65 backdrop-blur-xs flex items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Счета и акты выполненных работ"
 			data-testid="modal-finance-invoices"
 		>
-			<div className="w-full h-full sm:h-[92vh] max-w-5xl sm:max-h-[920px] rounded-none sm:rounded-2xl overflow-hidden shadow-2xl border-0 sm:border border-[var(--line)] flex flex-col bg-[var(--paper)]">
+			<div className="w-full h-full sm:h-[92vh] max-w-6xl sm:max-h-[920px] rounded-none sm:rounded-2xl overflow-hidden shadow-2xl border-0 sm:border border-[var(--line)] flex flex-col bg-[var(--paper)]">
 				<Suspense
 					fallback={
 						<div className="p-8 text-center text-xs text-[var(--muted)]">
@@ -42,4 +43,8 @@ export function FinanceInvoicesModal({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined" && document.body
+		? createPortal(modalContent, document.body)
+		: modalContent;
 }

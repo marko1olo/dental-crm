@@ -19,6 +19,9 @@ import fs, { existsSync, mkdirSync, statSync, readFileSync, writeFileSync, copyF
 import path from "node:path";
 import crypto from "node:crypto";
 import { chromium } from "playwright";
+import { runDomXrayProbeInPage } from "../../.agents/skills/visual-audit-pipeline/scripts/dom-xray-probe.mjs";
+import { evaluateDomXrayReport, formatDomXrayBlockers } from "./ui-xray-rules.mjs";
+import { printFailureManifesto } from "../manifests/failure-manifestos.mjs";
 
 export const CANONICAL_VIEWPORTS = {
 	PC_LIGHT: {
@@ -390,6 +393,19 @@ export async function capture4StateProof(config) {
 			const filename = `${screenName}_${state.id}_${state.viewport.width}x${state.viewport.height}.png`;
 			const filePath = path.join(targetDir, filename);
 
+			// Run live Playwright DOM X-Ray probe & evaluate strict layout/contrast/copy assertions
+			const domMetrics = await page.evaluate(runDomXrayProbeInPage, {
+				isMobile: state.isMobile,
+				theme: state.theme,
+			});
+			const xrayPath = filePath.replace(/\.png$/i, ".xray.json");
+			writeFileSync(xrayPath, JSON.stringify(domMetrics, null, 2), "utf8");
+			const xrayReport = evaluateDomXrayReport(domMetrics, {
+				state: state.id,
+				theme: state.theme,
+				viewport: state.viewport,
+			});
+
 			const buffer = await page.screenshot({
 				fullPage: false,
 				animations: "disabled",
@@ -406,7 +422,7 @@ export async function capture4StateProof(config) {
 			const stats = statSync(filePath);
 			const md5 = getFileMd5(filePath);
 
-			console.log(`   ✓ Saved: ${filename} | Size: ${(stats.size / 1024).toFixed(1)} KB | MD5: ${md5.slice(0, 10)}...`);
+			console.log(`   ✓ Saved: ${filename} | Size: ${(stats.size / 1024).toFixed(1)} KB | MD5: ${md5.slice(0, 10)}... | X-Ray blockers: ${xrayReport.blockers.length}, warnings: ${xrayReport.warnings.length}`);
 
 			// Anti-Blank Byte Guard (Mandate 8al): Crash if image is empty white canvas or crash screen
 			if (stats.size < minBytes) {
@@ -415,15 +431,27 @@ export async function capture4StateProof(config) {
 				);
 			}
 
+			if (!xrayReport.passed && config.enforceXray !== false) {
+				const details = formatDomXrayBlockers(xrayReport);
+				printFailureManifesto("UI_XRAY_LAYOUT", {
+					details: `Экран ${filename} не прошёл живой DOM X-Ray:\n${details}`,
+				});
+				throw new Error(`[UI X-Ray Gate Violation] ${filename} blocked by DOM X-Ray:\n${details}`);
+			}
+
 			hashByTheme[state.id] = md5;
 			results.push({
 				state: state.id,
 				name: state.name,
 				filePath,
+				xrayPath,
 				filename,
 				size: stats.size,
 				sizeKb: Number((stats.size / 1024).toFixed(1)),
 				md5,
+				xrayPassed: xrayReport.passed,
+				xrayBlockers: xrayReport.blockers,
+				xrayWarnings: xrayReport.warnings,
 			});
 
 			await context.close();

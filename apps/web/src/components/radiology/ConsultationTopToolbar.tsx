@@ -141,14 +141,14 @@ export const ConsultationTopToolbar: React.FC<ConsultationTopToolbarProps> = ({
 				)}
 
 				{/* Active Window Focus Indicator */}
-				<div className="flex items-center gap-1 bg-[#0f172a] p-0.5 rounded border border-[#334155] ml-1 shrink-0">
+				<div className="flex items-center gap-1 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] ml-1 shrink-0">
 					<button
 						type="button"
 						onClick={() => onSelectSlot("left")}
 						className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer whitespace-nowrap ${
 							activeSlot === "left"
-								? "bg-[#064e3b] text-[#34d399] border border-[#00C853]"
-								: "text-slate-400 hover:text-white"
+								? "bg-[var(--primary)] text-white"
+								: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="btn-select-slot-left"
 					>
@@ -159,8 +159,8 @@ export const ConsultationTopToolbar: React.FC<ConsultationTopToolbarProps> = ({
 						onClick={() => onSelectSlot("right")}
 						className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer whitespace-nowrap ${
 							activeSlot === "right"
-								? "bg-[#064e3b] text-[#34d399] border border-[#00C853]"
-								: "text-slate-400 hover:text-white"
+								? "bg-[var(--primary)] text-white"
+								: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="btn-select-slot-right"
 					>
@@ -171,14 +171,14 @@ export const ConsultationTopToolbar: React.FC<ConsultationTopToolbarProps> = ({
 
 			{/* Center: Interactive Viewport Tools */}
 			<div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-				<div className="flex items-center gap-1 bg-[#0f172a] p-0.5 rounded border border-[#334155] shrink-0">
+				<div className="flex items-center gap-1 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] shrink-0">
 					<button
 						type="button"
 						onClick={() => onSelectTool("pan")}
 						className={`px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap ${
 							activeTool === "pan"
-								? "bg-[#134e4a] text-[#2dd4bf]"
-								: "text-slate-400 hover:text-white"
+								? "bg-[var(--teal-surface)] text-[var(--primary)]"
+								: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="btn-tool-pan"
 						title="Панорамирование снимка (Рука)"
@@ -192,8 +192,8 @@ export const ConsultationTopToolbar: React.FC<ConsultationTopToolbarProps> = ({
 						onClick={() => onSelectTool("laser")}
 						className={`px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap ${
 							activeTool === "laser"
-								? "bg-[#881337] text-[#fda4af] font-bold shadow-xs"
-								: "text-rose-400 hover:text-rose-300"
+								? "bg-rose-500/20 text-rose-500 font-bold shadow-xs"
+								: "text-rose-500 hover:text-rose-400"
 						}`}
 						data-testid="btn-tool-laser"
 						title="Лазерная указка для демонстрации пациенту"
@@ -207,8 +207,8 @@ export const ConsultationTopToolbar: React.FC<ConsultationTopToolbarProps> = ({
 						onClick={() => onSelectTool("arrow")}
 						className={`px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap ${
 							activeTool === "arrow"
-								? "bg-[#134e4a] text-[#2dd4bf]"
-								: "text-slate-400 hover:text-white"
+								? "bg-[var(--teal-surface)] text-[var(--primary)]"
+								: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="btn-tool-arrow"
 						title="Векторная стрелка патологии"
@@ -222,8 +222,8 @@ export const ConsultationTopToolbar: React.FC<ConsultationTopToolbarProps> = ({
 						onClick={() => onSelectTool("pencil")}
 						className={`px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap ${
 							activeTool === "pencil"
-								? "bg-[#134e4a] text-[#2dd4bf]"
-								: "text-slate-400 hover:text-white"
+								? "bg-[var(--teal-surface)] text-[var(--primary)]"
+								: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 						data-testid="btn-tool-pencil"
 						title="Карандаш (свободное рисование)"
@@ -267,7 +267,7 @@ export const ConsultationTopToolbar: React.FC<ConsultationTopToolbarProps> = ({
 				<button
 					type="button"
 					onClick={onResetView}
-					className="px-2 py-0.5 rounded border border-[#334155] bg-[#0f172a] text-slate-300 hover:text-white text-[11px] font-medium cursor-pointer shrink-0 whitespace-nowrap"
+					className="px-2 py-0.5 rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] text-[11px] font-medium cursor-pointer shrink-0 whitespace-nowrap"
 					data-testid="btn-reset-view"
 					title="Сбросить масштаб и положение (1:1 / Центр)"
 				>
@@ -278,7 +278,7 @@ export const ConsultationTopToolbar: React.FC<ConsultationTopToolbarProps> = ({
 				<button
 					type="button"
 					onClick={onToggleInvert}
-					className="px-2 py-0.5 rounded border border-[#334155] bg-[#0f172a] text-slate-300 hover:text-white text-[11px] font-medium cursor-pointer shrink-0 whitespace-nowrap"
+					className="px-2 py-0.5 rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] text-[11px] font-medium cursor-pointer shrink-0 whitespace-nowrap"
 					data-testid="btn-toggle-invert"
 					title="Инверсия шкалы серого (Негатив)"
 				>
@@ -289,32 +289,32 @@ export const ConsultationTopToolbar: React.FC<ConsultationTopToolbarProps> = ({
 				<button
 					type="button"
 					onClick={onTakeSnapshot}
-					className="px-2 py-0.5 rounded border border-[#334155] bg-[#0f172a] hover:bg-[#1e293b] text-slate-300 hover:text-white text-[11px] font-medium flex items-center gap-1 cursor-pointer transition-colors shrink-0 whitespace-nowrap"
+					className="px-2 py-0.5 rounded border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] text-[11px] font-medium flex items-center gap-1 cursor-pointer transition-colors shrink-0 whitespace-nowrap"
 					data-testid="btn-consultation-snapshot"
 					title="Сохранить снимок сплит-сравнения в карту пациента"
 				>
-					<Camera size={12} className="text-[#00C853]" />
+					<Camera size={12} className="text-emerald-500" />
 					<span>Снимок</span>
 				</button>
 			</div>
 
-			{/* Right: 1-Click Form 043/u Note, Fullscreen, Close */}
+			{/* Right: Clinical Note, Fullscreen, Close */}
 			<div className="flex items-center gap-2 shrink-0">
 				<button
 					type="button"
 					onClick={onInsertProtocol}
-					className="px-2.5 py-1 rounded font-bold text-[11px] bg-[#064e3b] border border-[#10b981] text-[#a7f3d0] hover:bg-[#047857] transition-all cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap"
+					className="px-2.5 py-1 rounded font-bold text-[11px] bg-[var(--teal-surface)] border border-[var(--primary)]/40 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap"
 					data-testid="btn-insert-consultation-note"
 					title="Внести факт проведения визуальной консультации в медицинскую карту"
 				>
-					<Zap size={12} className="text-[#34d399]" />
+					<Zap size={12} />
 					<span>Внести в карту</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onToggleFullscreen}
-					className="p-1 rounded bg-[#1e293b] hover:bg-[#334155] text-slate-300 border border-[#334155] cursor-pointer"
+					className="p-1 rounded bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)] cursor-pointer"
 					data-testid="btn-consultation-fullscreen"
 					title={isFullscreen ? "Выйти из полного экрана (Esc)" : "Полноэкранный режим консультации"}
 				>
@@ -325,7 +325,7 @@ export const ConsultationTopToolbar: React.FC<ConsultationTopToolbarProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-1 rounded bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white border border-[#334155] cursor-pointer"
+						className="p-1 rounded bg-transparent hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)] cursor-pointer"
 						data-testid="btn-consultation-close"
 						title="Закрыть консультацию (Esc)"
 					>

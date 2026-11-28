@@ -1,3 +1,4 @@
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
 import type { RateLimitConfig, RateLimitStatus } from "./types.js";
 
 /**
@@ -16,13 +17,22 @@ export class TelegramRateLimiter {
 	};
 
 	// История временных меток отправки по ботам (timestamp ms)
-	private static globalTimestamps = new Map<string, number[]>();
+	private static globalTimestamps = new BoundedTtlMap<string, number[]>({
+		maxEntries: 2000,
+		ttlMs: 60_000,
+	});
 
 	// История временных меток отправки по связкам bot:chat (timestamp ms)
-	private static chatTimestamps = new Map<string, number[]>();
+	private static chatTimestamps = new BoundedTtlMap<string, number[]>({
+		maxEntries: 10_000,
+		ttlMs: 60_000,
+	});
 
 	// Заблокированные до определенного времени боты или чаты из-за 429
-	private static cooldownUntil = new Map<string, number>();
+	private static cooldownUntil = new BoundedTtlMap<string, number>({
+		maxEntries: 10_000,
+		ttlMs: 60 * 60_000,
+	});
 
 	private static makeChatKey(botToken: string, chatId: string | number): string {
 		const tokenPrefix = botToken.slice(0, 10);

@@ -37,11 +37,30 @@ export function useAuditAndManagerWriteoffHandlers(
 					}),
 				});
 				if (!res.ok) {
-					const rawJson = await res.json().catch(() => null);
+					let rawJson: { data?: { message?: string; error?: string }; message?: string; error?: string } | null = null;
+					try {
+						rawJson = (await res.json()) as {
+							data?: { message?: string; error?: string };
+							message?: string;
+							error?: string;
+						} | null;
+					} catch (parseErr) {
+						clientLogger.warn("[useAuditAndManagerWriteoffHandlers] Audit error JSON parse failed", {
+							status: res.status,
+							error: String(parseErr),
+						}, { module: "Inventory" });
+					}
 					const errPayload = rawJson?.data ?? rawJson;
 					throw new Error(errPayload?.message || errPayload?.error || `Ошибка корректировки остатков (${res.status})`);
 				}
-				const okJson = await res.json().catch(() => null);
+				let okJson: { data?: unknown } | null = null;
+				try {
+					okJson = (await res.json()) as { data?: unknown } | null;
+				} catch (parseErr) {
+					clientLogger.warn("[useAuditAndManagerWriteoffHandlers] Audit response JSON parse failed", {
+						error: String(parseErr),
+					}, { module: "Inventory" });
+				}
 				const _okPayload = okJson?.data ?? okJson;
 				void _okPayload;
 				showToast(`Инвентаризация утверждена: скорректировано ${discrepancyItems.length} позиций на складе`, "info");
@@ -85,7 +104,15 @@ export function useAuditAndManagerWriteoffHandlers(
 				}),
 			});
 			if (!res.ok) {
-				const errData = await res.json().catch(() => ({}));
+				let errData: { message?: string } = {};
+				try {
+					errData = (await res.json()) as { message?: string };
+				} catch (parseErr) {
+					clientLogger.warn("[useAuditAndManagerWriteoffHandlers] Writeoff error JSON parse failed", {
+						status: res.status,
+						error: String(parseErr),
+					}, { module: "Inventory" });
+				}
 				throw new Error(errData.message || `Ошибка списания (${res.status})`);
 			}
 			showToast(`Списание материалов успешно проведено (${writeoffLines?.length ?? 0} поз.)`, "success");

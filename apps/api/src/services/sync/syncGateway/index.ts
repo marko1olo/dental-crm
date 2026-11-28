@@ -8,7 +8,7 @@ import type {
 } from "@dental/shared";
 import { sql } from "drizzle-orm";
 import type { TenantDb } from "../../../db/rls.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withSavepoint, withTenantCtx } from "../../../db/rls.js";
 import { SyncEntityHandlers } from "./syncEntityHandlers.js";
 import { SyncQueueManager } from "./syncQueueManager.js";
 import { SyncSecurityEnforcer } from "./syncSecurityEnforcer.js";
@@ -69,20 +69,16 @@ export class SyncGatewayService {
 			const nowIso = new Date().toISOString();
 
 			for (const mutation of request.mutations) {
-				const safeSpId = mutation.mutationId.replace(/[^a-zA-Z0-9_]/g, "_");
-				const spName = `sp_${safeSpId}`;
-				await tx.execute(sql.raw(`SAVEPOINT ${spName}`));
-
 				try {
-					const mutationResult = await this.processSingleMutation(
-						tx,
-						organizationId,
-						mutation,
-						request.clientId,
-						authorUserId,
+					const mutationResult = await withSavepoint(tx, (spTx) =>
+						this.processSingleMutation(
+							spTx,
+							organizationId,
+							mutation,
+							request.clientId,
+							authorUserId,
+						),
 					);
-
-					await tx.execute(sql.raw(`RELEASE SAVEPOINT ${spName}`));
 					results.push(mutationResult);
 
 					if (mutationResult.status === "applied") {
@@ -126,11 +122,6 @@ export class SyncGatewayService {
 						);
 					}
 				} catch (err: unknown) {
-					try {
-						await tx.execute(sql.raw(`ROLLBACK TO SAVEPOINT ${spName}`));
-					} catch (rbErr) {
-						logger?.error({ rbErr }, `[SyncGateway] Failed to rollback savepoint ${spName}`);
-					}
 					const errorMessage =
 						err instanceof Error ? err.message : "Unknown sync mutation error";
 					rejectedCount++;
@@ -204,8 +195,11 @@ export class SyncGatewayService {
 
 		// 1a. Tenant Boundary Check: Guarantee zero cross-tenant contamination
 		const payloadOrgId =
-			mutation.payload && typeof mutation.payload === "object" && "organizationId" in mutation.payload
-				? String((mutation.payload as Record<string, unknown>).organizationId)
+			mutation.payload &&
+			typeof mutation.payload === "object" &&
+			"organizationId" in mutation.payload &&
+			mutation.payload.organizationId !== undefined
+				? String(mutation.payload.organizationId)
 				: undefined;
 
 		if (!SyncSecurityEnforcer.enforceTenantBoundary(organizationId, payloadOrgId)) {
@@ -241,6 +235,7 @@ export class SyncGatewayService {
 		let conflictDetails: FieldConflictDetail[] = [];
 		let currentServerEntity: Record<string, unknown> | undefined;
 
+		const entityKindStr: string = mutation.entityKind;
 		if (mutation.action === "delete") {
 			const deleteResult = await SyncEntityHandlers.handleDeleteMutation(
 				tx,
@@ -250,7 +245,7 @@ export class SyncGatewayService {
 			);
 			mutationStatus = deleteResult.status;
 			currentServerEntity = deleteResult.entity;
-		} else if (mutation.entityKind === "payment") {
+		} else if (entityKindStr === "payment") {
 			const paymentResult = await SyncEntityHandlers.handlePaymentMutation(
 				tx,
 				organizationId,
@@ -259,8 +254,8 @@ export class SyncGatewayService {
 			mutationStatus = paymentResult.status;
 			currentServerEntity = paymentResult.entity;
 		} else if (
-			mutation.entityKind === "patient_invoice" ||
-			(mutation.entityKind as string) === "invoice"
+			entityKindStr === "patient_invoice" ||
+			entityKindStr === "invoice"
 		) {
 			const invoiceResult = await SyncEntityHandlers.handleInvoiceMutation(
 				tx,
@@ -269,7 +264,7 @@ export class SyncGatewayService {
 			);
 			mutationStatus = invoiceResult.status;
 			currentServerEntity = invoiceResult.entity;
-		} else if (mutation.entityKind === "patient") {
+		} else if (entityKindStr === "patient") {
 			const patientResult = await SyncEntityHandlers.handlePatientMutation(
 				tx,
 				organizationId,
@@ -282,8 +277,8 @@ export class SyncGatewayService {
 			conflictDetails = patientResult.conflicts || [];
 			currentServerEntity = patientResult.entity;
 		} else if (
-			mutation.entityKind === "visit" ||
-			mutation.entityKind === "visit_diary"
+			entityKindStr === "visit" ||
+			entityKindStr === "visit_diary"
 		) {
 			const clinicalResult = await SyncEntityHandlers.handleClinicalMutation(
 				tx,
@@ -296,7 +291,7 @@ export class SyncGatewayService {
 			mergedFields = clinicalResult.mergedFields || [];
 			conflictDetails = clinicalResult.conflicts || [];
 			currentServerEntity = clinicalResult.entity;
-		} else if (mutation.entityKind === "appointment") {
+		} else if (entityKindStr === "appointment") {
 			const appointmentResult =
 				await SyncEntityHandlers.handleAppointmentMutation(
 					tx,
@@ -310,8 +305,8 @@ export class SyncGatewayService {
 			conflictDetails = appointmentResult.conflicts || [];
 			currentServerEntity = appointmentResult.entity;
 		} else if (
-			mutation.entityKind === "odontogram_state" ||
-			(mutation.entityKind as string) === "tooth_state"
+			entityKindStr === "odontogram_state" ||
+			entityKindStr === "tooth_state"
 		) {
 			const odontogramResult =
 				await SyncEntityHandlers.handleOdontogramMutation(

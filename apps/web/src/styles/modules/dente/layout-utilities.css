@@ -101,8 +101,8 @@
 	font-size: 13px;
 	font-weight: 600;
 	padding: 0 14px;
-	background: var(--teal);
-	color: #ffffff;
+	background: var(--primary, #0f766e);
+	color: var(--primary-fg, #ffffff);
 	border: 1px solid transparent;
 	box-shadow: var(--shadow-1);
 	display: inline-flex;
@@ -153,10 +153,8 @@
 }
 .status-flow-label {
 	color: var(--muted);
-	font-size: 11px;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
+	font-size: 12px;
+	font-weight: 600;
 }
 .status-flow-steps {
 	display: flex;

@@ -4,6 +4,7 @@
  */
 
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import type { ImagingStudy } from "../types.js";
 
 export const DEFAULT_CHUNK_SIZE_BYTES = 4 * 1024 * 1024;
@@ -183,6 +184,20 @@ async function sleepMs(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function readChunkedImagingError(res: Response, fallback: string, stage: string): Promise<string> {
+	let rawErr: { data?: { message?: string }; message?: string } | null = null;
+	try {
+		rawErr = (await res.json()) as { data?: { message?: string }; message?: string } | null;
+	} catch (parseErr) {
+		clientLogger.warn(`[chunkedImagingUpload] ${stage} error JSON parse failed`, {
+			status: res.status,
+			error: String(parseErr),
+		});
+	}
+	const errJson = rawErr?.data ?? rawErr;
+	return errJson?.message || fallback;
+}
+
 export async function uploadImagingScanChunked(params: ChunkedUploadParams): Promise<ChunkedUploadResult> {
 	const chunkSizeBytes = params.chunkSizeBytes || DEFAULT_CHUNK_SIZE_BYTES;
 	const totalChunks = Math.max(1, Math.ceil(params.file.size / chunkSizeBytes));
@@ -213,9 +228,12 @@ export async function uploadImagingScanChunked(params: ChunkedUploadParams): Pro
 	});
 
 	if (!initRes.ok) {
-		const rawErr = (await initRes.json().catch(() => null)) as { data?: { message?: string }; message?: string } | null;
-		const errJson = rawErr?.data ?? rawErr;
-		return { success: false, error: errJson?.message || `Ошибка инициализации загрузки (${initRes.status})` };
+		const error = await readChunkedImagingError(
+			initRes,
+			`Ошибка инициализации загрузки (${initRes.status})`,
+			"init",
+		);
+		return { success: false, error };
 	}
 
 	const rawInit = (await initRes.json()) as { data?: { uploadId: string; uploadedChunks?: number[] }; uploadId?: string; uploadedChunks?: number[] };
@@ -255,9 +273,8 @@ export async function uploadImagingScanChunked(params: ChunkedUploadParams): Pro
 					params.onProgress?.(pct);
 					return;
 				}
-				const rawPartErr = (await res.json().catch(() => null)) as { data?: { message?: string }; message?: string } | null;
-				const errJson = rawPartErr?.data ?? rawPartErr;
-				lastError = errJson?.message || `HTTP ${res.status}`;
+				const lastErrMsg = await readChunkedImagingError(res, `HTTP ${res.status}`, `part:${chunkIndex}`);
+				lastError = lastErrMsg;
 			} catch (err) {
 				lastError = err instanceof Error ? err.message : String(err);
 			}
@@ -291,9 +308,12 @@ export async function uploadImagingScanChunked(params: ChunkedUploadParams): Pro
 	});
 
 	if (!completeRes.ok) {
-		const rawCompleteErr = (await completeRes.json().catch(() => null)) as { data?: { message?: string }; message?: string } | null;
-		const errJson = rawCompleteErr?.data ?? rawCompleteErr;
-		return { success: false, error: errJson?.message || `Ошибка финализации снимка (${completeRes.status})` };
+		const error = await readChunkedImagingError(
+			completeRes,
+			`Ошибка финализации снимка (${completeRes.status})`,
+			"complete",
+		);
+		return { success: false, error };
 	}
 
 	const rawComplete = (await completeRes.json()) as { data?: { study?: ImagingStudy }; study?: ImagingStudy };

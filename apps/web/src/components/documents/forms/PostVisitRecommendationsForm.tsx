@@ -113,12 +113,12 @@ export const PostVisitRecommendationsForm: React.FC<
 				{[
 					{ topic: "extraction" as PostVisitCareTopic, label: "Удаление" },
 					{ topic: "implantation" as PostVisitCareTopic, label: "Имплантация" },
-					{ topic: "surgery_aftercare" as PostVisitCareTopic, label: "Хирургия & остеопластика" },
+					{ topic: "surgery_aftercare" as PostVisitCareTopic, label: "Хирургия и остеопластика" },
 					{ topic: "fixation_aftercare" as PostVisitCareTopic, label: "Фиксация коронок/виниров" },
 					{ topic: "filling_restoration" as PostVisitCareTopic, label: "Пломба / реставрация" },
 					{ topic: "endo" as PostVisitCareTopic, label: "Эндодонтия" },
 					{ topic: "hygiene" as PostVisitCareTopic, label: "Гигиена" },
-					{ topic: "orthodontics" as PostVisitCareTopic, label: "Ортодонтия & элайнеры" },
+					{ topic: "orthodontics" as PostVisitCareTopic, label: "Ортодонтия и элайнеры" },
 				].map((btn) => (
 					<button
 						key={btn.topic}

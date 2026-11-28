@@ -5,7 +5,9 @@
  * form 366/у PSO cleaning log, Dezar bactericidal lamps, microclimate log, and medical waste classes A/B.
  */
 
+import { resolveValidIanaTimeZone, shiftCalendarDay, todayDateKeyInTimeZone } from "@dental/shared";
 import { eq } from "drizzle-orm";
+import { clinicTimeZone } from "../../../reports/managerReports/timezone.js";
 import {
 	bactericidalEquipments,
 	bactericidalIrradiatorLogs,

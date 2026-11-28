@@ -43,7 +43,7 @@ export const ToothDrawerPediatricAccordion: React.FC<ToothDrawerPediatricAccordi
 			>
 				<div className="trigger-left">
 					<ToothDeciduous size={16} className="text-[var(--primary)]" />
-					<span className="trigger-title">Детский прием (Шкала Франкла & резорбция)</span>
+					<span className="trigger-title">Детский прием (Шкала Франкла и резорбция)</span>
 				</div>
 				<div className="trigger-right">
 					<span className="trigger-summary">Психологическая адаптация</span>

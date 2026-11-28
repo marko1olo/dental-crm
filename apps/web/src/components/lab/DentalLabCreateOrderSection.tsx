@@ -230,7 +230,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 									setIsAddingCustomLab(false);
 								}
 							}}
-							className="px-2.5 py-1.5 bg-[var(--primary)] text-white text-[11px] font-bold rounded-xl cursor-pointer"
+							className="px-2.5 py-1.5 bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[11px] font-bold rounded-xl cursor-pointer"
 						>
 							ОК
 						</button>
@@ -293,7 +293,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 						type="button"
 						data-testid="btn-open-order-3d-scan"
 						onClick={onOpen3DScan}
-						className="w-full min-h-[36px] max-sm:min-h-[44px] py-1.5 px-3 rounded-xl text-xs font-semibold border border-[var(--primary)]/40 bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/15 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+						className="w-full min-h-[36px] max-sm:min-h-[44px] py-1.5 px-3 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--teal-surface)] text-[var(--primary)] hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
 					>
 						<span>3D интраоральный скан (STL/PLY)</span>
 					</button>

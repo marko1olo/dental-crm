@@ -39,6 +39,18 @@ export interface SterilizationBatchCycleModalProps {
 
 const PRESET_BATCH_SIZES = [4, 8, 12, 16, 24] as const;
 
+async function extractSanpinErrorMessage(res: Response): Promise<string> {
+	let message = `HTTP error ${res.status}`;
+	try {
+		const json = (await res.json()) as { data?: { message?: string }; message?: string };
+		const payload = json?.data ?? json;
+		if (payload?.message) message = payload.message;
+	} catch (parseErr) {
+		clientLogger.warn("[SanPiN] Failed to parse sterilization error response:", parseErr);
+	}
+	return message;
+}
+
 export const CLINICAL_BATCH_TEMPLATES = [
 	{ id: "therapy", label: "Терапевтический лоток × 10", count: 10, regime: "standard_134" as const, desc: "Терапевтический лоток базовый (10 шт: зеркала, зонды, пинцеты, боры)" },
 	{ id: "surgery", label: "Хирургический набор × 3", count: 3, regime: "standard_134" as const, desc: "Хирургический набор (3 набора: щипцы, элеваторы, скальпели)" },
@@ -137,9 +149,7 @@ export function SterilizationBatchCycleModal({
 				body: JSON.stringify(payload),
 			});
 			if (!res.ok) {
-				const json = await res.json().catch(() => null);
-				const payload = json?.data ?? json;
-				throw new Error(payload?.message || `HTTP error ${res.status}`);
+				throw new Error(await extractSanpinErrorMessage(res));
 			}
 			setFeedbackToast(`Цикл стерилизации запущен: ${packagesCount} пакетов списано со склада`);
 			setTimeout(() => { onSuccess?.(); onCycleApproved?.(payload); onCycleCompleted?.(payload); onCycleCreated?.(payload); onClose(); }, 250);
@@ -178,9 +188,7 @@ export function SterilizationBatchCycleModal({
 				body: JSON.stringify(payloadMacro),
 			});
 			if (!res.ok) {
-				const json = await res.json().catch(() => null);
-				const payload = json?.data ?? json;
-				throw new Error(payload?.message || `HTTP error ${res.status}`);
+				throw new Error(await extractSanpinErrorMessage(res));
 			}
 			setFeedbackToast("Автоклавирование смены запущено: 2 цикла 134°C (27 пакетов) + контроль очистки. Списано со склада.");
 			setTimeout(() => { onSuccess?.(); onCycleApproved?.(payloadMacro); onCycleCompleted?.(payloadMacro); onCycleCreated?.(payloadMacro); onClose(); }, 250);

@@ -39,12 +39,12 @@ export function CryptoProCertSelectSection({
 				</p>
 			)}
 			<div>
-				<label htmlFor="cryptopro-cert-select" className="block text-xs font-medium text-[var(--muted)] mb-2 uppercase tracking-wider">
+				<label htmlFor="cryptopro-cert-select" className="block text-xs font-medium text-[var(--muted)] mb-2">
 					Выберите сертификат
 				</label>
 				<select
 					id="cryptopro-cert-select"
-					className="w-full bg-[var(--paper-soft)] border border-[var(--line-strong)] rounded-xl px-4 py-3 text-sm text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-h-[44px]"
+					className="w-full bg-[var(--paper-soft)] border border-[var(--line-strong)] rounded-xl px-4 py-3 text-sm text-[var(--ink)] focus:ring-2 focus:ring-[var(--primary)] focus:outline-none min-h-[44px]"
 					value={selectedCert}
 					onChange={(e) => { setSelectedCert(e.target.value); setFailureText(null); }}
 					disabled={isLoadingCerts || lockInProgress}
@@ -75,7 +75,7 @@ export function CryptoProCertSelectSection({
 								href="https://cryptopro.ru/products/cades/plugin"
 								target="_blank"
 								rel="noreferrer noopener"
-								className="inline-flex items-center gap-1 text-[var(--teal,var(--brand-primary))] font-semibold hover:underline"
+								className="inline-flex items-center gap-1 text-[var(--primary)] font-semibold hover:underline"
 							>
 								<span>Установить плагин КриптоПро ЭЦП Browser plug-in</span>
 								<ExternalLink className="w-3.5 h-3.5" />
@@ -90,14 +90,14 @@ export function CryptoProCertSelectSection({
 					type="button"
 					onClick={loadCertificates}
 					disabled={isLoadingCerts || lockInProgress}
-					className="mt-2 text-xs text-[var(--teal,var(--brand-primary))] hover:underline disabled:opacity-60 cursor-pointer"
+					className="mt-2 text-xs text-[var(--primary)] hover:underline disabled:opacity-60 cursor-pointer"
 				>
 					{isLoadingCerts ? "Обновляю…" : "Обновить список"}
 				</button>
 			</div>
 			{needsTokenPin && (
 				<div>
-					<label htmlFor="cryptopro-token-pin" className="block text-xs font-semibold text-[var(--muted)] mb-2 uppercase tracking-wider">
+					<label htmlFor="cryptopro-token-pin" className="block text-xs font-semibold text-[var(--muted)] mb-2">
 						ПИН-код токена или контейнера (опционально)
 					</label>
 					<input

@@ -2,8 +2,15 @@
  * clinicalScheduleSeeder.ts — Clinical Appointments and Chair Duties Seeding (Layer 1).
  */
 
+import {
+	resolveValidIanaTimeZone,
+	shiftCalendarDay,
+	todayDateKeyInTimeZone,
+	wallClockToUtcInTimeZone,
+} from "@dental/shared";
 import { eq, sql } from "drizzle-orm";
 import { appointments, communicationOutbox, communicationTasks, doctorShiftRosters } from "../../../db/schema.js";
+import { clinicTimeZone } from "../../reports/managerReports/timezone.js";
 import {
 	type DbTx,
 	DEMO_APPOINTMENT_1_ID,
@@ -55,32 +62,26 @@ export async function seedClinicalSchedule(
 	const isCanonicalDemoOrg = organizationId === DEMO_SHOWCASE_ORG_ID;
 
 	const now = new Date();
-	const todayIso = now.toISOString().slice(0, 10);
-	const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-	const tomorrowIso = tomorrow.toISOString().slice(0, 10);
+	const resolvedClinicTz = resolveValidIanaTimeZone(await clinicTimeZone(organizationId, tx));
+	const todayIso = todayDateKeyInTimeZone(resolvedClinicTz, now);
+	const tomorrowIso = shiftCalendarDay(todayIso, 1);
 
-	const today10 = new Date(now);
-	today10.setHours(10, 0, 0, 0);
+	const today10 = wallClockToUtcInTimeZone(todayIso, 10, 0, resolvedClinicTz) ?? new Date(now);
 	const today1045 = new Date(today10.getTime() + 45 * 60 * 1000);
 
-	const today1130 = new Date(now);
-	today1130.setHours(11, 30, 0, 0);
+	const today1130 = wallClockToUtcInTimeZone(todayIso, 11, 30, resolvedClinicTz) ?? new Date(now);
 	const today1230 = new Date(today1130.getTime() + 60 * 60 * 1000);
 
-	const today1400 = new Date(now);
-	today1400.setHours(14, 0, 0, 0);
+	const today1400 = wallClockToUtcInTimeZone(todayIso, 14, 0, resolvedClinicTz) ?? new Date(now);
 	const today1500 = new Date(today1400.getTime() + 60 * 60 * 1000);
 
-	const today1600 = new Date(now);
-	today1600.setHours(16, 0, 0, 0);
+	const today1600 = wallClockToUtcInTimeZone(todayIso, 16, 0, resolvedClinicTz) ?? new Date(now);
 	const today1730 = new Date(today1600.getTime() + 90 * 60 * 1000);
 
-	const tomorrow10 = new Date(tomorrow);
-	tomorrow10.setHours(10, 0, 0, 0);
+	const tomorrow10 = wallClockToUtcInTimeZone(tomorrowIso, 10, 0, resolvedClinicTz) ?? new Date(now);
 	const tomorrow11 = new Date(tomorrow10.getTime() + 60 * 60 * 1000);
 
-	const tomorrow12 = new Date(tomorrow);
-	tomorrow12.setHours(12, 0, 0, 0);
+	const tomorrow12 = wallClockToUtcInTimeZone(tomorrowIso, 12, 0, resolvedClinicTz) ?? new Date(now);
 	const tomorrow13 = new Date(tomorrow12.getTime() + 60 * 60 * 1000);
 
 	// 1. Очищаем существующие демо-записи канонической демо-организации во избежание конфликта интервалов

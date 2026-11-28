@@ -286,11 +286,11 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 					<button
 						type="button"
 						onClick={handleBatchApplyAllTeeth}
-						className="copilot-primary-cta w-full h-11 min-h-[44px] px-4 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-95 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all"
+						className="copilot-primary-cta w-full h-11 min-h-[44px] px-4 rounded-xl bg-[var(--primary)] hover:opacity-95 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all"
 						data-testid="copilot-batch-apply-btn"
 					>
 						<Zap size={15} />
-						<span>Оформить приём по всем зубам (Дневник + Смета)</span>
+						<span>Оформить приём по всем зубам (Дневник и смета)</span>
 					</button>
 
 					<div className="grid grid-cols-2 gap-2">
@@ -299,7 +299,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 							onClick={handleApplySoapOnly}
 							className="h-10 min-h-[40px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
 						>
-							<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+							<FileText size={13} className="text-[var(--primary)] shrink-0" />
 							<span>Только в дневник</span>
 						</button>
 						<button
@@ -307,7 +307,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 							onClick={handleApplyInvoiceOnly}
 							className="h-10 min-h-[40px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
 						>
-							<Receipt size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+							<Receipt size={13} className="text-[var(--primary)] shrink-0" />
 							<span>Только в смету</span>
 						</button>
 					</div>
@@ -321,10 +321,10 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 	if (singleFinding) {
 		const f = singleFinding;
 		return (
-			<div className="copilot-visit-digest-single p-4 rounded-2xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--teal,#0d9488)]/25 space-y-3" data-testid="copilot-single-tooth-digest">
+			<div className="copilot-visit-digest-single p-4 rounded-2xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--primary)]/25 space-y-3" data-testid="copilot-single-tooth-digest">
 				<div className="flex items-center justify-between gap-2">
 					<div className="flex items-center gap-2">
-						<div className="w-8 h-8 rounded-xl bg-[var(--teal,#0d9488)] text-white font-bold text-sm flex items-center justify-center shrink-0">
+						<div className="w-8 h-8 rounded-xl bg-[var(--primary)] text-white font-bold text-sm flex items-center justify-center shrink-0">
 							{f.tooth}
 						</div>
 						<div>
@@ -332,7 +332,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 							<p className="text-[11px] text-[var(--muted)] m-0">Диагноз МКБ-10: {f.icd10}</p>
 						</div>
 					</div>
-					<span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[var(--paper)] text-[var(--teal,#0d9488)] border border-[var(--line)]">
+					<span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[var(--paper)] text-[var(--primary)] border border-[var(--line)]">
 						~{kopecksToRubles(f.priceKopecks).toLocaleString("ru-RU")} ₽
 					</span>
 				</div>
@@ -370,10 +370,10 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 							onSendMessage(`Оформлено лечение зуба ${f.tooth}: ${f.stateTitle} (${f.icd10}). Протокол и смета добавлены.`);
 							showToast(`Зуб ${f.tooth}: протокол и смета применены`, "success");
 						}}
-						className="copilot-primary-cta w-full h-11 min-h-[44px] px-4 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-95 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all"
+						className="copilot-primary-cta w-full h-11 min-h-[44px] px-4 rounded-xl bg-[var(--primary)] hover:opacity-95 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all"
 					>
 						<Zap size={15} />
-						<span>Оформить зуб {f.tooth} (Дневник + Смета)</span>
+						<span>Оформить зуб {f.tooth} (Дневник и смета)</span>
 					</button>
 
 					<div className="grid grid-cols-2 gap-2">
@@ -382,7 +382,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 							onClick={() => onSendMessage(`Сформируй протокол приёма для зуба ${f.tooth}: ${f.stateTitle}`)}
 							className="h-10 min-h-[40px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
 						>
-							<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+							<FileText size={13} className="text-[var(--primary)] shrink-0" />
 							<span>Дневник приёма</span>
 						</button>
 						<button

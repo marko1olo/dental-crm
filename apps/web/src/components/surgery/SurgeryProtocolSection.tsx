@@ -21,6 +21,7 @@ export interface SurgeryProtocolSectionProps {
 	readonly activeScenario: SurgeryScenarioType;
 	readonly scenarioConfig: SurgeryScenarioConfig;
 	readonly onApplyPhysiologicalNorm: () => void;
+	readonly apiLoadError?: string | null | undefined;
 	readonly patientName: string;
 	readonly isPatientBound: boolean;
 	readonly doctorName: string;
@@ -33,7 +34,14 @@ export interface SurgeryProtocolSectionProps {
 	readonly onChangePatientSearchQuery: (q: string) => void;
 	readonly onSelectPatient: (patient: SurgeryPatientOption) => void;
 	readonly onSelectDoctor: (doctor: SurgeryDoctorOption) => void;
-	readonly boneDensity: MischBoneDensity;
+	readonly anesthesiaProtocol?: string | undefined;
+	readonly onChangeAnesthesiaProtocol?: ((val: string) => void) | undefined;
+	readonly incisionProtocol?: string | undefined;
+	readonly onChangeIncisionProtocol?: ((val: string) => void) | undefined;
+	readonly boneBedProtocol?: string | undefined;
+	readonly onChangeBoneBedProtocol?: ((val: string) => void) | undefined;
+	readonly boneDensity: MischBoneDensity | "";
+	readonly onSelectBoneDensity?: ((density: MischBoneDensity | "") => void) | undefined;
 	readonly selectedBrand: string;
 	readonly diameterMm: number;
 	readonly lengthMm: number;
@@ -72,6 +80,7 @@ export const SurgeryProtocolSection: React.FC<SurgeryProtocolSectionProps> = ({
 	activeScenario,
 	scenarioConfig,
 	onApplyPhysiologicalNorm,
+	apiLoadError,
 	patientName,
 	isPatientBound,
 	doctorName,
@@ -84,7 +93,14 @@ export const SurgeryProtocolSection: React.FC<SurgeryProtocolSectionProps> = ({
 	onChangePatientSearchQuery,
 	onSelectPatient,
 	onSelectDoctor,
+	anesthesiaProtocol = "",
+	onChangeAnesthesiaProtocol,
+	incisionProtocol = "",
+	onChangeIncisionProtocol,
+	boneBedProtocol = "",
+	onChangeBoneBedProtocol,
 	boneDensity,
+	onSelectBoneDensity,
 	selectedBrand,
 	diameterMm,
 	lengthMm,
@@ -123,6 +139,15 @@ export const SurgeryProtocolSection: React.FC<SurgeryProtocolSectionProps> = ({
 
 	return (
 		<div className="flex flex-col gap-4 min-h-0" data-testid="surgery-protocol-content">
+			{apiLoadError && (
+				<div
+					role="alert"
+					data-testid="surgery-api-error-banner"
+					className="p-2.5 rounded-xl border border-[var(--danger-line,var(--danger))] bg-[var(--danger-soft)] text-xs text-[var(--danger-ink,var(--ink))]"
+				>
+					{apiLoadError}
+				</div>
+			)}
 			{/* Честный селектор живого пациента и врача из API без фейковых заглушек */}
 			{showSelector ? (
 				<div
@@ -236,7 +261,7 @@ export const SurgeryProtocolSection: React.FC<SurgeryProtocolSectionProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsPickerExpanded(true)}
-							className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+							className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3.5 text-xs font-semibold rounded-lg border border-[var(--line-strong,var(--line))] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-colors"
 							data-testid="btn-change-surgery-context"
 						>
 							Сменить пациента
@@ -245,12 +270,12 @@ export const SurgeryProtocolSection: React.FC<SurgeryProtocolSectionProps> = ({
 					<button
 						type="button"
 						onClick={onApplyPhysiologicalNorm}
-						className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3.5 text-xs font-semibold rounded-lg border border-[var(--primary)] bg-[var(--paper)] text-[var(--primary)] hover:bg-[var(--primary-soft,rgba(var(--primary-rgb),0.1))] cursor-pointer shrink-0 flex items-center gap-1.5 transition-colors"
+						className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3.5 text-xs font-semibold rounded-lg border border-[var(--line-strong,var(--line))] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer shrink-0 inline-flex items-center justify-center gap-1.5 transition-colors"
 						data-testid="btn-standard-implant-protocol"
 						id="btn-apply-physio-norm"
 						title="Применить стандартный протокол операции без осложнений"
 					>
-						<Check className="w-4 h-4 shrink-0" />
+						<Check className="w-4 h-4 text-[var(--primary)] shrink-0" />
 						<span className="hidden sm:inline">Стандартная операция без осложнений</span>
 						<span className="sm:hidden">Физиологическая норма</span>
 					</button>
@@ -259,43 +284,85 @@ export const SurgeryProtocolSection: React.FC<SurgeryProtocolSectionProps> = ({
 
 			{activeScenario === "implant" && (
 				<div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs" data-testid="implant-protocol-phases">
-					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-0.5">
-						<span className="text-xs font-medium text-[var(--ink-muted)]">1. Анестезия</span>
-						<span className="font-semibold text-[var(--ink)] truncate">Articaini 4% 1:100k</span>
-						<span className="text-xs text-[var(--ink-muted)]">1.7 мл инфильтр.</span>
+					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-1">
+						<label htmlFor="surgery-phase-anesthesia" className="text-xs font-medium text-[var(--ink-muted)]">1. Анестезия</label>
+						<input
+							id="surgery-phase-anesthesia"
+							type="text"
+							value={anesthesiaProtocol}
+							onChange={(e) => onChangeAnesthesiaProtocol?.(e.target.value)}
+							placeholder="Не указана"
+							className="w-full h-7 px-2 text-xs font-medium rounded-md border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none focus:border-[var(--primary)]"
+							data-testid="input-surgery-anesthesia"
+						/>
 					</div>
-					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-0.5">
-						<span className="text-xs font-medium text-[var(--ink-muted)]">2. Разрез</span>
-						<span className="font-semibold text-[var(--ink)] truncate">По гребню альвеолы</span>
-						<span className="text-xs text-[var(--ink-muted)]">лоскут отслоен</span>
+					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-1">
+						<label htmlFor="surgery-phase-incision" className="text-xs font-medium text-[var(--ink-muted)]">2. Разрез</label>
+						<input
+							id="surgery-phase-incision"
+							type="text"
+							value={incisionProtocol}
+							onChange={(e) => onChangeIncisionProtocol?.(e.target.value)}
+							placeholder="Не указан"
+							className="w-full h-7 px-2 text-xs font-medium rounded-md border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none focus:border-[var(--primary)]"
+							data-testid="input-surgery-incision"
+						/>
 					</div>
-					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-0.5">
-						<span className="text-xs font-medium text-[var(--ink-muted)]">3. Костное ложе</span>
-						<span className="font-semibold text-[var(--ink)] truncate">Фрезы NaCl 0.9%</span>
-						<span className="text-xs text-[var(--ink-muted)]">кость {boneDensity} (Misch)</span>
+					<div className="col-span-2 sm:col-span-1 p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-1.5">
+						<label htmlFor="surgery-phase-bed" className="text-xs font-medium text-[var(--ink-muted)]">3. Костное ложе</label>
+						<div className="grid grid-cols-1 gap-1.5">
+							<input
+								id="surgery-phase-bed"
+								type="text"
+								value={boneBedProtocol}
+								onChange={(e) => onChangeBoneBedProtocol?.(e.target.value)}
+								placeholder="Препарирование ложа..."
+								className="w-full h-8 sm:h-7 px-2 text-xs font-medium rounded-md border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none focus:border-[var(--primary)]"
+								data-testid="input-surgery-bone-bed"
+							/>
+							<select
+								value={boneDensity}
+								onChange={(e) => onSelectBoneDensity?.(e.target.value as MischBoneDensity | "")}
+								aria-label="Плотность кости"
+								data-testid="select-surgery-bone-density"
+								className="w-full h-8 sm:h-7 px-1.5 text-xs sm:text-[11px] rounded-md border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none focus:border-[var(--primary)]"
+							>
+								<option value="">Плотность не выбрана</option>
+								<option value="D1">Кость D1</option>
+								<option value="D2">Кость D2</option>
+								<option value="D3">Кость D3</option>
+								<option value="D4">Кость D4</option>
+							</select>
+						</div>
 					</div>
-					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-0.5">
+					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col justify-between gap-1">
 						<span className="text-xs font-medium text-[var(--ink-muted)]">4. Имплантат</span>
-						<span className="font-semibold text-[var(--primary)] truncate">
-							{selectedBrand} Ø{diameterMm}×{lengthMm}
+						<span className="font-semibold text-[var(--primary)] dark:text-[#5eead4] truncate">
+							{selectedBrand
+								? `${selectedBrand}${diameterMm > 0 && lengthMm > 0 ? ` Ø${diameterMm}×${lengthMm}` : ""}`
+								: "Система не выбрана"}
 						</span>
-						<span className="text-xs font-mono text-[var(--ink-muted)]">{catalogArticle}</span>
+						<span className="text-xs font-mono text-[var(--ink-muted)] truncate">
+							{catalogArticle || "Выберите систему ниже"}
+						</span>
 					</div>
-					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-0.5">
-						<span className="text-xs font-medium text-[var(--ink-muted)]">5. Торк &amp; ISQ</span>
+					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col justify-between gap-1">
+						<span className="text-xs font-medium text-[var(--ink-muted)]">5. Торк и ISQ</span>
 						<span className="font-semibold text-[var(--ink)] font-mono tabular-nums truncate">
-							{torqueNcm} Н·см · ISQ {isqValue}
+							{torqueNcm > 0 || isqValue > 0
+								? `${torqueNcm > 0 ? `${torqueNcm} Н·см` : "—"} · ISQ ${isqValue > 0 ? isqValue : "—"}`
+								: "Не заданы"}
 						</span>
-						<span className="text-xs text-[var(--primary)]">
-							{isqValue >= 70 ? "зеленая зона" : isqValue >= 60 ? "допустимая зона" : "низкая стабильность"}
+						<span className="text-xs text-[var(--primary)] dark:text-[#5eead4]">
+							{isqValue === 0 ? "Укажите параметры ниже" : isqValue >= 70 ? "зеленая зона" : isqValue >= 60 ? "допустимая зона" : "низкая стабильность"}
 						</span>
 					</div>
-					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-0.5">
+					<div className="col-span-2 sm:col-span-1 p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col justify-between gap-1">
 						<span className="text-xs font-medium text-[var(--ink-muted)]">6. Ушивание</span>
 						<span className="font-semibold text-[var(--ink)] truncate">
 							{capType === "fdm" ? "ФДМ" : "Заглушка"}
 						</span>
-						<span className="text-xs text-[var(--ink-muted)] truncate">{selectedSuture || "Без шовного материала"}</span>
+						<span className="text-xs text-[var(--ink-muted)] truncate">{selectedSuture || "Шовный материал не выбран"}</span>
 					</div>
 				</div>
 			)}

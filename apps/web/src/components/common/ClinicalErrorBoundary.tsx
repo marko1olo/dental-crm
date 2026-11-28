@@ -181,7 +181,7 @@ export class ClinicalErrorBoundary extends Component<
 
 				<div className="p-3 mb-4 rounded-lg bg-[var(--paper-strong)] border border-[var(--line-subtle)] text-xs">
 					<p className="text-[var(--ink-muted)] mb-1">
-						Все данные, введённые до сбоя, зафиксированы в оперативной памяти и локальном офлайн-хранилище (IndexedDB).
+						Все данные, введённые до сбоя, зафиксированы в оперативной памяти и локальной памяти браузера.
 					</p>
 					{occurredAt && (
 						<p className="text-[11px] text-[var(--ink-muted)] opacity-80">

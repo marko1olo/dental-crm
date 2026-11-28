@@ -60,7 +60,7 @@ export function ToothPickerArchView({
 	return (
 		<div className="tg-arch-card">
 			<div className="mb-3">
-				<div className="text-[10px] uppercase font-bold text-[var(--tg-text-muted)] tracking-wider text-center mb-1.5">
+				<div className="text-[11px] font-bold text-[var(--tg-text-muted)] text-center mb-1.5">
 					Верхняя челюсть
 				</div>
 				<div className="flex gap-1 justify-center overflow-x-auto py-1 scrollbar-none">
@@ -71,7 +71,7 @@ export function ToothPickerArchView({
 			</div>
 
 			<div>
-				<div className="text-[10px] uppercase font-bold text-[var(--tg-text-muted)] tracking-wider text-center mb-1.5">
+				<div className="text-[11px] font-bold text-[var(--tg-text-muted)] text-center mb-1.5">
 					Нижняя челюсть
 				</div>
 				<div className="flex gap-1 justify-center overflow-x-auto py-1 scrollbar-none">

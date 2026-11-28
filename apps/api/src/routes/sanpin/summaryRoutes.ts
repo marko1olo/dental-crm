@@ -4,9 +4,11 @@
  * Мандат 8b: строго <= 120 строк (фасад <= 25 строк).
  */
 
+import { resolveValidIanaTimeZone, todayDateKeyInTimeZone } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { defineStreamRoute } from "../../core/routeFactories.js";
+import { clinicTimeZone } from "../../services/reports/managerReports/timezone.js";
 import { collectSanpinSummary } from "./summaryModules/sanpinSummaryCollector.js";
 
 export function registerSanpinSummaryRoutes(app: FastifyInstance) {
@@ -22,7 +24,8 @@ export function registerSanpinSummaryRoutes(app: FastifyInstance) {
 			);
 			if (!organizationId) return reply;
 
-			const todayStr = new Date().toISOString().slice(0, 10);
+			const clinicTz = resolveValidIanaTimeZone(await clinicTimeZone(organizationId));
+			const todayStr = todayDateKeyInTimeZone(clinicTz);
 			return collectSanpinSummary(organizationId, todayStr);
 		},
 	});

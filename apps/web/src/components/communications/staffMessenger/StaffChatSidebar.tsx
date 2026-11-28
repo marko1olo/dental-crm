@@ -24,7 +24,7 @@ export const StaffChatSidebar: React.FC<StaffChatSidebarProps> = ({
 						<Radio size={16} />
 					</div>
 					<div>
-						<h3 className="text-sm font-bold text-[var(--ink)]">Персонал & Интерком</h3>
+						<h3 className="text-sm font-bold text-[var(--ink)]">Персонал и интерком</h3>
 						<div className="flex items-center gap-1.5 text-[11px] text-teal-600 dark:text-teal-400 font-medium">
 							<Wifi size={10} className="animate-pulse" />
 							<span>LAN брокер онлайн</span>
@@ -41,7 +41,7 @@ export const StaffChatSidebar: React.FC<StaffChatSidebarProps> = ({
 
 			<div className="flex-1 overflow-y-auto p-3 space-y-4">
 				<div>
-					<div className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider px-2 mb-1.5 flex items-center justify-between">
+					<div className="text-[11px] font-semibold text-[var(--muted)] px-2 mb-1.5 flex items-center justify-between">
 						<span>Каналы клиники</span>
 						<span className="text-[10px] bg-[var(--paper-soft)] border border-[var(--line)] px-1.5 py-0.5 rounded text-[var(--ink)] font-bold">
 							{clinicChannels.length}
@@ -70,7 +70,7 @@ export const StaffChatSidebar: React.FC<StaffChatSidebarProps> = ({
 				</div>
 
 				<div>
-					<div className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider px-2 mb-1.5 flex items-center justify-between">
+					<div className="text-[11px] font-semibold text-[var(--muted)] px-2 mb-1.5 flex items-center justify-between">
 						<span>Личные диалоги</span>
 						<Users size={12} className="text-[var(--muted)]" />
 					</div>

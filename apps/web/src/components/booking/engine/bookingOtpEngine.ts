@@ -1,4 +1,5 @@
 import { generateUuidV7 } from "@dental/shared";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { cleanPhoneDigits } from "../../../utils/formatters";
 
 export type VerificationMethod = "sms" | "flash_call";
@@ -35,7 +36,15 @@ export async function sendOtpVerificationRequest(
 			}),
 		});
 
-		const raw = await res.json().catch(() => ({}));
+		let raw: unknown = {};
+		try {
+			raw = await res.json();
+		} catch (parseErr) {
+			clientLogger.warn("[bookingOtpEngine] send-otp response JSON parse failed", {
+				status: res.status,
+				error: String(parseErr),
+			});
+		}
 		const data = (raw && typeof raw === "object" && "data" in raw ? raw.data : raw) as {
 			success?: boolean;
 			error?: string;

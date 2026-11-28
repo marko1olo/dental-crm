@@ -1,3 +1,4 @@
+import { shiftCalendarDay, tomorrowDateKeyInTimeZone } from "@dental/shared";
 import type { FastifyReply } from "fastify";
 import { z } from "zod";
 import { replyBadRequest } from "../routeErrors.js";
@@ -108,16 +109,6 @@ function dateInTimeZone(
 	}
 }
 
-function nextCalendarDay(date: string): string {
-	const [year, month, day] = date
-		.split("-")
-		.map((value) => Number.parseInt(value, 10));
-	if (!year || !month || !day) return date;
-	return new Date(Date.UTC(year, month - 1, day + 1))
-		.toISOString()
-		.slice(0, 10);
-}
-
 export function tomorrowInTimeZone(
 	timeZone: string,
 	now = new Date(),
@@ -125,11 +116,9 @@ export function tomorrowInTimeZone(
 ): string {
 	const today = dateInTimeZone(timeZone, now, logger);
 	if (!today) {
-		return new Date(now.getTime() + 24 * 60 * 60 * 1000)
-			.toISOString()
-			.slice(0, 10);
+		return tomorrowDateKeyInTimeZone("UTC", now);
 	}
-	return nextCalendarDay(today);
+	return shiftCalendarDay(today, 1);
 }
 
 export function badDayConfirmationRequest(

@@ -438,7 +438,12 @@ export async function persistRvgScanToServer({
 			return { success: false, error: errorMessage };
 		}
 
-		const data: unknown = await response.json().catch(() => ({}));
+		let data: unknown = {};
+		try {
+			data = await response.json();
+		} catch (parseErr) {
+			clientLogger.warn("[directRvgFileValidation] Failed to parse response JSON:", parseErr);
+		}
 		return { success: true, data };
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);

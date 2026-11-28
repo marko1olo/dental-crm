@@ -138,47 +138,50 @@ export interface SurgeryPricelistEntry {
 	readonly priceKopecks: number;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isStockImplantRecord(item: unknown): item is StockImplantRecord {
+	return isRecord(item) && typeof item.id === "string" && typeof item.name === "string";
+}
+
 export async function fetchSurgeryPricelist(): Promise<Map<string, SurgeryPricelistEntry>> {
 	const map = new Map<string, SurgeryPricelistEntry>();
-	try {
-		const res = await fetch("/api/pricelist", { headers: denteClinicalReadHeaders() });
-		if (!res.ok) return map;
-		const raw = (await res.json()) as {
-			data?: { items?: unknown } | unknown[];
-			items?: unknown;
-		};
-		const envelope = raw && typeof raw === "object" && "data" in raw ? raw.data : raw;
-		const list = Array.isArray(envelope)
-			? envelope
-			: envelope && typeof envelope === "object" && Array.isArray((envelope as { items?: unknown }).items)
-				? (envelope as { items: unknown[] }).items
-				: Array.isArray(raw?.items)
-					? raw.items
-					: [];
-		for (const row of list) {
-			if (!row || typeof row !== "object") continue;
-			const rec = row as Record<string, unknown>;
-			if (rec.isActive === false) continue;
-			const code = typeof rec.code === "string" ? rec.code.trim() : "";
-			if (!code) continue;
-			const kopRaw = rec.priceKopecks ?? rec.price_kopecks;
-			const rubRaw = rec.priceRub ?? rec.price_rub ?? rec.price;
-			const kopecks =
-				typeof kopRaw === "number" && Number.isFinite(kopRaw)
-					? Math.round(kopRaw)
-					: typeof kopRaw === "string" && /^\d+$/.test(kopRaw.trim())
-						? Number(kopRaw.trim())
-						: Math.round(Number(rubRaw ?? 0) * 100);
-			const priceRub =
-				typeof rubRaw === "number" && Number.isFinite(rubRaw) && rubRaw > 0
-					? rubRaw
-					: kopecksToRubles(kopecks);
-			if (kopecks > 0 || priceRub > 0) {
-				map.set(code, { code, priceRub, priceKopecks: kopecks });
-			}
+	const res = await fetch("/api/pricelist", { headers: denteClinicalReadHeaders() });
+	if (!res.ok) {
+		clientLogger.warn("[surgeryHubApi] Ошибка загрузки прайскуранта", { status: res.status }, { module: "surgeryHubApi" });
+		throw new Error(`Не удалось загрузить прейскурант (HTTP ${res.status})`);
+	}
+	const raw: unknown = await res.json();
+	const envelope = isRecord(raw) && "data" in raw ? raw.data : raw;
+	const list = Array.isArray(envelope)
+		? envelope
+		: isRecord(envelope) && Array.isArray(envelope.items)
+			? envelope.items
+			: isRecord(raw) && Array.isArray(raw.items)
+				? raw.items
+				: [];
+	for (const row of list) {
+		if (!isRecord(row)) continue;
+		if (row.isActive === false) continue;
+		const code = typeof row.code === "string" ? row.code.trim() : "";
+		if (!code) continue;
+		const kopRaw = row.priceKopecks ?? row.price_kopecks;
+		const rubRaw = row.priceRub ?? row.price_rub ?? row.price;
+		const kopecks =
+			typeof kopRaw === "number" && Number.isFinite(kopRaw)
+				? Math.round(kopRaw)
+				: typeof kopRaw === "string" && /^\d+$/.test(kopRaw.trim())
+					? Number(kopRaw.trim())
+					: Math.round(Number(rubRaw ?? 0) * 100);
+		const priceRub =
+			typeof rubRaw === "number" && Number.isFinite(rubRaw) && rubRaw > 0
+				? rubRaw
+				: kopecksToRubles(kopecks);
+		if (kopecks > 0 || priceRub > 0) {
+			map.set(code, { code, priceRub, priceKopecks: kopecks });
 		}
-	} catch (err) {
-		clientLogger.warn("[surgeryHubApi] Ошибка загрузки прайскуранта", err, { module: "surgeryHubApi" });
 	}
 	return map;
 }
@@ -187,28 +190,28 @@ export async function fetchSurgeryPatients(searchQuery: string): Promise<Surgery
 	const q = searchQuery.trim();
 	const url = q ? `/api/patients?search=${encodeURIComponent(q)}&limit=20` : "/api/patients?limit=20";
 	const res = await fetch(url, { headers: denteClinicalReadHeaders() });
-	if (!res.ok) return [];
+	if (!res.ok) {
+		clientLogger.warn("[surgeryHubApi] Ошибка загрузки пациентов", { status: res.status }, { module: "surgeryHubApi" });
+		throw new Error(`Не удалось загрузить список пациентов (HTTP ${res.status})`);
+	}
 	const raw: unknown = await res.json();
-	const envelopeData = raw && typeof raw === "object" && "data" in raw ? (raw as { data?: unknown }).data : undefined;
+	const envelopeData = isRecord(raw) && "data" in raw ? raw.data : raw;
 	const listCandidate = Array.isArray(envelopeData)
 		? envelopeData
 		: Array.isArray(raw)
 			? raw
-			: raw && typeof raw === "object" && Array.isArray((raw as Record<string, unknown>).patients)
-				? (raw as Record<string, unknown>).patients
+			: isRecord(raw) && Array.isArray(raw.patients)
+				? raw.patients
 				: [];
 	const parsed: SurgeryPatientOption[] = [];
 	if (!Array.isArray(listCandidate)) return parsed;
 	for (const item of listCandidate) {
-		if (item && typeof item === "object") {
-			const rec = item as Record<string, unknown>;
-			if (typeof rec.id === "string" && typeof rec.fullName === "string" && rec.fullName.trim()) {
-				parsed.push({
-					id: rec.id,
-					fullName: rec.fullName.trim(),
-					phone: typeof rec.phone === "string" ? rec.phone : undefined,
-				});
-			}
+		if (isRecord(item) && typeof item.id === "string" && typeof item.fullName === "string" && item.fullName.trim()) {
+			parsed.push({
+				id: item.id,
+				fullName: item.fullName.trim(),
+				phone: typeof item.phone === "string" ? item.phone : undefined,
+			});
 		}
 	}
 	return parsed;
@@ -216,30 +219,33 @@ export async function fetchSurgeryPatients(searchQuery: string): Promise<Surgery
 
 export async function fetchSurgeryDoctors(): Promise<SurgeryDoctorOption[]> {
 	const res = await fetch("/api/v1/doctors", { headers: denteClinicalReadHeaders() });
-	if (!res.ok) return [];
-	const raw = (await res.json()) as { data?: { doctors?: unknown }; doctors?: unknown } | unknown[];
-	const envelope = !Array.isArray(raw) && raw && typeof raw === "object" ? (raw.data ?? raw) : null;
-	const docsRaw = envelope && typeof envelope === "object" && Array.isArray(envelope.doctors)
+	if (!res.ok) {
+		clientLogger.warn("[surgeryHubApi] Ошибка загрузки врачей", { status: res.status }, { module: "surgeryHubApi" });
+		throw new Error(`Не удалось загрузить список врачей (HTTP ${res.status})`);
+	}
+	const raw: unknown = await res.json();
+	const envelope = isRecord(raw) && "data" in raw ? raw.data : raw;
+	const docsRaw = isRecord(envelope) && Array.isArray(envelope.doctors)
 		? envelope.doctors
-		: Array.isArray(raw)
-			? raw
-			: [];
+		: Array.isArray(envelope)
+			? envelope
+			: Array.isArray(raw)
+				? raw
+				: [];
 	const parsed: SurgeryDoctorOption[] = [];
 	for (const item of docsRaw) {
-		if (item && typeof item === "object") {
-			const rec = item as Record<string, unknown>;
-			const nameCandidate = typeof rec.fullName === "string"
-				? rec.fullName
-				: typeof rec.name === "string"
-					? rec.name
-					: "";
-			if (typeof rec.id === "string" && nameCandidate.trim()) {
-				parsed.push({
-					id: rec.id,
-					fullName: nameCandidate.trim(),
-					specialty: typeof rec.specialty === "string" ? rec.specialty : undefined,
-				});
-			}
+		if (!isRecord(item)) continue;
+		const nameCandidate = typeof item.fullName === "string"
+			? item.fullName
+			: typeof item.name === "string"
+				? item.name
+				: "";
+		if (typeof item.id === "string" && nameCandidate.trim()) {
+			parsed.push({
+				id: item.id,
+				fullName: nameCandidate.trim(),
+				specialty: typeof item.specialty === "string" ? item.specialty : undefined,
+			});
 		}
 	}
 	return parsed;
@@ -247,10 +253,16 @@ export async function fetchSurgeryDoctors(): Promise<SurgeryDoctorOption[]> {
 
 export async function fetchSurgeryImplantStock(): Promise<readonly StockImplantRecord[]> {
 	const res = await fetch("/api/clinical/implants/stock", { headers: denteClinicalReadHeaders() });
-	if (!res.ok) return [];
-	const raw = (await res.json()) as { data?: { implants?: unknown }; implants?: unknown };
-	const payload = raw?.data ?? raw;
-	return Array.isArray(payload?.implants) ? (payload.implants as readonly StockImplantRecord[]) : [];
+	if (!res.ok) {
+		clientLogger.warn("[surgeryHubApi] Ошибка загрузки склада имплантатов", { status: res.status }, { module: "surgeryHubApi" });
+		throw new Error(`Не удалось загрузить остатки имплантатов (HTTP ${res.status})`);
+	}
+	const raw: unknown = await res.json();
+	const payload = isRecord(raw) && "data" in raw ? raw.data : raw;
+	if (isRecord(payload) && Array.isArray(payload.implants)) {
+		return payload.implants.filter(isStockImplantRecord);
+	}
+	return [];
 }
 
 export interface HydratedPatientImplantData {
@@ -266,30 +278,32 @@ export async function fetchPatientImplantContext(
 	const res = await fetch(`/api/clinical/implants/patient/${patientId}`, {
 		headers: denteClinicalReadHeaders(),
 	});
-	if (!res.ok) return null;
-	const rawBody = (await res.json()) as { data?: { installations?: unknown }; installations?: unknown };
-	const body = rawBody?.data ?? rawBody;
-	if (!Array.isArray(body?.installations) || body.installations.length === 0) return null;
+	if (res.status === 404) return null;
+	if (!res.ok) {
+		clientLogger.warn("[surgeryHubApi] Ошибка загрузки данных имплантации пациента", { status: res.status, patientId }, { module: "surgeryHubApi" });
+		throw new Error(`Не удалось загрузить данные имплантатов пациента (HTTP ${res.status})`);
+	}
+	const rawBody: unknown = await res.json();
+	const body = isRecord(rawBody) && "data" in rawBody ? rawBody.data : rawBody;
+	if (!isRecord(body) || !Array.isArray(body.installations) || body.installations.length === 0) return null;
 
-	const installations = body.installations as readonly Record<string, unknown>[];
+	const installations = body.installations.filter(isRecord);
 	const matched = installations.find((inst) => inst.toothNumberFdi === toothFdi) ?? installations[0];
 	if (!matched) return null;
 
 	let passport: Record<string, unknown> | null = null;
 	if (typeof matched.id === "string" && matched.id) {
-		try {
-			const passRes = await fetch(`/api/clinical/implants/${matched.id}/passport`, {
-				headers: denteClinicalReadHeaders(),
-			});
-			if (passRes.ok) {
-				const rawPass = (await passRes.json()) as { data?: { passport?: unknown }; passport?: unknown };
-				const passPayload = rawPass?.data ?? rawPass;
-				if (passPayload?.passport && typeof passPayload.passport === "object") {
-					passport = passPayload.passport as Record<string, unknown>;
-				}
+		const passRes = await fetch(`/api/clinical/implants/${matched.id}/passport`, {
+			headers: denteClinicalReadHeaders(),
+		});
+		if (passRes.ok) {
+			const rawPass: unknown = await passRes.json();
+			const passPayload = isRecord(rawPass) && "data" in rawPass ? rawPass.data : rawPass;
+			if (isRecord(passPayload) && isRecord(passPayload.passport)) {
+				passport = passPayload.passport;
 			}
-		} catch (err) {
-			clientLogger.warn("[surgeryHubApi] Ошибка запроса паспорта имплантата из API", err, {
+		} else if (passRes.status !== 404) {
+			clientLogger.warn("[surgeryHubApi] Ошибка запроса паспорта имплантата из API", { status: passRes.status, implantId: matched.id }, {
 				module: "surgeryHubApi",
 			});
 		}
@@ -313,9 +327,16 @@ export interface SubmitSurgeryApiResult {
 	readonly deductDeferred?: boolean | undefined;
 }
 
-async function parseSurgeryJsonLogged<T>(res: Response, context: string): Promise<T | null> {
+function unwrapEnvelopeData(raw: unknown): unknown {
+	if (isRecord(raw) && "data" in raw) {
+		return raw.data;
+	}
+	return raw;
+}
+
+async function parseSurgeryJsonLogged(res: Response, context: string): Promise<unknown> {
 	try {
-		return (await res.json()) as T;
+		return await res.json();
 	} catch (err) {
 		clientLogger.warn(`[surgeryHubApi] Не удалось разобрать JSON (${context})`, err, { module: "surgeryHubApi" });
 		return null;
@@ -323,13 +344,13 @@ async function parseSurgeryJsonLogged<T>(res: Response, context: string): Promis
 }
 
 async function readErrorFromResponse(res: Response, fallback: string): Promise<string> {
-	const errRaw = await parseSurgeryJsonLogged<{
-		data?: { message?: string; error?: string };
-		message?: string;
-		error?: string;
-	}>(res, "readErrorFromResponse");
-	const errBody = errRaw?.data ?? errRaw;
-	return errBody?.message || errBody?.error || fallback;
+	const errRaw = await parseSurgeryJsonLogged(res, "readErrorFromResponse");
+	const errBody = unwrapEnvelopeData(errRaw);
+	if (isRecord(errBody)) {
+		if (typeof errBody.message === "string" && errBody.message) return errBody.message;
+		if (typeof errBody.error === "string" && errBody.error) return errBody.error;
+	}
+	return fallback;
 }
 
 export async function submitSurgeryToApi(params: {
@@ -400,8 +421,8 @@ export async function submitSurgeryToApi(params: {
 					errorMessage: await readErrorFromResponse(apiRes, `Ошибка сохранения имплантатов (${apiRes.status})`),
 				};
 			}
-			const okRaw = await parseSurgeryJsonLogged<{ data?: unknown }>(apiRes, "installations:batch");
-			void okRaw?.data;
+			const okRaw = await parseSurgeryJsonLogged(apiRes, "installations:batch");
+			void unwrapEnvelopeData(okRaw);
 			return { ok: true };
 		}
 
@@ -453,8 +474,8 @@ export async function submitSurgeryToApi(params: {
 				errorMessage: await readErrorFromResponse(apiRes, `Ошибка сохранения имплантата (${apiRes.status})`),
 			};
 		}
-		const okRaw = await parseSurgeryJsonLogged<{ data?: unknown }>(apiRes, "installations:single");
-		void okRaw?.data;
+		const okRaw = await parseSurgeryJsonLogged(apiRes, "installations:single");
+		void unwrapEnvelopeData(okRaw);
 		return { ok: true };
 	}
 
@@ -498,10 +519,13 @@ export async function submitSurgeryToApi(params: {
 			errorMessage: await readErrorFromResponse(protoRes, `Ошибка сохранения протокола (${protoRes.status})`),
 		};
 	}
-	const protoRaw = await parseSurgeryJsonLogged<{ data?: { deduction?: { success?: boolean } }; deduction?: { success?: boolean } }>(
-		protoRes,
-		"surgery:protocols",
-	);
-	const deductOk = protoRaw?.data?.deduction?.success ?? protoRaw?.deduction?.success ?? true;
+	const protoRaw = await parseSurgeryJsonLogged(protoRes, "surgery:protocols");
+	const protoPayload = unwrapEnvelopeData(protoRaw);
+	const deductionObj = isRecord(protoPayload) && isRecord(protoPayload.deduction)
+		? protoPayload.deduction
+		: isRecord(protoRaw) && isRecord(protoRaw.deduction)
+			? protoRaw.deduction
+			: null;
+	const deductOk = typeof deductionObj?.success === "boolean" ? deductionObj.success : true;
 	return { ok: true, deductDeferred: !deductOk };
 }

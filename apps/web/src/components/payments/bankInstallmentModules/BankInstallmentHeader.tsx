@@ -44,7 +44,7 @@ export const BankInstallmentHeader: React.FC<BankInstallmentHeaderProps> = ({
 			<button
 				type="button"
 				onClick={onClose}
-				className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+				className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 				aria-label="Закрыть"
 				data-testid="bank-installment-close-btn"
 			>

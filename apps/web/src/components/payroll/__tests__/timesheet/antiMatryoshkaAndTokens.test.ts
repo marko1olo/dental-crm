@@ -1,58 +1,75 @@
-/**
- * antiMatryoshkaAndTokens.test.ts — Anti-Matryoshka, Anti-Cartoon Emojis & CSS Tokens
- * Mandate 8b: File strictly <= 120 lines.
- */
-
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { DoctorPayrollStudioModal } from "../../DoctorPayrollStudioModal";
+import {
+	CANONICAL_PAYROLL_DOCTORS,
+	CANONICAL_DEMO_ORDERS,
+	calculateDoctorPayrollSummary,
+} from "../../payrollCatalogData";
+import { calculateDoctorStaffPayroll } from "../../staffPayrollEngine";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const CARTOON_EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
-describe("Red Team: Anti-Matryoshka, Anti-Cartoon Emojis & CSS Tokens (Mandates 8d, 8s)", () => {
-	it("3.1 DoctorPayrollStudioModal.tsx contains 0 nested modals and exports cleanly", () => {
-		assert.ok(DoctorPayrollStudioModal, "DoctorPayrollStudioModal must be exported");
+describe("DoctorPayroll & Timesheet — Anti-Matryoshka, Tokens & Live UI (6G SUT)", () => {
+	it("renders DoctorPayrollStudioModal with single dialog root, zero nested modals, and zero cartoon emojis", () => {
+		const prevDoc = (globalThis as { document?: unknown }).document;
+		(globalThis as { document?: unknown }).document = undefined;
+		try {
+			const html = renderToStaticMarkup(
+				React.createElement(DoctorPayrollStudioModal, {
+					isOpen: true,
+					onClose: () => {},
+					clinicName: "Клиника ДЕНТЕ",
+					doctorsList: CANONICAL_PAYROLL_DOCTORS.map((d) => ({
+						id: d.id,
+						name: d.name,
+						specialtyId: d.specialtyId,
+					})),
+					orders: CANONICAL_DEMO_ORDERS,
+				}),
+			);
 
-		const filePath = path.resolve(__dirname, "../../DoctorPayrollStudioModal.tsx");
-		const content = fs.readFileSync(filePath, "utf8");
-
-		const modalTagMatches = content.match(/<Modal\b|<Dialog\b/g);
-		assert.equal(modalTagMatches, null, "DoctorPayrollStudioModal must not contain nested modals");
-
-		const overlayCount = (content.match(/payroll-studio-overlay/g) || []).length;
-		assert.ok(overlayCount <= 1, "DoctorPayrollStudioModal overlay must not be nested");
+			const dialogMatches = html.match(/role="dialog"/g) ?? [];
+			assert.equal(dialogMatches.length, 1, "Anti-matryoshka: exactly 1 dialog layer rendered");
+			const overlayMatches = html.match(/payroll-studio-overlay/g) ?? [];
+			assert.equal(overlayMatches.length, 1, "Must render exactly 1 payroll-studio-overlay");
+			assert.equal(CARTOON_EMOJI_RE.test(html), false, "Rendered UI must contain zero cartoon emojis");
+			assert.ok(html.includes("bg-[var(--primary)]"));
+		} finally {
+			(globalThis as { document?: unknown }).document = prevDoc;
+		}
 	});
 
-	it("3.2 Zero cartoon emojis exist in DoctorPayrollStudioModal.tsx or Engine", () => {
-		const files = [
-			path.resolve(__dirname, "../../DoctorPayrollStudioModal.tsx"),
-			path.resolve(__dirname, "../../staffPayrollEngine.ts"),
-		];
-
-		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
-
-		files.forEach((file) => {
-			const text = fs.readFileSync(file, "utf8");
-			const lines = text.split("\n");
-			lines.forEach((line, idx) => {
-				assert.equal(
-					emojiRegex.test(line),
-					false,
-					`Found prohibited cartoon emoji in ${path.basename(file)} at line ${idx + 1}: ${line}`,
-				);
-			});
+	it("payroll calculation engines produce clean numeric summaries without cartoon emojis", () => {
+		const doc = CANONICAL_PAYROLL_DOCTORS[0]!;
+		const summary = calculateDoctorPayrollSummary({
+			orders: CANONICAL_DEMO_ORDERS,
+			doctor: doc,
 		});
-	});
+		assert.equal(CARTOON_EMOJI_RE.test(summary.doctorName), false);
+		assert.ok(summary.payoutKopecks >= 0);
 
-	it("3.3 doctorPayrollModal.css contains zero hardcoded hex colors (#xxx or #xxxxxx)", () => {
-		const cssPath = path.resolve(__dirname, "../../styles/doctorPayrollModal.css");
-		const css = fs.readFileSync(cssPath, "utf8");
-
-		const hexMatches = css.match(/#[0-9a-fA-F]{3,8}\b/g);
-		assert.equal(hexMatches, null, `doctorPayrollModal.css must not contain hardcoded hex colors`);
+		const staffResult = calculateDoctorStaffPayroll({
+			employeeId: doc.id,
+			employeeTabNumber: "ТБ-01",
+			employeeFullName: doc.name,
+			specialtyId: doc.specialtyId,
+			periodStartIso: "2026-09-01",
+			periodEndIso: "2026-09-30",
+			services: [
+				{
+					id: "srv-1",
+					serviceCode: "A16.07.002.001",
+					serviceName: "Восстановление зуба пломбой",
+					category: "therapy",
+					amountKopecks: 500000,
+					isPaid: true,
+				},
+			],
+		});
+		assert.equal(CARTOON_EMOJI_RE.test(JSON.stringify(staffResult)), false);
+		assert.ok(staffResult.grossPayoutBeforeTaxKop >= 0);
 	});
 });

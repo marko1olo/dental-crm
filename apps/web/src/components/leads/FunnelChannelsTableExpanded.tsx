@@ -46,7 +46,7 @@ export const FunnelChannelsTableExpanded: React.FC<{
 						<th style={{ padding: "10px 8px" }}>Выручка (₽)</th>
 						<th style={{ padding: "10px 8px" }}>CAC (₽)</th>
 						<th style={{ padding: "10px 8px" }}>ROMI (%)</th>
-						<th style={{ padding: "10px 8px" }}>Статус & Рекомендация</th>
+						<th style={{ padding: "10px 8px" }}>Статус и рекомендация</th>
 					</tr>
 				</thead>
 				<tbody>

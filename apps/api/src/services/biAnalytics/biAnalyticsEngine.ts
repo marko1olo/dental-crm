@@ -239,15 +239,16 @@ export function startBiAnalyticsWorker(): NodeJS.Timeout {
 	}, 5000);
 	biStartupTimeout.unref();
 
-	biWorkerInterval = setInterval(
+	const interval = setInterval(
 		() => {
 			runScheduledSnapshots();
 		},
 		1000 * 60 * 60,
 	);
-	biWorkerInterval.unref();
+	interval.unref();
+	biWorkerInterval = interval;
 
-	return biWorkerInterval;
+	return interval;
 }
 
 /**

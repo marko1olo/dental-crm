@@ -1,9 +1,11 @@
+import { resolveValidIanaTimeZone, todayDateKeyInTimeZone } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { withTenantWriteCtx } from "../../../../db/rls.js";
 import { sterilizerEquipments } from "../../../../db/schema.js";
+import { clinicTimeZone } from "../../../../services/reports/managerReports/timezone.js";
 
 export async function handleDeleteSterilizerEquipment(
 	req: FastifyRequest,
@@ -29,12 +31,15 @@ export async function handleDeleteSterilizerEquipment(
 	}
 	const id = idParsed.data;
 	await withTenantWriteCtx(organizationId, async (tx) => {
+		const today = todayDateKeyInTimeZone(
+			resolveValidIanaTimeZone(await clinicTimeZone(organizationId, tx)),
+		);
 		await tx
 			.update(sterilizerEquipments)
 			.set({
 				status: "decommissioned",
 				isCommissioned: false,
-				decommissioningDate: new Date().toISOString().slice(0, 10),
+				decommissioningDate: today,
 				updatedAt: new Date(),
 			})
 			.where(

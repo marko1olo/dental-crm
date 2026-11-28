@@ -1,7 +1,9 @@
+import { resolveValidIanaTimeZone, todayDateKeyInTimeZone } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { onTenantTxCommit, withTenantWriteCtx } from "../../../../db/rls.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
+import { clinicTimeZone } from "../../../../services/reports/managerReports/timezone.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { executeSterilizationConsumablesDeduction } from "../../sterilizationModules/sterilizationStockDeduction.js";
 import { autofillShiftSchema } from "../shiftAutofillSchemas.js";
@@ -23,16 +25,18 @@ export async function handleAutofillShift(req: FastifyRequest, reply: FastifyRep
 		});
 	}
 	const body = parsed.data;
-	const now = new Date();
-	const todayStr = body.shiftDate || body.date || now.toISOString().slice(0, 10);
+	const explicitDate = body.shiftDate || body.date || null;
 	const resolvedUserId = getRequestIdentity(req).userId ?? null;
 
-	const { insertedPso, insertedSteril } = await withTenantWriteCtx(organizationId, async (tx) => {
+	const { insertedPso, insertedSteril, todayStr } = await withTenantWriteCtx(organizationId, async (tx) => {
+		const effectiveToday =
+			explicitDate ??
+			todayDateKeyInTimeZone(resolveValidIanaTimeZone(await clinicTimeZone(organizationId, tx)));
 		const result = await executeShiftAutofillTransaction(tx, {
 			organizationId,
 			body,
 			operatorId: body.operatorId || resolvedUserId,
-			todayStr,
+			todayStr: effectiveToday,
 		});
 
 		// Пакетное списание расходников стерилизации со склада клиники в единой транзакции (Мандаты 8e, 8n, 8bo)
@@ -54,14 +58,14 @@ export async function handleAutofillShift(req: FastifyRequest, reply: FastifyRep
 			wsBroker.broadcastToOrganization(organizationId, {
 				type: "SANPIN_SHIFT_AUTOPILOT_COMPLETED",
 				payload: {
-					date: todayStr,
+					date: effectiveToday,
 					psoCount: result.insertedPso.length,
 					sterilCount: result.insertedSteril.length,
 				},
 			});
 		});
 
-		return result;
+		return { ...result, todayStr: effectiveToday };
 	});
 
 	return reply.send({

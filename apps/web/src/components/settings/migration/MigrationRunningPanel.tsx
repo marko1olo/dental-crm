@@ -70,7 +70,7 @@ export function MigrationRunningPanel(props: {
 				<div className="mt-4 flex justify-center">
 					<button
 						type="button"
-						className="mw-btn mw-btn-ghost text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+						className="mw-btn mw-btn-ghost text-xs text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						onClick={props.onCancel}
 					>
 						<RotateCcw size={14} className="inline mr-1" />

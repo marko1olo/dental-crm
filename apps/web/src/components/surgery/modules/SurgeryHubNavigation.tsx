@@ -59,7 +59,7 @@ export const SurgeryHubNavigation: React.FC<SurgeryHubNavigationProps> = ({
 					data-testid="tab-surgery-protocol"
 				>
 					<Stethoscope size={14} className="shrink-0" />
-					<span className="hidden sm:inline">1. Протокол &amp; Параметры</span>
+					<span className="hidden sm:inline">1. Протокол и параметры</span>
 					<span className="sm:hidden">1. Протокол</span>
 				</button>
 				<button

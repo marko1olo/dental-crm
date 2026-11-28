@@ -26,14 +26,14 @@ export const DicomMeasureDropdown: React.FC<DicomMeasureDropdownProps> = ({
 	if (!isOpen) return null;
 
 	return (
-		<div className="absolute left-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-[40] p-1.5 flex flex-col gap-0.5">
-			<div className="text-xs font-semibold text-slate-400 px-2 py-1 border-b border-slate-800">
+		<div className="absolute left-0 top-full mt-1 w-64 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl z-[40] p-1.5 flex flex-col gap-0.5">
+			<div className="text-xs font-semibold text-[var(--ink-muted)] px-2 py-1 border-b border-[var(--line)]">
 				Измерение
 			</div>
 			<button
 				type="button"
 				onClick={() => { onSelectTool("ruler"); onClose(); }}
-				className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center gap-2 transition-colors"
+				className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center gap-2 transition-colors"
 			>
 				<Ruler size={14} className="text-sky-400" />
 				<span>Длина / Линейка (мм)</span>
@@ -41,7 +41,7 @@ export const DicomMeasureDropdown: React.FC<DicomMeasureDropdownProps> = ({
 			<button
 				type="button"
 				onClick={() => { onSelectTool("angle"); onClose(); }}
-				className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center gap-2 transition-colors"
+				className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center gap-2 transition-colors"
 			>
 				<Triangle size={14} className="text-amber-400" />
 				<span>Угол (Cobb / Gnathic °)</span>
@@ -49,19 +49,19 @@ export const DicomMeasureDropdown: React.FC<DicomMeasureDropdownProps> = ({
 			<button
 				type="button"
 				onClick={() => { onOpenHuProfile(); onClose(); }}
-				className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center gap-2 transition-colors"
+				className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center gap-2 transition-colors"
 			>
 				<Activity size={14} className="text-teal-400" />
 				<span>Плотность кости (HU Misch)</span>
 			</button>
 
-			<div className="text-xs font-semibold text-slate-400 px-2 py-1 border-b border-slate-800 mt-1">
+			<div className="text-xs font-semibold text-[var(--ink-muted)] px-2 py-1 border-b border-[var(--line)] mt-1">
 				Захват
 			</div>
 			<button
 				type="button"
 				onClick={() => { onInstantScreenCapture(true); onClose(); }}
-				className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center gap-2 transition-colors"
+				className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center gap-2 transition-colors"
 			>
 				<Copy size={14} className="text-emerald-400" />
 				<span>Снимок в буфер (Ctrl+V)</span>
@@ -69,13 +69,13 @@ export const DicomMeasureDropdown: React.FC<DicomMeasureDropdownProps> = ({
 			<button
 				type="button"
 				onClick={() => { onInstantScreenCapture(false); onClose(); }}
-				className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center gap-2 transition-colors"
+				className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center gap-2 transition-colors"
 			>
 				<Download size={14} className="text-cyan-400" />
 				<span>Экспорт PNG высокого разрешения</span>
 			</button>
 
-			<div className="text-xs font-semibold text-slate-400 px-2 py-1 border-b border-slate-800 mt-1">
+			<div className="text-xs font-semibold text-[var(--ink-muted)] px-2 py-1 border-b border-[var(--line)] mt-1">
 				Аннотация и имплантация
 			</div>
 			<button
@@ -84,7 +84,7 @@ export const DicomMeasureDropdown: React.FC<DicomMeasureDropdownProps> = ({
 					showToast("Режим стрелки-аннотации активирован: кликните на очаг", "info");
 					onClose();
 				}}
-				className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center gap-2 transition-colors"
+				className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center gap-2 transition-colors"
 			>
 				<Move size={14} className="text-pink-400" />
 				<span>Стрелка / Клиническая выноска</span>
@@ -95,7 +95,7 @@ export const DicomMeasureDropdown: React.FC<DicomMeasureDropdownProps> = ({
 					showToast("Библиотека имплантатов: буфер безопасности 1.5–2 мм вокруг IAN активна", "success");
 					onClose();
 				}}
-				className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center gap-2 transition-colors"
+				className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center gap-2 transition-colors"
 			>
 				<Zap size={14} className="text-amber-300" />
 				<span>Имплантат (Буфер 1.5–2 мм)</span>

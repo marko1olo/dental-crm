@@ -12,6 +12,7 @@ import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import { buildPatientAdministrativeProfilePayload } from "../../../utils/clinicProfileUtils";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import {
 	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
@@ -172,7 +173,12 @@ export async function createPatientCanonicalApiFallback(
 	});
 
 	if (!response.ok) {
-		const errorJson = (await response.json().catch(() => null)) as { message?: string } | null;
+		let errorJson: { message?: string } | null = null;
+		try {
+			errorJson = (await response.json()) as { message?: string } | null;
+		} catch (parseErr) {
+			clientLogger.warn("[patientCardModalTypes] Failed to parse conflict error JSON:", parseErr);
+		}
 		const errorMsg = errorJson?.message || "Ошибка создания пациента";
 		const conflictError = new Error(errorMsg) as Error & {
 			status?: number;

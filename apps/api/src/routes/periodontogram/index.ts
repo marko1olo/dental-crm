@@ -11,6 +11,7 @@ import {
 import { registerToothMutationRoutes } from "./routesMutationsTeeth.js";
 import { registerPatientPeriodontogramRoutes } from "./routesPatient.js";
 import { registerSnapshotPeriodontogramRoutes } from "./routesSnapshots.js";
+import type { PerioDemoContextOptions } from "../../services/periodontogram/periodontogramDemoHelper.js";
 
 export {
 	registerLifecyclePeriodontogramRoutes,
@@ -27,9 +28,10 @@ export { fetchToothPeriodontalEvents } from "./toothHistory.js";
  */
 export async function registerPeriodontogramSubRoutes(
 	app: FastifyInstance,
+	options?: PerioDemoContextOptions,
 ): Promise<void> {
-	await registerPatientPeriodontogramRoutes(app);
-	await registerSnapshotPeriodontogramRoutes(app);
+	await registerPatientPeriodontogramRoutes(app, options);
+	await registerSnapshotPeriodontogramRoutes(app, options);
 	await registerLifecyclePeriodontogramRoutes(app);
 	registerToothMutationRoutes(app);
 	registerSiteMutationRoutes(app);
@@ -40,8 +42,9 @@ export async function registerPeriodontogramSubRoutes(
  */
 export async function registerPeriodontogramRoutes(
 	app: FastifyInstance,
+	options?: PerioDemoContextOptions,
 ): Promise<void> {
-	await registerPeriodontogramSubRoutes(app);
+	await registerPeriodontogramSubRoutes(app, options);
 }
 
 export default registerPeriodontogramRoutes;

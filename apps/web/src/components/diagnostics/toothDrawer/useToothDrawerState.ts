@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { isPrimaryTooth, calculateAge } from "@dental/shared";
 import type { ToothData, ToothState } from "../../odontogram/ToothChart";
 import { getToothAnatomicalNameRu, getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols";
@@ -35,6 +35,9 @@ export function useToothDrawerState({
 	const calculatedAge = patient?.birthDate ? calculateAge(patient.birthDate) : undefined;
 	const isPediatricTooth = isPrimaryTooth(toothNumber) || (patient?.ageYears !== undefined && patient.ageYears < 14) || (calculatedAge !== undefined && calculatedAge < 14);
 	const [currentState, setCurrentState] = useState<ToothState>(toothData?.state ?? "Healthy");
+	const currentStateRef = useRef<ToothState>(currentState);
+	currentStateRef.current = currentState;
+	const isHandlingExternalEventRef = useRef<boolean>(false);
 
 	useEffect(() => {
 		if (toothData?.state) setCurrentState(toothData.state);
@@ -42,15 +45,20 @@ export function useToothDrawerState({
 
 	useEffect(() => {
 		const handleOdontogramEvent = (e: Event) => {
-			if (!(e instanceof CustomEvent)) return;
+			if (!(e instanceof CustomEvent) || isHandlingExternalEventRef.current) return;
 			const detail = e.detail as OdontogramEventDetail | undefined;
 			if (!detail) return;
 			const states: readonly OdontogramEventDetailItem[] = detail.states ?? [detail];
 			const match = states.find((s) => Number(s.toothNumber) === toothNumber);
-			if (match?.state) {
-				setCurrentState(match.state);
-				onUpdateTooth?.(toothNumber, { state: match.state });
-				onUpdateToothStatus?.(toothNumber, match.state);
+			if (match?.state && match.state !== currentStateRef.current) {
+				isHandlingExternalEventRef.current = true;
+				try {
+					setCurrentState(match.state);
+					onUpdateTooth?.(toothNumber, { state: match.state });
+					onUpdateToothStatus?.(toothNumber, match.state);
+				} finally {
+					isHandlingExternalEventRef.current = false;
+				}
 			}
 		};
 		window.addEventListener("dente-odontogram-update", handleOdontogramEvent);

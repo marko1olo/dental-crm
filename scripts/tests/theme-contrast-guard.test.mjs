@@ -518,3 +518,78 @@ test("детекторы краснеют на подделанном входе
 		"переименованный селектор обязан попасть в missing, иначе охрана молча охраняет пустоту",
 	);
 });
+
+function parseHexRgb(hex) {
+	const clean = hex.trim().replace(/^#/, "");
+	if (clean.length !== 6) return null;
+	return {
+		r: Number.parseInt(clean.slice(0, 2), 16),
+		g: Number.parseInt(clean.slice(2, 4), 16),
+		b: Number.parseInt(clean.slice(4, 6), 16),
+	};
+}
+
+function wcagContrastRatio(hex1, hex2) {
+	const c1 = parseHexRgb(hex1);
+	const c2 = parseHexRgb(hex2);
+	assert.ok(c1 && c2, `Ожидались 6-значные hex цвета, получено: ${hex1}, ${hex2}`);
+	const relLum = ({ r, g, b }) => {
+		const lin = (c) => {
+			const s = c / 255;
+			return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+		};
+		return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+	};
+	const l1 = relLum(c1);
+	const l2 = relLum(c2);
+	return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
+function extractCssThemeVars(cssText, blockMarker) {
+	const idx = cssText.indexOf(blockMarker);
+	assert.ok(idx >= 0, `Не найден блок темы ${blockMarker} в dente/tokens.css`);
+	const openBrace = cssText.indexOf("{", idx);
+	const closeBrace = cssText.indexOf("}", openBrace);
+	const block = cssText.slice(openBrace + 1, closeBrace);
+	const vars = {};
+	for (const m of block.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/gi)) {
+		vars[m[1]] = m[2].trim();
+	}
+	return vars;
+}
+
+test("Математический WCAG 2.1 контроль палитры tokens.css (Light и Dark темы)", () => {
+	const tokensPath = join(stylesDirectory, "modules", "dente", "tokens.css");
+	const css = readFileSync(tokensPath, "utf8");
+	const light = extractCssThemeVars(css, ':root[data-theme="light"]');
+	const dark = extractCssThemeVars(css, ':root[data-theme="dark"]');
+
+	for (const [name, theme] of [
+		["light", light],
+		["dark", dark],
+	]) {
+		const primaryCr = wcagContrastRatio(theme["--primary"], theme["--primary-fg"]);
+		assert.ok(
+			primaryCr >= 4.5,
+			`[${name}] КРИТИЧЕСКИЙ БРАК КОНТРАСТА КНОПОК: --primary (${theme["--primary"]}) + --primary-fg (${theme["--primary-fg"]}) даёт CR=${primaryCr.toFixed(2)} < 4.5! Поставь --primary не светлее #0f766e.`,
+		);
+
+		const inkPaperCr = wcagContrastRatio(theme["--ink"], theme["--paper"]);
+		assert.ok(
+			inkPaperCr >= 7.0,
+			`[${name}] Брак WCAG AAA для текста карточек: --ink (${theme["--ink"]}) на --paper (${theme["--paper"]}) даёт CR=${inkPaperCr.toFixed(2)} < 7.0!`,
+		);
+
+		const mutedPaperCr = wcagContrastRatio(theme["--muted"], theme["--paper"]);
+		assert.ok(
+			mutedPaperCr >= 4.5,
+			`[${name}] Мета-текст --muted (${theme["--muted"]}) не читается на --paper (${theme["--paper"]}): CR=${mutedPaperCr.toFixed(2)} < 4.5!`,
+		);
+	}
+
+	const darkTealOnWhiteCr = wcagContrastRatio(dark["--teal"], "#ffffff");
+	assert.ok(
+		darkTealOnWhiteCr < 4.5,
+		`Dark --teal (${dark["--teal"]}) даёт CR=${darkTealOnWhiteCr.toFixed(2)} с #ffffff — именно поэтому bg-[var(--teal)] на кнопках запрещён в DENTE!`,
+	);
+});

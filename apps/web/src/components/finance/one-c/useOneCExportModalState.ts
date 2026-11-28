@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { generateOneCEnterpriseXml, type OneCDocumentType } from "@dental/shared";
 import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import type { OneCExportItem } from "../OneCExportButton";
 import { formatMoney, triggerXmlDownload } from "./types";
@@ -61,7 +62,15 @@ export function useOneCExportModalState(p: UseOneCExportModalStateParams) {
 				const url = `/api/v1/integrations/1c/commerceml/export?startDateIso=${encodeURIComponent(fromIso)}&endDateIso=${encodeURIComponent(toIso)}&format=json`;
 				const res = await fetch(url, { headers: denteClinicalReadHeaders() });
 				if (!res.ok) {
-					const errJson = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+					let errJson: Record<string, unknown> | null = null;
+					try {
+						errJson = (await res.json()) as Record<string, unknown> | null;
+					} catch (parseErr) {
+						clientLogger.warn("useOneCExportModalState error JSON parse failed", {
+							status: res.status,
+							error: String(parseErr),
+						});
+					}
 					const msg =
 						(typeof errJson?.message === "string" && errJson.message.trim()) ||
 						`Ошибка выгрузки CommerceML 1С (HTTP ${res.status})`;

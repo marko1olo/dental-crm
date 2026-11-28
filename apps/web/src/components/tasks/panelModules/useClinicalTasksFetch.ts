@@ -38,10 +38,12 @@ export function useClinicalTasksFetch(
 			try {
 				const denteClinicalReadHeaders = auth ? auth.denteClinicalReadHeaders() : getDenteAuthHeaders();
 				response = await fetch(`/api/clinical/tasks?patientId=${encodeURIComponent(patientId)}`, { headers: denteClinicalReadHeaders });
-				customTypesResponse = await fetch("/api/crm/custom-task-types", { headers: denteClinicalReadHeaders }).catch((err: unknown) => {
+				try {
+					customTypesResponse = await fetch("/api/crm/custom-task-types", { headers: denteClinicalReadHeaders });
+				} catch (err: unknown) {
 					logger.warn("[ClinicalTasks] custom-task-types fetch failed", err);
-					return null;
-				});
+					customTypesResponse = null;
+				}
 			} catch (err: unknown) {
 				logger.warn("[ClinicalTasks] tasks fetch failed", err);
 				if (!isMountedRef.current) return;

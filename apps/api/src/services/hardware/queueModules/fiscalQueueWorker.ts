@@ -8,6 +8,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { withSavepoint, withTenantCtx } from "../../../db/rls.js";
 import { fiscalReceiptQueue, payments } from "../../../db/schema.js";
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
 import { LanKktDriverService } from "../lanKktDriverService.js";
 import type { KktDeviceStatus, KktLanConfig, KktPrintResult } from "../types.js";
 import {
@@ -66,7 +67,13 @@ function buildRetryFailurePatch(
 }
 
 export class FiscalQueueRetryWorker {
-	private static orgTimers = new Map<string, NodeJS.Timeout>();
+	private static orgTimers = new BoundedTtlMap<string, NodeJS.Timeout>({
+		maxEntries: 1000,
+		touchOnGet: false,
+		onEvict: (_orgId, timer) => {
+			clearInterval(timer);
+		},
+	});
 	public static logger?: {
 		warn: (obj: unknown, msg?: string) => void;
 		error: (obj: unknown, msg?: string) => void;

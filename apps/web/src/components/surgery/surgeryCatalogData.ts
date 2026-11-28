@@ -177,7 +177,7 @@ export const SURGERY_IMPLANT_SYSTEMS: readonly SurgeryImplantSystemSpec[] = [
 			patientPriceKopecks: sys.patientPriceKopecks,
 		};
 	}),
-	ANKYLOS_SURGERY_SPEC,
+	...(Object.values(CANONICAL_IMPLANT_SYSTEMS).some((sys) => sys.id === "ankylos") ? [] : [ANKYLOS_SURGERY_SPEC]),
 ];
 
 export const SURGERY_DEFAULT_BATCHES: readonly SurgeryWarehouseBatchItem[] = DEFAULT_CANONICAL_IMPLANT_STOCK.map((item) => {
@@ -238,7 +238,7 @@ export const SURGERY_SCENARIOS: Record<SurgeryScenarioType, SurgeryScenarioDefin
 		standardMaterials: [{ id: "mat-art-2", name: "Анестетик Артикаин 4% 1:100 000 1.7 мл", unit: "карп.", quantity: 1, isWarehouseCritical: false }, { id: "mat-blade-1", name: "Лезвие скальпеля стерильное #15", unit: "шт.", quantity: 1, isWarehouseCritical: false }, { id: "mat-drain-1", name: "Дренаж ленточный резиновый йодоформный", unit: "шт.", quantity: 1, isWarehouseCritical: false }],
 	},
 	sinus_gbr: {
-		id: "scen-sinus-gbr", type: "sinus_gbr", titleRu: "Синус-лифтинг & НКР", subtitleRu: "Субантральная костная пластика, барьерная мембрана, пины",
+		id: "scen-sinus-gbr", type: "sinus_gbr", titleRu: "Синус-лифтинг и НКР", subtitleRu: "Субантральная костная пластика, барьерная мембрана, пины",
 		defaultToothFdi: 16, icd10: "K08.2", icd10Label: "Атрофия беззубого альвеолярного края", serviceCode: "A16.07.041", serviceNameRu: "Синус-лифтинг открытый (субантральная аугментация) и НКР", defaultPriceRub: 35000, defaultProtocolRu: SINUS_LIFT_GBR_NORM_TEXT, defaultRecommendationsRu: "Не сморкаться 14 дней. Капли в нос сосудосуживающие (Тизин / Отривин). Антибиотикотерапия 7 дней. Контрольный осмотр на 3 и 7 сутки.",
 		standardMaterials: [{ id: "mat-art-3", name: "Анестетик Артикаин 4% 1:100 000 1.7 мл", unit: "карп.", quantity: 2, isWarehouseCritical: false }, { id: "mat-graft-1", name: "Ксеногенный костный гранулят 0.5 г", unit: "упак.", quantity: 1, isWarehouseCritical: true }, { id: "mat-memb-1", name: "Коллагеновая резорбируемая мембрана 16×22 мм", unit: "шт.", quantity: 1, isWarehouseCritical: true }, { id: "mat-pins-1", name: "Титановые микропины для фиксации мембран", unit: "шт.", quantity: 4, isWarehouseCritical: false }],
 	},
@@ -296,8 +296,9 @@ const FALLBACK_IMPLANT_SYSTEM: SurgeryImplantSystemSpec = {
 	patientPriceKopecks: 3500000n,
 };
 
-export function getImplantSystemById(id: string): SurgeryImplantSystemSpec {
+export function findImplantSystemById(id: string): SurgeryImplantSystemSpec | null {
 	const target = id.toLowerCase().trim();
+	if (!target) return null;
 	const found = SURGERY_IMPLANT_SYSTEMS.find(
 		(s) =>
 			s.id.toLowerCase() === target ||
@@ -312,7 +313,11 @@ export function getImplantSystemById(id: string): SurgeryImplantSystemSpec {
 			(target === "astra" && s.id === "astra_tech") ||
 			(target === "astra_tech" && (s.id === "astra" || s.id === "astra_tech")),
 	);
-	return found ?? SURGERY_IMPLANT_SYSTEMS[0] ?? FALLBACK_IMPLANT_SYSTEM;
+	return found ?? null;
+}
+
+export function getImplantSystemById(id: string): SurgeryImplantSystemSpec {
+	return findImplantSystemById(id) ?? SURGERY_IMPLANT_SYSTEMS[0] ?? FALLBACK_IMPLANT_SYSTEM;
 }
 
 export function computeOsteointegrationExpectedDate(dateIso = new Date().toISOString(), toothFdi = 46): string {
@@ -354,9 +359,9 @@ export function calculateSurgeryFinancials(params: {
 			? params.overrideOperationPriceRub
 			: (scenario?.defaultPriceRub ?? 45000);
 	if (params.scenario === "implant") {
-		const sys = getImplantSystemById(params.implantBrand || "Osstem");
-		const implantCostRub = sys.unitCostRub || 12500;
-		const implantCostKopecks = sys.implantCostKopecks ? Number(sys.implantCostKopecks) : rublesToKopecks(implantCostRub);
+		const sys = params.implantBrand?.trim() ? findImplantSystemById(params.implantBrand) : null;
+		const implantCostRub = sys?.unitCostRub ?? 0;
+		const implantCostKopecks = sys?.implantCostKopecks ? Number(sys.implantCostKopecks) : rublesToKopecks(implantCostRub);
 		const sutureTrimmed = params.sutureName?.trim() || "";
 		const suture = sutureTrimmed
 			? SURGERY_SUTURE_CATALOG.find((s) =>
@@ -639,8 +644,8 @@ export function getSinusGbrSurgicalServices(params: { isClosedSinus: boolean; to
 			}
 			: {
 				code: EXTRACTION_SURGICAL_CODES.BONE_GRAFT,
-				nameRu: "Костная пластика (синус-лифтинг & НКР)",
-				name: "Костная пластика (синус-лифтинг & НКР)",
+				nameRu: "Костная пластика (синус-лифтинг и НКР)",
+				name: "Костная пластика (синус-лифтинг и НКР)",
 				priceRub: 35000,
 				priceKopecks: 3500000n,
 				quantity: 1,

@@ -3,7 +3,7 @@
  */
 import { D4wXmlTokenizer, type XmlNode } from "./d4wXmlTokenizer.js";
 import { Dental4WindowsXmlParser } from "./d4wParser.js";
-import { kopecksToRubles } from "@dental/shared";
+import { kopecksToRubles, todayDateKeyInTimeZone } from "@dental/shared";
 import type {
   D4WAppointmentRecord,
   D4WInvoiceRecord,

@@ -1,96 +1,173 @@
-/**
- * apps/api/src/tests/routes/inventoryIntegrityAndDeadlockDefense.test.ts
- *
- * Red Team Inquisitor Test Suite:
- * 1. Defect 1 (Deadlock 40P01 Defense): Deterministic itemId key sorting before SELECT ... FOR UPDATE locks.
- * 2. Defect 2 (Catalog Mutation ACID): Multi-tenant transactional isolation in item updates, patches, deletes, and BOM rules.
- * 3. Defect 3 (Mandate 8bm - Money Integrity): Exact rublesToKopecks and kopecksToRubles conversions in supplier waybills.
- * 4. Defect 4 (Mandate 8be - Anti-Any): Strict Partial<typeof inventoryItems.$inferInsert> typing without any blind cast.
- */
-
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import type { FastifyReply } from "fastify";
+import { fefoStockService } from "../../services/inventory/fefoStockService.js";
+import {
+	allocateFefoBatches,
+	calculateWriteOffCostKopecks,
+	compareFefoBatches,
+	kopecksToRubString,
+	rubToKopecks,
+} from "../../routes/inventory/consumables/consumableFefoAllocator.js";
+import {
+	handleCreateInventoryItem,
+	handleUpdateInventoryItem,
+} from "../../routes/inventory/itemCatalog/itemCatalogMutations.js";
+import {
+	acceptanceWaybillBodySchema,
+	inventoryCreateBodySchema,
+	inventoryUpdateBodySchema,
+} from "../../routes/inventory/types.js";
+import { executeFefoBatchDeduction } from "../../routes/inventory/writeOffModules/writeOffFefoExecution.js";
+import type { DatabaseTransaction } from "../../routes/inventory/writeOffModules/writeOffValidation.js";
 
-describe("Warehouse & Inventory Integrity & Deadlock Defense Suite (Mandates 8e, 8n, 8bm, 8be)", () => {
-	it("1. Defect 1: Sorting prevents PostgreSQL 40P01 deadlocks by enforcing lexicographic lock order", () => {
-		// Имитируем входящие списки с разным неупорядоченным порядком элементов
-		const batchA = [
-			{ itemId: "uuid-z-999", quantity: 2, name: "Бонд" },
-			{ itemId: "uuid-a-001", quantity: 1, name: "Анестетик" },
-			{ itemId: "uuid-m-555", quantity: 5, name: "Перчатки" },
-		];
+function createMockReply() {
+	let statusCode = 200;
+	let sentBody: unknown = null;
+	const reply = {
+		status(code: number) {
+			statusCode = code;
+			return reply;
+		},
+		code(code: number) {
+			statusCode = code;
+			return reply;
+		},
+		send(body: unknown) {
+			sentBody = body;
+			return reply;
+		},
+	};
+	return {
+		reply: reply as unknown as FastifyReply,
+		getStatus: () => statusCode,
+		getBody: () => sentBody,
+	};
+}
 
-		const batchB = [
-			{ itemId: "uuid-m-555", quantity: 3, name: "Перчатки" },
-			{ itemId: "uuid-z-999", quantity: 1, name: "Бонд" },
-			{ itemId: "uuid-a-001", quantity: 2, name: "Анестетик" },
-		];
-
-		const sortedA = [...batchA].sort((a, b) => {
-			const idA = a.itemId || a.name || "";
-			const idB = b.itemId || b.name || "";
-			return idA.localeCompare(idB);
-		});
-
-		const sortedB = [...batchB].sort((a, b) => {
-			const idA = a.itemId || a.name || "";
-			const idB = b.itemId || b.name || "";
-			return idA.localeCompare(idB);
-		});
-
-		// Порядок блокировок строго идентичен!
-		assert.deepEqual(
-			sortedA.map((x) => x.itemId),
-			["uuid-a-001", "uuid-m-555", "uuid-z-999"],
-			"batchA обязан быть отсортирован по возрастанию itemId",
+describe("Warehouse & Inventory Integrity & Deadlock Defense Suite (Live 6G SUT)", () => {
+	it("1. executeFefoBatchDeduction enforces deterministic lexicographic lock order to prevent 40P01 deadlocks", async (t) => {
+		const callOrders: string[][] = [];
+		let currentOrder: string[] = [];
+		t.mock.method(
+			fefoStockService,
+			"deductFefo",
+			async (_tx: unknown, opts: { inventoryItemId: string; requiredQty: number }) => {
+				currentOrder.push(opts.inventoryItemId);
+				return {
+					inventoryItemId: opts.inventoryItemId,
+					deductedQty: opts.requiredQty,
+					shortageQty: 0,
+					totalCostKopecks: 1000,
+					usedBatches: [],
+					overdraftApplied: false,
+				};
+			},
 		);
 
-		assert.deepEqual(
-			sortedB.map((x) => x.itemId),
-			["uuid-a-001", "uuid-m-555", "uuid-z-999"],
-			"batchB обязан быть отсортирован по возрастанию itemId, исключая перекрестную блокировку",
-		);
+		const fakeTx = {} as DatabaseTransaction;
+
+		currentOrder = [];
+		await executeFefoBatchDeduction(fakeTx, {
+			organizationId: "org-1",
+			effectiveUserId: "user-1",
+			items: [
+				{ inventoryItemId: "uuid-z-999", quantity: 2, name: "Бонд" },
+				{ inventoryItemId: "uuid-a-001", quantity: 1, name: "Анестетик" },
+				{ inventoryItemId: "uuid-m-555", quantity: 5, name: "Перчатки" },
+			],
+		});
+		callOrders.push(currentOrder);
+
+		currentOrder = [];
+		await executeFefoBatchDeduction(fakeTx, {
+			organizationId: "org-1",
+			effectiveUserId: "user-1",
+			items: [
+				{ inventoryItemId: "uuid-m-555", quantity: 3, name: "Перчатки" },
+				{ inventoryItemId: "uuid-z-999", quantity: 1, name: "Бонд" },
+				{ inventoryItemId: "uuid-a-001", quantity: 2, name: "Анестетик" },
+			],
+		});
+		callOrders.push(currentOrder);
+
+		assert.deepEqual(callOrders[0], ["uuid-a-001", "uuid-m-555", "uuid-z-999"]);
+		assert.deepEqual(callOrders[1], ["uuid-a-001", "uuid-m-555", "uuid-z-999"]);
 	});
 
-	it("2. Defect 3: Mandate 8bm - exact rublesToKopecks and kopecksToRubles conversions", () => {
-		// Проверка конвертации без плавающей точки
-		const unitCostRub = 1250.5;
-		const kopecks = rublesToKopecks(unitCostRub);
-		assert.equal(kopecks, 125050, "1250.50 руб должны быть точно 125050 копеек");
+	it("2. compareFefoBatches, allocateFefoBatches & kopeck arithmetic preserve exact integer invariants", () => {
+		const sorted = [
+			{ batchId: "b-late", remainingQty: 5, expirationDate: "2027-12-01", unitCostKopecks: 20000, createdAt: "2026-01-02T00:00:00Z" },
+			{ batchId: "b-nodate", remainingQty: 5, expirationDate: null, unitCostKopecks: 15000, createdAt: "2026-01-01T00:00:00Z" },
+			{ batchId: "b-early", remainingQty: 2, expirationDate: "2026-10-01", unitCostKopecks: 125050, createdAt: "2026-01-03T00:00:00Z" },
+		].sort(compareFefoBatches);
+		assert.deepEqual(sorted.map((b) => b.batchId), ["b-early", "b-late", "b-nodate"]);
 
-		const backToRub = kopecksToRubles(kopecks);
-		assert.equal(backToRub, 1250.5, "125050 копеек должны быть точно 1250.50 руб");
+		const alloc = allocateFefoBatches({
+			inventoryItemId: "item-1",
+			requiredQty: 3,
+			batches: sorted,
+		});
+		assert.equal(alloc.slices[0]?.batchId, "b-early");
+		assert.equal(alloc.slices[0]?.quantityDeducted, 2);
+		assert.equal(alloc.slices[1]?.batchId, "b-late");
+		assert.equal(alloc.slices[1]?.quantityDeducted, 1);
 
-		// Проверка 0.01 руб (1 копейка)
+		assert.equal(rubToKopecks(1250.5), 125050);
 		assert.equal(rublesToKopecks(0.01), 1);
-		assert.equal(kopecksToRubles(1), 0.01);
-
-		// Проверка копеечного расчета тотала
-		const qty = 3;
-		const totalKopecks = qty * kopecks;
-		assert.equal(totalKopecks, 375150);
-		assert.equal(kopecksToRubles(totalKopecks), 3751.5);
+		assert.equal(kopecksToRubles(125050), 1250.5);
+		assert.equal(kopecksToRubString(125050), "1250.50");
+		assert.equal(calculateWriteOffCostKopecks(3, 125050), 375150);
+		assert.equal(calculateWriteOffCostKopecks(-1, 125050), 0);
 	});
 
-	it("3. Defect 4: Mandate 8be - patchData adheres strictly to inventoryItems insert contract", () => {
-		// Проверка, что структура patchData типизирована без any
-		const patchFields = {
+	it("3. inventory schemas & mutation handlers validate strict contracts and reject invalid payloads with 400", async () => {
+		const validCreate = inventoryCreateBodySchema.safeParse({
 			name: "Артикаин 4%",
-			criticalThreshold: "10",
-			unitCostRub: "350",
-			stockQuantity: "25",
-			currentQty: "25",
-			packageMultiplier: "50",
+			criticalThreshold: 10,
+			unitCostRub: 350,
+			stockQuantity: 25,
+			packageMultiplier: 50,
 			sku: "ART-100",
 			barcode: "4601234567890",
 			lotNumber: "LOT-2026",
 			expirationDate: "2027-12-31",
-			updatedAt: new Date(),
-		};
+		});
+		assert.equal(validCreate.success, true);
 
-		assert.equal(typeof patchFields.name, "string");
-		assert.equal(typeof patchFields.updatedAt, "object");
-		assert.ok(patchFields.updatedAt instanceof Date);
+		const unknownFieldCreate = inventoryCreateBodySchema.safeParse({
+			name: "Артикаин 4%",
+			bogusField: "forbidden",
+		});
+		assert.equal(unknownFieldCreate.success, false, "Strict create schema must reject unknown keys");
+
+		const missingNameMock = createMockReply();
+		await handleCreateInventoryItem("org-1", { name: "   " }, {} as never, missingNameMock.reply);
+		assert.equal(missingNameMock.getStatus(), 400);
+
+		const badDateMock = createMockReply();
+		await handleUpdateInventoryItem(
+			"org-1",
+			"11111111-1111-4111-8111-111111111111",
+			{ name: "Перчатки", expirationDate: "not-a-date" },
+			badDateMock.reply,
+		);
+		assert.equal(badDateMock.getStatus(), 400);
+
+		const badUuidMock = createMockReply();
+		await handleUpdateInventoryItem("org-1", "invalid-uuid", { name: "Перчатки" }, badUuidMock.reply);
+		assert.equal(badUuidMock.getStatus(), 404);
+
+		const validUpdate = inventoryUpdateBodySchema.safeParse({ name: "Перчатки", stockQuantity: -2 });
+		assert.equal(validUpdate.success, true);
+
+		const invalidWaybill = acceptanceWaybillBodySchema.safeParse({
+			supplierName: "ООО Мед",
+			waybillNumber: "НК-1",
+			receiptDate: "2026-09-01",
+			items: [],
+		});
+		assert.equal(invalidWaybill.success, false, "Waybill with 0 items must fail validation");
 	});
 });

@@ -72,6 +72,7 @@ describe("TelegramStaffCockpitService Suite — Staff Dispatcher & Doctor Chairs
 				chatId: "123456789",
 				chatFingerprint: "fingerprint_doctor_1",
 				startPayload: tokenRes.token,
+				allowInMemoryChatLinkFallback: true,
 			});
 
 			assert.strictEqual(authRes.success, true);
@@ -104,6 +105,7 @@ describe("TelegramStaffCockpitService Suite — Staff Dispatcher & Doctor Chairs
 				chatId: "987654321",
 				chatFingerprint: "fingerprint_chief_1",
 				startPayload: tokenRes.token,
+				allowInMemoryChatLinkFallback: true,
 			});
 
 			assert.strictEqual(authRes.success, true);
@@ -130,6 +132,7 @@ describe("TelegramStaffCockpitService Suite — Staff Dispatcher & Doctor Chairs
 				chatId: "555444333",
 				chatFingerprint: "fingerprint_admin_1",
 				startPayload: tokenRes.token,
+				allowInMemoryChatLinkFallback: true,
 			});
 
 			assert.strictEqual(authRes.success, true);
@@ -155,6 +158,7 @@ describe("TelegramStaffCockpitService Suite — Staff Dispatcher & Doctor Chairs
 				chatId: "444333222",
 				chatFingerprint: "fingerprint_assistant_1",
 				startPayload: tokenRes.token,
+				allowInMemoryChatLinkFallback: true,
 			});
 
 			assert.strictEqual(authRes.success, true);
@@ -192,6 +196,7 @@ describe("TelegramStaffCockpitService Suite — Staff Dispatcher & Doctor Chairs
 				chatId: "111",
 				chatFingerprint: "fp1",
 				startPayload: tokenRes.token,
+				allowInMemoryChatLinkFallback: true,
 			});
 			assert.strictEqual(firstUse.success, true);
 
@@ -228,34 +233,83 @@ describe("TelegramStaffCockpitService Suite — Staff Dispatcher & Doctor Chairs
 		});
 	});
 
+	async function withProductionEnv<T>(fn: () => Promise<T>): Promise<T> {
+		const prevNodeEnv = process.env.NODE_ENV;
+		const prevDemoMode = process.env.DENTE_DEMO_MODE;
+		const prevShowcase = process.env.DENTE_DEMO_SHOWCASE;
+		const prevAllowDemoLogin = process.env.DENTE_ALLOW_DEMO_LOGIN;
+		process.env.NODE_ENV = "production";
+		delete process.env.DENTE_DEMO_MODE;
+		delete process.env.DENTE_DEMO_SHOWCASE;
+		delete process.env.DENTE_ALLOW_DEMO_LOGIN;
+		try {
+			return await fn();
+		} finally {
+			if (prevNodeEnv === undefined) delete process.env.NODE_ENV;
+			else process.env.NODE_ENV = prevNodeEnv;
+			if (prevDemoMode === undefined) delete process.env.DENTE_DEMO_MODE;
+			else process.env.DENTE_DEMO_MODE = prevDemoMode;
+			if (prevShowcase === undefined) delete process.env.DENTE_DEMO_SHOWCASE;
+			else process.env.DENTE_DEMO_SHOWCASE = prevShowcase;
+			if (prevAllowDemoLogin === undefined) delete process.env.DENTE_ALLOW_DEMO_LOGIN;
+			else process.env.DENTE_ALLOW_DEMO_LOGIN = prevAllowDemoLogin;
+		}
+	}
+
 	// =========================================================================
 	// 2. ФУНКЦИОНАЛ ДЛЯ ВРАЧА (УТРЕННИЙ ДАЙДЖЕСТ И РЕАЛТАЙМ-ПУШИ)
 	// =========================================================================
 	describe("2. Doctor Functionality: Shift Morning Digest & Realtime Pushes", () => {
-		it("builds morning shift digest with patient count, first appointment, and complex clinical cases", async () => {
-			const digest = await TelegramStaffCockpitService.buildDoctorMorningDigest({
-				organizationId: testOrgId,
-				doctorUserId: testDoctorId,
-				doctorName: "Д-р Смирнов А.В.",
-				dateKey: "2026-10-05",
-				crmBaseUrl: "https://dente.clinic",
-			});
+		it("builds morning shift digest cleanly for empty clinic day without fabricating fake patients in production", async () => {
+			const digest = await withProductionEnv(() =>
+				TelegramStaffCockpitService.buildDoctorMorningDigest({
+					organizationId: testOrgId,
+					doctorUserId: testDoctorId,
+					doctorName: "Д-р Смирнов А.В.",
+					dateKey: "2026-10-05",
+					crmBaseUrl: "https://dente.clinic",
+				}),
+			);
 
-			assert.ok(digest.patientCount > 0, "Should contain patient count");
-			assert.ok(digest.firstAppointmentTime, "Should detect first appointment time");
-			assert.ok(digest.complexCasesCount > 0, "Should detect complex cases (endo, implant)");
+			assert.strictEqual(digest.patientCount, 0);
+			assert.strictEqual(digest.firstAppointmentTime, null);
+			assert.strictEqual(digest.complexCasesCount, 0);
+			assert.ok(!digest.text.includes("Смирнова Анна Сергеевна"), "Must never fabricate fake patients in production");
 
 			assert.match(digest.text, /Доброе утро, Д-р Смирнов А\.В\./);
 			assert.match(digest.text, /Дайджест смены на 05\.10\.2026/);
-			assert.match(digest.text, /Первый приём:/);
-			assert.match(digest.text, /Сложные клинические случаи/);
-			assert.match(digest.text, /Эндодонтия/);
-			assert.match(digest.text, /Имплантация/);
+			assert.match(digest.text, /На сегодня записей нет|База данных временно недоступна/);
 
 			const flat = digest.replyMarkup.inline_keyboard.flat();
 			assert.ok(flat.some((b) => b.text.includes("Расписание на сегодня")));
 			assert.ok(flat.some((b) => b.text.includes("Смена принята")));
 			assert.ok(flat.some((b) => b.text.includes("Открыть ЭМК в CRM")));
+		});
+
+		it("builds morning shift digest with demo appointments ONLY when demo showcase mode is explicitly active", async () => {
+			const prevNodeEnv = process.env.NODE_ENV;
+			const prevDemo = process.env.DENTE_DEMO_MODE;
+			process.env.NODE_ENV = "development";
+			process.env.DENTE_DEMO_MODE = "1";
+			try {
+				const digest = await TelegramStaffCockpitService.buildDoctorMorningDigest({
+					organizationId: testOrgId,
+					doctorUserId: testDoctorId,
+					doctorName: "Д-р Смирнов А.В.",
+					dateKey: "2026-10-05",
+					crmBaseUrl: "https://dente.clinic",
+				});
+
+				assert.ok(digest.patientCount > 0, "Demo showcase mode should render showcase schedule");
+				assert.ok(digest.firstAppointmentTime);
+				assert.ok(digest.complexCasesCount > 0);
+				assert.match(digest.text, /Первый приём:/);
+				assert.match(digest.text, /Сложные клинические случаи/);
+			} finally {
+				process.env.NODE_ENV = prevNodeEnv;
+				if (prevDemo === undefined) delete process.env.DENTE_DEMO_MODE;
+				else process.env.DENTE_DEMO_MODE = prevDemo;
+			}
 		});
 
 		it("formats realtime event push: Patient Arrived in Hall", () => {
@@ -336,17 +390,20 @@ describe("TelegramStaffCockpitService Suite — Staff Dispatcher & Doctor Chairs
 	// 3. ФУНКЦИОНАЛ ДЛЯ ГЛАВВРАЧА И УПРАВЛЯЮЩЕГО (EXECUTIVE DIGEST)
 	// =========================================================================
 	describe("3. Executive Digest: Evening Financial Report & Low Inventory Alert", () => {
-		it("builds daily executive evening financial report with revenue breakdown, chair occupancy, and confirmation rate", async () => {
-			const report = await TelegramStaffCockpitService.buildExecutiveEveningReport({
-				organizationId: testOrgId,
-				dateKey: "2026-10-04",
-				crmBaseUrl: "https://dente.clinic",
-			});
+		it("builds honest 0 ₽ executive report on empty clinic day without fabricating 284 500 ₽", async () => {
+			const report = await withProductionEnv(() =>
+				TelegramStaffCockpitService.buildExecutiveEveningReport({
+					organizationId: testOrgId,
+					dateKey: "2026-10-04",
+					crmBaseUrl: "https://dente.clinic",
+				}),
+			);
 
-			assert.ok(report.totalRevenueRub > 0, "Must calculate total revenue");
-			assert.ok(report.cashRevenueRub >= 0);
-			assert.ok(report.cardRevenueRub >= 0);
-			assert.ok(report.sbpRevenueRub >= 0);
+			assert.strictEqual(report.totalRevenueRub, 0, "Empty clinic day must report honest 0 ₽ in production");
+			assert.strictEqual(report.cashRevenueRub, 0);
+			assert.strictEqual(report.cardRevenueRub, 0);
+			assert.strictEqual(report.sbpRevenueRub, 0);
+			assert.ok(!report.text.includes("284"), "Must never fabricate 284 500 ₽ in production");
 			assert.ok(report.chairOccupancyPercent >= 0 && report.chairOccupancyPercent <= 100);
 			assert.ok(report.confirmationRatePercent >= 0 && report.confirmationRatePercent <= 100);
 
@@ -361,6 +418,63 @@ describe("TelegramStaffCockpitService Suite — Staff Dispatcher & Doctor Chairs
 			const flat = report.replyMarkup.inline_keyboard.flat();
 			assert.ok(flat.some((b) => b.text.includes("Полный финансовый отчет в CRM")));
 			assert.ok(flat.some((b) => b.text.includes("Отчёт принят")));
+		});
+
+		it("reports honest DB unavailability without fabricating 284 500 ₽ or fake Articaine when query fails in production", async () => {
+			const invalidOrgId = "not-a-valid-uuid";
+			const [report, alert, digest] = await withProductionEnv(() =>
+				Promise.all([
+					TelegramStaffCockpitService.buildExecutiveEveningReport({
+						organizationId: invalidOrgId,
+						dateKey: "2026-10-04",
+						crmBaseUrl: "https://dente.clinic",
+					}),
+					TelegramStaffCockpitService.buildLowInventoryAlert({
+						organizationId: invalidOrgId,
+					}),
+					TelegramStaffCockpitService.buildDoctorMorningDigest({
+						organizationId: invalidOrgId,
+						doctorUserId: testDoctorId,
+						doctorName: "Д-р Смирнов А.В.",
+						dateKey: "2026-10-05",
+					}),
+				]),
+			);
+
+			assert.strictEqual(report.totalRevenueRub, 0);
+			assert.ok(!report.text.includes("284"));
+			assert.match(report.text, /База данных временно недоступна/);
+
+			assert.strictEqual(alert.isShortage, false);
+			assert.ok(!alert.text.includes("Артикаин"));
+			assert.match(alert.text, /База данных временно недоступна/);
+
+			assert.strictEqual(digest.patientCount, 0);
+			assert.ok(!digest.text.includes("Смирнова Анна Сергеевна"));
+			assert.match(digest.text, /База данных временно недоступна/);
+		});
+
+		it("builds demo 284 500 ₽ executive report ONLY when demo showcase mode is enabled", async () => {
+			const prevNodeEnv = process.env.NODE_ENV;
+			const prevDemo = process.env.DENTE_DEMO_MODE;
+			process.env.NODE_ENV = "development";
+			process.env.DENTE_DEMO_MODE = "1";
+			try {
+				const report = await TelegramStaffCockpitService.buildExecutiveEveningReport({
+					organizationId: testOrgId,
+					dateKey: "2026-10-04",
+					crmBaseUrl: "https://dente.clinic",
+				});
+
+				assert.strictEqual(report.totalRevenueRub, 284500);
+				assert.strictEqual(report.cashRevenueRub, 42000);
+				assert.strictEqual(report.cardRevenueRub, 186500);
+				assert.strictEqual(report.sbpRevenueRub, 56000);
+			} finally {
+				process.env.NODE_ENV = prevNodeEnv;
+				if (prevDemo === undefined) delete process.env.DENTE_DEMO_MODE;
+				else process.env.DENTE_DEMO_MODE = prevDemo;
+			}
 		});
 
 		it("builds critical low inventory alert for anesthetics and consumables", async () => {
@@ -400,14 +514,17 @@ describe("TelegramStaffCockpitService Suite — Staff Dispatcher & Doctor Chairs
 			assert.ok(flat.some((b) => b.text.includes("Принято")));
 		});
 
-		it("returns normal state when there is no inventory shortage", async () => {
-			const alert = await TelegramStaffCockpitService.buildLowInventoryAlert({
-				organizationId: testOrgId,
-				items: [], // no items provided and no shortages detected
-			});
+		it("returns normal state without fabricated Articaine/gloves when there is no inventory shortage in production", async () => {
+			const emptyInventoryOrgId = "00000000-0000-4000-8000-000000000099";
+			const alert = await withProductionEnv(() =>
+				TelegramStaffCockpitService.buildLowInventoryAlert({
+					organizationId: emptyInventoryOrgId,
+				}),
+			);
 
-			// When passing explicitly empty list to override fallback:
-			assert.ok(alert.text);
+			assert.strictEqual(alert.isShortage, false);
+			assert.ok(!alert.text.includes("Артикаин"), "Must never fabricate Articaine shortage in production");
+			assert.ok(!alert.text.includes("Перчатки"), "Must never fabricate gloves shortage in production");
 		});
 	});
 

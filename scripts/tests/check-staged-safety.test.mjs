@@ -400,3 +400,21 @@ it("executes real SUT", () => {
 	}).map((v) => v.pattern.rule);
 	assert.ok(grewHits.includes("ANTI_GOODHART_AST_TEST_PHANTOM_NO_SUT"));
 });
+
+test("frontend UI purity diff guards catch solid var(--teal) buttons, slate-800 cards, reg codes, and global pointer:coarse", () => {
+	assert.ok(
+		hits("apps/web/src/components/Btn.tsx", `<button className="bg-[var(--teal,#0d9488)] text-white">Save</button>`).includes(
+			"ANTI_BLIND_SOLID_VAR_TEAL_BTN",
+		),
+	);
+	assert.deepEqual(
+		hits("apps/web/src/components/Badge.tsx", `<span className="bg-[var(--teal)]/10 text-teal-600">OK</span>`),
+		[],
+	);
+	assert.ok(hits("apps/web/src/components/Card.tsx", `<div className="bg-[#1e293b] p-4">`).includes("ANTI_BLIND_BLUE_DARK_CARD"));
+	assert.ok(hits("apps/web/src/components/Card.tsx", `<div className="dark:bg-slate-800 p-4">`).includes("ANTI_BLIND_BLUE_DARK_CARD"));
+	assert.ok(hits("apps/web/src/components/Doc.tsx", `<span>Форма 043/у в IndexedDB</span>`).includes("ANTI_BLIND_DEV_JARGON"));
+	assert.ok(hits("apps/web/src/components/Bar.tsx", `<button className="[@media(pointer:coarse)]:h-12">`).includes("ANTI_BLIND_GLOBAL_POINTER_COARSE"));
+	assert.deepEqual(hits("scripts/lib/helper.mjs", `console.log("ok");`), []);
+	assert.deepEqual(hits(".agents/skills/visual-audit-pipeline/scripts/probe.mjs", `const re = /043\\/у|indexeddb/;`), []);
+});

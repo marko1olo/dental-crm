@@ -1,10 +1,5 @@
 /**
- * desktopSystemTools.test.ts — Red Team изолированное тестирование десктопного системного харнесса:
- * 1. Файловый I/O: read_clinical_file, write_clinical_file, list_patient_study_directory, open_patient_dropzone_folder.
- * 2. Процессы и фоновые задачи: run_workstation_command (WaitMsBeforeAsync, фоновый переход), manage_task (list, status, kill, send_input), schedule.
- * 3. Внешний медицинский софт клиники: launch_workstation_app, capture_workstation_screen.
- * 4. Локальный MCP-мост: кассы Атол/Штрих-М 54-ФЗ, 2D DataMatrix сканеры Честный Знак, TWAIN сенсоры.
- * 5. Red Team безопасность: валидация путей (SAM, System32, .ssh), блокировка опасных команд, изоляция арендаторов (organizationId).
+ * desktopSystemTools.test.ts — Red Team изолированное тестирование десктопного системного харнесса (6G Live SUT)
  */
 
 import assert from "node:assert/strict";
@@ -61,7 +56,6 @@ describe("Desktop Agent Harness — Red Team Безопасность и Вал�
 		assert.strictEqual(isPathSafe("/etc/shadow"), false);
 		assert.strictEqual(isPathSafe("/etc/sudoers"), false);
 
-		// Разрешенные пути
 		assert.strictEqual(
 			isPathSafe("C:\\DentalClinic\\XRayDropzone\\patient_123\\study.dcm"),
 			true,
@@ -82,13 +76,12 @@ describe("Desktop Agent Harness — Red Team Безопасность и Вал�
 		assert.strictEqual(isExtensionSafe("autorun.msi"), false);
 		assert.strictEqual(isExtensionSafe("trojan.scr"), false);
 
-		// Разрешенные клинические расширения
 		assert.strictEqual(isExtensionSafe("report.txt"), true);
 		assert.strictEqual(isExtensionSafe("data.json"), true);
 		assert.strictEqual(isExtensionSafe("export.xml"), true);
 		assert.strictEqual(isExtensionSafe("slice.dcm"), true);
 		assert.strictEqual(isExtensionSafe("snapshot.png"), true);
-		assert.strictEqual(isExtensionSafe("form043.pdf"), true);
+		assert.strictEqual(isExtensionSafe("clinical_record.pdf"), true);
 	});
 
 	test("isCommandSafe: блокирует опасные деструктивные команды и RCE инъекции", () => {
@@ -126,7 +119,6 @@ describe("Desktop Agent Harness — Red Team Безопасность и Вал�
 			false,
 		);
 
-		// Разрешенные диагностические команды
 		assert.strictEqual(
 			isCommandSafe('powershell -NoProfile -Command "Get-Service *atol*"'),
 			true,
@@ -151,7 +143,6 @@ describe("Desktop Agent Harness — Red Team Безопасность и Вал�
 		try {
 			delete process.env.IS_DESKTOP_EXE;
 			delete process.env.WORKSTATION_MODE;
-			// Без серверного флага даже desktop_native + allowLocalExecution обязаны возвращать false (P0-1)
 			assert.strictEqual(checkIsLocalWorkstation(WEB_CTX), false);
 			assert.strictEqual(checkIsLocalWorkstation(DESKTOP_CTX), false);
 
@@ -187,14 +178,13 @@ describe("Desktop Agent Harness — Файловый I/O (File Engine)", () => {
 	});
 
 	test("write_clinical_file: создает файл с созданием директорий, проверяет overwrite и append", async () => {
-		const targetFile = path.join(SCRATCH_DIR, "subfolder", "clinical_note.txt");
+		const targetDestination = path.join(SCRATCH_DIR, "subfolder", "clinical_note.txt");
 
-		// Первичная запись
-		const writeRes = (await handleWriteClinicalFile(
+		const writeRes = await handleWriteClinicalFile(
 			{
-				targetFile,
+				targetFile: targetDestination,
 				content:
-					"Строка 1: Дневник визита пациента 16 кариес\nСтрока 2: Анестезия Ультракаин Д-С 1.7 мл\n",
+					"Строка 1: Дневник визита пациента 16 кариес\nСтрока 2: Анестезия Д-С 1.7 мл\n",
 				overwrite: false,
 				append: false,
 				createDirectories: true,
@@ -202,16 +192,16 @@ describe("Desktop Agent Harness — Файловый I/O (File Engine)", () => {
 				isBase64: false,
 			},
 			DESKTOP_CTX,
-		)) as any;
+		);
 
 		assert.strictEqual(writeRes.success, true);
+		if (!("action" in writeRes)) assert.fail("Expected action field on successful write");
 		assert.strictEqual(writeRes.action, "written");
-		assert.ok(fs.existsSync(targetFile));
+		assert.strictEqual(fs.existsSync(targetDestination), true);
 
-		// Попытка перезаписать без overwrite=true должна вернуть ошибку
-		const errRes = (await handleWriteClinicalFile(
+		const errRes = await handleWriteClinicalFile(
 			{
-				targetFile,
+				targetFile: targetDestination,
 				content: "Попытка перезаписи",
 				overwrite: false,
 				append: false,
@@ -219,40 +209,50 @@ describe("Desktop Agent Harness — Файловый I/O (File Engine)", () => {
 				isBase64: false,
 			},
 			DESKTOP_CTX,
-		)) as any;
+		);
 
 		assert.strictEqual(errRes.success, false);
-		assert.ok(errRes.error.includes("уже существует"));
+		if (!("error" in errRes)) assert.fail("Expected error on overwrite without flag");
+		assert.strictEqual(errRes.error.includes("уже существует"), true);
 
-		// Дописывание в конец (append=true)
-		const appendRes = (await handleWriteClinicalFile(
+		const appendRes = await handleWriteClinicalFile(
 			{
-				targetFile,
-				content: "Строка 3: Поставлена пломба Estelite Asteria A2\n",
+				targetFile: targetDestination,
+				content: "Строка 3: Поставлена пломба композит A2\n",
 				overwrite: false,
 				append: true,
 				createDirectories: true,
 				isBase64: false,
 			},
 			DESKTOP_CTX,
-		)) as any;
+		);
 
 		assert.strictEqual(appendRes.success, true);
+		if (!("action" in appendRes)) assert.fail("Expected action field on append");
 		assert.strictEqual(appendRes.action, "appended");
 
-		const content = await fs.promises.readFile(targetFile, "utf8");
-		assert.ok(content.includes("Строка 1"));
-		assert.ok(content.includes("Строка 3"));
+		const readBack = await handleReadClinicalFile(
+			{ filePath: targetDestination, maxBytes: 10000 },
+			DESKTOP_CTX,
+		);
+		assert.strictEqual(readBack.success, true);
+		if (!("content" in readBack) || typeof readBack.content !== "string") {
+			assert.fail("Expected text content from handleReadClinicalFile");
+		}
+		assert.strictEqual(
+			readBack.content,
+			"Строка 1: Дневник визита пациента 16 кариес\nСтрока 2: Анестезия Д-С 1.7 мл\nСтрока 3: Поставлена пломба композит A2\n",
+		);
 	});
 
 	test("write_clinical_file: запись бинарного содержимого base64", async () => {
-		const targetFile = path.join(SCRATCH_DIR, "export_mock.bin");
+		const binaryDest = path.join(SCRATCH_DIR, "export_mock.bin");
 		const rawBytes = Buffer.from("DENTAL_XRAY_RAW_DATA_12345");
 		const b64 = rawBytes.toString("base64");
 
-		const res = (await handleWriteClinicalFile(
+		const res = await handleWriteClinicalFile(
 			{
-				targetFile,
+				targetFile: binaryDest,
 				content: b64,
 				isBase64: true,
 				overwrite: true,
@@ -260,16 +260,22 @@ describe("Desktop Agent Harness — Файловый I/O (File Engine)", () => {
 				createDirectories: true,
 			},
 			DESKTOP_CTX,
-		)) as any;
+		);
 
 		assert.strictEqual(res.success, true);
-		const written = await fs.promises.readFile(targetFile);
-		assert.deepStrictEqual(written, rawBytes);
+		const readRes = await handleReadClinicalFile(
+			{ filePath: binaryDest, asBinaryBase64: true, maxBytes: 10000 },
+			DESKTOP_CTX,
+		);
+		assert.strictEqual(readRes.success, true);
+		if (!("content" in readRes) || typeof readRes.content !== "string") {
+			assert.fail("Expected base64 content");
+		}
+		assert.deepStrictEqual(Buffer.from(readRes.content, "base64"), rawBytes);
 	});
 
 	test("write_clinical_file: отказ при записи в системные пути и конфликт overwrite/append", async () => {
-		// Конфликт аргументов
-		const conflict = (await handleWriteClinicalFile(
+		const conflict = await handleWriteClinicalFile(
 			{
 				targetFile: path.join(SCRATCH_DIR, "fail.txt"),
 				content: "test",
@@ -279,12 +285,12 @@ describe("Desktop Agent Harness — Файловый I/O (File Engine)", () => {
 				isBase64: false,
 			},
 			DESKTOP_CTX,
-		)) as any;
+		);
 		assert.strictEqual(conflict.success, false);
-		assert.ok(conflict.error.includes("нельзя одновременно"));
+		if (!("error" in conflict)) assert.fail("Expected conflict error");
+		assert.strictEqual(conflict.error.includes("нельзя одновременно"), true);
 
-		// Попытка записи в SAM
-		const samBlock = (await handleWriteClinicalFile(
+		const samBlock = await handleWriteClinicalFile(
 			{
 				targetFile: "C:\\Windows\\System32\\config\\SAM",
 				content: "evil",
@@ -294,12 +300,12 @@ describe("Desktop Agent Harness — Файловый I/O (File Engine)", () => {
 				isBase64: false,
 			},
 			DESKTOP_CTX,
-		)) as any;
+		);
 		assert.strictEqual(samBlock.success, false);
-		assert.ok(samBlock.error.includes("заблокирована"));
+		if (!("error" in samBlock)) assert.fail("Expected SAM security error");
+		assert.strictEqual(samBlock.error.includes("заблокирована"), true);
 
-		// Попытка сброса исполняемого файла .bat / .exe (Executable Drop Guard)
-		const exeBlock = (await handleWriteClinicalFile(
+		const exeBlock = await handleWriteClinicalFile(
 			{
 				targetFile: path.join(SCRATCH_DIR, "backdoor.bat"),
 				content: "@echo off\r\ncalc.exe",
@@ -309,13 +315,14 @@ describe("Desktop Agent Harness — Файловый I/O (File Engine)", () => {
 				isBase64: false,
 			},
 			DESKTOP_CTX,
-		)) as any;
+		);
 		assert.strictEqual(exeBlock.success, false);
-		assert.ok(exeBlock.error.includes("запись исполняемых файлов"));
+		if (!("error" in exeBlock)) assert.fail("Expected executable block error");
+		assert.strictEqual(exeBlock.error.includes("запись исполняемых файлов"), true);
 	});
 
 	test("read_clinical_file: срез по строкам (startLine, endLine), base64 и детекция DICOM", async () => {
-		const testFile = path.join(SCRATCH_DIR, "lines_test.txt");
+		const linesNote = path.join(SCRATCH_DIR, "lines_test.txt");
 		const lines = [
 			"Линия 1: Пациент Иванов И.И.",
 			"Линия 2: Жалобы на боли в 46 зубе",
@@ -323,38 +330,42 @@ describe("Desktop Agent Harness — Файловый I/O (File Engine)", () => {
 			"Линия 4: ЭОД 25 мкА",
 			"Линия 5: Диагноз K04.0 Пульпит",
 		];
-		await fs.promises.writeFile(testFile, lines.join("\n"), "utf8");
+		await fs.promises.writeFile(linesNote, lines.join("\n"), "utf8");
 
-		// Чтение строк 2-4
-		const sliceRes = (await handleReadClinicalFile(
+		const sliceRes = await handleReadClinicalFile(
 			{
-				filePath: testFile,
+				filePath: linesNote,
 				startLine: 2,
 				endLine: 4,
 				maxBytes: 10000,
 			},
 			DESKTOP_CTX,
-		)) as any;
+		);
 
 		assert.strictEqual(sliceRes.success, true);
+		if (!("content" in sliceRes) || typeof sliceRes.content !== "string") {
+			assert.fail("Expected slice content");
+		}
 		assert.strictEqual(sliceRes.startLine, 2);
 		assert.strictEqual(sliceRes.endLine, 4);
 		assert.strictEqual(sliceRes.totalLines, 5);
-		assert.ok(!sliceRes.content.includes("Линия 1"));
-		assert.ok(sliceRes.content.includes("Линия 2"));
-		assert.ok(sliceRes.content.includes("Линия 4"));
-		assert.ok(!sliceRes.content.includes("Линия 5"));
+		assert.strictEqual(sliceRes.content.includes("Линия 1"), false);
+		assert.strictEqual(sliceRes.content.includes("Линия 2"), true);
+		assert.strictEqual(sliceRes.content.includes("Линия 4"), true);
+		assert.strictEqual(sliceRes.content.includes("Линия 5"), false);
 
-		// Чтение в base64
-		const b64Res = (await handleReadClinicalFile(
+		const b64Res = await handleReadClinicalFile(
 			{
-				filePath: testFile,
+				filePath: linesNote,
 				asBinaryBase64: true,
 				maxBytes: 10000,
 			},
 			DESKTOP_CTX,
-		)) as any;
+		);
 		assert.strictEqual(b64Res.success, true);
+		if (!("content" in b64Res) || !("isBinaryBase64" in b64Res)) {
+			assert.fail("Expected binary base64 response");
+		}
 		assert.strictEqual(b64Res.isBinaryBase64, true);
 		assert.strictEqual(
 			Buffer.from(b64Res.content, "base64").toString("utf8"),
@@ -363,21 +374,21 @@ describe("Desktop Agent Harness — Файловый I/O (File Engine)", () => {
 	});
 
 	test("read_clinical_file: распознавание сигнатуры DICOM", async () => {
-		const dicomFile = path.join(SCRATCH_DIR, "sample_study.dcm");
-		// 128 байт преамбулы + 'DICM'
+		const dicomSample = path.join(SCRATCH_DIR, "sample_study.dcm");
 		const dicomBuffer = Buffer.alloc(200);
 		dicomBuffer.write("DICM", 128, 4, "ascii");
-		await fs.promises.writeFile(dicomFile, dicomBuffer);
+		await fs.promises.writeFile(dicomSample, dicomBuffer);
 
-		const res = (await handleReadClinicalFile(
+		const res = await handleReadClinicalFile(
 			{
-				filePath: dicomFile,
+				filePath: dicomSample,
 				maxBytes: 10000,
 			},
 			DESKTOP_CTX,
-		)) as any;
+		);
 
 		assert.strictEqual(res.success, true);
+		if (!("isDicom" in res)) assert.fail("Expected DICOM flags");
 		assert.strictEqual(res.isDicom, true);
 		assert.strictEqual(res.dicomMeta?.signature, "DICM");
 	});
@@ -386,7 +397,6 @@ describe("Desktop Agent Harness — Файловый I/O (File Engine)", () => {
 		const dropzone = getTenantDropzonePath(TEST_ORG_ID, TEST_PATIENT_ID);
 		await fs.promises.mkdir(dropzone, { recursive: true });
 
-		// Создаем тестовые файлы снимков
 		await fs.promises.writeFile(
 			path.join(dropzone, "tooth_16_rvg.rvg"),
 			"MOCK_RVG_SENSOR_DATA",
@@ -404,49 +414,48 @@ describe("Desktop Agent Harness — Файловый I/O (File Engine)", () => {
 			"<xml>Report</xml>",
 		);
 
-		const listRes = (await handleListPatientStudyDirectory(
+		const listRes = await handleListPatientStudyDirectory(
 			{
 				patientId: TEST_PATIENT_ID,
 				recursive: false,
 			},
 			DESKTOP_CTX,
-		)) as any;
+		);
 
 		assert.strictEqual(listRes.success, true);
+		if (!("files" in listRes)) assert.fail("Expected files array");
 		assert.strictEqual(listRes.totalFilesCount, 4);
 
-		const rvg = listRes.files.find((f: any) => f.extension === "rvg");
+		const rvg = listRes.files.find((f) => f.extension === "rvg");
 		assert.ok(rvg);
-		assert.strictEqual(rvg.detectedModality, "rvg");
+		assert.strictEqual(rvg?.detectedModality, "rvg");
 
-		const dcm = listRes.files.find((f: any) => f.extension === "dcm");
+		const dcm = listRes.files.find((f) => f.extension === "dcm");
 		assert.ok(dcm);
-		assert.strictEqual(dcm.isDicom, true);
-		assert.strictEqual(dcm.detectedModality, "cbct");
+		assert.strictEqual(dcm?.isDicom, true);
+		assert.strictEqual(dcm?.detectedModality, "cbct");
 
-		const photo = listRes.files.find((f: any) => f.extension === "png");
+		const photo = listRes.files.find((f) => f.extension === "png");
 		assert.ok(photo);
-		assert.strictEqual(photo.detectedModality, "photo");
+		assert.strictEqual(photo?.detectedModality, "photo");
 
-		// Очистка тестовой дропзоны
 		await fs.promises.rm(dropzone, { recursive: true, force: true });
 	});
 
 	test("open_patient_dropzone_folder: создает директорию пациента и возвращает путь", async () => {
-		const res = (await handleOpenPatientDropzoneFolder(
+		const res = await handleOpenPatientDropzoneFolder(
 			{
 				patientId: TEST_PATIENT_ID,
 				patientName: "Тестовый Пациент",
 			},
 			DESKTOP_CTX,
-		)) as any;
+		);
 
 		assert.strictEqual(res.success, true);
-		assert.ok(res.dropzonePath.includes(TEST_PATIENT_ID));
-		assert.ok(fs.existsSync(res.dropzonePath));
+		if (!("dropzonePath" in res)) assert.fail("Expected dropzonePath");
+		assert.strictEqual(res.dropzonePath.includes(TEST_PATIENT_ID), true);
+		assert.strictEqual(fs.existsSync(res.dropzonePath), true);
 
-		// Очистка
 		await fs.promises.rm(res.dropzonePath, { recursive: true, force: true });
 	});
 });
-

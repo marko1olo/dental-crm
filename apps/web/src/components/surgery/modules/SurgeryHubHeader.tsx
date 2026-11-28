@@ -34,7 +34,7 @@ export const SurgeryHubHeader: React.FC<SurgeryHubHeaderProps> = ({
 					</div>
 					<div className="min-w-0 flex-1 overflow-hidden">
 						<h2 id={titleId}>
-							<span>Хирургический хаб &amp; Паспорт имплантации</span>
+							<span>Хирургический хаб и Паспорт имплантации</span>
 							<span className="text-xs px-2 py-0.5 rounded-lg font-mono font-bold bg-[var(--primary)] text-white shrink-0">
 								{toothBadge}
 							</span>

@@ -78,7 +78,17 @@ export function useDoctorWalletLogic(
 
 			if (controller.signal.aborted) return;
 			if (!lastRes || !lastRes.ok) {
-				const errJson = await lastRes?.json().catch(() => null);
+				let errJson: { message?: string } | null = null;
+				if (lastRes) {
+					try {
+						errJson = (await lastRes.json()) as { message?: string } | null;
+					} catch (parseErr) {
+						clientLogger.warn("[DoctorWalletLogic] Error JSON parse failed", {
+							status: lastRes.status,
+							error: String(parseErr),
+						});
+					}
+				}
 				throw new Error(errJson?.message || `Ошибка сервера (${lastRes?.status || 500})`);
 			}
 			const json = (await lastRes.json()) as unknown;

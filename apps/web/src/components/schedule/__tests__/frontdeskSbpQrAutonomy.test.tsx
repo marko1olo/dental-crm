@@ -1,35 +1,23 @@
 /**
  * frontdeskSbpQrAutonomy.test.tsx
  *
- * Unit & structural tests for FrontdeskPerspectiveView facade and authentic ISO/IEC 18004 SBP QR matrix generator,
- * verification of complete fake black box eradication and clean delegation to ScheduleView
- * (Mandate 8s: Single Domain Authority, Mandate 8e: Doctor & Staff Autonomy, Mandate 8n: Solo Doctor & Small Clinic).
+ * Unit & structural tests for ScheduleView direct rendering and authentic ISO/IEC 18004 SBP QR matrix generation.
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { describe, it, test } from "node:test";
-import { fileURLToPath } from "node:url";
-import { generateQrCodeSvg } from "@dental/shared";
+import { describe, test } from "node:test";
+import {
+	SbpQrEngine,
+	calculateSbpMultiTenderSplit,
+	computeCrc16Ccitt,
+	generateQrCodeSvg,
+	generateSbpPaymentPackage,
+	parseEmvCoTlv,
+} from "@dental/shared";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";
 import { ScheduleView } from "../../../ScheduleView";
-
-export interface CheckoutItem {
-	appointmentId: string;
-	patientId: string;
-	patientName: string;
-	doctorName: string;
-	serviceSummary: string;
-	amountRub: number;
-	fiscalStatus: "pending" | "paid";
-	time: string;
-}
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const mockAppContext = {
 	dashboard: {
@@ -47,74 +35,85 @@ const mockAppContext = {
 } as unknown as AppLogicContextType;
 
 describe("ScheduleView — Direct Reception & Authentic SBP QR Matrix Generator", () => {
-	const schedulePath = path.resolve(__dirname, "../../../ScheduleView.tsx");
-	const sourceCode = fs.readFileSync(schedulePath, "utf8");
-
-	test("1. гарантирует полное отсутствие процедурного блоата и черных боксов-заглушек", () => {
-		assert.strictEqual(
-			sourceCode.includes('w-48 h-48 bg-slate-950 rounded-xl flex flex-col items-center justify-center text-white p-2'),
-			false,
-			"ScheduleView.tsx must NOT contain fake black box container",
-		);
-		assert.strictEqual(
-			sourceCode.includes('<QrCode size={160} className="text-white" />'),
-			false,
-			"ScheduleView.tsx must NOT contain fake static <QrCode size={160} />",
-		);
-	});
-
-	test("2. напрямую рендерит канонический ScheduleView без фасадов (Мандат 8s)", () => {
+	test("1. рендерит рабочий ScheduleView без фейковых черных заглушек и статичного QR", () => {
 		const html = renderToStaticMarkup(
 			<AppLogicProvider value={mockAppContext}>
 				<ScheduleView />
 			</AppLogicProvider>,
 		);
-		assert.ok(html.length > 0, "Rendered HTML must not be empty");
+		assert.ok(html.includes('data-testid="schedule-view"'), "Must render canonical schedule-view");
+		assert.equal(html.includes("w-48 h-48 bg-slate-950"), false, "Must NOT render fake black box");
+		assert.equal(html.includes('width="160" height="160"'), false, "Must NOT render static placeholder SVG");
 	});
 
-	test("3. валидирует расчет SBP NSPK payload с точными копейками и параметрами банка", () => {
-		const testAppointmentId = "apt-test-44";
-		const testAmountRub = 4500.5;
-		const testPatient = "Иванов И.И.";
+	test("2. рендерит empty state при отсутствии dashboard и не падает", () => {
+		const emptyContext = {
+			dashboard: null,
+			auth: mockAppContext.auth,
+		} as unknown as AppLogicContextType;
+		const html = renderToStaticMarkup(
+			<AppLogicProvider value={emptyContext}>
+				<ScheduleView />
+			</AppLogicProvider>,
+		);
+		assert.ok(html.length > 0, "Empty state HTML must be rendered");
+		assert.equal(html.includes('data-testid="schedule-view"'), false);
+	});
 
-		const expectedSumKopecks = Math.round(testAmountRub * 100);
-		assert.strictEqual(expectedSumKopecks, 450050, "4500.50 RUB must equal 450050 kopecks");
-
-		const sbpPayload =
-			`https://qr.nspk.ru/AD1000${encodeURIComponent(testAppointmentId)}` +
-			`?type=02&bank=100000000004&sum=${expectedSumKopecks}&cur=RUB&crc=${encodeURIComponent(testPatient)}`;
-
-		assert.ok(sbpPayload.startsWith("https://qr.nspk.ru/AD1000apt-test-44"));
-		assert.ok(sbpPayload.includes("type=02"));
-		assert.ok(sbpPayload.includes("bank=100000000004"));
-		assert.ok(sbpPayload.includes("sum=450050"));
-		assert.ok(sbpPayload.includes("cur=RUB"));
-		assert.ok(sbpPayload.includes(`crc=${encodeURIComponent(testPatient)}`));
-
-		const svg = generateQrCodeSvg(sbpPayload, {
-			size: 192,
-			margin: 2,
-			title: `Оплата по СБП: ${testPatient}`,
+	test("3. формирует пакет СБП с CRC16-CCITT, EMVCo TLV и ISO/IEC 18004 SVG и отклоняет подделанный CRC", () => {
+		const pkg = generateSbpPaymentPackage({
+			operationId: "ad1000-appt-44",
+			bankMemberId: "100000000004",
+			amountKopecks: 450050,
+			currency: "RUB",
+			invoiceId: "INV-44",
+			merchantName: "Клиника ДЕНТЕ",
+			merchantCity: "Москва",
+			mcc: "8021",
+			ttlSeconds: 1800,
+			description: "Терапевтический прием",
 		});
 
-		assert.ok(svg.startsWith("<svg"), "Generated SVG starts with <svg");
-		assert.ok(svg.endsWith("</svg>"), "Generated SVG ends with </svg>");
-		assert.ok(svg.includes('viewBox="0 0'), "SVG contains viewBox attribute");
-		assert.ok(svg.includes("shape-rendering:crispEdges"), "SVG specifies crispEdges for pixel-perfect scan");
+		assert.ok(pkg.nspkUrl.startsWith("https://qr.nspk.ru/AD1000APPT44"));
+		assert.ok(pkg.nspkUrl.includes("sum=450050"));
+		assert.ok(pkg.sbpDeepLink.startsWith("sbp://qr.nspk.ru/"));
+		assert.equal(pkg.crc16.length, 4);
+
+		const verified = SbpQrEngine.verifyNspkPayload(pkg.nspkUrl);
+		assert.equal(verified.isValid, true);
+		assert.equal(verified.amountKopecks, 450050);
+		assert.equal(verified.bankMemberId, "100000000004");
+
+		const tampered = SbpQrEngine.verifyNspkPayload(
+			pkg.nspkUrl.replace("sum=450050", "sum=100"),
+		);
+		assert.equal(tampered.isValid, false, "Tampered amount must fail CRC16 check");
+
+		const parsedTlv = parseEmvCoTlv(pkg.emvCoTlvPayload);
+		assert.equal(parsedTlv.isValid, true, "EMVCo TLV CRC16 must verify");
+		assert.equal(computeCrc16Ccitt(pkg.nspkUrl.split("&crc=")[0]!), pkg.crc16);
+
+		const svg = generateQrCodeSvg(pkg.nspkUrl, {
+			size: 192,
+			margin: 2,
+			title: "Оплата по СБП: Иванов И.И.",
+		});
+		assert.ok(svg.startsWith("<svg"));
+		assert.ok(svg.endsWith("</svg>"));
+		assert.ok(svg.includes("shape-rendering:crispEdges"));
 	});
 
-	test("4. поддерживает интерфейс CheckoutItem для кассовых расчетов", () => {
-		const sampleItem: CheckoutItem = {
-			appointmentId: "apt-001",
-			patientId: "patient-001",
-			patientName: "Петров П.П.",
-			doctorName: "Д-р Иванов",
-			serviceSummary: "Консультация",
-			amountRub: 1500,
-			fiscalStatus: "pending",
-			time: "10:00",
-		};
-		assert.strictEqual(sampleItem.fiscalStatus, "pending");
-		assert.strictEqual(sampleItem.amountRub, 1500);
+	test("4. рассчитывает сплит-оплату СБП в копейках без потери точности", () => {
+		const split = calculateSbpMultiTenderSplit({
+			totalAmountRub: 1500,
+			depositAvailableRub: 500,
+			orderId: "ORD-SBP-1",
+			clinicName: "Клиника ДЕНТЕ",
+		});
+		assert.equal(split.totalAmountKopecks, 150000);
+		assert.equal(split.depositOffsetKopecks, 50000);
+		assert.equal(split.sbpChargeKopecks, 100000);
+		assert.equal(split.isFullyCoveredByDeposit, false);
+		assert.ok(split.sbpQr?.nspkUrl.includes("sum=100000"));
 	});
 });

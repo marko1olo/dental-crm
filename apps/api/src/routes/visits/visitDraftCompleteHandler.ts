@@ -1,4 +1,4 @@
-import { generateUuidV7 } from "@dental/shared";
+import { generateUuidV7, resolveValidIanaTimeZone, todayDateKeyInTimeZone } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -10,6 +10,7 @@ import { onTenantTxCommit, withTenantReadCtx, withTenantWriteCtx } from "../../d
 import { appointments, visits } from "../../db/schema.js";
 import { acceptVisitDraftInDb } from "../../db/visitsQuery.js";
 import { getRequestIdentity } from "../../security/identity.js";
+import { clinicTimeZone } from "../../services/reports/managerReports/timezone.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { buildEffectiveDraft } from "./buildEffectiveDraft.js";
 import { computeDoctorTodayEarningsInTx } from "../doctorPortal/todaySummaryQuery.js";
@@ -167,7 +168,8 @@ export async function handleCompleteVisit(
 			});
 
 			let doctorUserIdForSummary = identity.userId ?? null;
-			if (!doctorUserIdForSummary && result.visit.appointmentId) {
+			const visitAppointmentId = result.visit.appointmentId;
+			if (!doctorUserIdForSummary && visitAppointmentId) {
 				const apptRow = await withTenantReadCtx(orgId, async (tx) =>
 					tx
 						.select({ doctorUserId: appointments.doctorUserId })
@@ -175,7 +177,7 @@ export async function handleCompleteVisit(
 						.where(
 							and(
 								eq(appointments.organizationId, orgId),
-								eq(appointments.id, result.visit.appointmentId as string),
+								eq(appointments.id, visitAppointmentId),
 							),
 						)
 						.limit(1),
@@ -185,16 +187,17 @@ export async function handleCompleteVisit(
 
 			if (doctorUserIdForSummary) {
 				try {
-					const todayIso = new Date().toISOString().slice(0, 10);
-					const computed = await withTenantReadCtx(orgId, async (tx) =>
-						computeDoctorTodayEarningsInTx({
+					const computed = await withTenantReadCtx(orgId, async (tx) => {
+						const tz = resolveValidIanaTimeZone(await clinicTimeZone(orgId, tx));
+						const todayIso = todayDateKeyInTimeZone(tz);
+						return computeDoctorTodayEarningsInTx({
 							tx,
 							organizationId: orgId,
 							doctorId: doctorUserIdForSummary,
 							dateIso: todayIso,
 							visitIdForDelta: trimmedVisitId,
-						}),
-					);
+						});
+					});
 					doctorEarningsDeltaKopecks = computed.visitEarningsDeltaKopecks;
 					doctorTodayTotalKopecks = computed.summary.earnedTodayKopecks;
 				} catch (earningsErr) {

@@ -261,9 +261,6 @@ export const DmsStudioModal: React.FC<DmsStudioModalProps> = ({
 						Итого к сплиту: <strong>{formatDisplayRub(totalBillRub)}</strong> (Страховая: {formatDisplayRub(totalDmsCoveredRub)} • Пациент: {formatDisplayRub(totalPatientCoPayRub)})
 					</div>
 					<div className="dms-footer-actions">
-						<button type="button" onClick={onClose} className="dms-btn-secondary dente-btn-secondary">
-							Закрыть
-						</button>
 						{/* EXACTLY ONE PRIMARY CTA: Mandate 8am & 8e */}
 						<button
 							type="button"

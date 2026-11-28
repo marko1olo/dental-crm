@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
 	denteTelegramWebhookResponseSchema,
 	denteTelegramWebhookUpdateSchema,
@@ -26,10 +27,13 @@ import {
 	TelegramReferralLoyaltyService,
 } from "../../services/telegram/TelegramReferralLoyaltyService.js";
 import { TelegramStaffCockpitService } from "../../services/telegram/TelegramStaffCockpitService.js";
+import {
+	isTelegramInMemoryMode,
+	type TelegramDbSyncOptions,
+} from "./telegramDbSync.js";
 import type {
 	TelegramRuntimeContext,
 	TelegramWebhookReplyPackage,
-	UnknownRecord,
 } from "./types.js";
 import {
 	isRecord,
@@ -101,16 +105,23 @@ export async function sendWebhookSuggestedReply(
 	return telegramWebhookReplyFailureWarning(result);
 }
 
-export async function handleWebhook(
-	request: FastifyRequest<{
-		Params: { organizationId?: string; botConfigId?: string; botTokenHash?: string };
-	}>,
-	reply: FastifyReply,
-) {
-	let targetOrgId = request.params.organizationId ?? null;
-	let targetBotConfigId = request.params.botConfigId ?? null;
+const webhookParamsSchema = z.object({
+	organizationId: z.string().optional(),
+	botConfigId: z.string().optional(),
+	botTokenHash: z.string().optional(),
+});
 
-	const botTokenHash = request.params.botTokenHash;
+export async function handleWebhook(
+	request: FastifyRequest,
+	reply: FastifyReply,
+	routeOptions?: TelegramDbSyncOptions,
+) {
+	const parsedParams = webhookParamsSchema.safeParse(request.params ?? {});
+	const routeParams = parsedParams.success ? parsedParams.data : {};
+	let targetOrgId = routeParams.organizationId ?? null;
+	let targetBotConfigId = routeParams.botConfigId ?? null;
+
+	const botTokenHash = routeParams.botTokenHash;
 	if (botTokenHash) {
 		const supervisorBot = telegramMultiTenantSupervisor.getBotByTokenHash(botTokenHash);
 		if (!supervisorBot) {
@@ -231,9 +242,18 @@ export async function handleWebhook(
 				message: parsedUpdate.message,
 			});
 		}
-		const update = parsedUpdate.value as UnknownRecord & { update_id: number };
+		const parsedRawUpdate = parsedUpdate.value;
+		if (!isRecord(parsedRawUpdate) || typeof parsedRawUpdate.update_id !== "number") {
+			return reply.code(400).send({
+				ok: false,
+				error: "TelegramWebhookValidationFailed",
+				message: "Некорректный формат update_id в обновлении Telegram.",
+			});
+		}
+		const update = parsedRawUpdate;
+		const updateId = parsedRawUpdate.update_id;
 		const isDuplicate = await hasDenteTelegramWebhookUpdate(
-			update.update_id,
+			updateId,
 			runtime.organizationId,
 			runtime.botConfigId,
 		);
@@ -305,7 +325,7 @@ export async function handleWebhook(
 			const startPayload = messageText.trim().replace(/^\/start\s+/i, "");
 			const fromUser =
 				isRecord(update.message) && isRecord(update.message.from)
-					? (update.message.from as Record<string, unknown>)
+					? update.message.from
 					: undefined;
 			const refereeProfile = fromUser
 				? {
@@ -399,7 +419,7 @@ export async function handleWebhook(
 			const startPayload = messageText.trim().replace(/^\/start\s+/i, "");
 			const fromUser =
 				isRecord(update.message) && isRecord(update.message.from)
-					? (update.message.from as Record<string, unknown>)
+					? update.message.from
 					: undefined;
 			const telegramUser = fromUser
 				? {
@@ -532,13 +552,14 @@ export async function handleWebhook(
 	let domainState: DomainState;
 	try {
 		domainState = await withTenantCtx(runtime.organizationId, async () =>
-			hydrateTelegramDomainState(request, runtime.organizationId),
+			hydrateTelegramDomainState(request, runtime.organizationId, routeOptions),
 		);
 	} catch (err) {
-		if (
-			isDbConnectionError(err) &&
-			(process.env.NODE_ENV === "test" || !process.env.DATABASE_URL)
-		) {
+		if (isDbConnectionError(err) && isTelegramInMemoryMode(routeOptions?.inMemoryFallback)) {
+			request.log.warn(
+				{ err, organizationId: runtime.organizationId },
+				"[Telegram Webhook] DB unavailable in in-memory mode; falling back to inMemoryDomainState",
+			);
 			domainState = inMemoryDomainState;
 		} else {
 			throw err;
@@ -549,7 +570,15 @@ export async function handleWebhook(
 	return await executeWebhook(domainState);
 }
 
-export async function registerTelegramWebhookRoutes(app: FastifyInstance) {
+const telegramPollingDispatchResponseSchema = z.object({
+	ok: z.boolean().optional(),
+	action: z.string().optional(),
+});
+
+export async function registerTelegramWebhookRoutes(
+	app: FastifyInstance,
+	routeOptions?: TelegramDbSyncOptions,
+) {
 	telegramMultiTenantSupervisor.setDefaultPollingHandler(async ({
 		organizationId,
 		botConfigId,
@@ -562,10 +591,22 @@ export async function registerTelegramWebhookRoutes(app: FastifyInstance) {
 			headers: webhookSecret ? { [telegramSecretHeader]: webhookSecret } : {},
 			payload: isRecord(update) ? update : {},
 		});
-		let resolved: { ok?: boolean; action?: string } | null = null;
+		let resolved: { ok?: boolean | undefined; action?: string | undefined } | null = null;
 		try {
-			resolved = res.json() as { ok?: boolean; action?: string };
-		} catch {
+			const parsedRes = telegramPollingDispatchResponseSchema.safeParse(res.json());
+			if (parsedRes.success) {
+				resolved = parsedRes.data;
+			} else {
+				app.log.warn(
+					{ organizationId, botConfigId, issue: parsedRes.error.issues[0]?.message ?? "invalid_schema" },
+					"[Telegram Polling] Unexpected response shape from webhook inject handler",
+				);
+			}
+		} catch (err) {
+			app.log.warn(
+				{ err, organizationId, botConfigId },
+				"[Telegram Polling] Failed to parse webhook inject response JSON",
+			);
 			resolved = null;
 		}
 		return {
@@ -575,12 +616,18 @@ export async function registerTelegramWebhookRoutes(app: FastifyInstance) {
 	});
 
 	const options = { bodyLimit: 256 * 1024, config: { tenantTxSelfManaged: true } };
-	app.post("/api/telegram/webhook", options, handleWebhook);
+	const routeHandler = (request: FastifyRequest, reply: FastifyReply) =>
+		handleWebhook(request, reply, routeOptions);
+	// door-validation: none — Delegated to handleWebhook which validates request.body via denteTelegramWebhookUpdateSchema
+	app.post("/api/telegram/webhook", options, routeHandler);
+	// door-validation: none — Delegated to handleWebhook which validates request.body via denteTelegramWebhookUpdateSchema
 	app.post(
 		"/api/telegram/webhook/:organizationId/:botConfigId",
 		options,
-		handleWebhook,
+		routeHandler,
 	);
-	app.post("/api/telegram/webhook/:organizationId", options, handleWebhook);
-	app.post("/api/telegram/webhook/token/:botTokenHash", options, handleWebhook);
+	// door-validation: none — Delegated to handleWebhook which validates request.body via denteTelegramWebhookUpdateSchema
+	app.post("/api/telegram/webhook/:organizationId", options, routeHandler);
+	// door-validation: none — Delegated to handleWebhook which validates request.body via denteTelegramWebhookUpdateSchema
+	app.post("/api/telegram/webhook/token/:botTokenHash", options, routeHandler);
 }

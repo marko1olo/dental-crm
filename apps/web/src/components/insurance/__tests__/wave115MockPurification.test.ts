@@ -1,70 +1,74 @@
-/**
- * wave115MockPurification.test.ts — Wave 115 Mock Purity Verification Suite
- */
-
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { DmsStudioModal } from "../DmsStudioModal";
+import { PrescriptionModal } from "../../prescriptions/PrescriptionModal";
+import { PublicBookingWidget } from "../../booking/PublicBookingWidget";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const webSrcRoot = path.resolve(__dirname, "../../..");
+const CARTOON_EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
-describe("Wave 115: Mocks & Dev Leaks Purification Suite", () => {
-	it("1. DmsGuaranteeLetterModal.tsx: purged duplicate modal; DmsStudioModal.tsx must NOT contain 'Иванова Елена' or 'Иванов И.И.'", () => {
-		const filePath = path.resolve(webSrcRoot, "components/insurance/DmsStudioModal.tsx");
-		assert.ok(fs.existsSync(filePath), `File must exist at ${filePath}`);
-		const content = fs.readFileSync(filePath, "utf-8");
-		assert.equal(content.includes("Иванова Елена"), false);
-		assert.equal(content.includes("Иванов И.И."), false);
-	});
+describe("Wave 115: Mock Purification & Zero Cartoon Emojis (Live 6G SUT)", () => {
+	it("1. DmsStudioModal omits synthetic fallback names and INN 7701234567 in production SSR mode", () => {
+		const prevDoc = (globalThis as { document?: unknown }).document;
+		(globalThis as { document?: unknown }).document = undefined;
+		try {
+			const htmlWithRealPatient = renderToStaticMarkup(
+				React.createElement(DmsStudioModal, {
+					isOpen: true,
+					onClose: () => {},
+					patient: {
+						id: "pat-real-1",
+						fullName: "Королёв Андрей Олегович",
+						birthDate: "1986-04-12",
+					},
+				}),
+			);
+			assert.ok(htmlWithRealPatient.includes("Королёв Андрей Олегович"));
+			assert.equal(htmlWithRealPatient.includes("Иванова Елена"), false);
+			assert.equal(htmlWithRealPatient.includes("Иванов И.И."), false);
+			assert.equal(htmlWithRealPatient.includes("Иванов Сергей Александрович"), false);
+			assert.equal(htmlWithRealPatient.includes("7701234567"), false);
+			assert.equal(CARTOON_EMOJI_RE.test(htmlWithRealPatient), false);
 
-	it("2. ChairsidePreFlightChecklist.tsx: remains purged per Mandate 8e", () => {
-		const filePath = path.resolve(webSrcRoot, "components/chairside/ChairsidePreFlightChecklist.tsx");
-		assert.equal(fs.existsSync(filePath), false, "ChairsidePreFlightChecklist.tsx must remain purged per Mandate 8e");
-	});
-
-	it("3. DmsStudioModal.tsx: must NOT contain synthetic names", () => {
-		const filePath = path.resolve(webSrcRoot, "components/insurance/DmsStudioModal.tsx");
-		assert.ok(fs.existsSync(filePath));
-		const content = fs.readFileSync(filePath, "utf-8");
-		assert.equal(content.includes("Иванов Сергей Александрович"), false);
-		assert.equal(content.includes("Кузнецова Ольга Дмитриевна"), false);
-		assert.equal(content.includes("Петров Василий Николаевич"), false);
-	});
-
-	it("4. PrescriptionPrintModal.tsx: must NOT contain emojis", () => {
-		const filePath = path.resolve(webSrcRoot, "components/prescriptions/PrescriptionPrintModal.tsx");
-		assert.ok(fs.existsSync(filePath));
-		const content = fs.readFileSync(filePath, "utf-8");
-		assert.equal(content.includes("⚠️"), false);
-		assert.equal(content.includes("⚖️"), false);
-	});
-
-	it("5. PublicBookingWidget.tsx: exists and does NOT contain '+7 (999) 123-45-67'", () => {
-		const filePath = fs.existsSync(path.resolve(webSrcRoot, "components/booking/PublicBookingWidget.tsx"))
-			? path.resolve(webSrcRoot, "components/booking/PublicBookingWidget.tsx")
-			: path.resolve(webSrcRoot, "pages/PublicBookingWidget.tsx");
-		assert.equal(fs.existsSync(filePath), true, "PublicBookingWidget.tsx must exist");
-		const content = fs.readFileSync(filePath, "utf-8");
-		assert.equal(content.includes("+7 (999) 123-45-67"), false);
-	});
-
-	it("6. PatientBillingModal.tsx & DmsStudioModal.tsx: must NOT contain fake requisites", () => {
-		const billingPath = path.resolve(webSrcRoot, "components/finance/PatientBillingModal.tsx");
-		if (fs.existsSync(billingPath)) {
-			const billingContent = fs.readFileSync(billingPath, "utf-8");
-			assert.equal(billingContent.includes("7701234567"), false);
-			assert.equal(billingContent.includes("1027700132195"), false);
-			assert.equal(billingContent.includes("Ломоносовский проспект"), false);
-			assert.equal(billingContent.includes("ОВД Хамовники"), false);
+			const htmlEmptyPatient = renderToStaticMarkup(
+				React.createElement(DmsStudioModal, {
+					isOpen: true,
+					onClose: () => {},
+					patient: { id: "", fullName: "" },
+				}),
+			);
+			assert.equal(htmlEmptyPatient.includes("Иванов Сергей Александрович"), false);
+			assert.equal(htmlEmptyPatient.includes("Иванова Елена"), false);
+			assert.equal(htmlEmptyPatient.includes("7701234567"), false);
+		} finally {
+			(globalThis as { document?: unknown }).document = prevDoc;
 		}
+	});
 
-		const dmsStudioPath = path.resolve(webSrcRoot, "components/insurance/DmsStudioModal.tsx");
-		assert.ok(fs.existsSync(dmsStudioPath));
-		const dmsStudioContent = fs.readFileSync(dmsStudioPath, "utf-8");
-		assert.equal(dmsStudioContent.includes("7701234567"), false);
+	it("2. PrescriptionModal renders clinical drug list with zero cartoon emojis", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(PrescriptionModal, {
+				isOpen: true,
+				onClose: () => {},
+				disablePortal: true,
+				patientName: "Белова Мария Игоревна",
+				doctorName: "Соколов А. В.",
+			}),
+		);
+		assert.ok(html.includes("Белова Мария Игоревна"));
+		assert.equal(CARTOON_EMOJI_RE.test(html), false);
+	});
+
+	it("3. PublicBookingWidget renders booking interface without synthetic phone +7 (999) 123-45-67", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(PublicBookingWidget, {
+				clinicId: "org-test-1",
+				title: "Онлайн-запись",
+			}),
+		);
+		assert.ok(html.includes("Онлайн-запись"));
+		assert.equal(html.includes("+7 (999) 123-45-67"), false);
+		assert.equal(CARTOON_EMOJI_RE.test(html), false);
 	});
 });

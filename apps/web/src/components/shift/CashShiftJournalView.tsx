@@ -100,10 +100,22 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 				clientLogger.warn("[CashShiftJournalView] Ошибка загрузки смен", { status: res.status }, { module: "Shift" });
 				return;
 			}
-			const json = await res.json().catch(() => null);
-			const list = json?.data ?? json?.shifts;
-			if (Array.isArray(list)) {
-				setShifts(list);
+			const json: unknown = await res.json();
+			const list =
+				json && typeof json === "object"
+					? "data" in json && Array.isArray(json.data)
+						? json.data
+						: "shifts" in json && Array.isArray(json.shifts)
+							? json.shifts
+							: null
+					: null;
+			if (list) {
+				setShifts(
+					list.filter(
+						(item): item is CashShiftItem =>
+							Boolean(item) && typeof item === "object" && "id" in item && "shiftNumber" in item,
+					),
+				);
 			}
 		} catch (err) {
 			clientLogger.warn("[CashShiftJournalView] Не удалось обновить журнал смен", err, { module: "Shift" });
@@ -155,8 +167,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 							type="button"
 							onClick={() => onOpenShiftCloseModal?.(activeOpenShift.shiftNumber)}
 							data-testid="btn-journal-close-shift"
-							className="h-11 md:h-9 px-4 md:px-3.5 rounded-xl md:rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-base md:text-sm font-medium shadow-sm transition-all inline-flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-							style={{ backgroundColor: "var(--primary)", color: "#ffffff" }}
+							className="h-11 md:h-9 px-4 md:px-3.5 rounded-xl md:rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-base md:text-sm font-medium shadow-xs transition-all inline-flex items-center justify-center gap-2 shrink-0 cursor-pointer"
 						>
 							<FileText className="w-4 h-4 shrink-0" />
 							<span>Закрыть смену №{activeOpenShift.shiftNumber} (Z-отчёт)</span>
@@ -223,7 +234,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 								type="button"
 								onClick={onOpenNewShift}
 								data-testid="btn-empty-open-shift"
-								className="mt-1 h-9 px-3.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-medium transition-all shadow-sm inline-flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+								className="mt-1 h-9 px-3.5 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-sm font-medium transition-all shadow-xs inline-flex items-center justify-center gap-2 shrink-0 cursor-pointer"
 							>
 								<Plus className="w-4 h-4 shrink-0" />
 								<span>Открыть новую смену</span>
@@ -345,7 +356,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 							<button
 								type="button"
 								onClick={onOpenNewShift}
-								className="min-h-[52px] w-full px-4 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-base font-semibold transition-all shadow-md inline-flex items-center justify-center gap-2 cursor-pointer"
+								className="min-h-[52px] w-full px-4 rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-base font-semibold transition-all shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer"
 							>
 								<Plus className="w-4 h-4 shrink-0" />
 								<span>Открыть новую смену</span>
@@ -526,13 +537,6 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 
 						{/* Actions */}
 						<div className="h-16 px-6 flex items-center justify-end gap-3 border-t border-[var(--line)] bg-[var(--paper-soft)]/50 shrink-0">
-							<button
-								type="button"
-								onClick={() => setActiveShiftForPrint(null)}
-								className="h-11 md:h-9 px-4 md:px-3.5 rounded-xl md:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-base md:text-sm font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center shrink-0 cursor-pointer"
-							>
-								Закрыть
-							</button>
 							<button
 								type="button"
 								onClick={() => window.print()}

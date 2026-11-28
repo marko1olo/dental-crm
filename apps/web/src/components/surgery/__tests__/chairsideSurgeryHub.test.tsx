@@ -15,6 +15,13 @@ import {
 	computeOsteointegrationExpectedDate,
 	getImplantSystemById,
 } from "../surgeryCatalogData";
+import {
+	fetchPatientImplantContext,
+	fetchSurgeryDoctors,
+	fetchSurgeryImplantStock,
+	fetchSurgeryPatients,
+	fetchSurgeryPricelist,
+} from "../surgeryHubApi";
 import { ChairsideSurgeryHubModal } from "../ChairsideSurgeryHubModal";
 
 describe("Chairside Surgery Hub & Implant Passports SSOT (Mandates 8e, 8n, 8x, 8am)", () => {
@@ -197,7 +204,7 @@ describe("Chairside Surgery Hub & Implant Passports SSOT (Mandates 8e, 8n, 8x, 8
 		assert.ok(html.includes("ПАМЯТКА ПАЦИЕНТУ"), "Must render clear post-op title");
 	});
 
-	it("12. Mandate 8am & 8x: Exact Primary CTA button text and clean clinical terminology", () => {
+	it("12. Mandate 8am & 8x: Exact Primary CTA button text and clean clinical terminology without & or hardcoded brands", () => {
 		const html = renderToString(
 			<ChairsideSurgeryHubModal
 				isOpen={true}
@@ -206,9 +213,33 @@ describe("Chairside Surgery Hub & Implant Passports SSOT (Mandates 8e, 8n, 8x, 8
 			/>,
 		);
 
-		assert.ok(html.includes("✓ Зафиксировать операцию и внести в карту приёма &gt;"), "Must contain exact Mandate 8am Primary CTA text");
+		assert.ok(html.includes("✓ Зафиксировать операцию и внести в карту приёма"), "Must contain exact Mandate 8am Primary CTA text");
+		assert.ok(!html.includes("✓ Зафиксировать операцию и внести в карту приёма &gt;"), "Must NOT contain ASCII > arrow on CTA");
+		assert.ok(!html.includes("Хирургический хаб &amp;"), "Must NOT contain & in heading");
+		assert.ok(!html.includes("Синус-лифтинг &amp;"), "Must NOT contain & in scenario");
+		assert.ok(!html.includes("Articaini 4% 1:100k"), "Must NOT hardcode Articaini template when empty");
+		assert.ok(!html.includes("TS3S3510S") && !html.includes("TS3S4010S"), "Must NOT hardcode implant catalog article when empty");
+		assert.ok(!html.includes("кость D2 (Misch)"), "Must NOT hardcode Misch D2 when empty");
 		assert.ok(!html.includes("043/у"), "No Soviet order numbers in rendered HTML");
 		assert.ok(!html.includes("804н"), "No order numbers in rendered HTML");
 		assert.ok(!html.includes("54-ФЗ"), "No fiscal law numbers in rendered HTML");
+	});
+
+	it("13. surgeryHubApi throws explicit errors instead of silent fallbacks on !res.ok (404 returns null only for optional context)", async () => {
+		const origFetch = globalThis.fetch;
+		try {
+			globalThis.fetch = (async () => new Response(JSON.stringify({ error: "Access denied" }), { status: 403 })) as typeof fetch;
+			await assert.rejects(() => fetchSurgeryPricelist(), /HTTP 403/);
+			await assert.rejects(() => fetchSurgeryPatients(""), /HTTP 403/);
+			await assert.rejects(() => fetchSurgeryDoctors(), /HTTP 403/);
+			await assert.rejects(() => fetchSurgeryImplantStock(), /HTTP 403/);
+			await assert.rejects(() => fetchPatientImplantContext("p1", 46), /HTTP 403/);
+
+			globalThis.fetch = (async () => new Response("", { status: 404 })) as typeof fetch;
+			const missingContext = await fetchPatientImplantContext("p1", 46);
+			assert.equal(missingContext, null);
+		} finally {
+			globalThis.fetch = origFetch;
+		}
 	});
 });

@@ -66,7 +66,7 @@ export function LabOrdersTableRow(props: LabOrdersTableRowProps): React.JSX.Elem
 				</div>
 			</td>
 			<td className="px-1 py-1.5 whitespace-nowrap align-middle text-center w-[88px]">
-				<span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 border border-[var(--line)] font-mono">
+				<span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] font-mono">
 					{order.toothFdi ? `№ ${order.toothFdi}` : "Челюсть"}
 				</span>
 			</td>

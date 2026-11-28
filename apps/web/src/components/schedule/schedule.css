@@ -10,7 +10,8 @@
 
 /* Schedule Toolbar & Filter Strip Invariants */
 .schedule-filter-strip {
-	height: 36px;
+	min-height: 40px;
+	height: auto;
 }
 
 .schedule-toolbar-primary-quick-booking-btn {

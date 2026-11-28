@@ -150,8 +150,8 @@ export function ScheduleChairSingleShiftCard({
             }
             className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
               assignment.shiftPreset === "morning"
-                ? "bg-[var(--teal)] text-white shadow-xs"
-                : "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
+                ? "bg-[var(--primary)] text-white shadow-xs"
+                : "text-[var(--muted)] hover:text-[var(--primary)] hover:bg-[var(--teal-surface)]"
             }`}
             style={{ minHeight: "44px" }}
             title="1-я смена: Утро (08:00–14:00)"
@@ -174,8 +174,8 @@ export function ScheduleChairSingleShiftCard({
             }
             className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
               assignment.shiftPreset === "evening"
-                ? "bg-[var(--teal)] text-white shadow-xs"
-                : "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
+                ? "bg-[var(--primary)] text-white shadow-xs"
+                : "text-[var(--muted)] hover:text-[var(--primary)] hover:bg-[var(--teal-surface)]"
             }`}
             style={{ minHeight: "44px" }}
             title="2-я смена: Вечер (14:00–20:00)"
@@ -198,8 +198,8 @@ export function ScheduleChairSingleShiftCard({
             }
             className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
               assignment.shiftPreset === "full"
-                ? "bg-[var(--teal)] text-white shadow-xs"
-                : "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
+                ? "bg-[var(--primary)] text-white shadow-xs"
+                : "text-[var(--muted)] hover:text-[var(--primary)] hover:bg-[var(--teal-surface)]"
             }`}
             style={{ minHeight: "44px" }}
             title="Полный день (08:00–20:00)"
@@ -224,8 +224,8 @@ export function ScheduleChairSingleShiftCard({
             }}
             className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
               assignment.shiftLabel?.includes("Чет")
-                ? "bg-[var(--teal)] text-white shadow-xs"
-                : "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
+                ? "bg-[var(--primary)] text-white shadow-xs"
+                : "text-[var(--muted)] hover:text-[var(--primary)] hover:bg-[var(--teal-surface)]"
             }`}
             style={{ minHeight: "44px" }}
             title="Чётные/Нечётные дни (авто-смена утро/вечер)"

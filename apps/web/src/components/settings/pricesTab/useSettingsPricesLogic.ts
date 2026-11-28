@@ -223,7 +223,15 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				} else {
 					const res = await fetch("/api/settings/catalog", { method: "POST", headers: effectiveHeaders, body: JSON.stringify(servicePayload) });
 					if (!res.ok) {
-						const errJson = await res.json().catch(() => ({}));
+						let errJson: { message?: string } = {};
+						try {
+							errJson = (await res.json()) as { message?: string };
+						} catch (parseErr) {
+							clientLogger.warn("useSettingsPricesLogic create catalog error JSON parse failed", {
+								status: res.status,
+								error: String(parseErr),
+							});
+						}
 						throw new Error(errJson.message || `Ошибка сервера ${res.status}`);
 					}
 				}
@@ -233,7 +241,15 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				} else {
 					const res = await fetch(`/api/settings/catalog/${editServiceId}`, { method: "PUT", headers: effectiveHeaders, body: JSON.stringify(servicePayload) });
 					if (!res.ok) {
-						const errJson = await res.json().catch(() => ({}));
+						let errJson: { message?: string } = {};
+						try {
+							errJson = (await res.json()) as { message?: string };
+						} catch (parseErr) {
+							clientLogger.warn("useSettingsPricesLogic update catalog error JSON parse failed", {
+								status: res.status,
+								error: String(parseErr),
+							});
+						}
 						throw new Error(errJson.message || `Ошибка сервера ${res.status}`);
 					}
 				}
@@ -268,7 +284,15 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				};
 				const res = await fetch(`/api/settings/catalog/${id}`, { method: "DELETE", headers: effectiveHeaders });
 				if (!res.ok) {
-					const errJson = await res.json().catch(() => ({}));
+					let errJson: { message?: string } = {};
+					try {
+						errJson = (await res.json()) as { message?: string };
+					} catch (parseErr) {
+						clientLogger.warn("useSettingsPricesLogic delete catalog error JSON parse failed", {
+							status: res.status,
+							error: String(parseErr),
+						});
+					}
 					throw new Error(errJson.message || `Ошибка сервера ${res.status}`);
 				}
 			}
@@ -390,7 +414,15 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(payload),
 			});
 			if (!res.ok) {
-				const errData = await res.json().catch(() => ({}));
+				let errData: { message?: string } = {};
+				try {
+					errData = (await res.json()) as { message?: string };
+				} catch (parseErr) {
+					clientLogger.warn("useSettingsPricesLogic scan-and-import error parse failed", {
+						status: res.status,
+						error: String(parseErr),
+					});
+				}
 				throw new Error(errData.message || `Ошибка сканирования прейскуранта (HTTP ${res.status})`);
 			}
 			const raw = await res.json();
@@ -448,7 +480,15 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(payload),
 			});
 			if (!res.ok) {
-				const errData = await res.json().catch(() => ({}));
+				let errData: { message?: string } = {};
+				try {
+					errData = (await res.json()) as { message?: string };
+				} catch (parseErr) {
+					clientLogger.warn("useSettingsPricesLogic commit pricelist error parse failed", {
+						status: res.status,
+						error: String(parseErr),
+					});
+				}
 				throw new Error(errData.message || `Ошибка сохранения прейскуранта (HTTP ${res.status})`);
 			}
 			const raw = await res.json();
@@ -489,7 +529,15 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(payload),
 			});
 			if (!res.ok) {
-				const errData = await res.json().catch(() => ({}));
+				let errData: { message?: string } = {};
+				try {
+					errData = (await res.json()) as { message?: string };
+				} catch (parseErr) {
+					clientLogger.warn("useSettingsPricesLogic flat import error parse failed", {
+						status: res.status,
+						error: String(parseErr),
+					});
+				}
 				throw new Error(errData.message || `Ошибка импорта прейскуранта (HTTP ${res.status})`);
 			}
 			const raw = await res.json();

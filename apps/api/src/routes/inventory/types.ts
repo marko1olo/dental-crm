@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { isValidDateParts } from "@dental/shared";
 import { z } from "zod";
 
 declare module "fastify" {
@@ -307,10 +308,9 @@ export function normalizedExpirationDate(
 		return INVALID_DATE;
 	}
 
-	const parsed = new Date(`${isoCandidate}T00:00:00Z`);
-	if (Number.isNaN(parsed.getTime())) return INVALID_DATE;
-	// 2027-02-31 разбирается в 3 марта: сверяем, что дата не «уехала».
-	if (parsed.toISOString().slice(0, 10) !== isoCandidate) return INVALID_DATE;
+	const [yStr, mStr, dStr] = isoCandidate.split("-");
+	// 2027-02-31 разбирается в 3 марта: сверяем, что дата календарно валидна.
+	if (!isValidDateParts(Number(yStr), Number(mStr), Number(dStr))) return INVALID_DATE;
 	return isoCandidate;
 }
 

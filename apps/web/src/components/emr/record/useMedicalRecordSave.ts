@@ -113,7 +113,15 @@ export function useMedicalRecordSave({
 
 							if (!diaryRes.ok) {
 								anyDiaryFailed = true;
-								const errJson = (await diaryRes.json().catch(() => null)) as { error?: string; message?: string } | null;
+								let errJson: { error?: string; message?: string } | null = null;
+								try {
+									errJson = (await diaryRes.json()) as { error?: string; message?: string } | null;
+								} catch (parseErr) {
+									clientLogger.warn("useMedicalRecordSave diary error JSON parse failed", {
+										status: diaryRes.status,
+										error: String(parseErr),
+									});
+								}
 								const errorMessage = errJson?.message || errJson?.error || "Ошибка сохранения дневника приёма в базу данных";
 								clientLogger.warn("Ошибка сохранения дневника в /api/diaries", errJson, { module: "useMedicalRecordSave" });
 								showToast(errorMessage, "error", 5000);
@@ -132,7 +140,11 @@ export function useMedicalRecordSave({
 							if (typeof sessionStorage !== "undefined") {
 								try {
 									sessionStorage.removeItem(`dente:medical_card_autosave:${effectivePatientId}`);
-								} catch { /* ignore storage error */ }
+								} catch (storageErr) {
+									clientLogger.warn("useMedicalRecordSave sessionStorage cleanup failed", {
+										error: String(storageErr),
+									});
+								}
 							}
 						}
 						void denteQueryClient.invalidateQueries({ queryKey: ["diaries"] });
@@ -189,7 +201,15 @@ export function useMedicalRecordSave({
 					});
 
 					if (!res.ok) {
-						const errorPayload = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
+						let errorPayload: { error?: string; message?: string } | null = null;
+						try {
+							errorPayload = (await res.json()) as { error?: string; message?: string } | null;
+						} catch (parseErr) {
+							clientLogger.warn("useMedicalRecordSave patient patch error parse failed", {
+								status: res.status,
+								error: String(parseErr),
+							});
+						}
 						const errorMessage = errorPayload?.error || errorPayload?.message || "Не удалось сохранить медицинскую карту";
 						showToast(errorMessage, "error", 4000);
 						return;

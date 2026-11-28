@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { rublesToKopecks } from "@dental/shared";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { showToast } from "../../GlobalToast.js";
 import { isDemoShowcaseMode } from "../../../utils/demoModeEngine.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
@@ -65,11 +66,30 @@ export function useInventoryViewAudit(
 					}),
 				});
 				if (!res.ok) {
-					const rawJson = await res.json().catch(() => null);
+					let rawJson: { data?: { message?: string; error?: string }; message?: string; error?: string } | null = null;
+					try {
+						rawJson = (await res.json()) as {
+							data?: { message?: string; error?: string };
+							message?: string;
+							error?: string;
+						} | null;
+					} catch (parseErr) {
+						clientLogger.warn("[useInventoryViewAudit] Error JSON parse failed", {
+							status: res.status,
+							error: String(parseErr),
+						}, { module: "Inventory" });
+					}
 					const errPayload = rawJson?.data ?? rawJson;
 					throw new Error(errPayload?.message || errPayload?.error || `Ошибка сервера (${res.status})`);
 				}
-				const okJson = await res.json().catch(() => null);
+				let okJson: { data?: unknown } | null = null;
+				try {
+					okJson = (await res.json()) as { data?: unknown } | null;
+				} catch (parseErr) {
+					clientLogger.warn("[useInventoryViewAudit] Response JSON parse failed", {
+						error: String(parseErr),
+					}, { module: "Inventory" });
+				}
 				const _okPayload = okJson?.data ?? okJson;
 				void _okPayload;
 				showToast(`Инвентаризация утверждена: скорректировано ${discrepancyItems.length} позиций на складе`, "info");

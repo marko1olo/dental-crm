@@ -20,7 +20,7 @@ export const DoctorClinicalNotesCard: React.FC<DoctorClinicalNotesCardProps> = (
 					<Stethoscope className="w-3.5 h-3.5 text-[var(--teal)]" />
 					<span className="text-xs font-bold text-[var(--ink)]">Клинические особенности (Врач):</span>
 				</div>
-				<span className="text-[10px] text-[var(--muted)] font-medium">Кресло & ЭМК</span>
+				<span className="text-[10px] text-[var(--muted)] font-medium">Кресло и ЭМК</span>
 			</div>
 
 			<div className="flex items-center gap-1.5 flex-wrap">

@@ -61,10 +61,13 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 				}),
 				fetch(`/api/patients/${patientId}/relationships`, {
 					headers: getDenteAuthHeaders(),
-				}).catch((err) => {
-					logger.warn("Failed to fetch patient relationships for family wallet", err);
-					return null;
-				}),
+				}).then(
+					(res) => res,
+					(err) => {
+						logger.warn("Failed to fetch patient relationships for family wallet", err);
+						return null;
+					},
+				),
 			]);
 
 			let activeRels: RelationshipRecord[] = [];
@@ -248,9 +251,12 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 				});
 
 				if (!res.ok) {
-					const errorData = (await res.json().catch(() => ({}))) as {
-						message?: string;
-					};
+					let errorData: { message?: string } = {};
+					try {
+						errorData = (await res.json()) as { message?: string };
+					} catch (parseErr) {
+						logger.warn("Failed to parse create family group error JSON", parseErr);
+					}
 					throw new Error(
 						errorData.message || `Ошибка создания семьи (${res.status})`,
 					);
@@ -306,9 +312,12 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 				});
 
 				if (!res.ok) {
-					const errorData = (await res.json().catch(() => ({}))) as {
-						message?: string;
-					};
+					let errorData: { message?: string } = {};
+					try {
+						errorData = (await res.json()) as { message?: string };
+					} catch (parseErr) {
+						logger.warn("Failed to parse add family member error JSON", parseErr);
+					}
 					throw new Error(
 						errorData.message ||
 							`Ошибка добавления члена семьи (${res.status})`,
@@ -356,9 +365,12 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 				);
 
 				if (!res.ok) {
-					const errorData = (await res.json().catch(() => ({}))) as {
-						message?: string;
-					};
+					let errorData: { message?: string } = {};
+					try {
+						errorData = (await res.json()) as { message?: string };
+					} catch (parseErr) {
+						logger.warn("Failed to parse remove family member error JSON", parseErr);
+					}
 					throw new Error(
 						errorData.message ||
 							`Ошибка исключения из семьи (${res.status})`,

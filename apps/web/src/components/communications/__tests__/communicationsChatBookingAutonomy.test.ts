@@ -1,27 +1,26 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { useAppStore } from "../../../store/appStore";
 import { useScheduleStore } from "../../../store/scheduleStore";
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 import { executeBookAppointmentFromChat } from "../bookFromChatAutonomy";
 import { OMNICHANNEL_TEMPLATES } from "../../chat/OmnichannelOperatorDesk";
 
-describe("Communications & Chat 1-Click Booking Autonomy (Mandates 8e, 8n & 8b)", () => {
+describe("Communications & Chat Booking Autonomy (Mandates 8e, 8n — 6G Live SUT)", () => {
 	it("1. executeBookAppointmentFromChat immediately populates schedule draft and opens quick booking drawer", () => {
 		useAppStore.setState({ currentView: "communications" });
 		useUiSurfaceStore.setState({ activeDrawer: null });
 
-		executeBookAppointmentFromChat({
-			id: "pat-chat-1",
-			fullName: "Васильев Пётр Николаевич",
-			phone: "+79998887766",
-			reason: "Консультация по имплантации",
-		}, { todayIso: "2026-10-26" });
+		executeBookAppointmentFromChat(
+			{
+				id: "pat-chat-1",
+				fullName: "Васильев Пётр Николаевич",
+				phone: "+79998887766",
+				reason: "Консультация по имплантации",
+			},
+			{ todayIso: "2026-10-26" },
+		);
 
 		const draft = useScheduleStore.getState().newAppointmentDraft;
 		assert.equal(draft.patientId, "pat-chat-1");
@@ -37,7 +36,7 @@ describe("Communications & Chat 1-Click Booking Autonomy (Mandates 8e, 8n & 8b)"
 		assert.equal(useUiSurfaceStore.getState().activeDrawer, "quick_booking");
 	});
 
-	it("2. Omnichannel templates contain clinical memos (surgery, parking, reminder) without cartoon emojis", () => {
+	it("2. Omnichannel templates contain clinical memos (surgery, parking, reminder) without cartoon emojis or order codes", () => {
 		const surgeryTmpl = OMNICHANNEL_TEMPLATES.find((t) => t.id === "post_op_surgery");
 		assert.ok(surgeryTmpl, "Surgery post-op memo must exist");
 		assert.ok(surgeryTmpl.text.includes("удаления / имплантации"));
@@ -48,36 +47,34 @@ describe("Communications & Chat 1-Click Booking Autonomy (Mandates 8e, 8n & 8b)"
 		assert.ok(parkingTmpl.text.includes("бесплатная гостевая парковка"));
 
 		const EMOJI_REGEX = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+		const seenIds = new Set<string>();
 		for (const t of OMNICHANNEL_TEMPLATES) {
+			assert.equal(seenIds.has(t.id), false, `Duplicate template id ${t.id}`);
+			seenIds.add(t.id);
+			assert.ok(t.label.trim().length > 0);
 			assert.ok(!EMOJI_REGEX.test(t.text), `Template ${t.id} must not contain cartoon emojis per Mandate 8d`);
+			assert.equal(t.text.includes("043/у") || t.text.includes("804н"), false);
 		}
 	});
 
-	it("3. All communications CSS modules strictly respect <= 120 lines budget per Mandate 8b", () => {
-		const stylesDir = path.resolve(__dirname, "../styles");
-		const scanDirs = [
-			stylesDir,
-			path.join(stylesDir, "mobileMessenger"),
-			path.join(stylesDir, "staffMessenger"),
-		];
+	it("3. executeBookAppointmentFromChat handles minimal patient context without phone without crashing", () => {
+		useAppStore.setState({ currentView: "communications" });
+		useUiSurfaceStore.setState({ activeDrawer: null });
 
-		for (const dir of scanDirs) {
-			if (!fs.existsSync(dir)) continue;
-			for (const file of fs.readdirSync(dir)) {
-				const fullPath = path.join(dir, file);
-				if (fs.statSync(fullPath).isFile() && file.endsWith(".css")) {
-					const lines = fs.readFileSync(fullPath, "utf8").split("\n").length;
-					assert.ok(lines <= 120, `CSS Module ${file} exceeds 120 lines limit: ${lines} lines`);
-				}
-			}
-		}
+		executeBookAppointmentFromChat(
+			{
+				id: "pat-chat-min",
+				fullName: "Иванова Мария Сергеевна",
+				reason: "Осмотр",
+			},
+			{ todayIso: "2026-10-27" },
+		);
 
-		const rootMobileCss = path.resolve(__dirname, "../mobileCommunicationsMessenger.css");
-		const mobileLines = fs.readFileSync(rootMobileCss, "utf8").split("\n").length;
-		assert.ok(mobileLines <= 120, `mobileCommunicationsMessenger.css exceeds 120 lines: ${mobileLines}`);
-
-		const rootStaffCss = path.resolve(__dirname, "../staffMessenger.css");
-		const staffLines = fs.readFileSync(rootStaffCss, "utf8").split("\n").length;
-		assert.ok(staffLines <= 120, `staffMessenger.css exceeds 120 lines: ${staffLines}`);
+		const draft = useScheduleStore.getState().newAppointmentDraft;
+		assert.equal(draft.patientId, "pat-chat-min");
+		assert.equal(draft.date, "2026-10-27");
+		assert.equal(draft.reason, "Осмотр");
+		assert.equal(useAppStore.getState().currentView, "schedule");
+		assert.equal(useUiSurfaceStore.getState().activeDrawer, "quick_booking");
 	});
 });

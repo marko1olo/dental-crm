@@ -2,49 +2,33 @@
  * wave116PricelistAndStageBilling.test.ts
  *
  * Verification suite for Wave 116 (Clinical Pricelist & Phased Treatment Plan Stage Checkout):
- * 1. 21 Canonical StomX pricelist categories in @dental/shared
- * 2. Zod validation for categories and category items
- * 3. PatientBillingModal.tsx contract audit:
- *    - activeTreatmentPlan & onPayTreatmentPlanStage props
- *    - patient-billing-plan-stage-panel container
- *    - btn-tender-plan-stage with min-h-[44px]
- *    - plan-stage-item-* buttons with min-h-[44px]
- *    - Doctor autonomy (no disabled buttons without reason)
+ * 1. 21 Canonical pricelist categories & Zod schema validation (positive & negative cases)
+ * 2. Phased Treatment Plan stage advance & FFD 1.2 offset calculations via calculateStageAdvanceAmount
  */
 
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
+import { describe, it } from "node:test";
 import {
 	CLINICAL_PRICELIST_CATEGORIES,
 	CLINICAL_PRICELIST_CATEGORY_ITEMS,
-	clinicalPricelistCategoryNameSchema,
-	clinicalPricelistCategoryItemSchema,
 	STOMX_PRICELIST_CATEGORIES,
 	STOMX_PRICELIST_CATEGORY_ITEMS,
+	clinicalPricelistCategoryItemSchema,
+	clinicalPricelistCategoryNameSchema,
 } from "@dental/shared";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import {
+	DEFAULT_TREATMENT_STAGES,
+	calculateStageAdvanceAmount,
+} from "../../cashbox/stageAdvanceCalculator";
 
 describe("Wave 116: 21 Pricelist Categories & Treatment Plan Stage Billing", () => {
-	it("0. CLINICAL_PRICELIST_CATEGORIES is the clean canonical source of truth for DENTE", () => {
-		assert.ok(Array.isArray(CLINICAL_PRICELIST_CATEGORIES));
-		assert.ok(Array.isArray(CLINICAL_PRICELIST_CATEGORY_ITEMS));
-		assert.ok(clinicalPricelistCategoryNameSchema);
-		assert.ok(clinicalPricelistCategoryItemSchema);
+	it("0. CLINICAL_PRICELIST_CATEGORIES exposes 21 canonical DENTE categories", () => {
+		assert.equal(CLINICAL_PRICELIST_CATEGORIES.length, 21);
+		assert.equal(CLINICAL_PRICELIST_CATEGORY_ITEMS.length, 21);
+		assert.deepEqual(CLINICAL_PRICELIST_CATEGORIES, STOMX_PRICELIST_CATEGORIES);
 	});
 
-	it("1. STOMX_PRICELIST_CATEGORIES exports exactly 21 canonical clinical categories", () => {
-		assert.equal(
-			STOMX_PRICELIST_CATEGORIES.length,
-			21,
-			"Must contain exactly 21 StomX clinical pricelist categories",
-		);
-
+	it("1. STOMX_PRICELIST_CATEGORIES validates canonical names and rejects invalid category strings", () => {
 		const expectedCategories = [
 			"Первичный/повторный прием",
 			"Гигиена и профилактика",
@@ -71,15 +55,20 @@ describe("Wave 116: 21 Pricelist Categories & Treatment Plan Stage Billing", () 
 
 		for (const cat of expectedCategories) {
 			assert.ok(
-				STOMX_PRICELIST_CATEGORIES.includes(cat as any),
-				`Missing expected StomX category: ${cat}`,
+				STOMX_PRICELIST_CATEGORIES.includes(cat as (typeof STOMX_PRICELIST_CATEGORIES)[number]),
+				`Missing expected category: ${cat}`,
 			);
 			const parsed = clinicalPricelistCategoryNameSchema.safeParse(cat);
-			assert.ok(parsed.success, `Zod validation failed for category: ${cat}`);
+			assert.equal(parsed.success, true, `Zod validation failed for category: ${cat}`);
 		}
+
+		assert.equal(
+			clinicalPricelistCategoryNameSchema.safeParse("Несуществующая категория").success,
+			false,
+		);
 	});
 
-	it("2. STOMX_PRICELIST_CATEGORY_ITEMS is typed, indexed and passes Zod schema", () => {
+	it("2. STOMX_PRICELIST_CATEGORY_ITEMS passes Zod schema and rejects malformed items", () => {
 		assert.equal(STOMX_PRICELIST_CATEGORY_ITEMS.length, 21);
 
 		STOMX_PRICELIST_CATEGORY_ITEMS.forEach((item, idx) => {
@@ -88,116 +77,59 @@ describe("Wave 116: 21 Pricelist Categories & Treatment Plan Stage Billing", () 
 			assert.equal(item.slug, `category_${idx + 1}`);
 
 			const validation = clinicalPricelistCategoryItemSchema.safeParse(item);
-			assert.ok(
-				validation.success,
-				`Item ${idx + 1} (${item.nameRu}) failed Zod validation`,
-			);
+			assert.equal(validation.success, true, `Item ${idx + 1} failed Zod validation`);
 		});
+
+		const invalidItem = clinicalPricelistCategoryItemSchema.safeParse({
+			id: -1,
+			nameRu: "Чужая категория",
+			slug: "",
+		});
+		assert.equal(invalidItem.success, false);
 	});
 
-	it("3. Compares against StomX depot categories.json if depot exists on disk", () => {
-		const depotPath = path.resolve(
-			__dirname,
-			"../../../../../РЕВЕРС ИНЖИНИРИНГ СТОМ-ИКС НОВЫЙ ЗАВОЗ/data/pricelist/categories.json",
-		);
-
-		if (fs.existsSync(depotPath)) {
-			const rawJson = fs.readFileSync(depotPath, "utf-8");
-			const parsed = JSON.parse(rawJson);
-			assert.ok(Array.isArray(parsed), "Depot JSON must be an array");
-			assert.equal(
-				parsed.length,
-				21,
-				"Depot categories array must have length 21",
-			);
-
-			const depotTitles = parsed.map((item: any) =>
-				typeof item === "string" ? item.trim() : item.title?.trim(),
-			);
-			depotTitles.forEach((title: string) => {
-				assert.ok(
-					STOMX_PRICELIST_CATEGORIES.includes(title as any),
-					`Depot title «${title}» must be in STOMX_PRICELIST_CATEGORIES`,
-				);
-			});
+	it("3. DEFAULT_TREATMENT_STAGES provides coherent non-negative kopeck stages", () => {
+		assert.ok(DEFAULT_TREATMENT_STAGES.length >= 3);
+		for (const stage of DEFAULT_TREATMENT_STAGES) {
+			assert.ok(stage.id.length > 0);
+			assert.ok(stage.titleRu.length > 0);
+			assert.ok(stage.amountKop > 0);
+			assert.ok(stage.itemsCount >= 1);
 		}
 	});
 
-	it("4. PatientBillingModal.tsx implements Treatment Plan Stage billing contracts", () => {
-		const modalPath = path.resolve(
-			__dirname,
-			"../../finance/PatientBillingModal.tsx",
-		);
-		if (!fs.existsSync(modalPath)) {
-			// Legacy duplicate decommissioned in favor of CashRegisterStudioModal SSOT
-			return;
-		}
-		assert.ok(fs.existsSync(modalPath), "PatientBillingModal.tsx must exist");
+	it("4. calculateStageAdvanceAmount handles full, 30%, 50%, FFD tag 1215 offset, and clamping", () => {
+		const full = calculateStageAdvanceAmount(1000000, "full");
+		assert.equal(full.requiredAmountKop, 1000000);
+		assert.equal(full.advanceOffsetTag1215Kop, 0);
+		assert.equal(full.remainingDueKop, 0);
+		assert.equal(full.ffdTag1214, 4);
+		assert.equal(full.isAdvanceReceipt, false);
 
-		const content = [
-			fs.readFileSync(modalPath, "utf-8"),
-			fs.readFileSync(path.resolve(__dirname, "../../finance/PatientBillingTypes.ts"), "utf-8"),
-			fs.readFileSync(path.resolve(__dirname, "../../finance/PatientBillingPlanStagePanel.tsx"), "utf-8"),
-		].join("\n");
+		const adv30 = calculateStageAdvanceAmount(1000000, "advance_30");
+		assert.equal(adv30.requiredAmountKop, 300000);
+		assert.equal(adv30.remainingDueKop, 700000);
+		assert.equal(adv30.ffdTag1214, 2);
+		assert.equal(adv30.isAdvanceReceipt, true);
 
-		// Contract: types & props
-		assert.ok(
-			content.includes("export interface PatientBillingPlanStage"),
-			"Must define PatientBillingPlanStage interface",
-		);
-		assert.ok(
-			content.includes("export interface PatientBillingTreatmentPlan"),
-			"Must define PatientBillingTreatmentPlan interface",
-		);
-		assert.ok(
-			content.includes("activeTreatmentPlan?: PatientBillingTreatmentPlan"),
-			"Must include activeTreatmentPlan in props",
-		);
-		assert.ok(
-			content.includes(
-				"onPayTreatmentPlanStage?: ((stageId: string, stageAmountRub: number) => void)",
-			),
-			"Must include onPayTreatmentPlanStage callback in props",
-		);
+		const adv50 = calculateStageAdvanceAmount(1000000, "advance_50");
+		assert.equal(adv50.requiredAmountKop, 500000);
+		assert.equal(adv50.remainingDueKop, 500000);
+		assert.equal(adv50.ffdTag1214, 2);
+		assert.equal(adv50.isAdvanceReceipt, true);
 
-		// Contract: UI elements
-		assert.ok(
-			content.includes('data-testid="patient-billing-plan-stage-panel"'),
-			"Must render patient-billing-plan-stage-panel container",
-		);
-		assert.ok(
-			content.includes('data-testid="btn-tender-plan-stage"'),
-			"Must render 1-click stage payment button btn-tender-plan-stage",
-		);
-		assert.ok(
-			content.includes("plan-stage-item-"),
-			"Must render individual plan-stage-item- testids",
-		);
+		const offset = calculateStageAdvanceAmount(1000000, "advance_offset_tag1215", 400000);
+		assert.equal(offset.advanceOffsetTag1215Kop, 400000);
+		assert.equal(offset.requiredAmountKop, 600000);
+		assert.equal(offset.remainingDueKop, 0);
+		assert.equal(offset.isAdvanceOffsetReceipt, true);
 
-		// Contract: Touch target height min-h-[44px] (Apple HIG & Mandate 8c)
-		const stageBtnMatch = content.match(
-			/data-testid="btn-tender-plan-stage"[^>]*className="([^"]*)"/,
-		);
-		assert.ok(
-			stageBtnMatch ||
-				content.includes(
-					'className="min-h-[44px] px-4 py-2.5 rounded-xl bg-indigo-600',
-				),
-			"btn-tender-plan-stage must have min-h-[44px]",
-		);
-		assert.ok(
-			content.includes("min-h-[44px]"),
-			"Stage items and tender buttons must enforce min-h-[44px]",
-		);
+		const overAdvance = calculateStageAdvanceAmount(500000, "advance_offset_tag1215", 900000);
+		assert.equal(overAdvance.advanceOffsetTag1215Kop, 500000);
+		assert.equal(overAdvance.requiredAmountKop, 0);
 
-		// Contract: 1-click stage payment handling
-		assert.ok(
-			content.includes("handleTenderPlanStage"),
-			"Must have handleTenderPlanStage function",
-		);
-		assert.ok(
-			content.includes("handleSelectPlanStage"),
-			"Must have handleSelectPlanStage function",
-		);
+		const badInputs = calculateStageAdvanceAmount(Number.NaN, "full", -200);
+		assert.equal(badInputs.totalStageAmountKop, 0);
+		assert.equal(badInputs.requiredAmountKop, 0);
 	});
 });

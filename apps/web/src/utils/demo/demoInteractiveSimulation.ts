@@ -236,8 +236,9 @@ export class DemoInteractiveState {
 		this.ensureInitialized();
 		const current = this.getOdontogram(patientId);
 		const idx = current.findIndex((t) => t.toothNumber === toothNumber);
-		if (idx >= 0) {
-			current[idx] = { ...current[idx]!, ...patch };
+		const target = current[idx];
+		if (target) {
+			current[idx] = { ...target, ...patch };
 		} else {
 			current.push({
 				toothNumber,
@@ -610,7 +611,7 @@ export function getDemoRoleClinicalDetails(roleKey: string): {
 } {
 	const profile =
 		DEMO_CLINICAL_ROLE_PROFILES[roleKey] ||
-		DEMO_CLINICAL_ROLE_PROFILES.therapist!;
+		DEMO_CLINICAL_ROLE_PROFILES.therapist;
 
 	return {
 		profile,

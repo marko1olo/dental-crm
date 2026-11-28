@@ -12,6 +12,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import { organizations } from "../../db/schema.js";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { isDbConnectionError } from "./referralLoyalty/webAppValidator.js";
 
@@ -179,7 +180,10 @@ export interface RecordMessageSentResult {
  * Сервис управления B2B-тарифами, расходом сообщений и безопасными квотами для Telegram-ботов.
  */
 export class TelegramBotBillingService {
-	private static billingStore = new Map<string, OrganizationBillingRecord>();
+	private static billingStore = new BoundedTtlMap<string, OrganizationBillingRecord>({
+		maxEntries: 5000,
+		ttlMs: 24 * 60 * 60_000,
+	});
 
 	private static isPersistableOrgId(organizationId: string): boolean {
 		return (

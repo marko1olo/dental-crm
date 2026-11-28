@@ -57,28 +57,28 @@ export const SensorStudyMobileWlDrawer: React.FC<SensorStudyMobileWlDrawerProps>
 
 			{/* Drawer Surface */}
 			<div
-				className="relative z-10 w-full max-h-[82dvh] flex flex-col rounded-t-[24px] bg-[#0f172a] border-t border-[#334155] shadow-2xl animate-in slide-in-from-bottom duration-250 p-4 pb-[max(20px,env(safe-area-inset-bottom))]"
+				className="relative z-10 w-full max-h-[82dvh] flex flex-col rounded-t-[24px] bg-[var(--paper)] border-t border-[var(--line)] shadow-2xl animate-in slide-in-from-bottom duration-250 p-4 pb-[max(20px,env(safe-area-inset-bottom))]"
 				role="dialog"
 				aria-modal="true"
 				aria-label="Настройка яркости и контрастности снимка"
 			>
 				{/* Tactile Drag Handle */}
 				<div className="flex justify-center pb-2 cursor-grab">
-					<div className="w-10 h-1.5 rounded-full bg-slate-500/50" />
+					<div className="w-10 h-1.5 rounded-full bg-[var(--line)]" />
 				</div>
 
 				{/* Header */}
-				<div className="flex items-center justify-between pb-3 border-b border-slate-700/60">
+				<div className="flex items-center justify-between pb-3 border-b border-[var(--line)]">
 					<div className="flex items-center gap-2">
-						<Sliders size={17} className="text-teal-400" />
-						<h3 className="text-sm font-bold text-white tracking-tight">
+						<Sliders size={17} className="text-[var(--primary)]" />
+						<h3 className="text-sm font-bold text-[var(--ink)] tracking-tight">
 							Яркость и контрастность (W/L)
 						</h3>
 					</div>
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full flex items-center justify-center bg-slate-800 text-slate-300 hover:text-white cursor-pointer"
+						className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full flex items-center justify-center bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)] cursor-pointer"
 						aria-label="Закрыть шторку"
 					>
 						<X size={16} />
@@ -89,9 +89,9 @@ export const SensorStudyMobileWlDrawer: React.FC<SensorStudyMobileWlDrawerProps>
 				<div className="py-3.5 flex flex-col gap-4 overflow-y-auto overscroll-contain">
 					{/* Brightness Slider */}
 					<div>
-						<div className="flex items-center justify-between text-xs text-slate-200 mb-1.5 font-semibold">
+						<div className="flex items-center justify-between text-xs text-[var(--ink)] mb-1.5 font-semibold">
 							<span>Яркость (Window Level)</span>
-							<span className="font-mono text-teal-400 font-bold">
+							<span className="font-mono text-[var(--primary)] font-bold">
 								{brightnessPct > 0 ? `+${brightnessPct}%` : `${brightnessPct}%`}
 							</span>
 						</div>
@@ -103,14 +103,14 @@ export const SensorStudyMobileWlDrawer: React.FC<SensorStudyMobileWlDrawerProps>
 								step="5"
 								value={brightnessPct}
 								onChange={(e) => onBrightnessChange(Number(e.target.value))}
-								className="flex-1 h-3 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-400"
+								className="flex-1 h-3 bg-[var(--paper-soft)] rounded-lg appearance-none cursor-pointer accent-[var(--primary)]"
 								data-testid="mobile-slider-brightness"
 								aria-label="Яркость"
 							/>
 							<button
 								type="button"
 								onClick={() => onBrightnessChange(0)}
-								className="px-2 py-1 text-[11px] rounded bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+								className="px-2 py-1 text-[11px] rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink-muted)] hover:text-[var(--ink)] cursor-pointer"
 								title="Сбросить яркость на 0"
 							>
 								0%
@@ -120,9 +120,9 @@ export const SensorStudyMobileWlDrawer: React.FC<SensorStudyMobileWlDrawerProps>
 
 					{/* Contrast Slider */}
 					<div>
-						<div className="flex items-center justify-between text-xs text-slate-200 mb-1.5 font-semibold">
+						<div className="flex items-center justify-between text-xs text-[var(--ink)] mb-1.5 font-semibold">
 							<span>Контрастность (Window Width)</span>
-							<span className="font-mono text-teal-400 font-bold">
+							<span className="font-mono text-[var(--primary)] font-bold">
 								{contrastPct > 0 ? `+${contrastPct}%` : `${contrastPct}%`}
 							</span>
 						</div>
@@ -134,14 +134,14 @@ export const SensorStudyMobileWlDrawer: React.FC<SensorStudyMobileWlDrawerProps>
 								step="5"
 								value={contrastPct}
 								onChange={(e) => onContrastChange(Number(e.target.value))}
-								className="flex-1 h-3 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-400"
+								className="flex-1 h-3 bg-[var(--paper-soft)] rounded-lg appearance-none cursor-pointer accent-[var(--primary)]"
 								data-testid="mobile-slider-contrast"
 								aria-label="Контрастность"
 							/>
 							<button
 								type="button"
 								onClick={() => onContrastChange(0)}
-								className="px-2 py-1 text-[11px] rounded bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+								className="px-2 py-1 text-[11px] rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink-muted)] hover:text-[var(--ink)] cursor-pointer"
 								title="Сбросить контраст на 0"
 							>
 								0%
@@ -151,7 +151,7 @@ export const SensorStudyMobileWlDrawer: React.FC<SensorStudyMobileWlDrawerProps>
 
 					{/* Clinical Quick Presets */}
 					<div>
-						<span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+						<span className="block text-[11px] font-semibold text-[var(--ink-muted)] tracking-normal mb-2">
 							Клинические пресеты:
 						</span>
 						<div className="grid grid-cols-2 gap-2">
@@ -162,10 +162,10 @@ export const SensorStudyMobileWlDrawer: React.FC<SensorStudyMobileWlDrawerProps>
 									onBrightnessChange(0);
 									onContrastChange(20);
 								}}
-								className="h-11 px-3 rounded-xl text-xs font-bold bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+								className="h-11 px-3 rounded-xl text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 								data-testid="preset-sharp-contours"
 							>
-								<Sparkles size={13} className="text-teal-400" />
+								<Sparkles size={13} className="text-[var(--primary)]" />
 								<span>Резкие контуры</span>
 							</button>
 
@@ -176,10 +176,10 @@ export const SensorStudyMobileWlDrawer: React.FC<SensorStudyMobileWlDrawerProps>
 									onBrightnessChange(-5);
 									onContrastChange(30);
 								}}
-								className="h-11 px-3 rounded-xl text-xs font-bold bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+								className="h-11 px-3 rounded-xl text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 								data-testid="preset-endo-canal"
 							>
-								<Contrast size={13} className="text-amber-400" />
+								<Contrast size={13} className="text-amber-500" />
 								<span>Эндо-канал (верхушки)</span>
 							</button>
 
@@ -190,10 +190,10 @@ export const SensorStudyMobileWlDrawer: React.FC<SensorStudyMobileWlDrawerProps>
 									onBrightnessChange(10);
 									onContrastChange(35);
 								}}
-								className="h-11 px-3 rounded-xl text-xs font-bold bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+								className="h-11 px-3 rounded-xl text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 								data-testid="preset-bone-tissue"
 							>
-								<Sliders size={13} className="text-cyan-400" />
+								<Sliders size={13} className="text-cyan-500" />
 								<span>Костная ткань</span>
 							</button>
 
@@ -204,21 +204,21 @@ export const SensorStudyMobileWlDrawer: React.FC<SensorStudyMobileWlDrawerProps>
 									onBrightnessChange(0);
 									onContrastChange(15);
 								}}
-								className="h-11 px-3 rounded-xl text-xs font-bold bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+								className="h-11 px-3 rounded-xl text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 								data-testid="preset-pseudo-relief"
 							>
-								<Sparkles size={13} className="text-emerald-400" />
+								<Sparkles size={13} className="text-emerald-500" />
 								<span>Псевдо-рельеф 3D</span>
 							</button>
 						</div>
 					</div>
 
-					{/* 1-Click Reset */}
-					<div className="pt-2 border-t border-slate-800">
+					{/* Reset */}
+					<div className="pt-2 border-t border-[var(--line)]">
 						<button
 							type="button"
 							onClick={onReset}
-							className="w-full h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors"
+							className="w-full h-11 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors"
 							data-testid="mobile-btn-reset-filters"
 						>
 							<RotateCcw size={14} />

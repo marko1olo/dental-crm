@@ -14,6 +14,7 @@ import assert from "node:assert/strict";
 import { describe, it, beforeEach } from "node:test";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { renderToStaticMarkup } from "react-dom/server";
 import type { Dashboard } from "@dental/shared";
 
 import {
@@ -670,45 +671,62 @@ describe("Schedule, Chairs & Shifts Architecture Parity (Schedule & Chair)", () 
 			assert.equal(dualAssignment.endHour, 20);
 		});
 
-		it("supports quick doctor substitution on chair assignment without altering shift hours", () => {
-			const baseAssignment: ChairDoctorShiftAssignment = {
+		it("supports quick doctor substitution on chair assignment via applyCellShiftPreset without altering shift hours", () => {
+			const morningShifts = applyCellShiftPreset([], {
+				dateIso: "2026-09-09",
+				cabinetId: "cab-1",
 				chairId: "chair-1",
+				presetType: "morning",
 				doctorId: "doc-1",
-				doctorName: "Иванов Иван Иванович",
-				shiftPreset: "morning",
-				shiftLabel: "Утро 08-14",
-				shiftHours: "08:00–14:00",
-				startHour: 8,
-				endHour: 14,
-			};
-			const substituted: ChairDoctorShiftAssignment = {
-				...baseAssignment,
-				doctorId: "doc-3",
-				doctorName: "Сидорова Анна Сергеевна",
-			};
-			assert.equal(substituted.doctorId, "doc-3");
-			assert.equal(substituted.doctorName, "Сидорова Анна Сергеевна");
-			assert.equal(substituted.startHour, 8);
-			assert.equal(substituted.endHour, 14);
+				staffList: mockStaff as any,
+			});
+			const replacedShifts = applyCellShiftPreset(morningShifts, {
+				dateIso: "2026-09-09",
+				cabinetId: "cab-1",
+				chairId: "chair-1",
+				presetType: "morning",
+				doctorId: "doc-2",
+				staffList: mockStaff as any,
+			});
+			const assignment = buildChairDoctorAssignmentsFromShifts(replacedShifts, "2026-09-09")["chair-1"]!;
+			assert.equal(assignment.doctorId, "doc-2");
+			assert.equal(assignment.startHour, 8);
+			assert.equal(assignment.endHour, 14);
+			assert.equal(assignment.shiftHours, "08:00–14:00");
 		});
 
-		it("duplicates chair with prefilled name and identical parameters", () => {
-			const source = mockChairs[0]!;
-			const duplicated = {
-				name: `${source.name} (копия)`,
-				roomNumber: source.roomNumber,
-				specialization: source.specialization,
-				color: source.color,
-			};
-			assert.equal(duplicated.name, "Кресло 1 (Терапия) (копия)");
-			assert.equal(duplicated.roomNumber, "1");
-			assert.equal(duplicated.specialization, "therapist");
-			assert.equal(duplicated.color, "#0d9488");
+		it("supports clearing and restoring chair shift assignments via applyCellShiftPreset", () => {
+			const fullShifts = applyCellShiftPreset([], {
+				dateIso: "2026-09-09",
+				cabinetId: "cab-1",
+				chairId: "chair-1",
+				presetType: "full_day",
+				doctorId: "doc-1",
+				staffList: mockStaff as any,
+			});
+			assert.equal(
+				buildChairDoctorAssignmentsFromShifts(fullShifts, "2026-09-09")["chair-1"]?.startHour,
+				8,
+			);
+			const clearedShifts = applyCellShiftPreset(fullShifts, {
+				dateIso: "2026-09-09",
+				cabinetId: "cab-1",
+				chairId: "chair-1",
+				presetType: "clear",
+				doctorId: "doc-1",
+				staffList: mockStaff as any,
+			});
+			assert.equal(
+				buildChairDoctorAssignmentsFromShifts(clearedShifts, "2026-09-09")["chair-1"],
+				undefined,
+			);
+			assert.equal(formatDoctorShortName("Смирнова Елена Александровна"), "Смирнова Е.А.");
 		});
 
 		it("syncShiftsWithServer handles non-blocking sync payload without throw", async () => {
+			assert.equal(await syncShiftsWithServer("", {}), false);
 			const res = await syncShiftsWithServer("2026-09-09", {});
-			assert.ok(res !== undefined);
+			assert.equal(typeof res, "boolean");
 		});
 	});
 
@@ -913,9 +931,41 @@ describe("Schedule, Chairs & Shifts Architecture Parity (Schedule & Chair)", () 
 			assert.equal(firstCall[0]?.id, "warn-1");
 		});
 
-		it("ScheduleUnifiedToolbar is a valid component and renders without error", async () => {
-			assert.ok(ScheduleUnifiedToolbar, "ScheduleUnifiedToolbar component must be exported");
-			assert.equal(typeof ScheduleUnifiedToolbar, "function", "ScheduleUnifiedToolbar must be a function/component");
+		it("ScheduleUnifiedToolbar renders compact single-row controls and primary booking CTA in clinic and solo modes", () => {
+			const clinicHtml = renderToStaticMarkup(
+				React.createElement(ScheduleUnifiedToolbar, {
+					todayIso: "2026-09-09",
+					scheduleDateFilter: "2026-09-09",
+					setScheduleDateFilter: () => {},
+					stepScheduleDay: () => {},
+					activeScheduleFilterCount: 0,
+					resetScheduleFilters: () => {},
+					staffMembers: mockStaff,
+					chairs: mockChairs,
+					isSoloDoctor: false,
+					onQuickBooking: () => {},
+				}),
+			);
+			assert.ok(clinicHtml.includes("+ Запись"), "Toolbar must render primary booking CTA");
+			assert.ok(clinicHtml.includes("Сегодня"), "Toolbar must render Today step button");
+			assert.equal(hasCartoonEmojis(clinicHtml), false, "Toolbar must have 0 cartoon emojis");
+
+			const soloHtml = renderToStaticMarkup(
+				React.createElement(ScheduleUnifiedToolbar, {
+					todayIso: "2026-09-09",
+					scheduleDateFilter: "2026-09-09",
+					setScheduleDateFilter: () => {},
+					stepScheduleDay: () => {},
+					activeScheduleFilterCount: 0,
+					resetScheduleFilters: () => {},
+					staffMembers: [mockStaff[0]!],
+					chairs: [DEFAULT_SOLO_CHAIR],
+					isSoloDoctor: true,
+					onQuickBooking: () => {},
+				}),
+			);
+			assert.ok(soloHtml.includes("+ Запись"));
+			assert.equal(hasCartoonEmojis(soloHtml), false);
 		});
 	});
 });

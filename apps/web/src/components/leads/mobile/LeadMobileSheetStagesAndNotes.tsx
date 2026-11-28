@@ -32,7 +32,7 @@ export const LeadMobileSheetStagesAndNotes: React.FC<
 		<>
 			<div className="rounded-[16px] bg-[var(--paper-soft)] border border-[var(--line)] p-3.5 space-y-2">
 				<div className="flex items-center justify-between">
-					<span className="text-[12px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+					<span className="text-[12px] font-semibold text-[var(--muted)]">
 						Заметки куратора
 					</span>
 					<button
@@ -54,8 +54,8 @@ export const LeadMobileSheetStagesAndNotes: React.FC<
 			</div>
 
 			<div className="rounded-[16px] bg-[var(--paper-soft)] border border-[var(--line)] p-3.5 space-y-2.5">
-				<div className="text-[12px] font-semibold uppercase tracking-wider text-[var(--muted)]">
-					Перевести на этап воронки (1 тап)
+				<div className="text-[12px] font-semibold text-[var(--muted)]">
+					Перевести на этап воронки
 				</div>
 				<div className="grid grid-cols-2 gap-2">
 					{COLUMNS.map((col) => {

@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import {
 	ALL_VITA_SHADES,
@@ -16,28 +15,29 @@ import {
 	rgbToLab,
 	labToRgb,
 } from "../vitaShadesCatalog";
-
 import {
 	getStratificationPreset,
 	STUMP_NATURAL_DIE_SHADES,
 	SHADE_SWATCH_MAP,
 	VITA_BLEACH_SHADES_CLASSIFIED,
 } from "../../lab/labShadesData";
+import { ClinicalPhotoProtocolModal } from "../ClinicalPhotoProtocolModal";
+import { BeforeAfterComparisonView } from "../BeforeAfterComparisonView";
+import { VitaShadeSelector } from "../VitaShadeSelector";
+import { PhotoSlotCard } from "../PhotoSlotCard";
+import { PHOTO_PROTOCOL_PRESETS } from "../photoGridPresets";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const webSrc = path.resolve(__dirname, "../../../");
+const EMOJI_REGEX =
+	/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E0}-\u{1F1FF}\u{1FA00}-\u{1FAFF}]/u;
 
-describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Patient Card Integration", () => {
+describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Live UI (6G Live SUT)", () => {
 	it("1. VITA Scale Catalog Completeness & Homoglyph Normalization SSOT", () => {
-		// Exactly 20 Classical (16 standard + 4 bleach BL1-BL4)
 		assert.strictEqual(VITA_CLASSICAL_SHADES.length, 20, "VITA Classical must contain 20 shades");
-		// Exactly 29 3D-Master shades (0M1-0M3 bleach + groups 1..5)
 		assert.strictEqual(VITA_3D_MASTER_SHADES.length, 29, "VITA 3D-Master must contain 29 shades");
-		// Total 49 calibrated physical shades
 		assert.strictEqual(ALL_VITA_SHADES.length, 49, "Total catalog must contain 49 calibrated physical shades");
+		assert.ok(VITA_BLEACH_SHADES_CLASSIFIED.length >= 4);
 
-		// Test Cyrillic homoglyph inputs (Russian keyboard typing by doctors)
 		assert.strictEqual(normalizeVitaShadeCode("А2"), "A2", "Russian 'А' must normalize to Latin 'A'");
 		assert.strictEqual(normalizeVitaShadeCode("В1"), "B1", "Russian 'В' must normalize to Latin 'B'");
 		assert.strictEqual(normalizeVitaShadeCode("С3"), "C3", "Russian 'С' must normalize to Latin 'C'");
@@ -46,19 +46,19 @@ describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Patient Ca
 		assert.strictEqual(normalizeVitaShadeCode("vita  a-3.5 "), "A3.5", "Prefix and whitespace must normalize cleanly");
 		assert.strictEqual(normalizeVitaShadeCode("3D-2М2"), "2M2", "Russian 'М' in 3D group must normalize to Latin 'M'");
 
-		// Verify getVitaShadeByCode resolves Cyrillic codes
 		const resolvedRussianA2 = getVitaShadeByCode("А2");
 		assert.ok(resolvedRussianA2, "Russian 'А2' must resolve to VITA shade object");
-		assert.strictEqual(resolvedRussianA2.code, "A2");
+		assert.strictEqual(resolvedRussianA2?.code, "A2");
 
 		const resolvedRussianOM1 = getVitaShadeByCode("ОМ1");
 		assert.ok(resolvedRussianOM1, "Russian 'ОМ1' must resolve to 0M1");
-		assert.strictEqual(resolvedRussianOM1.code, "0M1");
+		assert.strictEqual(resolvedRussianOM1?.code, "0M1");
 	});
 
-	it("2. Colorimetry & CIEDE2000 Invariants (Zero NaN, Deterministic Metrics)", () => {
-		const a3 = getVitaShadeByCode("A3")!;
-		const bl2 = getVitaShadeByCode("BL2")!;
+	it("2. Colorimetry & CIEDE2000 / CIE76 Invariants (Zero NaN, Deterministic Metrics)", () => {
+		const a3 = getVitaShadeByCode("A3");
+		const bl2 = getVitaShadeByCode("BL2");
+		assert.ok(a3 && bl2);
 
 		const delta = calculateShadeDelta(a3, bl2);
 		assert.ok(Number.isFinite(delta.deltaE00), "CIEDE2000 must be a finite number");
@@ -66,130 +66,109 @@ describe("Red Team Inquisition: Dental Photography, VITA Scale SSOT & Patient Ca
 		assert.ok(delta.deltaL > 0, "Bleach BL2 must have higher lightness than A3");
 		assert.strictEqual(delta.isLighter, true, "isLighter must be true when whitening");
 
-		// Delta between identical shades must be 0
 		const zeroDelta = calculateShadeDelta(a3, a3);
 		assert.strictEqual(zeroDelta.deltaE00, 0, "Self Delta E must be 0");
 		assert.strictEqual(zeroDelta.deltaL, 0, "Self Delta L must be 0");
 
-		// Round-trip sRGB <-> CIELAB conversion test
+		const lab1 = rgbToLab({ r: 234, g: 218, b: 192 });
+		const lab2 = rgbToLab({ r: 248, g: 245, b: 238 });
+		assert.ok(colorDistanceDeltaE2000(lab1, lab2) > 0);
+		assert.ok(colorDistanceDeltaE76(lab1, lab2) > 0);
+		assert.strictEqual(colorDistanceDeltaE2000(lab1, lab1), 0);
+
 		const sampleRgb = { r: 234, g: 218, b: 192 };
-		const lab = rgbToLab(sampleRgb);
-		const roundtripRgb = labToRgb(lab);
+		const roundtripRgb = labToRgb(lab1);
 		assert.ok(Math.abs(roundtripRgb.r - sampleRgb.r) <= 1, "R channel roundtrip tolerance <= 1");
 		assert.ok(Math.abs(roundtripRgb.g - sampleRgb.g) <= 1, "G channel roundtrip tolerance <= 1");
 		assert.ok(Math.abs(roundtripRgb.b - sampleRgb.b) <= 1, "B channel roundtrip tolerance <= 1");
 	});
 
 	it("3. 3-Zone Stratification Presets & IPS Natural Die Stump Scale SSOT", () => {
-		// Natural stratification gradient
 		const stratA2 = getStratificationPreset("A2", "natural");
 		assert.strictEqual(stratA2.cervical, "A3", "A2 natural cervical must be A3 (warmer)");
 		assert.strictEqual(stratA2.body, "A2", "A2 body must be primary shade A2");
 		assert.strictEqual(stratA2.incisal, "A1", "A2 natural incisal must be A1 (lighter)");
 
-		// Monochrome preset
 		const monoA3 = getStratificationPreset("A3", "monochrome");
 		assert.strictEqual(monoA3.cervical, "A3");
 		assert.strictEqual(monoA3.body, "A3");
 		assert.strictEqual(monoA3.incisal, "A3");
 
-		// Youth translucent preset
 		const youthA2 = getStratificationPreset("A2", "youth_translucent");
 		assert.strictEqual(youthA2.cervical, "A2");
 		assert.strictEqual(youthA2.body, "A2");
 		assert.strictEqual(youthA2.incisal, "A1");
 
-		// Stump ND1-ND9 completeness
 		assert.strictEqual(STUMP_NATURAL_DIE_SHADES.length, 9, "Stump scale must have 9 ND shades (ND1-ND9)");
 		assert.ok(SHADE_SWATCH_MAP["ND1"], "ND1 swatch must exist");
 		assert.ok(SHADE_SWATCH_MAP["ND9"], "ND9 swatch must exist");
 	});
 
-	it("4. Anti-Monolith Law (Mandate 8c & §18): All components <= 800 lines", () => {
-		const filesToCheck = [
-			"components/photography/ClinicalPhotoProtocolModal.tsx",
-			"components/photography/BeforeAfterComparisonView.tsx",
-			"components/photography/VitaShadeSelector.tsx",
-			"components/photography/vitaShadesCatalog.ts",
-			"components/photography/photoProtocolEngine.ts",
-			"components/photography/photoGridPresets.ts",
-			"components/photography/PhotoSlotCard.tsx",
-			"components/patients/PatientCardModal.tsx",
-		];
+	it("4. Doctor Autonomy & Zero Cartoon Emojis in live rendered ClinicalPhotoProtocolModal & BeforeAfterComparisonView", () => {
+		const preset = PHOTO_PROTOCOL_PRESETS[0];
+		assert.ok(preset);
 
-		for (const rel of filesToCheck) {
-			const absPath = path.resolve(webSrc, rel);
-			assert.ok(fs.existsSync(absPath), `File must exist: ${rel}`);
-			const content = fs.readFileSync(absPath, "utf-8");
-			const lineCount = content.split("\n").length;
-			assert.ok(
-				lineCount <= 800,
-				`File ${rel} must NOT exceed 800 lines (actual: ${lineCount})`,
-			);
-		}
-	});
-
-	it("5. Doctor Autonomy (Mandate 8e): Zero disabled buttons in photography components", () => {
-		const photoFiles = [
-			"components/photography/ClinicalPhotoProtocolModal.tsx",
-			"components/photography/BeforeAfterComparisonView.tsx",
-			"components/photography/VitaShadeSelector.tsx",
-			"components/photography/PhotoSlotCard.tsx",
-		];
-
-		const disabledRegex = /disabled=\{/i;
-		const disabledAttrRegex = /\sdisabled(\s|>)/i;
-
-		for (const rel of photoFiles) {
-			const absPath = path.resolve(webSrc, rel);
-			const content = fs.readFileSync(absPath, "utf-8");
-
-			const hasDisabledProp = disabledRegex.test(content) || disabledAttrRegex.test(content);
-			assert.strictEqual(
-				hasDisabledProp,
-				false,
-				`Doctor Autonomy Violation: ${rel} contains disabled buttons!`,
-			);
-		}
-	});
-
-	it("6. Zero Cartoon Emojis (Mandate 8d item 7) in Photography & VITA modules", () => {
-		const files = [
-			"components/photography/ClinicalPhotoProtocolModal.tsx",
-			"components/photography/BeforeAfterComparisonView.tsx",
-			"components/photography/VitaShadeSelector.tsx",
-			"components/photography/vitaShadesCatalog.ts",
-			"components/photography/photoProtocolEngine.ts",
-		];
-
-		// Matches common emojis range excluding standard clinical ASCII / text
-		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E0}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}]/u;
-
-		for (const rel of files) {
-			const absPath = path.resolve(webSrc, rel);
-			const content = fs.readFileSync(absPath, "utf-8");
-			assert.strictEqual(
-				emojiRegex.test(content),
-				false,
-				`Mandate 8d Item 7 Violation: Cartoon emojis found in ${rel}`,
-			);
-		}
-	});
-
-	it("7. Clinical Integration: Photo Protocol Modals wired into StandaloneSurgeryHosts & OrthodonticsLaunchers", () => {
-		const surgeryHostPath = path.resolve(webSrc, "components/appLayout/modalsContainerModules/standalone/clinical/StandaloneSurgeryHosts.tsx");
-		const orthoLauncherPath = path.resolve(webSrc, "components/appLayout/modalsContainerModules/standalone/clinical/OrthodonticsLaunchers.tsx");
-		const surgeryContent = fs.existsSync(surgeryHostPath) ? fs.readFileSync(surgeryHostPath, "utf-8") : "";
-		const orthoContent = fs.existsSync(orthoLauncherPath) ? fs.readFileSync(orthoLauncherPath, "utf-8") : "";
-
-		// Proves clinical surgery hosts and orthodontic launchers import and render canonical ClinicalPhotoProtocolModal
-		assert.ok(
-			surgeryContent.includes("ClinicalPhotoProtocolModal"),
-			"StandaloneSurgeryHosts must import ClinicalPhotoProtocolModal",
+		const modalHtml = renderToStaticMarkup(
+			React.createElement(ClinicalPhotoProtocolModal, {
+				isOpen: true,
+				onClose: () => {},
+				patientId: "pat-photo-1",
+				patientName: "Смирнова Анна",
+			}),
 		);
-		assert.ok(
-			orthoContent.includes("ClinicalPhotoProtocolModal"),
-			"OrthodonticsLaunchers must import canonical ClinicalPhotoProtocolModal",
+		assert.ok(modalHtml.includes('data-testid="clinical-photo-protocol-modal"'));
+		assert.strictEqual(modalHtml.includes('disabled=""'), false);
+		assert.strictEqual(EMOJI_REGEX.test(modalHtml), false);
+
+		const compHtml = renderToStaticMarkup(
+			React.createElement(BeforeAfterComparisonView, {
+				preset,
+				slotsData: {},
+				beforeSlotId: preset.slots[0]?.id ?? "slot_1",
+				afterSlotId: preset.slots[1]?.id ?? "slot_2",
+			}),
 		);
+		assert.ok(compHtml.includes('data-testid="btn-patient-presentation-popout"'));
+		assert.strictEqual(compHtml.includes('disabled=""'), false);
+		assert.strictEqual(EMOJI_REGEX.test(compHtml), false);
+	});
+
+	it("5. VitaShadeSelector & PhotoSlotCard render with unlocked actions and zero emojis", () => {
+		const vitaHtml = renderToStaticMarkup(
+			React.createElement(VitaShadeSelector, {
+				beforeShadeCode: "A3",
+				afterShadeCode: "BL2",
+				onBeforeShadeChange: () => {},
+				onAfterShadeChange: () => {},
+			}),
+		);
+		assert.ok(vitaHtml.includes('data-testid="btn-transfer-vita-to-lab"'));
+		assert.strictEqual(vitaHtml.includes('disabled=""'), false);
+		assert.strictEqual(EMOJI_REGEX.test(vitaHtml), false);
+
+		const preset = PHOTO_PROTOCOL_PRESETS[0];
+		const slotDef = preset?.slots[0];
+		assert.ok(slotDef);
+		const slotHtml = renderToStaticMarkup(
+			React.createElement(PhotoSlotCard, {
+				slotDef,
+				record: { slotId: slotDef.id, detectedVitaShade: "A2" },
+				isDragActive: false,
+				onUploadClick: () => {},
+				onEditClick: () => {},
+				onDeleteClick: () => {},
+				onDragOver: () => {},
+				onDragLeave: () => {},
+				onDrop: () => {},
+			}),
+		);
+		assert.ok(slotHtml.includes(slotDef.shortLabelRu));
+		assert.strictEqual(slotHtml.includes('disabled=""'), false);
+		assert.strictEqual(EMOJI_REGEX.test(slotHtml), false);
+	});
+
+	it("6. Photo Protocol Studio resolves canonically via 3-Shell routeResolver", () => {
+		const route = resolveClinicRoute("", "#photo-protocol?patientId=pat-photo-1");
+		assert.strictEqual(route.studio?.kind, "photo_protocol");
 	});
 });

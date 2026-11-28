@@ -1,3 +1,4 @@
+import { resolveValidIanaTimeZone, todayDateKeyInTimeZone } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
@@ -7,6 +8,7 @@ import {
 	bactericidalIrradiatorLogs,
 } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
+import { clinicTimeZone } from "../../../../services/reports/managerReports/timezone.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { calculateBactericidalLampResource } from "../bactericidalHoursCalculator.js";
 import { eveningShiftBodySchema } from "../bactericidalSchemas.js";
@@ -30,7 +32,7 @@ export async function handleCloseEveningShift(
 		});
 	}
 	const body = parsed.data;
-	const dateStr = (body.date as string) || new Date().toISOString().slice(0, 10);
+	const explicitDate = typeof body.date === "string" && body.date ? body.date : null;
 	const shiftHours = typeof body.shiftHours === "number" ? body.shiftHours : 6;
 	const finalDisinfectionMinutes = 30;
 	const totalSessionHours = Number((shiftHours + finalDisinfectionMinutes / 60).toFixed(2));
@@ -38,6 +40,9 @@ export async function handleCloseEveningShift(
 	const operatorId = getRequestIdentity(req).userId ?? null;
 
 	const results = await withTenantWriteCtx(organizationId, async (tx) => {
+		const dateStr =
+			explicitDate ??
+			todayDateKeyInTimeZone(resolveValidIanaTimeZone(await clinicTimeZone(organizationId, tx)));
 		const activeEquipments = await tx
 			.select()
 			.from(bactericidalEquipments)

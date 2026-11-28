@@ -47,8 +47,8 @@ export function CephalometricReportTab({
 		<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto bg-[var(--paper)]">
 			<div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
 				<div className="flex items-center gap-2 min-w-0">
-					<FileText size={20} className="text-teal-400 shrink-0" />
-					<span className="text-sm font-bold text-white min-w-0 break-words">
+					<FileText size={20} className="text-[var(--primary)] shrink-0" />
+					<span className="text-sm font-bold text-[var(--ink)] min-w-0 break-words">
 						Предпросмотр протокола для карты
 					</span>
 				</div>
@@ -61,7 +61,7 @@ export function CephalometricReportTab({
 							}
 						}}
 						data-testid="btn-print-ceph-protocol"
-						className="h-8 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-[13px] font-medium text-slate-200 flex items-center gap-1.5 transition-colors border border-slate-700 cursor-pointer shadow-xs"
+						className="h-8 px-3 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[13px] font-medium text-[var(--ink)] flex items-center gap-1.5 transition-colors border border-[var(--line)] cursor-pointer shadow-xs"
 						title="Распечатать протокол ТРГ для медицинской карты"
 					>
 						<Printer size={14} />
@@ -70,9 +70,9 @@ export function CephalometricReportTab({
 					<button
 						type="button"
 						onClick={onCopyText}
-						className="h-8 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-[13px] font-medium text-slate-200 flex items-center gap-1.5 transition-colors border border-slate-700 cursor-pointer shadow-xs"
+						className="h-8 px-3 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[13px] font-medium text-[var(--ink)] flex items-center gap-1.5 transition-colors border border-[var(--line)] cursor-pointer shadow-xs"
 					>
-						{copied ? <Check size={14} className="text-emerald-400" /> : <Clipboard size={14} />}
+						{copied ? <Check size={14} className="text-emerald-500" /> : <Clipboard size={14} />}
 						<span>{copied ? "Скопировано" : "Копировать"}</span>
 					</button>
 				</div>
@@ -82,14 +82,14 @@ export function CephalometricReportTab({
 				readOnly
 				value={currentEffectiveProtocolText}
 				aria-label="Текст протокола ТРГ для медицинской карты"
-				className="flex-1 min-h-[320px] p-4 bg-slate-900 border border-slate-800 rounded-xl font-mono text-xs sm:text-sm text-slate-200 resize-none outline-none focus:border-teal-400 leading-relaxed shadow-inner"
+				className="flex-1 min-h-[320px] p-4 bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl font-mono text-xs sm:text-sm text-[var(--ink)] resize-none outline-none focus:border-[var(--primary)] leading-relaxed shadow-inner"
 			/>
 
-			<div className="mt-3 pt-3 border-t border-slate-800 flex flex-col gap-2">
+			<div className="mt-3 pt-3 border-t border-[var(--line)] flex flex-col gap-2">
 				<button
 					type="button"
 					onClick={onInsertToChart}
-					className="w-full h-10 py-2 px-4 rounded-lg bg-[var(--teal)] hover:brightness-105 text-white font-bold text-[13px] flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer"
+					className="w-full h-10 py-2 px-4 rounded-lg bg-[var(--primary)] hover:brightness-105 text-white font-bold text-[13px] flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer"
 				>
 					<Sparkles size={16} />
 					<span>Вставить в ортодонтическую карту</span>
@@ -460,10 +460,10 @@ export function CephalometricPresetsBar({
 						type="button"
 						onClick={onResetLandmarks}
 						data-testid="tab1-preset-clear"
-						className="h-8 px-2.5 rounded-lg bg-slate-800 hover:bg-rose-950/70 hover:border-rose-600/60 text-slate-300 hover:text-rose-200 border border-slate-700 text-[12.5px] font-medium transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
+						className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/10 hover:border-rose-500/50 text-[var(--ink-muted)] hover:text-rose-500 border border-[var(--line)] text-[12.5px] font-medium transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
 						title="Очистить разметку ориентиров для ручной укладки"
 					>
-						<Trash2 size={13} className="shrink-0 text-slate-400" />
+						<Trash2 size={13} className="shrink-0 text-[var(--ink-muted)]" />
 						<span>Очистить разметку</span>
 					</button>
 				</div>
@@ -472,26 +472,26 @@ export function CephalometricPresetsBar({
 	}
 
 	return (
-		<div className="mb-3 p-3 rounded-xl bg-slate-900 border border-slate-800 flex flex-col gap-2 shrink-0">
-			<div className="text-xs font-bold text-slate-300 flex items-center justify-between">
+		<div className="mb-3 p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-2 shrink-0">
+			<div className="text-xs font-bold text-[var(--ink)] flex items-center justify-between">
 				<span>Ввод по протоколу лаборатории:</span>
-				<span className="text-[11.5px] text-slate-400">Пикассо / Золотое Сечение / КЛКТ</span>
+				<span className="text-[11.5px] text-[var(--ink-muted)]">Пикассо / Золотое Сечение / КЛКТ</span>
 			</div>
 			<div className="grid grid-cols-2 gap-2">
 				<button
 					type="button"
 					onClick={() => onApplyPreset(CLASS_I_NORMAL_LANDMARKS_PRESET, "I Класс (Норма)")}
-					className="h-8 px-2.5 rounded-lg bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 text-[12.5px] font-semibold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
+					className="h-8 px-2.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-300 border border-emerald-500/40 text-[12.5px] font-semibold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
 					data-testid="btn-ceph-preset-class-1"
 					title="I Класс (Норма) — выставляет все 16 ориентиров по анатомической норме I класса"
 				>
-					<Sparkles size={12} className="text-emerald-400 shrink-0" />
+					<Sparkles size={12} className="text-emerald-500 shrink-0" />
 					<span>I Класс (Норма)</span>
 				</button>
 				<button
 					type="button"
 					onClick={() => onApplyPreset(CLASS_II_DISTAL_LANDMARKS_PRESET, "II Класс (Дистальный)")}
-					className="h-8 px-2.5 rounded-lg bg-amber-950/70 hover:bg-amber-900/80 text-amber-300 border border-amber-500/40 text-[12.5px] font-semibold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
+					className="h-8 px-2.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/40 text-[12.5px] font-semibold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
 					data-testid="btn-ceph-preset-class-2"
 					title="II Класс (Дистальный) — выставляет ориентиры дистального прикуса"
 				>
@@ -500,7 +500,7 @@ export function CephalometricPresetsBar({
 				<button
 					type="button"
 					onClick={() => onApplyPreset(CLASS_III_MESIAL_LANDMARKS_PRESET, "III Класс (Мезиальный)")}
-					className="h-8 px-2.5 rounded-lg bg-cyan-950/70 hover:bg-cyan-900/80 text-cyan-300 border border-cyan-500/40 text-[12.5px] font-semibold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
+					className="h-8 px-2.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 text-[12.5px] font-semibold transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
 					data-testid="btn-ceph-preset-class-3"
 					title="III Класс (Мезиальный) — выставляет ориентиры мезиального прикуса"
 				>
@@ -509,11 +509,11 @@ export function CephalometricPresetsBar({
 				<button
 					type="button"
 					onClick={onResetLandmarks}
-					className="h-8 px-2.5 rounded-lg bg-slate-800 hover:bg-rose-950/70 hover:border-rose-600/60 text-slate-300 hover:text-rose-200 border border-slate-700 text-[12.5px] font-medium transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
+					className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/10 hover:border-rose-500/50 text-[var(--ink-muted)] hover:text-rose-500 border border-[var(--line)] text-[12.5px] font-medium transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
 					data-testid="btn-ceph-preset-clear"
 					title="Очистить разметку ориентиров для ручной укладки"
 				>
-					<Trash2 size={12} className="text-slate-400 shrink-0" />
+					<Trash2 size={12} className="text-[var(--ink-muted)] shrink-0" />
 					<span>Очистить разметку</span>
 				</button>
 			</div>
@@ -547,15 +547,11 @@ export function CephalometricLandmarksList({
 						onClick={() => onSelectLandmark(lm.key)}
 						className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer min-h-[52px] ${
 							isTarget
-								? "bg-teal-950/80 border-teal-400 shadow-md ring-1 ring-teal-500/40"
+								? "bg-[var(--teal-surface)] border-[var(--primary)] shadow-md ring-1 ring-[var(--primary)]/30"
 								: isPlaced
-									? "bg-slate-900/90 border-slate-700 hover:border-teal-400"
-									: "bg-slate-900/90 border-slate-700 opacity-90 hover:opacity-100"
+									? "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--primary)]"
+									: "bg-[var(--paper)] border-[var(--line)] opacity-90 hover:opacity-100"
 						}`}
-						style={{
-							backgroundColor: isTarget ? "rgba(4, 47, 46, 0.9)" : "var(--paper,#0f172a)",
-							borderColor: isTarget ? "var(--primary,#2dd4bf)" : "var(--line,#334155)",
-						}}
 					>
 						<div className="flex items-center gap-3 min-w-0">
 							<div
@@ -565,10 +561,10 @@ export function CephalometricLandmarksList({
 								{lm.code}
 							</div>
 							<div className="min-w-0">
-								<div className="text-sm font-bold text-white min-w-0 break-words" style={{ color: "#ffffff" }}>
+								<div className="text-sm font-bold text-[var(--ink)] min-w-0 break-words">
 									{lm.nameRu}
 								</div>
-								<div className="text-xs font-medium text-slate-300 min-w-0 break-words leading-snug" style={{ color: "#cbd5e1" }}>
+								<div className="text-xs font-medium text-[var(--ink-muted)] min-w-0 break-words leading-snug">
 									{lm.anatomicalDescription}
 								</div>
 							</div>
@@ -576,11 +572,11 @@ export function CephalometricLandmarksList({
 
 						<div className="shrink-0 flex items-center gap-1.5">
 							{isPlaced ? (
-								<span className="text-xs font-bold text-teal-300 bg-teal-950/80 px-2.5 py-1 rounded-lg border border-teal-500/40 flex items-center gap-1">
+								<span className="text-xs font-bold text-[var(--primary)] bg-[var(--teal-surface)] px-2.5 py-1 rounded-lg border border-[var(--primary)]/40 flex items-center gap-1">
 									<Check size={13} /> Задана
 								</span>
 							) : (
-								<span className="text-xs font-semibold text-slate-300 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">
+								<span className="text-xs font-semibold text-[var(--ink-muted)] bg-[var(--paper-soft)] px-2.5 py-1 rounded-lg border border-[var(--line)]">
 									Не задана
 								</span>
 							)}
@@ -608,14 +604,14 @@ export function CephalometricMobileNav({
 	isComplete,
 }: CephalometricMobileNavProps) {
 	return (
-		<div className="lg:hidden flex items-center gap-1 bg-slate-900 border-b border-slate-800 p-1.5 shrink-0 overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none">
+		<div className="lg:hidden flex items-center gap-1 bg-[var(--paper)] border-b border-[var(--line)] p-1.5 shrink-0 overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none">
 			<button
 				type="button"
 				onClick={() => onSelectView("canvas")}
 				className={`min-h-[44px] min-w-max px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
 					mobileView === "canvas"
-						? "bg-teal-600 text-white shadow-md font-extrabold"
-						: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700"
+						? "bg-[var(--primary)] text-white shadow-md font-extrabold"
+						: "bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)]"
 				}`}
 				data-testid="ceph-mobile-tab-canvas"
 			>

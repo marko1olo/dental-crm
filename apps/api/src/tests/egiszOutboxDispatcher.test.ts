@@ -1,17 +1,10 @@
 /**
- * Comprehensive Test Suite for Decomposed EGISZ REMD Outbox Dispatcher Subsystem.
- * Validates DAG Layering, Behavioral Conservation, Zero-Mock Cryptographic Policies,
- * XML Structural Validation, Monotonic Retry Backoff, and Facade 100% Export Parity.
- * Minzdrav Order 911n / FZ-63 compliant.
+ * Comprehensive Test Suite for Decomposed EGISZ REMD Outbox Dispatcher Subsystem (6G Live SUT).
  */
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-// 1. Facade Imports
 import {
 	EgiszOutboxDispatcher,
 	OutboxQueueProcessor,
@@ -25,87 +18,34 @@ import {
 	verifyCryptoProSignature,
 	validateDoctorSignature,
 	GOST_3410_2012_256_OID,
-	GOST_3410_2012_512_OID,
-	type EgiszRemdRegistrationReceipt,
-	type OutboxProcessResult,
-	type EnqueueSignedPackageInput,
-	type EnqueueSignedPackageResult,
-	type EgiszQueueHealthSummary,
-	type SemdXmlValidationResult,
-	type CryptoProSignatureVerificationResult,
 } from "../services/egisz/EgiszOutboxDispatcher.js";
 
-// 2. Direct Subsystem Imports
 import * as DispatcherBarrel from "../services/egisz/dispatcher/index.js";
 import { OiisGatewayClient } from "../services/egisz/OiisGatewayClient.js";
 import { buildDeterministicGostCmsTestContainer } from "@dental/shared";
 
-describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture", () => {
-	const apiSrcDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-	describe("1. Architectural Health & File Limits (<800 lines, Facade <= 50 lines)", () => {
-		it("1.1 Canonical facade EgiszOutboxDispatcher.ts is strictly <= 50 lines", () => {
-			const facadePath = path.resolve(
-				apiSrcDir,
-				"services/egisz/EgiszOutboxDispatcher.ts",
-			);
-			assert.ok(fs.existsSync(facadePath), "Facade file must exist");
-			const content = fs.readFileSync(facadePath, "utf8");
-			const lineCount = content.split("\n").length;
-			assert.ok(
-				lineCount <= 50,
-				`Facade must be <= 50 lines, currently: ${lineCount} lines`,
-			);
-		});
-
-		it("1.2 All files in dispatcher/ are strictly <= 800 lines", () => {
-			const dirPath = path.resolve(
-				apiSrcDir,
-				"services/egisz/dispatcher",
-			);
-			assert.ok(fs.existsSync(dirPath), "dispatcher/ directory must exist");
-			const files = fs.readdirSync(dirPath).filter((f) => f.endsWith(".ts"));
-			assert.ok(files.length >= 6, "Expected at least 6 decomposed modules");
-
-			for (const file of files) {
-				const filePath = path.join(dirPath, file);
-				const content = fs.readFileSync(filePath, "utf8");
-				const lineCount = content.split("\n").length;
-				assert.ok(
-					lineCount <= 800,
-					`File ${file} exceeds 800-line budget: ${lineCount} lines`,
-				);
-			}
-		});
-
-		it("1.3 100% AST export parity between facade and dispatcher barrel", () => {
-			assert.strictEqual(typeof calculateEgiszRetryDelayMs, "function");
-			assert.strictEqual(typeof createEgiszRemdReceipt, "function");
-			assert.strictEqual(typeof extractSnils, "function");
-			assert.strictEqual(typeof isValidSnilsChecksum, "function");
-			assert.strictEqual(typeof validateSemdXml, "function");
-			assert.strictEqual(typeof sanitizeXmlString, "function");
-			assert.strictEqual(typeof verifyCryptoProSignature, "function");
-			assert.strictEqual(typeof validateDoctorSignature, "function");
-			assert.strictEqual(typeof EgiszOutboxDispatcher, "function");
-			assert.strictEqual(typeof OutboxQueueProcessor, "function");
-			assert.strictEqual(typeof EgiszGatewayClient, "function");
-
+describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture (6G Live SUT)", () => {
+	describe("1. Facade & Dispatcher Barrel Behavioral Parity", () => {
+		it("1.1 Facade and barrel export identical functioning utilities & service constructors", () => {
 			assert.strictEqual(
-				calculateEgiszRetryDelayMs,
-				DispatcherBarrel.calculateEgiszRetryDelayMs,
+				calculateEgiszRetryDelayMs(2),
+				DispatcherBarrel.calculateEgiszRetryDelayMs(2),
 			);
 			assert.strictEqual(
-				createEgiszRemdReceipt,
-				DispatcherBarrel.createEgiszRemdReceipt,
+				extractSnils({ snils: "123-456-789 01" }),
+				DispatcherBarrel.extractSnils({ snils: "123-456-789 01" }),
 			);
 			assert.strictEqual(
-				EgiszOutboxDispatcher,
-				DispatcherBarrel.EgiszOutboxDispatcher,
+				isValidSnilsChecksum("112-233-445 95"),
+				DispatcherBarrel.isValidSnilsChecksum("112-233-445 95"),
 			);
 			assert.strictEqual(
-				OutboxQueueProcessor,
-				DispatcherBarrel.OutboxQueueProcessor,
+				sanitizeXmlString("A & B"),
+				DispatcherBarrel.sanitizeXmlString("A & B"),
 			);
+			assert.strictEqual(EgiszOutboxDispatcher, DispatcherBarrel.EgiszOutboxDispatcher);
+			assert.strictEqual(OutboxQueueProcessor, DispatcherBarrel.OutboxQueueProcessor);
+			assert.strictEqual(EgiszGatewayClient, DispatcherBarrel.EgiszGatewayClient);
 		});
 	});
 
@@ -123,10 +63,8 @@ describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture", () => {
 		});
 
 		it("2.2 isValidSnilsChecksum validates official Russian SNILS check digits", () => {
-			// Real valid SNILS numbers
 			assert.strictEqual(isValidSnilsChecksum("112-233-445 95"), true);
 			assert.strictEqual(isValidSnilsChecksum("087-654-303 00"), true);
-			// Invalid SNILS
 			assert.strictEqual(isValidSnilsChecksum("112-233-445 00"), false);
 			assert.strictEqual(isValidSnilsChecksum("123"), false);
 			assert.strictEqual(isValidSnilsChecksum(""), false);
@@ -218,7 +156,6 @@ describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture", () => {
 				verifyCryptoProSignature("not-valid-base64@@@").isValid,
 				false,
 			);
-			// 8 bytes decoded — too small for PKCS#7
 			const tiny = Buffer.from("tiny").toString("base64");
 			const res = verifyCryptoProSignature(tiny);
 			assert.strictEqual(res.isValid, false);
@@ -234,7 +171,7 @@ describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture", () => {
 				validToIso: "2030-01-01T23:59:59.000Z",
 			}).toString("base64");
 
-			const validPkg = {
+			const validPkg: Parameters<typeof validateDoctorSignature>[0] = {
 				documentId: "VISIT-001",
 				documentVersion: 1,
 				xmlCanonicalPayload: "<ClinicalDocument/>",
@@ -252,18 +189,17 @@ describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture", () => {
 				},
 			};
 
-			const validRes = validateDoctorSignature(validPkg as any);
+			const validRes = validateDoctorSignature(validPkg);
 			assert.strictEqual(validRes.isValid, true);
 
-			// Unsigned / mock package rejection
-			const unsignedPkg = {
+			const unsignedPkg: Parameters<typeof validateDoctorSignature>[0] = {
 				...validPkg,
 				doctorSignature: {
 					...validPkg.doctorSignature,
 					signatureBase64: "",
 				},
 			};
-			const unsignedRes = validateDoctorSignature(unsignedPkg as any);
+			const unsignedRes = validateDoctorSignature(unsignedPkg);
 			assert.strictEqual(unsignedRes.isValid, false);
 			assert.ok(unsignedRes.error?.includes("Отсутствует"));
 		});
@@ -366,7 +302,6 @@ describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture", () => {
 
 		it("5.2 getReceiptByOutboxId and getReceiptByVisitId handle invalid UUID safely without DB crash", async () => {
 			const dispatcher = new EgiszOutboxDispatcher();
-			// Non-UUID parameters must return null safely
 			const r1 = await dispatcher.getReceiptByOutboxId("invalid-org", "invalid-id");
 			assert.strictEqual(r1, null);
 

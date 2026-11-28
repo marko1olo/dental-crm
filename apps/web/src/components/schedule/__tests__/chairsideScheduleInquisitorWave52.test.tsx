@@ -13,10 +13,7 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import {
@@ -24,9 +21,6 @@ import {
 	type AppointmentStatusPopupProps,
 } from "../AppointmentStatusPopup.js";
 import { ScheduleMobileBottomSheet } from "../grid/ScheduleMobileBottomSheet.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const mockAppointment: any = {
 	id: "appt-inquisitor-101",
@@ -79,45 +73,77 @@ const mockProps: AppointmentStatusPopupProps = {
 };
 
 describe("Chairside Schedule Inquisitor Wave 52: 4-Stage Transitions, >=44px Touch Targets & Stacking Integrity", () => {
-	describe("1. Static Code Analysis (Invariants & Anti-Regressions)", () => {
-		const popupSourcePath = path.resolve(__dirname, "../AppointmentStatusPopup.tsx");
-		const source = fs.readFileSync(popupSourcePath, "utf-8");
-
-		it("contains z-[100] high stacking context to avoid chair column clipping", () => {
+	describe("1. Live Render Invariants: Stacking, CLS Containment & Edge Collision Protection", () => {
+		it("renders z-[100] stacking context and contain:layout style for CLS = 0 stabilization", () => {
+			const html = renderToString(React.createElement(AppointmentHoverHud, mockProps));
 			assert.ok(
-				source.includes("z-[100]"),
-				"AppointmentStatusPopup must declare z-[100] to prevent chair column clipping",
+				html.includes("z-[100]"),
+				"AppointmentHoverHud must render z-[100] to prevent chair column clipping",
+			);
+			assert.match(
+				html,
+				/style="[^"]*contain:\s*layout style/,
+				"AppointmentHoverHud must render inline contain:layout style for CLS = 0",
 			);
 		});
 
-		it("enforces contain: layout style for CLS = 0 layout stabilization", () => {
-			assert.ok(
-				source.includes('contain: "layout style"'),
-				"AppointmentHoverHud must include layout containment for CLS = 0",
+		it("flips horizontal and vertical classes when near right edge or bottom boundary", () => {
+			const defaultHtml = renderToString(
+				React.createElement(AppointmentHoverHud, {
+					...mockProps,
+					isNearRightEdge: false,
+					isNearBottom: false,
+				}),
 			);
+			assert.equal(defaultHtml.includes("right-0 left-auto"), false);
+			assert.equal(defaultHtml.includes("bottom-full"), false);
+
+			const flippedHtml = renderToString(
+				React.createElement(AppointmentHoverHud, {
+					...mockProps,
+					isNearRightEdge: true,
+					isNearBottom: true,
+				}),
+			);
+			assert.ok(flippedHtml.includes("right-0 left-auto"), "Must flip alignment on right edge");
+			assert.ok(flippedHtml.includes("bottom-full"), "Must flip vertically near bottom");
 		});
 
-		it("supports dynamic boundary awareness (right-0 left-auto / bottom-full)", () => {
-			assert.ok(source.includes("isNearRightEdge"), "Must support isNearRightEdge prop");
-			assert.ok(source.includes("isNearBottom"), "Must support isNearBottom prop");
-			assert.ok(source.includes("right-0 left-auto"), "Must support right alignment flipping");
-			assert.ok(source.includes("bottom-full"), "Must support vertical bottom flip");
+		it("renders 4 transition testids and >=44px touch targets on every status and action button", () => {
+			const html = renderToString(React.createElement(AppointmentHoverHud, mockProps));
+			const expectedIds = [
+				`timeline-hover-status-planned-${mockAppointment.id}`,
+				`timeline-hover-status-arrived-${mockAppointment.id}`,
+				`timeline-hover-status-in-treatment-${mockAppointment.id}`,
+				`timeline-hover-status-completed-${mockAppointment.id}`,
+				"hover-start-visit-btn",
+				"hover-pay-54fz-btn",
+			];
+			for (const testId of expectedIds) {
+				const btnMatch = html.match(new RegExp(`<button[^>]*data-testid="${testId}"[^>]*>`));
+				assert.ok(btnMatch, `Button ${testId} must be rendered`);
+				assert.ok(
+					btnMatch[0].includes("min-h-[44px]"),
+					`Button ${testId} must enforce min-h-[44px]`,
+				);
+				assert.equal(
+					btnMatch[0].includes("disabled"),
+					false,
+					`Button ${testId} must not be disabled`,
+				);
+			}
 		});
 
-		it("declares testids for all 4 transition stages in hover hud", () => {
-			assert.ok(source.includes("timeline-hover-status-planned-"));
-			assert.ok(source.includes("timeline-hover-status-arrived-"));
-			assert.ok(source.includes("timeline-hover-status-in-treatment-"));
-			assert.ok(source.includes("timeline-hover-status-completed-"));
-		});
-
-		it("enforces min-h-[44px] on all transition buttons and quick actions", () => {
-			assert.match(source, /timeline-hover-status-planned-[\s\S]*?min-h-\[44px\]/);
-			assert.match(source, /timeline-hover-status-arrived-[\s\S]*?min-h-\[44px\]/);
-			assert.match(source, /timeline-hover-status-in-treatment-[\s\S]*?min-h-\[44px\]/);
-			assert.match(source, /timeline-hover-status-completed-[\s\S]*?min-h-\[44px\]/);
-			assert.match(source, /hover-start-visit-btn[\s\S]*?min-h-\[44px\]/);
-			assert.match(source, /hover-pay-54fz-btn[\s\S]*?min-h-\[44px\]/);
+		it("renders positive and omitted allergy/balance states accurately", () => {
+			const positiveBalanceHtml = renderToString(
+				React.createElement(AppointmentHoverHud, {
+					...mockProps,
+					patientBalance: 2500,
+					allergyAlert: null,
+				}),
+			);
+			assert.equal(positiveBalanceHtml.includes("Аллергия на лидокаин!"), false);
+			assert.match(positiveBalanceHtml, /2[\s\u00A0]?500/);
 		});
 	});
 

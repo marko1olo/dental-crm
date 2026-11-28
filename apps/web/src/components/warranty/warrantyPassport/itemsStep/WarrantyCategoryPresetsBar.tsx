@@ -25,7 +25,7 @@ const getCategoryLabel = (preset: WarrantyPreset): { tag: string; title: string 
 		case "endodontic_treatment":
 			return { tag: "Терапия", title: "Эндодонтия (Каналы)" };
 		case "orthodontic_aligners":
-			return { tag: "Ортодонтия", title: "Элайнеры & Брекеты" };
+			return { tag: "Ортодонтия", title: "Элайнеры и брекеты" };
 		case "periodontal_splinting":
 			return { tag: "Пародонтология", title: "Шинирование зубов" };
 		case "temporary_prosthesis":

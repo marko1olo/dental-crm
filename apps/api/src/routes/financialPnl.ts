@@ -9,8 +9,10 @@
 import {
 	type CalculateManagerialPnlInput,
 	calculateManagerialPnl,
+	formatDateKeyInTimeZone,
 	kopecksToRubles,
 	classifyPaymentFlowRecord,
+	resolveValidIanaTimeZone,
 	rublesToKopecks,
 	splitKopecks,
 } from "@dental/shared";
@@ -124,12 +126,13 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 				? resolvePeriodBoundary(parsed.data.to, "to", orgTimeZone) ?? defaultPeriod.to
 				: defaultPeriod.to;
 
+			const resolvedTz = resolveValidIanaTimeZone(orgTimeZone);
 			const fromDateStr = parsed.data.from && CALENDAR_DATE_PATTERN.test(parsed.data.from)
 				? parsed.data.from
-				: fromDate.toISOString().slice(0, 10);
+				: formatDateKeyInTimeZone(fromDate, resolvedTz);
 			const toDateStr = parsed.data.to && CALENDAR_DATE_PATTERN.test(parsed.data.to)
 				? parsed.data.to
-				: toDate.toISOString().slice(0, 10);
+				: formatDateKeyInTimeZone(toDate, resolvedTz);
 
 			const [clinic] = await tx
 				.select({ name: clinics.name })

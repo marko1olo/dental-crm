@@ -142,10 +142,9 @@ details.schedule-secret-collapsible summary:hover {
 
 .topbar-clinic .eyebrow {
 	margin: 0 0 2px 0;
-	font-size: 11px;
+	font-size: 12px;
+	font-weight: 600;
 	color: var(--muted);
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
 }
 
 /* Принудительная нейтрализация жестких Tailwind карт и фона блоков.

@@ -32,10 +32,10 @@ export const MessageTemplatePhonePreview: React.FC<Props> = ({ template }) => {
 
 	return (
 		<div className="phone-mockup-wrapper flex justify-center py-2">
-			<div className="phone-body w-[310px] rounded-[36px] p-3 border-4 border-slate-700 bg-slate-900 shadow-2xl flex flex-col min-h-[460px]">
-				<div className="phone-notch-bar flex justify-between items-center px-4 py-1 text-[11px] text-slate-400">
+			<div className="phone-body w-[310px] rounded-[36px] p-3 border-4 border-zinc-700 bg-zinc-900 shadow-2xl flex flex-col min-h-[460px]">
+				<div className="phone-notch-bar flex justify-between items-center px-4 py-1 text-[11px] text-zinc-400">
 					<span>09:41</span>
-					<div className="w-16 h-4 bg-slate-800 rounded-full" />
+					<div className="w-16 h-4 bg-zinc-800 rounded-full" />
 					<Battery size={14} />
 				</div>
 

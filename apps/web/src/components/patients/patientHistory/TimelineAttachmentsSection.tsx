@@ -20,8 +20,8 @@ export const TimelineAttachmentsSection: React.FC<TimelineAttachmentsSectionProp
 		<div className="clinical-attachments-row">
 			{scansList.length > 0 && (
 				<div className="clinical-scans-section w-full">
-					<div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5 mb-2">
-						<Eye className="w-3.5 h-3.5 text-[var(--teal)]" />
+					<div className="text-[11px] font-bold text-[var(--muted)] flex items-center gap-1.5 mb-2">
+						<Eye className="w-3.5 h-3.5 text-[var(--primary)]" />
 						<span>Прикрепленные снимки и рентгенограммы ({scansList.length})</span>
 					</div>
 					<div className="clinical-scans-grid">
@@ -48,7 +48,7 @@ export const TimelineAttachmentsSection: React.FC<TimelineAttachmentsSectionProp
 
 			{visit.materialsDeducted && visit.materialsDeducted.length > 0 && (
 				<div className="clinical-materials-section w-full">
-					<div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+					<div className="text-[11px] font-bold text-[var(--muted)] flex items-center gap-1.5 mb-1.5">
 						<Package className="w-3.5 h-3.5 text-purple-500" />
 						<span>Списано со склада по техкарте:</span>
 					</div>

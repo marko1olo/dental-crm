@@ -21,6 +21,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { generateUuidV7 } from "@dental/shared";
 import { playTactileEarcon } from "../../../lib/chairsideErgonomics.js";
 import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { showToast } from "../../GlobalToast.js";
 import { copySbpUrlToClipboard, fetchSbpDynamicQr, type SbpDynamicQrPayloadData } from "../sbpQrEngine.js";
 import type { SbpDynamicQrCardProps } from "./sbpTypes.js";
@@ -117,7 +118,12 @@ export function useSbpPolling(props: SbpDynamicQrCardProps) {
 				headers: denteClinicalReadHeaders(),
 			});
 			if (res.ok) {
-				const json = (await res.json().catch(() => null)) as { found?: boolean; status?: string } | null;
+				let json: { found?: boolean; status?: string } | null = null;
+				try {
+					json = (await res.json()) as { found?: boolean; status?: string } | null;
+				} catch (parseErr) {
+					clientLogger.warn("useSbpPolling response parse failed", { error: String(parseErr) });
+				}
 				const remoteStatus = json?.status?.trim();
 				if (json?.found && isTerminalPaidSbpStatus(remoteStatus)) {
 					setSbpCheckMessage(null);

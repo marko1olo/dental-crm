@@ -1,47 +1,50 @@
 /**
- * Single-Shell Route Resolution & Studio Overlay Host SSOT Invariant Test.
- * Мандаты 8b (Sweet Spot), 8e (Автономия врача), 8aq (Монтирование в UI), 8wy (Изоляция демо/прод).
+ * Single-Shell Route Resolution & Studio Overlay Host SSOT Invariant Test (6G Live SUT).
  */
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { renderStandaloneLaunchers } from "../StandaloneLaunchers";
+import {
+	CLINICAL_LAUNCHERS_REGISTRY,
+	renderClinicalLaunchers,
+} from "../standalone/clinicalLaunchersRegistry";
+import {
+	ADMINISTRATIVE_LAUNCHERS_REGISTRY,
+	renderAdministrativeLaunchers,
+} from "../standalone/administrativeLaunchersRegistry";
 import {
 	matchesDeepLink,
 	evaluateLaunchersRegistry,
 	type DeepLinkUrlContext,
 	type LauncherRegistryEntry,
 } from "../standalone/deepLinkMatcher";
+import type { StandaloneLaunchersProps } from "../modalsContainerTypes";
 import { resolveClinicRoute } from "../../../../router/routeResolver";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const modulesDir = path.resolve(__dirname, "..");
+const stubLauncherProps: StandaloneLaunchersProps = {
+	isCbctTunerOpen: false,
+	setIsCbctTunerOpen: () => {},
+	isCbctDirectModalOpen: false,
+	setIsCbctDirectModalOpen: () => {},
+	isConsentDirectModalOpen: false,
+	setIsConsentDirectModalOpen: () => {},
+	isCephDirectModalOpen: false,
+	setIsCephDirectModalOpen: () => {},
+	isEgiszRemdModalOpen: false,
+	setIsEgiszRemdModalOpen: () => {},
+};
 
-describe("Standalone Launchers Decomposition & Routing SSOT Suite", () => {
-	it("1.1. Фасад StandaloneLaunchers.tsx не превышает 120 строк", () => {
-		const facadePath = path.join(modulesDir, "StandaloneLaunchers.tsx");
-		assert.ok(fs.existsSync(facadePath), "StandaloneLaunchers.tsx must exist");
-
-		const content = fs.readFileSync(facadePath, "utf-8");
-		const lines = content.split("\n").length;
-		assert.ok(lines <= 120, `StandaloneLaunchers.tsx must be <= 120 lines, actual: ${lines}`);
-		assert.ok(content.includes("renderStandaloneLaunchers"), "Must export renderStandaloneLaunchers");
+describe("Standalone Launchers Decomposition & Routing SSOT Suite (6G Live SUT)", () => {
+	it("1.1. Legacy StandaloneLaunchers & registries return null / empty because overlays are consolidated in WorkspaceStudioOverlayHost", () => {
+		assert.strictEqual(renderStandaloneLaunchers(stubLauncherProps), null);
+		assert.strictEqual(renderClinicalLaunchers(stubLauncherProps), null);
+		assert.strictEqual(renderAdministrativeLaunchers(stubLauncherProps), null);
+		assert.deepStrictEqual(CLINICAL_LAUNCHERS_REGISTRY, []);
+		assert.deepStrictEqual(ADMINISTRATIVE_LAUNCHERS_REGISTRY, []);
 	});
 
-	it("1.2. Субмодули реестров и matcher находятся в целевом Sweet Spot диапазоне", () => {
-		const clinicalPath = path.join(modulesDir, "standalone/clinicalLaunchersRegistry.tsx");
-		const adminPath = path.join(modulesDir, "standalone/administrativeLaunchersRegistry.tsx");
-		const matcherPath = path.join(modulesDir, "standalone/deepLinkMatcher.ts");
-
-		assert.ok(fs.existsSync(clinicalPath), "clinicalLaunchersRegistry.tsx must exist");
-		assert.ok(fs.existsSync(adminPath), "administrativeLaunchersRegistry.tsx must exist");
-		assert.ok(fs.existsSync(matcherPath), "deepLinkMatcher.ts must exist");
-	});
-
-	it("2.1. matchesDeepLink корректно сопоставляет точные хеши и хеш-префиксы", () => {
+	it("2.1. matchesDeepLink корректно сопоставляет точные хеши, префиксы, query-параметры и отклоняет несовпадения", () => {
 		const loyaltyContext: DeepLinkUrlContext = {
 			search: "",
 			hash: "#loyalty",
@@ -51,6 +54,10 @@ describe("Standalone Launchers Decomposition & Routing SSOT Suite", () => {
 		assert.equal(
 			matchesDeepLink({ exactHashes: ["#loyalty", "#bonuses"], hashPrefixes: ["#loyalty?", "#loyalty/"] }, loyaltyContext),
 			true,
+		);
+		assert.equal(
+			matchesDeepLink({ exactHashes: ["#cashbox"] }, loyaltyContext),
+			false,
 		);
 	});
 
@@ -77,13 +84,25 @@ describe("Standalone Launchers Decomposition & Routing SSOT Suite", () => {
 		}
 	});
 
-	it("3.3. evaluateLaunchersRegistry возвращает компонент при совпадении критериев", () => {
+	it("3.3. evaluateLaunchersRegistry invokes render for matching deep-link and skips non-matching entries", () => {
+		let matchedRendered = false;
 		const testRegistry: readonly LauncherRegistryEntry<Record<string, never>>[] = [
+			{
+				id: "other-stand",
+				title: "Другой стенд",
+				criteria: { exactHashes: ["#other"] },
+				render: () => {
+					throw new Error("Should not render non-matching entry");
+				},
+			},
 			{
 				id: "dummy-test",
 				title: "Тестовый стенд",
 				criteria: { exactHashes: ["#test-stand"] },
-				render: () => null,
+				render: () => {
+					matchedRendered = true;
+					return null;
+				},
 			},
 		];
 		const testContext: DeepLinkUrlContext = {
@@ -93,5 +112,6 @@ describe("Standalone Launchers Decomposition & Routing SSOT Suite", () => {
 			searchParams: new URLSearchParams(),
 		};
 		assert.equal(evaluateLaunchersRegistry(testRegistry, {}, testContext), null);
+		assert.equal(matchedRendered, true);
 	});
 });

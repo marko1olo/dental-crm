@@ -115,7 +115,12 @@ export function usePatientIntake(
 				body: JSON.stringify({ fullName, phone: newPatientForm.phone.trim() || undefined, birthDate: newPatientForm.birthDate.trim() || undefined }),
 			});
 			if (!createRes.ok && !isDemoShowcaseMode()) {
-				const errJson = (await createRes.json().catch(() => null)) as { message?: string } | null;
+				let errJson: { message?: string } | null = null;
+				try {
+					errJson = (await createRes.json()) as { message?: string } | null;
+				} catch (parseErr) {
+					clientLogger.warn("[usePatientIntake] Failed to parse error JSON:", parseErr);
+				}
 				throw new Error(errJson?.message || `Ошибка создания карты пациента (${createRes.status})`);
 			}
 			const createdData = createRes.ok ? await createRes.json() : null;

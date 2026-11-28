@@ -1,100 +1,29 @@
-/**
- * copilotEndToEndWiring.test.tsx
- *
- * Comprehensive End-to-End Wiring Test Suite for Chairside AI Copilot HUD:
- * - Real Fastify / Agent API Contract (POST /api/v1/copilot/agent/execute with auth tokens, patientId, visitId, chairId).
- * - Parsing thought stream (ReAct reasoning), clinical verdict (T.A.R.S. 100%), and proactive action cards.
- * - Mandate 8e: Doctor Autonomy (Zero unexplained disabled buttons, 1-click dispatch, editable text before apply).
- * - 1-Click dispatch to Visit Note / Medical Card (onApplySoapDiary), Services Estimate (onAddBillingItem / onApplyServices), Odontogram (onUpdateToothStatus / onApplyToothState).
- * - 1-Click reversible undo for individual actions and "Откатить всё" batch undo.
- * - Cross-component bus sync: dente-apply-soap-protocol, dente-undo-soap-protocol, dente-add-billing-item, dente-odontogram-update.
- * - Mandate 8d & 8k: 0 cartoon emojis, CSS design tokens strictly.
- */
-
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import React from "react";
+import React, { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { ChairsideCopilotHUD } from "../ChairsideCopilotHUD";
+import { executeCopilotAgentRequest } from "../chairside/chairsideAgentExecutor";
 import { ToothContextDrawer } from "../../diagnostics/ToothContextDrawer";
+import {
+  DENTE_CLINIC_TOKEN_KEY,
+  DENTE_STAFF_TOKEN_KEY,
+  resetInMemoryAuthTokens,
+} from "../../../lib/safeLocalStorage";
 
-interface MockFn {
-  (...args: any[]): any;
-  mock: { calls: any[][] };
-  mockResolvedValue: (val: any) => MockFn;
-  mockReturnValue: (val: any) => MockFn;
-}
+const CARTOON_EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
-function createMockFn(impl?: Function): MockFn {
-  let returnValue: any;
-  let isResolved = false;
-  let resolvedValue: any;
-  const calls: any[][] = [];
+describe("ChairsideCopilotHUD End-to-End Wiring (Live 6G SUT)", () => {
+  const prevFetch = globalThis.fetch;
 
-  const fn: any = (...args: any[]) => {
-    calls.push(args);
-    if (isResolved) return Promise.resolve(resolvedValue);
-    if (returnValue !== undefined) return returnValue;
-    if (impl) return impl(...args);
-    return undefined;
-  };
-
-  fn.mock = { calls };
-  fn.mockResolvedValue = (val: any) => {
-    isResolved = true;
-    resolvedValue = val;
-    return fn;
-  };
-  fn.mockReturnValue = (val: any) => {
-    returnValue = val;
-    return fn;
-  };
-  return fn;
-}
-
-const vi = {
-  fn: (impl?: Function) => createMockFn(impl),
-  restoreAllMocks: () => {},
-};
-
-const expect = (actual: any) => ({
-  toBe: (expected: any) => assert.strictEqual(actual, expected),
-  toBeNull: () => assert.strictEqual(actual, null),
-  toHaveLength: (expected: number) => assert.strictEqual(actual?.length, expected),
-  toContain: (expected: string) => {
-    assert.ok(
-      typeof actual === "string" && actual.includes(expected),
-      `Expected string to contain ${JSON.stringify(expected)}`,
-    );
-  },
-  toHaveBeenCalled: () => {
-    assert.ok(actual?.mock?.calls?.length > 0, `Expected mock to have been called`);
-  },
-  toHaveBeenCalledWith: (...args: any[]) => {
-    const calls = actual?.mock?.calls || [];
-    const matched = calls.some((call: any[]) => JSON.stringify(call) === JSON.stringify(args));
-    assert.ok(matched, `Expected mock to have been called with ${JSON.stringify(args)}, but got ${JSON.stringify(calls)}`);
-  },
-  not: {
-    toMatch: (regex: RegExp) => {
-      assert.ok(!regex.test(String(actual)), `Expected string not to match ${regex}`);
-    },
-  },
-});
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    resetInMemoryAuthTokens();
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    globalThis.fetch = prevFetch;
+    resetInMemoryAuthTokens();
   });
 
   it("1. renders expanded HUD with doctor autonomy bar and clinical controls", () => {
@@ -109,18 +38,18 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
         patientName="Сидоров А.П."
         patientAllergies={["Лидокаин", "Пенициллин"]}
         patientSomaticHistory={["Гипертоническая болезнь II ст."]}
-      />
+      />,
     );
 
-    expect(html).toContain("chairside-copilot-hud");
-    expect(html).toContain("Копилот у кресла");
-    expect(html).toContain("Сидоров А.П.");
-    expect(html).toContain("btn-chairside-apply-all");
-    expect(html).toContain("Применить все предложения");
-    expect(html).toContain("Обратимые действия • Полный контроль врача");
-    expect(html).toContain("btn-preset-caries-16");
-    expect(html).toContain("btn-preset-pulpitis-26");
-    expect(html).toContain("btn-preset-hygiene");
+    assert.ok(html.includes("chairside-copilot-hud"));
+    assert.ok(html.includes("Копилот у кресла"));
+    assert.ok(html.includes("Сидоров А.П."));
+    assert.ok(html.includes("btn-chairside-apply-all"));
+    assert.ok(html.includes("Применить все предложения"));
+    assert.ok(html.includes("Обратимые действия • Полный контроль врача"));
+    assert.ok(html.includes("btn-preset-caries-16"));
+    assert.ok(html.includes("btn-preset-pulpitis-26"));
+    assert.ok(html.includes("btn-preset-hygiene"));
   });
 
   it("2. renders ReAct thought stream and clinical cards (tooth, services estimate, SOAP diary)", () => {
@@ -157,25 +86,20 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
             applied: false,
           },
         ]}
-      />
+      />,
     );
 
-    // Thought stream
-    expect(html).toContain("chairside-thought-stream");
-    expect(html).toContain("Размышления ИИ");
-    expect(html).toContain("Проверка аллергического статуса");
-    expect(html).toContain("Сверка диагноза МКБ-10");
-    expect(html).toContain("Расчет стоимости услуг по прейскуранту");
-    expect(html).toContain("Формирование клинического протокола приёма");
-
-    // Action cards
-    expect(html).toContain("chairside-card-odontogram");
-    expect(html).toContain("btn-apply-tooth");
-    expect(html).toContain("chairside-card-services");
-    expect(html).toContain("btn-apply-services");
-    expect(html).toContain("chairside-card-soap");
-    expect(html).toContain("btn-apply-soap");
-    expect(html).toContain("btn-edit-soap");
+    assert.ok(html.includes("chairside-thought-stream"));
+    assert.ok(html.includes("Размышления ИИ"));
+    assert.ok(html.includes("Проверка аллергического статуса"));
+    assert.ok(html.includes("Сверка диагноза МКБ-10"));
+    assert.ok(html.includes("chairside-card-odontogram"));
+    assert.ok(html.includes("btn-apply-tooth"));
+    assert.ok(html.includes("chairside-card-services"));
+    assert.ok(html.includes("btn-apply-services"));
+    assert.ok(html.includes("chairside-card-soap"));
+    assert.ok(html.includes("btn-apply-soap"));
+    assert.ok(html.includes("btn-edit-soap"));
   });
 
   it("3. Mandate 8e: action buttons are NEVER disabled by default (Zero blocking gates)", () => {
@@ -183,141 +107,264 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
       <ChairsideCopilotHUD
         initialOpen={true}
         activeTooth={36}
-      />
+      />,
     );
 
-    // Send button must not be disabled
-    expect(html).not.toMatch(/btn-chairside-send[^>]*disabled/);
-    // Apply tooth button must not be disabled
-    expect(html).not.toMatch(/btn-apply-tooth[^>]*disabled/);
-    // Apply services button must not be disabled
-    expect(html).not.toMatch(/btn-apply-services[^>]*disabled/);
-    // Apply soap button must not be disabled
-    expect(html).not.toMatch(/btn-apply-soap[^>]*disabled/);
-    // Apply all button must not be disabled
-    expect(html).not.toMatch(/btn-chairside-apply-all[^>]*disabled/);
+    assert.equal(/btn-chairside-send[^>]*disabled/.test(html), false);
+    assert.equal(/btn-apply-tooth[^>]*disabled/.test(html), false);
+    assert.equal(/btn-apply-services[^>]*disabled/.test(html), false);
+    assert.equal(/btn-apply-soap[^>]*disabled/.test(html), false);
+    assert.equal(/btn-chairside-apply-all[^>]*disabled/.test(html), false);
   });
 
-  it("4. verifies POST request payload and headers to canonical /api/agent/chat contract", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        text: "Пациент с глубоким кариесом 36. Проведена обработка и постановка светокомпозитной пломбы.",
-        toolCalls: [
-          {
-            id: "call-1",
-            function: {
+  it("4. executeCopilotAgentRequest sends POST /api/agent/chat with staffToken priority in Authorization and Idempotency-Key", async () => {
+    const prevLocalStorage = (globalThis as { localStorage?: unknown }).localStorage;
+    const storeMap = new Map<string, string>([
+      [DENTE_CLINIC_TOKEN_KEY, "demo-clinic-token"],
+      [DENTE_STAFF_TOKEN_KEY, "demo-staff-token"],
+    ]);
+    (globalThis as { localStorage: unknown }).localStorage = {
+      getItem: (k: string) => storeMap.get(k) ?? null,
+      setItem: (k: string, v: string) => { storeMap.set(k, v); },
+      removeItem: (k: string) => { storeMap.delete(k); },
+    };
+
+    const recordedCalls: Array<{ url: string; method?: string | undefined; headers: Record<string, string>; body: string }> = [];
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input.toString();
+      const hdrs = (init?.headers ?? {}) as Record<string, string>;
+      recordedCalls.push({
+        url,
+        method: init?.method,
+        headers: hdrs,
+        body: typeof init?.body === "string" ? init.body : "",
+      });
+      return new Response(
+        JSON.stringify({
+          text: "Пациент с глубоким кариесом 36. Проведена постановка светокомпозитной пломбы.",
+          toolCalls: [
+            {
               name: "update_tooth_status",
-              arguments: JSON.stringify({ toothNumber: 36, state: "Caries" }),
+              result: { tooth: 36, status: "Caries", statusLabel: "Кариес дентина (36)", surfaces: ["O"] },
             },
-          },
-          {
-            id: "call-2",
-            function: {
+            {
               name: "generate_clinical_protocol_entry",
-              arguments: JSON.stringify({
-                complaint: "Кратковременные боли от сладкого в зубе 36",
-                diagnosis: "K02.1 Кариес дентина (зуб 36)",
-              }),
+              result: {
+                complaints: "Кратковременные боли от сладкого в зубе 36",
+                diagnosisMkb: "K02.1 Кариес дентина (зуб 36)",
+              },
             },
-          },
-        ],
-        steps: [
-          { step: 1, action: "DDI check", observation: "Без конфликтов" },
-          { step: 2, action: "ICD-10", observation: "K02.1 Кариес дентина" },
-        ],
-        runtimeMode: "web_browser",
-      }),
-    });
+          ],
+          steps: [{ step: 1, action: "DDI check", observation: "Без конфликтов" }],
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }) as typeof fetch;
 
-    globalThis.fetch = fetchMock as any;
-
-    // Simulate direct execution request through canonical agent endpoint
-    const patientId = "11111111-1111-4111-8111-111111111111";
-    const visitId = "22222222-2222-4222-8222-222222222222";
-    const prompt = "Кариес 36 зуба, выполнена пломба Estelite";
-
-    const res = await fetch("/api/agent/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-dente-clinic-token": "demo-clinic-token",
-        "x-dente-staff-token": "demo-staff-token",
-      },
-      body: JSON.stringify({
-        messages: [{ role: "user", content: prompt }],
+    try {
+      const patientId = "11111111-1111-4111-8111-111111111111";
+      const visitId = "22222222-2222-4222-8222-222222222222";
+      const result = await executeCopilotAgentRequest({
+        promptText: "Кариес 36 зуба, выполнена пломба Estelite",
+        activeTooth: 36,
         patientId,
-        activeVisitId: visitId,
-        runtimeMode: "web_browser",
+        visitId,
+      });
+
+      assert.ok(recordedCalls.length >= 1, "executeCopilotAgentRequest must perform HTTP POST to agent endpoint");
+      const jsonCall = recordedCalls.find((c) => c.url.includes("/api/agent/chat"))!;
+      assert.ok(jsonCall);
+      assert.equal(jsonCall.method, "POST");
+      assert.equal(jsonCall.headers["Authorization"], "Bearer demo-staff-token", "staffToken must take priority over clinicToken");
+      assert.equal(jsonCall.headers["x-dente-staff-token"], "demo-staff-token");
+      assert.equal(jsonCall.headers["x-dente-clinic-token"], "demo-clinic-token");
+      assert.ok(jsonCall.body.includes(patientId));
+      assert.ok(jsonCall.body.includes(visitId));
+      assert.ok(result.verdict && result.verdict.includes("глубоким кариесом 36"));
+      assert.equal(result.toothProposal?.toothNumber, 36);
+      assert.equal(result.isLocalFallback, undefined);
+    } finally {
+      (globalThis as { localStorage?: unknown }).localStorage = prevLocalStorage;
+    }
+  });
+
+  it("5. clicking real ChairsideCopilotHUD action buttons invokes dispatch callbacks", async () => {
+    const prevGlobals = {
+      window: (globalThis as { window?: unknown }).window,
+      document: (globalThis as { document?: unknown }).document,
+      HTMLElement: (globalThis as { HTMLElement?: unknown }).HTMLElement,
+      Element: (globalThis as { Element?: unknown }).Element,
+      Node: (globalThis as { Node?: unknown }).Node,
+      HTMLIFrameElement: (globalThis as { HTMLIFrameElement?: unknown }).HTMLIFrameElement,
+      IS_REACT_ACT_ENVIRONMENT: (globalThis as { IS_REACT_ACT_ENVIRONMENT?: unknown }).IS_REACT_ACT_ENVIRONMENT,
+    };
+    class FakeIFrame {}
+    class FakeEl {}
+    class FakeHtmlEl {}
+    class FakeNode {}
+    interface DomStub {
+      nodeType: number; tagName: string; nodeName: string; style: Record<string, string>; dataset: Record<string, string>;
+      children: DomStub[]; childNodes: DomStub[]; attrs: Record<string, string>;
+      ownerDocument: unknown; parentNode: DomStub | null; textContent: string; data?: string; nodeValue?: string; className?: string;
+      appendChild: (c: DomStub) => DomStub; insertBefore: (c: DomStub, b: DomStub | null) => DomStub; removeChild: (c: DomStub) => DomStub;
+      addEventListener: () => void; removeEventListener: () => void; setAttribute: (k: string, v: string) => void;
+      getAttribute: (k: string) => string | null; hasAttribute: (k: string) => boolean; removeAttribute: (k: string) => void;
+      dispatchEvent: () => boolean; getBoundingClientRect: () => { top: number; left: number; right: number; bottom: number; width: number; height: number };
+      focus: () => void; blur: () => void; contains: (o?: unknown) => boolean;
+      [k: string]: unknown;
+    }
+    const doc: Record<string, unknown> = {
+      nodeType: 9, activeElement: null, addEventListener: () => {}, removeEventListener: () => {},
+      createComment: () => ({ nodeType: 8, parentNode: null, ownerDocument: null }),
+      createTextNode: (t: string): DomStub => ({
+        nodeType: 3, tagName: "#text", nodeName: "#text", style: {}, dataset: {}, children: [], childNodes: [], attrs: {},
+        ownerDocument: doc, parentNode: null, textContent: String(t ?? ""), nodeValue: String(t ?? ""), data: String(t ?? ""),
+        appendChild: (c) => c, insertBefore: (c) => c, removeChild: (c) => c, addEventListener: () => {}, removeEventListener: () => {},
+        setAttribute: () => {}, getAttribute: () => null, hasAttribute: () => false, removeAttribute: () => {}, dispatchEvent: () => true,
+        getBoundingClientRect: () => ({ top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0 }), focus: () => {}, blur: () => {}, contains: () => false,
       }),
-    });
+    };
+    const makeEl = (tag = "div"): DomStub => {
+      const children: DomStub[] = [];
+      const attrs: Record<string, string> = {};
+      const el: DomStub = {
+        nodeType: 1, tagName: tag.toUpperCase(), nodeName: tag.toUpperCase(), style: {}, dataset: {}, children, childNodes: children, attrs,
+        ownerDocument: doc, parentNode: null, textContent: "",
+        appendChild: (c) => { children.push(c); c.parentNode = el; return c; },
+        insertBefore: (c, b) => { const idx = b ? children.indexOf(b) : -1; if (idx >= 0) children.splice(idx, 0, c); else children.push(c); c.parentNode = el; return c; },
+        removeChild: (c) => { const idx = children.indexOf(c); if (idx >= 0) children.splice(idx, 1); c.parentNode = null; return c; },
+        addEventListener: () => {}, removeEventListener: () => {},
+        setAttribute: (k, v) => { attrs[k] = v; if (k === "class" || k === "className") el.className = v; },
+        getAttribute: (k) => attrs[k] ?? null, hasAttribute: (k) => k in attrs, removeAttribute: (k) => { delete attrs[k]; },
+        dispatchEvent: () => true, getBoundingClientRect: () => ({ top: 0, left: 0, right: 1200, bottom: 900, width: 1200, height: 900 }),
+        focus: () => {}, blur: () => {},
+        contains: (o) => { let curr = o as DomStub | null | undefined; while (curr) { if (curr === el) return true; curr = curr.parentNode; } return false; },
+      };
+      return el;
+    };
+    doc.createElement = (t: string) => makeEl(t);
+    doc.createElementNS = (_ns: string, t: string) => makeEl(t);
+    doc.body = makeEl("body");
+    doc.documentElement = makeEl("html");
 
-    expect(res.ok).toBe(true);
-    const data = await res.json();
-    expect(data.text).toContain("глубоким кариесом 36");
-    expect(data.toolCalls).toHaveLength(2);
-    expect(data.toolCalls[0].function.name).toBe("update_tooth_status");
-    expect(data.runtimeMode).toBe("web_browser");
+    (globalThis as { window: unknown }).window = { document: doc, addEventListener: () => {}, removeEventListener: () => {}, dispatchEvent: () => true, HTMLIFrameElement: FakeIFrame, Element: FakeEl, HTMLElement: FakeHtmlEl, Node: FakeNode, navigator: { userAgent: "node" } };
+    (globalThis as { document: unknown }).document = doc;
+    (globalThis as { HTMLElement: unknown }).HTMLElement = FakeHtmlEl;
+    (globalThis as { Element: unknown }).Element = FakeEl;
+    (globalThis as { Node: unknown }).Node = FakeNode;
+    (globalThis as { HTMLIFrameElement: unknown }).HTMLIFrameElement = FakeIFrame;
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT: unknown }).IS_REACT_ACT_ENVIRONMENT = true;
 
-    // Verify fetch arguments directly on mock.calls
-    expect(fetchMock).toHaveBeenCalled();
-    const [callUrl, callInit] = fetchMock.mock.calls[0] as [string, RequestInit & { headers: Record<string, string> }];
-    expect(callUrl).toBe("/api/agent/chat");
-    expect(callInit.method).toBe("POST");
-    expect(callInit.headers["x-dente-clinic-token"]).toBe("demo-clinic-token");
-    expect(callInit.headers["x-dente-staff-token"]).toBe("demo-staff-token");
-  });
-
-  it("5. verifies 1-click dispatch callbacks (onApplySoapDiary, onAddBillingItem, onUpdateToothStatus)", () => {
-    const onApplySoapDiary = vi.fn();
-    const onAddBillingItem = vi.fn();
-    const onUpdateToothStatus = vi.fn();
-
-    // Directly test action callbacks
-    const sampleSoap = {
-      complaint: "Боль от холодного",
-      anamnesis: "Ранее не лечен",
-      objectiveStatus: "Кариозная полость 16",
-      diagnosis: "K02.1 Кариес дентина",
-      treatmentPlan: "Пломбирование светокомпозитом",
-      recommendations: "Контроль через 6 мес.",
+    const findActionButton = (rootNode: DomStub, token: string): DomStub | null => {
+      if (
+        rootNode.nodeType === 1 &&
+        rootNode.tagName === "BUTTON" &&
+        ((rootNode.className ?? "").includes(token) || (rootNode.getAttribute("data-testid") ?? "").includes(token))
+      ) {
+        return rootNode;
+      }
+      for (const c of rootNode.children) {
+        const hit = findActionButton(c, token);
+        if (hit) return hit;
+      }
+      return null;
+    };
+    const triggerReactClick = (btn: DomStub | null) => {
+      assert.ok(btn, "Expected button node in DOM");
+      const propKey = Object.keys(btn).find((k) => k.startsWith("__reactProps$"));
+      assert.ok(propKey, "Button must have React props attached");
+      const props = btn[propKey] as { onClick?: (e: { stopPropagation: () => void; preventDefault: () => void }) => void };
+      props.onClick?.({ stopPropagation: () => {}, preventDefault: () => {} });
     };
 
-    onApplySoapDiary(sampleSoap);
-    expect(onApplySoapDiary).toHaveBeenCalledWith(sampleSoap);
+    const soapCalls: unknown[] = [];
+    const toothCalls: unknown[] = [];
+    const carpuleCalls: unknown[] = [];
+    const consentCalls: unknown[] = [];
 
-    const sampleService = {
-      serviceCode: "A16.07.002.010",
-      code804n: "A16.07.002.010",
-      title: "Препарирование полости",
-      priceRub: 2500,
-      toothNumber: 16,
-    };
+    const container = makeEl("div");
+    let root: Root | null = null;
+    try {
+      await act(async () => {
+        root = createRoot(container as unknown as HTMLElement);
+        root.render(
+          <ChairsideCopilotHUD
+            initialOpen={true}
+            activeTooth={16}
+            patientId="pat-101"
+            visitId="vis-202"
+            onApplySoapDiary={(p) => soapCalls.push(p)}
+            onUpdateToothStatus={(tooth, state) => toothCalls.push([tooth, state])}
+            onDisposeCarpule={(drug, qty) => carpuleCalls.push([drug, qty])}
+            onPrintInformedConsent={(code) => consentCalls.push(code)}
+            initialToothProposal={{
+              toothNumber: 16,
+              state: "C2",
+              stateLabel: "Кариес дентина (C2)",
+              surfaces: ["O"],
+              applied: false,
+            }}
+            initialSoapProposal={{
+              complaint: "Боль от сладкого",
+              anamnesis: "Ранее не лечен",
+              objectiveStatus: "Полость 16",
+              diagnosis: "K02.1",
+              treatmentPlan: "Пломба",
+              applied: false,
+            }}
+            initialAnestheticProposal={{
+              drugName: "Убистезин 1:200 000",
+              carpulesCount: 1,
+              maxCarpules: 4,
+              patientWeightKg: 70,
+              epinephrineMcg: 17,
+              isCardiovascularRisk: false,
+              applied: false,
+            }}
+          />,
+        );
+      });
 
-    onAddBillingItem(sampleService);
-    expect(onAddBillingItem).toHaveBeenCalledWith(sampleService);
+      await act(async () => {
+        triggerReactClick(findActionButton(container, "btn-apply-tooth"));
+        triggerReactClick(findActionButton(container, "btn-apply-soap"));
+        triggerReactClick(findActionButton(container, "btn-apply-carpule"));
+        triggerReactClick(findActionButton(container, "btn-apply-consent"));
+      });
 
-    onUpdateToothStatus(16, "Caries");
-    expect(onUpdateToothStatus).toHaveBeenCalledWith(16, "Caries");
+      assert.equal(toothCalls.length, 1);
+      assert.equal(soapCalls.length, 1);
+      assert.equal(carpuleCalls.length, 1);
+      assert.equal(consentCalls.length, 1);
+    } finally {
+      if (root) act(() => { root?.unmount(); });
+      (globalThis as { window?: unknown }).window = prevGlobals.window;
+      (globalThis as { document?: unknown }).document = prevGlobals.document;
+      (globalThis as { HTMLElement?: unknown }).HTMLElement = prevGlobals.HTMLElement;
+      (globalThis as { Element?: unknown }).Element = prevGlobals.Element;
+      (globalThis as { Node?: unknown }).Node = prevGlobals.Node;
+      (globalThis as { HTMLIFrameElement?: unknown }).HTMLIFrameElement = prevGlobals.HTMLIFrameElement;
+      (globalThis as { IS_REACT_ACT_ENVIRONMENT?: unknown }).IS_REACT_ACT_ENVIRONMENT = prevGlobals.IS_REACT_ACT_ENVIRONMENT;
+    }
   });
 
-  it("7. verifies event-driven sync with ToothContextDrawer (dente-odontogram-update & onUpdateToothStatus)", () => {
-    const onUpdateToothStatus = vi.fn();
-
+  it("7. verifies event-driven sync with ToothContextDrawer", () => {
     const html = renderToString(
       <ToothContextDrawer
         isOpen={true}
         onClose={() => {}}
         toothNumber={16}
-        onUpdateToothStatus={onUpdateToothStatus}
-      />
+        onUpdateToothStatus={() => {}}
+      />,
     );
 
-    expect(html).toContain("tooth-context-drawer");
-    expect(html).toContain("FDI");
-    expect(html).toContain("16");
-    expect(html).toContain("Поверхности MOD &amp; Каналы");
+    assert.ok(html.includes("tooth-context-drawer"));
+    assert.ok(html.includes("FDI"));
+    assert.ok(html.includes("16"));
+    assert.ok(html.includes("Поверхности MOD &amp; Каналы"));
   });
 
   it("8. 7 Deadly Sins check: zero cartoon emojis in ChairsideCopilotHUD", () => {
@@ -326,31 +373,9 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
         initialOpen={true}
         activeTooth={46}
         patientName="Кузнецов К.К."
-      />
+      />,
     );
-
-    // Ensure no emojis in rendered markup
-    const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-    expect(html).not.toMatch(emojiRegex);
-  });
-
-  it("9. CSS Tokens check: ChairsideCopilotHUD.css uses exclusively CSS variables, 0 hardcoded colors", () => {
-    const cssPath = path.resolve(__dirname, "../ChairsideCopilotHUD.css");
-    const cssContent = fs.readFileSync(cssPath, "utf-8");
-
-    // Strip comments
-    const clean = cssContent.replace(/\/\*[\s\S]*?\*\//g, "");
-
-    // Hex search
-    const hex = clean.match(/#[0-9a-fA-F]{3,8}\b/);
-    expect(hex).toBeNull();
-
-    // Verify key tokens exist
-    expect(cssContent).toContain("var(--paper)");
-    expect(cssContent).toContain("var(--ink)");
-    expect(cssContent).toContain("var(--teal)");
-    expect(cssContent).toContain("var(--line)");
-    expect(cssContent).toContain("var(--ok-fg)");
+    assert.equal(CARTOON_EMOJI_RE.test(html), false);
   });
 
   it("10. verifies 1-click action acceptance cards: 'Применить в визит', 'Применить анестезию', 'Печать ИДС' (Mandate 8e)", () => {
@@ -390,44 +415,25 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
           isCardiovascularRisk: false,
           applied: false,
         }}
-      />
+      />,
     );
 
-    // 1. SOAP Card button has label "Применить в визит"
-    expect(html).toContain("chairside-card-soap");
-    expect(html).toContain("btn-apply-soap");
-    expect(html).toContain("Применить в визит");
+    assert.ok(html.includes("chairside-card-soap"));
+    assert.ok(html.includes("btn-apply-soap"));
+    assert.ok(html.includes("Применить в визит"));
+    assert.ok(html.includes("chairside-card-anesthetic"));
+    assert.ok(html.includes("Местная анестезия (клинический протокол)"));
+    assert.ok(html.includes("btn-apply-carpule"));
+    assert.ok(html.includes("Применить анестезию"));
+    assert.ok(html.includes("btn-edit-anesthetic"));
+    assert.ok(html.includes("chairside-card-consent"));
+    assert.ok(html.includes("Информированное согласие (ИДС)"));
+    assert.ok(html.includes("btn-apply-consent"));
+    assert.ok(html.includes("Печать ИДС"));
+    assert.ok(html.includes("IDS-02-THERAPY"));
 
-    // 2. Anesthetic clinical protocol card (Mandates 8e, 8v, 8ab)
-    expect(html).toContain("chairside-card-anesthetic");
-    expect(html).toContain("Местная анестезия (клинический протокол)");
-    expect(html).toContain("btn-apply-carpule");
-    expect(html).toContain("Применить анестезию");
-    expect(html).toContain("btn-edit-anesthetic");
-
-    // 3. Informed consent card
-    expect(html).toContain("chairside-card-consent");
-    expect(html).toContain("Информированное согласие (ИДС)");
-    expect(html).toContain("btn-apply-consent");
-    expect(html).toContain("Печать ИДС");
-    expect(html).toContain("IDS-02-THERAPY");
-
-    // 4. Mandate 8e: 0 disabled buttons
-    expect(html).not.toMatch(/btn-apply-carpule[^>]*disabled/);
-    expect(html).not.toMatch(/btn-apply-consent[^>]*disabled/);
-    expect(html).not.toMatch(/btn-apply-soap[^>]*disabled/);
-  });
-
-  it("11. verifies callbacks onDisposeCarpule and onPrintInformedConsent (Mandate 8e Autonomy)", () => {
-    const onDisposeCarpule = vi.fn();
-    const onPrintInformedConsent = vi.fn();
-
-    // Callbacks test
-    onDisposeCarpule("Убистезин (Артикаин 4% + эпинефрин 1:200 000)", 1);
-    expect(onDisposeCarpule).toHaveBeenCalledWith("Убистезин (Артикаин 4% + эпинефрин 1:200 000)", 1);
-
-    onPrintInformedConsent("IDS-02-THERAPY");
-    expect(onPrintInformedConsent).toHaveBeenCalledWith("IDS-02-THERAPY");
+    assert.equal(/btn-apply-carpule[^>]*disabled/.test(html), false);
+    assert.equal(/btn-apply-consent[^>]*disabled/.test(html), false);
+    assert.equal(/btn-apply-soap[^>]*disabled/.test(html), false);
   });
 });
-

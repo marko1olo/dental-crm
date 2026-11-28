@@ -2,6 +2,7 @@
  * kktModules/kktStatusChecker.ts — LAN KKT Hardware Telemetry & Paper/Cover Check.
  */
 
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import type { KktDeviceStatus, KktLanConfig } from "../types.js";
 import {
 	formatShtrikhMCommandPacket,
@@ -11,6 +12,12 @@ import {
 	pingKktSocket,
 	sendShtrikhCommand,
 } from "./kktProtocolFraming.js";
+
+const logger = createApiLogger("kktStatusChecker");
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+	return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
 
 export async function checkKktDeviceStatus(
 	config?: Partial<KktLanConfig>,
@@ -53,7 +60,7 @@ export async function checkKktDeviceStatus(
 		};
 	}
 
-	if (process.env.NODE_ENV === "test" || cfg.model === "emulator") {
+	if (cfg.model === "emulator") {
 		return {
 			online: true,
 			paperOk: true,
@@ -104,13 +111,14 @@ export async function checkKktDeviceStatus(
 			}
 
 			if (resp.ok) {
-				const data = (await resp.json()) as Record<string, unknown>;
+				const rawJson: unknown = await resp.json();
+				const data = isPlainRecord(rawJson) ? rawJson : {};
 				const results = Array.isArray(data.results)
-					? (data.results as Record<string, unknown>[])
+					? data.results.filter(isPlainRecord)
 					: [data];
 				const first = results[0] ?? {};
-				const deviceInfo = (first.deviceInfo as Record<string, unknown> | undefined) || {};
-				const fnInfo = (first.fnInfo as Record<string, unknown> | undefined) || {};
+				const deviceInfo = isPlainRecord(first.deviceInfo) ? first.deviceInfo : {};
+				const fnInfo = isPlainRecord(first.fnInfo) ? first.fnInfo : {};
 				const errorCode = typeof first.errorCode === "number" ? first.errorCode : 0;
 
 				const paperOk =
@@ -148,8 +156,12 @@ export async function checkKktDeviceStatus(
 					error: errorCode !== 0 ? mapAtolErrorCode(errorCode) : null,
 				};
 			}
-		} catch {
+		} catch (err: unknown) {
 			// Protocol inquiry failed; fall through to unverified response without fake telemetry
+			logger.warn(
+				{ err: safeLogError(err), host: cfg.host, port: cfg.port, model: cfg.model },
+				"[kktStatusChecker] ATOL HTTP status inquiry failed",
+			);
 		}
 	}
 

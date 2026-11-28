@@ -67,8 +67,9 @@ export const clinicalCategoryTranslations: Record<ClinicalErrorCode, string> = {
  * Перевод HTTP-статуса в человекочитаемый текст.
  */
 export function translateHttpStatus(status: number): string {
-	if (status in httpStatusTranslations) {
-		return httpStatusTranslations[status]!;
+	const translation = httpStatusTranslations[status as keyof typeof httpStatusTranslations];
+	if (translation) {
+		return translation;
 	}
 	if (status >= 500) {
 		return "сервер клиники не смог выполнить действие";

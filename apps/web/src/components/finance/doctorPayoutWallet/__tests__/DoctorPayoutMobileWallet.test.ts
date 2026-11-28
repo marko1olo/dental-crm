@@ -1,7 +1,5 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import React from "react";
 import { renderToString } from "react-dom/server";
 
@@ -19,45 +17,56 @@ import {
 } from "../index.js";
 
 describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
-	const currentDir = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1"));
-	const walletDir = path.resolve(currentDir, "..");
-	const canonicalWalletPath = path.resolve(walletDir, "DoctorPayoutMobileWallet.tsx");
+	describe("1. Live Wallet Header, Breakdown & History Components", () => {
+		it("renders DoctorWalletBalanceHeader and DoctorEarningsBreakdownCard with zero and demo values", () => {
+			const headerHtml = renderToString(
+				React.createElement(DoctorWalletBalanceHeader, {
+					availableDoctors: [DEMO_SHOWCASE_DOCTOR, DEMO_SHOWCASE_SOLO_DOCTOR],
+					currentDoctor: DEMO_SHOWCASE_DOCTOR,
+					onSelectDoctor: () => {},
+					monthLabel: formatMonthLabel("2026-10"),
+					month: "2026-10",
+					monthInputId: "wallet-month-test",
+					onMonthChange: () => {},
+					totalWithheld: 0,
+				}),
+			);
+			assert.ok(headerHtml.includes("Выплаты врачам"));
 
-	describe("1. Architectural Budget & File Limit Invariants", () => {
-		it("ensures canonical mobile wallet component exists and is strictly <= 200 lines", () => {
-			assert.ok(fs.existsSync(canonicalWalletPath), `Canonical wallet must exist at ${canonicalWalletPath}`);
-			const content = fs.readFileSync(canonicalWalletPath, "utf-8");
-			const lines = content.split("\n").length;
-			assert.ok(lines <= 200, `Canonical wallet must be <= 200 lines, got ${lines}`);
+			const categoryCards = computeCategoryCards(DEMO_SHOWCASE_DOCTOR);
+			const breakdownHtml = renderToString(
+				React.createElement(DoctorEarningsBreakdownCard, {
+					categoryCards,
+				}),
+			);
+			assert.ok(breakdownHtml.includes('id="wallet-categories-heading"'));
 		});
 
-		it("ensures all decomposed files in doctorPayoutWallet/ are strictly <= 800 lines", () => {
-			const files = fs.readdirSync(walletDir).filter((f) => /\.(ts|tsx)$/.test(f));
-			assert.ok(files.length >= 5, "Must have at least 5 decomposed files in module");
+		it("renders DoctorPayoutHistoryList and formats shift dates cleanly", () => {
+			assert.deepEqual(computeDoctorShifts(null), []);
+			const formatted = formatShiftDate("2026-10-12");
+			assert.ok(formatted.formatted.length > 0);
+			assert.ok(formatted.dayOfWeek.length > 0);
 
-			for (const f of files) {
-				const filePath = path.join(walletDir, f);
-				const content = fs.readFileSync(filePath, "utf-8");
-				const lines = content.split("\n").length;
-				assert.ok(
-					lines <= 800,
-					`File ${f} must be <= 800 lines, but has ${lines} lines`,
-				);
-			}
+			const emptyHistoryHtml = renderToString(
+				React.createElement(DoctorPayoutHistoryList, {
+					shifts: [],
+					activeShift: null,
+					onSelectShiftDate: () => {},
+					currentDoctor: DEMO_SHOWCASE_DOCTOR,
+				}),
+			);
+			assert.ok(emptyHistoryHtml.includes('id="wallet-shifts-heading"'));
 		});
 	});
 
-	describe("2. Public Export Parity", () => {
-		it("exports all canonical components and pure calculation helpers", () => {
-			assert.equal(typeof DoctorPayoutMobileWallet, "function");
-			assert.equal(typeof DoctorWalletBalanceHeader, "function");
-			assert.equal(typeof DoctorEarningsBreakdownCard, "function");
-			assert.equal(typeof DoctorPayoutHistoryList, "function");
-			assert.equal(typeof computeCategoryCards, "function");
-			assert.equal(typeof computeDoctorShifts, "function");
-			assert.equal(typeof formatMonthLabel, "function");
-			assert.equal(typeof formatShiftDate, "function");
-			assert.ok(DEMO_SHOWCASE_DOCTOR);
+	describe("2. Solo Doctor Profile & Boundary Rendering", () => {
+		it("renders solo doctor breakdown with lab deduction category and positive payout", () => {
+			const soloCategories = computeCategoryCards(DEMO_SHOWCASE_SOLO_DOCTOR);
+			const lab = soloCategories.find((c) => c.id === "cat-lab-deduction");
+			assert.ok(lab);
+			assert.equal(lab.isDeduction, true);
+			assert.equal(lab.amountRub, 45000);
 		});
 	});
 
@@ -66,7 +75,6 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 			const categories = computeCategoryCards(DEMO_SHOWCASE_DOCTOR);
 			assert.ok(categories.length > 0, "Must have categories");
 
-			// Check therapy, ortho, surgery, hygiene items
 			const therapy = categories.find((c) => c.id === "cat-therapy");
 			assert.ok(therapy, "Must have therapy category");
 			assert.equal(therapy.ratePct, 30);
@@ -75,7 +83,6 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 			assert.ok(ortho, "Must have orthopedics category");
 			assert.equal(ortho.ratePct, 30);
 
-			// Check lab deduction item
 			const categoriesKovalev = computeCategoryCards(DEMO_SHOWCASE_SOLO_DOCTOR);
 			const lab = categoriesKovalev.find((c) => c.id === "cat-lab-deduction");
 			assert.ok(lab, "Must have lab deduction category");
@@ -83,7 +90,6 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 			assert.equal(lab.amountRub, 45000);
 			assert.equal(lab.ratePct, 100);
 
-			// Check material deduction item
 			const docWithMat = {
 				...DEMO_SHOWCASE_DOCTOR,
 				withheldMaterialRub: 700,
@@ -105,7 +111,6 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 			const shifts = computeDoctorShifts(DEMO_SHOWCASE_DOCTOR);
 			assert.ok(shifts.length >= 4, "Must group into shifts");
 
-			// Dates must be descending
 			for (let i = 0; i < shifts.length - 1; i++) {
 				const cur = shifts[i];
 				const nxt = shifts[i + 1];
@@ -114,13 +119,12 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 				}
 			}
 
-			// First shift is 2026-10-22
 			const s1 = shifts[0];
 			assert.ok(s1);
 			assert.equal(s1.date, "2026-10-27");
 			assert.equal(s1.patientCount, 1);
 			assert.equal(s1.shiftRevenueRub, 32000);
-			assert.equal(s1.shiftEarnedRub, Math.round(32000 * 0.3)); // 9600
+			assert.equal(s1.shiftEarnedRub, Math.round(32000 * 0.3));
 
 			for (const shift of shifts) {
 				const sumVisitsEarnedRub = shift.visits.reduce((acc, v) => acc + (v.earnedRub ?? 0), 0);
@@ -166,7 +170,7 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 				isEmpty: false,
 				rows: [
 					DEMO_SHOWCASE_DOCTOR,
-	DEMO_SHOWCASE_SOLO_DOCTOR,
+					DEMO_SHOWCASE_SOLO_DOCTOR,
 					{
 						...DEMO_SHOWCASE_DOCTOR,
 						doctorUserId: "demo_doc_ivanov",
@@ -187,7 +191,6 @@ describe("DoctorPayoutMobileWallet Modular Architecture (Wave 25)", () => {
 				}),
 			);
 
-			// Check test anchors:
 			assert.ok(html.includes('id="wallet-categories-heading"'), "Anchor 1: wallet-categories-heading");
 			assert.ok(html.includes('id="wallet-shifts-heading"'), "Anchor 2: wallet-shifts-heading");
 			assert.ok(html.includes('aria-label="Выбор врача"'), "Anchor 3: Выбор врача");

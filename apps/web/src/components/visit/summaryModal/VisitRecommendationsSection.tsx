@@ -49,7 +49,7 @@ export const VisitRecommendationsSection: React.FC<VisitRecommendationsSectionPr
 						>
 							<Sparkles className="w-3.5 h-3.5 text-purple-600 shrink-0" />
 							<span className="min-w-0 break-words">
-								Сменный прикус & Кариограмма Bratthall
+								Сменный прикус и кариограмма Bratthall
 							</span>
 						</span>
 					)}
@@ -59,8 +59,8 @@ export const VisitRecommendationsSection: React.FC<VisitRecommendationsSectionPr
 			{/* Odontogram Abnormalities Summary */}
 			{abnormalTeeth.length > 0 && (
 				<div className="space-y-2">
-					<h4 className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
-						<Activity className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" /> Зубная формула ({abnormalTeeth.length}{" "}
+					<h4 className="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5">
+						<Activity className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" /> Зубная формула ({abnormalTeeth.length}{" "}
 						{abnormalTeeth.length === 1 ? "зуб" : "зубов"} с отметками)
 					</h4>
 					<div className="flex flex-wrap gap-2">

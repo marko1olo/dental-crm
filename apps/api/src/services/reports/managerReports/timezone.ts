@@ -9,6 +9,10 @@ import { db } from "../../../db/client.js";
 import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import { clinics } from "../../../db/schema.js";
 import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
+import { PG_TIMEZONE_SQL_LITERALS } from "./pgTimeZoneLiterals.js";
+
+const logger = createApiLogger("managerReportsTimezone");
 
 /**
  * Канонический часовой пояс по умолчанию из схемы клиники (clinics.timezone default 'Europe/Samara').
@@ -48,7 +52,9 @@ const TIME_ZONE_NAME_SHAPE = /^[A-Za-z0-9_+/-]+$/;
  */
 export function inClinicZone(column: unknown, zone: string | null) {
 	if (!zone || !TIME_ZONE_NAME_SHAPE.test(zone)) return sql`${column}`;
-	return sql`(${column} AT TIME ZONE ${sql.raw(`'${zone}'`)})`;
+	const literal = PG_TIMEZONE_SQL_LITERALS.get(zone);
+	if (!literal) return sql`${column}`;
+	return sql`(${column} AT TIME ZONE ${literal})`;
 }
 
 /**
@@ -77,7 +83,11 @@ export async function clinicTimeZone(
 			return clinic?.timezone ?? null;
 		};
 		return executor ? await run(executor) : await withTenantCtx(organizationId, run);
-	} catch {
+	} catch (err: unknown) {
+		logger.warn(
+			{ err: safeLogError(err), organizationId },
+			"Не удалось прочитать часовой пояс клиники; отчёт продолжен в поясе сессии",
+		);
 		return null;
 	}
 }
@@ -89,6 +99,7 @@ export async function postgresKnowsTimeZone(
 	executor?: TenantDb,
 ): Promise<string | null> {
 	if (!timeZone) return null;
+	if (!PG_TIMEZONE_SQL_LITERALS.has(timeZone)) return null;
 	const cached = knownTimeZoneCache.get(timeZone);
 	if (cached !== undefined) return cached ? timeZone : null;
 	try {
@@ -99,9 +110,13 @@ export async function postgresKnowsTimeZone(
 		const known = found.rows.length > 0;
 		knownTimeZoneCache.set(timeZone, known);
 		return known ? timeZone : null;
-	} catch {
+	} catch (err: unknown) {
 		// До базы не дошли — считаем пояс неизвестным и работаем как раньше.
 		// Ронять отчёт из-за неудачной сверки списка поясов нельзя.
+		logger.warn(
+			{ err: safeLogError(err), timeZone },
+			"Не удалось сверить часовой пояс в pg_timezone_names; отчёт продолжен в поясе сессии",
+		);
 		return null;
 	}
 }

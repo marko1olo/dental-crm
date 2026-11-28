@@ -25,7 +25,7 @@ export function calculateDenominationsTotalKopecks(d: CashDenominations): Kopeck
 	const c2 = (d.c2 || 0) * 200;
 	const c1 = (d.c1 || 0) * 100;
 	const coins = Math.max(0, rubToKopecks(d.coinsFractionalRub || 0));
-	return (b5000 + b2000 + b1000 + b500 + b200 + b100 + b50 + c10 + c5 + c2 + c1 + coins) as Kopecks;
+	return b5000 + b2000 + b1000 + b500 + b200 + b100 + b50 + c10 + c5 + c2 + c1 + coins;
 }
 
 export function calculateDenominationsTotalRub(d: CashDenominations): number {
@@ -48,45 +48,45 @@ export interface CalculateCashShiftBalancesParams {
 }
 
 export function calculateCashShiftBalances(p: CalculateCashShiftBalancesParams): CashShiftReconciliationResult {
-	const initialKop = Math.max(0, rubToKopecks(p.initialChangeFundRub || 0)) as Kopecks;
-	let [cashInKop, cardInKop, sbpInKop, advInKop] = [0 as Kopecks, 0 as Kopecks, 0 as Kopecks, 0 as Kopecks];
-	let [cashRetKop, cardRetKop, sbpRetKop, advRetKop] = [0 as Kopecks, 0 as Kopecks, 0 as Kopecks, 0 as Kopecks];
-	let [manualInKop, manualOutKop, receiptsCount, returnsCount] = [0 as Kopecks, 0 as Kopecks, 0, 0];
+	const initialKop = Math.max(0, rubToKopecks(p.initialChangeFundRub || 0));
+	let [cashInKop, cardInKop, sbpInKop, advInKop] = [0, 0, 0, 0];
+	let [cashRetKop, cardRetKop, sbpRetKop, advRetKop] = [0, 0, 0, 0];
+	let [manualInKop, manualOutKop, receiptsCount, returnsCount] = [0, 0, 0, 0];
 
 	for (const op of p.operations) {
-		const kop = op.amountKopecks !== undefined ? op.amountKopecks : (rubToKopecks(op.amountRub) as Kopecks);
+		const kop = op.amountKopecks !== undefined ? op.amountKopecks : rubToKopecks(op.amountRub);
 		if (op.type === "patient_payment") {
 			receiptsCount++;
-			if (op.tenderType === "card") cardInKop = (cardInKop + kop) as Kopecks;
-			else if (op.tenderType === "sbp") sbpInKop = (sbpInKop + kop) as Kopecks;
-			else if (op.tenderType === "advance_offset") advInKop = (advInKop + kop) as Kopecks;
-			else cashInKop = (cashInKop + kop) as Kopecks;
+			if (op.tenderType === "card") cardInKop = cardInKop + kop;
+			else if (op.tenderType === "sbp") sbpInKop = sbpInKop + kop;
+			else if (op.tenderType === "advance_offset") advInKop = advInKop + kop;
+			else cashInKop = cashInKop + kop;
 		} else if (op.type === "patient_refund") {
 			returnsCount++;
-			if (op.tenderType === "card") cardRetKop = (cardRetKop + kop) as Kopecks;
-			else if (op.tenderType === "sbp") sbpRetKop = (sbpRetKop + kop) as Kopecks;
-			else if (op.tenderType === "advance_offset") advRetKop = (advRetKop + kop) as Kopecks;
-			else cashRetKop = (cashRetKop + kop) as Kopecks;
-		} else if (op.type === "cash_in") manualInKop = (manualInKop + kop) as Kopecks;
-		else if (op.type === "cash_out" || op.type === "encashment") manualOutKop = (manualOutKop + kop) as Kopecks;
+			if (op.tenderType === "card") cardRetKop = cardRetKop + kop;
+			else if (op.tenderType === "sbp") sbpRetKop = sbpRetKop + kop;
+			else if (op.tenderType === "advance_offset") advRetKop = advRetKop + kop;
+			else cashRetKop = cashRetKop + kop;
+		} else if (op.type === "cash_in") manualInKop = manualInKop + kop;
+		else if (op.type === "cash_out" || op.type === "encashment") manualOutKop = manualOutKop + kop;
 	}
 
-	const totalGrossKop = (cashInKop + cardInKop + sbpInKop + advInKop) as Kopecks;
-	const totalRetKop = (cashRetKop + cardRetKop + sbpRetKop + advRetKop) as Kopecks;
-	const netRevKop = Math.max(0, totalGrossKop - totalRetKop) as Kopecks;
-	const totalInflowKop = (initialKop + cashInKop + manualInKop) as Kopecks;
-	const totalOutflowKop = (cashRetKop + manualOutKop) as Kopecks;
-	const calcCashInDrawerKop = Math.max(0, totalInflowKop - totalOutflowKop) as Kopecks;
+	const totalGrossKop = cashInKop + cardInKop + sbpInKop + advInKop;
+	const totalRetKop = cashRetKop + cardRetKop + sbpRetKop + advRetKop;
+	const netRevKop = Math.max(0, totalGrossKop - totalRetKop);
+	const totalInflowKop = initialKop + cashInKop + manualInKop;
+	const totalOutflowKop = cashRetKop + manualOutKop;
+	const calcCashInDrawerKop = Math.max(0, totalInflowKop - totalOutflowKop);
 
 	const countedKop: Kopecks = p.denominations ? calculateDenominationsTotalKopecks(p.denominations)
-		: p.countedCashRub !== undefined ? Math.max(0, rubToKopecks(p.countedCashRub)) as Kopecks
+		: p.countedCashRub !== undefined ? Math.max(0, rubToKopecks(p.countedCashRub))
 		: calcCashInDrawerKop;
 
-	const diffKop = (countedKop - calcCashInDrawerKop) as Kopecks;
+	const diffKop = countedKop - calcCashInDrawerKop;
 	const status: "balanced" | "surplus" | "shortage" = diffKop > 0 ? "surplus" : diffKop < 0 ? "shortage" : "balanced";
 	const resolvedReason: CashDiscrepancyReason = status === "balanced" ? "exact_match" : (p.discrepancyReason || "other");
-	const retainedKop = Math.min(countedKop, Math.max(0, rubToKopecks(p.retainedChangeFundRub || 0)) as Kopecks);
-	const encashmentKop = Math.max(0, countedKop - retainedKop) as Kopecks;
+	const retainedKop = Math.min(countedKop, Math.max(0, rubToKopecks(p.retainedChangeFundRub || 0)));
+	const encashmentKop = Math.max(0, countedKop - retainedKop);
 
 	const closedAtIso = p.closedAtIso || new Date().toISOString();
 	const durationMs = Math.max(0, new Date(closedAtIso).getTime() - new Date(p.openedAtIso).getTime());

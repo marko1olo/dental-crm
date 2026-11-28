@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import { isValidUuid } from "@dental/shared";
 import {
 	requireClinicalMutationContext,
@@ -12,18 +13,25 @@ import { openVisitForAppointmentInDb } from "../../db/visitsQuery.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { sendVisitOpenError } from "./visitOpenErrors.js";
 
-const UUID_PATTERN =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const appointmentIdParamsSchema = z.object({
+	appointmentId: z.string().trim().uuid(),
+});
+
+const visitOpenBodyIdempotencySchema = z
+	.object({
+		idempotencyKey: z.string().optional(),
+		clientMutationId: z.string().optional(),
+	})
+	.passthrough();
 
 function extractVisitOpenIdempotencyKey(request: FastifyRequest): string | undefined {
 	const headerPrimary = request.headers?.["idempotency-key"];
 	const headerAlt = request.headers?.["x-idempotency-key"];
 	const headerShort = request.headers?.["x-idempotence-key"];
-	const bodyKey =
-		request.body && typeof request.body === "object"
-			? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
-				((request.body as Record<string, unknown>).clientMutationId as string | undefined)
-			: undefined;
+	const parsedBody = visitOpenBodyIdempotencySchema.safeParse(request.body ?? {});
+	const bodyKey = parsedBody.success
+		? (parsedBody.data.idempotencyKey ?? parsedBody.data.clientMutationId)
+		: undefined;
 	const raw =
 		(typeof headerPrimary === "string" ? headerPrimary : undefined) ??
 		(typeof headerAlt === "string" ? headerAlt : undefined) ??
@@ -37,11 +45,12 @@ function extractVisitOpenIdempotencyKey(request: FastifyRequest): string | undef
 export function registerVisitOpenRoutes(app: FastifyInstance) {
 	app.register(async (scope) => {
 		scope.addContentTypeParser("application/json", { parseAs: "string" }, (_req, body, done) => {
-			if (!body || (typeof body === "string" && body.trim() === "")) return done(null, {});
+			const rawText = typeof body === "string" ? body : body.toString("utf8");
+			if (!rawText || rawText.trim() === "") return done(null, {});
 			try {
-				done(null, JSON.parse(body as string));
+				done(null, JSON.parse(rawText));
 			} catch (err) {
-				done(err as Error, undefined);
+				done(err instanceof Error ? err : new Error(String(err)), undefined);
 			}
 		});
 
@@ -57,15 +66,16 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 				);
 				if (!context) return reply;
 				const orgId = context.organizationId;
-				const { appointmentId } = request.params as { appointmentId?: string };
+				const parsedParams = appointmentIdParamsSchema.safeParse(request.params ?? {});
 
-				if (!appointmentId || !UUID_PATTERN.test(appointmentId.trim())) {
+				if (!parsedParams.success) {
 					reply.code(400);
 					return {
 						error: "VisitValidationError",
 						message: "Не передан или некорректен идентификатор записи на приём.",
 					};
 				}
+				const trimmedAppointmentId = parsedParams.data.appointmentId;
 
 				const existing = await withTenantReadCtx(orgId, async (tx) => {
 					const [row] = await tx
@@ -73,7 +83,7 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 						.from(visits)
 						.where(
 							and(
-								eq(visits.appointmentId, appointmentId.trim()),
+								eq(visits.appointmentId, trimmedAppointmentId),
 								eq(visits.organizationId, orgId),
 							),
 						)
@@ -109,9 +119,9 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 				);
 				if (!context) return reply;
 				const orgId = context.organizationId;
-				const { appointmentId } = request.params as { appointmentId?: string };
+				const parsedParams = appointmentIdParamsSchema.safeParse(request.params ?? {});
 
-				if (!appointmentId || !UUID_PATTERN.test(appointmentId.trim())) {
+				if (!parsedParams.success) {
 					reply.code(400);
 					return {
 						error: "VisitValidationError",
@@ -119,6 +129,7 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 							"Прием не открыт: не передана запись расписания. Откройте строку расписания и повторите.",
 					};
 				}
+				const trimmedAppointmentId = parsedParams.data.appointmentId;
 
 				const idempotencyKey = extractVisitOpenIdempotencyKey(request);
 				if (idempotencyKey && !isValidUuid(idempotencyKey)) {
@@ -135,7 +146,6 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 				}
 
 				try {
-					const trimmedAppointmentId = appointmentId.trim();
 					const responsePayload = await withTenantWriteCtx(orgId, async (tx) => {
 						const res = await openVisitForAppointmentInDb(orgId, trimmedAppointmentId, tx);
 						await tx

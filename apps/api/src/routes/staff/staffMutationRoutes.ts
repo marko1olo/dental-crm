@@ -12,6 +12,7 @@ import {
 } from "@dental/shared";
 import { and, eq, ne } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { defineStreamRoute } from "../../core/routeFactories.js";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
 import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
@@ -20,8 +21,70 @@ import { invalidateStaffSessionCache } from "../../security/identity.js";
 import { assembleStaffProfile, resolveOrganizationId } from "./staffHelpers.js";
 import type { ExtendedHrProfileStorage } from "./types.js";
 
-const UUID_PATTERN =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const staffIdParamsSchema = z.object({
+	staffId: z.string().trim().uuid(),
+});
+
+function asPlainRecord(value: unknown): Record<string, unknown> {
+	if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+		const out: Record<string, unknown> = {};
+		for (const [key, entry] of Object.entries(value)) {
+			out[key] = entry;
+		}
+		return out;
+	}
+	return {};
+}
+
+function readOptionalString(record: Record<string, unknown>, key: string): string | undefined {
+	const value = record[key];
+	return typeof value === "string" ? value : undefined;
+}
+
+function readOptionalNullableString(
+	record: Record<string, unknown>,
+	key: string,
+): string | null | undefined {
+	const value = record[key];
+	if (value === null || typeof value === "string") return value;
+	return undefined;
+}
+
+function readOptionalStringArray(
+	record: Record<string, unknown>,
+	key: string,
+): string[] | undefined {
+	const value = record[key];
+	return Array.isArray(value) && value.every((item): item is string => typeof item === "string")
+		? value
+		: undefined;
+}
+
+function readOptionalNumber(record: Record<string, unknown>, key: string): number | undefined {
+	const value = record[key];
+	return typeof value === "number" ? value : undefined;
+}
+
+function extractHrProfile(uiPreferences: unknown): ExtendedHrProfileStorage {
+	const ui = asPlainRecord(uiPreferences);
+	const hr = asPlainRecord(ui.hrProfile);
+	return {
+		inn: readOptionalNullableString(hr, "inn"),
+		medicalBookNumber: readOptionalNullableString(hr, "medicalBookNumber"),
+		medicalBookCheckupDate: readOptionalNullableString(hr, "medicalBookCheckupDate"),
+		minzdravAccreditationDate: readOptionalNullableString(hr, "minzdravAccreditationDate"),
+		minzdravAccreditationSpecialty: readOptionalNullableString(hr, "minzdravAccreditationSpecialty"),
+		clinicalNotes: readOptionalNullableString(hr, "clinicalNotes"),
+		managementNotes: readOptionalNullableString(hr, "managementNotes"),
+		assignedBranches: readOptionalStringArray(hr, "assignedBranches"),
+		assignedCabinetRooms: readOptionalStringArray(hr, "assignedCabinetRooms"),
+		assignedChairIds: readOptionalStringArray(hr, "assignedChairIds"),
+		priceCategory: readOptionalString(hr, "priceCategory"),
+		baseSalaryRub: readOptionalNumber(hr, "baseSalaryRub"),
+		baseSalaryKopecks: readOptionalNumber(hr, "baseSalaryKopecks"),
+		passwordEntropyBits: readOptionalNumber(hr, "passwordEntropyBits"),
+	};
+}
 
 const staffMutationOptions = {
 	config: { tenantTxSelfManaged: true },
@@ -68,14 +131,15 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 		if (!auth) return;
 		if (!requirePersonalStaff(auth, reply)) return;
 
-		const params = request.params as { staffId: string };
-		if (!params.staffId || !UUID_PATTERN.test(params.staffId.trim())) {
+		const parsedParams = staffIdParamsSchema.safeParse(request.params ?? {});
+		if (!parsedParams.success) {
 			reply.code(400);
 			return {
 				error: "ValidationError",
 				message: "Некорректный идентификатор сотрудника (ожидается UUID).",
 			};
 		}
+		const params = parsedParams.data;
 		const parsed = updateStaffProfileExtendedSchema.safeParse(request.body);
 		if (!parsed.success) {
 			reply.code(400);
@@ -168,8 +232,7 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 		);
 
 		const staffCandidates: StaffMemberSearchCandidate[] = allStaff.map((u) => {
-			const ui = (u.uiPreferences as Record<string, unknown>) || {};
-			const hr = (ui.hrProfile as ExtendedHrProfileStorage) || {};
+			const hr = extractHrProfile(u.uiPreferences);
 			return {
 				id: u.id,
 				fullName: u.fullName,
@@ -207,10 +270,8 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 		}
 
 		// 6. Проверка прав доступа и предотвращение эскалации привилегий
-		const existingUiPrefs =
-			(existingUser.uiPreferences as Record<string, unknown>) || {};
-		const existingHr =
-			(existingUiPrefs.hrProfile as ExtendedHrProfileStorage) || {};
+		const existingUiPrefs = asPlainRecord(existingUser.uiPreferences);
+		const existingHr = extractHrProfile(existingUiPrefs);
 
 		const isSelf = Boolean(auth.callerUserId && auth.callerUserId === params.staffId);
 		const hasStaffAuthority = canManageStaffAuthority(auth.callerRole) || auth.callerRole === "owner";
@@ -582,14 +643,15 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 		if (!auth) return;
 		if (!requirePersonalStaff(auth, reply)) return;
 
-		const params = request.params as { staffId: string };
-		if (!params.staffId || !UUID_PATTERN.test(params.staffId.trim())) {
+		const parsedParams = staffIdParamsSchema.safeParse(request.params ?? {});
+		if (!parsedParams.success) {
 			reply.code(400);
 			return {
 				error: "ValidationError",
 				message: "Некорректный идентификатор сотрудника (ожидается UUID).",
 			};
 		}
+		const params = parsedParams.data;
 
 		if (!canManageStaffAuthority(auth.callerRole) && auth.callerRole !== "owner") {
 			reply.code(403);
@@ -672,7 +734,15 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 			 * правом управления кадрами (свою сессию завершает владелец токена —
 			 * это выход, а не атака).
 			 */
-			const isSelf = auth.callerUserId === (request.params as { staffId: string }).staffId;
+			const parsedParams = staffIdParamsSchema.safeParse(request.params ?? {});
+			const rawStaffId =
+				typeof request.params === "object" &&
+				request.params !== null &&
+				"staffId" in request.params &&
+				typeof request.params.staffId === "string"
+					? request.params.staffId
+					: undefined;
+			const isSelf = Boolean(auth.callerUserId && rawStaffId && auth.callerUserId === rawStaffId);
 			if (!auth.callerUserId) {
 				reply.code(401);
 				return {
@@ -690,14 +760,14 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 				};
 			}
 
-			const params = request.params as { staffId: string };
-			if (!params.staffId || !UUID_PATTERN.test(params.staffId.trim())) {
+			if (!parsedParams.success) {
 				reply.code(400);
 				return {
 					error: "ValidationError",
 					message: "Некорректный идентификатор сотрудника (ожидается UUID).",
 				};
 			}
+			const params = parsedParams.data;
 			await withTenantWriteCtx(auth.orgId, async (tx) => {
 				await tx
 					.update(schema.users)

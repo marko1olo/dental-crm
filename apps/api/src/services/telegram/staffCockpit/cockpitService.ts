@@ -26,14 +26,6 @@ import { wsBroker } from "../../websocketBroker.js";
 
 const logger = createApiLogger("telegramStaffCockpit");
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function isTestRuntime(): boolean {
-	return (
-		process.env.NODE_ENV === "test" ||
-		Boolean(process.env.NODE_TEST_CONTEXT) ||
-		process.execArgv.some((arg) => arg === "--test" || arg.startsWith("--test-"))
-	);
-}
 import {
 	buildDoctorEventPush,
 	buildDoctorMorningDigest,
@@ -166,6 +158,10 @@ export class TelegramStaffCockpitService {
 		startPayload: string;
 		telegramUser?: { id: number; firstName: string; lastName?: string | undefined; username?: string | undefined } | undefined;
 		crmBaseUrl?: string | null | undefined;
+		/**
+		 * Явный DI-флаг для тестов без записи организации/пользователя в БД.
+		 */
+		allowInMemoryChatLinkFallback?: boolean | undefined;
 	}): Promise<{
 		success: boolean;
 		staffUserId: string | null;
@@ -299,11 +295,12 @@ export class TelegramStaffCockpitService {
 		}
 
 		// Привязываем связку в denteTelegramChatLinks
+		const allowInMemoryFallback = Boolean(params.allowInMemoryChatLinkFallback);
 		try {
 			const hasUuidPair =
 				UUID_REGEX.test(params.organizationId) && UUID_REGEX.test(tokenRecord.staffUserId);
 			let canPersistDbChatLink = hasUuidPair;
-			if (hasUuidPair && isTestRuntime()) {
+			if (hasUuidPair && allowInMemoryFallback) {
 				canPersistDbChatLink = await withTenantCtx(params.organizationId, async (tx) => {
 					const [orgRow] = await tx
 						.select({ id: organizations.id })
@@ -325,7 +322,7 @@ export class TelegramStaffCockpitService {
 					chatTransportRef: encryptTelegramChatId(params.chatId),
 					chatIdLast4: params.chatId.slice(-4),
 				});
-			} else if (!isTestRuntime()) {
+			} else if (!allowInMemoryFallback) {
 				return {
 					success: false,
 					staffUserId: tokenRecord.staffUserId,
@@ -342,7 +339,7 @@ export class TelegramStaffCockpitService {
 				{ err: safeLogError(err), organizationId: params.organizationId, staffUserId: tokenRecord.staffUserId },
 				"[handleStaffAuthStart] Failed to persist denteTelegramChatLink in database",
 			);
-			if (!isTestRuntime()) {
+			if (!allowInMemoryFallback) {
 				return {
 					success: false,
 					staffUserId: tokenRecord.staffUserId,
@@ -497,7 +494,12 @@ export class TelegramStaffCockpitService {
 					botToken: params.botToken,
 					callbackQueryId: params.callbackQueryId,
 					text: "✓ Принято в работу",
-				}).catch(() => {});
+				}).catch((err: unknown) => {
+					logger.warn(
+						{ err: safeLogError(err), organizationId: params.organizationId },
+						"[handleCockpitCallback] answerTelegramCallbackQuery failed",
+					);
+				});
 			}
 
 			// Транслируем событие подтверждения через WebSocket в CRM
@@ -529,7 +531,12 @@ export class TelegramStaffCockpitService {
 					botToken: params.botToken,
 					callbackQueryId: params.callbackQueryId,
 					text: "Загрузка расписания...",
-				}).catch(() => {});
+				}).catch((err: unknown) => {
+					logger.warn(
+						{ err: safeLogError(err), organizationId: params.organizationId },
+						"[handleCockpitCallback] answerTelegramCallbackQuery failed",
+					);
+				});
 			}
 
 			const digest = await this.buildDoctorMorningDigest({
@@ -553,7 +560,12 @@ export class TelegramStaffCockpitService {
 					botToken: params.botToken,
 					callbackQueryId: params.callbackQueryId,
 					text: "Смена принята!",
-				}).catch(() => {});
+				}).catch((err: unknown) => {
+					logger.warn(
+						{ err: safeLogError(err), organizationId: params.organizationId },
+						"[handleCockpitCallback] answerTelegramCallbackQuery failed",
+					);
+				});
 			}
 
 			return {
@@ -570,7 +582,12 @@ export class TelegramStaffCockpitService {
 					botToken: params.botToken,
 					callbackQueryId: params.callbackQueryId,
 					text: "Формирование отчета...",
-				}).catch(() => {});
+				}).catch((err: unknown) => {
+					logger.warn(
+						{ err: safeLogError(err), organizationId: params.organizationId },
+						"[handleCockpitCallback] answerTelegramCallbackQuery failed",
+					);
+				});
 			}
 
 			const report = await this.buildExecutiveEveningReport({
@@ -592,7 +609,12 @@ export class TelegramStaffCockpitService {
 					botToken: params.botToken,
 					callbackQueryId: params.callbackQueryId,
 					text: "Проверка склада...",
-				}).catch(() => {});
+				}).catch((err: unknown) => {
+					logger.warn(
+						{ err: safeLogError(err), organizationId: params.organizationId },
+						"[handleCockpitCallback] answerTelegramCallbackQuery failed",
+					);
+				});
 			}
 
 			const alert = await this.buildLowInventoryAlert({

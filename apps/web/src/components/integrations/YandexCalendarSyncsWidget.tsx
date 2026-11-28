@@ -11,6 +11,7 @@ import {
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { auth } from "../../AppConstants";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { showToast } from "../GlobalToast";
 
 /**
@@ -319,8 +320,14 @@ export const YandexCalendarSyncsWidget: React.FC = () => {
 				showToast("Синхронизация с Яндекс Календарём запущена в фоне", "info");
 				await load();
 			} else {
-				const err = await res.json().catch(() => ({}));
-				showToast(err.message || "Ошибка при запуске синхронизации", "warning");
+				let msg = "Ошибка при запуске синхронизации";
+				try {
+					const err = (await res.json()) as { message?: string };
+					if (err?.message) msg = err.message;
+				} catch (parseErr) {
+					clientLogger.warn("[YandexCalendarSyncsWidget] Non-JSON error response:", parseErr);
+				}
+				showToast(msg, "warning");
 			}
 		} catch {
 			showToast("Не удалось связаться с сервером синхронизации", "error");
@@ -398,7 +405,7 @@ export const YandexCalendarSyncsWidget: React.FC = () => {
 							onClick={() => setSyncTimezone("MSK")}
 							className={`h-7 px-2.5 rounded-md font-medium text-xs transition-all cursor-pointer ${
 								syncTimezone === "MSK"
-									? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
+									? "bg-[var(--primary)] text-white shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 							title="Синхронизировать по московскому времени (UTC+3)"
@@ -411,7 +418,7 @@ export const YandexCalendarSyncsWidget: React.FC = () => {
 							onClick={() => setSyncTimezone("local")}
 							className={`h-7 px-2.5 rounded-md font-medium text-xs transition-all cursor-pointer ${
 								syncTimezone === "local"
-									? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
+									? "bg-[var(--primary)] text-white shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 							title="Синхронизировать по локальному времени устройства"
@@ -460,7 +467,7 @@ export const YandexCalendarSyncsWidget: React.FC = () => {
 						type="button"
 						onClick={() => void handleTriggerManualSync()}
 						aria-busy={isBackgroundSyncing}
-						className="h-8 px-3 rounded-lg font-semibold text-xs cursor-pointer bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white inline-flex items-center gap-1.5 shadow-xs transition-all"
+						className="h-8 px-3 rounded-lg font-semibold text-xs cursor-pointer bg-[var(--primary)] hover:opacity-90 active:scale-95 text-white inline-flex items-center gap-1.5 shadow-xs transition-all"
 					>
 						<RefreshCcw size={13} className={isBackgroundSyncing ? "animate-spin" : ""} aria-hidden="true" />
 						<span>{isBackgroundSyncing ? "Синхронизация…" : "Синхронизировать"}</span>

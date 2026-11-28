@@ -71,7 +71,7 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 						type="button"
 						onClick={logic.handleQuickMarkBatchNorm}
 						aria-busy={logic.submitting}
-						className="h-9 min-h-[36px] max-md:h-11 max-md:min-h-[44px] px-3.5 rounded-lg max-md:rounded-xl font-medium text-xs text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] shadow-sm inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
+						className="max-md:hidden h-9 min-h-[36px] px-3.5 rounded-lg font-medium text-xs text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] shadow-sm inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
 						data-testid="pso-quick-mark-shift-btn"
 						title="Зафиксировать пробу предстерилизационной очистки (100% норма)"
 					>
@@ -135,9 +135,9 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 											type="button"
 											onClick={logic.handleQuickMarkBatchNorm}
 											aria-busy={logic.submitting}
-											className="h-9 px-3.5 rounded-lg text-xs font-medium text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] inline-flex items-center gap-1.5 cursor-pointer touch-manipulation shadow-sm"
+											className="secondary-button h-9 px-3.5 rounded-lg text-xs font-medium text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] inline-flex items-center gap-1.5 cursor-pointer touch-manipulation shadow-sm"
 										>
-											<CheckCircle2 className="w-4 h-4 shrink-0" />
+											<CheckCircle2 className="w-4 h-4 shrink-0 text-[var(--primary)]" />
 											<span>Зафиксировать норму (5 проб из 50 инструментов)</span>
 										</button>
 									</td>
@@ -219,9 +219,9 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 								type="button"
 								onClick={logic.handleQuickMarkBatchNorm}
 								aria-busy={logic.submitting}
-								className="h-11 min-h-[44px] w-full rounded-xl font-semibold text-sm text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
+								className="secondary-button h-11 min-h-[44px] w-full rounded-xl font-semibold text-sm text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
 							>
-								<Sparkles size={16} />
+								<Sparkles size={16} className="text-[var(--primary)]" />
 								<span>Зафиксировать норму (5 проб)</span>
 							</button>
 						</div>

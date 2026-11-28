@@ -13,6 +13,7 @@ import {
 import { useCallback, useRef, useState } from "react";
 import { money } from "../../../../AppHelpers";
 import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { showToast } from "../../../GlobalToast";
 import type { FamilyGroupDetails, TopupPaymentMethod } from "./types";
 
@@ -71,12 +72,25 @@ export function useFamilyTopupMutation({
 				}),
 			});
 
-			const rawJson = (await res.json().catch(() => null)) as {
+			let rawJson: {
 				data?: { newBalance?: string };
 				newBalance?: string;
 				message?: string;
 				error?: string;
-			} | null;
+			} | null = null;
+			try {
+				rawJson = (await res.json()) as {
+					data?: { newBalance?: string };
+					newBalance?: string;
+					message?: string;
+					error?: string;
+				} | null;
+			} catch (parseErr) {
+				clientLogger.warn("[useFamilyTopupMutation] Response JSON parse failed", {
+					status: res.status,
+					error: String(parseErr),
+				});
+			}
 			const resJson = rawJson?.data ?? rawJson;
 
 			if (!res.ok) {

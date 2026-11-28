@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { todayDateKeyInTimeZone } from "@dental/shared";
 import type { PortalBudgetSignature } from "./types.js";
 
 export function computeDocumentHash(payload: {

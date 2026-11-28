@@ -149,10 +149,21 @@ const mdlpItemsQuerySchema = z
 
 // ─── Route Registration ─────────────────────────────────────────────────────
 
+export interface MdlpRoutesOptions {
+	/**
+	 * Explicit DI option for unit/route tests without provisioned DB organizations.
+	 * Production callers leave this undefined so DB errors propagate normally.
+	 */
+	readonly allowInMemoryQueueFallback?: boolean | undefined;
+}
+
 export async function registerMdlpRoutes(
 	app: FastifyInstance,
-	_opts?: Record<string, unknown>,
+	opts?: MdlpRoutesOptions,
 ): Promise<void> {
+	if (opts?.allowInMemoryQueueFallback !== undefined) {
+		mdlpQueueService.setAllowInMemoryFallback(opts.allowInMemoryQueueFallback);
+	}
 	/**
 	 * POST /api/mdlp/scan
 	 * Verify GS1 DataMatrix barcode, check checksum, registration, expiration, and recognize drug.

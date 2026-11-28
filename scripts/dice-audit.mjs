@@ -70,7 +70,7 @@ export function parseCliArgs(argv = process.argv.slice(2)) {
 		samples: 100,
 		seed: null,
 		list: "all",
-		strict: false,
+		strict: true,
 		json: false,
 		help: false,
 		root: null,
@@ -106,6 +106,8 @@ export function parseCliArgs(argv = process.argv.slice(2)) {
 			}
 		} else if (arg === "--strict") {
 			options.strict = true;
+		} else if (arg === "--warn-only") {
+			options.strict = false;
 		} else if (arg === "--root") {
 			options.root = argv[++i] ?? null;
 		} else if (arg.startsWith("--root=")) {

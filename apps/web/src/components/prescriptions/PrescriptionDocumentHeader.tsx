@@ -51,7 +51,7 @@ export const PrescriptionDocumentHeader: React.FC<
 					}`}
 				>
 					<div
-						className={`font-bold uppercase text-[10px] ${withStampAndSignature ? "text-blue-900 dark:text-blue-200" : "text-[var(--ink)]"}`}
+						className={`font-bold text-[10px] ${withStampAndSignature ? "text-blue-900 dark:text-blue-200" : "text-[var(--ink)]"}`}
 					>
 						{clinic}
 					</div>
@@ -89,9 +89,9 @@ export const PrescriptionDocumentHeader: React.FC<
 			{/* Title */}
 			<div className="text-center my-0.5 text-[var(--ink)]">
 				<div
-					className={`font-extrabold text-base tracking-widest uppercase ${isSpecial ? "text-rose-600 dark:text-rose-400" : "text-[var(--ink)]"}`}
+					className={`font-extrabold text-base tracking-wide ${isSpecial ? "text-rose-600 dark:text-rose-400" : "text-[var(--ink)]"}`}
 				>
-					РЕЦЕПТ {isSpecial ? "(СПЕЦ. УЧЕТ)" : ""}
+					Рецепт {isSpecial ? "(спец. учёт)" : ""}
 				</div>
 				<div className="text-[10px] font-sans text-[var(--muted)]">
 					Серия:{" "}

@@ -14,7 +14,7 @@ export const ShiftHudMetricsGrid: React.FC<ShiftHudMetricsGridProps> = ({ summar
 	return (
 		<div className="doctor-shift-hud-grid-metrics" data-testid="hud-metrics-grid">
 			<div className="doctor-shift-hud-metric-card">
-				<span className="text-[10px] font-bold text-[var(--muted)] uppercase">
+				<span className="text-[10px] font-bold text-[var(--muted)]">
 					Выполнено услуг (Gross)
 				</span>
 				<span className="text-xs font-bold font-mono text-[var(--ink)]">
@@ -23,7 +23,7 @@ export const ShiftHudMetricsGrid: React.FC<ShiftHudMetricsGridProps> = ({ summar
 			</div>
 
 			<div className="doctor-shift-hud-metric-card">
-				<span className="text-[10px] font-bold text-[var(--muted)] uppercase">
+				<span className="text-[10px] font-bold text-[var(--muted)]">
 					Вычет ЗТЛ (Лаборатория)
 				</span>
 				<span className="text-xs font-bold font-mono text-rose-600 dark:text-rose-400">
@@ -32,7 +32,7 @@ export const ShiftHudMetricsGrid: React.FC<ShiftHudMetricsGridProps> = ({ summar
 			</div>
 
 			<div className="doctor-shift-hud-metric-card">
-				<span className="text-[10px] font-bold text-[var(--muted)] uppercase">
+				<span className="text-[10px] font-bold text-[var(--muted)]">
 					Вычет прямых материалов
 				</span>
 				<span className="text-xs font-bold font-mono text-rose-600 dark:text-rose-400">
@@ -41,7 +41,7 @@ export const ShiftHudMetricsGrid: React.FC<ShiftHudMetricsGridProps> = ({ summar
 			</div>
 
 			<div className="doctor-shift-hud-metric-card">
-				<span className="text-[10px] font-bold text-[var(--muted)] uppercase">
+				<span className="text-[10px] font-bold text-[var(--muted)]">
 					Чистая база (Net Base)
 				</span>
 				<span className="text-xs font-bold font-mono text-teal-700 dark:text-teal-400">

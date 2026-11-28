@@ -45,10 +45,15 @@ export async function savePrescriptionToBackend(
 	});
 
 	if (!res.ok) {
-		const errJson = (await res.json().catch(() => null)) as {
-			message?: string;
-			error?: string;
-		} | null;
+		let errJson: { message?: string; error?: string } | null = null;
+		try {
+			errJson = (await res.json()) as { message?: string; error?: string } | null;
+		} catch (parseErr) {
+			clientLogger.warn("[prescriptionApiClient] savePrescription error JSON parse failed", {
+				status: res.status,
+				error: String(parseErr),
+			});
+		}
 		const errMsg =
 			errJson?.message ||
 			errJson?.error ||
@@ -106,10 +111,16 @@ export async function signPrescriptionOnBackend(
 	);
 
 	if (!res.ok) {
-		const errJson = (await res.json().catch(() => null)) as {
-			message?: string;
-			error?: string;
-		} | null;
+		let errJson: { message?: string; error?: string } | null = null;
+		try {
+			errJson = (await res.json()) as { message?: string; error?: string } | null;
+		} catch (parseErr) {
+			clientLogger.warn("[prescriptionApiClient] sign-ukep error JSON parse failed", {
+				prescriptionId,
+				status: res.status,
+				error: String(parseErr),
+			});
+		}
 		throw new Error(
 			errJson?.message || errJson?.error || "Ошибка сохранения подписи УКЭП",
 		);

@@ -164,7 +164,7 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		);
 
 		app = Fastify();
-		await registerPeriodontogramRoutes(app);
+		await registerPeriodontogramRoutes(app, { allowSyntheticDemoIds: true });
 
 		await purgeFixtureOrganizations([ORG_ID]);
 		await withFixtureTenant(ORG_ID, async (tx) => {
@@ -223,6 +223,25 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		assert.equal(res.statusCode, 400);
 		const json = JSON.parse(res.body);
 		assert.equal(json.error, "InvalidPatientId");
+	});
+
+	it("GET /api/periodontogram/patients/:patientId/snapshots rejects demo non-UUID when allowSyntheticDemoIds DI is omitted (production default)", async () => {
+		const prodApp = Fastify();
+		await registerPeriodontogramRoutes(prodApp);
+		try {
+			const res = await prodApp.inject({
+				method: "GET",
+				url: "/api/periodontogram/patients/demo_perio_patient/snapshots",
+				headers: {
+					[CLINIC_TOKEN_HEADER]: clinicToken,
+				},
+			});
+			assert.equal(res.statusCode, 404);
+			const json = JSON.parse(res.body);
+			assert.equal(json.error, "PatientNotFound");
+		} finally {
+			await prodApp.close();
+		}
 	});
 
 	it("GET /api/periodontogram/patients/:patientId/snapshots supports demo non-UUID patient ID cleanly", async () => {

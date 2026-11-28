@@ -316,10 +316,17 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 						showToast(`Не удалось загрузить портрет DSD на сервер (${uploadRes.status})`, 'error');
 						return;
 					}
-					const uploadJson = (await uploadRes.json().catch(() => ({}))) as {
+					let uploadJson: {
 						file?: { url?: string };
 						data?: { file?: { url?: string } };
-					};
+					} = {};
+					try {
+						uploadJson = (await uploadRes.json()) as typeof uploadJson;
+					} catch (parseErr) {
+						clientLogger.warn('Failed parsing DSD upload JSON', parseErr, { module: 'DsdAestheticStudioModal' });
+						showToast('Сервер вернул некорректный ответ при загрузке фото', 'error');
+						return;
+					}
 					const uploadedUrl = uploadJson?.file?.url || uploadJson?.data?.file?.url;
 					if (!uploadedUrl || uploadedUrl.startsWith('blob:')) {
 						showToast('Сервер не вернул постоянный URL загруженного фото', 'error');
@@ -386,8 +393,13 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 					});
 
 					if (!res.ok) {
-						const errData = await res.json().catch(() => ({}));
-						const errMsg = (errData as { message?: string })?.message || `Ошибка сохранения фотопротокола (${res.status})`;
+						let errMsg = `Ошибка сохранения фотопротокола (${res.status})`;
+						try {
+							const errData = (await res.json()) as { message?: string };
+							if (errData?.message) errMsg = errData.message;
+						} catch (parseErr) {
+							clientLogger.warn('Failed parsing photo-protocol error JSON', parseErr, { module: 'DsdAestheticStudioModal' });
+						}
 						showToast(errMsg, 'error');
 						return;
 					}

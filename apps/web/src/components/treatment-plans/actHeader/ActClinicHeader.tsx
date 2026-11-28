@@ -82,12 +82,12 @@ export const ActClinicHeader: React.FC<ActClinicHeaderProps> = (props) => {
 							{slogan}
 						</div>
 					)}
-					<div className="doc-clinic-meta text-xs font-semibold text-slate-700 mt-0.5">{legalName}</div>
+					<div className="doc-clinic-meta text-xs font-semibold text-[var(--ink-2)] print:text-slate-700 mt-0.5">{legalName}</div>
 				</div>
 			</div>
 			{showClinicRequisites && (
-				<div className="text-right doc-clinic-meta text-[11px] leading-tight text-slate-600 max-w-sm">
-					<div className="font-bold text-slate-900" style={{ color: palette.primaryDark }}>
+				<div className="text-right doc-clinic-meta text-[11px] leading-tight text-[var(--ink-muted)] print:text-slate-600 max-w-sm">
+					<div className="font-bold text-[var(--ink)] print:text-slate-900" style={{ color: palette.primaryDark }}>
 						Лицензия: {license}
 					</div>
 					<div className="mt-0.5">ИНН: {inn} • КПП: {kpp} • ОГРН: {ogrn}</div>

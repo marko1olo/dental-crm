@@ -8,7 +8,7 @@ import React from "react";
 import { Compass, Wrench } from "lucide-react";
 import {
 	SURGERY_IMPLANT_SYSTEMS,
-	getImplantSystemById,
+	findImplantSystemById,
 	type SurgeryCapType,
 } from "./surgeryCatalogData";
 
@@ -86,7 +86,7 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 	surgicalGuideTemplateId = "",
 	onChangeSurgicalGuideTemplateId,
 }) => {
-	const selectedSystem = getImplantSystemById(selectedBrand);
+	const selectedSystem = findImplantSystemById(selectedBrand);
 	const availableDiameters = selectedSystem?.standardDiametersMm?.length
 		? selectedSystem.standardDiametersMm
 		: [3.5, 4.0, 4.5, 5.0];
@@ -99,7 +99,7 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 			<div className="text-xs font-bold text-[var(--ink)] flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-1.5">
 					<Wrench size={14} className="text-[var(--primary)]" />
-					<span>Имплантационная система &amp; параметры изделия:</span>
+					<span>Имплантационная система и параметры изделия:</span>
 				</div>
 				{selectedTeeth && selectedTeeth.length > 1 && (
 					<span className="text-[11px] font-medium text-[var(--primary)]">
@@ -214,7 +214,7 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 				<div className="flex flex-col gap-1">
 					<div className="flex items-center justify-between text-[11px] font-semibold text-[var(--muted)]">
 						<span>Стабильность ISQ:</span>
-						<span className="text-[var(--primary)] font-bold">{isqValue}</span>
+						<span className="text-[var(--primary)] font-bold">{isqValue > 0 ? isqValue : "—"}</span>
 					</div>
 					<div className="flex items-center gap-1">
 						{[60, 68, 74, 78].map((val) => (
@@ -237,7 +237,8 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 							type="number"
 							min={30}
 							max={90}
-							value={isqValue}
+							value={isqValue > 0 ? isqValue : ""}
+							placeholder="74"
 							onChange={(e) => {
 								const num = Number(e.target.value);
 								if (!Number.isNaN(num) && num >= 30 && num <= 90) {
@@ -357,7 +358,7 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
 				<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
 					<div className="text-[10px] text-[var(--muted)]">Артикул (REF)</div>
-					<div className="font-mono font-bold">{catalogArticle}</div>
+					<div className="font-mono font-bold">{catalogArticle || "—"}</div>
 				</div>
 				<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
 					<label htmlFor="implant-lot-input" className="block text-[10px] text-[var(--muted)]">Партия (LOT)</label>
@@ -367,11 +368,12 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 							type="text"
 							value={lotNumber}
 							onChange={(e) => onChangeLotNumber(e.target.value)}
+							placeholder="LOT-..."
 							className="w-full h-7 px-1.5 mt-0.5 text-xs font-mono font-bold rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none focus:border-[var(--primary)]"
 							data-testid="input-implant-lot"
 						/>
 					) : (
-						<div className="font-mono font-bold">{lotNumber}</div>
+						<div className="font-mono font-bold">{lotNumber || "—"}</div>
 					)}
 				</div>
 				<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">

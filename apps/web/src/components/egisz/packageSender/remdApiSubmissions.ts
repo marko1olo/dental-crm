@@ -18,8 +18,11 @@ export async function fetchOutboxRecordsFromBackend(
 		try {
 			const res = await fetch(endpoint, { headers: denteClinicalReadHeaders() });
 			if (!res.ok) continue;
-			const data = (await res.json()) as { items?: unknown[]; success?: boolean } | unknown[];
-			const rawItems = Array.isArray(data) ? data : data.items || [];
+			const rawPayload: unknown = await res.json();
+			const payload = typeof rawPayload === "object" && rawPayload !== null && "data" in rawPayload ? rawPayload.data : rawPayload;
+			const rawItems = Array.isArray(payload)
+				? payload
+				: (typeof payload === "object" && payload !== null && "items" in payload && Array.isArray(payload.items) ? payload.items : []);
 			if (Array.isArray(rawItems)) {
 				return rawItems.map((item) => mapOutboxRowToRemdRecord(item, clinic));
 			}
@@ -80,15 +83,29 @@ export async function submitCdaPackageToRemd({
 	});
 
 	if (!res.ok) {
-		const errJson = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
-		const errMsg = errJson?.message || errJson?.error || `Шлюз РЭМД ЕГИСЗ вернул ошибку (${res.status} ${res.statusText})`;
-		throw new Error(errMsg);
+		let errMsg = "";
+		try {
+			const rawErr: unknown = await res.json();
+			if (typeof rawErr === "object" && rawErr !== null) {
+				if ("message" in rawErr && typeof rawErr.message === "string") errMsg = rawErr.message;
+				else if ("error" in rawErr && typeof rawErr.error === "string") errMsg = rawErr.error;
+			}
+		} catch (parseErr) {
+			clientLogger.warn("[remdApiSubmissions] Не удалось разобрать ответ ошибки РЭМД:", parseErr);
+		}
+		throw new Error(errMsg || `Шлюз РЭМД ЕГИСЗ вернул ошибку (${res.status} ${res.statusText})`);
 	}
 
-	const data = (await res.json()) as { regNumber?: string | null; transactionId?: string; outboxId?: string; queued?: boolean };
+	const rawOk: unknown = await res.json();
+	const dataObj = typeof rawOk === "object" && rawOk !== null && "data" in rawOk && typeof rawOk.data === "object" && rawOk.data !== null
+		? rawOk.data
+		: rawOk;
+	const regNumber = typeof dataObj === "object" && dataObj !== null && "regNumber" in dataObj && typeof dataObj.regNumber === "string" ? dataObj.regNumber : null;
+	const transactionId = typeof dataObj === "object" && dataObj !== null && "transactionId" in dataObj && typeof dataObj.transactionId === "string" ? dataObj.transactionId : null;
+	const outboxId = typeof dataObj === "object" && dataObj !== null && "outboxId" in dataObj && typeof dataObj.outboxId === "string" ? dataObj.outboxId : null;
 	// [EGI-01] Если документ зарегистрирован и получен реальный номер квитанции Минздрава — возвращаем его,
 	// иначе возвращаем честный идентификатор пакета в очереди отправки (outboxId / transactionId) без фабрикации номеров
-	return data.regNumber || data.transactionId || data.outboxId || effectiveVisitId;
+	return regNumber || transactionId || outboxId || effectiveVisitId;
 }
 
 export async function submitFnsTaxToGateway({

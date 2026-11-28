@@ -23,6 +23,7 @@ import "./VkIntegrationHub.css";
 import { generateUuidV7 } from "@dental/shared";
 import { useVkSettings } from "../../hooks/useVkSettings.js";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import { showToast } from "../GlobalToast.js";
 
 interface VkIntegrationHubProps {
@@ -144,7 +145,12 @@ export function VkIntegrationHub({ serverBaseUrl }: VkIntegrationHubProps) {
 					message: testMessageText.trim(),
 				}),
 			});
-			const data = await res.json().catch(() => ({}));
+			let data: { ok?: boolean; message?: string } = {};
+			try {
+				data = (await res.json()) as { ok?: boolean; message?: string };
+			} catch (parseErr) {
+				clientLogger.warn("VkIntegrationHub response parse failed", { error: String(parseErr) });
+			}
 			if (res.ok && data.ok) {
 				setTestSendResult({ ok: true, message: "Тестовое сообщение успешно отправлено!" });
 				showToast("Тестовое сообщение отправлено в VK", "success");

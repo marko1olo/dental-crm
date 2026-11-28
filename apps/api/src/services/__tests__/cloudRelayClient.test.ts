@@ -363,5 +363,101 @@ describe("CloudRelayClient (Clinic Edge NAT Traversal)", () => {
 			assert.strictEqual(reply.statusCode, 403);
 			assert.ok(reply.body?.includes("ForbiddenTunnelRoute"));
 		});
+
+		test("отклоняет неподдерживаемый HTTP-метод с кодом 405 MethodNotAllowed", async () => {
+			const mockFastify = Fastify({ logger: false });
+			client = new CloudRelayClient(
+				{
+					enabled: true,
+					relayUrl: `ws://127.0.0.1:${relayPort}/edge`,
+					authToken: testSecret,
+					clinicId: testClinicId,
+				},
+				mockFastify,
+			);
+			client.start();
+
+			const ws = await new Promise<WebSocket>((resolve) => {
+				wss.on("connection", (socket) => resolve(socket));
+			});
+
+			const methodNotAllowedPromise = new Promise<TunnelResponsePayload>((resolve) => {
+				ws.on("message", (raw) => {
+					const msg = JSON.parse(raw.toString()) as TunnelResponsePayload;
+					if (msg.type === "HTTP_RESPONSE" && msg.id === "bad-method-req") {
+						resolve(msg);
+					}
+				});
+			});
+
+			ws.send(
+				JSON.stringify({
+					type: "HTTP_REQUEST",
+					id: "bad-method-req",
+					clinicId: testClinicId,
+					method: "TRACE",
+					url: "/health",
+					headers: {},
+				}),
+			);
+
+			const reply = await methodNotAllowedPromise;
+			assert.strictEqual(reply.statusCode, 405);
+			assert.ok(reply.body?.includes("MethodNotAllowed"));
+			await mockFastify.close();
+		});
+
+		test("fallback через fetch на localBaseUrl выполняет запрос с AbortSignal таймаутом и возвращает 200", async () => {
+			const localHttp = createServer((_req, res) => {
+				res.writeHead(200, { "content-type": "application/json" });
+				res.end(JSON.stringify({ ok: true, source: "local-fetch" }));
+			});
+			await new Promise<void>((resolve) => localHttp.listen(0, "127.0.0.1", () => resolve()));
+			const localAddr = localHttp.address();
+			const localPort = typeof localAddr === "object" && localAddr ? localAddr.port : 0;
+
+			try {
+				client = new CloudRelayClient({
+					enabled: true,
+					relayUrl: `ws://127.0.0.1:${relayPort}/edge`,
+					authToken: testSecret,
+					clinicId: testClinicId,
+					localBaseUrl: `http://127.0.0.1:${localPort}`,
+				});
+				client.start();
+
+				const ws = await new Promise<WebSocket>((resolve) => {
+					wss.on("connection", (socket) => resolve(socket));
+				});
+
+				const responsePromise = new Promise<TunnelResponsePayload>((resolve) => {
+					ws.on("message", (raw) => {
+						const msg = JSON.parse(raw.toString()) as TunnelResponsePayload;
+						if (msg.type === "HTTP_RESPONSE" && msg.id === "local-fetch-req") {
+							resolve(msg);
+						}
+					});
+				});
+
+				ws.send(
+					JSON.stringify({
+						type: "HTTP_REQUEST",
+						id: "local-fetch-req",
+						clinicId: testClinicId,
+						method: "GET",
+						url: "/health",
+						headers: {},
+					}),
+				);
+
+				const reply = await responsePromise;
+				assert.strictEqual(reply.statusCode, 200);
+				const body = JSON.parse(reply.body || "{}") as { ok?: boolean; source?: string };
+				assert.strictEqual(body.ok, true);
+				assert.strictEqual(body.source, "local-fetch");
+			} finally {
+				await new Promise<void>((resolve) => localHttp.close(() => resolve()));
+			}
+		});
 	});
 });

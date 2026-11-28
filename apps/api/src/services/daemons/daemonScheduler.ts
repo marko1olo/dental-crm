@@ -5,6 +5,7 @@
  */
 
 import { pool } from "../../db/client.js";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { createApiLogger, safeLogError } from "../../observability/index.js";
 import {
 	runWeeklyRetentionScan,
@@ -134,7 +135,10 @@ export class DaemonScheduler {
 	private timer: NodeJS.Timeout | null = null;
 	private isRunning = false;
 	private isChecking = false;
-	private lastExecutedDateHourMinute = new Map<DaemonJobName, string>();
+	private lastExecutedDateHourMinute = new BoundedTtlMap<DaemonJobName, string>({
+		maxEntries: 64,
+		ttlMs: 48 * 60 * 60_000,
+	});
 	private options: DaemonSchedulerOptions;
 	private nowProvider: () => Date;
 
@@ -143,7 +147,10 @@ export class DaemonScheduler {
 	private cachedEmrAlerts: EmrSaviorDraftAlert[] = [];
 	private cachedRetentionSummaries: WeeklyRetentionSummary[] = [];
 	private cachedSanpinDigests: SanpinAndInventoryAuditDigest[] = [];
-	private cachedGapFillerAlerts = new Map<string, GapFillerAlert>();
+	private cachedGapFillerAlerts = new BoundedTtlMap<string, GapFillerAlert>({
+		maxEntries: 1000,
+		ttlMs: 60 * 60_000,
+	});
 
 	public readonly jobs: ScheduledDaemonJob[];
 
@@ -202,13 +209,14 @@ export class DaemonScheduler {
 		this.log("Starting daemon scheduler background loop...");
 
 		const pollMs = this.options.pollIntervalMs ?? 30000;
-		this.timer = setInterval(() => {
+		const timer = setInterval(() => {
 			this.checkAndRunJobs().catch((err: unknown) => {
 				const msg = err instanceof Error ? err.message : String(err);
 				this.log(`Error during checkAndRunJobs: ${msg}`);
 			});
 		}, pollMs);
-		this.timer.unref();
+		timer.unref();
+		this.timer = timer;
 
 		this.checkAndRunJobs().catch((err: unknown) => {
 			const msg = err instanceof Error ? err.message : String(err);
@@ -250,7 +258,7 @@ export class DaemonScheduler {
 	}
 
 	public getCachedGapFillerAlerts(): ReadonlyMap<string, GapFillerAlert> {
-		return this.cachedGapFillerAlerts;
+		return new Map(this.cachedGapFillerAlerts.entries());
 	}
 
 	private isJobEnabled(name: DaemonJobName): boolean {

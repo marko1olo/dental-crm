@@ -71,7 +71,7 @@ export const MobileShiftCashOutSheet: React.FC<MobileShiftCashOutSheetProps> = (
 
 				<div className="mobile-shift-sheet-footer">
 					<button type="button" className="mobile-shift-btn-primary-cta" onClick={handleConfirmCashOutAndZReport} aria-busy={isSubmittingCashOut} data-testid="btn-confirm-cash-out-z">
-						<Printer size={18} /><span>Снять Z-отчет & закрыть смену</span>
+						<Printer size={18} /><span>Снять Z-отчет и закрыть смену</span>
 					</button>
 				</div>
 			</div>

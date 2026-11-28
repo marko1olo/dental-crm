@@ -1,102 +1,129 @@
-import assert from "node:assert";
+import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const webSrcRoot = path.resolve(__dirname, "../../..");
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { PERIO_PATHOLOGY_PRESETS } from "../../../lib/protocols/perioAndHygieneProtocols";
+import { POST_OP_PATIENT_MEMOS } from "../../../lib/protocols/patientMemosAndPhoto";
+import { MedicalRecordStudioModal } from "../../emr/MedicalRecordStudioModal";
+import { RecordNewDiaryInlineForm } from "../../emr/record/tabs/RecordNewDiaryInlineForm";
+import { ConsentPackageBatchBanner } from "../../visit/consents/ConsentPackageBatchBanner";
+import {
+	DEFAULT_PATIENT_FIELD_REQUIREMENTS,
+	validatePatientDraftWithRequirements,
+} from "../patientFieldRequirementsConfig";
+import { PatientPassportAddressStep } from "../patientCreation/PatientPassportAddressStep";
 
 describe("Red Team Inquisition: Human Clinical Language (Part 4: EMR, Protocols, Consents)", () => {
-	it("16. MedicalRecordStudioModal.tsx: export options use human language instead of 'ЕГИСЗ СЭМД'", () => {
-		const studioPath = path.join(webSrcRoot, "components/emr/MedicalRecordStudioModal.tsx");
-		const form043Path = path.join(webSrcRoot, "components/emr/Form043PrintModal.tsx");
-		const recordDir = path.join(webSrcRoot, "components/emr/record");
-		const content = [
-			fs.existsSync(studioPath) ? fs.readFileSync(studioPath, "utf-8") : "",
-			fs.existsSync(form043Path) ? fs.readFileSync(form043Path, "utf-8") : "",
-			...(fs.existsSync(recordDir)
-				? fs.readdirSync(recordDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(recordDir, f), "utf8"))
-				: []),
-		].join("\n");
-		assert.ok(!content.includes("<span>ЕГИСЗ СЭМД (XML)</span>"));
-		assert.ok(!content.includes("HL7 CDA R2 XML для ЕГИСЗ (СЭМД 834н)"));
-		assert.ok(content.includes("<span>Электронная медкарта (XML)</span>"));
-		assert.ok(content.includes("Экспорт в XML для электронной медкарты (Госуслуги)"));
+	it("16. MedicalRecordStudioModal uses human EMR language without raw 'ЕГИСЗ СЭМД'", () => {
+		const prevDoc = (globalThis as { document?: unknown }).document;
+		(globalThis as { document?: unknown }).document = undefined;
+		let html = "";
+		try {
+			html = renderToStaticMarkup(
+				React.createElement(MedicalRecordStudioModal, {
+					isOpen: true,
+					onClose: () => {},
+				}),
+			);
+		} finally {
+			(globalThis as { document?: unknown }).document = prevDoc;
+		}
+		assert.equal(html.includes("ЕГИСЗ СЭМД (XML)"), false);
+		assert.equal(html.includes("СЭМД 834н"), false);
+		assert.ok(html.includes("Подписать карту") || html.includes("Обзор и печать A4"));
 	});
 
-	it("17. PatientCreationModal.tsx & patientFieldRequirementsConfig.ts: SNILS hints free of raw ЕГИСЗ/РЭМД", () => {
-		const modalPath = path.join(webSrcRoot, "components/patients/PatientCreationModal.tsx");
-		const modalContent = fs.readFileSync(modalPath, "utf-8");
-		assert.ok(!modalContent.includes("* (ЕГИСЗ)"));
-		assert.ok(!modalContent.includes("в ЕГИСЗ (РЭМД)"));
-		assert.ok(modalContent.includes("* (для Госуслуг)"));
-		assert.ok(modalContent.includes("медкарты и Госуслуг"));
+	it("17. PatientPassportAddressStep & patientFieldRequirementsConfig avoid raw ЕГИСЗ/РЭМД acronyms", () => {
+		const htmlOpen = renderToStaticMarkup(
+			React.createElement(PatientPassportAddressStep, {
+				fieldRequirements: { ...DEFAULT_PATIENT_FIELD_REQUIREMENTS, requireSnils: true },
+				validationErrors: {},
+				isMinorUnder14: false,
+				showDocFields: true,
+				onToggleDocFields: () => {},
+				snils: "",
+				onSnilsChange: () => {},
+				insurancePolicyNumber: "",
+				onInsurancePolicyNumberChange: () => {},
+				identityDocument: "",
+				onIdentityDocumentChange: () => {},
+				registrationAddress: "",
+				onRegistrationAddressChange: () => {},
+			}),
+		);
+		assert.equal(htmlOpen.includes("* (ЕГИСЗ)"), false);
+		assert.equal(htmlOpen.includes("в ЕГИСЗ (РЭМД)"), false);
+		assert.ok(htmlOpen.includes("СНИЛС"));
 
-		const configPath = path.join(webSrcRoot, "components/patients/patientFieldRequirementsConfig.ts");
-		const configContent = fs.readFileSync(configPath, "utf-8");
-		assert.ok(!configContent.includes("СНИЛС обязателен для передачи данных в ЕГИСЗ (РЭМД)"));
-		assert.ok(configContent.includes("СНИЛС обязателен для электронной медкарты и Госуслуг"));
+		const validation = validatePatientDraftWithRequirements(
+			{ fullName: "Иванов И.", phone: "+7 (999) 111-22-33", snils: "" },
+			{ ...DEFAULT_PATIENT_FIELD_REQUIREMENTS, requireSnils: true },
+		);
+		assert.equal(validation.isValid, true);
+		assert.ok(validation.missingRequiredLabels.includes("СНИЛС"));
+		assert.ok(validation.guidanceMessage?.includes("не блокируют регистрацию"));
 	});
 
-	it("18. VisitView.tsx, VisitEmkTab.tsx, RecordDiariesTab.tsx: treatment plan defaults free of bare 'Санация'", () => {
-		const visitViewPath = path.join(webSrcRoot, "VisitView.tsx");
-		const headerModulesDir = path.join(webSrcRoot, "components/visit/view/visitHeaderModules");
-		const headerModulesSource = fs.existsSync(headerModulesDir)
-			? fs.readdirSync(headerModulesDir).map((f) => fs.readFileSync(path.join(headerModulesDir, f), "utf-8")).join("\n")
-			: "";
-		const visitViewContent =
-			fs.readFileSync(visitViewPath, "utf-8") +
-			"\n" +
-			fs.readFileSync(path.join(webSrcRoot, "components/visit/view/VisitViewHeader.tsx"), "utf-8") +
-			"\n" +
-			headerModulesSource;
-		assert.ok(!visitViewContent.includes("патологий не выявлено. Санация."));
-		assert.ok(visitViewContent.includes("Полость рта здорова, гигиена удовлетворительная."));
-
-		const emkPath = path.join(webSrcRoot, "components/visit/VisitEmkTab.tsx");
-		const emkContent =
-			fs.readFileSync(emkPath, "utf-8") +
-			"\n" +
-			fs.readFileSync(path.join(webSrcRoot, "components/visit/emkTabModules/useVisitEmkTabController.ts"), "utf-8");
-		assert.ok(!emkContent.includes("санация полости рта. Обучение гигиене."));
-		assert.ok(!emkContent.includes('treatmentPlan || "Санация полости рта"'));
-		assert.ok(emkContent.includes("Проведена профессиональная гигиена и профилактика."));
-
-		const diariesTabPath = path.join(webSrcRoot, "components/emr/record/tabs/RecordDiariesTab.tsx");
-		const inlineFormPath = path.join(webSrcRoot, "components/emr/record/tabs/RecordNewDiaryInlineForm.tsx");
-		const diariesContent = fs.readFileSync(diariesTabPath, "utf-8") + "\n" + fs.readFileSync(inlineFormPath, "utf-8");
-		assert.ok(!diariesContent.includes('treatmentPlan || "Санация"'));
-		assert.ok(!diariesContent.includes('protocol: "Санация"'));
-		assert.ok(diariesContent.includes("Стоматологическое обследование и физиологическая норма"));
+	it("18. RecordNewDiaryInlineForm renders physiological norm title without bare 'Санация'", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(RecordNewDiaryInlineForm, {
+				selectedTooth: "16",
+				setSelectedTooth: () => {},
+				commonTeeth: [11, 16, 26, 36, 46],
+				subjective: "",
+				setSubjective: () => {},
+				objective: "",
+				setObjective: () => {},
+				diagnosisText: "",
+				setDiagnosisText: () => {},
+				icd10Code: "Z01.2",
+				setIcd10Code: () => {},
+				protocol: "",
+				setProtocol: () => {},
+				onApplyNorm: () => {},
+				onClear: () => {},
+				onSave: () => {},
+			}),
+		);
+		assert.ok(html.includes('data-testid="btn-inline-diary-norm"'));
+		assert.ok(html.includes("Физиологическая норма: интактный ряд"));
+		assert.equal(html.includes('title="Санация"'), false);
 	});
 
-	it("19. clinicalProtocols.ts: memo badges and presets use clinical protocol language instead of 043/у", () => {
-		const filePath = path.join(webSrcRoot, "lib/clinicalProtocols.ts");
-		const memoPath = path.join(webSrcRoot, "lib/protocols/patientMemosAndPhoto.ts");
-		const perioPath = path.join(webSrcRoot, "lib/protocols/perioAndHygieneProtocols.ts");
-		const content = `${fs.readFileSync(filePath, "utf-8")}\n${fs.readFileSync(memoPath, "utf-8")}\n${fs.readFileSync(perioPath, "utf-8")}`;
-		assert.ok(!content.includes('badge: "Хирургия 043/у"'));
-		assert.ok(!content.includes('badge: "Терапия 043/у"'));
-		assert.ok(!content.includes('badge: "Эндодонтия 043/у"'));
-		assert.ok(content.includes('badge: "Хирургический протокол"'));
-		assert.ok(content.includes('badge: "Терапевтический протокол"'));
-		assert.ok(content.includes('badge: "Эндодонтический протокол"'));
-		assert.ok(content.includes("Полное лечение и гигиена. Плановый профосмотр через 6 месяцев."));
+	it("19. clinicalProtocols catalogs use protocol badges instead of 043/у", () => {
+		const badges = POST_OP_PATIENT_MEMOS.map((m) => m.badge);
+		assert.equal(badges.includes("Хирургия 043/у"), false);
+		assert.equal(badges.includes("Терапия 043/у"), false);
+		assert.equal(badges.includes("Эндодонтия 043/у"), false);
+		assert.ok(badges.includes("Хирургический протокол"));
+		assert.ok(badges.includes("Терапевтический протокол"));
+		assert.ok(badges.includes("Эндодонтический протокол"));
+
+		const perioIntact = PERIO_PATHOLOGY_PRESETS.find((p) => p.id === "perio_intact");
+		assert.ok(perioIntact);
+		assert.ok(
+			perioIntact.treatmentDescription.includes(
+				"Полное лечение и гигиена. Плановый профосмотр через 6 месяцев.",
+			),
+		);
 	});
 
-	it("20. ConsentPackageBatchBanner.tsx & useVisitConsentsLogic.ts: user-facing strings use 'согласия на лечение'", () => {
-		const bannerPath = path.join(webSrcRoot, "components/visit/consents/ConsentPackageBatchBanner.tsx");
-		const bannerContent = fs.readFileSync(bannerPath, "utf-8");
-		assert.ok(!bannerContent.includes("каталог бланков ИДС"));
-		assert.ok(bannerContent.includes("каталог согласий на лечение"));
-
-		const logicPath = path.join(webSrcRoot, "components/visit/consents/hooks/useConsentActions.ts");
-		const logicContent = fs.readFileSync(logicPath, "utf-8");
-		assert.ok(!logicContent.includes('"Бланк ИДС отправлен на печать"'));
-		assert.ok(!logicContent.includes('"Чистый бланк ИДС отправлен на печать"'));
-		assert.ok(logicContent.includes('"Бланк согласия на лечение отправлен на печать"'));
-		assert.ok(logicContent.includes('"Чистый бланк согласия на лечение отправлен на печать"'));
+	it("20. ConsentPackageBatchBanner renders humanized 'каталог согласий на лечение'", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(ConsentPackageBatchBanner, {
+				unsignedRequiredItems: [
+					{
+						key: "CONSENT_INSPECTION_1051N",
+						title: "Осмотр полости рта",
+					} as never,
+				],
+				onPrintTodayPackage: () => {},
+				onMarkAllRequiredTodaySigned: () => {},
+				onOpenInformedConsentModal: () => {},
+			}),
+		);
+		assert.equal(html.includes("каталог бланков ИДС"), false);
+		assert.ok(html.includes("каталог согласий на лечение"));
+		assert.ok(html.includes("Требуется оформить 1 согласие"));
 	});
 });

@@ -151,9 +151,9 @@ export const PrescriptionExpressPills: React.FC<PrescriptionExpressPillsProps> =
 			{/* Quick 1-Tap Solo Medications (Horizontal scroller on mobile) */}
 			{onToggleDrug && (
 				<div className="flex flex-col gap-1.5">
-					<span className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-						<Pill className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-						Быстрый выбор препарата (1 тап):
+					<span className="text-[11px] font-bold text-[var(--muted)] flex items-center gap-1.5">
+						<Pill className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
+						Быстрый выбор препарата:
 					</span>
 					<div className="flex overflow-x-auto sm:flex-wrap pb-1.5 pt-0.5 gap-1.5 overscroll-x-contain touch-pan-x [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden">
 						{QUICK_SOLO_DRUGS.map((drug) => {
@@ -166,8 +166,8 @@ export const PrescriptionExpressPills: React.FC<PrescriptionExpressPillsProps> =
 									data-testid={`quick-drug-pill-${drug.id}`}
 									className={`px-3 py-1.5 min-h-[44px] sm:min-h-[36px] rounded-xl text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 ${
 										isSelected
-											? "bg-[var(--teal)] text-white shadow-xs border border-[var(--teal)]"
-											: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]"
+											? "bg-[var(--primary)] text-white shadow-xs border border-[var(--primary)]"
+											: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 									}`}
 								>
 									{isSelected ? <Check className="w-3.5 h-3.5 shrink-0" /> : <Plus className="w-3.5 h-3.5 shrink-0" />}
@@ -179,10 +179,10 @@ export const PrescriptionExpressPills: React.FC<PrescriptionExpressPillsProps> =
 				</div>
 			)}
 
-			{/* Clinical 1-Click Multi-Drug Course Presets */}
+			{/* Clinical Multi-Drug Course Presets */}
 			<div className="flex flex-col gap-1.5">
-				<span className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-					<Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+				<span className="text-[11px] font-bold text-[var(--muted)] flex items-center gap-1.5">
+					<Sparkles className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
 					Клинические курсы:
 				</span>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

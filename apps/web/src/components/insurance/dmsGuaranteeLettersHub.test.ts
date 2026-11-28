@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+	calculateDmsGuaranteeSplit,
 	type PatientGuaranteeLetter,
 	DEFAULT_BILL_ITEMS_TO_SPLIT,
 	COMMON_DENTAL_ICD10_DIAGNOSES,
@@ -45,6 +46,32 @@ describe("DmsGuaranteeLettersHub — Guarantee Letters, FDI Formula & Copay Spli
 		assert.equal(usedPct, 25);
 		assert.ok(usedPct < 80);
 
+		const remainingCheck = calculateDmsGuaranteeSplit(
+			{
+				...activeLetter,
+				maxCoverageKopecks: activeLetter.maxCoverageKopecks,
+				usedAmountKopecks: activeLetter.usedAmountKopecks,
+			},
+			[
+				{
+					serviceId: "s-check",
+					serviceCode: "A16.07.002.001",
+					serviceName: "Пломба",
+					category: "therapy",
+					toothNumber: "1.6",
+					quantity: 1,
+					priceRub: 40000,
+					unitPriceKopecks: 4000000,
+					discountRub: 0,
+					discountKopecks: 0,
+					diagnosisMkb10: "K02.1",
+				},
+			],
+			{ visitDate: "2026-08-15" },
+		);
+		assert.equal(remainingCheck.totalDmsCoveredKopecks, 3750000);
+		assert.equal(remainingCheck.totalPatientCoPayKopecks, 250000);
+
 		const expiredLetter = TEST_PATIENT_GUARANTEE_LETTERS[1]!;
 		const usedAmount = expiredLetter.usedAmountKopecks ?? (expiredLetter.usedAmountRub ? expiredLetter.usedAmountRub * 100 : 0);
 		const maxCoverage = expiredLetter.maxCoverageKopecks ?? (expiredLetter.maxCoverageRub ? expiredLetter.maxCoverageRub * 100 : 1);
@@ -79,24 +106,69 @@ describe("DmsGuaranteeLettersHub — Guarantee Letters, FDI Formula & Copay Spli
 		}
 	});
 
-	it("3.6 Proves Mandate 8e: counter-provision and patient co-pay split logic", () => {
-		const totalDueRub = 10000;
-		const availableDmsCoverageRub = 8000;
-		const totalKop = Math.round(totalDueRub * 100);
-		const dmsKop = Math.min(totalKop, Math.round(availableDmsCoverageRub * 100));
-		const patientCoPayKop = Math.max(0, totalKop - dmsKop);
-		assert.equal(dmsKop, 800000);
-		assert.equal(patientCoPayKop, 200000);
-		assert.equal(dmsKop + patientCoPayKop, totalKop);
+	it("3.6 Proves Mandate 8e: counter-provision and patient co-pay split logic via calculateDmsGuaranteeSplit", () => {
+		const split = calculateDmsGuaranteeSplit(
+			{
+				...TEST_PATIENT_GUARANTEE_LETTERS[0]!,
+				maxCoverageKopecks: 800000,
+				usedAmountKopecks: 0,
+				approvedServiceCodes804n: ["A16.07.002.001"],
+				approvedDiagnosisMkb10: ["K02.1"],
+				approvedTeethFdi: ["1.6"],
+			},
+			[
+				{
+					serviceId: "srv-1",
+					serviceCode: "A16.07.002.001",
+					serviceName: "Пломба",
+					category: "therapy",
+					toothNumber: "1.6",
+					quantity: 1,
+					priceRub: 10000,
+					unitPriceKopecks: 1000000,
+					discountRub: 0,
+					discountKopecks: 0,
+					diagnosisMkb10: "K02.1",
+				},
+			],
+			{ visitDate: "2026-08-15" },
+		);
+		assert.equal(split.totalBillKopecks, 1000000);
+		assert.equal(split.totalDmsCoveredKopecks, 800000);
+		assert.equal(split.totalPatientCoPayKopecks, 200000);
+		assert.equal(split.integrityInvariantHolds, true);
+		assert.equal((split.totalDmsCoveredKopecks ?? 0) + (split.totalPatientCoPayKopecks ?? 0), split.totalBillKopecks);
 	});
 
-	it("3.7 Proves 100% DMS payment skips consumer fiscal receipt", () => {
-		const totalDueRub = 5000;
-		const availableDmsCoverageRub = 50000;
-		const totalKop = Math.round(totalDueRub * 100);
-		const dmsKop = Math.min(totalKop, Math.round(availableDmsCoverageRub * 100));
-		const patientCoPayKop = Math.max(0, totalKop - dmsKop);
-		assert.equal(patientCoPayKop, 0);
-		assert.equal(patientCoPayKop > 0, false);
+	it("3.7 Proves 100% DMS payment leaves zero patient co-pay via calculateDmsGuaranteeSplit", () => {
+		const split = calculateDmsGuaranteeSplit(
+			{
+				...TEST_PATIENT_GUARANTEE_LETTERS[0]!,
+				maxCoverageKopecks: 5000000,
+				usedAmountKopecks: 0,
+				approvedServiceCodes804n: ["A16.07.002.001"],
+				approvedDiagnosisMkb10: ["K02.1"],
+				approvedTeethFdi: ["1.6"],
+			},
+			[
+				{
+					serviceId: "srv-2",
+					serviceCode: "A16.07.002.001",
+					serviceName: "Пломба",
+					category: "therapy",
+					toothNumber: "1.6",
+					quantity: 1,
+					priceRub: 5000,
+					unitPriceKopecks: 500000,
+					discountRub: 0,
+					discountKopecks: 0,
+					diagnosisMkb10: "K02.1",
+				},
+			],
+			{ visitDate: "2026-08-15" },
+		);
+		assert.equal(split.totalDmsCoveredKopecks, 500000);
+		assert.equal(split.totalPatientCoPayKopecks, 0);
+		assert.equal(split.integrityInvariantHolds, true);
 	});
 });

@@ -180,7 +180,12 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 			clientLogger.warn("Фоновое пакетное списание материалов завершилось с ошибкой", { status: res.status }, { module: "perioCatalogData" });
 			return { success: false, deductedCount: 0, messageRu: errMsg };
 		}
-		const data = (await res.json().catch(() => null)) as { isOverdraft?: boolean } | null;
+		let data: { isOverdraft?: boolean } | null = null;
+		try {
+			data = (await res.json()) as { isOverdraft?: boolean } | null;
+		} catch (parseErr) {
+			clientLogger.warn("[perioCatalogData] Failed to parse response JSON:", parseErr);
+		}
 		const isOverdraft = Boolean(data?.isOverdraft);
 		return {
 			success: true,

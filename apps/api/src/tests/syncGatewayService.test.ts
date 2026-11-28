@@ -679,5 +679,84 @@ describe("SyncGatewayService & 3-Tier Multi-Level Synchronization Engine", () =>
 			await purgeFixtureOrganizations([orgId]);
 		}
 	});
+
+	test("13. Push Batch withSavepoint safely isolates >63-char and metacharacter mutationIds without raw SQL interpolation", async () => {
+		const orgId = fixtureUuid("savepoint-metachar", 1);
+		const patientId1 = fixtureUuid("savepoint-metachar", 2);
+		const patientId2 = fixtureUuid("savepoint-metachar", 3);
+
+		try {
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx
+					.insert(organizations)
+					.values({ id: orgId, name: "Savepoint Isolation Clinic" })
+					.onConflictDoNothing();
+			});
+
+			const longPrefix = "mut-savepoint-very-long-identifier-exceeding-pg-63-byte-namelimit";
+			const p1 = { fullName: "Смирнов Игорь", phone: "+79990001122" };
+			const pBad = { patientId: "invalid-uuid", amountRub: 500 };
+			const p2 = { fullName: "Орлова Марина", phone: "+79990001133" };
+
+			const mut1Id = `${longPrefix}-alpha-${Date.now()}`;
+			const mutBadId = `${longPrefix}'; DROP TABLE patients; --${Date.now()}`;
+			const mut2Id = `${longPrefix}-beta-${Date.now()}`;
+
+			const batchRes = await SyncGatewayService.processPushBatch(orgId, {
+				syncBatchId: `batch-sp-safe-${Date.now()}`,
+				clientId: "tablet-sp-test",
+				sentAt: new Date().toISOString(),
+				mutations: [
+					{
+						mutationId: mut1Id,
+						idempotencyKey: createCompositeIdempotencyKey(mut1Id, p1),
+						payloadHash: computePayloadHash(p1),
+						entityKind: "patient",
+						entityId: patientId1,
+						action: "create",
+						payload: p1,
+						updatedAt: new Date().toISOString(),
+					},
+					{
+						mutationId: mutBadId,
+						idempotencyKey: createCompositeIdempotencyKey(mutBadId, pBad),
+						payloadHash: computePayloadHash(pBad),
+						entityKind: "payment",
+						entityId: fixtureUuid("savepoint-metachar", 4),
+						action: "create",
+						payload: pBad,
+						updatedAt: new Date().toISOString(),
+					},
+					{
+						mutationId: mut2Id,
+						idempotencyKey: createCompositeIdempotencyKey(mut2Id, p2),
+						payloadHash: computePayloadHash(p2),
+						entityKind: "patient",
+						entityId: patientId2,
+						action: "create",
+						payload: p2,
+						updatedAt: new Date().toISOString(),
+					},
+				],
+			});
+
+			assert.strictEqual(batchRes.appliedCount, 2);
+			assert.strictEqual(batchRes.rejectedCount, 1);
+			assert.strictEqual(batchRes.results[1]?.status, "rejected");
+
+			await withFixtureTenant(orgId, async (tx) => {
+				const rows = await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(eq(patients.organizationId, orgId));
+				assert.strictEqual(rows.length, 2);
+			});
+		} finally {
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx.delete(patients).where(eq(patients.organizationId, orgId));
+			});
+			await purgeFixtureOrganizations([orgId]);
+		}
+	});
 });
 

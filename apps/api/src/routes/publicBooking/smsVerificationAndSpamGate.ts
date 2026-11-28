@@ -299,10 +299,7 @@ export class BookingVerificationEngine {
 		}
 
 		const message = method === "sms" ? "SMS-код успешно отправлен" : "Заказ звонка-сброса выполнен (введите 6 цифр)";
-		const isDevOrTest =
-			namedDevelopmentModeActive() ||
-			process.env.NODE_ENV === "test" ||
-			process.env.NODE_ENV === "development";
+		const isDevOrTest = namedDevelopmentModeActive();
 		return {
 			allowed: true,
 			message,

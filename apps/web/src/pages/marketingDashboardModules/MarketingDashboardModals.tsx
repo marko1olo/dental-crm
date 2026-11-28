@@ -80,8 +80,16 @@ export function MarketingDashboardModals({
 							body: JSON.stringify(newPromo),
 						});
 						if (!res.ok) {
-							const err = await res.json().catch(() => ({}));
-							showToast(err.message || "Не удалось сохранить акцию", "error");
+							let msg = "Не удалось сохранить акцию";
+							try {
+								const err = (await res.json()) as { message?: string };
+								if (err?.message) msg = err.message;
+							} catch (parseErr) {
+								clientLogger.warn("[Marketing] Non-JSON error response", parseErr, {
+									module: "MarketingDashboardModals",
+								});
+							}
+							showToast(msg, "error");
 							return;
 						}
 						showToast(`Акция «${newPromo.title}» сохранена`, "success");

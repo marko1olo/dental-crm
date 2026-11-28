@@ -44,28 +44,31 @@ export function createCallAudioStreamActions(set: SetState, get: GetState) {
 			});
 
 			// Full stack CTI propagation: sync answer to API and notify PBX/WebSocket
-			try {
-				const staffToken = readDenteStaffToken();
-				const clinicToken = readDenteClinicToken();
-				void fetch("/api/telephony/calls/answer", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
-						...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-					},
-					body: JSON.stringify({
-						callId: updatedCallId,
-						phone: updatedCall.phone,
-						patientId: updatedCall.patientId || undefined,
-						lineId: activeLineId,
-					}),
-				}).catch((err) => {
+			void (async () => {
+				try {
+					const staffToken = readDenteStaffToken();
+					const clinicToken = readDenteClinicToken();
+					const res = await fetch("/api/telephony/calls/answer", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
+							...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+						},
+						body: JSON.stringify({
+							callId: updatedCallId,
+							phone: updatedCall.phone,
+							patientId: updatedCall.patientId || undefined,
+							lineId: activeLineId,
+						}),
+					});
+					if (!res.ok) {
+						logger.warn("[Telephony] Call answer sync returned HTTP error:", res.status);
+					}
+				} catch (err) {
 					logger.warn("[Telephony] Failed to sync call answer to API:", err);
-				});
-			} catch (err) {
-				logger.warn("[Telephony] Failed to initiate call answer fetch:", err);
-			}
+				}
+			})();
 		},
 
 		connectCall: () => {

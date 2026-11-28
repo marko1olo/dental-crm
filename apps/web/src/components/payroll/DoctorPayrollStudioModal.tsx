@@ -611,7 +611,6 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 						<span>Итого к выплате:</span><span className="text-base font-bold text-[var(--ink)]">{rub(activeTab === "summary" ? clinicTotals.payout : effectiveDoctorSummary.payoutKopecks)}</span>
 					</div>
 					<div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0">
-						<button type="button" onClick={onClose} className="hidden sm:inline-flex payroll-studio-secondary-btn">Закрыть</button>
 						<button type="button" onClick={handleCommitPayout} className="payroll-studio-primary-cta w-full sm:w-auto bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)]" data-testid="payroll-studio-primary-cta">
 							<Check className="w-4 h-4 shrink-0" /><span>{isSaving ? "Фиксация..." : activeTab === "summary" ? "Утвердить ведомости клиники" : "Закрыть расчетный период"}</span>
 						</button>

@@ -3,68 +3,66 @@
  * Mandate 8b: Modular stylesheet <= 120 lines
  */
 
-/* ─── 1. SCHEDULE FILTER STRIP (STRICT 1-ROW 48PX TOOLBAR) ─── */
+/* ─── 1. SCHEDULE FILTER STRIP (2-ROW CLEAN WRAPPING TOOLBAR) ─── */
 .schedule-filter-strip {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	width: 100%;
-	height: 48px;
-	min-height: 48px;
-	max-height: 48px;
-	padding: 0 16px;
+	height: auto;
+	min-height: 40px;
+	max-height: none;
+	padding: 6px 16px;
 	box-sizing: border-box;
 	border-bottom: 1px solid var(--line);
 	background: var(--paper);
 	gap: 8px;
-	overflow: hidden;
-	white-space: nowrap;
-	flex-wrap: nowrap;
+	row-gap: 6px;
+	overflow: visible;
+	white-space: normal;
+	flex-wrap: wrap;
 	user-select: none;
 }
 
-/* Secondary Quick Booking Action in Schedule Toolbar (Preserves single Primary CTA in AppTopBar) */
+/* Primary Quick Booking Action in Schedule Toolbar (AppTopBar #topbar-booking-action-btn is hidden here) */
 .schedule-toolbar-primary-quick-booking-btn {
-	height: 32px;
-	min-height: 32px;
-	max-height: 32px;
-	padding: 0 12px;
+	height: 36px;
+	min-height: 36px;
+	max-height: 36px;
+	padding: 0 14px;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
 	font-size: 13px;
-	font-weight: 500;
-	border-radius: 8px;
-	background: var(--paper);
-	color: var(--ink);
-	border: 1px solid var(--line);
+	font-weight: 600;
+	border-radius: 10px;
+	background: var(--primary, #0f766e);
+	color: var(--primary-fg, #ffffff);
+	border: 1px solid var(--primary, #0f766e);
 	cursor: pointer;
 	flex-shrink: 0;
 	transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
 }
 
 .schedule-toolbar-primary-quick-booking-btn:hover {
-	background: var(--paper-soft);
-	border-color: var(--line-strong, var(--line));
+	background: var(--primary-hover, #115e59);
+	border-color: var(--primary-hover, #115e59);
 }
 
 .schedule-toolbar-primary-quick-booking-btn:active {
 	transform: scale(0.98);
 }
 
-/* Horizontal Filter Chips Strip */
+/* Wrapping Filter Chips Strip */
 .schedule-filter-chips {
 	display: flex;
 	align-items: center;
-	gap: 4px;
-	overflow-x: auto;
-	white-space: nowrap;
-	flex-wrap: nowrap;
-	scroll-behavior: smooth;
-	-webkit-overflow-scrolling: touch;
-	scrollbar-width: none;
-	-ms-overflow-style: none;
+	gap: 6px;
+	width: 100%;
+	overflow: visible;
+	white-space: normal;
+	flex-wrap: wrap;
 }
 
 .schedule-filter-chips::-webkit-scrollbar {
@@ -73,15 +71,15 @@
 
 /* Quick Filter Chips */
 .schedule-filter-strip .quick-chip {
-	height: 32px;
-	min-height: 32px;
-	max-height: 32px;
+	height: 30px;
+	min-height: 30px;
+	max-height: 30px;
 	padding: 0 10px;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	border-radius: 8px;
+	border-radius: 9999px;
 	font-size: 12.5px;
 	font-weight: 500;
 	flex-shrink: 0;
@@ -94,14 +92,14 @@
 }
 
 .schedule-filter-strip .quick-chip:hover {
-	border-color: var(--teal, var(--brand-primary, #0d9488));
-	color: var(--teal, var(--brand-primary, #0d9488));
+	border-color: var(--primary, #0f766e);
+	color: var(--primary, #0f766e);
 }
 
 .schedule-filter-strip .quick-chip.active {
-	background: var(--teal, var(--brand-primary, #0d9488));
-	color: var(--on-teal, #ffffff);
-	border-color: var(--teal, var(--brand-primary, #0d9488));
+	background: var(--primary, #0f766e);
+	color: var(--primary-fg, #ffffff);
+	border-color: var(--primary, #0f766e);
 	font-weight: 600;
 }
 

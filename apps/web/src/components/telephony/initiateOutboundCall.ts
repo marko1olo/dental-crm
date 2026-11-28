@@ -8,6 +8,7 @@
 
 import { formatPhoneDisplay, normalizePhoneDigits, useTelephonyStore } from "../../store/telephonyStore";
 import { showToast } from "../GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 
 export interface OutboundCallRequest {
@@ -94,7 +95,12 @@ export async function initiateOutboundCall(req: OutboundCallRequest): Promise<bo
 			return false;
 		}
 
-		const data = (await res.json().catch(() => null)) as { error?: string; status?: string } | null;
+		let data: { error?: string; status?: string } | null = null;
+		try {
+			data = (await res.json()) as { error?: string; status?: string } | null;
+		} catch (parseErr) {
+			clientLogger.warn("[initiateOutboundCall] Failed to parse outbound call JSON:", parseErr);
+		}
 		if (data && (data.error || data.status === "failed" || data.status === "error")) {
 			store.endCall();
 			showToast("АТС не настроена в клинике", "warning");
@@ -109,7 +115,8 @@ export async function initiateOutboundCall(req: OutboundCallRequest): Promise<bo
 			"info",
 		);
 		return true;
-	} catch {
+	} catch (err) {
+		clientLogger.warn("[initiateOutboundCall] Outbound call failed:", err);
 		store.endCall();
 		showToast("АТС не настроена в клинике", "warning");
 		return false;

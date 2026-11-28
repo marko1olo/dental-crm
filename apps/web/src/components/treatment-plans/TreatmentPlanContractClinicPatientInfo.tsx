@@ -32,15 +32,15 @@ export const TreatmentPlanContractClinicPatientInfo: React.FC<TreatmentPlanContr
 	return (
 		<>
 			{/* Top Header: Clinic & Patient Info */}
-			<div className="flex items-start justify-between border-b pb-4 border-slate-300 gap-4">
+			<div className="flex items-start justify-between border-b pb-4 border-[var(--line)] print:border-slate-300 gap-4">
 				<div className="space-y-1 max-w-sm">
-					<h1 className="text-base sm:text-lg font-bold tracking-tight text-slate-900">{clinicName}</h1>
-					<div className="text-[10px] text-slate-600 space-y-0.5">
-						{clinicLegalName && <div className="font-semibold text-slate-800">{clinicLegalName}</div>}
+					<h1 className="text-base sm:text-lg font-bold tracking-tight text-[var(--ink)] print:text-slate-900">{clinicName}</h1>
+					<div className="text-[10px] text-[var(--ink-muted)] print:text-slate-600 space-y-0.5">
+						{clinicLegalName && <div className="font-semibold text-[var(--ink)] print:text-slate-800">{clinicLegalName}</div>}
 						{(clinicInn || clinicOgrn) && (
 							<div>
 								{clinicInn && <span>ИНН: {clinicInn}</span>}
-								{clinicInn && clinicOgrn && <span className="text-slate-400"> · </span>}
+								{clinicInn && clinicOgrn && <span className="text-[var(--ink-muted)] print:text-slate-400"> · </span>}
 								{clinicOgrn && <span>ОГРН: {clinicOgrn}</span>}
 							</div>
 						)}
@@ -51,12 +51,12 @@ export const TreatmentPlanContractClinicPatientInfo: React.FC<TreatmentPlanContr
 
 				<div className="flex items-center gap-3">
 					<div className="text-right space-y-1">
-						<div className="inline-block px-3 py-1 bg-slate-100 rounded-lg font-mono font-bold text-slate-800">
+						<div className="inline-block px-3 py-1 bg-[var(--paper-soft)] print:bg-slate-100 rounded-lg font-mono font-bold text-[var(--ink)] print:text-slate-800">
 							Договор № {displayContractNumber}
 						</div>
-						<p className="text-[10px] text-slate-500 m-0">г. Москва · {todayRu} г.</p>
+						<p className="text-[10px] text-[var(--ink-muted)] print:text-slate-500 m-0">г. Москва · {todayRu} г.</p>
 					</div>
-					<div className="p-1.5 rounded-xl bg-white border border-slate-300 shadow-xs shrink-0 text-center">
+					<div className="p-1.5 rounded-xl bg-[var(--paper)] print:bg-white border border-[var(--line)] print:border-slate-300 shadow-xs shrink-0 text-center">
 						<TreatmentPlanQrCode value={qrPayload} size={64} />
 					</div>
 				</div>
@@ -64,31 +64,31 @@ export const TreatmentPlanContractClinicPatientInfo: React.FC<TreatmentPlanContr
 
 			{/* Document Title & Regulatory Compliance Strip */}
 			<div className="text-center space-y-1.5 py-1">
-				<div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-medium tracking-normal">
-					<ShieldCheck size={12} className="text-teal-700" />
+				<div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[var(--paper-soft)] print:bg-slate-100 text-[var(--ink-2)] print:text-slate-700 text-[10px] font-medium tracking-normal">
+					<ShieldCheck size={12} className="text-[var(--primary)] print:text-teal-700" />
 					<span>Клинические стандарты и протоколы СтАР</span>
 				</div>
-				<h2 className="text-sm sm:text-base font-bold text-slate-900 m-0">
+				<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] print:text-slate-900 m-0">
 					Договор на оказание платных медицинских услуг и согласованный план лечения
 				</h2>
-				<p className="text-[10.5px] text-slate-500 m-0">
+				<p className="text-[10.5px] text-[var(--ink-muted)] print:text-slate-500 m-0">
 					В соответствии с утвержденными клиническими стандартами и Законом об охране здоровья граждан
 				</p>
 			</div>
 
 			{/* Parties Details */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50/80 border border-slate-200 text-[11px]">
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-[var(--paper-soft)] print:bg-slate-50/80 border border-[var(--line)] print:border-slate-200 text-[11px]">
 				<div>
-					<strong className="text-slate-900 block mb-1">Исполнитель (Клиника):</strong>
-					<p className="text-slate-700 m-0 leading-relaxed">
+					<strong className="text-[var(--ink)] print:text-slate-900 block mb-1">Исполнитель (Клиника):</strong>
+					<p className="text-[var(--ink-2)] print:text-slate-700 m-0 leading-relaxed">
 						{clinicLegalName} ({clinicName})<br />
 						{clinicAddress && <>Адрес: {clinicAddress}<br /></>}
 						Лечащий врач: <strong>{doctorFullName}</strong>
 					</p>
 				</div>
 				<div>
-					<strong className="text-slate-900 block mb-1">Пациент (Заказчик):</strong>
-					<p className="text-slate-700 m-0 leading-relaxed">
+					<strong className="text-[var(--ink)] print:text-slate-900 block mb-1">Пациент (Заказчик):</strong>
+					<p className="text-[var(--ink-2)] print:text-slate-700 m-0 leading-relaxed">
 						ФИО: <strong>{patientName}</strong><br />
 						{patientBirthDate ? `Дата рождения: ${patientBirthDate}` : `Номер медкарты: ${patientId}`}<br />
 						Телефон: {patientPhone}
@@ -98,24 +98,24 @@ export const TreatmentPlanContractClinicPatientInfo: React.FC<TreatmentPlanContr
 
 			{/* Section 1: Subject */}
 			<div className="space-y-1.5">
-				<h3 className="font-bold text-slate-900 tracking-normal text-[11px]">
+				<h3 className="font-bold text-[var(--ink)] print:text-slate-900 tracking-normal text-[11px]">
 					1. Предмет договора и согласованный вариант лечения
 				</h3>
-				<p className="text-slate-700 text-justify m-0">
+				<p className="text-[var(--ink-2)] print:text-slate-700 text-justify m-0">
 					1.1. Исполнитель обязуется оказать Пациенту комплекс платных стоматологических услуг надлежащего качества по утвержденному варианту: <strong>«{tier.title}»</strong> ({tier.materialsHeadline}), а Пациент обязуется принять и оплатить медицинские услуги в порядке и на условиях, установленных настоящим Договором и приложениями к нему.
 				</p>
-				<p className="text-slate-700 text-justify m-0">
+				<p className="text-[var(--ink-2)] print:text-slate-700 text-justify m-0">
 					1.2. До заключения Договора Пациент уведомлен о возможности получения бесплатной медицинской помощи в рамках государственных гарантий по полису ОМС в государственных и муниципальных учреждениях здравоохранения.
 				</p>
 			</div>
 
 			{/* Section 1.3: Patient Dental Formula / Odontogram from Examination */}
-			<div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2 break-inside-avoid" data-testid="contract-print-odontogram">
+			<div className="p-3.5 rounded-xl bg-[var(--paper)] print:bg-white border border-[var(--line)] print:border-slate-200 space-y-2 break-inside-avoid" data-testid="contract-print-odontogram">
 				<div className="flex flex-wrap items-center justify-between gap-2">
-					<h3 className="font-bold text-slate-900 tracking-normal text-[11px] m-0">
+					<h3 className="font-bold text-[var(--ink)] print:text-slate-900 tracking-normal text-[11px] m-0">
 						1.3. Зубная формула пациента по результатам осмотра
 					</h3>
-					<span className="text-[10px] text-slate-500 font-mono">
+					<span className="text-[10px] text-[var(--ink-muted)] print:text-slate-500 font-mono">
 						{nonHealthyTeeth.length > 0 ? `Выявлено изменений: ${nonHealthyTeeth.length}` : plannedToothNumbers.length > 0 ? `Плановые зубы: ${plannedToothNumbers.join(", ")}` : "Исходный клинический статус"}
 					</span>
 				</div>

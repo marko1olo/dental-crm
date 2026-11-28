@@ -1,6 +1,7 @@
 import { showToast } from "../GlobalToast";
 import { generateUuidV7, rublesToKopecks } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type {
 	ClinicServiceCatalogEntry,
 	LiveInvoiceCashierExport,
@@ -132,9 +133,15 @@ export async function exportLiveInvoiceToCashier({
 			});
 
 			if (!response.ok) {
-				const errJson = (await response.json().catch(() => ({}))) as {
-					message?: string;
-				};
+				let errJson: { message?: string } = {};
+				try {
+					errJson = (await response.json()) as { message?: string };
+				} catch (parseErr) {
+					clientLogger.warn("[liveInvoiceActions] Invoice error JSON parse failed", {
+						status: response.status,
+						error: String(parseErr),
+					});
+				}
 				throw new Error(errJson.message || `Ошибка сервера: ${response.status}`);
 			}
 

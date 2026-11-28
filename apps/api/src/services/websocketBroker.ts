@@ -1,4 +1,5 @@
 import type { WebSocket } from "ws";
+import { BoundedTtlMap } from "../lib/boundedTtlMap.js";
 import {
 	evaluateClinicalAccess,
 	stripDiagnosisPayload,
@@ -50,9 +51,9 @@ export const CLINICAL_WS_EVENT_TYPES: ReadonlySet<string> = new Set([
 
 export function isClinicalWsEvent(message: unknown): boolean {
 	if (!message || typeof message !== "object") return false;
-	const msg = message as { type?: unknown; payload?: unknown };
-	if (typeof msg.type === "string") {
-		const upperType = msg.type.toUpperCase();
+	const msgType = "type" in message && typeof message.type === "string" ? message.type : undefined;
+	if (msgType !== undefined) {
+		const upperType = msgType.toUpperCase();
 		if (CLINICAL_WS_EVENT_TYPES.has(upperType)) return true;
 		if (
 			upperType.includes("ODONTOGRAM") ||
@@ -77,12 +78,12 @@ export function isClinicalWsEvent(message: unknown): boolean {
 			return true;
 		}
 	}
-	if (msg.payload && typeof msg.payload === "object") {
-		const p = msg.payload as Record<string, unknown>;
+	if ("payload" in message && message.payload && typeof message.payload === "object") {
+		const p = message.payload;
 		if (
 			"odontogram" in p ||
 			"toothStates" in p ||
-			("states" in p && typeof msg.type === "string" && msg.type.toUpperCase().includes("ODONTOGRAM")) ||
+			("states" in p && msgType !== undefined && msgType.toUpperCase().includes("ODONTOGRAM")) ||
 			"clinicalNotes" in p ||
 			"clinicalData" in p ||
 			"diagnoses" in p ||
@@ -147,7 +148,19 @@ export type ClientConn = {
 	isAlive?: boolean | undefined;
 };
 
-const clients = new Set<ClientConn>();
+const clients = new BoundedTtlMap<ClientConn, true>({
+	maxEntries: 2000,
+	touchOnGet: false,
+	onEvict: (client, _val, reason) => {
+		if (reason === "capacity") {
+			try {
+				client.ws.terminate();
+			} catch {
+				// socket already closed
+			}
+		}
+	},
+});
 
 function isStrictSecrecyClient(client: ClientConn): boolean {
 	return (
@@ -212,7 +225,7 @@ export const wsBroker = {
 			isPatient: patientFlag,
 			isAlive: true,
 		};
-		clients.add(conn);
+		clients.set(conn, true);
 		if (typeof ws?.on === "function") {
 			ws.on("pong", () => {
 				conn.isAlive = true;
@@ -233,7 +246,7 @@ export const wsBroker = {
 		info: Omit<StaffPresenceInfo, "lastSeen">,
 	): StaffPresenceInfo | null {
 		let targetConn: ClientConn | null = null;
-		for (const client of clients) {
+		for (const client of clients.keys()) {
 			if (client.ws === ws) {
 				targetConn = client;
 				break;
@@ -267,7 +280,7 @@ export const wsBroker = {
 	},
 	removePresence(ws: WsClientSocket): boolean {
 		let targetConn: ClientConn | null = null;
-		for (const client of clients) {
+		for (const client of clients.keys()) {
 			if (client.ws === ws) {
 				targetConn = client;
 				break;
@@ -303,7 +316,7 @@ export const wsBroker = {
 		const result: StaffPresenceInfo[] = [];
 		const seenStaff = new Set<string>();
 
-		for (const client of clients) {
+		for (const client of clients.keys()) {
 			if (client.organizationId !== organizationId) continue;
 			if (!client.presence) continue;
 			if (now - client.presence.lastSeen > PRESENCE_TTL_MS) {
@@ -329,7 +342,7 @@ export const wsBroker = {
 		const isClinical = isClinicalWsEvent(message);
 		let sanitizedData: string | null = null;
 		let strictSanitizedData: string | null = null;
-		for (const client of clients) {
+		for (const client of clients.keys()) {
 			if (client.ws.readyState !== 1) {
 				if (client.ws.readyState === 2 || client.ws.readyState === 3) {
 					clients.delete(client);
@@ -395,7 +408,7 @@ export const wsBroker = {
 		let sanitizedData: string | null = null;
 		let strictSanitizedData: string | null = null;
 
-		for (const client of clients) {
+		for (const client of clients.keys()) {
 			if (client.ws.readyState !== 1) {
 				if (client.ws.readyState === 2 || client.ws.readyState === 3) {
 					clients.delete(client);
@@ -452,7 +465,7 @@ export const wsBroker = {
 		let sanitizedData: string | null = null;
 		let strictSanitizedData: string | null = null;
 
-		for (const client of clients) {
+		for (const client of clients.keys()) {
 			if (client.ws.readyState !== 1) {
 				if (client.ws.readyState === 2 || client.ws.readyState === 3) {
 					clients.delete(client);
@@ -498,7 +511,7 @@ export const wsBroker = {
 	removeClient(ws: WsClientSocket): boolean {
 		wsBroker.removePresence(ws);
 		let removed = false;
-		for (const client of clients) {
+		for (const client of clients.keys()) {
 			if (client.ws === ws) {
 				clients.delete(client);
 				removed = true;
@@ -511,7 +524,7 @@ export const wsBroker = {
 	},
 	pruneDeadClients(): number {
 		let count = 0;
-		for (const client of clients) {
+		for (const client of clients.keys()) {
 			if (client.ws.readyState !== 1) {
 				clients.delete(client);
 				count++;
@@ -523,14 +536,14 @@ export const wsBroker = {
 		if (heartbeatTimer) {
 			clearInterval(heartbeatTimer);
 		}
-		heartbeatTimer = setInterval(() => {
-			for (const client of clients) {
+		const timer = setInterval(() => {
+			for (const client of clients.keys()) {
 				if (client.isAlive === false) {
 					wsBroker.removePresence(client.ws);
 					try {
 						client.ws.terminate();
 					} catch {
-						// ignore termination error
+						clients.delete(client);
 					}
 					clients.delete(client);
 					continue;
@@ -546,7 +559,8 @@ export const wsBroker = {
 				}
 			}
 		}, intervalMs);
-		heartbeatTimer.unref();
+		timer.unref();
+		heartbeatTimer = timer;
 	},
 	stopHeartbeat(): void {
 		if (heartbeatTimer) {
@@ -556,7 +570,7 @@ export const wsBroker = {
 	},
 	clear(): void {
 		wsBroker.stopHeartbeat();
-		for (const client of clients) {
+		for (const client of clients.keys()) {
 			try {
 				client.ws.terminate();
 			} catch {

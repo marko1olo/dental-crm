@@ -26,7 +26,7 @@ export function LabTrackingFittingDates({
 		<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-4">
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<Calendar className="w-4 h-4 text-[var(--teal)]" />
+					<Calendar className="w-4 h-4 text-[var(--primary)]" />
 					<h3 className="text-sm font-bold text-[var(--ink)] m-0">
 						График клинических примерок и сдачи работы
 					</h3>
@@ -42,7 +42,7 @@ export function LabTrackingFittingDates({
 						type="date"
 						value={frameworkTrialDate}
 						onChange={(e) => setFrameworkTrialDate(e.target.value)}
-						className="w-full h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)]"
+						className="w-full h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)] focus:ring-2 focus:ring-[var(--primary)]"
 					/>
 				</div>
 
@@ -54,7 +54,7 @@ export function LabTrackingFittingDates({
 						type="date"
 						value={ceramicTrialDate}
 						onChange={(e) => setCeramicTrialDate(e.target.value)}
-						className="w-full h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)]"
+						className="w-full h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)] focus:ring-2 focus:ring-[var(--primary)]"
 					/>
 				</div>
 
@@ -66,7 +66,7 @@ export function LabTrackingFittingDates({
 						type="date"
 						value={deliveryDate}
 						onChange={(e) => setDeliveryDate(e.target.value)}
-						className="w-full h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)]"
+						className="w-full h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)] focus:ring-2 focus:ring-[var(--primary)]"
 					/>
 				</div>
 			</div>
@@ -78,7 +78,7 @@ export function LabTrackingFittingDates({
 						if (!isUpdating) void handleSaveFittingDates();
 					}}
 					aria-busy={isUpdating}
-					className="min-h-[36px] h-9 px-4 py-1.5 text-xs font-bold rounded-xl bg-[var(--teal)] hover:opacity-90 text-white shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer"
+					className="min-h-[36px] h-9 px-4 py-1.5 text-xs font-bold rounded-xl bg-[var(--primary)] hover:opacity-90 text-white shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer"
 				>
 					{isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
 					Сохранить даты примерок

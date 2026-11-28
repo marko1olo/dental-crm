@@ -50,12 +50,7 @@ export function ScheduleFilterChips({
 }: ScheduleFilterChipsProps) {
 	return (
 		<div
-			className="schedule-filter-chips hidden sm:flex flex-1 items-center gap-1.5 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-none py-0.5 min-w-0 px-1.5 h-full"
-			onWheel={(e) => {
-				if (e.deltaY !== 0) {
-					e.currentTarget.scrollLeft += e.deltaY;
-				}
-			}}
+			className="schedule-filter-chips order-3 basis-full w-full hidden sm:flex items-center gap-1.5 flex-wrap whitespace-normal py-0.5 min-w-0"
 		>
 			{/* Чип «Все записи» (сброс фильтров) */}
 			<button

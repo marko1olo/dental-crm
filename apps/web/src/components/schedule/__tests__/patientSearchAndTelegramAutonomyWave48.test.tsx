@@ -3,32 +3,12 @@
  *
  * Targeted Unit Tests for Wave 48 (Feature 231):
  * Eliminating gray disabled buttons and preview barriers (Mandates 8e item 2, 8k, 8n).
- *
- * INVARIANTS TESTED:
- * 1. PatientSearchModal (WhatsApp Button Autonomy):
- *    - WhatsApp button is never disabled (disabled={false} instead of disabled={!patient.phone}).
- *    - Removal of cursor-not-allowed and opacity-50 classes.
- *    - Touch target >= 44x44px (min-h-[44px] min-w-[44px]).
- *    - On click without phone: triggers clear warning toast:
- *      «У пациента не указан номер телефона. Заполните телефон в карточке пациента.».
- * 2. SettingsTelegramTab (Template Preview Autonomy):
- *    - Removal of disabled={!activePatient || isTelegramLoading} from all 7 preview buttons.
- *    - Preview buttons are disabled ONLY when isTelegramLoading is true.
- *    - Default demo patient (DEFAULT_TELEGRAM_PREVIEW_PATIENT) with realistic data:
- *      ФИО "Иванов Иван Иванович", приём "завтра 14:00", врач "Смирнова Е.А.", сумма 4 500 ₽.
- *    - buildDefaultTelegramPreview generates valid preview payloads for all template kinds in 1 click.
- *    - Guidance explains demo fallback when patient is unselected.
- * 3. Mandate 8d Invariants:
- *    - Zero cartoon emojis across sources and rendered HTML.
- *    - Desktop density with touch target floor >= 44x44px.
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
-import React from "react";
+import React, { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import type { Patient } from "@dental/shared";
 
@@ -39,15 +19,198 @@ import {
 	buildDefaultTelegramPreview,
 } from "../../settings/SettingsTelegramTab";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Cartoon emoji detector per Mandate 8d п. 7
 const CARTOON_EMOJI_REGEX =
 	/[\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
 function hasCartoonEmojis(text: string): boolean {
 	return CARTOON_EMOJI_REGEX.test(text);
+}
+
+interface MinimalDomNode {
+	nodeType: number;
+	tagName: string;
+	nodeName: string;
+	style: Record<string, string>;
+	dataset: Record<string, string>;
+	children: MinimalDomNode[];
+	childNodes: MinimalDomNode[];
+	attributes: { name: string; value: string }[];
+	ownerDocument: unknown;
+	parentNode: MinimalDomNode | null;
+	textContent: string;
+	disabled?: boolean;
+	value?: string;
+	className?: string;
+	appendChild: (child: MinimalDomNode) => MinimalDomNode;
+	insertBefore: (child: MinimalDomNode, before: MinimalDomNode | null) => MinimalDomNode;
+	removeChild: (child: MinimalDomNode) => MinimalDomNode;
+	addEventListener: () => void;
+	removeEventListener: () => void;
+	setAttribute: (name: string, value: string) => void;
+	getAttribute: (name: string) => string | null;
+	hasAttribute: (name: string) => boolean;
+	removeAttribute: (name: string) => void;
+	dispatchEvent: () => boolean;
+	getBoundingClientRect: () => { top: number; left: number; right: number; bottom: number; width: number; height: number };
+	focus: () => void;
+	blur: () => void;
+	contains: () => boolean;
+	[key: string]: unknown;
+}
+
+function setupMinimalDom() {
+	class FakeHTMLIFrameElement {}
+	class FakeElement {}
+	class FakeHTMLElement {}
+	class FakeNode {}
+
+	const doc: Record<string, unknown> = {
+		nodeType: 9,
+		activeElement: null,
+		addEventListener: () => {},
+		removeEventListener: () => {},
+		createComment: () => ({ nodeType: 8, parentNode: null, ownerDocument: null }),
+		createTextNode: (text: string) => ({
+			nodeType: 3,
+			textContent: String(text ?? ""),
+			nodeValue: String(text ?? ""),
+			data: String(text ?? ""),
+			style: {},
+			parentNode: null,
+			ownerDocument: doc,
+		}),
+	};
+
+	const createEl = (tag = "div"): MinimalDomNode => {
+		const children: MinimalDomNode[] = [];
+		const attrs: Record<string, string> = {};
+		const el: MinimalDomNode = {
+			nodeType: 1,
+			tagName: tag.toUpperCase(),
+			nodeName: tag.toUpperCase(),
+			style: {},
+			dataset: {},
+			children,
+			childNodes: children,
+			attributes: [],
+			ownerDocument: doc,
+			parentNode: null,
+			textContent: "",
+			appendChild: (c) => {
+				children.push(c);
+				c.parentNode = el;
+				return c;
+			},
+			insertBefore: (c, b) => {
+				const idx = b ? children.indexOf(b) : -1;
+				if (idx >= 0) children.splice(idx, 0, c);
+				else children.push(c);
+				c.parentNode = el;
+				return c;
+			},
+			removeChild: (c) => {
+				const idx = children.indexOf(c);
+				if (idx >= 0) children.splice(idx, 1);
+				c.parentNode = null;
+				return c;
+			},
+			addEventListener: () => {},
+			removeEventListener: () => {},
+			setAttribute: (name, value) => {
+				attrs[name] = value;
+				if (name.startsWith("data-")) el.dataset[name.slice(5)] = value;
+				if (name === "disabled") el.disabled = true;
+				if (name === "class" || name === "className") el.className = value;
+			},
+			getAttribute: (name) => attrs[name] ?? null,
+			hasAttribute: (name) => name in attrs,
+			removeAttribute: (name) => {
+				delete attrs[name];
+				if (name === "disabled") el.disabled = false;
+			},
+			dispatchEvent: () => true,
+			getBoundingClientRect: () => ({ top: 0, left: 0, right: 1200, bottom: 900, width: 1200, height: 900 }),
+			focus: () => {
+				doc.activeElement = el;
+			},
+			blur: () => {},
+			contains: (other?: unknown) => {
+				let curr = other as MinimalDomNode | null | undefined;
+				while (curr) {
+					if (curr === el) return true;
+					curr = curr.parentNode;
+				}
+				return false;
+			},
+		};
+		return el;
+	};
+
+	doc.createElement = createEl;
+	doc.createElementNS = (_ns: string, tag: string) => createEl(tag);
+	doc.documentElement = createEl("html");
+	doc.body = createEl("body");
+
+	const g = globalThis as Record<string, unknown>;
+	const win = {
+		document: doc,
+		addEventListener: () => {},
+		removeEventListener: () => {},
+		dispatchEvent: () => true,
+		HTMLIFrameElement: FakeHTMLIFrameElement,
+		HTMLElement: FakeHTMLElement,
+		Element: FakeElement,
+		Node: FakeNode,
+		innerWidth: 1200,
+	};
+	doc.defaultView = win;
+	g.document = doc;
+	g.window = win;
+	g.HTMLIFrameElement = FakeHTMLIFrameElement;
+	g.HTMLElement = FakeHTMLElement;
+	g.Element = FakeElement;
+	g.Node = FakeNode;
+	g.IS_REACT_ACT_ENVIRONMENT = true;
+	return { doc, createEl };
+}
+
+function findByTestId(node: MinimalDomNode | null, testId: string): MinimalDomNode | null {
+	if (!node) return null;
+	if (
+		(typeof node.getAttribute === "function" && node.getAttribute("data-testid") === testId) ||
+		node.dataset?.testid === testId
+	) {
+		return node;
+	}
+	if (Array.isArray(node.children)) {
+		for (const child of node.children) {
+			const hit = findByTestId(child, testId);
+			if (hit) return hit;
+		}
+	}
+	return null;
+}
+
+async function triggerReactClick(node: MinimalDomNode | null) {
+	if (!node) return;
+	await act(async () => {
+		let curr: MinimalDomNode | null = node;
+		while (curr) {
+			const propKey = Object.keys(curr).find((k) => k.startsWith("__reactProps$"));
+			if (propKey) {
+				const props = curr[propKey] as { onClick?: (ev: unknown) => Promise<void> | void } | undefined;
+				if (props && typeof props.onClick === "function") {
+					await props.onClick({
+						type: "click",
+						preventDefault: () => {},
+						stopPropagation: () => {},
+					});
+					return;
+				}
+			}
+			curr = curr.parentNode;
+		}
+	});
 }
 
 const mockPatientWithPhone: Patient = {
@@ -83,55 +246,8 @@ const mockPatientNoPhone: Patient = {
 };
 
 describe("Wave 48 (Feature 231): Zero-Disabled Buttons & Template Preview Autonomy", () => {
-	const searchModalPath = path.resolve(__dirname, "../PatientSearchModal.tsx");
-	const searchModalSource = fs.readFileSync(searchModalPath, "utf8");
-
-	const telegramTabPath = path.resolve(
-		__dirname,
-		"../../settings/SettingsTelegramTab.tsx",
-	);
-	const telegramTabSource = fs.readFileSync(telegramTabPath, "utf8");
-
-	// ─────────────────────────────────────────────────────────────────────────────
-	// Suite 1: PatientSearchModal WhatsApp Button Autonomy (Mandates 8e п. 2, 8k, 8n)
-	// ─────────────────────────────────────────────────────────────────────────────
 	describe("1. PatientSearchModal: WhatsApp Button Autonomy", () => {
-		it("1.1. WhatsApp button does not have disabled={!patient.phone} in source code", () => {
-			assert.equal(
-				searchModalSource.includes("disabled={!patient.phone}"),
-				false,
-				"Must not contain disabled={!patient.phone} roadblock",
-			);
-			assert.equal(
-				searchModalSource.includes("disabled={false}"),
-				true,
-				"WhatsApp button must be explicitly active (disabled={false})",
-			);
-		});
-
-		it("1.2. WhatsApp button does not have cursor-not-allowed or opacity-50", () => {
-			assert.equal(
-				searchModalSource.includes("cursor-not-allowed"),
-				false,
-				"Must not apply cursor-not-allowed on WhatsApp button",
-			);
-			assert.equal(
-				searchModalSource.includes("opacity-50"),
-				false,
-				"Must not dim WhatsApp button with opacity-50",
-			);
-		});
-
-		it("1.3. WhatsApp button satisfies touch target >= 44x44px", () => {
-			assert.equal(
-				searchModalSource.includes("min-h-[44px]") &&
-					searchModalSource.includes("min-w-[44px]"),
-				true,
-				"WhatsApp button must satisfy min-h-[44px] and min-w-[44px] touch target floor",
-			);
-		});
-
-		it("1.4. WhatsApp button renders without disabled attribute when phone is null", () => {
+		it("1.1. WhatsApp button renders without disabled attribute when phone is null", () => {
 			const html = renderToString(
 				<PatientSearchModal
 					isOpen={true}
@@ -139,25 +255,41 @@ describe("Wave 48 (Feature 231): Zero-Disabled Buttons & Template Preview Autono
 					onClose={() => {}}
 				/>,
 			);
-
-			const waButtonMatch = html.match(
-				/<button[^>]*data-testid="quick-wa-patient-pat-w48-no-phone"[^>]*>/,
-			);
-			assert.ok(waButtonMatch, "WhatsApp button must be rendered");
-			const buttonHtml = waButtonMatch[0];
-			assert.equal(
-				buttonHtml.includes('disabled=""') || buttonHtml.includes("disabled "),
-				false,
-				"Rendered WhatsApp button must not have disabled attribute",
-			);
-			assert.equal(
-				buttonHtml.includes("cursor-pointer"),
-				true,
-				"WhatsApp button must have cursor-pointer even without phone",
-			);
+			const waMatch = html.match(/<button[^>]*data-testid="quick-wa-patient-pat-w48-no-phone"[^>]*>/);
+			assert.ok(waMatch, "WhatsApp button must render");
+			assert.equal(/\bdisabled(?:=|\s|>)/.test(waMatch[0]), false, "Must not render disabled attribute");
 		});
 
-		it("1.5. WhatsApp button renders active state when phone is present", () => {
+		it("1.2. WhatsApp button does not render cursor-not-allowed or opacity-50 classes", () => {
+			const html = renderToString(
+				<PatientSearchModal
+					isOpen={true}
+					patients={[mockPatientNoPhone]}
+					onClose={() => {}}
+				/>,
+			);
+			const waMatch = html.match(/<button[^>]*data-testid="quick-wa-patient-pat-w48-no-phone"[^>]*>/);
+			assert.ok(waMatch);
+			assert.equal(waMatch[0].includes("cursor-not-allowed"), false);
+			assert.equal(waMatch[0].includes("opacity-50"), false);
+			assert.equal(waMatch[0].includes("cursor-pointer"), true);
+		});
+
+		it("1.3. WhatsApp button satisfies touch target >= 44x44px in rendered markup", () => {
+			const html = renderToString(
+				<PatientSearchModal
+					isOpen={true}
+					patients={[mockPatientNoPhone]}
+					onClose={() => {}}
+				/>,
+			);
+			const waMatch = html.match(/<button[^>]*data-testid="quick-wa-patient-pat-w48-no-phone"[^>]*>/);
+			assert.ok(waMatch);
+			assert.equal(waMatch[0].includes("min-h-[44px]"), true);
+			assert.equal(waMatch[0].includes("min-w-[44px]"), true);
+		});
+
+		it("1.4. WhatsApp button renders active emerald accent when phone is present", () => {
 			const html = renderToString(
 				<PatientSearchModal
 					isOpen={true}
@@ -165,99 +297,85 @@ describe("Wave 48 (Feature 231): Zero-Disabled Buttons & Template Preview Autono
 					onClose={() => {}}
 				/>,
 			);
-
-			const waButtonMatch = html.match(
-				/<button[^>]*data-testid="quick-wa-patient-pat-w48-phone"[^>]*>/,
-			);
-			assert.ok(waButtonMatch, "WhatsApp button must be rendered");
-			const buttonHtml = waButtonMatch[0];
-			assert.equal(
-				buttonHtml.includes("bg-emerald-500"),
-				true,
-				"WhatsApp button must display emerald accent when phone is present",
-			);
+			const waMatch = html.match(/<button[^>]*data-testid="quick-wa-patient-pat-w48-phone"[^>]*>/);
+			assert.ok(waMatch);
+			assert.equal(waMatch[0].includes("bg-emerald-500"), true);
 		});
 
-		it("1.6. clicking WhatsApp button without phone triggers clear warning toast", () => {
+		it("1.5. clicking WhatsApp button without phone invokes showToastFn with warning guidance", async () => {
+			const dom = setupMinimalDom();
 			let capturedToastText = "";
 			let capturedToastType = "";
 
-			const mockToastFn = (text: string, type?: string) => {
-				capturedToastText = text;
-				capturedToastType = type || "";
-			};
+			const container = dom.createEl("div");
+			const root: Root = createRoot(container as unknown as HTMLElement);
+			await act(async () => {
+				root.render(
+					<PatientSearchModal
+						isOpen={true}
+						patients={[mockPatientNoPhone]}
+						onClose={() => {}}
+						showToastFn={(text, type) => {
+							capturedToastText = text;
+							capturedToastType = type || "";
+						}}
+					/>,
+				);
+			});
 
-			const element = (
-				<PatientSearchModal
-					isOpen={true}
-					patients={[mockPatientNoPhone]}
-					onClose={() => {}}
-					showToastFn={mockToastFn}
-				/>
-			);
+			const waBtn = findByTestId(container, "quick-wa-patient-pat-w48-no-phone");
+			assert.ok(waBtn, "Must mount quick-wa button in DOM");
+			await triggerReactClick(waBtn);
 
-			// Render element to ensure clean component execution
-			const html = renderToString(element);
-			assert.ok(html.includes("data-testid=\"quick-wa-patient-pat-w48-no-phone\""));
-
-			// Simulate trigger of WhatsApp button action directly
-			const expectedWarningMessage =
-				"У пациента не указан номер телефона. Заполните телефон в карточке пациента.";
 			assert.equal(
-				searchModalSource.includes(expectedWarningMessage),
-				true,
-				"Source code must include the canonical guidance toast text",
+				capturedToastText,
+				"У пациента не указан номер телефона. Заполните телефон в карточке пациента.",
 			);
-
-			mockToastFn(expectedWarningMessage, "warning");
-			assert.equal(capturedToastText, expectedWarningMessage);
 			assert.equal(capturedToastType, "warning");
 		});
 	});
 
-	// ─────────────────────────────────────────────────────────────────────────────
-	// Suite 2: SettingsTelegramTab Template Preview Autonomy (Mandates 8e п. 2, 8k, 8n)
-	// ─────────────────────────────────────────────────────────────────────────────
 	describe("2. SettingsTelegramTab: Template Preview Autonomy", () => {
-		it("2.1. does not contain disabled={!activePatient || isTelegramLoading} in source code", () => {
-			assert.equal(
-				telegramTabSource.includes("disabled={!activePatient || isTelegramLoading}"),
-				false,
-				"Must eliminate all occurrences of disabled={!activePatient || isTelegramLoading}",
+		it("2.1. SettingsTelegramTab hides when settingsTab !== 'telegram' and renders hub when active", () => {
+			const hiddenHtml = renderToString(
+				<SettingsTelegramTab props={{}} settingsTab="general" />,
 			);
+			assert.equal(hiddenHtml, "");
+
+			const activeHtml = renderToString(
+				<SettingsTelegramTab
+					props={{ isTelegramLoading: false, activePatient: null }}
+					settingsTab="telegram"
+				/>,
+			);
+			assert.ok(activeHtml.includes('data-testid="telegram-integration-hub"'));
+			assert.ok(activeHtml.includes("Бот Telegram"));
+			assert.ok(activeHtml.includes("Личный аккаунт Telegram"));
 		});
 
-		it("2.2. action buttons are never blocked by disabled={isTelegramLoading} (Mandate 8e)", () => {
-			const matches = telegramTabSource.match(/disabled=\{isTelegramLoading\}/g);
-			assert.equal(
-				matches,
-				null,
-				"Must have zero disabled={isTelegramLoading} roadblocks per Doctor Autonomy Mandate 8e",
+		it("2.2. hub buttons are never blocked by disabled even when isTelegramLoading is true", () => {
+			const html = renderToString(
+				<SettingsTelegramTab
+					props={{ isTelegramLoading: true, activePatient: null }}
+					settingsTab="telegram"
+				/>,
 			);
+			const buttons = [...html.matchAll(/<button[^>]*>/g)];
+			assert.ok(buttons.length >= 4, "Must render Telegram hub buttons");
+			for (const btn of buttons) {
+				assert.equal(/\bdisabled\b/.test(btn[0]), false, `Button must not be disabled: ${btn[0]}`);
+			}
 		});
 
 		it("2.3. exports DEFAULT_TELEGRAM_PREVIEW_PATIENT with realistic clinic demo data", () => {
-			assert.ok(
-				DEFAULT_TELEGRAM_PREVIEW_PATIENT,
-				"DEFAULT_TELEGRAM_PREVIEW_PATIENT must be exported",
-			);
-			assert.equal(
-				DEFAULT_TELEGRAM_PREVIEW_PATIENT.fullName,
-				"",
-			);
-			assert.equal(
-				DEFAULT_TELEGRAM_PREVIEW_PATIENT.doctorName,
-				"Смирнова Е.А.",
-			);
-			assert.equal(
-				DEFAULT_TELEGRAM_PREVIEW_PATIENT.appointmentTime,
-				"завтра 14:00",
-			);
+			assert.equal(DEFAULT_TELEGRAM_PREVIEW_PATIENT.fullName, "");
+			assert.equal(DEFAULT_TELEGRAM_PREVIEW_PATIENT.doctorName, "Смирнова Е.А.");
+			assert.equal(DEFAULT_TELEGRAM_PREVIEW_PATIENT.appointmentTime, "завтра 14:00");
 			assert.equal(DEFAULT_TELEGRAM_PREVIEW_PATIENT.amountRub, 4500);
 			assert.equal(DEFAULT_TELEGRAM_PREVIEW_PATIENT.amountFormatted, "4 500 ₽");
 		});
 
-		it("2.4. buildDefaultTelegramPreview creates complete preview without patient selection", () => {
+		it("2.4. buildDefaultTelegramPreview creates complete preview across all 7 template kinds", () => {
 			const templates = [
 				"appointment_confirmation",
 				"document_ready_notice",
@@ -275,97 +393,31 @@ describe("Wave 48 (Feature 231): Zero-Disabled Buttons & Template Preview Autono
 				assert.equal(preview.classification, "limited_admin");
 				assert.ok(preview.text.length > 20, "Preview text must not be empty");
 				assert.equal(preview.blockedReason, null);
-				assert.ok(
-					preview.variablesUsed.length > 0,
-					"Preview must declare variablesUsed",
-				);
+				assert.ok(preview.variablesUsed.length > 0);
+				assert.ok(preview.warnings.some((w) => w.includes("демонстрационные данные")));
 			}
-		});
-
-		it("2.5. SettingsTelegramTab renders TelegramIntegrationHub as SSOT view", () => {
-			const mockProps = {
-				isTelegramLoading: false,
-				activePatient: null,
-			};
-
-			const html = renderToString(
-				<SettingsTelegramTab props={mockProps} settingsTab="telegram" />,
-			);
-
-			assert.ok(
-				html.includes('data-testid="telegram-integration-hub"'),
-				"Must render TelegramIntegrationHub as SSOT view",
-			);
-			assert.ok(
-				html.includes("Бот Telegram"),
-				"Must include Bot Telegram tab",
-			);
-			assert.ok(
-				html.includes("Личный аккаунт Telegram"),
-				"Must include Staff account tab",
-			);
-		});
-
-		it("2.6. action buttons are never disabled when isTelegramLoading is true (Mandate 8e)", () => {
-			const mockProps = {
-				isTelegramLoading: true,
-				activePatient: null,
-			};
-
-			const html = renderToString(
-				<SettingsTelegramTab props={mockProps} settingsTab="telegram" />,
-			);
-
-			// Under Mandate 8e, tab navigation and primary action buttons are never disabled
-			const tabButtonMatches = [
-				...html.matchAll(/<button[^>]*class="[^"]*tg-hub-tab-btn[^"]*"[^>]*>/g),
-			];
-			assert.ok(tabButtonMatches.length >= 4, "Must render hub tab buttons");
-			for (const match of tabButtonMatches) {
-				assert.equal(
-					match[0].includes("disabled"),
-					false,
-					"Hub tab buttons must not be disabled during loading",
-				);
-			}
-		});
-
-		it("2.7. buildDefaultTelegramPreview includes realistic demo guidance warnings", () => {
-			const preview = buildDefaultTelegramPreview("appointment_confirmation");
-			assert.ok(
-				preview.warnings.some((w) => w.includes("демонстрационные данные")),
-				"Preview warnings must indicate realistic demo data usage",
-			);
 		});
 	});
 
-	// ─────────────────────────────────────────────────────────────────────────────
-	// Suite 3: Constitutional Mandates (Zero Emojis, No-Bloat, Strict Density)
-	// ─────────────────────────────────────────────────────────────────────────────
-	describe("3. Constitutional Mandates: Zero Emojis & Medical Density (Mandates 8d, 8i)", () => {
-		it("3.1. Zero Cartoon Emojis: guarantees 0 cartoon emojis in PatientSearchModal source", () => {
-			assert.equal(
-				hasCartoonEmojis(searchModalSource),
-				false,
-				"PatientSearchModal.tsx contains forbidden cartoon emojis!",
+	describe("3. Constitutional Mandates: Zero Cartoon Emojis in Rendered Output", () => {
+		it("3.1. renders 0 cartoon emojis in PatientSearchModal HTML", () => {
+			const html = renderToString(
+				<PatientSearchModal
+					isOpen={true}
+					patients={[mockPatientWithPhone, mockPatientNoPhone]}
+					onClose={() => {}}
+				/>,
 			);
+			assert.equal(hasCartoonEmojis(html), false);
 		});
 
-		it("3.2. Zero Cartoon Emojis: guarantees 0 cartoon emojis in SettingsTelegramTab source", () => {
-			assert.equal(
-				hasCartoonEmojis(telegramTabSource),
-				false,
-				"SettingsTelegramTab.tsx contains forbidden cartoon emojis!",
+		it("3.2. renders 0 cartoon emojis in SettingsTelegramTab HTML and preview text", () => {
+			const html = renderToString(
+				<SettingsTelegramTab props={{}} settingsTab="telegram" />,
 			);
-		});
-
-		it("3.3. Zero Cartoon Emojis: guarantees 0 cartoon emojis in test suite", () => {
-			const thisFileSource = fs.readFileSync(__filename, "utf8");
-			assert.equal(
-				hasCartoonEmojis(thisFileSource),
-				false,
-				"Test file itself contains forbidden cartoon emojis!",
-			);
+			assert.equal(hasCartoonEmojis(html), false);
+			const preview = buildDefaultTelegramPreview("appointment_confirmation");
+			assert.equal(hasCartoonEmojis(preview.text), false);
 		});
 	});
 });

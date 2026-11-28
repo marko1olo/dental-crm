@@ -48,7 +48,7 @@ export const ScannerAttachmentActions: React.FC<ScannerAttachmentActionsProps> =
 						type="button"
 						data-testid="scanner-capture-button"
 						onClick={cameraError ? onOpenFile : onCapture}
-						className="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 rounded-xl bg-[var(--teal)] px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-[var(--teal-dark)] transition-colors cursor-pointer"
+						className="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-5 py-2 text-xs font-bold text-white shadow-md hover:opacity-95 transition-colors cursor-pointer"
 					>
 						{cameraError ? <Folder size={15} className="shrink-0" /> : <Camera size={15} className="shrink-0" />}
 						<span>{cameraError ? "Выбрать файл" : "Сфотографировать"}</span>
@@ -76,7 +76,7 @@ export const ScannerAttachmentActions: React.FC<ScannerAttachmentActionsProps> =
 						type="button"
 						data-testid="scanner-save-attachment-button"
 						onClick={onSaveAttachment}
-						className="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 rounded-xl bg-[var(--teal)] px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-[var(--teal-dark)] cursor-pointer"
+						className="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-5 py-2 text-xs font-bold text-white shadow-md hover:opacity-95 cursor-pointer"
 					>
 						<Save size={14} className="shrink-0" />
 						<span>{isUploading ? "Сохраняю…" : "Прикрепить к медкарте"}</span>

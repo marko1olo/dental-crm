@@ -32,7 +32,7 @@ export const DocumentsTaxStatBoxes: React.FC<DocumentsTaxStatBoxesProps> = ({
 				</span>
 			</div>
 			<div className="pc-tax-stat-box">
-				<span className="pc-tax-stat-label">Имплантация & Хирургия (Код 02)</span>
+				<span className="pc-tax-stat-label">Имплантация и хирургия (Код 02)</span>
 				<span className="pc-tax-stat-value">{formatRubles(taxDeductionCalc.code02SpentRub)}</span>
 				<span className="pc-tax-stat-refund">
 					<CheckCircle2 size={15} />

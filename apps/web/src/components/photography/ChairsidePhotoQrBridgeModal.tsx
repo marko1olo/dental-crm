@@ -90,8 +90,14 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 			});
 
 			if (!res.ok) {
-				const errData = await res.json().catch(() => ({}));
-				throw new Error(errData.message || "Не удалось создать QR-сессию");
+				let msg = "Не удалось создать QR-сессию";
+				try {
+					const errData = (await res.json()) as { message?: string };
+					if (errData?.message) msg = errData.message;
+				} catch (parseErr) {
+					logger.warn("[ChairsidePhotoQrBridge] Non-JSON error response", parseErr);
+				}
+				throw new Error(msg);
 			}
 
 			const data = await res.json();
@@ -188,15 +194,20 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 
 	const handleCloseAndTerminate = async () => {
 		if (token) {
-			void fetch(`/api/photo-bridge/session/${token}`, {
-				method: "DELETE",
-				headers: {
-					...denteClinicalMutationHeaders(),
-					"Idempotency-Key": generateUuidV7(),
-				},
-			}).catch((err: unknown) => {
+			try {
+				const delRes = await fetch(`/api/photo-bridge/session/${token}`, {
+					method: "DELETE",
+					headers: {
+						...denteClinicalMutationHeaders(),
+						"Idempotency-Key": generateUuidV7(),
+					},
+				});
+				if (!delRes.ok) {
+					logger.warn(`[photo-bridge] DELETE session returned HTTP ${delRes.status}`);
+				}
+			} catch (err: unknown) {
 				logger.warn("[photo-bridge] Failed to close session cleanly", err);
-			});
+			}
 		}
 		onClose();
 	};
@@ -267,7 +278,7 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 							<button
 								type="button"
 								onClick={createSession}
-								className="mt-2 primary-button min-h-[40px] px-4 rounded-xl text-xs font-bold flex items-center gap-2 bg-[var(--teal)] text-white cursor-pointer"
+								className="mt-2 primary-button min-h-[40px] px-4 rounded-xl text-xs font-bold flex items-center gap-2 bg-[var(--primary)] text-white cursor-pointer"
 							>
 								<RefreshCw size={14} />
 								<span>Создать новый QR-код</span>
@@ -365,7 +376,7 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 					<button
 						type="button"
 						onClick={handleCloseAndTerminate}
-						className="primary-button min-h-[40px] px-5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 bg-[#0d9488] hover:bg-[#0f766e] text-white cursor-pointer shadow-sm"
+						className="primary-button min-h-[40px] px-5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 bg-[var(--primary)] hover:opacity-95 text-white cursor-pointer shadow-sm"
 						data-testid="btn-close-qr-bridge"
 					>
 						<CheckCircle size={16} />

@@ -110,7 +110,7 @@ export function BotTemplatesStep({
 				<span className="bot-field-label">Тон общения виртуального ассистента:</span>
 				<div className="bot-tone-radio-row">
 					{[
-						{ id: "premium" as BotTone, label: "Премиум & Престиж", hint: "Забота, персональный координатор" },
+						{ id: "premium" as BotTone, label: "Премиум и престиж", hint: "Забота, персональный координатор" },
 						{ id: "caring" as BotTone, label: "Семейный и тёплый", hint: "Адаптационный прием, без боли" },
 						{ id: "concise" as BotTone, label: "Лаконичный медицинский", hint: "Четкие факты, доказательный подход" },
 					].map((toneItem) => (

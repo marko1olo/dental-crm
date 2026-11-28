@@ -77,7 +77,7 @@ export const ToolbarParamsMenuItems: React.FC<ToolbarParamsMenuItemsProps> = ({
 					title="Открыть студию поэтапной оплаты и эскроу-депозитов"
 				>
 					<Coins size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-					<span>Поэтапная оплата & Эскроу</span>
+					<span>Поэтапная оплата и эскроу</span>
 				</button>
 			)}
 

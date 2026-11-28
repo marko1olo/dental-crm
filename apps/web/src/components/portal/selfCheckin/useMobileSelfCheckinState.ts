@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { generateQrCodeSvg } from "@dental/shared/fiscal/qrGenerator";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import {
 	type StatutoryConsentItem,
 	DEFAULT_CONSENTS,
@@ -276,7 +277,12 @@ export function useMobileSelfCheckinState(props: UseMobileSelfCheckinStateProps)
 				});
 				return;
 			}
-			const err = await res.json().catch(() => null);
+			let err: { message?: string; error?: string } | null = null;
+			try {
+				err = (await res.json()) as { message?: string; error?: string } | null;
+			} catch (parseErr) {
+				clientLogger.warn("[useMobileSelfCheckinState] Failed to parse error JSON:", parseErr);
+			}
 			const errorMessage = err?.message || err?.error || "Не удалось зарегистрировать визит. Пожалуйста, обратитесь к администратору на ресепшн.";
 			setAuthError(errorMessage);
 			if (isDemo) {

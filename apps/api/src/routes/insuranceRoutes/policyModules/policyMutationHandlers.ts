@@ -1,9 +1,16 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import {
+	kopecksToRubles,
+	resolveValidIanaTimeZone,
+	rublesToKopecks,
+	shiftCalendarDay,
+	todayDateKeyInTimeZone,
+} from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { withTenantWriteCtx } from "../../../db/rls.js";
 import { dmsGuaranteeLetters, insuranceContracts, patients } from "../../../db/schema.js";
+import { clinicTimeZone } from "../../../services/reports/managerReports/timezone.js";
 import {
 	INSURANCE_COMPANY_NAME_REQUIRED,
 	INSURANCE_CONTRACT_NOT_FOUND,
@@ -411,8 +418,6 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 		}
 
 		const insurerName = INSURER_NAMES[body.insurerKey] || "";
-		const todayIso = new Date().toISOString().slice(0, 10);
-		const oneYearLaterIso = new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10);
 
 		const maxCoverageKop =
 			body.maxCoverageKopecks ??
@@ -424,6 +429,10 @@ export async function registerPolicyMutationRoutes(app: FastifyInstance) {
 			: `ДМС-${Date.now().toString().slice(-6)}`;
 
 		const txResult = await withTenantWriteCtx(orgId, async (tx) => {
+			const clinicTz = resolveValidIanaTimeZone(await clinicTimeZone(orgId, tx));
+			const todayIso = todayDateKeyInTimeZone(clinicTz);
+			const oneYearLaterIso = shiftCalendarDay(todayIso, 365);
+
 			// Mandate 8z: BOLA/IDOR protection - verify patient belongs to current clinic organization
 			const [patient] = await tx
 				.select({

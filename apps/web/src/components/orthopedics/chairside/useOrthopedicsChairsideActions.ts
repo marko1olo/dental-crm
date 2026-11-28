@@ -114,7 +114,18 @@ export function useOrthopedicsChairsideActions(
 				body: JSON.stringify(labOrderPayload),
 			});
 			if (res.ok) {
-				const json = await res.json().catch(() => null);
+				let json: { data?: { id?: string; orderNumber?: string }; id?: string; orderNumber?: string } | null = null;
+				try {
+					json = (await res.json()) as {
+						data?: { id?: string; orderNumber?: string };
+						id?: string;
+						orderNumber?: string;
+					} | null;
+				} catch (parseErr) {
+					clientLogger.warn("Lab order response JSON parse failed", {
+						error: String(parseErr),
+					}, { module: "useOrthopedicsChairsideActions" });
+				}
 				const payload = json?.data ?? json;
 				const serverOrderId = payload?.id;
 				const serverOrderNumber = payload?.orderNumber

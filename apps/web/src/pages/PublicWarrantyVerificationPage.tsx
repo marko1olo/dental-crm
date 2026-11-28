@@ -13,6 +13,7 @@ import {
 	Check,
 } from "lucide-react";
 import { DentalCrown } from "../components/icons/DentalIcons";
+import { clientLogger } from "../services/logging/clientLogger";
 
 interface PublicWarrantyItem {
 	readonly toothNumber?: string;
@@ -85,7 +86,12 @@ export function PublicWarrantyVerificationPage({
 
 		try {
 			const res = await fetch(`/api/public/warranty/${encodeURIComponent(trimmed)}`);
-			const json = await res.json().catch(() => null);
+			let json: { message?: string; certificate?: PublicWarrantyCertificate } | null = null;
+			try {
+				json = (await res.json()) as typeof json;
+			} catch (parseErr) {
+				clientLogger.warn("[PublicWarrantyVerificationPage] Non-JSON warranty response", parseErr);
+			}
 
 			if (!res.ok) {
 				setError(

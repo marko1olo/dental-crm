@@ -25,11 +25,10 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
 import { registerHooks } from "node:module";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 if (typeof registerHooks === "function") {
 	try {
@@ -88,10 +87,13 @@ import {
 import {
 	getRepresentativeLegalStatus,
 } from "../../patients/patientCardModalModules/patientCardModalTypes";
+import { PatientCardModal } from "../../patients/PatientCardModal";
+import { RepresentativeAlertBanner } from "../../patients/tabs/generalInfo/RepresentativeAlertBanner";
+import { RepresentativeRelationshipChips } from "../../patients/tabs/generalInfo/RepresentativeRelationshipChips";
+import { QuickPresetChipsBar } from "../quickBookingService/QuickPresetChipsBar";
+import { PatientSectionHeader } from "../quickBookingPatient/PatientSectionHeader";
+import { buildQuickBookingPayload } from "../quickBookingSubmitPayload";
 const MODAL_REPRESENTATIVE_CATALOG = STOMX_REPRESENTATIVE_CATALOG;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 describe("Wave 117: Appointment Catalogs Export & Blocking Intervals", () => {
 	describe("1. Export of appointment catalogs in @dental/shared", () => {
@@ -231,60 +233,87 @@ describe("Wave 117: Appointment Catalogs Export & Blocking Intervals", () => {
 			assert.equal(isTechnicalBreakAppointment({ reason: "Острая боль" }), false);
 		});
 
-		it("2.4 QuickBookingDrawer.tsx source code contains 1-click chip buttons and touch target >= 44px", () => {
-			const drawerPath = path.resolve(__dirname, "../QuickBookingDrawer.tsx");
-			const chipsPath = path.resolve(__dirname, "../quickBookingService/QuickPresetChipsBar.tsx");
-			const patientHeaderPath = path.resolve(__dirname, "../quickBookingPatient/PatientSectionHeader.tsx");
-			const submitPath = path.resolve(__dirname, "../useQuickBookingSubmit.ts");
+		it("2.4 QuickPresetChipsBar, PatientSectionHeader and buildQuickBookingPayload implement non-blocking chip selection and technical breaks", () => {
+			const chipsHtml = renderToStaticMarkup(
+				React.createElement(QuickPresetChipsBar, {
+					reason: "",
+					setReason: () => {},
+					comment: "",
+					setComment: () => {},
+				}),
+			);
+			assert.ok(chipsHtml.includes('data-testid="appointment-quick-reasons"'));
+			assert.ok(chipsHtml.includes('data-testid="appointment-doctor-blocks"'));
+			assert.ok(chipsHtml.includes("chip-reason-"));
+			assert.ok(chipsHtml.includes("chip-block-"));
+			assert.ok(chipsHtml.includes("min-h-[44px]"));
 
-			assert.ok(fs.existsSync(drawerPath), "QuickBookingDrawer.tsx must exist");
-			assert.ok(fs.existsSync(chipsPath), "QuickPresetChipsBar.tsx must exist");
-			assert.ok(fs.existsSync(patientHeaderPath), "PatientSectionHeader.tsx must exist");
-			assert.ok(fs.existsSync(submitPath), "useQuickBookingSubmit.ts must exist");
+			const clinicalHeaderHtml = renderToStaticMarkup(
+				React.createElement(PatientSectionHeader, {
+					showInlineNewPatient: false,
+					setShowInlineNewPatient: () => {},
+					selectedPatient: null,
+					newPatientFullName: "",
+					setNewPatientFullName: () => {},
+					newPatientPhone: "",
+					setNewPatientPhone: () => {},
+					newPatientBirthDate: "",
+					searchQuery: "",
+					setAppointmentType: () => {},
+					setReason: () => {},
+					setComment: () => {},
+					setDurationMinutes: () => {},
+					doctors: [],
+					doctorUserId: "",
+					isTechnicalBreak: false,
+				}),
+			);
+			assert.ok(clinicalHeaderHtml.includes("Пациент *"));
+			assert.ok(clinicalHeaderHtml.includes("min-h-[44px]"));
 
-			const content = [drawerPath, chipsPath, patientHeaderPath, submitPath]
-				.map((p) => fs.readFileSync(p, "utf-8"))
-				.join("\n");
+			const techBreakHeaderHtml = renderToStaticMarkup(
+				React.createElement(PatientSectionHeader, {
+					showInlineNewPatient: false,
+					setShowInlineNewPatient: () => {},
+					selectedPatient: null,
+					newPatientFullName: "",
+					setNewPatientFullName: () => {},
+					newPatientPhone: "",
+					setNewPatientPhone: () => {},
+					newPatientBirthDate: "",
+					searchQuery: "",
+					setAppointmentType: () => {},
+					setReason: () => {},
+					setComment: () => {},
+					setDurationMinutes: () => {},
+					doctors: [],
+					doctorUserId: "",
+					isTechnicalBreak: true,
+				}),
+			);
+			assert.ok(techBreakHeaderHtml.includes("Пациент (не требуется)"));
 
-			// Testids
-			assert.ok(
-				content.includes('data-testid="appointment-quick-reasons"'),
-				"Must include appointment-quick-reasons container",
-			);
-			assert.ok(
-				content.includes('data-testid="appointment-doctor-blocks"'),
-				"Must include appointment-doctor-blocks container",
-			);
-			assert.ok(
-				content.includes('data-testid="technical-break-patient-free-banner"'),
-				"Must include technical-break-patient-free-banner",
-			);
-
-			// Chips & Touch target >= 44px (Mandates 8c, 8e)
-			assert.ok(
-				content.includes("min-h-[44px]"),
-				"Buttons must adhere to touch target >= 44px",
-			);
-			assert.ok(
-				content.includes("chip-reason-"),
-				"Must render chip-reason- testids",
-			);
-			assert.ok(
-				content.includes("chip-block-"),
-				"Must render chip-block- testids",
-			);
-
-			// Patient requirement is relaxed for technical break (Mandates 8e, 8n)
-			assert.ok(
-				content.includes("Пациент {isTechnicalBreak ? \"(не требуется)\" : \"*\"}"),
-				"Patient label must adapt during technical break",
-			);
-			assert.ok(
-				content.includes("if (!effectivePatientId && !isTechnicalBreak)") ||
-					content.includes("if (!effectivePatientId && !isTechBreak)"),
-				"Save logic must allow null patientId for technical breaks",
-			);
-
+			const breakPayload = buildQuickBookingPayload({
+				params: {
+					doctorUserId: "doc-1",
+					dutyDoctorId: "",
+					doctors: [{ id: "doc-1" }],
+					chairId: "chair-1",
+					chairs: [{ id: "chair-1" }],
+					assistantUserId: "",
+					isSoloClinic: false,
+					reason: "Служебный перерыв: Обед",
+					comment: "",
+					status: "planned",
+				} as never,
+				activePatientId: null,
+				startsAtIso: "2026-10-01T12:00:00.000Z",
+				endsAtIso: "2026-10-01T13:00:00.000Z",
+				isEmergency: false,
+				overbookOverride: false,
+			});
+			assert.equal(breakPayload.patientId, null);
+			assert.equal(breakPayload.reason, "Служебный перерыв: Обед");
 		});
 	});
 
@@ -293,23 +322,19 @@ describe("Wave 117: Appointment Catalogs Export & Blocking Intervals", () => {
 			assert.ok(Array.isArray(MODAL_REPRESENTATIVE_CATALOG), "MODAL_REPRESENTATIVE_CATALOG must be an array");
 			assert.equal(MODAL_REPRESENTATIVE_CATALOG.length, 14);
 
-			// Test statutory legal status helper for mother
 			const motherStatus = getRepresentativeLegalStatus("Мать");
 			assert.equal(motherStatus.isLegalRepresentative, true);
 			assert.equal(motherStatus.idsSigningAllowed, true);
 			assert.ok(motherStatus.descriptionRu.includes("Законный представитель") || motherStatus.descriptionRu.includes("323-ФЗ"));
 
-			// Test statutory legal status helper for father
 			const fatherStatus = getRepresentativeLegalStatus("Отец");
 			assert.equal(fatherStatus.isLegalRepresentative, true);
 			assert.equal(fatherStatus.idsSigningAllowed, true);
 
-			// Test statutory legal status helper for guardian
 			const guardianStatus = getRepresentativeLegalStatus("Опекун");
 			assert.equal(guardianStatus.isLegalRepresentative, true);
 			assert.equal(guardianStatus.idsSigningAllowed, true);
 
-			// Test non-statutory family member (husband/wife/brother)
 			const brotherStatus = getRepresentativeLegalStatus("Брат");
 			assert.equal(brotherStatus.isLegalRepresentative, false);
 			assert.equal(brotherStatus.idsSigningAllowed, false);
@@ -317,7 +342,6 @@ describe("Wave 117: Appointment Catalogs Export & Blocking Intervals", () => {
 		});
 
 		it("3.2 isStatutoryLegalRepresentative accurately checks statutory rights by СК РФ ст. 64 and 323-ФЗ", () => {
-			// True for statutory representatives
 			assert.equal(isStatutoryLegalRepresentative("mother"), true);
 			assert.equal(isStatutoryLegalRepresentative("father"), true);
 			assert.equal(isStatutoryLegalRepresentative("parent"), true);
@@ -326,7 +350,6 @@ describe("Wave 117: Appointment Catalogs Export & Blocking Intervals", () => {
 			assert.equal(isStatutoryLegalRepresentative("adoptive_parent"), true);
 			assert.equal(isStatutoryLegalRepresentative("authorized_representative"), true);
 
-			// False for other relatives without unconditional statutory rights
 			assert.equal(isStatutoryLegalRepresentative("husband"), false);
 			assert.equal(isStatutoryLegalRepresentative("wife"), false);
 			assert.equal(isStatutoryLegalRepresentative("son"), false);
@@ -336,46 +359,39 @@ describe("Wave 117: Appointment Catalogs Export & Blocking Intervals", () => {
 			assert.equal(isStatutoryLegalRepresentative("other"), false);
 		});
 
-		it("3.3 PatientGeneralInfoTab.tsx contains chips and IDS signing rights badge (ст. 20 323-ФЗ)", () => {
-			const tabPath = path.resolve(__dirname, "../../patients/tabs/PatientGeneralInfoTab.tsx");
-			const repSectionPath = path.resolve(__dirname, "../../patients/tabs/generalInfo/PatientRepresentativesSection.tsx");
-			const chipsPath = path.resolve(__dirname, "../../patients/tabs/generalInfo/RepresentativeRelationshipChips.tsx");
-			const bannerPath = path.resolve(__dirname, "../../patients/tabs/generalInfo/RepresentativeAlertBanner.tsx");
-			assert.ok(fs.existsSync(tabPath), "PatientGeneralInfoTab.tsx must exist");
-			assert.ok(fs.existsSync(repSectionPath), "PatientRepresentativesSection.tsx must exist");
-			assert.ok(fs.existsSync(chipsPath), "RepresentativeRelationshipChips.tsx must exist");
-			assert.ok(fs.existsSync(bannerPath), "RepresentativeAlertBanner.tsx must exist");
-			const content = [
-				fs.readFileSync(tabPath, "utf-8"),
-				fs.readFileSync(repSectionPath, "utf-8"),
-				fs.readFileSync(chipsPath, "utf-8"),
-				fs.readFileSync(bannerPath, "utf-8"),
-			].join("\n");
+		it("3.3 RepresentativeRelationshipChips & RepresentativeAlertBanner render statutory 323-ФЗ / 64 СК РФ badges", () => {
+			const chipsHtml = renderToStaticMarkup(
+				React.createElement(RepresentativeRelationshipChips, {
+					patient: { representativeType: "Мать" },
+					disabled: false,
+					onUpdatePatient: () => {},
+				}),
+			);
+			assert.ok(chipsHtml.includes("chip-representative-mother"));
+			assert.ok(chipsHtml.includes("min-h-[44px]"));
 
-			// Renders representative chips
-			assert.ok(content.includes("chip-representative-"), "Must include chip-representative- testids");
-			assert.ok(content.includes("min-h-[44px]"), "Representative chips must have min-h-[44px]");
-
-			// Renders automatic statutory legal status notice & badge
-			assert.ok(
-				content.includes('data-testid="representative-ids-signing-badge"'),
-				"Must include representative-ids-signing-badge",
+			const motherMeta = STOMX_REPRESENTATIVE_CATALOG.find((r) => r.code === "mother") ?? null;
+			const bannerHtml = renderToStaticMarkup(
+				React.createElement(RepresentativeAlertBanner, {
+					isMinorChild: true,
+					selectedRep: motherMeta,
+					compact: false,
+				}),
 			);
-			assert.ok(
-				content.includes("323-ФЗ"),
-				"Must cite Federal Law 323-ФЗ for IDS signing rights",
-			);
-			assert.ok(
-				content.includes("64 СК РФ"),
-				"Must cite Russian Family Code art. 64 for statutory representatives",
-			);
+			assert.ok(bannerHtml.includes('data-testid="minor-323fz-alert"'));
+			assert.ok(bannerHtml.includes('data-testid="representative-ids-signing-badge"'));
+			assert.ok(bannerHtml.includes("323-ФЗ"));
+			assert.ok(bannerHtml.includes("64 СК РФ"));
 		});
 
-		it("3.4 Canonical components/patients/PatientCardModal.tsx resolves cleanly", () => {
-			const patientsBridgePath = path.resolve(__dirname, "../../patients/PatientCardModal.tsx");
-			assert.ok(fs.existsSync(patientsBridgePath), "components/patients/PatientCardModal.tsx must exist");
-			const bridgeContent = fs.readFileSync(patientsBridgePath, "utf-8");
-			assert.ok(bridgeContent.includes("PatientCardModal"));
+		it("3.4 Canonical components/patients/PatientCardModal renders cleanly when closed", () => {
+			const closedHtml = renderToStaticMarkup(
+				React.createElement(PatientCardModal, {
+					isOpen: false,
+					onClose: () => {},
+				}),
+			);
+			assert.equal(closedHtml, "");
 		});
 	});
 });

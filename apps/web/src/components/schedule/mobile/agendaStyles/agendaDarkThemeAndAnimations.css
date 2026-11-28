@@ -37,9 +37,9 @@
 
 [data-theme="dark"] .schedule-mobile-filter-chip.active,
 .dark .schedule-mobile-filter-chip.active {
-  background: var(--primary-soft) !important;
-  border-color: var(--primary) !important;
-  color: var(--primary) !important;
+  background: rgba(13, 148, 136, 0.22) !important;
+  border-color: var(--teal, #14b8a6) !important;
+  color: #5eead4 !important;
 }
 
 [data-theme="dark"] .schedule-mobile-bottom-bar,

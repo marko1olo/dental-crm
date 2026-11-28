@@ -153,19 +153,20 @@ export function getHddAsyncLoggerStream(): ReturnType<typeof pino.destination> {
 	});
 
 	// Периодический сброс буфера логов, чтобы редкие сообщения не зависали в буфере
-	flushTimer = setInterval(() => {
+	const timer = setInterval(() => {
 		try {
 			if (asyncLoggerDestination) {
 				asyncLoggerDestination.flush();
 			}
-		} catch {
-			// Игнорируем ошибки сброса при закрытии потока
+		} catch (err: unknown) {
+			if (err instanceof Error && !/destroyed|closed|EPIPE/i.test(err.message)) {
+				process.stderr.write(`[perf/hdd] Ошибка сброса буфера логов: ${err.message}\n`);
+			}
 		}
 	}, HDD_LOG_FLUSH_INTERVAL_MS);
 
-	if (flushTimer.unref) {
-		flushTimer.unref();
-	}
+	timer.unref();
+	flushTimer = timer;
 
 	// Гарантированный сброс буфера перед выходом из процесса
 	process.once("beforeExit", () => {
@@ -176,6 +177,17 @@ export function getHddAsyncLoggerStream(): ReturnType<typeof pino.destination> {
 }
 
 /**
+ * Останавливает фоновый таймер сброса буфера и принудительно сбрасывает логи на диск.
+ */
+export function stopHddLogger(): void {
+	if (flushTimer) {
+		clearInterval(flushTimer);
+		flushTimer = null;
+	}
+	flushHddLogger();
+}
+
+/**
  * Синхронный принудительный сброс буфера логов на диск.
  * Должен вызываться при graceful shutdown и при падении сервера (uncaughtException).
  */
@@ -183,8 +195,10 @@ export function flushHddLogger(): void {
 	if (asyncLoggerDestination) {
 		try {
 			asyncLoggerDestination.flushSync();
-		} catch {
-			// Игнорируем ошибки при уже закрытом дескрипторе
+		} catch (err: unknown) {
+			if (err instanceof Error && !/destroyed|closed|EPIPE/i.test(err.message)) {
+				process.stderr.write(`[perf/hdd] Ошибка финального сброса логов: ${err.message}\n`);
+			}
 		}
 	}
 }

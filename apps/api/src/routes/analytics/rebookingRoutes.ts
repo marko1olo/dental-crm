@@ -1,3 +1,4 @@
+import { formatDateKeyInTimeZone, resolveValidIanaTimeZone, todayDateKeyInTimeZone } from "@dental/shared";
 import { and, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -106,9 +107,10 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 				let startDate: Date | undefined;
 				let endDate: Date | undefined;
 
-				const { storedRules, completedVisits, appointmentsPool, soloResolved } =
+				const { storedRules, completedVisits, appointmentsPool, soloResolved, resolvedTimeZone } =
 					await (async () => {
 						const timeZone = await clinicTimeZone(orgId, tx);
+						const resolvedTz = resolveValidIanaTimeZone(timeZone);
 						const now = new Date();
 
 						const rawStart = qStartDate || qPeriodStart;
@@ -274,6 +276,7 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 						completedVisits: visitsRows,
 						appointmentsPool: apptsRows,
 						soloResolved: soloFlag,
+						resolvedTimeZone: resolvedTz,
 					};
 				})();
 			isSoloDoctor = soloResolved;
@@ -352,7 +355,7 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 						rebookedBy,
 						timeDeltaMinutes: deltaMinutes,
 						creditedRole,
-						appointmentDate: candidateAppt.startsAt.toISOString().slice(0, 10),
+						appointmentDate: formatDateKeyInTimeZone(candidateAppt.startsAt, resolvedTimeZone),
 						createdAt: apptCreatedAt,
 						attributionReason,
 						doctorId: candidateAppt.attributedUserId ?? visit.doctorUserId ?? candidateAppt.doctorUserId ?? null,
@@ -625,8 +628,12 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 
 				const patientName = body.patientName?.trim() || "Пациент";
 				const rebookedBy = body.rebookedBy?.trim() || "Сотрудник";
+				const clinicTz = body.appointmentDate?.trim()
+					? null
+					: resolveValidIanaTimeZone(await clinicTimeZone(orgId, tx));
 				const appointmentDate =
-					body.appointmentDate?.trim() || new Date().toISOString().slice(0, 10);
+					body.appointmentDate?.trim() ||
+					todayDateKeyInTimeZone(clinicTz ?? "Europe/Samara");
 
 				let isSoloDoctor = body.isSoloDoctor;
 				if (isSoloDoctor === undefined) {

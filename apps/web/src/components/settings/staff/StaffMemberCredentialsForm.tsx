@@ -34,7 +34,7 @@ export const StaffMemberCredentialsForm: React.FC<CredentialsFormProps> = ({
 				/>
 				<button
 					type="submit"
-					className="h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--teal)] text-[var(--on-teal)] hover:opacity-90 cursor-pointer"
+					className="h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--primary)] text-white hover:opacity-90 cursor-pointer"
 					disabled={loading}
 				>
 					ОК
@@ -62,7 +62,7 @@ export const StaffMemberCredentialsForm: React.FC<CredentialsFormProps> = ({
 			/>
 			<button
 				type="submit"
-				className="h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--teal)] text-[var(--on-teal)] hover:opacity-90 cursor-pointer"
+				className="h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--primary)] text-white hover:opacity-90 cursor-pointer"
 				disabled={loading}
 			>
 				ОК

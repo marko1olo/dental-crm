@@ -86,7 +86,7 @@ export async function fetchSbpDynamicQr(config: SbpDynamicQrConfig): Promise<Sbp
 						: "Оплата стоматологических услуг"),
 			}),
 		});
-		const data = (await res.json().catch(() => null)) as {
+		type SbpQrRawResponse = {
 			success?: boolean;
 			payloadUrl?: string;
 			operationId?: string;
@@ -95,7 +95,13 @@ export async function fetchSbpDynamicQr(config: SbpDynamicQrConfig): Promise<Sbp
 			expiresAt?: string;
 			ttlSeconds?: number;
 			message?: string;
-		} | null;
+		};
+		let data: SbpQrRawResponse | null = null;
+		try {
+			data = (await res.json()) as SbpQrRawResponse | null;
+		} catch (parseErr) {
+			clientLogger.warn("[sbpQrEngine] Non-JSON SBP QR response", parseErr, { module: "Billing" });
+		}
 
 		if (!res.ok || !data?.success || !data.payloadUrl) {
 			return {

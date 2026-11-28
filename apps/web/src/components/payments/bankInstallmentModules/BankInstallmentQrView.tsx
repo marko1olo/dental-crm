@@ -48,7 +48,7 @@ export const BankInstallmentQrView: React.FC<BankInstallmentQrViewProps> = ({
 				<button
 					type="button"
 					onClick={onCopyLink}
-					className="min-h-[44px] flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--paper-soft,#f8fafc)] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] transition cursor-pointer"
+					className="min-h-[44px] flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] transition cursor-pointer"
 					data-testid="copy-installment-link-btn"
 				>
 					{isCopied ? (
@@ -62,7 +62,7 @@ export const BankInstallmentQrView: React.FC<BankInstallmentQrViewProps> = ({
 				<button
 					type="button"
 					onClick={onSendSms}
-					className="min-h-[44px] flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--paper-soft,#f8fafc)] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] transition cursor-pointer"
+					className="min-h-[44px] flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] transition cursor-pointer"
 					data-testid="send-installment-sms-btn"
 				>
 					{isSmsSent ? (

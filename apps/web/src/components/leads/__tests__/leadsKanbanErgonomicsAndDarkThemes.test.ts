@@ -1,23 +1,20 @@
 /**
- * DENTE Dental CRM — Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Inquisitor Test Suite
- *
- * Mandate 8c: Visual Quality & 10 Themes Parity (Night, Dark, OLED, Ocean, Emerald, Cyber X-Ray)
- * Mandate 8e: Doctor Autonomy & Non-Blocking Clinical Invariants
- * Mandate 8n: Solo Doctor Scale Sovereignty & Anti-Landfill Ergonomics
- * Mandate 8p: Zero Dead-Ends & Zero Bureaucratic Ciphers
+ * DENTE Dental CRM — Leads Kanban Ergonomics, Dark Themes & Conversion Test Suite
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { afterEach, beforeEach, describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { Lead } from "../../../store/leadsStore";
+import { useLeadsStore, type Lead } from "../../../store/leadsStore";
 import {
 	CHANNEL_BADGE_COLORS,
 	CHANNEL_DISPLAY_NAMES,
 } from "../../telephony/telephonyAttribution";
 import { LeadsKanbanHeaderToolbar } from "../kanbanView/LeadsKanbanHeaderToolbar";
+import { resolveKanbanDefaultDayScheduleWindow } from "../LeadsKanbanView";
 import { normalizeMarketingChannel } from "../leadsFunnelTypes";
+import { getLeadSlaStatus } from "../leadsKanbanSla";
 import {
 	COLUMNS,
 	CORE_FUNNEL_COLUMNS,
@@ -25,8 +22,19 @@ import {
 	FALLBACK_SOLO_DOCTOR,
 } from "../leadsKanbanTypes";
 
-describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification", () => {
-	describe("1. Kanban Funnel & Drag-and-Drop / Button-Based Stage Transfer", () => {
+describe("Leads Kanban Ergonomics, Dark Themes & Conversion Verification", () => {
+	const originalFetch = globalThis.fetch;
+
+	beforeEach(() => {
+		useLeadsStore.setState({ leads: [], isLoading: false, error: null });
+	});
+
+	afterEach(() => {
+		globalThis.fetch = originalFetch;
+		useLeadsStore.setState({ leads: [], isLoading: false, error: null });
+	});
+
+	describe("1. Kanban Funnel & Store-Backed Stage Transitions", () => {
 		it("CORE_FUNNEL_COLUMNS has exactly 4 sequential stages with zero horizontal clutter", () => {
 			assert.equal(CORE_FUNNEL_COLUMNS.length, 4);
 			assert.deepEqual(
@@ -53,64 +61,78 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 			assert.ok(columnIds.includes("showed_up"));
 		});
 
-		it("Simulates sequential 1-click status transitions through all canonical funnel stages", () => {
-			const mockLead: Lead = {
+		it("useLeadsStore.updateLeadStatus and batchUpdateStage transition leads and rollback on HTTP error", async () => {
+			const leadA: Lead = {
 				id: "lead-seq-1",
 				name: "Анна Смирнова",
 				phone: "+7 (999) 111-22-33",
 				source: "yandex_direct",
 				status: "new",
 			};
+			useLeadsStore.setState({ leads: [leadA] });
 
-			// Step 1: new -> contacted
-			mockLead.status = "contacted";
-			assert.equal(mockLead.status, "contacted");
+			globalThis.fetch = (async () =>
+				new Response(JSON.stringify({ ok: true }), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				})) as typeof fetch;
 
-			// Step 2: contacted -> consult_booked (conversion to appointment)
-			mockLead.status = "consult_booked";
-			assert.equal(mockLead.status, "consult_booked");
+			await useLeadsStore.getState().updateLeadStatus("lead-seq-1", "contacted");
+			assert.equal(useLeadsStore.getState().leads[0]?.status, "contacted");
 
-			// Step 3: consult_booked -> showed_up (patient arrived)
-			mockLead.status = "showed_up";
-			assert.equal(mockLead.status, "showed_up");
+			await useLeadsStore.getState().batchUpdateStage(["lead-seq-1"], "consult_booked");
+			assert.equal(useLeadsStore.getState().leads[0]?.status, "consult_booked");
+
+			globalThis.fetch = (async () =>
+				new Response(JSON.stringify({ message: "Ошибка перехода этапа" }), {
+					status: 422,
+					headers: { "Content-Type": "application/json" },
+				})) as typeof fetch;
+
+			await assert.rejects(
+				useLeadsStore.getState().updateLeadStatus("lead-seq-1", "showed_up"),
+				/Ошибка перехода этапа/,
+			);
+			assert.equal(
+				useLeadsStore.getState().leads[0]?.status,
+				"consult_booked",
+				"Failed transition must roll back optimistic state",
+			);
 		});
 
-		it("Supports quick recovery from edge columns (no_answer / trash -> new)", () => {
+		it("recovers edge leads from no_answer/trash back to new via batchUpdateStage", async () => {
 			const noAnswerLead: Lead = {
 				id: "lead-no-ans",
 				name: "Михаил Кузнецов",
 				phone: "+7 (999) 444-55-66",
 				status: "no_answer",
 			};
-			noAnswerLead.status = "new";
-			assert.equal(noAnswerLead.status, "new");
-
 			const trashLead: Lead = {
 				id: "lead-trash",
 				name: "Дмитрий Орлов",
 				phone: "+7 (999) 777-88-99",
 				status: "trash",
 			};
-			trashLead.status = "new";
-			assert.equal(trashLead.status, "new");
+			useLeadsStore.setState({ leads: [noAnswerLead, trashLead] });
+
+			globalThis.fetch = (async () =>
+				new Response(JSON.stringify({ data: { leads: [] } }), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				})) as typeof fetch;
+
+			await useLeadsStore.getState().batchUpdateStage(["lead-no-ans", "lead-trash"], "new");
+			assert.equal(useLeadsStore.getState().leads[0]?.status, "new");
+			assert.equal(useLeadsStore.getState().leads[1]?.status, "new");
 		});
 	});
 
 	describe("2. Dark Themes Parity & Token Invariants (Mandate 8c)", () => {
 		it("COLUMNS use CSS variable tokens instead of hardcoded RGBA colors", () => {
 			for (const col of COLUMNS) {
-				assert.ok(
-					col.color.startsWith("var(--"),
-					`Column ${col.id} color (${col.color}) must be a CSS variable token`,
-				);
-				assert.ok(
-					!col.color.includes("#"),
-					`Column ${col.id} must not contain static hex colors`,
-				);
-				assert.ok(
-					!col.color.startsWith("rgba("),
-					`Column ${col.id} must not contain raw rgba() colors`,
-				);
+				assert.ok(col.color.startsWith("var(--"));
+				assert.equal(col.color.includes("#"), false);
+				assert.equal(col.color.startsWith("rgba("), false);
 			}
 		});
 
@@ -129,18 +151,9 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 			for (const ch of canonicalChannels) {
 				const badge = CHANNEL_BADGE_COLORS[ch];
 				assert.ok(badge, `Missing badge color for channel ${ch}`);
-				assert.ok(
-					badge.bg.startsWith("var(--"),
-					`Channel ${ch} bg must use design token`,
-				);
-				assert.ok(
-					badge.border.startsWith("var(--"),
-					`Channel ${ch} border must use design token`,
-				);
-				assert.ok(
-					CHANNEL_DISPLAY_NAMES[ch],
-					`Channel ${ch} must have a Cyrillic human-readable display name`,
-				);
+				assert.ok(badge.bg.startsWith("var(--"));
+				assert.ok(badge.border.startsWith("var(--"));
+				assert.ok(CHANNEL_DISPLAY_NAMES[ch]);
 			}
 		});
 
@@ -151,85 +164,70 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 			assert.equal(normalizeMarketingChannel("НаПоправку"), "napopravku");
 			assert.equal(normalizeMarketingChannel("Официальный сайт"), "site_seo");
 			assert.equal(normalizeMarketingChannel("ВКонтакте"), "social_media");
-			assert.equal(
-				normalizeMarketingChannel("Сарафанное радио"),
-				"recommendations",
-			);
+			assert.equal(normalizeMarketingChannel("Сарафанное радио"), "recommendations");
 		});
 	});
 
 	describe("3. Lead to Patient & Appointment Conversion (Mandates 8e, 8n)", () => {
-		it("Preserves phone, name, and advertising source in appointment conversion payload", () => {
-			const lead: Lead = {
-				id: "lead-conversion-test",
-				name: "Екатерина Волкова",
-				phone: "+7 (999) 555-12-34",
-				source: "gis_2",
-				status: "new",
-			};
+		it("exposes solo fallbacks and computes default appointment window cleanly", () => {
+			assert.equal(FALLBACK_SOLO_DOCTOR.id, "default-doctor");
+			assert.equal(FALLBACK_DEFAULT_CHAIR.id, "default-chair");
 
-			const appointmentStart = new Date("2026-10-01T10:00:00Z").toISOString();
-			const appointmentEnd = new Date("2026-10-01T10:30:00Z").toISOString();
-
-			const payload = {
-				appointmentStart,
-				appointmentEnd,
-				chairId: FALLBACK_DEFAULT_CHAIR.id,
-				doctorId: FALLBACK_SOLO_DOCTOR.id,
-			};
-
-			assert.ok(payload.appointmentStart);
-			assert.ok(payload.appointmentEnd);
-			assert.equal(payload.doctorId, "default-doctor");
-			assert.equal(payload.chairId, "default-chair");
-			assert.equal(lead.name, "Екатерина Волкова");
-			assert.equal(lead.phone, "+7 (999) 555-12-34");
-			assert.equal(lead.source, "gis_2");
+			const windowInfo = resolveKanbanDefaultDayScheduleWindow(
+				{
+					clinicSettings: {
+						profile: {
+							timezone: "Europe/Moscow",
+							defaultVisitMinutes: 30,
+						},
+					},
+				},
+				"2026-10-02",
+				"11:00",
+			);
+			assert.equal(windowInfo.targetDate, "2026-10-02");
+			assert.equal(
+				Date.parse(windowInfo.appointmentEnd) - Date.parse(windowInfo.appointmentStart),
+				30 * 60000,
+			);
 		});
 
-		it("Computes 30-minute primary appointment slot for solo practitioner without configuration", () => {
-			const startDate = "2026-10-02";
-			const startTime = "11:00";
-			const startDateTime = new Date(`${startDate}T${startTime}:00`);
-			const durationMinutes = 30;
-			const endDateTime = new Date(
-				startDateTime.getTime() + durationMinutes * 60000,
+		it("computes SLA status urgency across fresh, warning, and breached leads", () => {
+			const now = new Date("2026-10-02T12:00:00.000Z");
+			const freshSla = getLeadSlaStatus(
+				{ status: "new", createdAt: "2026-10-02T11:58:00.000Z" },
+				now,
 			);
+			assert.equal(freshSla.urgency, "fresh");
+			assert.equal(freshSla.isBreached, false);
 
-			assert.equal(startDateTime.getHours(), 11);
-			assert.equal(startDateTime.getMinutes(), 0);
-			assert.equal(endDateTime.getHours(), 11);
-			assert.equal(endDateTime.getMinutes(), 30);
+			const breachedSla = getLeadSlaStatus(
+				{ status: "new", createdAt: "2026-10-02T11:00:00.000Z" },
+				now,
+			);
+			assert.equal(breachedSla.urgency, "breached");
+			assert.equal(breachedSla.isBreached, true);
 		});
 	});
 
 	describe("4. Complete Absence of Bureaucratic Ciphers & Technical Noise", () => {
 		it("Ensures column labels contain zero bureaucratic or technical codes", () => {
-			const forbiddenTokens = [
-				"МКБ",
-				"043/у",
-				"СНИЛС",
-				"ОМС",
-				"ЕГИСЗ",
-				"UUID",
-				"ID:",
-				"CRUD",
-			];
+			const forbiddenTokens = ["МКБ", "043/у", "СНИЛС", "ОМС", "ЕГИСЗ", "UUID", "ID:", "CRUD"];
 			for (const col of COLUMNS) {
 				for (const forbidden of forbiddenTokens) {
-					assert.ok(
-						!col.label.includes(forbidden),
-						`Column label "${col.label}" must not contain bureaucratic code "${forbidden}"`,
-					);
+					assert.equal(col.label.includes(forbidden), false);
 				}
 			}
 		});
 
-		it("Lead card identifier formatting uses readable number symbol instead of tech ID", () => {
-			const rawUuid = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
-			const formattedNumber = `№ ${rawUuid.slice(0, 6)}`;
-			assert.equal(formattedNumber, "№ e7b1a2");
-			assert.ok(!formattedNumber.startsWith("ID:"));
+		it("Formats SLA labels and duration strings cleanly without UUID or tech codes", () => {
+			const sla = getLeadSlaStatus(
+				{ status: "contacted", createdAt: "2026-10-02T11:30:00.000Z" },
+				new Date("2026-10-02T12:00:00.000Z"),
+			);
+			assert.equal(sla.label.includes("ID:"), false);
+			assert.equal(sla.label.includes("UUID"), false);
+			assert.ok(sla.formattedDuration.includes("м"));
 		});
 	});
 
@@ -252,26 +250,11 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 				}),
 			);
 
-			assert.ok(
-				!html.includes("style="),
-				"Toolbar HTML must contain zero inline style attributes",
-			);
-			assert.ok(
-				html.includes("!pl-[38px]"),
-				"Search input must enforce !pl-[38px] icon clearance",
-			);
-			assert.ok(
-				html.includes("h-9 min-h-[36px] rounded-xl"),
-				"Toolbar controls must use 36px (h-9) and rounded-xl (12px)",
-			);
-			assert.ok(
-				html.includes("h-8 rounded-lg"),
-				"Segmented toggle must use 32px (h-8) and rounded-lg (8px)",
-			);
-			assert.ok(
-				html.includes("bg-[var(--primary)]"),
-				"Primary CTA must use canonical var(--primary) token",
-			);
+			assert.equal(html.includes("style="), false);
+			assert.ok(html.includes("!pl-[38px]"));
+			assert.ok(html.includes("h-9 min-h-[36px] rounded-xl"));
+			assert.ok(html.includes("h-8 rounded-lg"));
+			assert.ok(html.includes("bg-[var(--primary)]"));
 		});
 	});
 });

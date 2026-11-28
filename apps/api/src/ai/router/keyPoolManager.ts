@@ -8,6 +8,7 @@ import {
 	type ModelHealthInfo,
 	AgentRouterAllKeysExhaustedError,
 } from "./routerTypes.js";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { aiLogger } from "../aiLogger.js";
 
 /**
@@ -82,9 +83,18 @@ export function parseAllConfiguredApiKeys(): string[] {
 
 export class KeyPoolManager {
 	private readonly apiKeys: string[];
-	private readonly keyCooldowns = new Map<string, number>();
-	private readonly keyFailures = new Map<string, number>();
-	private readonly modelBans = new Map<string, number>();
+	private readonly keyCooldowns = new BoundedTtlMap<string, number>({
+		maxEntries: 1000,
+		ttlMs: 24 * 60 * 60_000,
+	});
+	private readonly keyFailures = new BoundedTtlMap<string, number>({
+		maxEntries: 1000,
+		ttlMs: 24 * 60 * 60_000,
+	});
+	private readonly modelBans = new BoundedTtlMap<string, number>({
+		maxEntries: 500,
+		ttlMs: 24 * 60 * 60_000,
+	});
 	private roundRobinIndex = 0;
 
 	constructor(keys: string[]) {

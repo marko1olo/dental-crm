@@ -2,6 +2,7 @@ import type { StaffProfileExtended } from "@dental/shared";
 import { LogOut, UserCheck, UserX } from "lucide-react";
 import React, { useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { showToast } from "../../../GlobalToast";
 
 interface Props {
@@ -24,8 +25,14 @@ export const StaffSecurityStatusAndSessions: React.FC<Props> = ({ staffMember, o
 				body: JSON.stringify({ active: nextState }),
 			});
 			if (!res.ok) {
-				const errJson = (await res.json().catch(() => ({}))) as { message?: string };
-				showToast(errJson.message || "Не удалось изменить статус сотрудника", "error");
+				let msg = "Не удалось изменить статус сотрудника";
+				try {
+					const errJson = (await res.json()) as { message?: string };
+					if (errJson?.message) msg = errJson.message;
+				} catch (parseErr) {
+					clientLogger.warn("[StaffSecurityStatusAndSessions] Non-JSON error on profile update", parseErr);
+				}
+				showToast(msg, "error");
 				return;
 			}
 			setIsActive(nextState);
@@ -46,8 +53,14 @@ export const StaffSecurityStatusAndSessions: React.FC<Props> = ({ staffMember, o
 				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 			});
 			if (!res.ok) {
-				const errJson = (await res.json().catch(() => ({}))) as { message?: string };
-				showToast(errJson.message || "Не удалось завершить сессию сотрудника", "error");
+				let msg = "Не удалось завершить сессию сотрудника";
+				try {
+					const errJson = (await res.json()) as { message?: string };
+					if (errJson?.message) msg = errJson.message;
+				} catch (parseErr) {
+					clientLogger.warn("[StaffSecurityStatusAndSessions] Non-JSON error on terminate-session", parseErr);
+				}
+				showToast(msg, "error");
 				return;
 			}
 			showToast("Все активные сессии сотрудника завершены", "success");

@@ -190,7 +190,7 @@ export const DoctorSpecialtyRatesTable: React.FC<DoctorSpecialtyRatesTableProps>
 											<div className="flex items-center justify-end gap-2">
 												<button
 													type="button"
-													className="primary-button h-8 px-3 rounded-lg text-xs font-semibold cursor-pointer"
+													className="secondary-button h-8 px-3 rounded-lg text-xs font-semibold cursor-pointer border border-[var(--primary)] bg-[var(--paper)] text-[var(--primary)] hover:bg-[var(--paper-soft)]"
 													style={{
 														minHeight: "32px",
 														padding: "4px 12px",

@@ -38,9 +38,7 @@
 .ops-section-title {
 	margin: 22px 0 10px;
 	font-size: 13px;
-	font-weight: 700;
-	letter-spacing: 0.02em;
-	text-transform: uppercase;
+	font-weight: 600;
 	color: var(--muted);
 }
 

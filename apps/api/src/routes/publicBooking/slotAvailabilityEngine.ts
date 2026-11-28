@@ -1,3 +1,5 @@
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import {
 	type DaySchedule,
 	type DoctorScheduleWindow,
@@ -6,12 +8,25 @@ import {
 	weekdayKeys,
 } from "./types.js";
 
+const logger = createApiLogger("slotAvailabilityEngine");
+
+function asPlainRecord(value: unknown): Record<string, unknown> | null {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) {
+		return null;
+	}
+	const out: Record<string, unknown> = {};
+	for (const [k, v] of Object.entries(value)) {
+		out[k] = v;
+	}
+	return out;
+}
+
 export function clockToMinutes(value: unknown): number | null {
 	if (typeof value !== "string") return null;
 	const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
-	if (!match) return null;
-	const hours = Number.parseInt(match[1] as string, 10);
-	const minutes = Number.parseInt(match[2] as string, 10);
+	if (!match || !match[1] || !match[2]) return null;
+	const hours = Number.parseInt(match[1], 10);
+	const minutes = Number.parseInt(match[2], 10);
 	if (hours === 24 && minutes === 0) return 1440;
 	if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
 	return hours * 60 + minutes;
@@ -33,14 +48,8 @@ export function resolveDaySchedule(
 	weekday: number,
 ): DaySchedule {
 	const key = weekdayKeys[weekday];
-	const schedule =
-		clinicSchedule && typeof clinicSchedule === "object"
-			? (clinicSchedule as Record<string, unknown>)
-			: null;
-	const day =
-		schedule && key && typeof schedule[key] === "object"
-			? (schedule[key] as Record<string, unknown>)
-			: null;
+	const schedule = asPlainRecord(clinicSchedule);
+	const day = schedule && key ? asPlainRecord(schedule[key]) : null;
 
 	if (!day) {
 		const workdayOpen = clockToMinutes(schedule?.workdayStart);
@@ -54,7 +63,7 @@ export function resolveDaySchedule(
 			workdayClose > workdayOpen
 		) {
 			const settingsWorkingDays = Array.isArray(schedule?.workingDays)
-				? (schedule.workingDays as unknown[]).map((value) => Number(value))
+				? schedule.workingDays.map((value) => Number(value))
 				: null;
 			return {
 				isWorking:
@@ -71,7 +80,7 @@ export function resolveDaySchedule(
 			const openHour = Number(workHours[0]);
 			const closeHour = Number(workHours[1]);
 			const workingDays = Array.isArray(schedule?.workingDays)
-				? (schedule.workingDays as unknown[]).map((value) => Number(value))
+				? schedule.workingDays.map((value) => Number(value))
 				: null;
 			if (
 				Number.isFinite(openHour) &&
@@ -131,16 +140,21 @@ export function resolveDoctorDaySchedule(
 		};
 	}
 
-	const entry = workingHoursRaw.find(
-		(item) => typeof item === "object" && item !== null && Number(item.weekday) === weekday,
-	);
+	let matchedEntry: Record<string, unknown> | null = null;
+	for (const item of workingHoursRaw) {
+		const rec = asPlainRecord(item);
+		if (rec && Number(rec.weekday) === weekday) {
+			matchedEntry = rec;
+			break;
+		}
+	}
 
-	if (!entry || entry.enabled === false) {
+	if (!matchedEntry || matchedEntry.enabled === false) {
 		return { isWorking: false, startMinute: 0, endMinute: 0 };
 	}
 
-	const startMinute = clockToMinutes(entry.start) ?? clinicDay.openMinute;
-	const endMinute = resolveCloseMinutes(entry.end, startMinute) ?? clinicDay.closeMinute;
+	const startMinute = clockToMinutes(matchedEntry.start) ?? clinicDay.openMinute;
+	const endMinute = resolveCloseMinutes(matchedEntry.end, startMinute) ?? clinicDay.closeMinute;
 
 	if (endMinute <= startMinute) {
 		return { isWorking: false, startMinute: 0, endMinute: 0 };
@@ -180,7 +194,10 @@ export function intersectWorkingWindows(
 	};
 }
 
-const offsetFormatters = new Map<string, Intl.DateTimeFormat>();
+const offsetFormatters = new BoundedTtlMap<string, Intl.DateTimeFormat>({
+	maxEntries: 64,
+	ttlMs: 24 * 60 * 60 * 1000,
+});
 
 function getOffsetFormatter(timeZone: string): Intl.DateTimeFormat {
 	const cached = offsetFormatters.get(timeZone);
@@ -198,12 +215,16 @@ export function timezoneOffsetMinutes(instant: Date, timeZone: string): number {
 		const parts = getOffsetFormatter(timeZone).formatToParts(instant);
 		const name = parts.find((p) => p.type === "timeZoneName")?.value ?? "";
 		const match = /GMT([+-])(\d{1,2})(?::(\d{2}))?/.exec(name);
-		if (!match) return 0;
+		if (!match || !match[2]) return 0;
 		const sign = match[1] === "-" ? -1 : 1;
-		const hours = Number.parseInt(match[2] as string, 10);
+		const hours = Number.parseInt(match[2], 10);
 		const minutes = match[3] ? Number.parseInt(match[3], 10) : 0;
 		return sign * (hours * 60 + minutes);
-	} catch (_err) {
+	} catch (err) {
+		logger.warn(
+			{ err: safeLogError(err), timeZone },
+			"[slotAvailabilityEngine] Invalid timezone in timezoneOffsetMinutes, falling back to UTC",
+		);
 		return 0;
 	}
 }
@@ -226,16 +247,10 @@ export function localWallTimeToUtc(
 	minuteOfDay: number,
 	timeZone: string,
 ): Date {
-	const [year, month, day] = date.split("-").map((n) => Number.parseInt(n, 10));
+	const [year = 1970, month = 1, day = 1] = date.split("-").map((n) => Number.parseInt(n, 10));
 	const hour = Math.floor(minuteOfDay / 60);
 	const minute = minuteOfDay % 60;
-	const naiveUtc = Date.UTC(
-		year as number,
-		(month as number) - 1,
-		day as number,
-		hour,
-		minute,
-	);
+	const naiveUtc = Date.UTC(year, month - 1, day, hour, minute);
 	let offset = timezoneOffsetMinutes(new Date(naiveUtc), timeZone);
 	let corrected = naiveUtc - offset * 60_000;
 	const refinedOffset = timezoneOffsetMinutes(new Date(corrected), timeZone);

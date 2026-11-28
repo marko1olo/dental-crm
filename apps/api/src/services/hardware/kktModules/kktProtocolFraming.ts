@@ -11,12 +11,15 @@ export const DEFAULT_ATOL_PORT = 16732;
 export const DEFAULT_SHTRIKH_PORT = 4001;
 export const DEFAULT_TIMEOUT_MS = 3000;
 
-export function getDefaultKktConfig(): KktLanConfig {
-	const host = process.env.KKT_LAN_HOST || "192.168.1.150";
+export function getDefaultKktConfig(
+	overrides?: Partial<KktLanConfig> | undefined,
+): KktLanConfig {
+	const host = overrides?.host || process.env.KKT_LAN_HOST || "192.168.1.150";
 	const portStr = process.env.KKT_LAN_PORT;
 	const modelStr = (
+		overrides?.model ||
 		process.env.KKT_MODEL ||
-		(process.env.NODE_ENV === "test" ? "emulator" : "atol_web_server")
+		"atol_web_server"
 	).toLowerCase();
 	const timeoutMsStr = process.env.KKT_TIMEOUT_MS;
 
@@ -29,16 +32,20 @@ export function getDefaultKktConfig(): KktLanConfig {
 					? "emulator"
 					: "atol_web_server";
 
-	const port = portStr
-		? Number.parseInt(portStr, 10) ||
-			(model === "shtrikh_m_tcp" ? DEFAULT_SHTRIKH_PORT : DEFAULT_ATOL_PORT)
-		: model === "shtrikh_m_tcp"
-			? DEFAULT_SHTRIKH_PORT
-			: DEFAULT_ATOL_PORT;
+	const port =
+		overrides?.port ??
+		(portStr
+			? Number.parseInt(portStr, 10) ||
+				(model === "shtrikh_m_tcp" ? DEFAULT_SHTRIKH_PORT : DEFAULT_ATOL_PORT)
+			: model === "shtrikh_m_tcp"
+				? DEFAULT_SHTRIKH_PORT
+				: DEFAULT_ATOL_PORT);
 
-	const timeoutMs = timeoutMsStr
-		? Number.parseInt(timeoutMsStr, 10) || DEFAULT_TIMEOUT_MS
-		: DEFAULT_TIMEOUT_MS;
+	const timeoutMs =
+		overrides?.timeoutMs ??
+		(timeoutMsStr
+			? Number.parseInt(timeoutMsStr, 10) || DEFAULT_TIMEOUT_MS
+			: DEFAULT_TIMEOUT_MS);
 
 	return { host, port, model, timeoutMs };
 }
@@ -242,11 +249,17 @@ export async function dispatchAtolSyncTask(
 			};
 		}
 
-		const rawData = (await resp.json()) as Record<string, unknown>;
-		const results = Array.isArray(rawData.results)
-			? (rawData.results as Record<string, unknown>[])
+		const parsedRaw: unknown = await resp.json();
+		const isRecord = (value: unknown): value is Record<string, unknown> =>
+			Boolean(value) && typeof value === "object" && !Array.isArray(value);
+		const rawData: Record<string, unknown> = isRecord(parsedRaw) ? parsedRaw : {};
+		const rawResults = Array.isArray(rawData.results)
+			? rawData.results.filter(
+					(entry): entry is Record<string, unknown> =>
+						Boolean(entry) && typeof entry === "object" && !Array.isArray(entry),
+				)
 			: [rawData];
-		const firstResult = results[0] ?? {};
+		const firstResult = rawResults[0] ?? {};
 		const errorCode = typeof firstResult.errorCode === "number" ? firstResult.errorCode : 0;
 
 		if (errorCode !== 0) {

@@ -6,6 +6,8 @@
  */
 
 import { and, eq, gte, lte } from "drizzle-orm";
+import { todayDateKeyInTimeZone } from "@dental/shared";
+import { isDemoShowcaseMode } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	appointments,
@@ -15,6 +17,11 @@ import {
 	payments,
 	users,
 } from "../../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
+import {
+	clinicTimeZone,
+	DEFAULT_CLINIC_TIME_ZONE,
+} from "../../reports/managerReports/timezone.js";
 import {
 	formatPatientInitials,
 	sanitizePhoneForCall,
@@ -29,6 +36,23 @@ import type {
 	LowInventoryAlertResult,
 	StaffCockpitRole,
 } from "./types.js";
+
+const logger = createApiLogger("telegramStaffCockpitDigest");
+
+function formatTimeInZone(dateInput: Date | string, timeZone: string): string {
+	const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+	try {
+		return new Intl.DateTimeFormat("ru-RU", {
+			timeZone,
+			hour: "2-digit",
+			minute: "2-digit",
+			hour12: false,
+		}).format(d);
+	} catch (err) {
+		logger.warn({ err: safeLogError(err), timeZone }, "[digestBuilders] Invalid timezone, falling back to UTC time");
+		return d.toISOString().slice(11, 16);
+	}
+}
 
 // ============================================================================
 // РОЛЕВАЯ КЛАВИАТУРА КОКПИТА ПЕРСОНАЛА
@@ -122,10 +146,12 @@ export async function buildDoctorMorningDigest(params: {
 	dateKey?: string;
 	crmBaseUrl?: string;
 }): Promise<DoctorMorningDigestResult> {
-	const targetDate = params.dateKey || new Date().toISOString().slice(0, 10);
 	const crmBaseUrl = params.crmBaseUrl || "https://dente.clinic";
+	let resolvedZone = DEFAULT_CLINIC_TIME_ZONE;
+	let targetDate = params.dateKey || todayDateKeyInTimeZone(resolvedZone);
 
 	let doctorName = params.doctorName || "Доктор";
+	let dbUnavailable = false;
 	let appointmentList: Array<{
 		id: string;
 		time: string;
@@ -138,10 +164,14 @@ export async function buildDoctorMorningDigest(params: {
 
 	// Запрос расписания врача на день
 	try {
-		const dayStart = new Date(`${targetDate}T00:00:00.000Z`);
-		const dayEnd = new Date(`${targetDate}T23:59:59.999Z`);
-
 		await withTenantCtx(params.organizationId, async (tx) => {
+			resolvedZone = (await clinicTimeZone(params.organizationId, tx)) || DEFAULT_CLINIC_TIME_ZONE;
+			if (!params.dateKey) {
+				targetDate = todayDateKeyInTimeZone(resolvedZone);
+			}
+			const dayStart = new Date(`${targetDate}T00:00:00.000Z`);
+			const dayEnd = new Date(`${targetDate}T23:59:59.999Z`);
+
 			if (!params.doctorName) {
 				const [docUser] = await tx
 					.select({ fullName: users.fullName })
@@ -176,19 +206,28 @@ export async function buildDoctorMorningDigest(params: {
 
 			appointmentList = rows.map((r) => ({
 				id: r.id,
-				time: new Date(r.startsAt).toISOString().slice(11, 16),
+				time: formatTimeInZone(r.startsAt, resolvedZone),
 				patientName: r.patientFullName || "Пациент",
 				chairName: r.chairName || "Кабинет 1",
 				notes: [r.reason, r.comment].filter(Boolean).join(". "),
 				status: r.status,
 			}));
 		});
-	} catch {
-		// Игнорируем ошибку подключения в изолированной среде
+	} catch (err) {
+		dbUnavailable = true;
+		logger.warn(
+			{
+				err: safeLogError(err),
+				organizationId: params.organizationId,
+				doctorUserId: params.doctorUserId,
+				targetDate,
+			},
+			"[buildDoctorMorningDigest] Failed to load doctor schedule from database",
+		);
 	}
 
-	// Демо-данные в случае отсутствия записей в базе (тестовая среда или пустой день)
-	if (appointmentList.length === 0) {
+	// Демо-данные строго для изолированного режима демонстрации (Mandate 8z/8wy)
+	if (appointmentList.length === 0 && isDemoShowcaseMode()) {
 		appointmentList = [
 			{
 				id: "app-1",
@@ -248,14 +287,18 @@ export async function buildDoctorMorningDigest(params: {
 		`🌅 Доброе утро, ${doctorName}!`,
 		`📅 Дайджест смены на ${formattedDate}`,
 		``,
-		`👥 Пациентов на сегодня: ${patientCount}`,
 	];
 
-	if (firstApp) {
-		const safeFirstPatient = formatPatientInitials(firstApp.patientName);
-		lines.push(`⏰ Первый приём: ${firstApp.time} — ${safeFirstPatient} (${firstApp.chairName})`);
+	if (dbUnavailable && appointmentList.length === 0) {
+		lines.push(`⚠️ База данных временно недоступна — расписание на смену не загружено.`);
 	} else {
-		lines.push(`⏰ На сегодня записей нет.`);
+		lines.push(`👥 Пациентов на сегодня: ${patientCount}`);
+		if (firstApp) {
+			const safeFirstPatient = formatPatientInitials(firstApp.patientName);
+			lines.push(`⏰ Первый приём: ${firstApp.time} — ${safeFirstPatient} (${firstApp.chairName})`);
+		} else {
+			lines.push(`⏰ На сегодня записей нет.`);
+		}
 	}
 
 	lines.push(``);
@@ -337,7 +380,6 @@ export function buildDoctorEventPush(params: DoctorEventPushParams): DoctorEvent
 	const sanitization = sanitizeStaffPushFor323FZ(rawText);
 	const safeText = sanitization.safeText;
 
-	// Формируем 1-клик кнопки
 	const keyboard: Array<Array<{ text: string; url?: string; callback_data?: string }>> = [];
 	const row1: Array<{ text: string; url?: string; callback_data?: string }> = [];
 
@@ -389,8 +431,9 @@ export async function buildExecutiveEveningReport(params: {
 	dateKey?: string;
 	crmBaseUrl?: string;
 }): Promise<ExecutiveEveningReportResult> {
-	const targetDate = params.dateKey || new Date().toISOString().slice(0, 10);
 	const crmBaseUrl = params.crmBaseUrl || "https://dente.clinic";
+	let resolvedZone = DEFAULT_CLINIC_TIME_ZONE;
+	let targetDate = params.dateKey || todayDateKeyInTimeZone(resolvedZone);
 
 	let totalRevenue = 0;
 	let cashRevenue = 0;
@@ -401,14 +444,19 @@ export async function buildExecutiveEveningReport(params: {
 	let confirmedAppointments = 0;
 	let completedAppointments = 0;
 	let cancelledAppointments = 0;
-	let totalChairs = 2;
+	let totalChairs = 0;
 	let bookedMinutes = 0;
+	let dbUnavailable = false;
 
 	try {
-		const dayStart = new Date(`${targetDate}T00:00:00.000Z`);
-		const dayEnd = new Date(`${targetDate}T23:59:59.999Z`);
-
 		await withTenantCtx(params.organizationId, async (tx) => {
+			resolvedZone = (await clinicTimeZone(params.organizationId, tx)) || DEFAULT_CLINIC_TIME_ZONE;
+			if (!params.dateKey) {
+				targetDate = todayDateKeyInTimeZone(resolvedZone);
+			}
+			const dayStart = new Date(`${targetDate}T00:00:00.000Z`);
+			const dayEnd = new Date(`${targetDate}T23:59:59.999Z`);
+
 			// 1. Считаем платежи за день
 			const paymentRows = await tx
 				.select({
@@ -481,12 +529,20 @@ export async function buildExecutiveEveningReport(params: {
 				}
 			}
 		});
-	} catch {
-		// Игнорируем ошибку подключения к базе
+	} catch (err) {
+		dbUnavailable = true;
+		logger.warn(
+			{
+				err: safeLogError(err),
+				organizationId: params.organizationId,
+				targetDate,
+			},
+			"[buildExecutiveEveningReport] Failed to load evening financial report from database",
+		);
 	}
 
-	// Демо-данные для надежного офлайн-тестирования или пустой организации
-	if (totalRevenue === 0 && totalAppointments === 0) {
+	// Демо-данные строго для изолированного режима демонстрации (Mandate 8z/8wy)
+	if (totalRevenue === 0 && totalAppointments === 0 && isDemoShowcaseMode()) {
 		totalRevenue = 284500;
 		cashRevenue = 42000;
 		cardRevenue = 186500;
@@ -507,7 +563,7 @@ export async function buildExecutiveEveningReport(params: {
 
 	const confirmationRate = totalAppointments > 0
 		? Math.round((confirmedAppointments / totalAppointments) * 100)
-		: 100;
+		: 0;
 
 	const formattedDate = targetDate.split("-").reverse().join(".");
 	const formatNum = (n: number) => n.toLocaleString("ru-RU");
@@ -516,14 +572,22 @@ export async function buildExecutiveEveningReport(params: {
 		`📊 ИТОГОВЫЙ ВЕЧЕРНИЙ ОТЧЕТ КЛИНИКИ`,
 		`📅 Дата: ${formattedDate}`,
 		``,
+	];
+
+	if (dbUnavailable && !isDemoShowcaseMode()) {
+		lines.push(`⚠️ База данных временно недоступна — финансовые показатели за день не загружены.`);
+		lines.push(``);
+	}
+
+	lines.push(
 		`💰 Выручка за день: ${formatNum(totalRevenue)} ₽`,
 		`• Наличные (касса): ${formatNum(cashRevenue)} ₽`,
 		`• Терминал (эквайринг): ${formatNum(cardRevenue)} ₽`,
 		`• СБП (QR-код): ${formatNum(sbpRevenue)} ₽`,
 		``,
-		`🪑 Загрузка кресел: ${chairOccupancy}% (${totalChairs} кресла)`,
+		`🪑 Загрузка кресел: ${chairOccupancy}% (${totalChairs} кресел)`,
 		`✅ Подтверждение визитов: ${confirmationRate}% (${confirmedAppointments} из ${totalAppointments})`,
-	];
+	);
 
 	if (cancelledAppointments > 0) {
 		lines.push(`⚠️ Отмен / неявок: ${cancelledAppointments}`);
@@ -562,9 +626,11 @@ export async function buildLowInventoryAlert(params: {
 	crmBaseUrl?: string;
 }): Promise<LowInventoryAlertResult> {
 	const crmBaseUrl = params.crmBaseUrl || "https://dente.clinic";
-	let shortageItems: InventoryShortageItem[] = params.items || [];
+	const hasExplicitItems = params.items !== undefined;
+	let shortageItems: InventoryShortageItem[] = params.items ? [...params.items] : [];
+	let dbUnavailable = false;
 
-	if (shortageItems.length === 0) {
+	if (!hasExplicitItems) {
 		try {
 			await withTenantCtx(params.organizationId, async (tx) => {
 				const rows = await tx
@@ -591,32 +657,53 @@ export async function buildLowInventoryAlert(params: {
 					unit: r.unit || "шт",
 				}));
 			});
-		} catch {
-			// Демо-данные для надежного офлайн-тестирования
-			shortageItems = [
+		} catch (err) {
+			dbUnavailable = true;
+			logger.warn(
 				{
-					name: "Артикаин 1:100 000 (Септанест)",
-					category: "anesthesia",
-					currentQty: 5,
-					minQty: 20,
-					unit: "карпул",
+					err: safeLogError(err),
+					organizationId: params.organizationId,
 				},
-				{
-					name: "Стерильные смотровые перчатки (M)",
-					category: "consumable",
-					currentQty: 1,
-					minQty: 5,
-					unit: "уп",
-				},
-				{
-					name: "Карпульные инъекционные иглы 30G",
-					category: "consumable",
-					currentQty: 15,
-					minQty: 50,
-					unit: "шт",
-				},
-			];
+				"[buildLowInventoryAlert] Failed to load inventory shortages from database",
+			);
+
+			// Демо-данные строго для изолированного режима демонстрации (Mandate 8z/8wy)
+			if (isDemoShowcaseMode()) {
+				shortageItems = [
+					{
+						name: "Артикаин 1:100 000 (Септанест)",
+						category: "anesthesia",
+						currentQty: 5,
+						minQty: 20,
+						unit: "карпул",
+					},
+					{
+						name: "Стерильные смотровые перчатки (M)",
+						category: "consumable",
+						currentQty: 1,
+						minQty: 5,
+						unit: "уп",
+					},
+					{
+						name: "Карпульные инъекционные иглы 30G",
+						category: "consumable",
+						currentQty: 15,
+						minQty: 50,
+						unit: "шт",
+					},
+				];
+			}
 		}
+	}
+
+	if (dbUnavailable && shortageItems.length === 0) {
+		return {
+			text: "⚠️ База данных временно недоступна — остатки на складе не проверены.",
+			isShortage: false,
+			anestheticsCount: 0,
+			consumablesCount: 0,
+			replyMarkup: { inline_keyboard: [] },
+		};
 	}
 
 	if (shortageItems.length === 0) {

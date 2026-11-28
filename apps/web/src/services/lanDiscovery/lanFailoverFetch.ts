@@ -59,11 +59,15 @@ export function resetApiToCloud(): void {
 }
 
 export function createLanFailoverFetch(
-	baseFetch: typeof fetch = typeof fetch !== "undefined" ? fetch : (() => Promise.reject(new Error("fetch undefined"))) as unknown as typeof fetch,
+	baseFetch?: typeof fetch,
 ): typeof fetch {
-	return (async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+	const resolvedFetch = baseFetch ?? (typeof fetch !== "undefined" ? fetch : undefined);
+	const wrappedFetch: typeof fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+		if (!resolvedFetch) {
+			throw new Error("fetch undefined");
+		}
 		try {
-			const res = await baseFetch(input, init);
+			const res = await resolvedFetch(input, init);
 			lanHeartbeatManager.setCloudReachable(true);
 			return res;
 		} catch (networkErr) {
@@ -72,7 +76,7 @@ export function createLanFailoverFetch(
 					? input
 					: input instanceof URL
 						? input.toString()
-						: (input as Request).url;
+						: input.url;
 
 			const isLocalOrLan =
 				urlStr.startsWith("/") ||
@@ -88,10 +92,11 @@ export function createLanFailoverFetch(
 						: urlStr.replace(/^https?:\/\/[^/]+/, discovered.baseUrl);
 					logger.info(`[LanDiscovery] Retrying request on local clinic server: ${targetUrl}`);
 					setActiveApiBaseUrl(`${discovered.baseUrl}/api`);
-					return await baseFetch(targetUrl, init);
+					return await resolvedFetch(targetUrl, init);
 				}
 			}
 			throw networkErr;
 		}
-	}) as typeof fetch;
+	};
+	return wrappedFetch;
 }

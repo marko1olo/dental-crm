@@ -1,7 +1,9 @@
+import { resolveValidIanaTimeZone, todayDateKeyInTimeZone } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { withTenantWriteCtx } from "../../../../db/rls.js";
 import { sterilizerEquipments } from "../../../../db/schema.js";
+import { clinicTimeZone } from "../../../../services/reports/managerReports/timezone.js";
 import { createSterilizerEquipmentDtoSchema } from "../sterilizationSchemas.js";
 
 export async function handleCreateSterilizerEquipment(
@@ -25,6 +27,7 @@ export async function handleCreateSterilizerEquipment(
 	const data = parsed.data;
 
 	const [created] = await withTenantWriteCtx(organizationId, async (tx) => {
+		const resolvedClinicTz = resolveValidIanaTimeZone(await clinicTimeZone(organizationId, tx));
 		return tx
 			.insert(sterilizerEquipments)
 			.values({
@@ -40,7 +43,7 @@ export async function handleCreateSterilizerEquipment(
 				verificationExpiryDate: data.verificationExpiryDate ?? null,
 				lastMaintenanceDate: data.lastMaintenanceDate ?? null,
 				nextMaintenanceDate: data.nextMaintenanceDate ?? null,
-				commissioningDate: data.commissioningDate ?? new Date().toISOString().slice(0, 10),
+				commissioningDate: data.commissioningDate ?? todayDateKeyInTimeZone(resolvedClinicTz),
 				status: data.status ?? "active",
 				isCommissioned: data.status !== "decommissioned",
 				notes: data.notes ?? null,

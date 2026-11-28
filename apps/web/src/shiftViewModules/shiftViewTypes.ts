@@ -51,12 +51,11 @@ export function getDashboardRuntimeMeta(dashboard: Dashboard | undefined): Shift
 
 export function getAppointmentCabinetName(appointment: unknown, defaultName = "Кабинет №1"): string {
 	if (!appointment || typeof appointment !== "object") return defaultName;
-	const candidate = appointment as Record<string, unknown>;
-	if (typeof candidate.cabinetName === "string" && candidate.cabinetName.trim()) {
-		return candidate.cabinetName.trim();
+	if ("cabinetName" in appointment && typeof appointment.cabinetName === "string" && appointment.cabinetName.trim()) {
+		return appointment.cabinetName.trim();
 	}
-	if (typeof candidate.room === "string" && candidate.room.trim()) {
-		return candidate.room.trim();
+	if ("room" in appointment && typeof appointment.room === "string" && appointment.room.trim()) {
+		return appointment.room.trim();
 	}
 	return defaultName;
 }

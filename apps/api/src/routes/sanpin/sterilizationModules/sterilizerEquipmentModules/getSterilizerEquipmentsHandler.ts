@@ -1,8 +1,10 @@
+import { resolveValidIanaTimeZone, shiftCalendarDay, todayDateKeyInTimeZone } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { withTenantReadCtx, withTenantWriteCtx } from "../../../../db/rls.js";
 import { sterilizerEquipments } from "../../../../db/schema.js";
+import { clinicTimeZone } from "../../../../services/reports/managerReports/timezone.js";
 
 export async function handleGetSterilizerEquipments(
 	req: FastifyRequest,
@@ -15,18 +17,26 @@ export async function handleGetSterilizerEquipments(
 	);
 	if (!organizationId) return;
 
-	let list = await withTenantReadCtx(organizationId, async (tx) => {
-		return tx
-			.select()
-			.from(sterilizerEquipments)
-			.where(eq(sterilizerEquipments.organizationId, organizationId))
-			.orderBy(sterilizerEquipments.name);
+	const initialLoad = await withTenantReadCtx(organizationId, async (tx) => {
+		const [rows, rawClinicTz] = await Promise.all([
+			tx
+				.select()
+				.from(sterilizerEquipments)
+				.where(eq(sterilizerEquipments.organizationId, organizationId))
+				.orderBy(sterilizerEquipments.name),
+			clinicTimeZone(organizationId, tx),
+		]);
+		return {
+			rows,
+			clinicTimeZone: resolveValidIanaTimeZone(rawClinicTz),
+		};
 	});
+	let list = initialLoad.rows;
+	const todayStr = todayDateKeyInTimeZone(initialLoad.clinicTimeZone);
 
 	if (list.length === 0) {
-		const todayStr = new Date().toISOString().slice(0, 10);
-		const in180Days = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-		const in365Days = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+		const in180Days = shiftCalendarDay(todayStr, 180);
+		const in365Days = shiftCalendarDay(todayStr, 365);
 
 		try {
 			const [seeded] = await withTenantWriteCtx(organizationId, async (tx) => {
@@ -61,8 +71,7 @@ export async function handleGetSterilizerEquipments(
 		}
 	}
 
-	const todayStr = new Date().toISOString().slice(0, 10);
-	const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+	const in30Days = shiftCalendarDay(todayStr, 30);
 
 	return list.map((row) => {
 		const isVerificationExpired = Boolean(row.verificationExpiryDate && row.verificationExpiryDate < todayStr);

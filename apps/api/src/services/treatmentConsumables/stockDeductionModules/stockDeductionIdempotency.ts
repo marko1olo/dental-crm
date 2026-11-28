@@ -76,6 +76,9 @@ export async function checkIdempotentVisitDeduction(
 	return null;
 }
 
+/**
+ * guard-callers: none — Охранник дедупликации списания по позиции зуба treatment_items для изолированного списания материалов
+ */
 export async function checkIdempotentToothDeduction(
 	tx: DbExecutor,
 	organizationId: string,

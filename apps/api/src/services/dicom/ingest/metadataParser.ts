@@ -7,13 +7,17 @@ import crypto from "node:crypto";
 import {
 	calculateAnnualRadiationDose,
 	type DentalRadiologyStudyType,
+	formatDateKeyInTimeZone,
 	type RadiationDoseSheetPayload,
 	type RadiationExposureEntry,
+	resolveValidIanaTimeZone,
+	todayDateKeyInTimeZone,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { db, type TenantDb } from "../../../db/client.js";
 import { withSavepoint, withTenantCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
+import { clinicTimeZone } from "../../reports/managerReports/timezone.js";
 import {
 	classifyDicomModality,
 	cleanDicomString,

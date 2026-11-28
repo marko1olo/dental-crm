@@ -65,6 +65,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 
 	before(async () => {
 		process.env.NODE_ENV = "test";
+		process.env.KKT_MODEL = "emulator";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
 		process.env.TELEPHONY_WEBHOOK_SECRET = "test-webhook-secret-xyz";
@@ -136,6 +137,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 	});
 
 	after(async () => {
+		delete process.env.KKT_MODEL;
 		delete process.env.KKM_FORCE_OFFLINE;
 		delete process.env.KKM_HARDWARE_TIMEOUT;
 		delete process.env.KKM_OUT_OF_PAPER;

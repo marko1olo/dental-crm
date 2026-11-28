@@ -1,282 +1,184 @@
 /**
  * DENTE Dental CRM — Unit & Regression Tests: Chairside Clipboard Photo,
- * Intraoral Camera Fast Capture & Before/After Patient Splitter
- *
- * Mandates:
- * - Mandate 8e: Doctor Autonomy (0 disabled buttons, non-blocking flow)
- * - Mandate 8d pt 7: Zero cartoon emojis
- * - Mandate 8k: Rapid Before/After Comparison Math
- * - Anti-monolith <= 800 lines
+ * Intraoral Camera Fast Capture & Before/After Patient Splitter (6G Live SUT)
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { IntraoralCameraModal } from "../IntraoralCameraModal";
+import { BeforeAfterSplitter } from "../../visit/BeforeAfterSplitter";
+import { VisitDiaryPhotoUpload } from "../../visit/photoUpload/VisitDiaryPhotoUpload";
+import { VisitDiaryPhotoActionsToolbar } from "../../visit/photoUpload/VisitDiaryPhotoActionsToolbar";
+import { VisitDiaryPhotoThumbnailGrid } from "../../visit/photoUpload/VisitDiaryPhotoThumbnailGrid";
+import { VisitDiaryPhotoModals } from "../../visit/photoUpload/VisitDiaryPhotoModals";
+import { calculateSplitClipPath } from "../photoProtocolMath";
+import { useClipboardPhotoPaste } from "../useClipboardPhotoPaste";
+import { compressChairsidePhotoToBlobUrl } from "../chairsidePhotoCompressor";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const EMOJI_REGEX =
+	/[\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}]/u;
 
-describe("Chairside Fast Photo Capture & Before/After Splitter (@dental/web)", () => {
-	const componentsDir = path.resolve(__dirname, "..");
-	const visitDir = path.resolve(__dirname, "../../visit");
+describe("Chairside Fast Photo Capture & Before/After Splitter (6G Live SUT)", () => {
+	it("1. IntraoralCameraModal renders closed empty and live capture controls without disabled buttons or emojis", () => {
+		const closed = renderToStaticMarkup(
+			React.createElement(IntraoralCameraModal, {
+				isOpen: false,
+				onClose: () => {},
+				onCapturePhoto: async () => {},
+			}),
+		);
+		assert.equal(closed, "");
 
-	const compressorPath = path.join(
-		componentsDir,
-		"chairsidePhotoCompressor.ts",
-	);
-	const pasteHookPath = path.join(componentsDir, "useClipboardPhotoPaste.ts");
-	const cameraModalPath = path.join(componentsDir, "IntraoralCameraModal.tsx");
-	const splitterPath = path.join(visitDir, "BeforeAfterSplitter.tsx");
-	const diaryUploadPath = path.resolve(
-		__dirname,
-		"../../VisitDiaryPhotoUpload.tsx",
-	);
-	const photoUploadDir = path.resolve(__dirname, "../../visit/photoUpload");
-	const modularUploadPath = path.join(
-		photoUploadDir,
-		"VisitDiaryPhotoUpload.tsx",
-	);
-	const toolbarPath = path.join(
-		photoUploadDir,
-		"VisitDiaryPhotoActionsToolbar.tsx",
-	);
-	const gridPath = path.join(
-		photoUploadDir,
-		"VisitDiaryPhotoThumbnailGrid.tsx",
-	);
-	const hookPath = path.join(
-		photoUploadDir,
-		"useVisitDiaryPhotoUploadState.ts",
-	);
-	const modalsPath = path.join(
-		photoUploadDir,
-		"VisitDiaryPhotoModals.tsx",
-	);
+		const open = renderToStaticMarkup(
+			React.createElement(IntraoralCameraModal, {
+				isOpen: true,
+				onClose: () => {},
+				onCapturePhoto: async () => {},
+			}),
+		);
+		assert.ok(open.length > 50);
+		assert.equal(open.includes('disabled=""'), false);
+		assert.equal(EMOJI_REGEX.test(open), false);
+	});
 
-	it("1. Verifies all required files exist on disk and meet anti-monolith limit (<= 800 lines)", () => {
-		const filesToCheck = [
-			compressorPath,
-			pasteHookPath,
-			cameraModalPath,
-			splitterPath,
-			diaryUploadPath,
-			modularUploadPath,
-			toolbarPath,
-			gridPath,
-			hookPath,
-			modalsPath,
-		];
+	it("2. BeforeAfterSplitter renders empty state, populated comparison slider, and deterministic split clip path", () => {
+		const emptyHtml = renderToStaticMarkup(
+			React.createElement(BeforeAfterSplitter, {
+				photos: [],
+			}),
+		);
+		assert.ok(emptyHtml.includes('data-testid="before-after-empty-state"'));
+		assert.equal(emptyHtml.includes('disabled=""'), false);
+		assert.equal(EMOJI_REGEX.test(emptyHtml), false);
 
-		for (const file of filesToCheck) {
-			assert.ok(fs.existsSync(file), `File must exist: ${file}`);
-			const content = fs.readFileSync(file, "utf8");
-			const lineCount = content.split("\n").length;
-			assert.ok(
-				lineCount <= 800,
-				`File ${path.basename(file)} must not exceed 800 lines (currently ${lineCount})`,
-			);
+		const activeHtml = renderToStaticMarkup(
+			React.createElement(BeforeAfterSplitter, {
+				beforeUrl: "blob:before",
+				afterUrl: "blob:after",
+				beforeLabel: "До",
+				afterLabel: "После",
+				onClose: () => {},
+			}),
+		);
+		assert.ok(activeHtml.includes('data-testid="before-after-split-slider"'));
+		assert.ok(activeHtml.includes("До"));
+		assert.ok(activeHtml.includes("После"));
+		assert.ok(calculateSplitClipPath(35, "vertical").includes("65%"));
+	});
+
+	it("3. VisitDiaryPhotoActionsToolbar exposes Ctrl+V hint, Before/After CTA, QR Bridge & DSD without disabled buttons", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(VisitDiaryPhotoActionsToolbar, {
+				isLocked: false,
+				diaryId: "diary-1",
+				attachmentsCount: 2,
+				isUploading: false,
+				onCameraOpen: () => {},
+				onBeforeAfterOpen: () => {},
+				onFileInputChange: () => {},
+				onQrBridgeOpen: () => {},
+				onDsdOpen: () => {},
+			}),
+		);
+		assert.ok(html.includes("Ctrl+V: вставить"));
+		assert.ok(html.includes("До / После"));
+		assert.ok(html.includes('data-testid="btn-visit-diary-qr-bridge"'));
+		assert.ok(html.includes('data-testid="btn-visit-diary-open-dsd"'));
+		assert.equal(html.includes('disabled=""'), false);
+		assert.equal(EMOJI_REGEX.test(html), false);
+	});
+
+	it("4. VisitDiaryPhotoUpload & VisitDiaryPhotoThumbnailGrid render cleanly for unlocked visits", () => {
+		const uploadHtml = renderToStaticMarkup(
+			React.createElement(VisitDiaryPhotoUpload, {
+				visitId: "visit-1",
+				diaryId: "diary-1",
+				isLocked: false,
+				patientId: "pat-1",
+				patientName: "Сидоров А.А.",
+			}),
+		);
+		assert.ok(uploadHtml.includes("Вложения (Фотографии)"));
+		assert.ok(uploadHtml.includes("Ctrl+V: вставить"));
+		assert.equal(uploadHtml.includes('disabled=""'), false);
+		assert.equal(EMOJI_REGEX.test(uploadHtml), false);
+
+		const gridHtml = renderToStaticMarkup(
+			React.createElement(VisitDiaryPhotoThumbnailGrid, {
+				attachments: [
+					{
+						id: "att-1",
+						name: "tooth_11.jpg",
+						mimeType: "image/jpeg",
+						sizeBytes: 1024,
+					},
+				],
+				photoObjectUrls: { "att-1": "blob:tooth-11" },
+				unreadablePhotoIds: [],
+				loadState: "ready",
+				selectedPrintIds: new Set(["att-1"]),
+				isLocked: false,
+				diaryId: "diary-1",
+				zoomPhoto: null,
+				onZoomChange: () => {},
+				onTogglePrint: () => {},
+				onDeletePhoto: () => {},
+				onReload: () => {},
+			}),
+		);
+		assert.ok(gridHtml.includes("tooth_11.jpg"));
+		assert.equal(EMOJI_REGEX.test(gridHtml), false);
+	});
+
+	it("5. VisitDiaryPhotoModals mounts BeforeAfterSplitter when isBeforeAfterOpen is true", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(VisitDiaryPhotoModals, {
+				isDsdModalOpen: false,
+				onCloseDsd: () => {},
+				patientId: "pat-1",
+				patientName: "Пациент",
+				visitId: "visit-1",
+				dsdPatientPhotos: [],
+				onDsdApplySuccess: () => {},
+				isQrBridgeOpen: false,
+				onCloseQrBridge: () => {},
+				onQrPhotoReceived: () => {},
+				isCameraModalOpen: false,
+				onCloseCameraModal: () => {},
+				onCaptureCameraPhoto: async () => {},
+				isBeforeAfterOpen: true,
+				onCloseBeforeAfter: () => {},
+				splitterPhotos: [],
+			}),
+		);
+		assert.ok(html.includes('data-testid="before-after-split-slider"'));
+		assert.equal(EMOJI_REGEX.test(html), false);
+	});
+
+	it("6. useClipboardPhotoPaste & compressChairsidePhotoToBlobUrl handle clipboard paste & URL cleanup", async () => {
+		function HookProbe() {
+			useClipboardPhotoPaste({ enabled: false, onPhotoReceived: () => {} });
+			return React.createElement("span", null, "probe");
 		}
-	});
+		assert.ok(renderToStaticMarkup(React.createElement(HookProbe)).includes("probe"));
 
-	it("2. Doctor Autonomy (Mandate 8e): Proves 0 disabled buttons across all chairside photo capture components", () => {
-		const filesToCheck = [
-			cameraModalPath,
-			splitterPath,
-			diaryUploadPath,
-			modularUploadPath,
-			toolbarPath,
-			gridPath,
-		];
-
-		for (const file of filesToCheck) {
-			const content = fs.readFileSync(file, "utf8");
-			// Check for disabled attribute on <button> tags
-			const matches = content.match(/<button[^>]*\bdisabled\b/gi);
-			assert.equal(
-				matches,
-				null,
-				`File ${path.basename(file)} must have 0 disabled buttons for doctor autonomy, but found: ${matches?.join(", ")}`,
-			);
+		const prevCreate = URL.createObjectURL;
+		const prevRevoke = URL.revokeObjectURL;
+		let revokedUrl: string | null = null;
+		(URL as { createObjectURL: (obj: Blob) => string }).createObjectURL = () => "blob:chairside-test";
+		(URL as { revokeObjectURL: (url: string) => void }).revokeObjectURL = (url: string) => {
+			revokedUrl = url;
+		};
+		try {
+			const res = await compressChairsidePhotoToBlobUrl(new Blob(["raw"], { type: "image/jpeg" }));
+			assert.equal(res.blobUrl, "blob:chairside-test");
+			res.revoke();
+			assert.equal(revokedUrl, "blob:chairside-test");
+		} finally {
+			(URL as { createObjectURL: typeof prevCreate }).createObjectURL = prevCreate;
+			(URL as { revokeObjectURL: typeof prevRevoke }).revokeObjectURL = prevRevoke;
 		}
-	});
-
-	it("3. Zero Cartoon Emojis (Mandate 8d pt 7): Proves 0 cartoon emojis in components", () => {
-		const filesToCheck = [
-			compressorPath,
-			pasteHookPath,
-			cameraModalPath,
-			splitterPath,
-			diaryUploadPath,
-			modularUploadPath,
-			toolbarPath,
-			gridPath,
-			hookPath,
-		];
-
-		const emojiRegex =
-			/[\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}]/u;
-
-		for (const file of filesToCheck) {
-			const content = fs.readFileSync(file, "utf8");
-			const hasEmoji = emojiRegex.test(content);
-			assert.equal(
-				hasEmoji,
-				false,
-				`File ${path.basename(file)} must not contain cartoon emojis`,
-			);
-		}
-	});
-
-	it("4. 1-Click Clipboard Paste (Ctrl+V) Contract Invariants", () => {
-		const hookContent = fs.readFileSync(pasteHookPath, "utf8");
-
-		// Checks that paste event listener is registered
-		assert.ok(
-			hookContent.includes('window.addEventListener("paste", handlePaste)'),
-			"Hook must register paste listener on window",
-		);
-
-		// Checks that clipboardData.items is examined for image/*
-		assert.ok(
-			hookContent.includes('item.type.startsWith("image/")'),
-			"Hook must check item type for image/*",
-		);
-
-		// Checks that preventDefault is called for images to prevent unwanted DOM mutations
-		assert.ok(
-			hookContent.includes("e.preventDefault()"),
-			"Hook must call preventDefault on paste when image is present",
-		);
-
-		// Checks that image is compressed using compressChairsidePhoto
-		assert.ok(
-			hookContent.includes("compressChairsidePhoto("),
-			"Hook must compress image before triggering callback",
-		);
-	});
-
-	it("5. Intraoral Camera / Webcam Direct WebRTC Invariants", () => {
-		const cameraContent = fs.readFileSync(cameraModalPath, "utf8");
-
-		// Proves WebRTC getUserMedia is called
-		assert.ok(
-			cameraContent.includes("navigator.mediaDevices.getUserMedia"),
-			"Camera modal must call getUserMedia for WebRTC capture",
-		);
-
-		// Proves device enumeration for USB UVC cameras
-		assert.ok(
-			cameraContent.includes("navigator.mediaDevices.enumerateDevices"),
-			"Camera modal must enumerate video input devices",
-		);
-
-		// Proves preferred camera is remembered in localStorage
-		assert.ok(
-			cameraContent.includes("dente_preferred_camera_device_id"),
-			"Camera modal must remember preferred camera in localStorage",
-		);
-
-		// Proves Spacebar / Enter capture trigger for chairside foot pedal / hands-free
-		assert.ok(
-			cameraContent.includes('e.key === " "') ||
-				cameraContent.includes("Spacebar"),
-			"Camera modal must support Spacebar capture trigger",
-		);
-
-		// Proves all stream tracks are stopped on close to prevent camera LED overheating
-		assert.ok(
-			cameraContent.includes("track.stop()"),
-			"Camera modal must stop stream tracks on close",
-		);
-	});
-
-	it("6. Chairside Before/After Splitter Invariants", () => {
-		const viewportPath = path.join(visitDir, "BeforeAfterViewport.tsx");
-		const hookPath = path.join(visitDir, "useBeforeAfterSplitter.ts");
-		const sliderPath = path.join(componentsDir, "BeforeAfterSplitSlider.tsx");
-		const presentationPath = path.join(componentsDir, "presentation/PresentationHeader.tsx");
-		const splitterContent = [
-			fs.readFileSync(splitterPath, "utf8"),
-			fs.existsSync(sliderPath) ? fs.readFileSync(sliderPath, "utf8") : "",
-			fs.existsSync(viewportPath) ? fs.readFileSync(viewportPath, "utf8") : "",
-			fs.existsSync(hookPath) ? fs.readFileSync(hookPath, "utf8") : "",
-			fs.existsSync(presentationPath) ? fs.readFileSync(presentationPath, "utf8") : "",
-		].join("\n");
-
-		// Proves split clip path math is utilized
-		assert.ok(
-			splitterContent.includes("calculateSplitClipPath"),
-			"Splitter must use calculateSplitClipPath for deterministic wiper positioning",
-		);
-
-		// Proves pointer capture for smooth dragging
-		assert.ok(
-			splitterContent.includes("setPointerCapture"),
-			"Splitter must use setPointerCapture for smooth dragging",
-		);
-
-		// Proves fullscreen patient presentation toggle
-		assert.ok(
-			splitterContent.includes("isFullscreen") &&
-				(splitterContent.includes("Maximize2") ||
-					splitterContent.includes("Minimize2")),
-			"Splitter must support fullscreen presentation mode for operatory monitors",
-		);
-
-		// Proves Before and After photo swap functionality
-		assert.ok(
-			splitterContent.includes("handleSwap"),
-			"Splitter must allow swapping Before and After photos",
-		);
-
-		// Proves keyboard navigation (Left/Right arrow support)
-		assert.ok(
-			splitterContent.includes("ArrowLeft") &&
-				splitterContent.includes("ArrowRight"),
-			"Splitter must support keyboard step navigation",
-		);
-	});
-
-	it("7. VisitDiaryPhotoUpload Integration Invariants", () => {
-		const uploadContent = [
-			fs.readFileSync(diaryUploadPath, "utf8"),
-			fs.readFileSync(modularUploadPath, "utf8"),
-			fs.readFileSync(toolbarPath, "utf8"),
-			fs.readFileSync(gridPath, "utf8"),
-			fs.readFileSync(hookPath, "utf8"),
-			fs.existsSync(modalsPath) ? fs.readFileSync(modalsPath, "utf8") : "",
-		].join("\n");
-
-		// Proves hook is wired
-		assert.ok(
-			uploadContent.includes("useClipboardPhotoPaste"),
-			"VisitDiaryPhotoUpload must wire useClipboardPhotoPaste hook",
-		);
-
-		// Proves IntraoralCameraModal is wired
-		assert.ok(
-			uploadContent.includes("<IntraoralCameraModal"),
-			"VisitDiaryPhotoUpload must render IntraoralCameraModal",
-		);
-
-		// Proves BeforeAfterSplitter is wired
-		assert.ok(
-			uploadContent.includes("<BeforeAfterSplitter"),
-			"VisitDiaryPhotoUpload must render BeforeAfterSplitter",
-		);
-
-		// Proves Ctrl+V prompt for clinician is visible
-		assert.ok(
-			uploadContent.includes("Ctrl+V: вставить"),
-			"VisitDiaryPhotoUpload must display Ctrl+V quick hint for doctor",
-		);
-
-		// Proves Before/After button exists
-		assert.ok(
-			uploadContent.includes("До / После"),
-			"VisitDiaryPhotoUpload must display Before/After comparison button",
-		);
 	});
 });

@@ -126,7 +126,12 @@ export function useConsentBackendSync({
 			});
 
 			if (!res.ok) {
-				const errData = await res.json().catch(() => ({}));
+				let errData: unknown = {};
+				try {
+					errData = await res.json();
+				} catch (parseErr) {
+					clientLogger.warn("Failed to parse consent error JSON", parseErr, { module: "useConsentBackendSync" });
+				}
 				clientLogger.warn("Failed to persist consent to backend", { status: res.status, errData }, { module: "useConsentBackendSync" });
 				showToast(`Согласие сохранено локально. Ошибка синхронизации с сервером (${res.status}).`, "warning");
 				return;

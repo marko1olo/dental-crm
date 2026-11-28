@@ -227,13 +227,27 @@ export function useBotOnboardingState(props: BotOnboardingWizardProps) {
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ token: trimmed }),
 				});
-				const data = (await response.json().catch(() => ({}))) as {
+				let data: {
 					ok: boolean;
 					username?: string;
 					bot?: { username?: string };
 					error?: string;
 					message?: string;
-				};
+				} = { ok: false };
+				try {
+					data = (await response.json()) as {
+						ok: boolean;
+						username?: string;
+						bot?: { username?: string };
+						error?: string;
+						message?: string;
+					};
+				} catch (parseErr) {
+					clientLogger.warn("[useBotOnboardingState] verify error JSON parse failed", {
+						status: response.status,
+						error: String(parseErr),
+					});
+				}
 
 				if (response.ok && data.ok) {
 					const uname = data.bot?.username || data.username || "clinic_bot";
@@ -322,7 +336,15 @@ export function useBotOnboardingState(props: BotOnboardingWizardProps) {
 				);
 				showToast(`Бот ${chLabel} сохранён в базе и запущен!`, "success");
 			} else {
-				const errData = await res.json().catch(() => ({}));
+				let errData: { message?: string } = {};
+				try {
+					errData = (await res.json()) as { message?: string };
+				} catch (parseErr) {
+					clientLogger.warn("[useBotOnboardingState] launch error JSON parse failed", {
+						status: res.status,
+						error: String(parseErr),
+					});
+				}
 				const errMsg = errData.message || "Ошибка сохранения настроек бота.";
 				setLiveNotice(errMsg);
 				showToast(errMsg, "error");

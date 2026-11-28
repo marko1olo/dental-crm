@@ -162,7 +162,12 @@ export async function sendTreatmentPlanTelegramFollowup(
 			body: JSON.stringify(force ? { force: true } : {}),
 		});
 
-		const rawJson = (await res.json().catch(() => ({}))) as { data?: Record<string, unknown> } & Record<string, unknown>;
+		let rawJson: ({ data?: Record<string, unknown> } & Record<string, unknown>) | Record<string, unknown> = {};
+		try {
+			rawJson = (await res.json()) as { data?: Record<string, unknown> } & Record<string, unknown>;
+		} catch (parseErr) {
+			logger.warn("[treatmentPlanMessengerHelper] Failed to parse Telegram followup JSON:", parseErr);
+		}
 		const payload = (rawJson?.data ?? rawJson) as Record<string, unknown>;
 
 		if (!res.ok) {

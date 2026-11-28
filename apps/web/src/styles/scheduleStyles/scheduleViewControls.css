@@ -19,25 +19,31 @@ body:has([data-testid="schedule-mobile-agenda-view"]) #topbar-booking-action-btn
 	display: none !important;
 }
 
-/* Ensure schedule filter chips stay strictly on a single horizontal row without wrapping */
+/* Ensure schedule filter chips wrap cleanly on their own full-width toolbar row without overlapping Island 3 */
 .schedule-filter-chips,
 .schedule-filter-chips.dente-filter-chips,
 .schedule-unified-toolbar .schedule-filter-chips,
 .schedule-unified-toolbar .dente-filter-chips {
 	display: flex !important;
-	flex: 1 1 0% !important;
+	flex: 1 1 100% !important;
+	width: 100% !important;
 	min-width: 0 !important;
-	flex-wrap: nowrap !important;
+	flex-wrap: wrap !important;
 	flex-direction: row !important;
 	align-items: center !important;
-	overflow-x: auto !important;
-	overflow-y: hidden !important;
-	white-space: nowrap !important;
+	overflow: visible !important;
+	white-space: normal !important;
+	gap: 6px !important;
 }
 .schedule-filter-chips > *,
 .schedule-unified-toolbar .schedule-filter-chips > * {
 	flex-shrink: 0 !important;
 	white-space: nowrap !important;
+}
+
+/* Closed <details> shift-preset popovers in chair headers must collapse completely so hidden buttons never hit-test over 08:00 slots */
+.schedule-grid-container details:not([open]) > :not(summary) {
+	display: none !important;
 }
 
 /* Remove outer card border/padding on mobile schedule wrapper (anti-Matryoshka, Apple HIG) */

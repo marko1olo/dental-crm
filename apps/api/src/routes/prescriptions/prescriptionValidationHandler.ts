@@ -1,6 +1,11 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
-import { verifyPrescriptionStatutoryValidity } from "@dental/shared";
+import { z } from "zod";
+import {
+	formatDateKeyInTimeZone,
+	todayDateKeyInTimeZone,
+	verifyPrescriptionStatutoryValidity,
+} from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { withTenantReadCtx } from "../../db/rls.js";
 import {
@@ -10,18 +15,48 @@ import {
 	patients,
 } from "../../db/schema.js";
 import { validatePrescriptionAllergiesAndSafety } from "../../services/clinical/prescriptionValidationService.js";
+import { clinicTimeZone } from "../../services/reports/managerReports/timezone.js";
 import { FORBIDDEN_NARCOTIC_INN_PATTERNS } from "./prescriptionSchemas.js";
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type StatutoryValidationPayload = Parameters<typeof verifyPrescriptionStatutoryValidity>[0] & {
 	patientAllergies?: string[];
 	patientId?: string;
 };
 
-interface VerifyPrescriptionParams {
-	id: string;
-}
+const verifyPrescriptionParamsSchema = z.object({
+	id: z.string().uuid(),
+});
+
+const validatePrescriptionItemSchema = z
+	.object({
+		latinName: z.string().optional(),
+		tradeName: z.string().optional(),
+		category: z.string().optional(),
+	})
+	.passthrough();
+
+const validatePrescriptionBodySchema = z
+	.object({
+		formNumber: z.string().optional(),
+		formType: z.string().optional(),
+		prescriptionDate: z.string().optional(),
+		validityDays: z.union([z.string(), z.number()]).optional(),
+		isChronicSpecialCare: z.boolean().optional(),
+		chronicPeriodicity: z.string().nullable().optional(),
+		items: z.array(z.unknown()).optional(),
+		patientAddress: z.string().nullable().optional(),
+		preferentialDetails: z
+			.object({
+				patientSnils: z.string().optional(),
+				patientOmsPolicy: z.string().optional(),
+			})
+			.passthrough()
+			.nullable()
+			.optional(),
+		patientAllergies: z.array(z.unknown()).optional(),
+		patientId: z.string().optional(),
+	})
+	.passthrough();
 
 /**
  * 2. POST /api/prescriptions/validate
@@ -34,59 +69,48 @@ export async function handleValidatePrescription(
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
 
-	const rawBody = request.body;
-	if (!rawBody || typeof rawBody !== "object") {
+	if (!request.body || typeof request.body !== "object") {
 		return reply.code(400).send({
 			error: "ValidationError",
 			message: "Тело запроса для валидации рецепта обязательно.",
 		});
 	}
 
-	const bodyObj: Record<string, unknown> =
-		typeof rawBody === "object" && rawBody !== null
-			? (rawBody as Record<string, unknown>)
-			: {};
-
-	const itemsList = Array.isArray(bodyObj.items) ? bodyObj.items : [];
+	const parsedBodyResult = validatePrescriptionBodySchema.safeParse(request.body);
+	const bodyData = parsedBodyResult.success ? parsedBodyResult.data : {};
+	const clinicTz = await clinicTimeZone(orgId);
+	const itemsList = (bodyData.items ?? []).map((item) => {
+		const parsedItem = validatePrescriptionItemSchema.safeParse(item);
+		return parsedItem.success ? parsedItem.data : {};
+	});
 	const prescriptionPayload = {
-		formNumber: typeof bodyObj.formNumber === "string" ? bodyObj.formNumber : undefined,
-		formType: typeof bodyObj.formType === "string" ? bodyObj.formType : undefined,
-		prescriptionDate: typeof bodyObj.prescriptionDate === "string" ? bodyObj.prescriptionDate : new Date().toISOString().slice(0, 10),
-		validityDays: typeof bodyObj.validityDays === "string" || typeof bodyObj.validityDays === "number" ? bodyObj.validityDays : "60",
-		isChronicSpecialCare: typeof bodyObj.isChronicSpecialCare === "boolean" ? bodyObj.isChronicSpecialCare : undefined,
-		chronicPeriodicity: typeof bodyObj.chronicPeriodicity === "string" ? bodyObj.chronicPeriodicity : null,
-		items: itemsList.map((item) => {
-			const obj = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
-			return {
-				latinName: typeof obj.latinName === "string" ? obj.latinName : undefined,
-				tradeName: typeof obj.tradeName === "string" ? obj.tradeName : undefined,
-				category: typeof obj.category === "string" ? obj.category : undefined,
-			};
-		}),
-		patientAddress: typeof bodyObj.patientAddress === "string" ? bodyObj.patientAddress : null,
-		preferentialDetails:
-			bodyObj.preferentialDetails && typeof bodyObj.preferentialDetails === "object"
-				? {
-						patientSnils:
-							typeof (bodyObj.preferentialDetails as Record<string, unknown>).patientSnils === "string"
-								? ((bodyObj.preferentialDetails as Record<string, unknown>).patientSnils as string)
-								: undefined,
-						patientOmsPolicy:
-							typeof (bodyObj.preferentialDetails as Record<string, unknown>).patientOmsPolicy === "string"
-								? ((bodyObj.preferentialDetails as Record<string, unknown>).patientOmsPolicy as string)
-								: undefined,
-					}
-				: null,
+		formNumber: bodyData.formNumber,
+		formType: bodyData.formType,
+		prescriptionDate: bodyData.prescriptionDate ?? todayDateKeyInTimeZone(clinicTz),
+		validityDays: bodyData.validityDays ?? "60",
+		isChronicSpecialCare: bodyData.isChronicSpecialCare,
+		chronicPeriodicity: bodyData.chronicPeriodicity ?? null,
+		items: itemsList.map((item) => ({
+			latinName: item.latinName,
+			tradeName: item.tradeName,
+			category: item.category,
+		})),
+		patientAddress: bodyData.patientAddress ?? null,
+		preferentialDetails: bodyData.preferentialDetails
+			? {
+					patientSnils: bodyData.preferentialDetails.patientSnils,
+					patientOmsPolicy: bodyData.preferentialDetails.patientOmsPolicy,
+				}
+			: null,
 	};
 
 	let result = verifyPrescriptionStatutoryValidity(prescriptionPayload);
 	const narcoticErrors: string[] = [];
-	for (const item of itemsList) {
-		const itemObj = item && typeof item === "object" ? (item as Record<string, unknown>) : null;
+	for (const itemObj of itemsList) {
 		const name =
-			typeof itemObj?.latinName === "string"
+			typeof itemObj.latinName === "string"
 				? itemObj.latinName
-				: typeof itemObj?.tradeName === "string"
+				: typeof itemObj.tradeName === "string"
 					? itemObj.tradeName
 					: "";
 		if (name && FORBIDDEN_NARCOTIC_INN_PATTERNS.some((p) => p.test(name))) {
@@ -104,26 +128,25 @@ export async function handleValidatePrescription(
 	}
 
 	const proposedDrugs: string[] = [];
-	for (const item of itemsList) {
-		const itemObj = item && typeof item === "object" ? (item as Record<string, unknown>) : null;
+	for (const itemObj of itemsList) {
 		const name =
-			typeof itemObj?.latinName === "string"
+			typeof itemObj.latinName === "string"
 				? itemObj.latinName
-				: typeof itemObj?.tradeName === "string"
+				: typeof itemObj.tradeName === "string"
 					? itemObj.tradeName
 					: "";
 		if (name) proposedDrugs.push(name);
 	}
 
 	let patientAllergies: string[] = [];
-	const customAllergies = bodyObj.patientAllergies;
+	const customAllergies = bodyData.patientAllergies;
 	if (Array.isArray(customAllergies)) {
 		patientAllergies = customAllergies.filter((a): a is string => typeof a === "string" && a.length > 0);
 	}
-	const maybePatientId = bodyObj.patientId;
+	const maybePatientId = bodyData.patientId;
 	if (typeof maybePatientId === "string" && maybePatientId.trim().length > 0) {
 		const trimmedPatientId = maybePatientId.trim();
-		if (!UUID_PATTERN.test(trimmedPatientId)) {
+		if (!z.string().uuid().safeParse(trimmedPatientId).success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный идентификатор пациента (ожидается формат UUID).",
@@ -183,32 +206,36 @@ export async function handleVerifyPrescription(
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
 
-	const { id } = request.params as VerifyPrescriptionParams;
-	if (!UUID_PATTERN.test(id)) {
+	const parsedParams = verifyPrescriptionParamsSchema.safeParse(request.params ?? {});
+	if (!parsedParams.success) {
 		return reply.code(400).send({
 			error: "ValidationError",
 			message: "Некорректный идентификатор рецепта (ожидается формат UUID).",
 		});
 	}
+	const { id } = parsedParams.data;
 
-	const loaded = await withTenantReadCtx(orgId, async (tx) => {
-		const [prescInner] = await tx
-			.select()
-			.from(electronicPrescriptions)
-			.where(and(eq(electronicPrescriptions.id, id), eq(electronicPrescriptions.organizationId, orgId)))
-			.limit(1);
+	const [clinicTz, loaded] = await Promise.all([
+		clinicTimeZone(orgId),
+		withTenantReadCtx(orgId, async (tx) => {
+			const [prescInner] = await tx
+				.select()
+				.from(electronicPrescriptions)
+				.where(and(eq(electronicPrescriptions.id, id), eq(electronicPrescriptions.organizationId, orgId)))
+				.limit(1);
 
-		if (!prescInner) {
-			return null;
-		}
+			if (!prescInner) {
+				return null;
+			}
 
-		const itemsInner = await tx
-			.select()
-			.from(electronicPrescriptionItems)
-			.where(and(eq(electronicPrescriptionItems.prescriptionId, prescInner.id), eq(electronicPrescriptionItems.organizationId, orgId)));
+			const itemsInner = await tx
+				.select()
+				.from(electronicPrescriptionItems)
+				.where(and(eq(electronicPrescriptionItems.prescriptionId, prescInner.id), eq(electronicPrescriptionItems.organizationId, orgId)));
 
-		return { presc: prescInner, items: itemsInner };
-	});
+			return { presc: prescInner, items: itemsInner };
+		}),
+	]);
 
 	if (!loaded) {
 		return reply.code(404).send({ error: "PrescriptionNotFound", message: "Рецепт не найден." });
@@ -226,7 +253,7 @@ export async function handleVerifyPrescription(
 
 	const validation = verifyPrescriptionStatutoryValidity({
 		formType: presc.formType,
-		prescriptionDate: presc.issuedAt?.toISOString().slice(0, 10) || presc.createdAt.toISOString().slice(0, 10),
+		prescriptionDate: formatDateKeyInTimeZone(presc.issuedAt ?? presc.createdAt, clinicTz),
 		validityDays: validityDaysNum,
 		isChronicSpecialCare: presc.isSpecialChronicIndication,
 		chronicPeriodicity: presc.chronicDispenseFrequencyNotes,

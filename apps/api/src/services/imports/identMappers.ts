@@ -2,7 +2,7 @@
  * Entity mapping functions for IDENT / StomX JSON exports.
  */
 import { IdentJsonParser } from "./identParser.js";
-import { kopecksToRubles } from "@dental/shared";
+import { kopecksToRubles, todayDateKeyInTimeZone } from "@dental/shared";
 import type {
   IdentInvoiceRecord,
   IdentInvoiceServiceItem,

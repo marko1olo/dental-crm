@@ -3,11 +3,21 @@
  * @description Менеджер фоновых таймеров и регламентов (Reactive Wakeup).
  */
 
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
 import type { WorkstationScheduleEntry } from "./desktopTypes.js";
 
 export class WorkstationScheduleManager {
 	private static instance: WorkstationScheduleManager;
-	private schedules = new Map<string, WorkstationScheduleEntry>();
+	private schedules = new BoundedTtlMap<string, WorkstationScheduleEntry>({
+		maxEntries: 1000,
+		ttlMs: 24 * 60 * 60_000,
+		onEvict: (_id, entry) => {
+			if (entry.timerHandle) {
+				clearTimeout(entry.timerHandle);
+				entry.timerHandle = undefined;
+			}
+		},
+	});
 	private counter = 0;
 
 	private constructor() {}
@@ -43,6 +53,7 @@ export class WorkstationScheduleManager {
 			entry.status = "fired";
 			entry.iterationsFired += 1;
 		}, durationSeconds * 1000);
+		entry.timerHandle.unref?.();
 		this.schedules.set(scheduleId, entry);
 		return entry;
 	}

@@ -10,6 +10,7 @@ import type {
 	Visit,
 } from "@dental/shared";
 import type { DomainState } from "../../../types/domainState.js";
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
 import {
 	normalizeDenteTelegramVisualCardUrls,
 	normalizeExistingDenteTelegramVisualCardUrls,
@@ -120,10 +121,13 @@ export const denteTelegramLinkCodes: DenteTelegramLinkCode[] = [];
 export const denteTelegramChatLinks: DenteTelegramChatLink[] = [];
 export const denteTelegramOutboxDeliveryReceipts: DenteTelegramOutboxDeliveryReceipt[] = [];
 export const denteTelegramWebhookEvents: DenteTelegramWebhookEvent[] = [];
-export const denteTelegramOutboxDeliveryReceiptsMap = new Map<
+export const denteTelegramOutboxDeliveryReceiptsMap = new BoundedTtlMap<
 	string,
 	DenteTelegramOutboxDeliveryReceipt
->();
+>({
+	maxEntries: 5000,
+	ttlMs: 24 * 60 * 60_000,
+});
 
 export const inMemoryActiveVisit: Visit = {
 	id: UNCONFIGURED_PLACEHOLDER_ORG_ID,
@@ -191,7 +195,10 @@ export function toValidUuid(val?: string | null): string | null {
 	return uuidRegex.test(trimmed) ? trimmed : null;
 }
 
-const telegramSettingsByOrganizationId = new Map<string, DenteTelegramBotSettings>();
+const telegramSettingsByOrganizationId = new BoundedTtlMap<string, DenteTelegramBotSettings>({
+	maxEntries: 2000,
+	ttlMs: 6 * 60 * 60_000,
+});
 
 export function getDenteTelegramBotSettings(
 	organizationId?: string | null,

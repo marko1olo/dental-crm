@@ -113,7 +113,7 @@ export const LocalVaultStorageIndicator: React.FC<
 								color: "var(--muted, #64748b)",
 							}}
 						>
-							Защищенная квота IndexedDB / SQLite OPFS и аппаратный статус AES-GCM
+							Защищённое локальное хранилище карты и аппаратный статус шифрования
 						</p>
 					</div>
 				</div>

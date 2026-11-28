@@ -116,8 +116,9 @@ export async function submitBookingRequest(params: BookingSubmissionParams): Pro
 		if (response?.status === 409) {
 			throw new Error("Выбранное время только что заняли. Пожалуйста, выберите другое время в расписании.");
 		}
-		const errData = response ? await response.json().catch(() => ({})) : null;
-		throw new Error(errData?.message || errData?.error || `Не удалось завершить запись. Позвоните: ${selectedBranch.phone}`);
+		const errData = response ? await parseJsonWithLog(response, "submitBookingRequest:error") : null;
+		const errObj = (errData && typeof errData === "object" ? errData : null) as { message?: string; error?: string } | null;
+		throw new Error(errObj?.message || errObj?.error || `Не удалось завершить запись. Позвоните: ${selectedBranch.phone}`);
 	}
 
 	const rawResponse = await parseJsonWithLog(response, "submitBookingRequest");
@@ -247,8 +248,9 @@ export async function submitWaitlistRequest(params: WaitlistSubmissionParams): P
 	}
 
 	if (!response || !response.ok) {
-		const errData = response ? await response.json().catch(() => ({})) : null;
-		throw new Error(errData?.message || errData?.error || `Не удалось отправить заявку в лист ожидания. Позвоните: ${selectedBranch.phone}`);
+		const errData = response ? await parseJsonWithLog(response, "submitWaitlistRequest:error") : null;
+		const errObj = (errData && typeof errData === "object" ? errData : null) as { message?: string; error?: string } | null;
+		throw new Error(errObj?.message || errObj?.error || `Не удалось отправить заявку в лист ожидания. Позвоните: ${selectedBranch.phone}`);
 	}
 
 	const rawResponse = await parseJsonWithLog(response, "submitBookingRequest");

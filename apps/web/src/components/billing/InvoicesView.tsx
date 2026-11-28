@@ -22,6 +22,19 @@ import { clientLogger } from "../../services/logging/clientLogger.js";
 export { INVOICES_STORAGE_KEY, loadStoredInvoices, saveStoredInvoices };
 export type { InvoiceLineItem, BillingInvoice, InvoicesViewProps, InvoiceFilterTab };
 
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+async function parseInvoiceJsonLogged(res: Response, context: string): Promise<unknown> {
+	try {
+		return await res.json();
+	} catch (err) {
+		clientLogger.warn(`[InvoicesView] Не удалось разобрать JSON (${context})`, err, { module: "Billing" });
+		return null;
+	}
+}
+
 export const INVOICE_STATUS_CLASSES = {
 	paid: "bg-[var(--ok-bg,rgba(74,222,128,0.15))] text-[var(--success,#15803d)] border-[var(--success,#22c55e)]/30",
 	warranty: "bg-[var(--primary-soft,#ccfbf1)] text-[var(--teal-dark,#0f766e)] border-[var(--teal,#0d9488)]/30",
@@ -90,21 +103,39 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 			});
 
 			if (!res.ok) {
-				const errPayload = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
-				const errMsg = errPayload?.message || errPayload?.error || `Ошибка сервера при создании счёта (${res.status})`;
+				const errPayload = await parseInvoiceJsonLogged(res, "createInvoice:error");
+				const errSource = isPlainRecord(errPayload) && isPlainRecord(errPayload.data)
+					? errPayload.data
+					: isPlainRecord(errPayload)
+						? errPayload
+						: null;
+				const errMsg =
+					(typeof errSource?.message === "string" && errSource.message) ||
+					(typeof errSource?.error === "string" && errSource.error) ||
+					`Ошибка сервера при создании счёта (${res.status})`;
 				clientLogger.error("[InvoicesView] Не удалось создать счёт через API", { status: res.status, errMsg }, { module: "Billing" });
 				showToast(errMsg, "error");
 				return;
 			}
 
-			const payload = (await res.json().catch(() => null)) as {
-				invoice?: { id?: string; number?: string; invoiceNumber?: string };
-				data?: { id?: string; number?: string; invoiceNumber?: string; invoice?: { id?: string; number?: string; invoiceNumber?: string } };
-			} | null;
-			const unwrapped = payload?.data ?? payload;
-			const created = payload?.invoice || unwrapped?.invoice || payload?.data;
-			generatedId = created?.id || (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : "");
-			generatedNumber = created?.number || created?.invoiceNumber || invoiceNumber;
+			const payload = await parseInvoiceJsonLogged(res, "createInvoice:success");
+			const payloadRec = isPlainRecord(payload) ? payload : null;
+			const unwrapped = payloadRec && isPlainRecord(payloadRec.data) ? payloadRec.data : payloadRec;
+			const created =
+				(payloadRec && isPlainRecord(payloadRec.invoice) ? payloadRec.invoice : null) ||
+				(unwrapped && isPlainRecord(unwrapped.invoice) ? unwrapped.invoice : null) ||
+				unwrapped;
+			const createdId = created && typeof created.id === "string" ? created.id.trim() : "";
+			if (!createdId) {
+				clientLogger.error("[InvoicesView] Сервер вернул некорректный ответ без ID созданного счёта", { payload }, { module: "Billing" });
+				showToast("Сервер вернул некорректный ответ при создании счёта. Повторите попытку.", "error");
+				return;
+			}
+			generatedId = createdId;
+			generatedNumber =
+				(typeof created?.number === "string" && created.number.trim()) ||
+				(typeof created?.invoiceNumber === "string" && created.invoiceNumber.trim()) ||
+				invoiceNumber;
 		} catch (syncErr: unknown) {
 			clientLogger.error("[InvoicesView] Сетевой сбой при создании счёта", syncErr, { module: "Billing" });
 			showToast("Не удалось связаться с сервером для создания счёта. Проверьте соединение с сетью.", "error");

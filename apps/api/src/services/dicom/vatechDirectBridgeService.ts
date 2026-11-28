@@ -16,8 +16,10 @@
 import { watch, type FSWatcher } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { resolveValidIanaTimeZone, todayDateKeyInTimeZone } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
+import { clinicTimeZone } from "../reports/managerReports/timezone.js";
 import {
 	type IngestDicomResult,
 	dicomStudyIngestService,
@@ -25,7 +27,7 @@ import {
 import { resolveOrAutoCreatePatientForDicom } from "./dicomPatientAutoBinder.js";
 import { getPacsTenantStorageDir, toNormalizedRelativePacsStoragePath } from "../imaging/localPacsSanitizer.js";
 import { wsBroker } from "../websocketBroker.js";
-import { BoundedStringSet } from "../../lib/boundedTtlMap.js";
+import { BoundedStringSet, BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { dicomIngestLogger } from "./ingest/dicomIngestLogger.js";
 
 export interface VatechTagMetadata {
@@ -161,7 +163,13 @@ export class VatechDirectBridgeService {
 
 	// Ограниченный кэш дедупликации уже обработанных файлов
 	private processedFiles = new BoundedStringSet(MAX_VATECH_PROCESSED_FILES);
-	private pendingFileChecks = new Map<string, NodeJS.Timeout>();
+	private pendingFileChecks = new BoundedTtlMap<string, NodeJS.Timeout>({
+		maxEntries: 2000,
+		ttlMs: 10 * 60_000,
+		onEvict: (_path, timer) => {
+			clearTimeout(timer);
+		},
+	});
 
 	// Статистика
 	private totalFilesDetected = 0;
@@ -429,8 +437,13 @@ export class VatechDirectBridgeService {
 			}
 		}
 
+		const resolvedClinicTz = resolveValidIanaTimeZone(await clinicTimeZone(orgId));
 		const tenantDir = getPacsTenantStorageDir(orgId);
-		const subFolder = path.join(tenantDir, "vatech_scans", new Date().toISOString().slice(0, 10));
+		const subFolder = path.join(
+			tenantDir,
+			"vatech_scans",
+			todayDateKeyInTimeZone(resolvedClinicTz),
+		);
 		await fs.mkdir(subFolder, { recursive: true });
 
 		const targetFile = path.join(subFolder, path.basename(filePath));

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { generateUuidV7 } from "@dental/shared";
+import { clientLogger } from "../../../../../services/logging/clientLogger";
 import {
 	generateSbpQrPayload,
 	type PatientInvoiceItem,
@@ -76,10 +77,21 @@ export function useCabinetSbpState(
 				}),
 			});
 
-			const json = (await res.json().catch(() => null)) as {
+			let json: {
 				sbpPayload?: SbpQrPayload;
 				message?: string;
-			} | null;
+			} | null = null;
+			try {
+				json = (await res.json()) as {
+					sbpPayload?: SbpQrPayload;
+					message?: string;
+				} | null;
+			} catch (parseErr) {
+				clientLogger.warn("[useCabinetSbpState] create-sbp-qr JSON parse failed", {
+					status: res.status,
+					error: String(parseErr),
+				});
+			}
 
 			if (res.ok && json?.sbpPayload) {
 				setActiveSbpPayload(json.sbpPayload);
@@ -87,7 +99,8 @@ export function useCabinetSbpState(
 				return;
 			}
 			tryLocalFallback(json?.message);
-		} catch {
+		} catch (err) {
+			clientLogger.warn("[useCabinetSbpState] create-sbp-qr request failed", { error: String(err) });
 			tryLocalFallback();
 		}
 	}, [clinicInfo]);
@@ -108,7 +121,7 @@ export function useCabinetSbpState(
 
 			const res = await fetch(queryUrl, { headers });
 			if (res.ok) {
-				const statusData = (await res.json().catch(() => null)) as {
+				let statusData: {
 					isPaid?: boolean;
 					paid?: boolean;
 					status?: string;
@@ -116,7 +129,22 @@ export function useCabinetSbpState(
 					fiscalReceiptNumber?: string | null;
 					paidAtIso?: string | null;
 					paidAt?: string | null;
-				} | null;
+				} | null = null;
+				try {
+					statusData = (await res.json()) as {
+						isPaid?: boolean;
+						paid?: boolean;
+						status?: string;
+						fiscalReceiptId?: string | null;
+						fiscalReceiptNumber?: string | null;
+						paidAtIso?: string | null;
+						paidAt?: string | null;
+					} | null;
+				} catch (parseErr) {
+					clientLogger.warn("[useCabinetSbpState] payment status JSON parse failed", {
+						error: String(parseErr),
+					});
+				}
 
 				if (statusData && (statusData.isPaid || statusData.paid || statusData.status === "paid")) {
 					const updatedInvoice: PatientInvoiceItem = {

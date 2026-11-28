@@ -128,11 +128,16 @@ export function useVisitSaveExecutor(params: UseVisitSaveExecutorParams) {
 				});
 
 				if (response.status === 409) {
-					const conflictJson = (await response.json().catch(() => null)) as {
+					let conflictJson: {
 						conflict?: boolean;
 						serverDraft?: VisitDraftAutosave;
 						message?: string;
-					} | null;
+					} | null = null;
+					try {
+						conflictJson = (await response.json()) as typeof conflictJson;
+					} catch (parseErr) {
+						logger.warn("[useVisitSaveExecutor] Failed to parse 409 conflict JSON:", parseErr);
+					}
 
 					if (conflictJson?.serverDraft?.draft && draftPayload) {
 						const serverDraft = conflictJson.serverDraft.draft;

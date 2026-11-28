@@ -35,7 +35,7 @@ export const PatientHealthIndexCard: React.FC<PatientHealthIndexCardProps> = mem
 					<ShieldCheck size={20} style={{ color: accentColor, flexShrink: 0 }} />
 					<div>
 						<strong style={{ fontSize: "15px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
-							Интерактивный индекс здоровья зубов
+							Состояние полости рта
 						</strong>
 						<div style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
 							{healthIndex.statusLabelRu} &bull; Клиническая формула FDI (32 зуба)

@@ -303,13 +303,19 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 		})
 			.then(async (res) => {
 				if (!res.ok) return;
-				const rawJson = (await res.json().catch((parseErr: unknown) => {
-					logger.warn("[OdontogramStampPalette] Failed to parse tooth defects JSON:", parseErr);
-					return null;
-				})) as {
+				let rawJson: {
 					defects?: unknown;
 					data?: { defects?: unknown };
-				} | null;
+				} | null = null;
+				try {
+					rawJson = (await res.json()) as {
+						defects?: unknown;
+						data?: { defects?: unknown };
+					} | null;
+				} catch (parseErr) {
+					logger.warn("[OdontogramStampPalette] Failed to parse tooth defects JSON:", parseErr);
+					return;
+				}
 				if (!rawJson || typeof rawJson !== "object") return;
 				const payload = rawJson.data ?? rawJson;
 				if (!Array.isArray(payload?.defects) || payload.defects.length === 0) return;

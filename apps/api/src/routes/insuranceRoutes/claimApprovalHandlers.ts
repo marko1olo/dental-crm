@@ -1,7 +1,10 @@
 import {
 	calculateDmsGuaranteeSplit,
 	kopecksToRubles,
+	resolveValidIanaTimeZone,
 	rublesToKopecks,
+	shiftCalendarDay,
+	todayDateKeyInTimeZone,
 	type DmsGuaranteeLetter,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
@@ -13,6 +16,7 @@ import {
 import { defineStreamRoute } from "../../core/routeFactories.js";
 import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { dmsGuaranteeLetters, insuranceContracts, patients } from "../../db/schema.js";
+import { clinicTimeZone } from "../../services/reports/managerReports/timezone.js";
 import { INSURER_NAMES } from "./constants.js";
 import { resolveDbKopecks } from "./guaranteeLetterModules/guaranteeLetterFormatters.js";
 import {
@@ -47,7 +51,8 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 
 			const { letterId, contractId, visitDate, items } = parsed.data;
 
-			const { letter, contract } = await withTenantReadCtx(orgId, async (tx) => {
+			const { letter, contract, clinicTz } = await withTenantReadCtx(orgId, async (tx) => {
+			const resolvedClinicTz = resolveValidIanaTimeZone(await clinicTimeZone(orgId, tx));
 			let resolvedLetter: DmsGuaranteeLetter | null = null;
 			if (letterId) {
 				const [foundLetter] = await tx
@@ -137,11 +142,11 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 				}
 			}
 
-			return { letter: resolvedLetter, contract: resolvedContract };
+			return { letter: resolvedLetter, contract: resolvedContract, clinicTz: resolvedClinicTz };
 		});
 
 		const splitResult = calculateDmsGuaranteeSplit(letter, items, {
-			visitDate: visitDate || new Date().toISOString().slice(0, 10),
+			visitDate: visitDate || todayDateKeyInTimeZone(clinicTz),
 			contract,
 			isEmergency: parsed.data.isEmergency,
 			hasAcutePain: parsed.data.hasAcutePain,
@@ -361,10 +366,11 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 				return reply.code(200).send(txResult.data);
 			} else {
 				// Create a draft pre-auth letter in pending_approval in ACID transaction
-				const todayIso = new Date().toISOString().slice(0, 10);
-				const nextMonthIso = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
-
 				const txResult = await withTenantWriteCtx(orgId, async (tx) => {
+					const clinicTz = resolveValidIanaTimeZone(await clinicTimeZone(orgId, tx));
+					const todayIso = todayDateKeyInTimeZone(clinicTz);
+					const nextMonthIso = shiftCalendarDay(todayIso, 30);
+
 					// Mandate 8z/8bd: BOLA/IDOR protection - verify patient belongs to current clinic organization
 					const [patientRecord] = await tx
 						.select({

@@ -5,13 +5,19 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
-import { computePackagingExpirationDate, type SterilizationPackagingType } from "@dental/shared";
+import {
+	computePackagingExpirationDate,
+	resolveValidIanaTimeZone,
+	todayDateKeyInTimeZone,
+	type SterilizationPackagingType,
+} from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { withTenantWriteCtx } from "../../../../db/rls.js";
 import { sterilizationLogs, users } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
+import { clinicTimeZone } from "../../../../services/reports/managerReports/timezone.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { scanSchema } from "../sterilizationSchemas.js";
 import { executeSterilizationConsumablesDeduction } from "./sterilizationConsumablesDeduction.js";
@@ -31,7 +37,7 @@ export async function handleScanSterilization(req: FastifyRequest, reply: Fastif
 	const data = scanParsed.data;
 
 	const now = new Date();
-	const effectiveBarcode = data.barcode?.trim() || `BATCH-SHIFT-${now.toISOString().slice(0, 10).replace(/-/g, "")}-${data.cycleNumber || 1}`;
+	const explicitBarcode = data.barcode?.trim() || "";
 	const effectiveAutoclaveId = data.autoclaveId?.trim() || "АК-01";
 	const expiresAt = data.status === "passed"
 		? computePackagingExpirationDate(data.packagingType as SterilizationPackagingType, now)
@@ -40,6 +46,10 @@ export async function handleScanSterilization(req: FastifyRequest, reply: Fastif
 	const passedIndicator = data.status === "passed";
 
 	const log = await withTenantWriteCtx(organizationId, async (tx) => {
+		const tz = resolveValidIanaTimeZone(await clinicTimeZone(organizationId, tx));
+		const effectiveBarcode =
+			explicitBarcode ||
+			`BATCH-SHIFT-${todayDateKeyInTimeZone(tz, now).replace(/-/g, "")}-${data.cycleNumber || 1}`;
 		let verifiedOperatorId: string | null = null;
 		if (data.operatorId) {
 			const [operator] = await tx

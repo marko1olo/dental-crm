@@ -47,28 +47,30 @@ export function calculateTaxDeductionBreakdown(
 	items: readonly (Order804nFiscalReceiptItem | TreatmentPlanItem)[],
 	alreadyClaimedYearRub = 0,
 ): TaxDeductionReceiptBreakdown {
-	let code01Kopecks = 0 as Kopecks;
-	let code02Kopecks = 0 as Kopecks;
+	let code01Kopecks = 0;
+	let code02Kopecks = 0;
 	let code01Count = 0;
 	let code02Count = 0;
 
 	for (const item of items) {
 		const isRetail = isRetailCommodityItem({
-			name: (item as { name?: string }).name,
-			category: (item as { category?: string }).category,
-			paymentSubject: (item as { paymentSubject?: Ffd12PaymentSubject }).paymentSubject,
-			vatRate: (item as { vatRate?: Ffd12VatRate }).vatRate,
-			isRetail: (item as { isRetail?: boolean }).isRetail,
+			name: item.name,
+			category: item.category,
+			paymentSubject: item.paymentSubject,
+			vatRate: item.vatRate,
+			isRetail: item.isRetail,
 		});
 		if (isRetail) {
 			// Розничные товары стойки ресепшена и сертификаты исключаются из социального вычета на лечение (ст. 219 НК РФ)
 			continue;
 		}
 
-		const code804n = (item as { code804n?: string }).code804n || "";
-		const serviceName = (item as { name?: string }).name || "";
+		const code804n = item.code804n || "";
+		const serviceName = item.name || "";
 		const cat =
-			(item as { taxDeductionCategory?: "1" | "2" }).taxDeductionCategory ||
+			("taxDeductionCategory" in item && (item.taxDeductionCategory === "1" || item.taxDeductionCategory === "2")
+				? item.taxDeductionCategory
+				: undefined) ||
 			resolveTaxDeductionCategory(code804n, serviceName);
 
 		let itemKopecks: Kopecks;
@@ -84,17 +86,17 @@ export function calculateTaxDeductionBreakdown(
 		}
 
 		if (cat === "2") {
-			code02Kopecks = (code02Kopecks + itemKopecks) as Kopecks;
+			code02Kopecks = code02Kopecks + itemKopecks;
 			code02Count += 1;
 		} else {
-			code01Kopecks = (code01Kopecks + itemKopecks) as Kopecks;
+			code01Kopecks = code01Kopecks + itemKopecks;
 			code01Count += 1;
 		}
 	}
 
 	const code01Rub = kopecksToRubles(code01Kopecks);
 	const code02Rub = kopecksToRubles(code02Kopecks);
-	const totalKopecks = (code01Kopecks + code02Kopecks) as Kopecks;
+	const totalKopecks = code01Kopecks + code02Kopecks;
 	const totalRub = kopecksToRubles(totalKopecks);
 
 	// Лимит 150 000 ₽ применяется строго к обычному лечению (Код 01)
@@ -265,33 +267,33 @@ export function calculateSplitPaymentAllocation(
 
 	return {
 		cashRub: res.cashRub,
-		cashKopecks: res.cashKopecks as Kopecks,
+		cashKopecks: res.cashKopecks,
 		receivedCashRub: res.receivedCashRub,
-		receivedCashKopecks: res.receivedCashKopecks as Kopecks,
+		receivedCashKopecks: res.receivedCashKopecks,
 		changeRub: res.changeRub,
-		changeKopecks: res.changeKopecks as Kopecks,
+		changeKopecks: res.changeKopecks,
 		isCashShortage: res.isCashShortage,
 		cashShortageRub: res.cashShortageRub,
 		cardRub: res.cardRub,
-		cardKopecks: res.cardKopecks as Kopecks,
+		cardKopecks: res.cardKopecks,
 		sbpRub: res.sbpRub,
-		sbpKopecks: res.sbpKopecks as Kopecks,
+		sbpKopecks: res.sbpKopecks,
 		depositRub: res.depositRub,
-		depositKopecks: res.depositKopecks as Kopecks,
+		depositKopecks: res.depositKopecks,
 		advanceOffsetRub: res.advanceOffsetRub,
-		advanceOffsetKopecks: res.advanceOffsetKopecks as Kopecks,
+		advanceOffsetKopecks: res.advanceOffsetKopecks,
 		familyWalletRub: res.familyWalletRub,
-		familyWalletKopecks: res.familyWalletKopecks as Kopecks,
+		familyWalletKopecks: res.familyWalletKopecks,
 		certificateRub: res.certificateRub,
-		certificateKopecks: res.certificateKopecks as Kopecks,
+		certificateKopecks: res.certificateKopecks,
 		insuranceRub: res.insuranceRub,
-		insuranceKopecks: res.insuranceKopecks as Kopecks,
+		insuranceKopecks: res.insuranceKopecks,
 		patientCoPayRub: res.patientCoPayRub,
-		patientCoPayKopecks: res.patientCoPayKopecks as Kopecks,
+		patientCoPayKopecks: res.patientCoPayKopecks,
 		totalRub: res.totalRub,
-		totalKopecks: res.totalKopecks as Kopecks,
-		allocatedKopecks: res.allocatedKopecks as Kopecks,
-		remainingKopecks: res.remainingKopecks as Kopecks,
+		totalKopecks: res.totalKopecks,
+		allocatedKopecks: res.allocatedKopecks,
+		remainingKopecks: res.remainingKopecks,
 		isFullyAllocated: res.isFullyAllocated,
 		isOverallocated: res.isOverallocated,
 	};

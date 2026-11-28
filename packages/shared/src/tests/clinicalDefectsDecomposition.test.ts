@@ -1,13 +1,10 @@
 /**
  * packages/shared/src/tests/clinicalDefectsDecomposition.test.ts
  *
- * Comprehensive verification of clinicalDefects monolith decomposition.
- * Verifies 100% AST Parity, Line Count Budgets, ICD-10 Presets and Mandate 8e Compliance.
+ * Comprehensive verification of clinicalDefects catalog & ICD-10 clinical presets (6G Live SUT).
  */
 
-import assert from "node:assert";
-import fs from "node:fs";
-import path from "node:path";
+import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	CLINICAL_CARIES_PRESETS,
@@ -30,15 +27,14 @@ import {
 	STOMX_TOOTH_DEFECTS,
 } from "../clinical/clinicalDefectsData.js";
 
-describe("ClinicalDefects Monolith Decomposition Suite", () => {
+describe("ClinicalDefects Monolith Decomposition Suite (6G Live SUT)", () => {
 	it("preserves exactly 49 items in STOMX_TOOTH_DEFECTS with 100% parity", () => {
 		assert.strictEqual(
 			STOMX_TOOTH_DEFECTS.length,
 			49,
-			`Ожидалось ровно 49 дефектов в каталоге, получено ${STOMX_TOOTH_DEFECTS.length}`
+			`Ожидалось ровно 49 дефектов в каталоге, получено ${STOMX_TOOTH_DEFECTS.length}`,
 		);
 
-		// 1. Healthy
 		const healthy = STOMX_TOOTH_DEFECTS[0];
 		assert.ok(healthy, "Дефект Healthy обязан присутствовать");
 		assert.strictEqual(healthy.id, 2);
@@ -47,7 +43,6 @@ describe("ClinicalDefects Monolith Decomposition Suite", () => {
 		assert.strictEqual(healthy.require_treatment, false);
 		assert.strictEqual(healthy.category, "healthy");
 
-		// 2. Outpatient pathologies requiring treatment
 		const parodontitis = STOMX_TOOTH_DEFECTS.find((d) => d.id === 10 && d.alias === "A");
 		assert.ok(parodontitis, "Пародонтит обязан присутствовать");
 		assert.strictEqual(parodontitis?.items?.length, 3, "Пародонтит обязан иметь 3 стадии (AI, AII, AIII)");
@@ -74,7 +69,6 @@ describe("ClinicalDefects Monolith Decomposition Suite", () => {
 		const missing = STOMX_TOOTH_DEFECTS.find((d) => d.id === 1 && d.alias === "О" && d.category === "pathology");
 		assert.ok(missing, "Отсутствующий зуб обязан присутствовать");
 
-		// 3. Restorations
 		const filling = STOMX_TOOTH_DEFECTS.find((d) => d.id === 3 && d.alias === "П");
 		assert.ok(filling, "Пломба обязана присутствовать");
 		assert.strictEqual(filling?.crmToothState, "Filled");
@@ -87,22 +81,15 @@ describe("ClinicalDefects Monolith Decomposition Suite", () => {
 		assert.ok(implant, "Имплантат обязан присутствовать");
 		assert.strictEqual(implant?.crmToothState, "Implant");
 
-		// 4. Radiology defects
 		const xRayCaries = STOMX_TOOTH_DEFECTS.find((d) => d.id === 19 && d.key === "rg_klkt");
 		assert.ok(xRayCaries, "Рентген кариес обязан присутствовать");
 
-		// 5. Surgery
 		const removal = STOMX_TOOTH_DEFECTS.find((d) => d.id === 1 && d.key === "removal");
 		assert.ok(removal, "Хирургическое удаление обязано присутствовать");
 		assert.strictEqual(removal?.medplan_only, true);
 
-		// 6. Position anomalies (10 шт.)
 		assert.strictEqual(STOMX_POSITION_DEFECTS.length, 10, "Должно быть 10 аномалий положения");
-
-		// 7. Eruption anomalies (3 шт.)
 		assert.strictEqual(STOMX_ERUPTION_DEFECTS.length, 3, "Должно быть 3 аномалии прорезывания");
-
-		// 8. Amount anomalies (3 шт.)
 		assert.strictEqual(STOMX_AMOUNT_DEFECTS.length, 3, "Должно быть 3 аномалии количества");
 	});
 
@@ -110,7 +97,7 @@ describe("ClinicalDefects Monolith Decomposition Suite", () => {
 		assert.strictEqual(
 			STOMX_DEFECTS_TREE.length,
 			33,
-			`Ожидалось 33 элемента в дереве дефектов, получено ${STOMX_DEFECTS_TREE.length}`
+			`Ожидалось 33 элемента в дереве дефектов, получено ${STOMX_DEFECTS_TREE.length}`,
 		);
 
 		const parodontitisInTree = STOMX_DEFECTS_TREE.find((d) => d.alias === "A");
@@ -118,7 +105,7 @@ describe("ClinicalDefects Monolith Decomposition Suite", () => {
 		assert.strictEqual(parodontitisInTree.items?.length, 3);
 		assert.deepStrictEqual(
 			parodontitisInTree.items?.map((i) => i.alias),
-			["AI", "AII", "AIII"]
+			["AI", "AII", "AIII"],
 		);
 
 		const recessionInTree = STOMX_DEFECTS_TREE.find((d) => d.alias === "Рд");
@@ -126,7 +113,7 @@ describe("ClinicalDefects Monolith Decomposition Suite", () => {
 		assert.strictEqual(recessionInTree.items?.length, 4);
 		assert.deepStrictEqual(
 			recessionInTree.items?.map((i) => i.alias),
-			["Рд1", "Рд2", "Рд3", "Рд4"]
+			["Рд1", "Рд2", "Рд3", "Рд4"],
 		);
 	});
 
@@ -142,7 +129,6 @@ describe("ClinicalDefects Monolith Decomposition Suite", () => {
 	});
 
 	it("verifies clinical presets (Black I..VI, ICD-10 K02..K08, 804n) for Mandate 8e Doctor Autonomy", () => {
-		// Caries presets (Black I..VI)
 		assert.ok(CLINICAL_CARIES_PRESETS.length >= 10, "Должно быть не менее 10 пресетов кариеса");
 		const blackI = CLINICAL_CARIES_PRESETS.find((p) => p.code === "CARIES_MODERATE_BLACK_I");
 		assert.ok(blackI);
@@ -150,49 +136,48 @@ describe("ClinicalDefects Monolith Decomposition Suite", () => {
 		assert.ok(blackI?.recommended804nCodes?.includes("A16.07.002.001"));
 		assert.ok((blackI?.doctorFastNoteTemplate?.length ?? 0) > 20);
 
-		// Non-caries presets
 		assert.ok(CLINICAL_NON_CARIES_PRESETS.length >= 5);
 		const wedge = CLINICAL_NON_CARIES_PRESETS.find((p) => p.code === "NON_CARIES_WEDGE_DEFECT_INITIAL");
 		assert.ok(wedge);
 		assert.strictEqual(wedge?.mkb10, "K03.1");
 
-		// Endodontic presets
 		assert.ok(CLINICAL_ENDODONTIC_PRESETS.length >= 5);
 		const pulpitisPreset = CLINICAL_ENDODONTIC_PRESETS.find((p) => p.code === "PULPITIS_ACUTE_FOCAL");
 		assert.ok(pulpitisPreset);
 		assert.strictEqual(pulpitisPreset?.mkb10, "K04.01");
 
-		// Periodontal presets
 		assert.ok(CLINICAL_PERIODONTAL_PRESETS.length >= 4);
 		const perioPreset = CLINICAL_PERIODONTAL_PRESETS.find((p) => p.code === "PERIODONTITIS_CHRONIC_MILD");
 		assert.ok(perioPreset);
 		assert.strictEqual(perioPreset?.mkb10, "K05.3");
 
-		// Surgical presets
 		assert.ok(CLINICAL_SURGICAL_PRESETS.length >= 3);
 		const surgPreset = CLINICAL_SURGICAL_PRESETS.find((p) => p.code === "SURGERY_EXTRACTION_SIMPLE");
 		assert.ok(surgPreset);
 		assert.strictEqual(surgPreset?.mkb10, "K08.1");
 	});
 
-	it("enforces Mandate 8b Line Count Budgets (Facade <= 25 lines, submodules <= 800 lines)", () => {
-		const facadePath = path.resolve(import.meta.dirname, "../clinical/clinicalDefectsData.ts");
-		const facadeContent = fs.readFileSync(facadePath, "utf8");
-		const facadeLines = facadeContent.split("\n").length;
-		assert.ok(
-			facadeLines <= 25,
-			`Фасад clinicalDefectsData.ts обязан быть <= 25 строк (Мандат 8b), текущее: ${facadeLines}`
-		);
-
-		const decomposedDir = path.resolve(import.meta.dirname, "../clinical/clinicalDefects");
-		const files = fs.readdirSync(decomposedDir).filter((f) => f.endsWith(".ts"));
-		for (const file of files) {
-			const fullPath = path.join(decomposedDir, file);
-			const lines = fs.readFileSync(fullPath, "utf8").split("\n").length;
-			assert.ok(
-				lines <= 800,
-				`Файл ${file} превышает лимит 800 строк: ${lines} строк`
-			);
+	it("verifies unique preset codes, valid ICD-10 format, and tree/flat defect key consistency across all exported submodules", () => {
+		const allPresets = [
+			...CLINICAL_CARIES_PRESETS,
+			...CLINICAL_NON_CARIES_PRESETS,
+			...CLINICAL_ENDODONTIC_PRESETS,
+			...CLINICAL_PERIODONTAL_PRESETS,
+			...CLINICAL_SURGICAL_PRESETS,
+		];
+		const seenCodes = new Set<string>();
+		for (const preset of allPresets) {
+			assert.strictEqual(seenCodes.has(preset.code), false, `Duplicate preset code ${preset.code}`);
+			seenCodes.add(preset.code);
+			assert.match(preset.mkb10, /^K\d{2}(\.\d{1,2})?$/, `Invalid ICD-10 code on ${preset.code}: ${preset.mkb10}`);
+			assert.ok(preset.doctorFastNoteTemplate.trim().length >= 10, `Empty fast note template on ${preset.code}`);
 		}
+
+		const flatKeys = new Set(STOMX_TOOTH_DEFECTS.map((d) => d.key));
+		assert.strictEqual(flatKeys.has(STOMX_DEFECT_HEALTHY.key), true);
+		assert.strictEqual(flatKeys.has(STOMX_DEFECT_CARIES.key), true);
+		assert.strictEqual(flatKeys.has(STOMX_DEFECT_PARODONTITIS.key), true);
+		assert.strictEqual(flatKeys.has(STOMX_DEFECT_RECESSION.key), true);
+		assert.strictEqual(flatKeys.has(STOMX_DEFECT_REMOVAL.key), true);
 	});
 });

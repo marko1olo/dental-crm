@@ -36,12 +36,17 @@ export function useCabinetDataHydration(initialData?: PatientPersonalCabinetData
 		setIsFetchingMe(true);
 		const fetchMe = async () => {
 			try {
-				const [res, consentsRes] = await Promise.all([
-					fetch("/api/portal/me", { headers: { Authorization: `Bearer ${token}` } }),
-					fetch("/api/portal/consents", { headers: { Authorization: `Bearer ${token}` } }).catch((err) => {
+				const consentsPromise = (async () => {
+					try {
+						return await fetch("/api/portal/consents", { headers: { Authorization: `Bearer ${token}` } });
+					} catch (err) {
 						clientLogger.warn("[PatientCabinetModal] Failed to fetch /api/portal/consents:", err);
 						return null;
-					}),
+					}
+				})();
+				const [res, consentsRes] = await Promise.all([
+					fetch("/api/portal/me", { headers: { Authorization: `Bearer ${token}` } }),
+					consentsPromise,
 				]);
 				if (!res.ok) {
 					clientLogger.warn("[PatientCabinetModal] /api/portal/me returned non-OK status:", res.status);

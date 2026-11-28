@@ -36,7 +36,7 @@ export const LanCitoEmergencyBanner: React.FC<LanCitoEmergencyBannerProps> = ({
 		<aside
 			role="alert"
 			aria-live="assertive"
-			className="lan-cito-emergency-container flex flex-col gap-2 w-full px-4 py-2 bg-[var(--danger-soft)] border-b-2 border-[var(--danger)] shadow-sm z-[999]"
+			className="lan-cito-emergency-container flex flex-col gap-2 w-full px-4 py-2 bg-[var(--danger-soft)] border-b-2 border-[var(--danger)] shadow-sm z-[100]"
 		>
 			{alerts.map((alert) => {
 				const urgencyLabel = URGENCY_LABELS[alert.urgency || "normal"] || "Вызов";

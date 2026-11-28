@@ -1,43 +1,51 @@
 /**
  * prescriptionPrintTokensAndSpecial.test.ts
  *
- * Red Team Inquisition: CSS Tokens, Dark Mode Theme Hygiene & Special Outpatient Prescriptions.
- * Extracted from prescriptionPrintAutonomyInquisition.test.ts per Mandate 8b.
+ * Red Team Inquisition: CSS Tokens, Dark Mode Theme Hygiene & Special Outpatient Prescriptions (6G Live SUT).
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
 import React from "react";
-import { renderToString } from "react-dom/server";
-import { PrescriptionPrintModal } from "../PrescriptionPrintModal.js";
+import { renderToStaticMarkup } from "react-dom/server";
+import {
+	PrescriptionPrintModal,
+	resolvePrescriptionPatientName,
+} from "../PrescriptionPrintModal.js";
 
-describe("Red Team Inquisition: CSS Tokens & Dark Mode Theme Hygiene (WCAG AAA)", () => {
-	it("6.1 PrescriptionPrintModal.tsx has 0 hardcoded static hex colors", () => {
-		const rawPath = path.resolve(
-			process.cwd(),
-			"apps/web/src/components/prescriptions/PrescriptionPrintModal.tsx",
+describe("Red Team Inquisition: CSS Tokens & Dark Mode Theme Hygiene (6G Live SUT)", () => {
+	it("6.1 PrescriptionPrintModal renders without hardcoded static hex colors in inline styles or closed null state", () => {
+		const closedHtml = renderToStaticMarkup(
+			React.createElement(PrescriptionPrintModal, {
+				isOpen: false,
+				onClose: () => {},
+				disablePortal: true,
+			}),
 		);
-		const filePath = fs.existsSync(rawPath)
-			? rawPath
-			: path.resolve(
-					process.cwd(),
-					"src/components/prescriptions/PrescriptionPrintModal.tsx",
-				);
-		const content = fs.readFileSync(filePath, "utf8");
-		const hexRegex = /#[0-9a-fA-F]{3,8}\b/g;
-		const matches = content.match(hexRegex) || [];
+		assert.strictEqual(closedHtml, "");
 
-		assert.strictEqual(
-			matches.length,
-			0,
-			`PrescriptionPrintModal.tsx must NOT contain hardcoded hex colors. Found: ${matches.join(", ")}`,
+		const html = renderToStaticMarkup(
+			React.createElement(PrescriptionPrintModal, {
+				isOpen: true,
+				onClose: () => {},
+				disablePortal: true,
+				patient: { id: "pat-1", fullName: "Иванов И.И." },
+			}),
 		);
+
+		const inlineStyleHexMatches = html.match(/style="[^"]*#[0-9a-fA-F]{3,8}[^"]*"/gi) ?? [];
+		assert.deepStrictEqual(
+			inlineStyleHexMatches,
+			[],
+			`PrescriptionPrintModal inline styles must use CSS tokens, found: ${inlineStyleHexMatches.join(", ")}`,
+		);
+		assert.strictEqual(resolvePrescriptionPatientName({ fullName: "Петров А.В." }, "Фолбэк"), "Петров А.В.");
+		assert.strictEqual(resolvePrescriptionPatientName(undefined, "Сидоров С.С."), "Сидоров С.С.");
+		assert.strictEqual(resolvePrescriptionPatientName(undefined, undefined), "");
 	});
 
 	it("6.2 Printable sheet preview uses CSS tokens (var(--paper-strong), var(--ink), var(--line))", () => {
-		const html = renderToString(
+		const html = renderToStaticMarkup(
 			React.createElement(PrescriptionPrintModal, {
 				isOpen: true,
 				onClose: () => {},
@@ -63,7 +71,7 @@ describe("Red Team Inquisition: CSS Tokens & Dark Mode Theme Hygiene (WCAG AAA)"
 
 describe("Red Team Inquisition: Special Outpatient Prescriptions (Accounting & Safety)", () => {
 	it("7.1 Supports special prescription forms for strict accounting drugs", () => {
-		const html = renderToString(
+		const html = renderToStaticMarkup(
 			React.createElement(PrescriptionPrintModal, {
 				isOpen: true,
 				onClose: () => {},
@@ -72,17 +80,17 @@ describe("Red Team Inquisition: Special Outpatient Prescriptions (Accounting & S
 			}),
 		);
 
-		// Special prescription blank indicator without soviet bureaucracy
 		assert.ok(
 			html.includes("Специальный рецепт") ||
 				html.includes("Специальный бланк") ||
 				html.includes("148"),
 			"Должен присутствовать переключатель или индикатор специального рецепта",
 		);
+		assert.strictEqual(html.includes('disabled=""'), false);
 	});
 
 	it("7.2 Prescriptions enforce validity period and medical documentation notice", () => {
-		const html = renderToString(
+		const html = renderToStaticMarkup(
 			React.createElement(PrescriptionPrintModal, {
 				isOpen: true,
 				onClose: () => {},

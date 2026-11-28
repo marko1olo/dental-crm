@@ -55,8 +55,8 @@ export const SurgeryHubFooter: React.FC<SurgeryHubFooterProps> = ({
 					className="surgery-primary-cta"
 					data-testid="btn-save-chairside-surgery"
 				>
-					<span className="hidden sm:inline">✓ Зафиксировать операцию и внести в карту приёма &gt;</span>
-					<span className="sm:hidden">✓ Зафиксировать операцию &gt;</span>
+					<span className="hidden sm:inline">✓ Зафиксировать операцию и внести в карту приёма</span>
+					<span className="sm:hidden">✓ Зафиксировать операцию</span>
 				</button>
 			</div>
 		</footer>

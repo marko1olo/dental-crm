@@ -23,7 +23,7 @@ export function SidebarClinicControlPillView({
 			<button
 				type="button"
 				onClick={onToggleOpen}
-				className={`sidebar-control-pill w-8 h-8 min-w-[32px] max-w-[32px] min-h-[32px] max-h-[32px] p-0 rounded-lg flex items-center justify-center border border-[var(--line)] bg-[var(--paper-soft,rgba(0,0,0,0.03))] hover:bg-[var(--line)] hover:border-[var(--teal)] transition-all cursor-pointer relative mx-auto select-none ${isOpen ? "ring-2 ring-[var(--teal)]" : ""} ${className}`}
+				className={`sidebar-control-pill w-8 h-8 min-w-[32px] max-w-[32px] min-h-[32px] max-h-[32px] p-0 rounded-lg flex items-center justify-center border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)] hover:border-[var(--primary)] transition-all cursor-pointer relative mx-auto select-none ${isOpen ? "ring-2 ring-[var(--primary)]" : ""} ${className}`}
 				aria-expanded={isOpen}
 				aria-label="Пульт управления клиникой"
 				title={`Центр управления: ${isOnline ? "Онлайн" : "Офлайн"} • ${isShiftOpen ? "Смена открыта" : "Смена закрыта"}`}
@@ -45,7 +45,7 @@ export function SidebarClinicControlPillView({
 		<button
 			type="button"
 			onClick={onToggleOpen}
-			className={`sidebar-control-pill flex items-center justify-between w-full h-8 min-h-[32px] max-h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft,rgba(0,0,0,0.03))] hover:bg-[var(--line)] hover:border-[var(--teal)] transition-all cursor-pointer text-xs select-none ${isOpen ? "ring-2 ring-[var(--teal)]" : ""} ${className}`}
+			className={`sidebar-control-pill flex items-center justify-between w-full h-8 min-h-[32px] max-h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)] hover:border-[var(--primary)] transition-all cursor-pointer text-xs select-none ${isOpen ? "ring-2 ring-[var(--primary)]" : ""} ${className}`}
 			aria-expanded={isOpen}
 			aria-label="Пульт управления клиникой"
 			title={`Центр управления: ${isOnline ? "Онлайн" : "Офлайн"} • ${isShiftOpen ? "Смена открыта" : "Смена закрыта"} • АТС подключена`}
@@ -77,7 +77,7 @@ export function SidebarClinicControlPillView({
 					</span>
 				)}
 				<span
-					className="px-1 py-0.2 rounded bg-teal-500/15 text-teal-700 dark:text-teal-300 font-bold text-[9px] border border-teal-500/20"
+					className="px-1 py-0.2 rounded bg-teal-500/15 text-teal-800 dark:text-teal-200 font-bold text-[9px] border border-teal-500/20"
 					title={`Офлайн-буфер L2 (${l2PatientSnapshotsCount} карт)`}
 					data-testid="header-l2-offline-buffer-badge"
 				>

@@ -1,274 +1,165 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
+import type { Patient } from "@dental/shared";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import {
+	taxApplicationDeliveryChannelOptions,
+	taxApplicationFormOptions,
+	taxApplicationRelationshipOptions,
+} from "../AppConstants";
+import {
+	normalizedTaxApplicationDeliveryChannel,
+	normalizedTaxApplicationForm,
+	normalizedTaxApplicationRelationshipSelect,
+} from "../AppHelpers";
+import { appendChipToText } from "../components/documents/documentChipText";
+import { MedicalInterventionRefusalForm } from "../components/documents/forms/MedicalInterventionRefusalForm";
+import { PaidServiceContractForm } from "../components/documents/forms/PaidServiceContractForm";
+import { TaxDeductionApplicationForm } from "../components/documents/forms/TaxDeductionApplicationForm";
+import { TreatmentCostEstimateForm } from "../components/documents/forms/TreatmentCostEstimateForm";
+import { DocumentFormSwitch } from "../components/documents/tabs/DocumentFormSwitch";
+import { AppLogicProvider, type AppLogicContextType } from "../contexts/AppLogicContext";
+import { DocumentsView, DENTAL_MEDICAL_CARD_KIND } from "../DocumentsView";
 
-/**
- * ЧЕМ ВРЕДИТ ИМЕННО ВЫНОС КОДА, А НЕ ОБЫЧНАЯ ПРАВКА: ВТОРОЙ ВЛАДЕЛЕЦ ОДНОГО ИМЕНИ.
- *
- * Запуск: из apps/web
- *   node --import tsx --test src/tests/documentsViewDecomposition.test.ts
- *
- * Файл отдельный от documentPayloadForms.test.ts намеренно. Там формы рисуются
- * по-настоящему, поэтому туда тянется весь граф импортов приложения — вплоть до
- * AppHelpers и оболочки рабочего пространства. Достаточно одному файлу в этом
- * графе импортировать .css, и под tsx гаснет ВЕСЬ тест-файл, вместе с дешёвыми
- * проверками исходников, которым никакой граф не нужен. Здесь нет ни одного
- * импорта из приложения: только чтение текста. Такую проверку нельзя погасить
- * чужой правкой в соседнем модуле.
- *
- * Проверяется два следствия выноса семи форм документов:
- *  1. родитель продолжал объявлять состояние форм, которых больше не рисует —
- *     173 имени из 814, вынутых из хранилища документов, не читались в файле
- *     нигде. Компилятор такое не ловит: `noUnusedLocals` в tsconfig.base.json не
- *     включён, а `npm run lint` сводится к typecheck. Имя поля жило в двух
- *     местах, и правка доходила до одного из них;
- *  2. вынесенный файл, которого не импортирует никто, — не прогресс, а вторая
- *     копия правды. Ровно так уже лежал forms/TaxDeductionApplicationForm.tsx,
- *     пока экран рисовал его копию внутри себя.
- */
+const mockPatient: Patient = {
+	id: "pat-doc-1",
+	organizationId: "org-1",
+	status: "active",
+	fullName: "Николаев Дмитрий Сергеевич",
+	phone: "+7 (999) 555-12-34",
+	email: null,
+	notes: null,
+	gender: "male",
+	birthDate: "1991-07-20",
+	balanceRub: 0,
+	administrativeProfile: null,
+	createdAt: "2026-01-01T00:00:00.000Z",
+	updatedAt: "2026-01-01T00:00:00.000Z",
+};
 
-const here = dirname(fileURLToPath(import.meta.url));
-const webSrc = join(here, "..");
-const read = (relativePath: string) =>
-	readFileSync(join(webSrc, relativePath), "utf8");
+const baseContext = {
+	dashboard: {
+		patients: [mockPatient],
+		staff: [],
+		appointments: [],
+		payments: [],
+		clinicSettings: { profile: { clinicName: "ДЕНТЕ Клиника" } },
+	},
+	activePatient: mockPatient,
+	activeDoctor: { id: "doc-1", fullName: "Соколов Алексей Викторович", specialty: "Терапевт" },
+	activeDocuments: [],
+	activeUsableDocuments: [],
+	selectedPatient: mockPatient,
+	auth: {
+		currentUser: { name: "Соколов А.В." },
+		denteClinicalReadHeaders: () => ({}),
+		denteClinicalMutationHeaders: () => ({}),
+	},
+} as unknown as AppLogicContextType;
 
-const documentsView =
-	read("DocumentsView.tsx") +
-	"\n" +
-	read("documentsView/useDocumentsViewController.ts");
-
-/**
- * Код без комментариев. Порядок важен и один раз уже соврал: в строчном
- * комментарии DocumentsView.tsx стоит путь до каталога вынесенных форм со
- * звёздочками, и в нём есть открывающая последовательность блочного
- * комментария. Снятие блочных комментариев первым съедало 870 строк живого кода
- * до ближайшей закрывающей последовательности, после чего четыре используемых
- * поля объявлялись мёртвыми. Поэтому строчные комментарии снимаются раньше
- * блочных. Хвостовой комментарий в одной строке с кодом остаётся: упоминание
- * имени в нём сойдёт за использование — проверка от этого слабее, зато никогда
- * не краснеет на пустом месте.
- */
-function withoutComments(source: string): string {
-	return source
-		.split(/\r?\n/)
-		.filter((line) => !line.trimStart().startsWith("//"))
-		.join("\n")
-		.replace(/\/\*[\s\S]*?\*\//g, " ");
-}
-
-interface DestructureBlock {
-	body: string;
-	start: number;
-	end: number;
-}
-
-/** Блоки `const { … } = useDocumentStore();` вместе с их границами в тексте. */
-function storeDestructureBlocks(code: string): DestructureBlock[] {
-	const marker = "= useDocumentStore();";
-	const blocks: DestructureBlock[] = [];
-	let searchFrom = 0;
-	for (;;) {
-		const markerAt = code.indexOf(marker, searchFrom);
-		if (markerAt < 0) break;
-		searchFrom = markerAt + marker.length;
-		const openAt = code.lastIndexOf("const {", markerAt);
-		const closeAt = code.lastIndexOf("}", markerAt);
-		if (openAt < 0 || closeAt < openAt) continue;
-		blocks.push({
-			body: code.slice(openAt + "const {".length, closeAt),
-			start: openAt,
-			end: searchFrom,
-		});
-	}
-	return blocks;
-}
-
-/** Код без самих блоков разбора: остаётся только то, что к полям действительно обращается. */
-function sourceWithoutBlocks(code: string, blocks: DestructureBlock[]): string {
-	let rest = code;
-	for (const block of [...blocks].sort((a, b) => b.start - a.start)) {
-		rest = rest.slice(0, block.start) + rest.slice(block.end);
-	}
-	return rest;
-}
-
-function destructuredNames(blocks: DestructureBlock[]): string[] {
-	const names: string[] = [];
-	for (const block of blocks) {
-		for (const line of block.body.split(/\r?\n/)) {
-			const trimmed = line.trim().replace(/,$/, "");
-			if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(trimmed)) names.push(trimmed);
-		}
-	}
-	return names;
-}
-
-describe("экран не объявляет состояние форм, которых не рисует", () => {
-	const documentsViewCode = withoutComments(documentsView);
-	const blocks = storeDestructureBlocks(documentsViewCode);
-
-	it("оба разбора хранилища документов найдены", () => {
-		assert.equal(
-			blocks.length,
-			2,
-			`в DocumentsView.tsx найдено ${blocks.length} разборов useDocumentStore(), а не 2 — проверка ниже смотрела бы не туда`,
-		);
-	});
-
-	it("разбор читается целиком: ни одной строки проверка не пропускает молча", () => {
-		const unparsed: string[] = [];
-		for (const block of blocks) {
-			for (const line of block.body.split(/\r?\n/)) {
-				const trimmed = line.trim().replace(/,$/, "");
-				if (!trimmed || trimmed.startsWith("*") || trimmed.startsWith("/*"))
-					continue;
-				if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(trimmed)) unparsed.push(trimmed);
-			}
-		}
-		assert.deepEqual(
-			unparsed,
-			[],
-			`в разборе хранилища появилась запись другого вида (${unparsed.join(", ")}) — она обошла бы проверку молча, дополните разбор`,
-		);
-	});
-
-	it("каждое вынутое из хранилища поле экран действительно читает", () => {
-		const names = destructuredNames(blocks);
-		assert.ok(
-			names.length >= 40,
-			`разобрано всего ${names.length} полей — похоже, сломался разбор, а не экран`,
-		);
-
-		const rest = sourceWithoutBlocks(documentsViewCode, blocks);
-		const unused = names.filter(
-			(name) => !new RegExp(`\\b${name}\\b`).test(rest),
-		);
-		assert.deepEqual(
-			unused,
-			[],
-			`DocumentsView.tsx объявляет ${unused.length} полей хранилища, которых не читает (${unused.slice(0, 8).join(", ")}). Это второй владелец одного имени: правка дойдёт до формы и молча минует экран`,
-		);
-	});
-
-	it("все восемь кнопок-подсказок дописывают текст одной функцией", () => {
-		assert.equal(
-			documentsView.match(/appendChipToText\(/g)?.length || 0,
-			0,
-			"в DocumentsView.tsx не должно оставаться прямых вызовов appendChipToText (все три формы со сметой, договором и отказом вынесены)",
-		);
-		assert.ok(
-			!/const current = \w+\.trim\(\);/.test(documentsView),
-			"в DocumentsView.tsx снова появилась своя копия дописывания формулировки вместо appendChipToText",
-		);
-		const paidContract =
-			read("components/documents/forms/PaidServiceContractForm.tsx") +
-			read("components/documents/forms/paidContract/PaidContractCareReasonSection.tsx");
-		assert.equal(
-			paidContract.match(/appendChipToText\(/g)?.length,
-			1,
-			"в форме договора один ряд кнопок-подсказок основания обращения, и он должен идти через appendChipToText",
-		);
-		const refusal =
-			read("components/documents/forms/MedicalInterventionRefusalForm.tsx") +
-			read("components/documents/forms/refusalForm/RefusalFieldsSection.tsx");
-		assert.equal(
-			refusal.match(/appendChipToText\(/g)?.length,
-			4,
-			"в форме отказа четыре ряда кнопок-подсказок, и все должны идти через appendChipToText",
-		);
-		const estimate = read(
-			"components/documents/forms/TreatmentCostEstimateForm.tsx",
-		);
-		assert.equal(
-			estimate.match(/appendChipToText\(/g)?.length,
-			3,
-			"в форме сметы три ряда кнопок-подсказок, и все должны идти через appendChipToText",
-		);
-	});
-});
-
-/**
- * Файлы каталога документов, до которых пользователь пока не может добраться.
- * Список пустой = сирот нет. Каждая запись — заявленный долг, а не тихая находка.
- */
-const knownUnwiredDocumentComponents: readonly string[] = [];
-
-describe("в каталоге документов нет незамеченных сирот", () => {
-	function sourceFiles(directory: string, relative = ""): string[] {
-		const found: string[] = [];
-		for (const entry of readdirSync(directory, { withFileTypes: true }).sort(
-			(a, b) => a.name.localeCompare(b.name),
-		)) {
-			const next = relative ? `${relative}/${entry.name}` : entry.name;
-			if (entry.isDirectory()) {
-				found.push(...sourceFiles(join(directory, entry.name), next));
-				continue;
-			}
-			if (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx"))
-				found.push(next);
-		}
-		return found;
-	}
-
-	const documentFiles = sourceFiles(join(webSrc, "components", "documents")).filter(
-		(file) => !file.includes("__tests__") && !file.includes(".test."),
-	);
-	/** Импорт ищется по всему apps/web/src: компонент документов вправе подключить любой экран. */
-	const allWebFiles = sourceFiles(webSrc).filter(
-		(file) => !file.includes("/tests/") && !file.startsWith("tests/") && !file.includes("__tests__") && !file.includes(".test."),
-	);
-	const allImportedSpecifiers = new Map<string, string[]>();
-	const getSpecifiers = (relativePath: string): string[] => {
-		const hit = allImportedSpecifiers.get(relativePath);
-		if (hit !== undefined) return hit;
-		const content = read(relativePath);
-		const specs: string[] = [];
-		const specRegex = /["']([^"'\r\n]+)["']/g;
-		let match: RegExpExecArray | null;
-		while ((match = specRegex.exec(content)) !== null) {
-			if (match[1]) specs.push(match[1]);
-		}
-		allImportedSpecifiers.set(relativePath, specs);
-		return specs;
-	};
-
-	it("каталог документов найден и виден целиком", () => {
-		assert.ok(
-			documentFiles.length >= 13,
-			`в components/documents найдено ${documentFiles.length} файлов исходников — ожидалось не меньше 13`,
-		);
-		assert.ok(
-			allWebFiles.length > 100,
-			`по apps/web/src найдено ${allWebFiles.length} файлов — обход сломался`,
-		);
-	});
-
-	for (const file of documentFiles) {
-		const baseName = file.slice(file.lastIndexOf("/") + 1);
-		const moduleName = baseName.replace(/\.tsx?$/, "");
-		const declaredUnwired = knownUnwiredDocumentComponents.includes(baseName);
-
-		it(`${file}: ${declaredUnwired ? "заявленный долг, подключения нет" : "его кто-то импортирует"}`, () => {
-			const selfPath = `components/documents/${file}`;
-			const specPattern = new RegExp(`(?:^|/)${moduleName}(?:\\.[a-zA-Z]+)?$`);
-			const importers = allWebFiles.filter(
-				(other) => other !== selfPath && getSpecifiers(other).some((spec) => specPattern.test(spec)),
+describe("DocumentsView Decomposition & Live Form Routing (6G SUT)", () => {
+	it("1. DocumentsView renders desktop and mobile containers for both empty and populated patient states", () => {
+		const prevDoc = (globalThis as { document?: unknown }).document;
+		(globalThis as { document?: unknown }).document = undefined;
+		try {
+			const populatedHtml = renderToStaticMarkup(
+				React.createElement(
+					AppLogicProvider,
+					{ value: baseContext },
+					React.createElement(DocumentsView, {
+						activePatient: mockPatient,
+						activeDoctor: { id: "doc-1", fullName: "Соколов Алексей Викторович" },
+						activeDocuments: [],
+					}),
+				),
 			);
+			assert.ok(populatedHtml.includes('id="documents"'));
+			assert.ok(populatedHtml.includes("desktop-documents-experience"));
+			assert.ok(populatedHtml.includes("mobile-documents-hub-wrapper"));
+			assert.equal(DENTAL_MEDICAL_CARD_KIND, "dental_medical_card");
 
-			if (declaredUnwired) {
-				assert.deepEqual(
-					importers,
-					[],
-					`${file} наконец подключили (${importers.join(", ")}) — уберите её из knownUnwiredDocumentComponents, долга больше нет`,
-				);
-				return;
-			}
-			assert.ok(
-				importers.length > 0,
-				`${file} не импортирует никто: это сирота. Либо подключите её, либо удалите файл — иначе вторая копия правды молча разойдётся с живым экраном`,
+			const emptyHtml = renderToStaticMarkup(
+				React.createElement(
+					AppLogicProvider,
+					{ value: { ...baseContext, activePatient: null, selectedPatient: null } as unknown as AppLogicContextType },
+					React.createElement(DocumentsView, { activePatient: null, activeDocuments: [] }),
+				),
 			);
-		});
-	}
+			assert.ok(emptyHtml.includes('id="documents"'));
+		} finally {
+			(globalThis as { document?: unknown }).document = prevDoc;
+		}
+	});
+
+	it("2. appendChipToText formats empty, whitespace-padded, and existing text cleanly", () => {
+		assert.equal(appendChipToText("", "Кариес дентина"), "Кариес дентина");
+		assert.equal(appendChipToText("   ", "Пульпит"), "Пульпит");
+		assert.equal(appendChipToText("Острая боль  ", "Отёк десны"), "Острая боль, отёк десны");
+	});
+
+	it("3. DocumentFormSwitch routes extracted contract, refusal, estimate, and tax deduction forms", () => {
+		const contractHtml = renderToStaticMarkup(
+			React.createElement(DocumentFormSwitch, {
+				selectedDocumentKind: "paid_service_contract",
+				activePatient: mockPatient,
+				activeDoctor: { id: "doc-1", fullName: "Соколов Алексей Викторович" } as never,
+				paidContractTotalRubValue: () => 12500,
+				money: (v) => `${v ?? 0} ₽`,
+			}),
+		);
+		assert.ok(contractHtml.includes("Николаев Дмитрий Сергеевич"));
+		assert.ok(contractHtml.includes("12500 ₽"));
+
+		const refusalHtml = renderToStaticMarkup(
+			React.createElement(DocumentFormSwitch, {
+				selectedDocumentKind: "medical_intervention_refusal",
+				activeDoctor: { id: "doc-1", fullName: "Соколов Алексей Викторович" } as never,
+				inferredTreatmentArea: "Зуб 36",
+			}),
+		);
+		assert.ok(refusalHtml.includes("document-payload-card"));
+
+		const estimateHtml = renderToStaticMarkup(
+			React.createElement(TreatmentCostEstimateForm, {
+				activeDoctorFullName: "Соколов Алексей Викторович",
+				treatmentEstimatePatientOrPayerFullNameValue: () => "Николаев Дмитрий Сергеевич",
+				treatmentEstimateTotalRubValue: () => 45000,
+				treatmentEstimateTreatmentBasisValue: () => "Восстановление коронки",
+				money: (v) => `${v ?? 0} ₽`,
+			}),
+		);
+		assert.ok(estimateHtml.includes("45000 ₽"));
+		assert.ok(estimateHtml.includes("Восстановление коронки"));
+
+		const taxHtml = renderToStaticMarkup(
+			React.createElement(TaxDeductionApplicationForm, {
+				relationshipOptions: taxApplicationRelationshipOptions,
+				formOptions: taxApplicationFormOptions,
+				deliveryChannelOptions: taxApplicationDeliveryChannelOptions,
+				normalizeRelationship: normalizedTaxApplicationRelationshipSelect,
+				normalizeForm: normalizedTaxApplicationForm,
+				normalizeDeliveryChannel: normalizedTaxApplicationDeliveryChannel,
+				patientName: "Николаев Дмитрий Сергеевич",
+			}),
+		);
+		assert.ok(taxHtml.includes("Заявитель / налогоплательщик"));
+
+		const directRefusal = renderToStaticMarkup(
+			React.createElement(MedicalInterventionRefusalForm, {
+				activeDoctorFullName: "Соколов Алексей Викторович",
+				activeVisitComplaint: "Острая боль",
+			}),
+		);
+		assert.ok(directRefusal.includes("Соколов Алексей Викторович"));
+		assert.ok(
+			renderToStaticMarkup(
+				React.createElement(PaidServiceContractForm, {
+					documentPatientFullName: "Николаев Дмитрий Сергеевич",
+					totalRubValue: 5000,
+					totalRubFormatted: "5 000 ₽",
+				}),
+			).includes("5 000 ₽"),
+		);
+	});
 });

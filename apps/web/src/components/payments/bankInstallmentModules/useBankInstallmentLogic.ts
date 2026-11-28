@@ -5,6 +5,7 @@ import {
 	denteClinicalReadHeaders,
 } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import {
 	BANK_INSTALLMENT_PROVIDERS,
 	type BankInstallmentCalculationResult,
@@ -198,11 +199,16 @@ export const useBankInstallmentLogic = (props: BankInstallmentQrModalProps) => {
 					notes: `Банковская рассрочка (${activeProviderConfig.name}): ${stageTitle}`,
 				}),
 			});
-			const json = (await res.json().catch(() => null)) as {
+			let json: {
 				data?: { contract?: { id?: string; contractNumber?: string } };
 				contract?: { id?: string; contractNumber?: string };
 				message?: string;
-			} | null;
+			} | null = null;
+			try {
+				json = (await res.json()) as typeof json;
+			} catch (parseErr) {
+				clientLogger.warn("[useBankInstallmentLogic] Failed to parse bank installment JSON:", parseErr);
+			}
 			if (!res.ok) {
 				throw new Error(
 					json?.message ||

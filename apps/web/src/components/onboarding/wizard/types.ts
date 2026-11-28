@@ -57,6 +57,7 @@ export interface StaffScheduleDraft {
 }
 
 export interface ClinicProfileDraft {
+	mode?: ClinicMode | string | undefined;
 	clinicName?: string;
 	phone?: string;
 	timezone?: string;

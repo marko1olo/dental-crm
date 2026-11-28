@@ -64,7 +64,7 @@ export const DoctorPayrollTable: React.FC<DoctorPayrollTableProps> = ({
 												<button
 													type="button"
 													onClick={onOpenStudio}
-													className="primary-button mt-2 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-hover)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5"
+													className="secondary-button mt-2 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold hover:bg-[var(--paper-soft)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5"
 												>
 													<Calculator size={14} />
 													<span>Открыть ведомость / закрыть период</span>

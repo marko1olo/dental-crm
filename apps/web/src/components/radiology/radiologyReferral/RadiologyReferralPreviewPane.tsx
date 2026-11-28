@@ -69,7 +69,7 @@ export function RadiologyReferralPreviewPane({
 					<div className="overflow-hidden" dangerouslySetInnerHTML={{ __html: barcodeSvg }} data-testid="referral-barcode-preview" />
 					<div className="flex items-center gap-2 text-right">
 						<div className="text-[9px] text-[var(--muted)] leading-tight"><strong>QR-код КЛКТ</strong><br />для рентген-центра</div>
-						<div className="w-12 h-12 shrink-0 border border-[var(--line)] rounded-lg overflow-hidden p-0.5 bg-white" dangerouslySetInnerHTML={{ __html: qrCodeSvg }} data-testid="referral-qrcode-preview" />
+						<div className="w-12 h-12 shrink-0 border border-[var(--line)] rounded-lg overflow-hidden p-0.5 bg-white dark:bg-white" dangerouslySetInnerHTML={{ __html: qrCodeSvg }} data-testid="referral-qrcode-preview" />
 					</div>
 				</div>
 

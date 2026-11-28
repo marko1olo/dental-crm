@@ -9,6 +9,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { cashBoxShifts } from "../../db/schema.js";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { LanKktDriverService } from "../hardware/lanKktDriverService.js";
 import { FiscalQueueRetryWorker } from "../hardware/queueModules/fiscalQueueWorker.js";
@@ -18,7 +19,13 @@ import type { FiscalHealthTelemetry, FiscalRetryExecutor } from "./types.js";
 const logger = createApiLogger("fiscalHealthChecker");
 
 export class FiscalHealthChecker {
-	private static orgWorkers = new Map<string, NodeJS.Timeout>();
+	private static orgWorkers = new BoundedTtlMap<string, NodeJS.Timeout>({
+		maxEntries: 1000,
+		touchOnGet: false,
+		onEvict: (_orgId, timer) => {
+			clearInterval(timer);
+		},
+	});
 	private static defaultRetryExecutor: FiscalRetryExecutor | null = null;
 
 	public static setRetryExecutor(executor: FiscalRetryExecutor): void {

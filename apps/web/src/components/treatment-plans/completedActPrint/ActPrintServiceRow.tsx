@@ -30,31 +30,31 @@ export const ActPrintServiceRow: React.FC<ActPrintServiceRowProps> = ({ item, in
 					<span className="text-slate-400 font-mono">—</span>
 				)}
 			</td>
-			<td className="border border-slate-300 p-2 font-medium text-slate-900 leading-snug">
+			<td className="border border-[var(--line)] print:border-slate-300 p-2 font-medium text-[var(--ink)] print:text-slate-900 leading-snug">
 				<div className="flex items-baseline gap-1.5 flex-wrap">
 					{(item.serviceCode || item.code804n) && (
-						<span className="font-mono font-bold text-slate-700 shrink-0 text-[11px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+						<span className="font-mono font-bold text-[var(--ink-2)] print:text-slate-700 shrink-0 text-[11px] bg-[var(--paper-soft)] print:bg-slate-100 px-1 py-0.5 rounded border border-[var(--line)] print:border-slate-200">
 							{item.serviceCode || item.code804n}
 						</span>
 					)}
-					<span className="font-semibold text-slate-900">{item.name}</span>
+					<span className="font-semibold text-[var(--ink)] print:text-slate-900">{item.name}</span>
 				</div>
 				{item.clinicalRationale && (
-					<div className="text-[11px] text-slate-500 italic mt-0.5">
+					<div className="text-[11px] text-[var(--ink-muted)] print:text-slate-500 italic mt-0.5">
 						Клиническое показание: {item.clinicalRationale}
 					</div>
 				)}
 			</td>
-			<td className="border border-slate-300 p-2 text-center font-mono font-bold">
+			<td className="border border-[var(--line)] print:border-slate-300 p-2 text-center font-mono font-bold">
 				{item.quantity}
 			</td>
-			<td className="border border-slate-300 p-2 text-right font-mono text-slate-700">
+			<td className="border border-[var(--line)] print:border-slate-300 p-2 text-right font-mono text-[var(--ink-2)] print:text-slate-700">
 				{formatMoneyExact(item.unitPriceRub ?? item.priceRub ?? 0)}
 			</td>
-			<td className="border border-slate-300 p-2 text-right font-mono text-slate-500">
+			<td className="border border-[var(--line)] print:border-slate-300 p-2 text-right font-mono text-[var(--ink-muted)] print:text-slate-500">
 				{item.discountRub > 0 ? `-${formatMoneyExact(item.discountRub)}` : "0,00 ₽"}
 			</td>
-			<td className="border border-slate-300 p-2 text-right font-mono font-bold text-slate-950">
+			<td className="border border-[var(--line)] print:border-slate-300 p-2 text-right font-mono font-bold text-[var(--ink)] print:text-slate-950">
 				{formatMoneyExact(item.priceRub)}
 			</td>
 		</tr>

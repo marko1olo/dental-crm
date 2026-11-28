@@ -216,11 +216,11 @@ export function AppointmentModalLabSection({
         <button
           type="button"
           onClick={() => handleNavigateToLab()}
-          className="h-7 min-h-[28px] px-2.5 rounded-lg border border-[var(--primary)]/30 bg-[var(--primary-soft)] text-xs font-bold text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white inline-flex items-center gap-1 transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95"
+          className="h-7 min-h-[28px] px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center gap-1 transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95"
           data-testid="appointment-modal-create-lab-order-btn"
           title="Перейти в реестр лаборатории для оформления наряда"
         >
-          <FlaskConical size={12} />
+          <FlaskConical size={12} className="text-[var(--primary)]" />
           <span>+ Оформить наряд в ЗТЛ</span>
         </button>
       </div>
@@ -323,11 +323,11 @@ export function AppointmentModalLabSection({
                 <button
                   type="button"
                   onClick={() => handleConfirmFitting(item)}
-                  className="h-6 px-2.5 rounded bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs transition-all active:scale-95"
+                  className="secondary-button h-7 px-2.5 rounded-md bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] font-semibold text-[11px] inline-flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs transition-all active:scale-95"
                   data-testid="appointment-confirm-fitting-btn"
                   title="Подтвердить успешную примерку конструкции"
                 >
-                  <CheckCircle2 size={11} />
+                  <CheckCircle2 size={11} className="text-[var(--primary)]" />
                   <span>Подтвердить примерку</span>
                 </button>
               </div>
@@ -432,12 +432,12 @@ export function AppointmentModalLabSection({
                 <button
                   type="button"
                   onClick={() => handleNavigateToLab(item.orderNumber)}
-                  className="h-7 px-2.5 rounded-md bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer shadow-2xs transition-all"
+                  className="secondary-button h-7 px-2.5 rounded-md bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] font-semibold text-[11px] inline-flex items-center gap-1 cursor-pointer shadow-2xs transition-all"
                   title="Открыть реестр лаборатории и наряд ЗТЛ (#lab)"
                   data-testid="appointment-modal-open-lab-order-btn"
                 >
                   <span>Открыть в ЗТЛ</span>
-                  <ExternalLink size={11} />
+                  <ExternalLink size={11} className="text-[var(--primary)]" />
                 </button>
               </div>
             </div>

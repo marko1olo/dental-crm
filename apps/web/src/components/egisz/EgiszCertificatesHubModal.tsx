@@ -75,7 +75,7 @@ export const TaxDeductionCertificateDrawer: React.FC<TaxDeductionCertificateDraw
 			</div>
 
 			<div className="egisz-tax-payments-list">
-				<div className="text-xs font-bold text-muted uppercase">Подтвержденные оплаты ({effectivePayments.length})</div>
+				<div className="text-xs font-bold text-muted">Подтвержденные оплаты ({effectivePayments.length})</div>
 				{effectivePayments.length === 0 ? (
 					<div className="text-xs text-muted py-2">Нет зарегистрированных оплат за выбранный период</div>
 				) : (
@@ -177,7 +177,7 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 	};
 
 	const content = (
-		<div className="egisz-hub-backdrop" role="dialog" aria-modal="true" data-testid="egisz-certificates-hub-modal">
+		<div className="egisz-hub-backdrop fixed" role="dialog" aria-modal="true" data-testid="egisz-certificates-hub-modal">
 			<div className="egisz-hub-modal-panel">
 				<div className="egisz-mobile-drag-handle" aria-hidden="true" />
 				<header className="egisz-hub-header">
@@ -196,13 +196,18 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 
 					<div className="egisz-hub-tabs" role="tablist">
 						<button type="button" role="tab" aria-selected={activeSection === "queue"} className={`egisz-hub-tab ${activeSection === "queue" ? "active" : ""}`} onClick={() => setActiveSection("queue")}>
-							<Archive size={15} /> Фоновый журнал
+							<Archive size={15} className="shrink-0" />
+							<span>Фоновый журнал</span>
 						</button>
 						<button type="button" role="tab" aria-selected={activeSection === "tax_deduction"} className={`egisz-hub-tab ${activeSection === "tax_deduction" ? "active" : ""}`} onClick={() => setActiveSection("tax_deduction")}>
-							<Receipt size={15} /> Справка для налогового вычета
+							<Receipt size={15} className="shrink-0" />
+							<span className="hidden sm:inline">Справка для налогового вычета</span>
+							<span className="sm:hidden">Налоговый вычет</span>
 						</button>
 						<button type="button" role="tab" aria-selected={activeSection === "extracts"} className={`egisz-hub-tab ${activeSection === "extracts" ? "active" : ""}`} onClick={() => setActiveSection("extracts")}>
-							<FileText size={15} /> Выписки и справки
+							<FileText size={15} className="shrink-0" />
+							<span className="hidden sm:inline">Выписки и справки</span>
+							<span className="sm:hidden">Выписки</span>
 						</button>
 					</div>
 				</header>

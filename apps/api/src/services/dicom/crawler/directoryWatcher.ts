@@ -7,6 +7,7 @@ import { existsSync, statSync, readdirSync, watch, type FSWatcher } from "node:f
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
 import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import { DEBOUNCE_FILE_STABILIZE_MS, JUNK_VIEWER_PATH_REGEX } from "./types.js";
 
@@ -237,7 +238,13 @@ export type HotFileHandler = (targetPath: string) => Promise<void>;
  */
 export class HotFolderWatchController {
 	private watchers: FSWatcher[] = [];
-	private pendingFileChecks = new Map<string, NodeJS.Timeout>();
+	private pendingFileChecks = new BoundedTtlMap<string, NodeJS.Timeout>({
+		maxEntries: 2000,
+		ttlMs: 10 * 60_000,
+		onEvict: (_path, timer) => {
+			clearTimeout(timer);
+		},
+	});
 
 	public setupWatchers(
 		folders: string[],
@@ -289,6 +296,7 @@ export class HotFolderWatchController {
 		const timer = setTimeout(() => {
 			void this.checkFileStabilityAndHandle(targetPath, 0, 0, handler);
 		}, 150);
+		timer.unref?.();
 		this.pendingFileChecks.set(targetPath, timer);
 	}
 
@@ -309,6 +317,7 @@ export class HotFolderWatchController {
 					const timer = setTimeout(() => {
 						void this.checkFileStabilityAndHandle(targetPath, 0, retryCount + 1, handler);
 					}, 200);
+					timer.unref?.();
 					this.pendingFileChecks.set(targetPath, timer);
 				}
 				return;
@@ -319,6 +328,7 @@ export class HotFolderWatchController {
 				const timer = setTimeout(() => {
 					void this.checkFileStabilityAndHandle(targetPath, st.size, retryCount + 1, handler);
 				}, 150);
+				timer.unref?.();
 				this.pendingFileChecks.set(targetPath, timer);
 				return;
 			}

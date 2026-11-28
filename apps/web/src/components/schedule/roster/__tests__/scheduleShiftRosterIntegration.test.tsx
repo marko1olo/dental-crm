@@ -15,35 +15,13 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "node:test";
-
-import { registerHooks } from "node:module";
-
-if (typeof registerHooks === "function") {
-	try {
-		registerHooks({
-			load(url, context, nextLoad) {
-				if (url.endsWith(".css")) {
-					return {
-						format: "module",
-						shortCircuit: true,
-						source: "export default {};",
-					};
-				}
-				return nextLoad(url, context);
-			},
-		});
-	} catch {
-		// Ignore if already registered
-	}
-}
-
-const {
+import {
 	DoctorShiftRosterModal,
 	generateWeeklyScheduleForStaffAndCabinets,
 	getMondayOfWeekIso,
 	DoctorRosterToolbar,
 	DoctorRosterMatrix,
-} = await import("../DoctorShiftRosterModal");
+} from "../DoctorShiftRosterModal";
 
 import {
 	detectRosterConflicts,
@@ -370,7 +348,10 @@ describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration", () => {
 	});
 
 	describe("Full Persistence Loop & Chair Header Instant Updates (Mandates 8e, 8n)", () => {
-		it("initializes from localStorage dente_doctor_shifts and preserves shifts", () => {
+		it("builds single-shift chair doctor assignment via buildChairDoctorAssignmentsFromShifts", async () => {
+			const { buildChairDoctorAssignmentsFromShifts } = await import(
+				"../../scheduleViewModules/scheduleViewConstants"
+			);
 			const storedShifts: DoctorShift[] = [
 				{
 					id: "shift-stored-1",
@@ -393,15 +374,27 @@ describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration", () => {
 				},
 			];
 
-			// Simulate JSON round-trip
-			const serialized = JSON.stringify(storedShifts);
-			const parsed = JSON.parse(serialized);
-			assert.equal(parsed.length, 1);
-			assert.equal(parsed[0].doctorId, "doc-real-1");
-			assert.equal(parsed[0].chairId, "chair-planmeca-1");
+			const assignments = buildChairDoctorAssignmentsFromShifts(
+				storedShifts,
+				"2026-08-24",
+			);
+			const chair1 = assignments["chair-planmeca-1"];
+			assert.ok(chair1);
+			assert.equal(chair1.doctorId, "doc-real-1");
+			assert.equal(chair1.shiftPreset, "morning");
+			assert.equal(chair1.shiftHours, "08:30–14:30");
+
+			const otherDay = buildChairDoctorAssignmentsFromShifts(
+				storedShifts,
+				"2026-08-25",
+			);
+			assert.equal(otherDay["chair-planmeca-1"], undefined);
 		});
 
-		it("evaluates computedChairDoctorAssignments correctly for active dateKey", () => {
+		it("computes multi-chair assignments and detects shift conflicts via real roster engines", async () => {
+			const { buildChairDoctorAssignmentsFromShifts } = await import(
+				"../../scheduleViewModules/scheduleViewConstants"
+			);
 			const shifts: DoctorShift[] = [
 				{
 					id: "shift-2026-08-24-chair-planmeca-1",
@@ -443,31 +436,10 @@ describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration", () => {
 				},
 			];
 
-			const currentDateKey = "2026-08-24";
-			const assignments: Record<string, any> = {};
-
-			for (const shift of shifts) {
-				if (shift.dateIso === currentDateKey && shift.chairId && shift.doctorId) {
-					const preset = shift.archetypeId === "morning_shift"
-						? "morning"
-						: shift.archetypeId === "evening_shift"
-							? "evening"
-							: "custom";
-					const hours = `${shift.startTime}–${shift.endTime}`;
-					assignments[shift.chairId] = {
-						chairId: shift.chairId,
-						doctorId: shift.doctorId,
-						doctorName: shift.doctorName,
-						doctorSpecialty: shift.doctorRole,
-						shiftPreset: preset,
-						shiftLabel: shift.customNotes || hours,
-						shiftHours: hours,
-						startHour: parseInt(shift.startTime.slice(0, 2), 10) || 8,
-						endHour: parseInt(shift.endTime.slice(0, 2), 10) || 20,
-					};
-				}
-			}
-
+			const assignments = buildChairDoctorAssignmentsFromShifts(
+				shifts,
+				"2026-08-24",
+			);
 			assert.ok(assignments["chair-planmeca-1"]);
 			assert.equal(assignments["chair-planmeca-1"].doctorId, "doc-real-1");
 			assert.equal(assignments["chair-planmeca-1"].shiftPreset, "morning");
@@ -477,6 +449,17 @@ describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration", () => {
 			assert.equal(assignments["chair-sirona-2"].doctorId, "doc-real-2");
 			assert.equal(assignments["chair-sirona-2"].shiftPreset, "evening");
 			assert.equal(assignments["chair-sirona-2"].shiftHours, "14:30–20:30");
+
+			const conflicts = detectRosterConflicts(shifts, mockRealStaff);
+			assert.equal(
+				conflicts.some((c) => c.type === "no_assistant_for_surgery"),
+				true,
+				"Surgeon without assistant must be flagged in clinic mode",
+			);
+			const privateConflicts = detectRosterConflicts(shifts, mockRealStaff, {
+				checkSurgeryAssistant: false,
+			});
+			assert.equal(privateConflicts.length, 0);
 		});
 	});
 

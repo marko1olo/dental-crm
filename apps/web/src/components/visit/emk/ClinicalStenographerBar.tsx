@@ -86,7 +86,7 @@ export function ClinicalStenographerBar({
 									e.preventDefault();
 									onApplyInterim();
 								}}
-								className="inline-flex items-center gap-1 px-2.5 py-0.5 h-7 min-h-[28px] rounded-md bg-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-dark,#0f766e)] text-white text-[11px] font-bold transition-all shadow-xs cursor-pointer select-none"
+								className="inline-flex items-center gap-1 px-2.5 py-0.5 h-7 min-h-[28px] rounded-md bg-[var(--primary)] hover:opacity-95 text-white text-[11px] font-bold transition-all shadow-xs cursor-pointer select-none"
 								title="Применить распознанный текст в дневник"
 								data-testid="btn-steno-apply-speech"
 							>
@@ -128,7 +128,7 @@ export function ClinicalStenographerBar({
 								<span className="absolute inline-flex h-full w-full rounded-full bg-[var(--danger,#ef4444)] opacity-75 animate-ping" />
 								<span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--danger,#ef4444)]" />
 							</div>
-							<span className="text-xs font-semibold text-[var(--teal,var(--brand-primary))]">
+							<span className="text-xs font-semibold text-[var(--primary)]">
 								Стенографист у кресла
 							</span>
 						</div>
@@ -161,7 +161,7 @@ export function ClinicalStenographerBar({
 									e.preventDefault();
 									onApplyInterim();
 								}}
-								className="flex-1 min-h-[48px] px-4 rounded-xl bg-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-dark,#0f766e)] text-white text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-98"
+								className="flex-1 min-h-[48px] px-4 rounded-xl bg-[var(--primary)] hover:opacity-95 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-98"
 								data-testid="btn-steno-apply-speech-mobile"
 							>
 								<Check size={18} />

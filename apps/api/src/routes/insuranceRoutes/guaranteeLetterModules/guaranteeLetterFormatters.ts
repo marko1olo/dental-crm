@@ -2,6 +2,7 @@ import {
 	type DmsGuaranteeLetter,
 	kopecksToRubles,
 	rublesToKopecks,
+	todayDateKeyInTimeZone,
 } from "@dental/shared";
 import type { dmsGuaranteeLetters, insuranceContracts } from "../../../db/schema.js";
 
@@ -64,7 +65,7 @@ export function safeToIsoString(date: unknown, fallback?: string): string {
 
 export type DbGuaranteeLetterRow = typeof dmsGuaranteeLetters.$inferSelect;
 
-export function formatGuaranteeLetterResponse(l: DbGuaranteeLetterRow, todayIso: string = new Date().toISOString().slice(0, 10)) {
+export function formatGuaranteeLetterResponse(l: DbGuaranteeLetterRow, todayIso: string = todayDateKeyInTimeZone("Europe/Samara")) {
 	const limitKop = resolveDbKopecks(l.maxCoverageKopecks, l.maxCoverageRub);
 	const usedKop = resolveDbKopecks(l.usedAmountKopecks, l.usedAmountRub);
 	const remainingLimitKop = Math.max(0, limitKop - usedKop);

@@ -49,12 +49,17 @@ function loadMetricsMap(shotsDir) {
 
 const NUMERIC_COUNTERS = [
 	{ key: "horizontalOverflowPx", label: "Overflow-X (px)", getter: (m) => m.dom?.horizontalOverflowPx ?? 0 },
+	{ key: "viewportClippedControlsCount", label: "Обрезка кнопок краем экрана", getter: (m) => m.dom?.viewportClippedControlsCount ?? 0 },
 	{ key: "clippedTextsCount", label: "Обрезка текста", getter: (m) => m.dom?.clippedTextsCount ?? 0 },
 	{ key: "undersizedTargetsCount", label: "Мелкие тач/кнопки", getter: (m) => m.dom?.undersizedTargetsCount ?? 0 },
+	{ key: "tableRowPrimaryButtonsCount", label: "Забор Primary в таблицах", getter: (m) => m.dom?.tableRowPrimaryButtonsCount ?? 0 },
+	{ key: "lowContrastControlsCount", label: "Низкий контраст / неон кнопок", getter: (m) => m.dom?.lowContrastControlsCount ?? 0 },
+	{ key: "blueDarkCardsCount", label: "Синие карты #1e293b в Dark", getter: (m) => m.dom?.blueDarkCardsCount ?? 0 },
+	{ key: "duplicateCloseButtonsCount", label: "Дубль [X]+Закрыть", getter: (m) => m.dom?.duplicateCloseButtonsCount ?? 0 },
 	{ key: "allCapsViolationsCount", label: "Капслок", getter: (m) => m.dom?.allCapsViolationsCount ?? 0 },
 	{ key: "inputIconOverlapsCount", label: "Наезд иконки на инпут", getter: (m) => m.dom?.inputIconOverlapsCount ?? 0 },
 	{ key: "darkModeWhiteBlobsCount", label: "Белые пятна Dark", getter: (m) => m.dom?.darkModeWhiteBlobsCount ?? 0 },
-	{ key: "overlappingControlsCount", label: "Наложения кнопок", getter: (m) => m.dom?.overlappingControlsCount ?? 0 },
+	{ key: "overlappingControlsCount", label: "Наложения кнопок и FAB", getter: (m) => (m.dom?.overlappingControlsCount ?? 0) + (m.dom?.fabOverlapsCount ?? 0) },
 	{ key: "consoleErrorsCount", label: "Ошибки консоли", getter: (m) => m.consoleErrors?.length ?? 0 },
 ];
 

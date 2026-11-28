@@ -166,17 +166,31 @@ export type BookAppointmentRequest = FastifyRequest<{
 	Body: BookAppointmentBody;
 }>;
 
+export interface PublicBookingRouteConfig {
+	organizationIdOverride?: string | undefined;
+	telegramBotTokenOverride?: string | undefined;
+	allowTelegramDevBypass?: boolean | undefined;
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+	return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 /**
  * Full transactional handler for booking appointment endpoint POST /:organizationId/book.
  */
 export async function handleBookAppointment(
-	request: BookAppointmentRequest,
+	request: FastifyRequest,
 	reply: FastifyReply,
+	routeConfig?: PublicBookingRouteConfig,
 ) {
 	if (isRateLimited(request.ip ?? "unknown")) {
 		return reply.status(429).send({ error: "Слишком много запросов." });
 	}
-	const { organizationId } = request.params;
+	const rawParams = isPlainRecord(request.params) ? request.params : {};
+	const organizationId =
+		routeConfig?.organizationIdOverride ??
+		(typeof rawParams.organizationId === "string" ? rawParams.organizationId : "");
 	if (!organizationIdSchema.safeParse(organizationId).success) {
 		return reply.status(404).send({
 			error: "ClinicLinkInvalid",
@@ -289,7 +303,9 @@ export async function handleBookAppointment(
 			.where(eq(clinics.organizationId, organizationId))
 			.limit(1);
 
-		const orgSchedule = bookingOrg?.clinicSchedule as Record<string, unknown> | null;
+		const orgSchedule = isPlainRecord(bookingOrg?.clinicSchedule)
+			? bookingOrg.clinicSchedule
+			: null;
 		const clinicRequiresSms = orgSchedule?.requireSmsVerification === true;
 
 		if (!isVerified && clinicRequiresSms) {
@@ -302,7 +318,7 @@ export async function handleBookAppointment(
 		const bookingTimeZone = clinicRow?.timezone || DEFAULT_TIMEZONE;
 		const localDate = utcToLocalWallTime(startDate, bookingTimeZone);
 		const bookingDaySchedule = resolveDaySchedule(
-			bookingOrg?.clinicSchedule as unknown,
+			bookingOrg?.clinicSchedule,
 			localDate.weekday,
 		);
 
@@ -370,24 +386,24 @@ export async function handleBookAppointment(
 			const effectiveIdempotencyKey = parsed.data.idempotencyKey || headerIdempotencyKey;
 
 			// Trust check: OTP verified OR cryptographically validated Telegram session
+			const telegramInitDataHeader = request.headers["x-telegram-init-data"];
 			const rawInitData =
-				(typeof request.headers["x-telegram-init-data"] === "string"
-					? request.headers["x-telegram-init-data"]
-					: undefined) || (parsed.data as { telegramInitData?: string }).telegramInitData;
+				(typeof telegramInitDataHeader === "string"
+					? telegramInitDataHeader
+					: undefined) || parsed.data.telegramInitData;
 
 			let isTelegramAuthorized = false;
 			if (rawInitData) {
-				const isTestEnv = process.env.NODE_ENV === "test";
 				const botToken =
+					routeConfig?.telegramBotTokenOverride ||
 					process.env.TELEGRAM_BOT_TOKEN ||
-					process.env.DENTE_TELEGRAM_BOT_TOKEN ||
-					(isTestEnv ? "test_bot_token" : undefined);
+					process.env.DENTE_TELEGRAM_BOT_TOKEN;
 				if (botToken) {
 					const validation = TelegramReferralLoyaltyService.validateTelegramWebAppData(
 						rawInitData,
 						botToken,
 						{
-							allowDevBypass: isTestEnv,
+							allowDevBypass: Boolean(routeConfig?.allowTelegramDevBypass),
 						},
 					);
 					if (validation.isValid && validation.user) {
@@ -501,12 +517,16 @@ export async function handleBookAppointment(
 				},
 			};
 		} catch (error) {
-			const err = error as { code?: string; message?: string };
+			const errorCode =
+				typeof error === "object" && error !== null && "code" in error && typeof error.code === "string"
+					? error.code
+					: undefined;
+			const errorMessage = error instanceof Error ? error.message : String(error);
 			if (
-				err?.code === "23P01" ||
-				err?.message?.includes("23P01") ||
-				err?.message?.includes("exclusion constraint") ||
-				err?.message?.includes("overlap_excl")
+				errorCode === "23P01" ||
+				errorMessage.includes("23P01") ||
+				errorMessage.includes("exclusion constraint") ||
+				errorMessage.includes("overlap_excl")
 			) {
 				return reply.status(409).send({
 					error: "Выбранное время уже занято. Обновите список слотов.",

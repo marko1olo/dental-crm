@@ -15,12 +15,13 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { SomaticSafetyAlertWidget } from "../components/clinical/SomaticSafetyAlertWidget";
+import { EmergencyRescueModal } from "../components/emergency/EmergencyRescueModal";
+import { EmergencyResuscitationTools } from "../components/emergency/emergencyModules/EmergencyResuscitationTools";
+import { VisitEmkCompletionSection } from "../components/visit/emkTab/VisitEmkCompletionSection";
 
 import {
 	CANONICAL_FORM043_SOMATIC_NORM,
@@ -348,113 +349,94 @@ describe("Wave 308: Patient Allergo-Somatic Guard & Emergency Rescue Inquisitor"
 		});
 	});
 
-	describe("4. Codebase & Component Source Verification (Mandates 8e, 8i, 8k)", () => {
-		it("verifies SomaticSafetyAlertWidget.tsx exists and implements all shield requirements", () => {
-			const widgetPath = path.resolve(
-				__dirname,
-				"../components/clinical/SomaticSafetyAlertWidget.tsx",
+	describe("4. Live UI Render Verification: Somatic Shield, Visit EMK & Emergency Modal (Mandates 8e, 8i, 8k)", () => {
+		it("renders SomaticSafetyAlertWidget in healthy norm and risk states with zero cartoon emojis", () => {
+			const normHtml = renderToStaticMarkup(
+				React.createElement(SomaticSafetyAlertWidget, {
+					patient: {},
+					onApplyNorm: () => {},
+				}),
 			);
-			assert.ok(fs.existsSync(widgetPath), "SomaticSafetyAlertWidget.tsx must physically exist");
+			assert.ok(normHtml.includes('data-testid="btn-somatic-norm-one-click"'));
+			assert.equal(hasCartoonEmojis(normHtml), false);
 
-			let content = fs.readFileSync(widgetPath, "utf8");
-			const alertModulesDir = path.resolve(
-				__dirname,
-				"../components/clinical/somaticAlert",
+			const riskHtml = renderToStaticMarkup(
+				React.createElement(SomaticSafetyAlertWidget, {
+					patient: { hasArticaineAllergy: true, hasPacemakerExs: true },
+					variant: "card",
+					onApplyNorm: () => {},
+					onSyncToDiary: () => {},
+				}),
 			);
-			if (fs.existsSync(alertModulesDir)) {
-				for (const file of fs.readdirSync(alertModulesDir)) {
-					content += `\n${fs.readFileSync(path.join(alertModulesDir, file), "utf8")}`;
-				}
-			}
-			assert.ok(
-				content.includes('data-testid="somatic-safety-alert-badge"'),
-				"Widget must contain data-testid somatic-safety-alert-badge",
-			);
-			assert.ok(
-				content.includes('data-testid="btn-somatic-norm-one-click"'),
-				"Widget must contain 1-click norm button btn-somatic-norm-one-click",
-			);
-			assert.ok(
-				content.includes('from "@dental/shared"'),
-				"Widget must import strictly from @dental/shared per Mandate 8s",
-			);
-			assert.strictEqual(
-				hasCartoonEmojis(content),
-				false,
-				"SomaticSafetyAlertWidget.tsx must contain 0 cartoon emojis",
-			);
+			assert.ok(riskHtml.includes('data-testid="somatic-safety-alert-badge"'));
+			assert.ok(riskHtml.includes('data-testid="btn-somatic-norm-one-click"'));
+			assert.equal(hasCartoonEmojis(riskHtml), false);
 		});
 
-		it("verifies VisitEmkTab.tsx exists and contains save/complete buttons with zero disabled buttons", () => {
-			const emkTabPath = path.resolve(
-				__dirname,
-				"../components/visit/VisitEmkTab.tsx",
+		it("renders VisitEmkCompletionSection save & complete buttons without disabled on save", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(VisitEmkCompletionSection, {
+					isSignedVisit: false,
+					isRevisingVisitNote: false,
+					setIsRevisingVisitNote: () => {},
+					handleSaveVisitNote: () => {},
+					handleCompleteVisitAndGenerateReceipt: () => {},
+					isDraftAccepting: false,
+					isCompletingVisit: false,
+					completionResult: null,
+					completionError: null,
+					setIsSbpQrModalOpen: () => {},
+					activeEmkTab: "complaints",
+					setActiveEmkTab: () => {},
+					followupSlotChipsNode: null,
+				}),
 			);
-			const completionSectionPath = path.resolve(
-				__dirname,
-				"../components/visit/emkTab/VisitEmkCompletionSection.tsx",
-			);
-			assert.ok(fs.existsSync(emkTabPath), "VisitEmkTab.tsx must physically exist");
-			assert.ok(fs.existsSync(completionSectionPath), "VisitEmkCompletionSection.tsx must physically exist");
-
-			const content =
-				fs.readFileSync(emkTabPath, "utf8") +
-				"\n" +
-				fs.readFileSync(completionSectionPath, "utf8");
-			assert.ok(
-				content.includes('data-testid="btn-save-visit-note"'),
-				"VisitEmkTab must have btn-save-visit-note",
-			);
-			assert.ok(
-				content.includes('data-testid="btn-complete-visit-emk"'),
-				"VisitEmkTab must have btn-complete-visit-emk",
-			);
-
-			// Check Doctor Autonomy: Save and Complete buttons must NOT have disabled={true} due to somatic fields
-			assert.ok(
-				!content.includes('data-testid="btn-save-visit-note" disabled'),
-				"Save visit note button must not be disabled by somatic inputs",
-			);
-			assert.ok(
-				!content.includes('data-testid="btn-complete-visit-emk" disabled'),
-				"Complete visit button must not be disabled by somatic inputs",
-			);
-			assert.strictEqual(
-				hasCartoonEmojis(content),
-				false,
-				"VisitEmkTab.tsx must contain 0 cartoon emojis",
-			);
+			const saveBtn = html.match(/<button[^>]*data-testid="btn-save-visit-note"[^>]*>/);
+			const completeBtn = html.match(/<button[^>]*data-testid="btn-complete-visit-emk"[^>]*>/);
+			assert.ok(saveBtn, "VisitEmkCompletionSection must render btn-save-visit-note");
+			assert.ok(completeBtn, "VisitEmkCompletionSection must render btn-complete-visit-emk");
+			assert.equal(/\bdisabled\b/.test(saveBtn[0]), false, "Save visit note button must not be disabled");
+			assert.equal(/\bdisabled\b/.test(completeBtn[0]), false, "Complete visit button must not be disabled");
+			assert.equal(hasCartoonEmojis(html), false);
 		});
 
-		it("verifies EmergencyRescueModal.tsx exists and provides statutory adrenaline and metronome tools", () => {
-			const modalPath = path.resolve(
-				__dirname,
-				"../components/emergency/EmergencyRescueModal.tsx",
+		it("renders EmergencyRescueModal with real adrenaline dosages and EmergencyResuscitationTools with timer and statutory kit memo", () => {
+			const closedHtml = renderToStaticMarkup(
+				React.createElement(EmergencyRescueModal, {
+					isOpen: false,
+					onClose: () => {},
+				}),
 			);
-			assert.ok(fs.existsSync(modalPath), "EmergencyRescueModal.tsx must physically exist");
+			assert.equal(closedHtml, "");
 
-			const content = fs.readFileSync(modalPath, "utf8");
-			assert.ok(
-				content.includes("EmergencyRescueModal"),
-				"EmergencyRescueModal must export EmergencyRescueModal component",
+			const openHtml = renderToStaticMarkup(
+				React.createElement(EmergencyRescueModal, {
+					isOpen: true,
+					onClose: () => {},
+					initialPatientName: "Сидоров С.С.",
+					initialPatientWeightKg: 75,
+				}),
 			);
-			assert.ok(
-				content.includes("calculateAllEmergencyDosages"),
-				"EmergencyRescueModal must calculate real-time emergency dosages",
+			assert.ok(openHtml.includes("Сидоров С.С."));
+			assert.ok(openHtml.includes("Адреналин"));
+			assert.equal(hasCartoonEmojis(openHtml), false);
+
+			const toolsHtml = renderToStaticMarkup(
+				React.createElement(EmergencyResuscitationTools, {
+					adrenalineTimerSeconds: 300,
+					isAdrenalineTimerRunning: false,
+					isAdrenalineDue: false,
+					onStartAdrenalineTimer: () => {},
+					onResetAdrenalineTimer: () => {},
+					onWriteoffAntishockKit: () => {},
+					isWritingOffKit: false,
+					isKitWrittenOff: false,
+				}),
 			);
-			assert.ok(
-				content.includes("ТАЙМЕР ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА"),
-				"EmergencyRescueModal must provide adrenaline timer",
-			);
-			assert.ok(
-				content.includes("УКЛАДКА ЭКСТРЕННОЙ ПОМОЩИ (ПРИКАЗ МЗ РФ № 786н / 1144н)"),
-				"EmergencyRescueModal must provide statutory kit memo",
-			);
-			assert.strictEqual(
-				hasCartoonEmojis(content),
-				false,
-				"EmergencyRescueModal.tsx must contain 0 cartoon emojis",
-			);
+			assert.ok(toolsHtml.includes("ТАЙМЕР ПОВТОРНОГО ВВЕДЕНИЯ АДРЕНАЛИНА"));
+			assert.ok(toolsHtml.includes("786н / 1144н"));
+			assert.ok(toolsHtml.includes("emergency-writeoff-kit-btn"));
+			assert.equal(hasCartoonEmojis(toolsHtml), false);
 		});
 	});
 });

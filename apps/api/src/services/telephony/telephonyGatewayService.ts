@@ -161,6 +161,7 @@ export class TelephonyGatewayService {
 		patientId?: string | null | undefined;
 		patientName?: string | undefined;
 		staffUserId?: string | null | undefined;
+		dryRun?: boolean | undefined;
 		logger?: {
 			warn: (obj: unknown, msg?: string) => void;
 			error: (obj: unknown, msg?: string) => void;

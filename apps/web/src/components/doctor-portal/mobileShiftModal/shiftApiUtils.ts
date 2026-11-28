@@ -80,7 +80,18 @@ export async function persistBatchSigningToApi(
 				headers: denteClinicalMutationHeaders(),
 			});
 			if (!visitRes.ok) continue;
-			const visitRaw = await visitRes.json().catch(() => null);
+			let visitRaw: { data?: { diary?: { id?: string | null } }; diary?: { id?: string | null } } | null = null;
+			try {
+				visitRaw = (await visitRes.json()) as {
+					data?: { diary?: { id?: string | null } };
+					diary?: { id?: string | null };
+				} | null;
+			} catch (parseErr) {
+				clientLogger.warn("[DoctorMobileShiftModal] Visit JSON parse failed", {
+					aptId,
+					error: String(parseErr),
+				});
+			}
 			const visitPayload = (visitRaw?.data ?? visitRaw) as { diary?: { id?: string | null } } | null;
 			const diaryId = visitPayload?.diary?.id;
 			if (typeof diaryId !== "string" || !uuidRe.test(diaryId)) continue;

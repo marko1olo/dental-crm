@@ -40,7 +40,10 @@ function readPerioErrorInfo(err: unknown): {
 	};
 }
 
-export async function registerSnapshotPeriodontogramRoutes(app: FastifyInstance) {
+export async function registerSnapshotPeriodontogramRoutes(
+	app: FastifyInstance,
+	demoOptions?: { readonly allowSyntheticDemoIds?: boolean | undefined },
+) {
 	/**
 	 * 1. GET /api/periodontogram/patients/:patientId/snapshots
 	 * История закрытых осмотров пациента
@@ -62,7 +65,12 @@ export async function registerSnapshotPeriodontogramRoutes(app: FastifyInstance)
 			const rawPatientId = paramParsed.data.patientId;
 			try {
 				const snapshots = await withTenantReadCtx(orgId, async (tx) => {
-					const patientId = await resolvePerioPatientId(orgId, rawPatientId, tx);
+					const patientId = await resolvePerioPatientId(
+						orgId,
+						rawPatientId,
+						tx,
+						demoOptions,
+					);
 					return tx
 						.select()
 						.from(periodontogramSnapshots)
@@ -116,7 +124,12 @@ export async function registerSnapshotPeriodontogramRoutes(app: FastifyInstance)
 			const rawPatientId = paramParsed.data.patientId;
 			try {
 				const data = await withTenantReadCtx(orgId, async (tx) => {
-					const patientId = await resolvePerioPatientId(orgId, rawPatientId, tx);
+					const patientId = await resolvePerioPatientId(
+						orgId,
+						rawPatientId,
+						tx,
+						demoOptions,
+					);
 					const [draft] = await tx
 						.select()
 						.from(periodontogramSnapshots)
@@ -178,7 +191,12 @@ export async function registerSnapshotPeriodontogramRoutes(app: FastifyInstance)
 			const identity = getRequestIdentity(req);
 			try {
 				const txOutcome = await withTenantWriteCtx(orgId, async (tx) => {
-					const patientId = await resolvePerioPatientId(orgId, rawPatientId, tx);
+					const patientId = await resolvePerioPatientId(
+						orgId,
+						rawPatientId,
+						tx,
+						demoOptions,
+					);
 					const [existing] = await tx
 						.select()
 						.from(periodontogramSnapshots)
@@ -201,6 +219,7 @@ export async function registerSnapshotPeriodontogramRoutes(app: FastifyInstance)
 						null,
 						rawPatientId,
 						tx,
+						demoOptions,
 					);
 					return { created: true as const, data: created };
 				});

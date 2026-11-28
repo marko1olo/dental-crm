@@ -6,6 +6,7 @@ import {
 } from "@dental/shared";
 import { useRef, useState } from "react";
 import type { IngestedMappingItem } from "../../catalog/mappingDiff/types";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { staffMutationHeaders } from "../staffMutationRequest";
 import type {
 	ImportResultSummary,
@@ -78,7 +79,15 @@ export function usePricesAiImport(props: SettingsPricesAiImportSectionProps) {
 			});
 
 			if (!res.ok) {
-				const errorJson = await res.json().catch(() => ({}));
+				let errorJson: { message?: string } = {};
+				try {
+					errorJson = (await res.json()) as { message?: string };
+				} catch (parseErr) {
+					clientLogger.warn("[usePricesAiImport] parse-file error JSON parse failed", {
+						status: res.status,
+						error: String(parseErr),
+					});
+				}
 				throw new Error(
 					errorJson.message || `Ошибка сервера при разборе таблицы (HTTP ${res.status})`,
 				);
@@ -249,7 +258,15 @@ export function usePricesAiImport(props: SettingsPricesAiImportSectionProps) {
 			});
 
 			if (!response.ok) {
-				const errorJson = await response.json().catch(() => ({}));
+				let errorJson: { message?: string } = {};
+				try {
+					errorJson = (await response.json()) as { message?: string };
+				} catch (parseErr) {
+					clientLogger.warn("[usePricesAiImport] batch-import error JSON parse failed", {
+						status: response.status,
+						error: String(parseErr),
+					});
+				}
 				throw new Error(
 					errorJson.message ||
 						`Сбой транзакции при пакетном импорте (HTTP ${response.status})`,

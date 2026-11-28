@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { generateUuidV7 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { useSettingsStore } from "../../store/settings";
 import { showToast } from "../GlobalToast";
 import { MessengerChannelGridItem } from "./messengers/MessengerChannelGridItem";
@@ -40,8 +41,8 @@ export function MessengersOverviewCard({ onSelectTab, className = "" }: Messenge
 				if (Array.isArray(data?.channels)) setChannels(data.channels);
 				if (data?.summary) setSummary(data.summary);
 			}
-		} catch {
-			// keep defaults
+		} catch (err) {
+			clientLogger.warn("[MessengersOverviewCard] Failed to fetch overview", err);
 		} finally {
 			setIsLoading(false);
 		}
@@ -64,7 +65,12 @@ export function MessengersOverviewCard({ onSelectTab, className = "" }: Messenge
 				),
 				body: JSON.stringify({ channelId: ch.id }),
 			});
-			const raw = await res.json().catch(() => null);
+			let raw: { data?: { ok?: boolean; message?: string }; ok?: boolean; message?: string } | null = null;
+			try {
+				raw = (await res.json()) as typeof raw;
+			} catch (parseErr) {
+				clientLogger.warn("[MessengersOverviewCard] Non-JSON test-connection response", parseErr);
+			}
 			const data = (raw?.data ?? raw) as { ok?: boolean; message?: string } | null;
 			if (!res.ok || data?.ok === false) {
 				showToast(data?.message || `${ch.title}: ошибка проверки канала (${res.status})`, "error");

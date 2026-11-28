@@ -13,3 +13,4 @@ export * from "./SanPinCyclesTable";
 export * from "./SanPinDesktopCycleRow";
 export * from "./SanPinTableEmptyState";
 export * from "./SanPinMobileCyclesCards";
+export * from "./SanPinRunCycleTab";

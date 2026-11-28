@@ -24,7 +24,7 @@ export const LeadMobileSheetClinicalCard: React.FC<
 	return (
 		<>
 			<div className="rounded-[16px] bg-[var(--paper-soft)] border border-[var(--line)] p-3.5 space-y-2.5">
-				<div className="text-[12px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+				<div className="text-[12px] font-semibold text-[var(--muted)]">
 					Источник и регламент ответа (SLA)
 				</div>
 

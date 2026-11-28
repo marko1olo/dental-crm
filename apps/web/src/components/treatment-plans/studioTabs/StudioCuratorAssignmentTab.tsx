@@ -7,6 +7,7 @@ import React, { useState } from "react";
 import { generateUuidV7 } from "@dental/shared";
 import { UserCheck, Calendar, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { useAppStore } from "../../../store/appStore";
 import {
 	normalizeToPipelineStage,
@@ -82,8 +83,13 @@ export const StudioCuratorAssignmentTab: React.FC<StudioCuratorAssignmentTabProp
 				});
 
 				if (!res.ok) {
-					const errJson = await res.json().catch(() => ({}));
-					const errMsg = errJson?.message || errJson?.error || "Ошибка сохранения настроек куратора на сервере";
+					let errMsg = "Ошибка сохранения настроек куратора на сервере";
+					try {
+						const errJson = (await res.json()) as { message?: string; error?: string };
+						errMsg = errJson?.message || errJson?.error || errMsg;
+					} catch (parseErr) {
+						clientLogger.warn("[StudioCuratorAssignmentTab] Non-JSON error response", parseErr);
+					}
 					setSaveError(errMsg);
 					setIsSaving(false);
 					return;

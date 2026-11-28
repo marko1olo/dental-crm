@@ -31,7 +31,7 @@ export const TreatmentPlanActMaterialsTable: React.FC<TreatmentPlanActMaterialsT
 	return (
 		<div className="doc-soap-section mb-6 print:mb-4">
 			<div
-				className="doc-soap-heading flex items-center justify-between p-2 rounded-t-lg font-bold text-xs text-slate-900 border-b-2"
+				className="doc-soap-heading flex items-center justify-between p-2 rounded-t-lg font-bold text-xs text-[var(--ink)] print:text-slate-900 border-b-2"
 				style={{
 					backgroundColor: palette.softBg,
 					borderColor: palette.primary,
@@ -39,7 +39,7 @@ export const TreatmentPlanActMaterialsTable: React.FC<TreatmentPlanActMaterialsT
 				}}
 			>
 				<div className="flex items-center gap-2">
-					<Package className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
+					<Package className="w-4 h-4 text-[var(--primary)]" />
 					<span>2. Накладная на списание медикаментов и расходных материалов (ТМЦ)</span>
 				</div>
 				<span className="text-[11px] font-semibold lowercase opacity-90">
@@ -48,9 +48,9 @@ export const TreatmentPlanActMaterialsTable: React.FC<TreatmentPlanActMaterialsT
 			</div>
 
 			<div className="overflow-x-auto">
-				<table className="w-full border-collapse border border-slate-300 text-xs">
+				<table className="w-full border-collapse border border-[var(--line)] print:border-slate-300 text-xs">
 					<thead>
-						<tr className="bg-slate-100 text-slate-800 font-bold text-[11px]">
+						<tr className="bg-[var(--paper-soft)] print:bg-slate-100 text-[var(--ink)] print:text-slate-800 font-bold text-[11px]">
 							<th className="border border-slate-300 p-2 text-center w-10">№</th>
 							<th className="border border-slate-300 p-2 text-left">
 								Наименование медикамента / расходного материала

@@ -8,6 +8,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import {
 	CLINICAL_AUTOCLAVE_1CLICK_PRESETS,
@@ -76,23 +77,41 @@ export function useSterilizationDrawerLogic(
 		});
 
 		try {
-			const res = await fetch("/api/sanpin/sterilization/quick-norm", {
-				method: "POST",
-				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify(payload),
-			}).catch(() => null);
+			let res: Response | null = null;
+			try {
+				res = await fetch("/api/sanpin/sterilization/quick-norm", {
+					method: "POST",
+					headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify(payload),
+				});
+			} catch (fetchErr) {
+				clientLogger.warn("[useSterilizationDrawerLogic] quick-norm request failed", {
+					error: String(fetchErr),
+				});
+			}
 
 			showToast(
 				`Цикл автоклава (${activePreset.temperatureC}°C / ${activePreset.pressureBar} бар) утверждён: норма, ${packsCount} наборов`,
 				"success",
 			);
 			if (onCycleApproved) {
-				onCycleApproved(
-					res?.ok ? await res.json().catch(() => payload) : payload,
-				);
+				let approvedRecord: unknown = payload;
+				if (res?.ok) {
+					try {
+						approvedRecord = await res.json();
+					} catch (parseErr) {
+						clientLogger.warn("[useSterilizationDrawerLogic] quick-norm JSON parse failed", {
+							error: String(parseErr),
+						});
+					}
+				}
+				onCycleApproved(approvedRecord);
 			}
 			onClose?.();
-		} catch {
+		} catch (err) {
+			clientLogger.warn("[useSterilizationDrawerLogic] handleApprove unexpected error", {
+				error: String(err),
+			});
 			showToast(
 				`Цикл стерилизации утверждён (${activePreset.temperatureC}°C, норма)`,
 				"success",

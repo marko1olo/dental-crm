@@ -13,12 +13,12 @@ export const ChairsideAssistantReasonsDropdown: React.FC<ChairsideAssistantReaso
 
 	return (
 		<div className="absolute top-full left-0 mt-1.5 w-72 bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl shadow-2xl p-2 z-50 max-h-80 overflow-y-auto">
-			<div className="text-[11px] font-bold text-[var(--muted)] px-2 py-1 uppercase tracking-wider">
+			<div className="text-[11px] font-bold text-[var(--muted)] px-2 py-1 tracking-normal">
 				Повод для вызова ассистента:
 			</div>
 			{CLINICAL_ASSISTANT_REASONS_BY_SPECIALTY.map((cat) => (
 				<div key={cat.id} className="mb-2 last:mb-0">
-					<div className="text-[10.5px] font-bold text-[var(--teal)] px-2 py-0.5 uppercase tracking-wider flex items-center gap-1.5">
+					<div className="text-[11px] font-bold text-[var(--primary)] px-2 py-0.5 flex items-center gap-1.5">
 						<span>{cat.icon}</span>
 						<span>{cat.name}</span>
 					</div>

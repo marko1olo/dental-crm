@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { generateUuidV7, type StaffRole } from "@dental/shared";
 import { MoreHorizontal } from "lucide-react";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import { FinanceToolbarMenuItems } from "./FinanceToolbarMenuItems.js";
 
@@ -44,8 +45,14 @@ export function FinanceToolbarMenu(p: FinanceToolbarMenuProps): React.JSX.Elemen
 			});
 
 			if (!response.ok) {
-				const errJson = (await response.json().catch(() => null)) as { message?: string } | null;
-				throw new Error(errJson?.message || `Ошибка сервера: ${response.status}`);
+				let msg = `Ошибка сервера: ${response.status}`;
+				try {
+					const errJson = (await response.json()) as { message?: string } | null;
+					if (errJson?.message) msg = errJson.message;
+				} catch (parseErr) {
+					clientLogger.warn("[FinanceToolbarMenu] Non-JSON error response:", parseErr);
+				}
+				throw new Error(msg);
 			}
 
 			const rawJson = (await response.json()) as {

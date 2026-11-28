@@ -2,7 +2,7 @@
  * demoStaffAndChairsSeeder.ts — Demo Organization, Clinic, Chairs, Staff and Isolation Reset (Layer 2).
  */
 
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, type SQL } from "drizzle-orm";
 import {
 	aiJobs,
 	appointments,
@@ -49,11 +49,18 @@ import {
 	DEMO_SHOWCASE_ORG_ID,
 } from "../types.js";
 
+export interface DemoCleanupTx {
+	execute(query: SQL): Promise<{ rows?: unknown[] }>;
+	delete: (table: Parameters<DbTx["delete"]>[0]) => {
+		where: (condition: SQL | undefined) => PromiseLike<unknown>;
+	};
+}
+
 /**
  * Очищает исключительно строки демо-тенанта при forceReset.
  * Строгие условия WHERE и RLS гарантируют нулевое воздействие на боевые клиники.
  */
-export async function cleanDemoShowcaseTables(tx: DbTx): Promise<void> {
+export async function cleanDemoShowcaseTables(tx: DbTx | DemoCleanupTx): Promise<void> {
 	const tablesToClean = [
 		"dms_guarantee_letters",
 		"insurance_contracts",
@@ -122,21 +129,31 @@ export async function cleanDemoShowcaseTables(tx: DbTx): Promise<void> {
 		"treatment_items",
 	];
 
+	const tableAllowlist = new Set(tablesToClean);
 	const validCols = await tx.execute(
-		sql.raw(
-			`SELECT table_name FROM information_schema.columns WHERE table_schema = 'public' AND column_name = 'organization_id' AND table_name IN (${tablesToClean.map((t) => `'${t}'`).join(", ")})`,
-		),
+		sql`SELECT table_name FROM information_schema.columns WHERE table_schema = 'public' AND column_name = 'organization_id' AND table_name IN (${sql.join(
+			tablesToClean.map((t) => sql`${t}`),
+			sql`, `,
+		)})`,
 	);
-	const validTableNames = new Set(
-		(validCols.rows as Array<{ table_name: string }>).map((r) => r.table_name),
-	);
+	const validTableNames = new Set<string>();
+	if (Array.isArray(validCols.rows)) {
+		for (const row of validCols.rows) {
+			if (
+				typeof row === "object" &&
+				row !== null &&
+				"table_name" in row &&
+				typeof row.table_name === "string"
+			) {
+				validTableNames.add(row.table_name);
+			}
+		}
+	}
 
 	for (const tbl of tablesToClean) {
-		if (validTableNames.has(tbl)) {
+		if (tableAllowlist.has(tbl) && validTableNames.has(tbl)) {
 			await tx.execute(
-				sql.raw(
-					`DELETE FROM "${tbl}" WHERE organization_id = '${DEMO_SHOWCASE_ORG_ID}'::uuid`,
-				),
+				sql`DELETE FROM ${sql.identifier(tbl)} WHERE organization_id = ${DEMO_SHOWCASE_ORG_ID}::uuid`,
 			);
 		}
 	}

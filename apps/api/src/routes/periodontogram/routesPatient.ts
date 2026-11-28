@@ -43,7 +43,10 @@ function readPerioError(err: unknown): {
 	};
 }
 
-export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) {
+export async function registerPatientPeriodontogramRoutes(
+	app: FastifyInstance,
+	demoOptions?: { readonly allowSyntheticDemoIds?: boolean | undefined },
+) {
 	const handleGet = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
@@ -61,7 +64,12 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 		let data: Awaited<ReturnType<typeof fetchPatientLatestPeriodontogram>>;
 		try {
 			const result = await withTenantReadCtx(orgId, async (tx) => {
-				const resolvedPatientId = await resolvePerioPatientId(orgId, rawPatientId, tx);
+				const resolvedPatientId = await resolvePerioPatientId(
+					orgId,
+					rawPatientId,
+					tx,
+					demoOptions,
+				);
 				const latestData = await fetchPatientLatestPeriodontogram(
 					orgId,
 					resolvedPatientId,
@@ -164,7 +172,12 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 
 		try {
 			const { patientId, result } = await withTenantWriteCtx(orgId, async (tx) => {
-				const resolvedPatientId = await resolvePerioPatientId(orgId, rawPatientId, tx);
+				const resolvedPatientId = await resolvePerioPatientId(
+					orgId,
+					rawPatientId,
+					tx,
+					demoOptions,
+				);
 				const upsertResult = await upsertPatientFullPeriodontogram({
 					orgId,
 					patientId: resolvedPatientId,
@@ -178,6 +191,7 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 					autoClose: Boolean(body.autoClose),
 					psrData: rawPsrData,
 					tx,
+					demoOptions,
 				});
 				return { patientId: resolvedPatientId, result: upsertResult };
 			});

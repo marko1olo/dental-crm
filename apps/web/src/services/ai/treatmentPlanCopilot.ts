@@ -369,7 +369,14 @@ export async function requestTreatmentPlanAiValidationAndComment(
 		});
 
 		if (!response.ok) {
-			const errBody = await response.json().catch(() => ({}));
+			let errBody: unknown = {};
+			try {
+				errBody = await response.json();
+			} catch (parseErr) {
+				clientLogger.warn("[TreatmentPlanCopilot] Failed to parse AI error JSON", parseErr, {
+					module: "treatmentPlanCopilot",
+				});
+			}
 			clientLogger.warn("[TreatmentPlanCopilot] AI API returned error", { status: response.status, errBody }, {
 				module: "treatmentPlanCopilot",
 			});

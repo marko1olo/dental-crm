@@ -167,7 +167,7 @@ export function renderOnboardingWizardTree(
 						</span>
 					</div>
 					<button
-						className="primary-button onboarding-fast-oneclick-btn"
+						className="secondary-button onboarding-fast-oneclick-btn"
 						type="button"
 						onClick={() => {
 							if (!clinicProfileDraft.clinicName?.trim()) {

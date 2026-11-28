@@ -64,10 +64,12 @@ export async function submitPhaseCompletion(params: CompletePhaseParams): Promis
 		};
 	}
 
-	const payload = (await response.json().catch((err) => {
+	let payload: (ClinicalTask & { message?: string }) | { message?: string } | null = null;
+	try {
+		payload = (await response.json()) as (ClinicalTask & { message?: string }) | { message?: string } | null;
+	} catch (err) {
 		logger.error("[Dente phase-completion]", err);
-		return null;
-	})) as (ClinicalTask & { message?: string }) | { message?: string } | null;
+	}
 
 	if (!response.ok) {
 		const message = payload && typeof payload === "object" && typeof payload.message === "string" ? payload.message : null;

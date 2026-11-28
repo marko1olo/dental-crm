@@ -228,11 +228,23 @@ export function useIncomingCallPopupController(
 				body: JSON.stringify({ fullName: targetName, phone: currentCall.phone }),
 			});
 			if (!res.ok) {
-				const data = (await res.json().catch(() => ({}))) as {
+				let data: {
 					message?: string;
 					existingPatientId?: string;
 					existingPatient?: { id: string; fullName: string };
-				};
+				} = {};
+				try {
+					data = (await res.json()) as {
+						message?: string;
+						existingPatientId?: string;
+						existingPatient?: { id: string; fullName: string };
+					};
+				} catch (parseErr) {
+					logger.warn("[IncomingCallPopup] Create patient error JSON parse failed", {
+						status: res.status,
+						error: String(parseErr),
+					});
+				}
 				if (res.status === 409 && (data.existingPatientId || data.existingPatient?.id)) {
 					const existingId = data.existingPatientId || data.existingPatient?.id || "";
 					const existingName = data.existingPatient?.fullName || targetName;
@@ -320,10 +332,20 @@ export function useIncomingCallPopupController(
 		});
 		openWhatsAppChat(currentCall.phone, msg);
 		if (resolvedPatient?.id) {
-			fetch("/api/whatsapp/send", {
-				method: "POST", headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({ patientId: resolvedPatient.id, message: msg }),
-			}).catch((err) => logger.warn("[IncomingCallPopup] WhatsApp direct send API error:", err));
+			void (async () => {
+				try {
+					const waRes = await fetch("/api/whatsapp/send", {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+						body: JSON.stringify({ patientId: resolvedPatient.id, message: msg }),
+					});
+					if (!waRes.ok) {
+						logger.warn("[IncomingCallPopup] WhatsApp direct send HTTP error:", waRes.status);
+					}
+				} catch (err) {
+					logger.warn("[IncomingCallPopup] WhatsApp direct send API error:", err);
+				}
+			})();
 		}
 		showToast(`Чат WhatsApp открыт для ${callerName} (${formattedPhone})`, "success");
 	};

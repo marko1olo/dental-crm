@@ -61,7 +61,7 @@ export const ShiftTodoListSection: React.FC<ShiftTodoListSectionProps> = ({
 									) : null}
 								</div>
 								<button
-									className="secondary-button shift-todo-go min-h-[44px] px-3 py-2 shrink-0"
+									className="secondary-button shift-todo-go min-h-[44px] md:min-h-[32px] md:h-8 px-3 py-2 md:py-1 shrink-0"
 									type="button"
 									onClick={() => onRunRecommendedAction(action)}
 								>

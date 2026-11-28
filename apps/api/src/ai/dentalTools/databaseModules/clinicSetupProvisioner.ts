@@ -4,6 +4,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { resolveValidIanaTimeZone, shiftCalendarDay, todayDateKeyInTimeZone } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { TenantDb } from "../../../db/rls.js";
 import { cashBoxes, chairs, doctorShiftRosters, serviceCatalogItems, users } from "../../../db/schema.js";
@@ -37,14 +38,18 @@ export async function provisionDoctorsAndShifts(activeDb: DbClient, orgId: strin
 	}
 
 	const createdShifts: Array<{ date: string; doctorName: string; time: string }> = [];
-	const today = new Date();
+	const clinicTimeZone = resolveValidIanaTimeZone(schedule.timezone);
+	const todayKey = todayDateKeyInTimeZone(clinicTimeZone);
 	const startHourStr = String(schedule.startHour).padStart(2, "0") + ":00";
 	const endHourStr = String(schedule.endHour).padStart(2, "0") + ":00";
 
 	for (let offset = 0; offset < 7; offset++) {
-		const dateObj = new Date(today.getTime() + offset * 86400000);
-		if (schedule.workDays.includes(dateObj.getDay())) {
-			const dateIso = dateObj.toISOString().slice(0, 10);
+		const dateIso = shiftCalendarDay(todayKey, offset);
+		const [yearStr, monthStr, dayStr] = dateIso.split("-");
+		const dayOfWeek = new Date(
+			Date.UTC(Number(yearStr), Number(monthStr) - 1, Number(dayStr)),
+		).getUTCDay();
+		if (schedule.workDays.includes(dayOfWeek)) {
 			for (let dIdx = 0; dIdx < createdDocs.length; dIdx++) {
 				const doc = createdDocs[dIdx];
 				const assignedChair = createdChairs[dIdx % createdChairs.length];

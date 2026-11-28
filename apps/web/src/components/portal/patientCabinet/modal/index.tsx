@@ -11,6 +11,7 @@
 import React from "react";
 import { RefreshCw, X } from "lucide-react";
 import { generateUuidV7 } from "@dental/shared";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { formatRubles, type PatientInvoiceItem } from "../patientCabinetEngine.js";
 import { TaxDeductionCertificateModal } from "../../../documents/DocumentsStudioModal";
 import { MobileSelfCheckinModal } from "../../selfCheckin/index";
@@ -133,7 +134,12 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = (props) =
 				},
 				body: JSON.stringify({ invoiceId: inv.id }),
 			});
-			const raw = (await res.json().catch(() => null)) as unknown;
+			let raw: unknown = null;
+			try {
+				raw = await res.json();
+			} catch (parseErr) {
+				clientLogger.warn("[PatientCabinetModal] Non-JSON card-order response", parseErr);
+			}
 			const payload = (
 				raw && typeof raw === "object" && "data" in raw
 					? (raw as { data?: { formUrl?: string; message?: string } }).data

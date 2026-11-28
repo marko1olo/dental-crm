@@ -64,8 +64,16 @@ export const PublicConsentSignPage: React.FC<PublicConsentSignPageProps> = ({
 			setError(null);
 			const res = await fetch(`/api/public/consents/share-info?token=${encodeURIComponent(tok)}`);
 			if (!res.ok) {
-				const data = (await res.json().catch(() => ({}))) as { message?: string };
-				setError(data.message || "Срок действия ссылки истёк или ссылка недействительна.");
+				let msg = "Срок действия ссылки истёк или ссылка недействительна.";
+				try {
+					const data = (await res.json()) as { message?: string };
+					if (data?.message) msg = data.message;
+				} catch (parseErr) {
+					clientLogger.warn("[PublicConsentSignPage] Non-JSON share-info error", parseErr, {
+						module: "PublicConsentSignPage",
+					});
+				}
+				setError(msg);
 				setIsLoading(false);
 				return;
 			}
@@ -126,8 +134,16 @@ export const PublicConsentSignPage: React.FC<PublicConsentSignPageProps> = ({
 				});
 
 				if (!res.ok) {
-					const data = (await res.json().catch(() => ({}))) as { message?: string };
-					setError(data.message || "Не удалось сохранить подпись. Попробуйте повторить.");
+					let msg = "Не удалось сохранить подпись. Попробуйте повторить.";
+					try {
+						const data = (await res.json()) as { message?: string };
+						if (data?.message) msg = data.message;
+					} catch (parseErr) {
+						clientLogger.warn("[PublicConsentSignPage] Non-JSON sign error", parseErr, {
+							module: "PublicConsentSignPage",
+						});
+					}
+					setError(msg);
 					return;
 				}
 

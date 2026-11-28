@@ -106,9 +106,9 @@ export const CopilotDdiSafetyCard: React.FC<CopilotDdiSafetyCardProps> = ({
             )}
             <button
               type="button"
-              className="px-3.5 py-1.5 rounded-xl bg-[var(--teal,#0d9488)] text-white hover:bg-[var(--teal-dark,#0f766e)] font-bold text-xs inline-flex items-center gap-1.5 shadow-xs cursor-pointer min-h-[36px]"
+              className="px-3.5 py-1.5 rounded-xl bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] font-bold text-xs inline-flex items-center gap-1.5 shadow-xs cursor-pointer min-h-[36px]"
               onClick={handleOverride}
-              title="Утвердить назначение врача (Мандат 8e)"
+              title="Утвердить назначение врача"
             >
               <Check size={16} />
               <span>Утвердить</span>

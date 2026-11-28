@@ -78,8 +78,8 @@ export const DoctorShiftVisitItem: React.FC<DoctorShiftVisitItemProps> = ({
 				) : isInChair ? (
 					<button
 						type="button"
-						className="primary-button"
-						style={{ fontSize: "13px", height: "36px", padding: "0 14px", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--teal)", color: "#fff", cursor: "pointer" }}
+						className="secondary-button"
+						style={{ fontSize: "13px", height: "36px", padding: "0 14px", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--paper)", border: "1px solid var(--line)", color: "var(--ink)", cursor: "pointer" }}
 						onClick={() => patient && onOpenAppointmentEmk?.(patient.id)}
 						title="Открыть карту и продолжить прием"
 					>
@@ -88,8 +88,8 @@ export const DoctorShiftVisitItem: React.FC<DoctorShiftVisitItemProps> = ({
 				) : (
 					<button
 						type="button"
-						className="primary-button"
-						style={{ fontSize: "13px", height: "36px", padding: "0 14px", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--teal)", color: "#fff", cursor: "pointer" }}
+						className="secondary-button"
+						style={{ fontSize: "13px", height: "36px", padding: "0 14px", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--paper)", border: "1px solid var(--line)", color: "var(--ink)", cursor: "pointer" }}
 						onClick={() => patient && onOpenAppointmentEmk?.(patient.id)}
 						title="Принять пациента в кресло"
 						data-testid="btn-call-to-chair"

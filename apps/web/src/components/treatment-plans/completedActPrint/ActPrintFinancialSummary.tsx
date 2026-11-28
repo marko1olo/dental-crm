@@ -27,7 +27,7 @@ export const ActPrintFinancialSummary: React.FC<ActPrintFinancialSummaryProps> =
 			}}
 		>
 			<div className="space-y-1">
-				<span className="text-slate-600 block font-semibold text-[11px]">
+				<span className="text-[var(--ink-muted)] print:text-slate-600 block font-semibold text-[11px]">
 					Стоимость услуг (выручка этапа):
 				</span>
 				<strong
@@ -36,34 +36,34 @@ export const ActPrintFinancialSummary: React.FC<ActPrintFinancialSummaryProps> =
 				>
 					{formatMoneyExact(netServicesRub, netServicesKopecks)}
 				</strong>
-				<span className="text-[10px] text-slate-500 block">
+				<span className="text-[10px] text-[var(--ink-muted)] print:text-slate-500 block">
 					Без НДС (ст. 149 НК РФ)
 				</span>
 			</div>
 
 			<div className="space-y-1">
-				<span className="text-slate-600 block font-semibold text-[11px]">
+				<span className="text-[var(--ink-muted)] print:text-slate-600 block font-semibold text-[11px]">
 					Себестоимость ТМЦ этапа:
 				</span>
-				<strong className="text-base font-mono text-slate-900 block">
+				<strong className="text-base font-mono text-[var(--ink)] print:text-slate-900 block">
 					{formatMoneyExact(netMaterialRub, netMaterialKopecks)}
 				</strong>
-				<span className="text-[10px] text-slate-500 block">
+				<span className="text-[10px] text-[var(--ink-muted)] print:text-slate-500 block">
 					По учетным ценам склада
 				</span>
 			</div>
 
 			<div className="space-y-1">
-				<span className="text-slate-600 block font-semibold text-[11px]">
+				<span className="text-[var(--ink-muted)] print:text-slate-600 block font-semibold text-[11px]">
 					Валовая маржинальность этапа:
 				</span>
-				<strong className="text-base font-mono text-emerald-700 flex items-center gap-1.5">
+				<strong className="text-base font-mono text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
 					<TrendingUp className="w-5 h-5 shrink-0" />
 					<span>
 						{formatMoneyExact(marginRub)} ({marginPercent}%)
 					</span>
 				</strong>
-				<span className="text-[10px] text-slate-500 block">
+				<span className="text-[10px] text-[var(--ink-muted)] print:text-slate-500 block">
 					Рентабельность медицинского этапа
 				</span>
 			</div>

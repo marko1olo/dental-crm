@@ -37,7 +37,7 @@ export const ShiftDesktopRightColumn: React.FC<ShiftDesktopRightColumnProps> = (
 	runRecommendedAction,
 	userRole,
 }) => (
-	<div className="space-y-4 min-w-0" data-testid="shift-right-column">
+	<div className="space-y-3 min-w-0" data-testid="shift-right-column">
 		<DoctorShiftCashSection
 			cashSummary={
 				shiftStats?.cashBreakdown

@@ -1,3 +1,4 @@
+import { resolveValidIanaTimeZone, todayDateKeyInTimeZone } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { withTenantCtx } from "../../db/rls.js";
@@ -5,6 +6,7 @@ import {
 	ensureClinicalStaffAccess,
 	requireClinicalReadContext,
 } from "../../security/tenantContext.js";
+import { clinicTimeZone } from "../../services/reports/managerReports/timezone.js";
 import { resolveDoctorUserUuid } from "../payrollSettlementDbQueries.js";
 import { computeDoctorTodayEarningsInTx } from "./todaySummaryQuery.js";
 
@@ -43,7 +45,7 @@ export async function handleGetDoctorTodaySummary(
 
 	const orgId = context.organizationId;
 	const q = parsed.data;
-	const dateIso = q.date ? q.date.slice(0, 10) : new Date().toISOString().slice(0, 10);
+	const explicitDateIso = q.date ? q.date.slice(0, 10) : null;
 
 	const requestedDocId = q.doctorId || context.userId || "";
 	if (
@@ -85,14 +87,17 @@ export async function handleGetDoctorTodaySummary(
 		});
 	}
 
-	const { summary } = await withTenantCtx(orgId, async (tx) =>
-		computeDoctorTodayEarningsInTx({
+	const { summary } = await withTenantCtx(orgId, async (tx) => {
+		const dateIso =
+			explicitDateIso ??
+			todayDateKeyInTimeZone(resolveValidIanaTimeZone(await clinicTimeZone(orgId, tx)));
+		return computeDoctorTodayEarningsInTx({
 			tx,
 			organizationId: orgId,
 			doctorId: resolvedDocId,
 			dateIso,
-		}),
-	);
+		});
+	});
 
 	return reply.send({
 		success: true,

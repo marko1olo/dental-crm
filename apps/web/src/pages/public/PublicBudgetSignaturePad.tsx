@@ -204,7 +204,7 @@ export const PublicBudgetSignaturePad: React.FC<PublicBudgetSignaturePadProps> =
 				<button
 					type="button"
 					onClick={clearCanvas}
-					className="h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/80 flex items-center gap-1.5 transition-all relative before:absolute before:-inset-1.5 before:content-[''] shrink-0 select-none"
+					className="h-8 px-3 rounded-lg border border-[var(--line)] text-xs font-medium text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 transition-all relative before:absolute before:-inset-1.5 before:content-[''] shrink-0 select-none"
 					title="Очистить поле подписи"
 				>
 					<RotateCcw className="w-3.5 h-3.5" />

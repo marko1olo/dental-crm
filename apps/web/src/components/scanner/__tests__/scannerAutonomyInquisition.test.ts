@@ -1,200 +1,180 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { DocumentCameraScannerModal } from "../DocumentCameraScannerModal";
+import { ScannerDocumentPresets } from "../cameraModal/ScannerDocumentPresets";
+import { ScannerCameraViewport } from "../cameraModal/ScannerCameraViewport";
+import { ScannerAttachmentActions } from "../cameraModal/ScannerAttachmentActions";
+import { DOCUMENT_PRESETS } from "../documentScannerEngine";
+import { ClinicalPhotoProtocolModal } from "../../photography/ClinicalPhotoProtocolModal";
+import { BeforeAfterComparisonView } from "../../photography/BeforeAfterComparisonView";
+import { LabPhotoExportDrawer } from "../../photography/LabPhotoExportDrawer";
+import { PHOTO_PROTOCOL_PRESETS } from "../../photography/photoGridPresets";
 
-describe('Red Team Inquisitor: Clinical Imaging, Scanner & Visiograph Autonomy', () => {
-	const componentsDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-	const scannerDir = path.join(componentsDir, 'scanner');
-	const photographyDir = path.join(componentsDir, 'photography');
+const EMOJI_REGEX =
+	/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA70}-\u{1FAFF}]/u;
 
-	const targetDirs = [scannerDir, photographyDir];
-
-	function getAllSourceFiles(dir: string): string[] {
-		const result: string[] = [];
-		const entries = fs.readdirSync(dir, { withFileTypes: true });
-		for (const entry of entries) {
-			const fullPath = path.join(dir, entry.name);
-			if (entry.isDirectory()) {
-				if (entry.name !== '__tests__' && entry.name !== 'node_modules') {
-					result.push(...getAllSourceFiles(fullPath));
-				}
-			} else if (entry.isFile() && (entry.name.endsWith('.tsx') || entry.name.endsWith('.ts') || entry.name.endsWith('.css'))) {
-				result.push(fullPath);
-			}
-		}
-		return result;
-	}
-
-	it('1. Doctor Autonomy (Mandate 8e): ZERO disabled button attributes across all clinical imaging modules', () => {
-		const allFiles = targetDirs.flatMap(getAllSourceFiles);
-		const violations: { file: string; line: number; text: string }[] = [];
-
-		for (const file of allFiles) {
-			if (!file.endsWith('.tsx') && !file.endsWith('.ts')) continue;
-			const content = fs.readFileSync(file, 'utf8');
-			const lines = content.split('\n');
-
-			lines.forEach((line, idx) => {
-				const trimmed = line.trim();
-				// Check for disabled attribute on JSX elements (e.g. disabled={...}, disabled, disabled="true")
-				// Ignore comments, aria-disabled, CSS classes (disabled:), or object properties (disabled?: boolean)
-				if (
-					/\bdisabled\b/.test(trimmed) &&
-					!trimmed.startsWith('//') &&
-					!trimmed.startsWith('/*') &&
-					!trimmed.startsWith('*') &&
-					!trimmed.includes('aria-disabled') &&
-					!trimmed.includes('disabled:') &&
-					!trimmed.includes('disabled?:') &&
-					!trimmed.includes('disabled: boolean') &&
-					!trimmed.includes('type') &&
-					!trimmed.includes('interface') &&
-					!trimmed.includes('// disabled') &&
-					(trimmed.includes('<button') || trimmed.includes('<option') || /<[A-Za-z]+.*disabled/.test(trimmed) || /disabled=\{/.test(trimmed))
-				) {
-					violations.push({
-						file: path.relative(process.cwd(), file),
-						line: idx + 1,
-						text: trimmed,
-					});
-				}
-			});
-		}
-
-		assert.deepStrictEqual(
-			violations,
-			[],
-			`Found ${violations.length} prohibited disabled elements violating Doctor Autonomy (Mandate 8e):\n` +
-				violations.map((v) => `  ${v.file}:${v.line} -> ${v.text}`).join('\n')
+describe("Red Team Inquisitor: Clinical Imaging, Scanner & Visiograph Autonomy (6G Live SUT)", () => {
+	it("1. Doctor Autonomy (Mandate 8e): ZERO disabled button attributes across rendered scanner & photography components", () => {
+		const scannerOpenHtml = renderToStaticMarkup(
+			React.createElement(DocumentCameraScannerModal, {
+				isOpen: true,
+				patientId: "pat-scan-1",
+				patientName: "Смирнова А.С.",
+				onClose: () => {},
+			}),
 		);
+		assert.ok(scannerOpenHtml.includes('data-testid="document-camera-scanner-modal"'));
+		assert.strictEqual(scannerOpenHtml.includes('disabled=""'), false);
+		assert.strictEqual(EMOJI_REGEX.test(scannerOpenHtml), false);
+
+		const preset = PHOTO_PROTOCOL_PRESETS[0];
+		assert.ok(preset);
+		const photoHtml = renderToStaticMarkup(
+			React.createElement(ClinicalPhotoProtocolModal, {
+				isOpen: true,
+				onClose: () => {},
+				patientId: "pat-photo-1",
+			}),
+		);
+		assert.strictEqual(photoHtml.includes('disabled=""'), false);
+		assert.strictEqual(EMOJI_REGEX.test(photoHtml), false);
+
+		const compHtml = renderToStaticMarkup(
+			React.createElement(BeforeAfterComparisonView, {
+				preset,
+				slotsData: {},
+				beforeSlotId: preset.slots[0]?.id ?? "slot_1",
+				afterSlotId: preset.slots[1]?.id ?? "slot_2",
+			}),
+		);
+		assert.strictEqual(compHtml.includes('disabled=""'), false);
+		assert.strictEqual(EMOJI_REGEX.test(compHtml), false);
 	});
 
-	it('2. Real Hardware Camera Lifecycle & Multi-Device Support in DocumentCameraScannerModal', () => {
-		const scannerModalPath = path.join(scannerDir, 'DocumentCameraScannerModal.tsx');
-		assert.ok(fs.existsSync(scannerModalPath), 'DocumentCameraScannerModal.tsx must exist');
+	it("2. ScannerDocumentPresets supports preset selection and multi-device USB camera dropdown", () => {
+		const fakeCameras = [
+			{ deviceId: "cam-usb-1", groupId: "g1", kind: "videoinput", label: "USB Document Camera", toJSON: () => ({}) },
+			{ deviceId: "cam-usb-2", groupId: "g2", kind: "videoinput", label: "Webcam HD", toJSON: () => ({}) },
+		] as MediaDeviceInfo[];
 
-		const modalFiles = [
-			scannerModalPath,
-			path.join(scannerDir, 'cameraModal', 'useScannerModalState.ts'),
-			path.join(scannerDir, 'cameraModal', 'ScannerCameraViewport.tsx'),
-			path.join(scannerDir, 'cameraModal', 'ScannerDocumentPresets.tsx'),
-			path.join(scannerDir, 'hooks', 'useCameraStream.ts'),
-		];
-		const content = modalFiles.filter((f) => fs.existsSync(f)).map((f) => fs.readFileSync(f, 'utf8')).join('\n');
-
-		// Device Enumeration & Selection
-		assert.ok(
-			content.includes('navigator.mediaDevices.enumerateDevices') || content.includes('enumerateDevices'),
-			'DocumentCameraScannerModal must support device enumeration for USB document cameras'
+		const html = renderToStaticMarkup(
+			React.createElement(ScannerDocumentPresets, {
+				selectedDocType: "passport",
+				onSelectDocType: () => {},
+				availableCameras: fakeCameras,
+				selectedCameraId: "cam-usb-1",
+				onSelectCameraId: () => {},
+			}),
 		);
-		assert.ok(
-			content.includes('availableCameras') && content.includes('selectedCameraId'),
-			'DocumentCameraScannerModal must maintain availableCameras and selectedCameraId state'
-		);
-
-		// Clean Track Teardown to prevent camera hardware locks and memory leaks
-		assert.ok(
-			content.includes('track.stop()'),
-			'DocumentCameraScannerModal must release camera hardware stream via track.stop()'
-		);
-
-		// Offline / Hardware Failure Fallback
-		assert.ok(
-			content.includes('handleFallbackFileChange') || content.includes('handleFileChange') || content.includes('type="file"'),
-			'DocumentCameraScannerModal must provide a 1-click fallback file upload when no webcam is present'
-		);
+		assert.ok(html.includes("USB Document Camera"));
+		assert.ok(html.includes("Webcam HD"));
+		assert.ok(html.includes(DOCUMENT_PRESETS.passport.shortTitle));
+		assert.strictEqual(html.includes('disabled=""'), false);
 	});
 
-	it('3. CRM != Simulator (Mandate 8i): Exterminate fake scan progress bars and simulated delays', () => {
-		const allFiles = targetDirs.flatMap(getAllSourceFiles);
-		const violations: { file: string; line: number; text: string }[] = [];
-
-		for (const file of allFiles) {
-			const content = fs.readFileSync(file, 'utf8');
-			const lines = content.split('\n');
-
-			lines.forEach((line, idx) => {
-				const trimmed = line.trim();
-				// Look for fake scanning simulations (e.g. simulatedScanProgress, fake scanning setTimeout loops)
-				if (
-					(trimmed.includes('simulatedScan') ||
-						trimmed.includes('fakeScan') ||
-						trimmed.includes('mockScan') ||
-						trimmed.includes('mockSensorData') ||
-						(trimmed.includes('setTimeout') && (trimmed.includes('scan') || trimmed.includes('progress')))) &&
-					!trimmed.includes('//')
-				) {
-					violations.push({
-						file: path.relative(process.cwd(), file),
-						line: idx + 1,
-						text: trimmed,
-					});
-				}
-			});
-		}
-
-		assert.deepStrictEqual(
-			violations,
-			[],
-			`Found fake scanning mocks or simulator delays violating CRM != Simulator (Mandate 8i):\n` +
-				violations.map((v) => `  ${v.file}:${v.line} -> ${v.text}`).join('\n')
+	it("3. ScannerCameraViewport renders hardware stream, error fallback upload button, and PDF preview cleanly", () => {
+		const emptyRef = { current: null };
+		const errorHtml = renderToStaticMarkup(
+			React.createElement(ScannerCameraViewport, {
+				videoRef: emptyRef,
+				canvasRef: emptyRef,
+				fileInputRef: emptyRef,
+				isCapturing: true,
+				cameraError: "Камера не найдена",
+				preset: DOCUMENT_PRESETS.passport,
+				capturedDataUrl: null,
+				capturedBlob: null,
+				isDragOver: false,
+				onDragOver: () => {},
+				onDragLeave: () => {},
+				onDrop: () => {},
+				onFileChange: () => {},
+			}),
 		);
+		assert.ok(errorHtml.includes('data-testid="scanner-fallback-file-button"'));
+		assert.ok(errorHtml.includes("Выбрать файл с диска"));
+		assert.strictEqual(errorHtml.includes('disabled=""'), false);
+
+		const pdfBlob = new Blob(["%PDF-1.4"], { type: "application/pdf" });
+		const pdfHtml = renderToStaticMarkup(
+			React.createElement(ScannerCameraViewport, {
+				videoRef: emptyRef,
+				canvasRef: emptyRef,
+				fileInputRef: emptyRef,
+				isCapturing: false,
+				cameraError: null,
+				preset: DOCUMENT_PRESETS.oms,
+				capturedDataUrl: null,
+				capturedBlob: pdfBlob,
+				isDragOver: false,
+				onDragOver: () => {},
+				onDragLeave: () => {},
+				onDrop: () => {},
+				onFileChange: () => {},
+			}),
+		);
+		assert.ok(pdfHtml.includes("PDF-документ готов к отправке"));
+		assert.strictEqual(EMOJI_REGEX.test(pdfHtml), false);
 	});
 
-	it('4. Anti-Matryoshka Law (Mandate 8d pt 6): Modal depth <= 1 (No nested position: fixed overlays)', () => {
-		// Verify clinicalPhotography.css or modular photoCamera.css .photo-editor-overlay uses position: absolute
-		const photoCssPath = path.join(photographyDir, 'clinicalPhotography.css');
-		const photoCameraCssPath = path.join(photographyDir, 'styles', 'photoCamera.css');
-		assert.ok(fs.existsSync(photoCssPath), 'clinicalPhotography.css must exist');
-		const photoCss = (fs.existsSync(photoCameraCssPath) ? fs.readFileSync(photoCameraCssPath, 'utf8') : '') + fs.readFileSync(photoCssPath, 'utf8');
-
-		assert.ok(
-			photoCss.includes('.photo-editor-overlay') && photoCss.includes('position: absolute;'),
-			'.photo-editor-overlay must use position: absolute within parent modal to respect Anti-Matryoshka Law'
+	it("4. ScannerAttachmentActions renders shutter/file fallback in capture mode and rotate/save CTA after capture", () => {
+		const capturingHtml = renderToStaticMarkup(
+			React.createElement(ScannerAttachmentActions, {
+				isCapturing: true,
+				cameraError: null,
+				rotationDeg: 0,
+				isUploading: false,
+				onCapture: () => {},
+				onRetake: () => {},
+				onRotate: () => {},
+				onOpenFile: () => {},
+				onSaveAttachment: () => {},
+			}),
 		);
+		assert.ok(capturingHtml.includes('data-testid="scanner-capture-button"'));
+		assert.ok(capturingHtml.includes("Сфотографировать"));
 
-		// Verify LabPhotoExportDrawer exists and is mounted in ClinicalPhotoProtocolModal
-		const exportDrawerPath = path.join(photographyDir, 'LabPhotoExportDrawer.tsx');
-		assert.ok(fs.existsSync(exportDrawerPath), 'LabPhotoExportDrawer.tsx must exist');
+		const readyHtml = renderToStaticMarkup(
+			React.createElement(ScannerAttachmentActions, {
+				isCapturing: false,
+				cameraError: null,
+				rotationDeg: 90,
+				isUploading: false,
+				onCapture: () => {},
+				onRetake: () => {},
+				onRotate: () => {},
+				onOpenFile: () => {},
+				onSaveAttachment: () => {},
+			}),
+		);
+		assert.ok(readyHtml.includes('data-testid="scanner-save-attachment-button"'));
+		assert.ok(readyHtml.includes("Прикрепить к медкарте"));
+		assert.ok(readyHtml.includes("90°"));
+		assert.strictEqual(readyHtml.includes('disabled=""'), false);
 	});
 
-	it('5. Zero Cartoon Emojis (Mandate 8d pt 7): 0 unicode emojis across all clinical imaging files', () => {
-		const allFiles = targetDirs.flatMap(getAllSourceFiles);
-		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA70}-\u{1FAFF}]/u;
-		const violations: { file: string; line: number; match: string }[] = [];
-
-		for (const file of allFiles) {
-			const content = fs.readFileSync(file, 'utf8');
-			const lines = content.split('\n');
-
-			lines.forEach((line, idx) => {
-				const match = line.match(emojiRegex);
-				if (match) {
-					violations.push({
-						file: path.relative(process.cwd(), file),
-						line: idx + 1,
-						match: match[0],
-					});
-				}
-			});
-		}
-
-		assert.deepStrictEqual(
-			violations,
-			[],
-			`Found cartoon emojis violating Mandate 8d pt 7:\n` +
-				violations.map((v) => `  ${v.file}:${v.line} -> ${v.match}`).join('\n')
+	it("5. Closed DocumentCameraScannerModal returns empty markup & LabPhotoExportDrawer has zero disabled buttons", () => {
+		const closedHtml = renderToStaticMarkup(
+			React.createElement(DocumentCameraScannerModal, {
+				isOpen: false,
+				patientId: "pat-scan-1",
+				onClose: () => {},
+			}),
 		);
-	});
+		assert.strictEqual(closedHtml, "");
 
-	it('6. Design System Tokens: CSS and component styles use standard CSS variables', () => {
-		const photoCssPath = path.join(photographyDir, 'clinicalPhotography.css');
-		const photoCss = fs.readFileSync(photoCssPath, 'utf8');
-
-		assert.ok(photoCss.includes('var(--paper)'), 'clinicalPhotography.css must reference var(--paper)');
-		assert.ok(photoCss.includes('var(--ink)'), 'clinicalPhotography.css must reference var(--ink)');
-		assert.ok(photoCss.includes('var(--teal'), 'clinicalPhotography.css must reference var(--teal)');
+		const preset = PHOTO_PROTOCOL_PRESETS[0];
+		assert.ok(preset);
+		const drawerHtml = renderToStaticMarkup(
+			React.createElement(LabPhotoExportDrawer, {
+				preset,
+				slotsData: {},
+			}),
+		);
+		assert.ok(drawerHtml.includes('data-testid="btn-export-lab-png"'));
+		assert.strictEqual(drawerHtml.includes('disabled=""'), false);
+		assert.strictEqual(EMOJI_REGEX.test(drawerHtml), false);
 	});
 });

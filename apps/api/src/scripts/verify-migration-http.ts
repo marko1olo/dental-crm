@@ -369,9 +369,14 @@ try {
 		peakHeap = Math.max(peakHeap, heapUsedMb());
 		peakRss = Math.max(peakRss, rssMb());
 	}, 100);
+	memoryTimer.unref();
 
-	const drained = await drainMigrationQueue(5);
-	clearInterval(memoryTimer);
+	let drained = 0;
+	try {
+		drained = await drainMigrationQueue(5);
+	} finally {
+		clearInterval(memoryTimer);
+	}
 	const workMs = Date.now() - workStarted;
 	same("воркер выполнил один прогон", drained, 1);
 	cliOut(

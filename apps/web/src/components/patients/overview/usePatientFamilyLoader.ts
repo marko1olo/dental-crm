@@ -31,14 +31,16 @@ export function usePatientFamilyLoader(
 			.then(async (res) => {
 				if (selectedPatientIdRef.current !== requestedPatientId) return;
 				if (res.ok) {
-					const raw = await res.json().catch((err: unknown) => {
+					let raw: unknown = null;
+					try {
+						raw = await res.json();
+					} catch (err: unknown) {
 						logger.error(err);
 						const status = typeof err === "object" && err !== null && "status" in err && typeof (err as { status?: unknown }).status === "number"
 							? (err as { status: number }).status
 							: null;
 						showToast(actionFailureToast("Ошибка чтения ответа", status), "error");
-						return null;
-					});
+					}
 					const data = raw && typeof raw === "object" && "data" in raw ? raw.data : raw;
 					setFamilyData((data as FamilyGroupData) ?? null);
 					setFamilyLoadFailure(data ? null : { status: res.status });

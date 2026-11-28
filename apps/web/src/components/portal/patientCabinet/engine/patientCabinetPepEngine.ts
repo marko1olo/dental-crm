@@ -1,4 +1,5 @@
 import { generateUuidV7, sha256Hex } from "@dental/shared";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import type { ConsentSignatureAudit } from "./patientCabinetTypes.js";
 import type { PatientStatutoryConsent } from "./patientCabinetProfileTypes.js";
 
@@ -30,11 +31,20 @@ export async function sendPortalSmsOtp(
 			body: JSON.stringify({ phone, organizationId }),
 		});
 		if (!res.ok) {
-			const json = await res.json().catch(() => null);
+			let json: { message?: string } | null = null;
+			try {
+				json = (await res.json()) as { message?: string } | null;
+			} catch (parseErr) {
+				clientLogger.warn("[patientCabinetPepEngine] send-otp error JSON parse failed", {
+					status: res.status,
+					error: String(parseErr),
+				});
+			}
 			return { success: false, error: json?.message || "Не удалось отправить SMS-код." };
 		}
 		return { success: true };
-	} catch {
+	} catch (err) {
+		clientLogger.warn("[patientCabinetPepEngine] send-otp network error", { error: String(err) });
 		return { success: false, error: "Ошибка сети при отправке SMS." };
 	}
 }
@@ -84,14 +94,27 @@ export async function signConsentViaServerApi(
 			},
 		);
 		if (!res.ok) {
-			const json = await res.json().catch(() => null);
+			let json: { message?: string } | null = null;
+			try {
+				json = (await res.json()) as { message?: string } | null;
+			} catch (parseErr) {
+				clientLogger.warn("[patientCabinetPepEngine] sign-consent error JSON parse failed", {
+					consentId,
+					status: res.status,
+					error: String(parseErr),
+				});
+			}
 			return {
 				success: false,
 				error: json?.message || "Неверный код подтверждения из SMS.",
 			};
 		}
 		return { success: true };
-	} catch {
+	} catch (err) {
+		clientLogger.warn("[patientCabinetPepEngine] sign-consent network error", {
+			consentId,
+			error: String(err),
+		});
 		return {
 			success: false,
 			error: "Сетевая ошибка при проверке кода. Попробуйте снова.",

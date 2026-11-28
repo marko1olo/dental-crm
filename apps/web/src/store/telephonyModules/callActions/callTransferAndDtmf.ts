@@ -222,33 +222,39 @@ export function createCallTransferAndDtmfActions(set: SetState, get: GetState) {
 				try {
 					const staffToken = readDenteStaffToken();
 					const clinicToken = readDenteClinicToken();
-					void fetch("/api/telephony/sip/transfer", {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
-							...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-						},
-						body: JSON.stringify({
-							callId: updatedCallId || `call-${Date.now()}`,
-							targetExtensionOrPhone: targetExtension,
-							transferType: "blind",
-						}),
-					})
-						.then(async (res) => {
+					void (async () => {
+						try {
+							const res = await fetch("/api/telephony/sip/transfer", {
+								method: "POST",
+								headers: {
+									"Content-Type": "application/json",
+									...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
+									...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+								},
+								body: JSON.stringify({
+									callId: updatedCallId || `call-${Date.now()}`,
+									targetExtensionOrPhone: targetExtension,
+									transferType: "blind",
+								}),
+							});
 							if (!res.ok) {
-								const errData = (await res.json().catch(() => ({}))) as { message?: string };
+								let errData: { message?: string } = {};
+								try {
+									errData = (await res.json()) as { message?: string };
+								} catch (parseErr) {
+									logger.warn("[Telephony] SIP transfer error JSON parse failed", parseErr);
+								}
 								const errMsg = errData.message || `Ошибка перевода звонка (${res.status})`;
 								logger.warn("[Telephony] SIP transfer error:", errMsg);
 								showToast(errMsg, "error");
 							} else {
 								showToast(`Звонок успешно переведён на ${targetExtension}`, "success");
 							}
-						})
-						.catch((err) => {
+						} catch (err) {
 							logger.warn("[Telephony] SIP transfer network error:", err);
 							showToast("Сетевая ошибка при переводе звонка", "error");
-						});
+						}
+					})();
 				} catch (err) {
 					logger.warn("[Telephony] SIP transfer dispatch error:", err);
 				}
@@ -277,33 +283,39 @@ export function createCallTransferAndDtmfActions(set: SetState, get: GetState) {
 				try {
 					const staffToken = readDenteStaffToken();
 					const clinicToken = readDenteClinicToken();
-					void fetch("/api/telephony/sip/transfer", {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
-							...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-						},
-						body: JSON.stringify({
-							callId: callId || `call-${Date.now()}`,
-							targetExtensionOrPhone: targetExtension,
-							transferType: "attended",
-						}),
-					})
-						.then(async (res) => {
+					void (async () => {
+						try {
+							const res = await fetch("/api/telephony/sip/transfer", {
+								method: "POST",
+								headers: {
+									"Content-Type": "application/json",
+									...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
+									...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+								},
+								body: JSON.stringify({
+									callId: callId || `call-${Date.now()}`,
+									targetExtensionOrPhone: targetExtension,
+									transferType: "attended",
+								}),
+							});
 							if (!res.ok) {
-								const errData = (await res.json().catch(() => ({}))) as { message?: string };
+								let errData: { message?: string } = {};
+								try {
+									errData = (await res.json()) as { message?: string };
+								} catch (parseErr) {
+									logger.warn("[Telephony] Attended SIP transfer error JSON parse failed", parseErr);
+								}
 								const errMsg = errData.message || `Ошибка перевода звонка (${res.status})`;
 								logger.warn("[Telephony] Attended SIP transfer error:", errMsg);
 								showToast(errMsg, "error");
 							} else {
 								showToast(`Звонок переведён на ${targetExtension}`, "success");
 							}
-						})
-						.catch((err) => {
+						} catch (err) {
 							logger.warn("[Telephony] Attended SIP transfer network error:", err);
 							showToast("Сетевая ошибка при переводе звонка", "error");
-						});
+						}
+					})();
 				} catch (err) {
 					logger.warn("[Telephony] Attended SIP transfer dispatch error:", err);
 				}

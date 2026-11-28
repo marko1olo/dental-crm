@@ -122,13 +122,18 @@ export async function bookFollowupSlot(params: {
 		}),
 		body: JSON.stringify(body),
 	});
-	const raw = (await res.json().catch(() => null)) as {
+	let raw: {
 		id?: string;
 		data?: { id?: string };
 		appointment?: { id?: string };
 		message?: string;
 		error?: string;
-	} | null;
+	} | null = null;
+	try {
+		raw = (await res.json()) as typeof raw;
+	} catch (parseErr) {
+		clientLogger.warn("[visitChairsideHabitsApi] Failed to parse appointment response JSON:", parseErr);
+	}
 	if (!res.ok) {
 		const msg = raw?.message || raw?.error || `Ошибка записи на повторный визит (${res.status})`;
 		throw new Error(msg);

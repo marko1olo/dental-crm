@@ -11,6 +11,7 @@ import { LabAttachScanModal } from "./LabAttachScanModal";
 import { DentalLabReadyInClinicModal } from "./DentalLabReadyInClinicModal";
 import { LabActionPromptModal } from "./LabActionPromptModal";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { generateUuidV7 } from "@dental/shared";
 if (typeof document !== "undefined") { void import("./dentalLab.css"); }
 
@@ -112,8 +113,16 @@ export function DentalLabOrdersView({
 							}),
 						});
 						if (!res.ok) {
-							const err = await res.json().catch(() => ({}));
-							throw new Error(err.message || "Ошибка обновления дат примерки");
+							let errMessage = "Ошибка обновления дат примерки";
+							try {
+								const err = (await res.json()) as { message?: string } | null;
+								if (err?.message) errMessage = err.message;
+							} catch (parseErr) {
+								clientLogger.warn("[DentalLabOrdersView] Failed to parse status update error", parseErr, {
+									module: "Lab",
+								});
+							}
+							throw new Error(errMessage);
 						}
 					}}
 				/>

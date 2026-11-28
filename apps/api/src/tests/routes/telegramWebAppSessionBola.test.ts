@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import fastify from "fastify";
 import { registerTelegramWebAppSessionRoutes } from "../../routes/telegramBotLoyalty/telegramWebAppSessionHandlers.js";
+import { registerTelegramReferralActionRoutes } from "../../routes/telegramBotLoyalty/telegramReferralActionHandlers.js";
 import { registerPortalImagingRoutes } from "../../routes/portal/portalImagingRoutes.js";
 
 test("Telegram WebApp Session BOLA Defense & Scans Security Suite", async (t) => {
@@ -116,6 +117,53 @@ test("Telegram WebApp Session BOLA Defense & Scans Security Suite", async (t) =>
 			process.env.NODE_ENV = prevEnv;
 			if (prevToken) process.env.TELEGRAM_BOT_TOKEN = prevToken;
 			if (prevDenteToken) process.env.DENTE_TELEGRAM_BOT_TOKEN = prevDenteToken;
+		}
+	});
+
+	await t.test("5. NODE_ENV=test without botToken or DI fallback returns 503 (zero backdoor) and blocks referral-link BOLA bypass", async () => {
+		const prevEnv = process.env.NODE_ENV;
+		const prevToken = process.env.TELEGRAM_BOT_TOKEN;
+		const prevDenteToken = process.env.DENTE_TELEGRAM_BOT_TOKEN;
+		const prevBypass = process.env.DENTE_TELEGRAM_ALLOW_UNGUARDED_CONTROL_PLANE;
+
+		try {
+			process.env.NODE_ENV = "test";
+			delete process.env.TELEGRAM_BOT_TOKEN;
+			delete process.env.DENTE_TELEGRAM_BOT_TOKEN;
+			delete process.env.DENTE_TELEGRAM_ALLOW_UNGUARDED_CONTROL_PLANE;
+
+			const app = fastify();
+			await registerTelegramWebAppSessionRoutes(app);
+			await registerTelegramReferralActionRoutes(app);
+			await app.ready();
+
+			const sessionRes = await app.inject({
+				method: "POST",
+				url: "/api/telegram/webapp/session",
+				payload: {
+					initData: "user=%7B%22id%22%3A12345%7D&hash=somehash",
+					organizationId: "00000000-0000-4000-8000-000000000001",
+					phone: "+79991234567",
+				},
+			});
+			assert.equal(sessionRes.statusCode, 503);
+			assert.equal(sessionRes.json().error, "TELEGRAM_INTEGRATION_NOT_CONFIGURED");
+
+			const referralRes = await app.inject({
+				method: "GET",
+				url: "/api/telegram/loyalty/referral-link/00000000-0000-4000-8000-000000000099?organizationId=00000000-0000-4000-8000-000000000001&initData=user%3D%257B%2522id%2522%253A12345%257D%26hash%3Dsomehash",
+			});
+			assert.equal(referralRes.statusCode, 503);
+			assert.equal(referralRes.json().error, "TELEGRAM_INTEGRATION_NOT_CONFIGURED");
+
+			await app.close();
+		} finally {
+			process.env.NODE_ENV = prevEnv;
+			if (prevToken) process.env.TELEGRAM_BOT_TOKEN = prevToken;
+			if (prevDenteToken) process.env.DENTE_TELEGRAM_BOT_TOKEN = prevDenteToken;
+			if (prevBypass !== undefined) {
+				process.env.DENTE_TELEGRAM_ALLOW_UNGUARDED_CONTROL_PLANE = prevBypass;
+			}
 		}
 	});
 });

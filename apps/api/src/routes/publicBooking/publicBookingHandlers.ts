@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { z } from "zod";
 import { computePayloadHash, isValidUuid, normalizePhone } from "@dental/shared";
 import { definePublicRoute } from "../../core/routeFactories.js";
 import { withSuperuserBypass, withTenantWriteCtx } from "../../db/rls.js";
@@ -30,7 +31,7 @@ import {
 import {
 	createCrmLeadFromPublicIntake,
 	handleBookAppointment,
-	type BookAppointmentRequest,
+	type PublicBookingRouteConfig,
 } from "./bookingModules/publicBookingMutations.js";
 import {
 	isRateLimited,
@@ -42,26 +43,50 @@ import {
 
 export { handleSlotsQuery };
 
+const optionalOrgIdContainerSchema = z.object({
+	organizationId: z.string().optional(),
+});
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+	return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 function formatClinicWorkHours(schedule: unknown): string | null {
-	if (!schedule || typeof schedule !== "object") return null;
-	const s = schedule as Record<string, unknown>;
-	if (typeof s.workHours === "string" && s.workHours.trim()) {
-		return s.workHours.trim();
+	if (!isPlainRecord(schedule)) return null;
+	if (typeof schedule.workHours === "string" && schedule.workHours.trim()) {
+		return schedule.workHours.trim();
 	}
-	const days = s.days as Record<string, { enabled?: boolean; isWorking?: boolean; start?: string; end?: string }> | undefined;
-	if (days && typeof days === "object") {
-		const mon = days.monday ?? days.mon;
-		if (mon && (mon.enabled !== false && mon.isWorking !== false) && mon.start && mon.end) {
-			return `Пн–Пт ${mon.start}–${mon.end}`;
+	if (isPlainRecord(schedule.days)) {
+		const monRaw = schedule.days.monday ?? schedule.days.mon;
+		if (isPlainRecord(monRaw)) {
+			const enabled = monRaw.enabled !== false && monRaw.isWorking !== false;
+			const start = typeof monRaw.start === "string" ? monRaw.start : null;
+			const end = typeof monRaw.end === "string" ? monRaw.end : null;
+			if (enabled && start && end) {
+				return `Пн–Пт ${start}–${end}`;
+			}
 		}
 	}
-	const open = typeof s.open === "string" ? s.open : typeof s.start === "string" ? s.start : null;
-	const close = typeof s.close === "string" ? s.close : typeof s.end === "string" ? s.end : null;
+	const open =
+		typeof schedule.open === "string"
+			? schedule.open
+			: typeof schedule.start === "string"
+				? schedule.start
+				: null;
+	const close =
+		typeof schedule.close === "string"
+			? schedule.close
+			: typeof schedule.end === "string"
+				? schedule.end
+				: null;
 	if (open && close) return `${open} – ${close}`;
 	return null;
 }
 
-export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
+export const registerPublicBookingRoutes = async (
+	server: FastifyInstance,
+	routeConfig?: PublicBookingRouteConfig,
+) => {
 	// Root health/discovery endpoint
 	definePublicRoute(server, {
 		method: "GET",
@@ -83,11 +108,12 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		}
 
 		const clientIp = request.ip || "unknown";
-		const params = (request.params ?? {}) as { organizationId?: string };
+		const parsedParams = optionalOrgIdContainerSchema.safeParse(request.params ?? {});
+		const parsedQuery = optionalOrgIdContainerSchema.safeParse(request.query ?? {});
 		const effectiveOrgId =
 			parsed.data.organizationId ||
-			params.organizationId ||
-			(request.query as { organizationId?: string } | undefined)?.organizationId;
+			(parsedParams.success ? parsedParams.data.organizationId : undefined) ||
+			(parsedQuery.success ? parsedQuery.data.organizationId : undefined);
 		if (!effectiveOrgId || !isValidUuid(effectiveOrgId)) {
 			return reply.status(404).send({
 				error: "ClinicNotFound",
@@ -143,9 +169,10 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			});
 		}
 
-		const params = (request.params ?? {}) as { organizationId?: string };
+		const parsedParams = optionalOrgIdContainerSchema.safeParse(request.params ?? {});
 		const effectiveOrgId =
-			parsed.data.organizationId || params.organizationId;
+			parsed.data.organizationId ||
+			(parsedParams.success ? parsedParams.data.organizationId : undefined);
 		if (!effectiveOrgId || !isValidUuid(effectiveOrgId)) {
 			return reply.status(404).send({
 				error: "ClinicNotFound",
@@ -274,8 +301,11 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			if (isRateLimited(request.ip ?? "unknown")) {
 				return reply.status(429).send({ error: "Слишком много запросов." });
 			}
-			const { organizationId } = (request.params ?? {}) as { organizationId: string };
-			if (!isValidUuid(organizationId)) {
+			const parsedClinicParams = optionalOrgIdContainerSchema.safeParse(request.params ?? {});
+			const organizationId = parsedClinicParams.success
+				? parsedClinicParams.data.organizationId
+				: undefined;
+			if (!organizationId || !isValidUuid(organizationId)) {
 				return reply.status(404).send({ error: "ClinicNotFound", message: "Клиника не найдена." });
 			}
 			const [clinicRow] = await withSuperuserBypass(async (tx) => {
@@ -313,7 +343,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		if (isRateLimited(request.ip ?? "unknown")) {
 			return reply.status(429).send({ error: "Слишком много запросов." });
 		}
-		const rawQuery = (request.query ?? {}) as Record<string, unknown>;
+		const rawQuery = isPlainRecord(request.query) ? request.query : {};
 		const organizationId = typeof rawQuery.organizationId === "string" ? rawQuery.organizationId : undefined;
 		if (!organizationId || !isValidUuid(organizationId)) {
 			return reply.status(404).send({
@@ -361,41 +391,43 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 
 	// 0c. Direct appointment creation endpoint: POST /api/public/booking/create or /appointments
 	const createAppointmentHandler = async (
-		request: BookAppointmentRequest,
+		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
+		const parsedBodyOrg = optionalOrgIdContainerSchema.safeParse(request.body ?? {});
+		const parsedParamOrg = optionalOrgIdContainerSchema.safeParse(request.params ?? {});
 		const organizationId =
-			request.body?.organizationId || request.params.organizationId;
+			(parsedBodyOrg.success ? parsedBodyOrg.data.organizationId : undefined) ||
+			(parsedParamOrg.success ? parsedParamOrg.data.organizationId : undefined);
 		if (!organizationId || !isValidUuid(organizationId)) {
 			return reply.status(404).send({
 				error: "ClinicNotFound",
 				message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
 			});
 		}
-		request.params.organizationId = organizationId;
-		return handleBookAppointment(request, reply);
+		return handleBookAppointment(request, reply, {
+			...routeConfig,
+			organizationIdOverride: organizationId,
+		});
 	};
 
 	definePublicRoute(server, {
 		method: "POST",
 		path: "/create",
-		handler: async ({ request, reply }) =>
-			createAppointmentHandler(request as BookAppointmentRequest, reply),
+		handler: async ({ request, reply }) => createAppointmentHandler(request, reply),
 	});
 
 	definePublicRoute(server, {
 		method: "POST",
 		path: "/appointments",
-		handler: async ({ request, reply }) =>
-			createAppointmentHandler(request as BookAppointmentRequest, reply),
+		handler: async ({ request, reply }) => createAppointmentHandler(request, reply),
 	});
 
 	// door-validation: none — Delegated to handleBookAppointment with bookAppointmentSchema
 	definePublicRoute(server, {
 		method: "POST",
 		path: "/book",
-		handler: async ({ request, reply }) =>
-			createAppointmentHandler(request as BookAppointmentRequest, reply),
+		handler: async ({ request, reply }) => createAppointmentHandler(request, reply),
 	});
 
 	// DEF-PB-03: Public waitlist intake handler with ACID transaction & concurrency deduping
@@ -415,11 +447,14 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			});
 		}
 		const body = parsedBody.data;
-		const params = (request.params ?? {}) as { organizationId?: string };
+		const parsedParams = optionalOrgIdContainerSchema.safeParse(request.params ?? {});
+		const params = parsedParams.success ? parsedParams.data : {};
 
+		const headerIdemp = request.headers["idempotency-key"];
+		const headerXIdemp = request.headers["x-idempotency-key"];
 		const rawIdempotencyKey =
-			(request.headers["idempotency-key"] as string | undefined) ||
-			(request.headers["x-idempotency-key"] as string | undefined) ||
+			(typeof headerIdemp === "string" ? headerIdemp : undefined) ||
+			(typeof headerXIdemp === "string" ? headerXIdemp : undefined) ||
 			body.idempotencyKey;
 		const idempotencyKey = rawIdempotencyKey?.trim();
 
@@ -737,7 +772,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 					message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
 				});
 			}
-			const rawQuery = (request.query ?? {}) as Record<string, unknown>;
+			const rawQuery = isPlainRecord(request.query) ? request.query : {};
 			if (!rawQuery.date || typeof rawQuery.date !== "string") {
 				return reply.status(400).send({
 					error: "BookingDateMissing",
@@ -785,7 +820,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 				});
 			}
 			const { organizationId, doctorId } = paramCheck.data;
-			const rawQuery = (request.query ?? {}) as Record<string, unknown>;
+			const rawQuery = isPlainRecord(request.query) ? request.query : {};
 			if (!rawQuery.date || typeof rawQuery.date !== "string") {
 				return reply.status(400).send({
 					error: "BookingDateMissing",
@@ -810,6 +845,6 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		method: "POST",
 		path: "/:organizationId/book",
 		handler: async ({ request, reply }) =>
-			handleBookAppointment(request as BookAppointmentRequest, reply),
+			handleBookAppointment(request, reply, routeConfig),
 	});
 };

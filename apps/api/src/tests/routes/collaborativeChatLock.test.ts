@@ -379,4 +379,57 @@ describe("Collaborative Chat Concurrency Locking (PostgreSQL 18)", { concurrency
 		assert.equal(firstRow.processingAgent, winnerAgent);
 		assert.ok(firstRow.lockExpiresAt);
 	});
+
+	test("детерминированный порядок ORDER BY id ASC: при наличии 2 строк блокировка/статус берут минимальный id", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		const dupChatId = "dce70000-0000-4000-8000-0000000009aa";
+		const lowId = "00000000-0000-4000-8000-000000000001";
+		const highId = "ffffffff-ffff-4000-8000-ffffffffffff";
+		const futureExpiry = new Date(Date.now() + 120_000);
+
+		await withFixtureTenant(ORG_ID_1, async (tx) => {
+			await tx
+				.delete(collaborativeChatProcessingStates)
+				.where(eq(collaborativeChatProcessingStates.chatId, dupChatId));
+			await tx.insert(collaborativeChatProcessingStates).values([
+				{
+					id: highId,
+					organizationId: ORG_ID_1,
+					chatId: dupChatId,
+					processingAgent: "Старший ID Оператор",
+					lockAcquiredAt: new Date(),
+					lockExpiresAt: futureExpiry,
+					lastProcessedAt: new Date(),
+				},
+				{
+					id: lowId,
+					organizationId: ORG_ID_1,
+					chatId: dupChatId,
+					processingAgent: "Младший ID Оператор",
+					lockAcquiredAt: new Date(),
+					lockExpiresAt: futureExpiry,
+					lastProcessedAt: new Date(),
+				},
+			]);
+		});
+
+		const statusRes = await app.inject({
+			method: "GET",
+			url: `/api/communications/chats/${dupChatId}/lock-status`,
+			headers: HEADERS_ORG_1,
+		});
+		assert.equal(statusRes.statusCode, 200, statusRes.body);
+		const statusBody = JSON.parse(statusRes.body);
+		assert.equal(statusBody.lockedByAgent, "Младший ID Оператор");
+
+		const unlockRes = await app.inject({
+			method: "POST",
+			url: `/api/communications/chats/${dupChatId}/unlock`,
+			headers: HEADERS_ORG_1,
+			payload: { agentName: "Младший ID Оператор" },
+		});
+		assert.equal(unlockRes.statusCode, 200, unlockRes.body);
+		assert.equal(JSON.parse(unlockRes.body).released, true);
+	});
 });

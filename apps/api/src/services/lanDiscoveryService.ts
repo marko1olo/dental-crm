@@ -16,6 +16,7 @@ import * as crypto from "node:crypto";
 import * as dgram from "node:dgram";
 import * as os from "node:os";
 import Bonjour, { type Browser, type Service } from "bonjour-service";
+import { BoundedTtlMap } from "../lib/boundedTtlMap.js";
 import { createApiLogger, safeLogError } from "../observability/logger.js";
 
 const logger = createApiLogger("lanDiscoveryService");
@@ -84,14 +85,17 @@ const serverInstanceId = crypto.randomUUID();
 let activeUdpSocket: dgram.Socket | null = null;
 let activeBonjour: Bonjour | null = null;
 let activeMdnsService: Service | null = null;
-const udpMessageListeners = new Set<LanDiscoveryUdpListener>();
+const udpMessageListeners = new BoundedTtlMap<LanDiscoveryUdpListener, true>({
+	maxEntries: 100,
+	touchOnGet: false,
+});
 
 export function getLanDiscoveryUdpSocket(): dgram.Socket | null {
 	return activeUdpSocket;
 }
 
 export function registerLanDiscoveryUdpListener(listener: LanDiscoveryUdpListener): () => void {
-	udpMessageListeners.add(listener);
+	udpMessageListeners.set(listener, true);
 	return () => {
 		udpMessageListeners.delete(listener);
 	};
@@ -767,7 +771,7 @@ export function startLanDiscoveryService(options: {
 		});
 
 		socket.on("message", (msg, rinfo) => {
-			for (const listener of udpMessageListeners) {
+			for (const listener of udpMessageListeners.keys()) {
 				try {
 					listener(msg, rinfo);
 				} catch (err: unknown) {

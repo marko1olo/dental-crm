@@ -6,7 +6,44 @@
 
 import { z } from "zod";
 import type { EgiszRemdPackage } from "../cda/signature.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { isValidSnils } from "../../utils/snils.js";
+
+const oiisLogger = createApiLogger("OiisGatewayClient");
+
+const REMD_STATUS_VALUES = new Set<RemdSubmissionResponse["status"]>([
+	"Pending",
+	"Sent",
+	"Registered",
+	"Rejected",
+	"Error",
+]);
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeRemdStatus(value: unknown): RemdSubmissionResponse["status"] {
+	if (typeof value === "string") {
+		for (const allowed of REMD_STATUS_VALUES) {
+			if (allowed === value) return allowed;
+		}
+	}
+	return "Sent";
+}
+
+function parseJsonRecordOrNull(rawText: string): Record<string, unknown> | null {
+	try {
+		const parsed: unknown = JSON.parse(rawText);
+		return isPlainRecord(parsed) ? parsed : null;
+	} catch (err) {
+		oiisLogger.debug(
+			{ err: safeLogError(err) },
+			"OIIS response body is not valid JSON",
+		);
+		return null;
+	}
+}
 
 export interface OiisGatewayConfig {
 	baseUrl: string;
@@ -66,7 +103,7 @@ export class OiisGatewayClient {
 			frmoId: config?.frmoId || process.env.EGISZ_FRMO_ID || null,
 			apiKey: config?.apiKey || process.env.EGISZ_N3_API_KEY || null,
 			timeoutMs: config?.timeoutMs ?? 15000,
-			isSandbox: config?.isSandbox ?? (process.env.EGISZ_SANDBOX === "1" || process.env.NODE_ENV === "test"),
+			isSandbox: config?.isSandbox ?? process.env.EGISZ_SANDBOX === "1",
 		};
 	}
 
@@ -181,12 +218,7 @@ export class OiisGatewayClient {
 
 			if (!res.ok) {
 				const errorText = await res.text();
-				let parsedJson: Record<string, unknown> | null = null;
-				try {
-					parsedJson = JSON.parse(errorText);
-				} catch {
-					parsedJson = null;
-				}
+				const parsedJson = parseJsonRecordOrNull(errorText);
 
 				return {
 					success: false,
@@ -197,11 +229,11 @@ export class OiisGatewayClient {
 				};
 			}
 
-			const json = (await res.json()) as Record<string, unknown>;
+			const json = parseJsonRecordOrNull(await res.text()) ?? {};
 			return {
 				success: true,
-				transactionId: String(json.transactionId || transactionId),
-				status: (json.status as RemdSubmissionResponse["status"]) || "Sent",
+				transactionId: typeof json.transactionId === "string" && json.transactionId ? json.transactionId : transactionId,
+				status: normalizeRemdStatus(json.status),
 				remdDocumentId: json.remdDocumentId ? String(json.remdDocumentId) : undefined,
 				registrationDate: json.registrationDate ? String(json.registrationDate) : new Date().toISOString(),
 				rawResponse: json,
@@ -262,10 +294,10 @@ export class OiisGatewayClient {
 				};
 			}
 
-			const json = (await res.json()) as Record<string, unknown>;
+			const json = parseJsonRecordOrNull(await res.text()) ?? {};
 			return {
 				transactionId,
-				status: (json.status as RemdStatusResponse["status"]) || "Sent",
+				status: normalizeRemdStatus(json.status),
 				remdDocumentId: json.remdDocumentId ? String(json.remdDocumentId) : undefined,
 				statusCodeNsi: json.statusCodeNsi ? String(json.statusCodeNsi) : undefined,
 				statusDescription: json.statusDescription ? String(json.statusDescription) : undefined,

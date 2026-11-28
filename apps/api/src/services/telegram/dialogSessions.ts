@@ -5,6 +5,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 
 export type TelegramBotDialogStep =
 	| "idle"
@@ -54,7 +55,10 @@ export type SetTelegramBotDialogSessionInput = {
 const DEFAULT_DIALOG_SESSION_TTL_MS = 60 * 60 * 1000; // 1 час неактивности
 const MAX_DIALOG_SESSIONS = 5000; // Жесткий потолок на размер кэша для защиты от утечек памяти
 
-export const telegramDialogSessions = new Map<string, TelegramBotDialogSession>();
+export const telegramDialogSessions = new BoundedTtlMap<string, TelegramBotDialogSession>({
+	maxEntries: MAX_DIALOG_SESSIONS,
+	ttlMs: DEFAULT_DIALOG_SESSION_TTL_MS,
+});
 
 export function getTelegramDialogSessionKey(
 	organizationId: string,
@@ -65,7 +69,7 @@ export function getTelegramDialogSessionKey(
 }
 
 export function cleanupStaleTelegramDialogSessions(nowMs = Date.now()): number {
-	let purgedCount = 0;
+	let purgedCount = telegramDialogSessions.pruneExpired(nowMs);
 	for (const [key, session] of telegramDialogSessions.entries()) {
 		if (session.expiresAt <= nowMs) {
 			telegramDialogSessions.delete(key);
@@ -105,15 +109,6 @@ export function setTelegramDialogSession(
 
 	if (telegramDialogSessions.size >= MAX_DIALOG_SESSIONS) {
 		cleanupStaleTelegramDialogSessions(nowMs);
-		if (telegramDialogSessions.size >= MAX_DIALOG_SESSIONS) {
-			const sortedEntries = Array.from(telegramDialogSessions.entries()).sort(
-				(a, b) => a[1].lastActiveAt - b[1].lastActiveAt,
-			);
-			const toEvict = sortedEntries.slice(0, 500);
-			for (const [evictKey] of toEvict) {
-				telegramDialogSessions.delete(evictKey);
-			}
-		}
 	}
 
 	const existing = telegramDialogSessions.get(key);
@@ -135,7 +130,7 @@ export function setTelegramDialogSession(
 		expiresAt: nowMs + ttl,
 	};
 
-	telegramDialogSessions.set(key, session);
+	telegramDialogSessions.set(key, session, ttl);
 	return session;
 }
 

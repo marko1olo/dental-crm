@@ -228,18 +228,37 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 							});
 
 							if (!reviseRes.ok) {
-								const errJson = (await reviseRes.json().catch(() => null)) as { error?: string; message?: string } | null;
+								let errJson: { error?: string; message?: string } | null = null;
+								try {
+									errJson = (await reviseRes.json()) as { error?: string; message?: string } | null;
+								} catch (parseErr) {
+									clientLogger.warn("RecordDiariesTab revise error JSON parse failed", {
+										status: reviseRes.status,
+										error: String(parseErr),
+									});
+								}
 								const errorMsg = errJson?.message || "Ошибка сохранения ревизии дневника приёма («Исправленному верить»)";
 								clientLogger.warn("Отказ ревизии дневника в /api/diaries/:id/revise", errJson, { module: "RecordDiariesTab" });
 								showToast(errorMsg, "error", 5000);
 								return;
 							}
 
-							const json = (await reviseRes.json().catch(() => null)) as {
+							let json: {
 								data?: { hash?: string; digitalSignatureHash?: string };
 								hash?: string;
 								digitalSignatureHash?: string;
-							} | null;
+							} | null = null;
+							try {
+								json = (await reviseRes.json()) as {
+									data?: { hash?: string; digitalSignatureHash?: string };
+									hash?: string;
+									digitalSignatureHash?: string;
+								} | null;
+							} catch (parseErr) {
+								clientLogger.warn("RecordDiariesTab revise response JSON parse failed", {
+									error: String(parseErr),
+								});
+							}
 							const payload = json?.data ?? json;
 							if (payload?.hash || payload?.digitalSignatureHash) {
 								revisedEntry.digitalSignatureHash = payload.hash || payload.digitalSignatureHash;
@@ -459,7 +478,7 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 									<button
 										type="button"
 										onClick={() => handleCopyDiaryText(diary, index)}
-										className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
+										className="p-1 rounded hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] transition-colors"
 										title="Скопировать текст дневника"
 										data-testid={`btn-copy-diary-${index}`}
 									>

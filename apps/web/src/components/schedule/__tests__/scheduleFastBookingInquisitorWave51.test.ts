@@ -2,9 +2,15 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { DEFAULT_SOLO_CHAIR } from "../grid/gridConstants.js";
 import {
-	DEFAULT_PATIENT_FIELD_REQUIREMENTS,
 	validatePatientDraftWithRequirements,
 } from "../../patients/patientFieldRequirementsConfig.js";
+import { parseSearchQueryForQuickPatient } from "../patientSearchEngine.js";
+import { buildQuickBookingPayload } from "../quickBookingSubmitPayload.js";
+import {
+	extractStageBookingServices,
+	hasTreatmentPlanStageContext,
+} from "../quickBookingService/quickServiceHelpers.js";
+import { detectWaitlistUrgency } from "../waitlist/waitlistTypes.js";
 
 describe("Wave 51 Schedule & Fast Booking Inquisitor: Frictionless Booking & Overbooking Integrity", () => {
 	describe("1. Patient Field Requirements: CITO Emergency Frictionless Name Policy (Mandates 8e, 8n)", () => {
@@ -21,7 +27,7 @@ describe("Wave 51 Schedule & Fast Booking Inquisitor: Frictionless Booking & Ove
 				"CITO emergency draft must be valid without full name",
 			);
 			assert.equal(result.errors.fullName, undefined);
-			assert.ok(!result.missingRequiredLabels.includes("ФИО"));
+			assert.equal(result.missingRequiredLabels.includes("ФИО"), false);
 		});
 
 		it("blocks empty full name when isEmergencyOrPrimary is false (standard planned intake)", () => {
@@ -37,102 +43,102 @@ describe("Wave 51 Schedule & Fast Booking Inquisitor: Frictionless Booking & Ove
 				"Planned intake must require full name",
 			);
 			assert.equal(result.errors.fullName, "Укажите ФИО пациента");
-			assert.ok(result.missingRequiredLabels.includes("ФИО"));
+			assert.equal(result.missingRequiredLabels.includes("ФИО"), true);
 		});
 	});
 
-	describe("2. NewAppointmentForm: Smart Phone Parser & Overbooking Arguments (Mandate 8e, 8k)", () => {
-		it("extracts phone and clean name from mixed search query 'Иван +7 (999) 111-22-33'", () => {
-			const q = "Иван +7 (999) 111-22-33";
-			const phoneMatch = q.match(/(\+?[78][\d\s()-]{9,}\d)/);
-			assert.ok(phoneMatch, "Must detect phone pattern in mixed query");
-
-			let resolvedPhone: string | null = null;
-			let resolvedName = q;
-			if (phoneMatch) {
-				resolvedPhone = phoneMatch[0].trim();
-				const remaining = q.replace(phoneMatch[0], "").trim();
-				resolvedName = remaining || `Пациент (${resolvedPhone})`;
-			}
-
-			assert.equal(resolvedPhone, "+7 (999) 111-22-33");
-			assert.equal(resolvedName, "Иван");
+	describe("2. Smart Phone Parser & QuickBooking Payload Construction (Mandate 8e, 8k)", () => {
+		it("extracts phone and clean name from mixed search query via parseSearchQueryForQuickPatient", () => {
+			const parsed = parseSearchQueryForQuickPatient("Иван +7 (999) 111-22-33");
+			assert.equal(parsed.fullName, "Иван");
+			assert.equal(parsed.phone, "+7 (999) 111-22-33");
 		});
 
-		it("extracts name as 'Пациент (+79991112233)' when query is phone-only", () => {
-			const q = "+79991112233";
-			const phoneMatch = q.match(/(\+?[78][\d\s()-]{9,}\d)/);
-			assert.ok(phoneMatch);
-
-			let resolvedPhone: string | null = null;
-			let resolvedName = q;
-			if (phoneMatch) {
-				resolvedPhone = phoneMatch[0].trim();
-				const remaining = q.replace(phoneMatch[0], "").trim();
-				resolvedName = remaining || `Пациент (${resolvedPhone})`;
-			}
-
-			assert.equal(resolvedPhone, "+79991112233");
-			assert.equal(resolvedName, "Пациент (+79991112233)");
+		it("normalizes phone-only queries without losing digits", () => {
+			const parsed = parseSearchQueryForQuickPatient("+79991112233");
+			assert.equal(parsed.fullName, "");
+			assert.equal(parsed.phone, "+7 (999) 111-22-33");
 		});
 
-		it("flags isCitoOrOverbook as true when collision or CITO is present", () => {
-			const cases = [
-				{ collision: { isCitoOverbooking: true, hasCollision: false }, expected: true },
-				{ collision: { isCitoOverbooking: false, hasCollision: true }, expected: true },
-				{ collision: { isCitoOverbooking: false, hasCollision: false }, draft: { isCito: true }, expected: true },
-				{ collision: { isCitoOverbooking: false, hasCollision: false }, draft: { cito: true }, expected: true },
-				{ collision: { isCitoOverbooking: false, hasCollision: false }, draft: {}, expected: false },
-			];
+		it("builds honest quick booking payload with CITO/overbook flags and stage services", () => {
+			const stageSlot = {
+				treatmentPlanId: "plan-1",
+				stageId: "11111111-1111-4111-8111-111111111111",
+				stageTitle: "Этап 1: Терапия",
+				services: [{ id: "srv-1", title: "Пломба", priceKopecks: 450000 }],
+			};
+			assert.equal(hasTreatmentPlanStageContext(stageSlot as never), true);
+			assert.equal(extractStageBookingServices(stageSlot as never).length, 1);
 
-			for (const c of cases) {
-				const isCitoOrOverbook = Boolean(
-					c.collision.isCitoOverbooking ||
-					c.collision.hasCollision ||
-					c.draft?.isCito ||
-					c.draft?.cito
-				);
-				assert.equal(isCitoOrOverbook, c.expected);
-			}
+			const emergencyPayload = buildQuickBookingPayload({
+				params: {
+					doctorUserId: "",
+					dutyDoctorId: "",
+					doctors: [],
+					chairId: "",
+					chairs: [],
+					assistantUserId: "asst-ignored",
+					isSoloClinic: true,
+					reason: "",
+					comment: "",
+					status: "planned",
+					initialSlot: stageSlot as never,
+				} as never,
+				activePatientId: null,
+				startsAtIso: "2026-10-15T09:00:00.000Z",
+				endsAtIso: "2026-10-15T09:30:00.000Z",
+				isEmergency: true,
+				overbookOverride: false,
+			});
+
+			assert.equal(emergencyPayload.doctorUserId, null);
+			assert.equal(emergencyPayload.chairId, null);
+			assert.equal(emergencyPayload.assistantUserId, null);
+			assert.equal(emergencyPayload.isCito, true);
+			assert.equal(emergencyPayload.allowOverbooking, true);
+			assert.equal(emergencyPayload.reason, "Срочно! Острая боль");
+			assert.ok(emergencyPayload.comment.includes("План лечения: plan-1"));
+
+			const plannedPayload = buildQuickBookingPayload({
+				params: {
+					doctorUserId: "doc-1",
+					dutyDoctorId: "",
+					doctors: [{ id: "doc-1" }],
+					chairId: "chair-1",
+					chairs: [{ id: "chair-1" }],
+					assistantUserId: "asst-1",
+					isSoloClinic: false,
+					reason: "Осмотр",
+					comment: "",
+					status: "planned",
+				} as never,
+				activePatientId: "pat-1",
+				startsAtIso: "2026-10-15T10:00:00.000Z",
+				endsAtIso: "2026-10-15T10:30:00.000Z",
+				isEmergency: false,
+				overbookOverride: false,
+			});
+
+			assert.equal(plannedPayload.doctorUserId, "doc-1");
+			assert.equal(plannedPayload.assistantUserId, "asst-1");
+			assert.equal(plannedPayload.allowOverbooking, false);
+			assert.equal(plannedPayload.isCito, false);
 		});
 	});
 
-	describe("3. WaitlistDrawer: Chair & Doctor Solo Fallback & Overbooking Integrity", () => {
-		it("provides DEFAULT_SOLO_CHAIR id as fallback when clinic has no configured chairs", () => {
-			const clinicSettings = { chairs: [] as Array<{ id: string; active?: boolean }>, staff: [] };
-			const activeChairs = (clinicSettings.chairs ?? []).filter((c: any) => c.active);
-			const currentSlotChairId = null;
-
-			const resolvedChairId =
-				currentSlotChairId ||
-				(activeChairs.length > 0 ? activeChairs[0]?.id : null) ||
-				DEFAULT_SOLO_CHAIR.id;
-
-			assert.equal(resolvedChairId, DEFAULT_SOLO_CHAIR.id);
-			assert.equal(resolvedChairId, "default-chair");
+	describe("3. Waitlist & Solo Chair Resilience (Mandate 8n)", () => {
+		it("provides canonical DEFAULT_SOLO_CHAIR fallback id and capacity", () => {
+			assert.equal(DEFAULT_SOLO_CHAIR.id, "default-chair");
+			assert.ok(DEFAULT_SOLO_CHAIR.name.length > 0);
 		});
 
-		it("falls back to first active doctor or 'doctor-default' when none specified in slot", () => {
-			const staffWithDoc = [{ id: "doc-specialist-1", role: "doctor", active: true }];
-			const activeDocs = staffWithDoc.filter((m: any) => m.active && (m.role === "doctor" || m.role === "owner"));
-			const currentSlotDoc = null;
-			const patientPreferredDoc = null;
-
-			const resolvedDocId =
-				currentSlotDoc ||
-				patientPreferredDoc ||
-				(activeDocs.length > 0 ? activeDocs[0]?.id : null) ||
-				"doctor-default";
-
-			assert.equal(resolvedDocId, "doc-specialist-1");
-
-			// Empty staff case
-			const resolvedDocIdEmpty =
-				currentSlotDoc ||
-				patientPreferredDoc ||
-				([].length > 0 ? null : null) ||
-				"doctor-default";
-			assert.equal(resolvedDocIdEmpty, "doctor-default");
+		it("detects waitlist urgency deterministically across priority and urgency fields", () => {
+			assert.equal(detectWaitlistUrgency({ urgency: "acute_pain" }), "acute_pain");
+			assert.equal(detectWaitlistUrgency({ priorityLevel: "high" }), "acute_pain");
+			assert.equal(detectWaitlistUrgency({ urgency: "treatment_plan" }), "ortho_endo");
+			assert.equal(detectWaitlistUrgency({ priorityLevel: "vip" }), "vip");
+			assert.equal(detectWaitlistUrgency({ urgency: "hygiene" }), "hygiene");
+			assert.equal(detectWaitlistUrgency(null), "routine");
 		});
 	});
 });

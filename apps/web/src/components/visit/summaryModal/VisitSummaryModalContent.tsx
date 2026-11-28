@@ -286,7 +286,7 @@ export const VisitSummaryModalContent: React.FC<VisitSummaryModalContentProps> =
 									className="absolute left-0 bottom-full mb-2 z-50 flex flex-col p-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xl min-w-[280px] animate-in fade-in slide-in-from-bottom-2 duration-150"
 									data-testid="summary-docs-dropup-menu"
 								>
-									<div className="px-3 py-1.5 text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider border-b border-[var(--line)]">
+									<div className="px-3 py-1.5 text-[11px] font-bold text-[var(--muted)] border-b border-[var(--line)]">
 										Документы и направления
 									</div>
 									<button
@@ -417,7 +417,7 @@ export const VisitSummaryModalContent: React.FC<VisitSummaryModalContentProps> =
 							type="button"
 							onClick={handleCompleteVisitAction}
 							disabled={isCompleting}
-							className="inline-flex items-center justify-center gap-2 px-5 py-2 min-h-[44px] sm:min-h-[36px] sm:h-9 min-w-[190px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-sm font-bold transition-colors shadow-sm cursor-pointer disabled:opacity-50 whitespace-nowrap shrink-0"
+							className="inline-flex items-center justify-center gap-2 px-5 py-2 min-h-[44px] sm:min-h-[36px] sm:h-9 min-w-[190px] rounded-xl bg-[var(--primary)] hover:opacity-95 text-white text-sm font-bold transition-colors shadow-sm cursor-pointer disabled:opacity-50 whitespace-nowrap shrink-0"
 							data-testid="summary-complete-visit-btn"
 							title="Завершить приём и сформировать чек"
 						>

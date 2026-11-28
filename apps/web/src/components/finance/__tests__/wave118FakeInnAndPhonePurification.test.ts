@@ -1,67 +1,122 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { buildLabOrderMessengerSummary } from "../../lab/DentalLabStudioModal";
-import { formatOrthodonticPatientMemo } from "../../orthodontics/OrthodonticsStudioModal";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal";
+import { EmergencyRescueModal } from "../../emergency/EmergencyRescueModal";
+import { Billing1CExportModal } from "../Billing1CExportModal";
+import { OneCExportButton } from "../OneCExportButton";
+import { DentalLabStudioModal, buildLabOrderMessengerSummary } from "../../lab/DentalLabStudioModal";
+import { OrthodonticsStudioModal, formatOrthodonticPatientMemo } from "../../orthodontics/OrthodonticsStudioModal";
+import { PrescriptionModal } from "../../visit/PrescriptionModal";
+import { CashShiftClosingModal } from "../../shift/CashShiftClosingModal";
 
-function resolveRepoPath(relPathFromRepoRoot: string): string {
-	const cwd = process.cwd();
-	const repoRoot =
-		cwd.endsWith("apps\\web") || cwd.endsWith("apps/web")
-			? path.resolve(cwd, "../..")
-			: cwd;
-	return path.resolve(repoRoot, relPathFromRepoRoot);
-}
-
-describe("Wave 118: Eradication of Synthetic INNs and Phone Fallbacks", () => {
+describe("Wave 118: Eradication of Synthetic INNs and Phone Fallbacks (Live 6G SUT)", () => {
 	const FAKE_INN = "7701234567";
 	const FAKE_PHONE = "+7 (495) 123-45-67";
 
-	describe("1. Static Code Audit — Zero Hardcoded Fake INN ('7701234567')", () => {
-		const filesToCheckForInn = [
-			"apps/web/src/components/finance/Billing1CExportModal.tsx",
-			"apps/web/src/components/shift/CashShiftClosingModal.tsx",
-			"apps/web/src/components/finance/OneCExportButton.tsx",
-			"apps/web/src/components/cashbox/CashRegisterStudioModal.tsx",
-		];
+	describe("1. Live Finance Modals & Export Controls — Zero Synthetic INN ('7701234567')", () => {
+		it("Billing1CExportModal and OneCExportButton omit synthetic INN 7701234567 when clinicInn is empty", () => {
+			const modalHtml = renderToStaticMarkup(
+				React.createElement(Billing1CExportModal, {
+					isOpen: true,
+					onClose: () => {},
+					actNumber: "АКТ-118",
+					items: [{ name: "Консультация", priceRub: 1500, quantity: 1 }],
+					totalRub: 1500,
+					clinicInn: "",
+				}),
+			);
+			assert.equal(modalHtml.includes(FAKE_INN), false);
+			assert.equal(modalHtml.includes(FAKE_PHONE), false);
 
-		for (const relPath of filesToCheckForInn) {
-			it(`file ${path.basename(relPath)} contains NO hardcoded INN '${FAKE_INN}'`, () => {
-				const fullPath = resolveRepoPath(relPath);
-				assert.ok(fs.existsSync(fullPath), `File must exist: ${relPath}`);
-				const content = fs.readFileSync(fullPath, "utf-8");
-				assert.strictEqual(
-					content.includes(FAKE_INN),
-					false,
-					`Found forbidden fake INN '${FAKE_INN}' in ${relPath}`,
+			const btnHtml = renderToStaticMarkup(
+				React.createElement(OneCExportButton, {
+					actNumber: "АКТ-118",
+					items: [{ name: "Консультация", priceRub: 1500, quantity: 1 }],
+					totalRub: 1500,
+					clinicInn: "",
+				}),
+			);
+			assert.equal(btnHtml.includes(FAKE_INN), false);
+			assert.equal(btnHtml.includes(FAKE_PHONE), false);
+		});
+
+		it("CashShiftClosingModal and CashRegisterStudioModal omit synthetic INN 7701234567", () => {
+			const prevDoc = (globalThis as { document?: unknown }).document;
+			(globalThis as { document?: unknown }).document = undefined;
+			try {
+				const shiftHtml = renderToStaticMarkup(
+					React.createElement(CashShiftClosingModal, {
+						isOpen: true,
+						onClose: () => {},
+						shiftNumber: 12,
+						cashierFullName: "Кассир Клиники",
+					}),
 				);
-			});
-		}
+				assert.ok(shiftHtml.includes("Кассир Клиники"));
+				assert.equal(shiftHtml.includes(FAKE_INN), false);
+
+				const registerHtml = renderToStaticMarkup(
+					React.createElement(CashRegisterStudioModal, {
+						isOpen: true,
+						onClose: () => {},
+						shiftNumber: 12,
+						cashierFullName: "Кассир Клиники",
+					}),
+				);
+				assert.ok(registerHtml.length > 0);
+				assert.equal(registerHtml.includes(FAKE_INN), false);
+			} finally {
+				(globalThis as { document?: unknown }).document = prevDoc;
+			}
+		});
 	});
 
-	describe("2. Static Code Audit — Zero Hardcoded Fake Phone ('+7 (495) 123-45-67')", () => {
-		const filesToCheckForPhone = [
-			"apps/web/src/components/finance/Billing1CExportModal.tsx",
-			"apps/web/src/components/finance/OneCExportButton.tsx",
-			"apps/web/src/components/visit/PrescriptionModal.tsx",
-			"apps/web/src/components/emergency/EmergencyRescueModal.tsx",
-			"apps/web/src/components/lab/DentalLabStudioModal.tsx",
-			"apps/web/src/components/orthodontics/OrthodonticsStudioModal.tsx",
-		];
-
-		for (const relPath of filesToCheckForPhone) {
-			it(`file ${path.basename(relPath)} contains NO hardcoded phone '${FAKE_PHONE}'`, () => {
-				const fullPath = resolveRepoPath(relPath);
-				assert.ok(fs.existsSync(fullPath), `File must exist: ${relPath}`);
-				const content = fs.readFileSync(fullPath, "utf-8");
-				assert.strictEqual(
-					content.includes(FAKE_PHONE),
-					false,
-					`Found forbidden fake phone '${FAKE_PHONE}' in ${relPath}`,
+	describe("2. Live Clinical & Specialty Modals — Zero Synthetic Phone ('+7 (495) 123-45-67')", () => {
+		it("PrescriptionModal, EmergencyRescueModal, DentalLabStudioModal, and OrthodonticsStudioModal omit fake clinic phone", () => {
+			const prevDoc = (globalThis as { document?: unknown }).document;
+			(globalThis as { document?: unknown }).document = undefined;
+			try {
+				const rxHtml = renderToStaticMarkup(
+					React.createElement(PrescriptionModal, {
+						isOpen: true,
+						onClose: () => {},
+						patientName: "Пациент Тест",
+					}),
 				);
-			});
-		}
+				assert.equal(rxHtml.includes(FAKE_PHONE), false);
+
+				const emergencyHtml = renderToStaticMarkup(
+					React.createElement(EmergencyRescueModal, {
+						isOpen: true,
+						onClose: () => {},
+						initialPatientName: "Пациент Тест",
+					}),
+				);
+				assert.equal(emergencyHtml.includes(FAKE_PHONE), false);
+
+				const labHtml = renderToStaticMarkup(
+					React.createElement(DentalLabStudioModal, {
+						isOpen: true,
+						onClose: () => {},
+						patientName: "Пациент Тест",
+					}),
+				);
+				assert.equal(labHtml.includes(FAKE_PHONE), false);
+
+				const orthoHtml = renderToStaticMarkup(
+					React.createElement(OrthodonticsStudioModal, {
+						isOpen: true,
+						onClose: () => {},
+						patientName: "Пациент Тест",
+					}),
+				);
+				assert.equal(orthoHtml.includes(FAKE_PHONE), false);
+			} finally {
+				(globalThis as { document?: unknown }).document = prevDoc;
+			}
+		});
 	});
 
 	describe("3. Runtime Behavior — formatOrthodonticPatientMemo phone fallback autonomy", () => {
@@ -73,11 +128,7 @@ describe("Wave 118: Eradication of Synthetic INNs and Phone Fallbacks", () => {
 				bracketSystem: "damon_q2",
 			});
 
-			assert.strictEqual(
-				memo.includes(FAKE_PHONE),
-				false,
-				"Must NOT include fake phone number",
-			);
+			assert.strictEqual(memo.includes(FAKE_PHONE), false, "Must NOT include fake phone number");
 			assert.ok(
 				memo.includes("немедленно свяжитесь с клиникой."),
 				"Outputs clean contact prompt without trailing colon or empty string",
@@ -114,11 +165,7 @@ describe("Wave 118: Eradication of Synthetic INNs and Phone Fallbacks", () => {
 				dueDate: "20.09.2026",
 			});
 
-			assert.strictEqual(
-				summary.includes(FAKE_PHONE),
-				false,
-				"Must NOT include fake phone number",
-			);
+			assert.strictEqual(summary.includes(FAKE_PHONE), false, "Must NOT include fake phone number");
 			assert.ok(
 				summary.includes("Связь с клиникой: не указан."),
 				"Outputs 'не указан' when phone is omitted",

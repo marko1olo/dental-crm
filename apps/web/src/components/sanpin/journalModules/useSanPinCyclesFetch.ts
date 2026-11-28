@@ -94,14 +94,27 @@ export function useSanPinCyclesFetch(period: SanPinJournalPeriod) {
 	const fetchCyclesFromDb = useCallback(async (targetPeriod: SanPinJournalPeriod = period) => {
 		try {
 			setIsLoading(true);
-			let res = await fetch(`/api/sanpin/sterilization?period=${targetPeriod}`, {
-				headers: getDenteAuthHeaders(),
-			}).catch(() => null);
+			let res: Response | null = null;
+			try {
+				res = await fetch(`/api/sanpin/sterilization?period=${targetPeriod}`, {
+					headers: getDenteAuthHeaders(),
+				});
+			} catch (err) {
+				clientLogger.warn("[useSanPinCyclesFetch] Primary endpoint fetch failed", {
+					error: String(err),
+				});
+			}
 
 			if (!res || !res.ok) {
-				res = await fetch(`/api/sanpin/sterilization/cycles?period=${targetPeriod}`, {
-					headers: getDenteAuthHeaders(),
-				}).catch(() => null);
+				try {
+					res = await fetch(`/api/sanpin/sterilization/cycles?period=${targetPeriod}`, {
+						headers: getDenteAuthHeaders(),
+					});
+				} catch (err) {
+					clientLogger.warn("[useSanPinCyclesFetch] Fallback endpoint fetch failed", {
+						error: String(err),
+					});
+				}
 			}
 
 			if (res && res.ok) {

@@ -35,7 +35,7 @@ export const DepositOperationsHistoryPanel: React.FC<DepositOperationsHistoryPan
 						</button>
 					)}
 					{onNewAppointment && (
-						<button type="button" onClick={() => onNewAppointment(patientId || undefined)} className="min-h-[34px] h-8 px-3 rounded-lg bg-[var(--teal)] text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer hover:opacity-95 transition-all shadow-2xs">
+						<button type="button" onClick={() => onNewAppointment(patientId || undefined)} className="min-h-[34px] h-8 px-3 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs">
 							<Plus className="w-3.5 h-3.5 shrink-0" /><span>Новый визит</span>
 						</button>
 					)}

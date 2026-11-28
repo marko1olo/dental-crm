@@ -64,6 +64,34 @@ async function streamToBuffer(stream: Readable): Promise<Buffer> {
 	return Buffer.concat(chunks);
 }
 
+function parseBackupType(raw?: string): CloudBackupType | undefined {
+	const normalized = raw?.toLowerCase();
+	if (normalized === "daily" || normalized === "weekly" || normalized === "monthly") {
+		return normalized;
+	}
+	return undefined;
+}
+
+async function withFetchTimeout<T>(
+	url: string,
+	init: StreamRequestInit,
+	timeoutMs: number,
+	label: string,
+	onResponse: (response: Response) => Promise<T>,
+): Promise<T> {
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => {
+		controller.abort(new Error(`${label} timed out after ${timeoutMs}ms`));
+	}, timeoutMs);
+	timeoutId.unref?.();
+	try {
+		const response = await fetch(url, { ...init, signal: controller.signal });
+		return await onResponse(response);
+	} finally {
+		clearTimeout(timeoutId);
+	}
+}
+
 function parseS3ListXml(xml: string): CloudBackupObjectInfo[] {
 	const objects: CloudBackupObjectInfo[] = [];
 	const regex =
@@ -75,7 +103,7 @@ function parseS3ListXml(xml: string): CloudBackupObjectInfo[] {
 			key,
 			lastModified: new Date(match[2] ?? ""),
 			size: Number.parseInt(match[3] ?? "0", 10),
-			backupType: (tm?.[1] as CloudBackupType) ?? undefined,
+			backupType: parseBackupType(tm?.[1]),
 		});
 	}
 	return objects;
@@ -145,6 +173,16 @@ export class NativeS3Adapter implements IS3StorageAdapter {
 		return headers;
 	}
 
+	private getTimeoutMs(multiplier = 1): number {
+		const base =
+			typeof this.config.requestTimeoutMs === "number" &&
+			Number.isFinite(this.config.requestTimeoutMs) &&
+			this.config.requestTimeoutMs > 0
+				? this.config.requestTimeoutMs
+				: DEFAULT_S3_TIMEOUT_MS;
+		return base * multiplier;
+	}
+
 	async upload(
 		key: string,
 		data: Buffer | Readable | string,
@@ -164,15 +202,21 @@ export class NativeS3Adapter implements IS3StorageAdapter {
 					headers: signedHeaders,
 					body: toFetchStreamBody(fileStream),
 					duplex: "half",
-					signal: AbortSignal.timeout(DEFAULT_S3_TIMEOUT_MS * 4),
 				};
-				const response = await fetch(url.toString(), init);
-				if (!response.ok) {
-					throw new Error(
-						`S3 upload failed HTTP ${response.status} for ${key}: ${await response.text()}`,
-					);
-				}
-				return { key, size: stat.size };
+				return await withFetchTimeout(
+					url.toString(),
+					init,
+					this.getTimeoutMs(4),
+					`S3 upload (${key})`,
+					async (response) => {
+						if (!response.ok) {
+							throw new Error(
+								`S3 upload failed HTTP ${response.status} for ${key}: ${await response.text()}`,
+							);
+						}
+						return { key, size: stat.size };
+					},
+				);
 			} finally {
 				fileStream.destroy();
 			}
@@ -182,18 +226,24 @@ export class NativeS3Adapter implements IS3StorageAdapter {
 			const signedHeaders = this.signRequest("PUT", url, sha256Hex(data));
 			signedHeaders["content-type"] = contentType;
 			signedHeaders["content-length"] = String(data.length);
-			const response = await fetch(url.toString(), {
-				method: "PUT",
-				headers: signedHeaders,
-				body: new Uint8Array(data),
-				signal: AbortSignal.timeout(DEFAULT_S3_TIMEOUT_MS),
-			});
-			if (!response.ok) {
-				throw new Error(
-					`S3 upload failed HTTP ${response.status} for ${key}: ${await response.text()}`,
-				);
-			}
-			return { key, size: data.length };
+			return withFetchTimeout(
+				url.toString(),
+				{
+					method: "PUT",
+					headers: signedHeaders,
+					body: new Uint8Array(data),
+				},
+				this.getTimeoutMs(1),
+				`S3 upload (${key})`,
+				async (response) => {
+					if (!response.ok) {
+						throw new Error(
+							`S3 upload failed HTTP ${response.status} for ${key}: ${await response.text()}`,
+						);
+					}
+					return { key, size: data.length };
+				},
+			);
 		}
 
 		let streamedBytes = 0;
@@ -213,15 +263,21 @@ export class NativeS3Adapter implements IS3StorageAdapter {
 			headers: signedHeaders,
 			body: toFetchStreamBody(countedStream),
 			duplex: "half",
-			signal: AbortSignal.timeout(DEFAULT_S3_TIMEOUT_MS * 4),
 		};
-		const response = await fetch(url.toString(), init);
-		if (!response.ok) {
-			throw new Error(
-				`S3 upload failed HTTP ${response.status} for ${key}: ${await response.text()}`,
-			);
-		}
-		return { key, size: streamedBytes };
+		return withFetchTimeout(
+			url.toString(),
+			init,
+			this.getTimeoutMs(4),
+			`S3 upload (${key})`,
+			async (response) => {
+				if (!response.ok) {
+					throw new Error(
+						`S3 upload failed HTTP ${response.status} for ${key}: ${await response.text()}`,
+					);
+				}
+				return { key, size: streamedBytes };
+			},
+		);
 	}
 
 	async download(key: string): Promise<Readable> {
@@ -378,7 +434,7 @@ export class LocalMockS3Adapter implements IS3StorageAdapter {
 							key: rel,
 							lastModified: st.mtime,
 							size: st.size,
-							backupType: (tm?.[1] as CloudBackupType) ?? undefined,
+							backupType: parseBackupType(tm?.[1]),
 						});
 					}
 				}

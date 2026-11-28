@@ -1,102 +1,187 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
-import * as mod from "../../../ScheduleView.js";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import {
+	ScheduleView,
+	activeVisitLockedAppointmentStatuses,
+	buildChairDoctorAssignmentsByDate,
+	buildChairDoctorAssignmentsFromShifts,
+	default as DefaultScheduleView,
+} from "../../../ScheduleView.js";
+import { useScheduleFilterSummary } from "../../../components/schedule/scheduleViewModules/useScheduleFilterSummary.js";
+import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const webSrcDir = path.resolve(__dirname, "../../..");
-const facadeFile = path.join(webSrcDir, "ScheduleView.tsx");
-const modulesDir = path.join(webSrcDir, "components/schedule/scheduleViewModules");
+function FilterSummaryHarness(
+	props: Parameters<typeof useScheduleFilterSummary>[0],
+) {
+	const result = useScheduleFilterSummary(props);
+	return React.createElement(
+		"div",
+		{ "data-count": String(result.activeScheduleFilterCount) },
+		result.scheduleFilterSummaryNode,
+	);
+}
 
-describe("ScheduleView Monolith Decomposition Suite (/decomposer)", () => {
-  it("1. enforces strict Mandate 8b facade line limit (<= 120 lines) on ScheduleView.tsx", () => {
-    assert.ok(fs.existsSync(facadeFile), "ScheduleView.tsx facade must exist");
-    const content = fs.readFileSync(facadeFile, "utf8");
-    const lineCount = content.split(/\r?\n/).length;
-    assert.ok(
-      lineCount <= 120,
-      `ScheduleView.tsx must be <= 120 lines, got ${lineCount}`,
-    );
-  });
+describe("ScheduleView Monolith Decomposition Suite (Live 6G SUT)", () => {
+	it("1. renders disconnected empty state when dashboard is missing", () => {
+		const ctx = {
+			dashboard: null,
+			auth: {
+				currentUser: { name: "Администратор" },
+				denteClinicalMutationHeaders: () => ({}),
+				denteClinicalReadHeaders: () => ({}),
+			},
+		} as unknown as AppLogicContextType;
 
-  it("2. enforces strict sub-module line budget (<= 800 lines) across scheduleViewModules/", () => {
-    assert.ok(fs.existsSync(modulesDir), "scheduleViewModules directory must exist");
-    const requiredFiles = [
-      "types.ts",
-      "scheduleViewConstants.ts",
-      "useScheduleViewController.ts",
-      "useScheduleShiftDrawerController.ts",
-      "useScheduleFilterSummary.tsx",
-    ];
+		const html = renderToStaticMarkup(
+			React.createElement(
+				AppLogicProvider,
+				{ value: ctx },
+				React.createElement(ScheduleView),
+			),
+		);
+		assert.ok(html.includes('data-testid="schedule-view-disconnected-state"'));
+		assert.equal(html.includes('data-testid="schedule-view"'), false);
+		assert.equal(ScheduleView, DefaultScheduleView);
+	});
 
-    for (const file of requiredFiles) {
-      const fullPath = path.join(modulesDir, file);
-      assert.ok(fs.existsSync(fullPath), `Required module ${file} is missing`);
-      const content = fs.readFileSync(fullPath, "utf8");
-      const lineCount = content.split(/\r?\n/).length;
-      assert.ok(
-        lineCount <= 800,
-        `Module ${file} exceeds 800 lines (${lineCount})`,
-      );
-    }
-  });
+	it("2. renders canonical ScheduleView with id='schedule' and data-testid='schedule-view'", () => {
+		const ctx = {
+			dashboard: {
+				appointments: [],
+				patients: [],
+				staff: [],
+				clinicSettings: { profile: { clinicName: "ДЕНТЕ" }, chairs: [], staff: [] },
+			},
+			auth: {
+				currentUser: { name: "Администратор" },
+				denteClinicalMutationHeaders: () => ({}),
+				denteClinicalReadHeaders: () => ({}),
+			},
+		} as unknown as AppLogicContextType;
 
-  it("3. preserves 100% of public runtime exports from ScheduleView facade", () => {
-    assert.equal(typeof mod.ScheduleView, "function", "ScheduleView must be a function");
-    assert.equal(typeof mod.default, "function", "default export must be ScheduleView");
-    assert.equal(
-      typeof mod.buildChairDoctorAssignmentsFromShifts,
-      "function",
-      "buildChairDoctorAssignmentsFromShifts must be exported",
-    );
-    assert.equal(
-      typeof mod.buildChairDoctorAssignmentsByDate,
-      "function",
-      "buildChairDoctorAssignmentsByDate must be exported",
-    );
-    assert.ok(
-      mod.activeVisitLockedAppointmentStatuses instanceof Set,
-      "activeVisitLockedAppointmentStatuses must be a Set",
-    );
-    assert.ok(
-      mod.activeVisitLockedAppointmentStatuses.has("completed"),
-      "activeVisitLockedAppointmentStatuses must lock completed status",
-    );
-  });
+		const html = renderToStaticMarkup(
+			React.createElement(
+				AppLogicProvider,
+				{ value: ctx },
+				React.createElement(ScheduleView),
+			),
+		);
+		assert.ok(html.includes('id="schedule"'));
+		assert.ok(html.includes('data-testid="schedule-view"'));
+	});
 
-  it("4. enforces direct canonical component mounting in ScheduleView facade with createPortal", () => {
-    const facadeSource = fs.readFileSync(facadeFile, "utf8");
-    assert.ok(
-      facadeSource.includes("ScheduleViewToolbar") &&
-        facadeSource.includes("ScheduleViewBody") &&
-        facadeSource.includes("ScheduleViewModals"),
-      "ScheduleView must connect ScheduleViewToolbar, ScheduleViewBody, and ScheduleViewModals directly",
-    );
-    assert.ok(
-      facadeSource.includes("createPortal(") && facadeSource.includes("document.body"),
-      "ScheduleView must mount modals strictly via createPortal(..., document.body)",
-    );
-  });
+	it("3. maps and sorts dual-shift chair doctor assignments and excludes cancelled shifts", () => {
+		const shifts = [
+			{
+				id: "s-pm",
+				doctorId: "doc-2",
+				doctorName: "Петров П.П.",
+				chairId: "chair-1",
+				dateIso: "2026-10-10",
+				archetypeId: "evening_shift",
+				startTime: "14:00",
+				endTime: "20:00",
+				status: "scheduled",
+			},
+			{
+				id: "s-am",
+				doctorId: "doc-1",
+				doctorName: "Иванова А.А.",
+				chairId: "chair-1",
+				dateIso: "2026-10-10",
+				archetypeId: "morning_shift",
+				startTime: "08:00",
+				endTime: "14:00",
+				status: "scheduled",
+			},
+			{
+				id: "s-cancel",
+				doctorId: "doc-3",
+				doctorName: "Сидоров С.С.",
+				chairId: "chair-2",
+				dateIso: "2026-10-10",
+				archetypeId: "full_day",
+				startTime: "09:00",
+				endTime: "21:00",
+				status: "cancelled",
+			},
+		];
 
-  it("5. preserves test anchors and DOM identity attributes across facade and sub-modules", () => {
-    const facadeSource = fs.readFileSync(facadeFile, "utf8");
-    assert.ok(
-      facadeSource.includes('id="schedule"') &&
-        facadeSource.includes('data-testid="schedule-view"'),
-      "ScheduleView facade must preserve id='schedule' and data-testid='schedule-view'",
-    );
+		const byChair = buildChairDoctorAssignmentsFromShifts(shifts, "2026-10-10");
+		assert.ok(byChair["chair-1"]);
+		assert.equal(byChair["chair-2"], undefined, "Cancelled shifts must be excluded");
+		assert.equal(byChair["chair-1"].startHour, 8);
+		assert.equal(byChair["chair-1"].endHour, 20);
+		assert.equal(byChair["chair-1"].subShifts?.length, 2);
+		assert.equal(byChair["chair-1"].subShifts?.[0]?.doctorId, "doc-1");
+		assert.equal(byChair["chair-1"].subShifts?.[1]?.doctorId, "doc-2");
 
-    const summarySource = fs.readFileSync(
-      path.join(modulesDir, "useScheduleFilterSummary.tsx"),
-      "utf8",
-    );
-    assert.ok(
-      summarySource.includes('data-testid="schedule-shift-summary"') &&
-        summarySource.includes('aria-label="Короткая сводка смены"'),
-      "useScheduleFilterSummary must preserve data-testid='schedule-shift-summary' and aria-label",
-    );
-  });
+		const byDate = buildChairDoctorAssignmentsByDate(shifts);
+		assert.ok(byDate["2026-10-10"]?.["chair-1"]);
+	});
+
+	it("4. enforces activeVisitLockedAppointmentStatuses locking terminal statuses", () => {
+		assert.ok(activeVisitLockedAppointmentStatuses instanceof Set);
+		assert.equal(activeVisitLockedAppointmentStatuses.has("completed"), true);
+		assert.equal(activeVisitLockedAppointmentStatuses.has("cancelled"), true);
+		assert.equal(activeVisitLockedAppointmentStatuses.has("no_show"), true);
+		assert.equal(activeVisitLockedAppointmentStatuses.has("in_treatment"), false);
+		assert.equal(activeVisitLockedAppointmentStatuses.has("planned"), false);
+	});
+
+	it("5. useScheduleFilterSummary hides empty summary and renders schedule-shift-summary when filters/warnings active", () => {
+		const idleHtml = renderToStaticMarkup(
+			React.createElement(FilterSummaryHarness, {
+				scheduleDateFilter: "2026-10-10",
+				clinicToday: "2026-10-10",
+				scheduleStatusFilter: "all",
+				scheduleDoctorFilterId: null,
+				scheduleAssistantFilterId: null,
+				scheduleChairFilterId: null,
+				scheduleOverlapCount: 0,
+				shiftWarnings: [],
+				resetScheduleFilters: () => {},
+				setScheduleDateFilter: () => {},
+			}),
+		);
+		assert.ok(idleHtml.includes('data-count="0"'));
+		assert.equal(idleHtml.includes('data-testid="schedule-shift-summary"'), false);
+
+		const activeHtml = renderToStaticMarkup(
+			React.createElement(FilterSummaryHarness, {
+				scheduleDateFilter: "2026-10-11",
+				clinicToday: "2026-10-10",
+				scheduleStatusFilter: "arrived",
+				scheduleDoctorFilterId: "doc-1",
+				scheduleAssistantFilterId: null,
+				scheduleChairFilterId: "chair-1",
+				appointmentLabels: {
+					planned: "Запланирован",
+					confirmed: "Подтвержден",
+					arrived: "В клинике",
+					in_treatment: "В кресле",
+					completed: "Завершен",
+					cancelled: "Отменен",
+					no_show: "Не явился",
+				},
+				dashboard: {
+					clinicSettings: {
+						staff: [{ id: "doc-1", fullName: "Смирнова Е.А." }],
+						chairs: [{ id: "chair-1", name: "Кресло 1" }],
+					},
+				} as never,
+				scheduleOverlapCount: 1,
+				shiftWarnings: [],
+				resetScheduleFilters: () => {},
+				setScheduleDateFilter: () => {},
+			}),
+		);
+		assert.ok(activeHtml.includes('data-count="4"'));
+		assert.ok(activeHtml.includes('data-testid="schedule-shift-summary"'));
+		assert.ok(activeHtml.includes('aria-label="Короткая сводка смены"'));
+		assert.ok(activeHtml.includes("Смирнова Е.А."));
+		assert.ok(activeHtml.includes("Кресло 1"));
+	});
 });

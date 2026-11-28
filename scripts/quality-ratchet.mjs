@@ -457,6 +457,13 @@ function runCli() {
 	}
 	console.log("-".repeat(86));
 	console.log(`TOTAL DEBT: ${totalDebt} findings. ${totalDebt === 0 ? "Nothing found by these detectors." : "This is what the codebase owes, not what is allowed to grow."}`);
+	if (totalDebt > 0) {
+		console.log("BOY-SCOUT RATCHET MANDATE: Whenever you touch ANY file, check & burn down its debt too (not just `any`!):");
+		console.log("  1) `double-cast` / `record-cast` / blind `type-assertion` (`res.json() as T`) -> Zod `safeParse` or type guards");
+		console.log("  2) `non-null-assertion` (`x!`) -> guard clauses / `?.` / `??`; 3) ALL 3 catch bugs (`empty-catch`, `silent-catch`, `swallowed-promise`)");
+		console.log("  4) Fake tests (`test-phantom-no-sut`, `test-source-grep`, `test-weak-only`, `test-size-assertion`) -> run real SUT");
+		console.log("  Inspect top targets: node scripts/quality-ratchet.mjs --list type-assertion --limit=40  (or silent-catch / empty-catch / non-null-assertion / test-phantom-no-sut)");
+	}
 	console.log("Blind spots (read them): detectors are syntactic. They do not prove tests are good (see the mutation");
 	console.log("probe), do not see logic errors, and 'weak/no-assertion' treats helpers not named assert*/expect*/verify*");
 	console.log("as non-assertions. A zero here is a floor, never a certificate.");

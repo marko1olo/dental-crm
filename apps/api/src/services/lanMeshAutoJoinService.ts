@@ -28,10 +28,13 @@ import {
 	timingSafeStringEqual,
 } from "@dental/shared";
 import { BoundedTtlMap } from "../lib/boundedTtlMap.js";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import { getPrimaryLanIp } from "./lanDiscoveryService.js";
 import { type LanMeshService, getLanMeshService } from "./lanMeshService.js";
+
+const logger = createApiLogger("lanMeshAutoJoinService");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Types & Interfaces
@@ -184,10 +187,11 @@ export class LanMeshAutoJoinService {
 		this.rotatePin(true);
 
 		// Schedule periodic PIN auto-rotation
-		this.rotationTimer = setInterval(() => {
+		const rotationTimer = setInterval(() => {
 			this.ensureValidPin();
 		}, 30000);
-		this.rotationTimer.unref?.();
+		rotationTimer.unref();
+		this.rotationTimer = rotationTimer;
 	}
 
 	/**
@@ -400,8 +404,8 @@ export class LanMeshAutoJoinService {
 					lastSeen: now,
 					status: "online",
 				});
-			} catch {
-				// Best-effort topology registration
+			} catch (err: unknown) {
+				logger.debug({ err: safeLogError(err), assignedNodeId }, "Best-effort topology registration skipped");
 			}
 		}
 
@@ -501,8 +505,8 @@ export class LanMeshAutoJoinService {
 			if (scanResult.primaryIp && scanResult.primaryIp !== "127.0.0.1") {
 				return scanResult.primaryIp;
 			}
-		} catch {
-			// Fall through
+		} catch (err: unknown) {
+			logger.debug({ err: safeLogError(err) }, "Subnet scan fallback to primary LAN IP");
 		}
 		const fallback = getPrimaryLanIp();
 		return fallback && fallback !== "127.0.0.1" ? fallback : "127.0.0.1";
@@ -546,7 +550,8 @@ export class LanMeshAutoJoinService {
 	private tryGetGlobalMeshService(): LanMeshService | null {
 		try {
 			return getLanMeshService();
-		} catch {
+		} catch (err: unknown) {
+			logger.debug({ err: safeLogError(err) }, "Global LAN mesh service not initialized");
 			return null;
 		}
 	}

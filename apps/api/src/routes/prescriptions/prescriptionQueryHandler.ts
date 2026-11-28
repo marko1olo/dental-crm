@@ -1,12 +1,17 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { and, desc, eq } from "drizzle-orm";
-import { verifyPrescriptionStatutoryValidity } from "@dental/shared";
+import {
+	formatDateKeyInTimeZone,
+	resolveValidIanaTimeZone,
+	verifyPrescriptionStatutoryValidity,
+} from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { withTenantReadCtx } from "../../db/rls.js";
 import { electronicPrescriptionItems, electronicPrescriptions } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+import { clinicTimeZone } from "../../services/reports/managerReports/timezone.js";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -109,19 +114,26 @@ export async function handleGetPrescriptionById(
 			return null;
 		}
 
-		const items = await tx
-			.select()
-			.from(electronicPrescriptionItems)
-			.where(and(eq(electronicPrescriptionItems.prescriptionId, prescription.id), eq(electronicPrescriptionItems.organizationId, orgId)))
-			.orderBy(electronicPrescriptionItems.itemIndex);
+		const [items, rawClinicTz] = await Promise.all([
+			tx
+				.select()
+				.from(electronicPrescriptionItems)
+				.where(and(eq(electronicPrescriptionItems.prescriptionId, prescription.id), eq(electronicPrescriptionItems.organizationId, orgId)))
+				.orderBy(electronicPrescriptionItems.itemIndex),
+			clinicTimeZone(orgId, tx),
+		]);
 
-		return { prescription, items };
+		return {
+			prescription,
+			items,
+			clinicTimeZone: resolveValidIanaTimeZone(rawClinicTz),
+		};
 	});
 
 	if (!loaded) {
 		return reply.code(404).send({ error: "PrescriptionNotFound", message: "Рецепт не найден." });
 	}
-	const { prescription, items } = loaded;
+	const { prescription, items, clinicTimeZone: resolvedTimeZone } = loaded;
 
 	await auditMedicalAccessFromRequest(request, {
 		organizationId: orgId,
@@ -142,7 +154,10 @@ export async function handleGetPrescriptionById(
 
 	const validityCheck = verifyPrescriptionStatutoryValidity({
 		formType: prescription.formType,
-		prescriptionDate: prescription.issuedAt?.toISOString().slice(0, 10) || prescription.createdAt.toISOString().slice(0, 10),
+		prescriptionDate: formatDateKeyInTimeZone(
+			prescription.issuedAt ?? prescription.createdAt,
+			resolvedTimeZone,
+		),
 		validityDays: validityDaysNum,
 		isChronicSpecialCare: prescription.isSpecialChronicIndication,
 		chronicPeriodicity: prescription.chronicDispenseFrequencyNotes,

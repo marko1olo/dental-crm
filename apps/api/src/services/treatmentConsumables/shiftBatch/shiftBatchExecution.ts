@@ -2,8 +2,9 @@
  * shiftBatchExecution.ts — Layer 3: 1-click execution of shift batch consumables deduction.
  */
 
+import { resolveValidIanaTimeZone, todayDateKeyInTimeZone } from "@dental/shared";
 import { and, eq, like, or, sql } from "drizzle-orm";
-import { inventoryTransactions } from "../../../db/schema.js";
+import { clinics, inventoryTransactions } from "../../../db/schema.js";
 import type { DbExecutor } from "../types.js";
 import { executeUnifiedStockDeduction } from "../unifiedStockDeductionEngine.js";
 import { getShiftConsumablesSummary } from "./shiftSummaryQueries.js";

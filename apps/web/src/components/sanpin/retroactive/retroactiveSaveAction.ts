@@ -1,4 +1,5 @@
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import type { RetroactiveDayRecord } from "../retroactiveSanpinEngine";
 
@@ -37,8 +38,13 @@ export async function saveRetroactiveBatchAction({
 		});
 
 		if (!res.ok) {
-			const json = await res.json().catch(() => null);
-			const payload = json?.data ?? json;
+			let payload: { message?: string; data?: { message?: string } } | null = null;
+			try {
+				const json = (await res.json()) as { message?: string; data?: { message?: string } } | null;
+				payload = json?.data ?? json;
+			} catch (parseErr) {
+				clientLogger.warn("[retroactiveSaveAction] Failed to parse error JSON:", parseErr);
+			}
 			throw new Error(payload?.message || `Ошибка сервера (${res.status})`);
 		}
 

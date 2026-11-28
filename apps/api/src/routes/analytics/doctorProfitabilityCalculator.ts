@@ -1,8 +1,12 @@
 import {
 	calculateDoctorPeriodPayroll,
 	calculateKopecksSharePercent,
+	formatDateKeyInTimeZone,
 	kopecksToRubles,
+	resolveValidIanaTimeZone,
 	rublesToKopecks,
+	todayDateKeyInTimeZone,
+	wallClockToUtcInTimeZone,
 } from "@dental/shared";
 import { and, eq, gte, inArray, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import { withTenantCtx, type TenantDb } from "../../db/rls.js";
@@ -23,6 +27,7 @@ import {
 } from "../../db/schema.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { fetchDoctorPayrollDataset, normalizeClinicalCategory } from "../doctorPayrollDbQueries.js";
+import { clinicTimeZone } from "../../services/reports/managerReports/timezone.js";
 
 const logger = createApiLogger("doctorProfitabilityCalculator");
 
@@ -287,10 +292,16 @@ export async function calculateDoctorProfitability(
 
 		const operativePayrollKopMap = new Map<string, number>();
 		if (missingDocIds.length > 0) {
-			const fromDate = startDate ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1, 0, 0, 0, 0);
+			const tz = resolveValidIanaTimeZone(await clinicTimeZone(orgId, tx));
 			const toDate = new Date();
-			const fromStr = fromDate.toISOString().slice(0, 10);
-			const toStr = toDate.toISOString().slice(0, 10);
+			const todayKey = todayDateKeyInTimeZone(tz, toDate);
+			const monthStartKey = `${todayKey.slice(0, 7)}-01`;
+			const fromDate =
+				startDate ??
+				wallClockToUtcInTimeZone(monthStartKey, 0, 0, tz) ??
+				new Date(toDate.getFullYear(), toDate.getMonth(), 1, 0, 0, 0, 0);
+			const fromStr = formatDateKeyInTimeZone(fromDate, tz);
+			const toStr = formatDateKeyInTimeZone(toDate, tz);
 
 			for (const docId of missingDocIds) {
 				try {

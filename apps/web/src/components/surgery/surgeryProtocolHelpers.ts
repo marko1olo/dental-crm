@@ -63,29 +63,45 @@ export function buildSurgeryDiaryText(params: {
 	lotNumber: string;
 	torqueNcm: number;
 	isqValue: number;
-	boneDensity: MischBoneDensity;
+	boneDensity: MischBoneDensity | "";
 	capType: SurgeryCapType;
 	selectedSuture: string;
+	anesthesiaProtocol?: string | undefined;
+	incisionProtocol?: string | undefined;
+	boneBedProtocol?: string | undefined;
 }): string {
 	const {
 		activeScenario, scenarioConfig, toothFdi, selectedTeeth, getToothSpec,
 		doctorName, patientName, selectedBrand, diameterMm, lengthMm,
 		catalogArticle, lotNumber, torqueNcm, isqValue, boneDensity, capType, selectedSuture,
+		anesthesiaProtocol, incisionProtocol, boneBedProtocol,
 	} = params;
 	const nowStr = new Date().toLocaleDateString("ru-RU");
 	if (activeScenario === "implant") {
 		const capStr = capType === "plug" ? "винт-заглушка (ушивание наглухо)" : "формирователь десны (ФДМ)";
 		const sutureClause = selectedSuture.trim() ? ` Наложены швы (${selectedSuture}).` : "";
+		const anesthClause = anesthesiaProtocol?.trim() ? `${anesthesiaProtocol.trim()}. ` : "";
+		const incisionClause = incisionProtocol?.trim() ? `${incisionProtocol.trim()}. ` : "";
+		const bedClause = boneBedProtocol?.trim() ? `${boneBedProtocol.trim()}. ` : "";
+		const densityClause = boneDensity ? `Плотность кости: ${boneDensity}. ` : "";
+		const brandLabel = selectedBrand.trim() || "Имплантационная система не указана";
 		if (selectedTeeth.length > 1) {
 			const perToothText = selectedTeeth.map((t) => {
 				const s = getToothSpec(t);
 				const tCap = s.capType === "plug" ? "заглушка" : "ФДМ";
 				const snSuffix = s.serialNumber ? `, SN: ${s.serialNumber}` : "";
-				return `#${t}: ${selectedBrand} Ø ${s.diameterMm} × ${s.lengthMm} мм (REF: ${s.catalogArticle}, LOT: ${s.lotNumber}${snSuffix}, торк ${s.torqueNcm} Н·см, ISQ ${s.isqValue}, ${tCap})`;
+				const sizePart = s.diameterMm > 0 && s.lengthMm > 0 ? ` Ø ${s.diameterMm} × ${s.lengthMm} мм` : "";
+				const refPart = s.catalogArticle ? `REF: ${s.catalogArticle}, ` : "";
+				const lotPart = s.lotNumber ? `LOT: ${s.lotNumber}` : "LOT: —";
+				return `#${t}: ${brandLabel}${sizePart} (${refPart}${lotPart}${snSuffix}, торк ${s.torqueNcm || "—"} Н·см, ISQ ${s.isqValue || "—"}, ${tCap})`;
 			}).join("; ");
-			return `Медицинская карта приёма · Хирургический протокол (Зубы FDI #${selectedTeeth.join(", #")})\nДата: ${nowStr} · Врач: ${doctorName} · Пациент: ${patientName}\nДиагноз: ${scenarioConfig.icd10} ${scenarioConfig.icd10Label}.\n\nХод операции:\nИнфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Разрез по гребню альвеолярного отростка, отслоен лоскут. Препарирование костного ложа фрезами с охлаждением физраствором. Плотность кости: ${boneDensity}. Установлены имплантаты: ${perToothText}.${sutureClause} Гемостаз полный. Паспорт выдан пациенту.\n\nНазначения и рекомендации:\n${scenarioConfig.defaultRecommendationsRu}`;
+			return `Медицинская карта приёма · Хирургический протокол (Зубы FDI #${selectedTeeth.join(", #")})\nДата: ${nowStr} · Врач: ${doctorName} · Пациент: ${patientName}\nДиагноз: ${scenarioConfig.icd10} ${scenarioConfig.icd10Label}.\n\nХод операции:\n${anesthClause}${incisionClause}${bedClause}${densityClause}Установлены имплантаты: ${perToothText}.${sutureClause} Гемостаз полный. Паспорт выдан пациенту.\n\nНазначения и рекомендации:\n${scenarioConfig.defaultRecommendationsRu}`;
 		}
-		return `Медицинская карта приёма · Хирургический протокол (Зуб FDI #${toothFdi})\nДата: ${nowStr} · Врач: ${doctorName} · Пациент: ${patientName}\nДиагноз: ${scenarioConfig.icd10} ${scenarioConfig.icd10Label}.\n\nХод операции:\nИнфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Разрез по гребню альвеолярного отростка, отслоен лоскут. Препарирование костного ложа фрезами с охлаждением физраствором. Плотность кости: ${boneDensity}. Установлен имплантат ${selectedBrand} Ø ${diameterMm} × ${lengthMm} мм (REF: ${catalogArticle}, LOT: ${lotNumber}). Первичная стабильность: ${torqueNcm} Н·см (ISQ ${isqValue}). Установлен ${capStr}.${sutureClause} Гемостаз полный. Паспорт выдан пациенту.\n\nНазначения и рекомендации:\n${scenarioConfig.defaultRecommendationsRu}`;
+		const sizePart = diameterMm > 0 && lengthMm > 0 ? ` Ø ${diameterMm} × ${lengthMm} мм` : "";
+		const refLotParts = [catalogArticle ? `REF: ${catalogArticle}` : "", lotNumber ? `LOT: ${lotNumber}` : ""].filter(Boolean);
+		const refLotStr = refLotParts.length > 0 ? ` (${refLotParts.join(", ")})` : "";
+		const stabilityPart = torqueNcm > 0 || isqValue > 0 ? ` Первичная стабильность: ${torqueNcm || "—"} Н·см (ISQ ${isqValue || "—"}).` : "";
+		return `Медицинская карта приёма · Хирургический протокол (Зуб FDI #${toothFdi})\nДата: ${nowStr} · Врач: ${doctorName} · Пациент: ${patientName}\nДиагноз: ${scenarioConfig.icd10} ${scenarioConfig.icd10Label}.\n\nХод операции:\n${anesthClause}${incisionClause}${bedClause}${densityClause}Имплантат: ${brandLabel}${sizePart}${refLotStr}.${stabilityPart} Установлен ${capStr}.${sutureClause} Гемостаз полный. Паспорт выдан пациенту.\n\nНазначения и рекомендации:\n${scenarioConfig.defaultRecommendationsRu}`;
 	}
 	return `Медицинская карта приёма · ${scenarioConfig.titleRu} (Зуб FDI #${toothFdi})\nДата: ${nowStr} · Врач: ${doctorName} · Пациент: ${patientName}\nДиагноз: ${scenarioConfig.icd10} ${scenarioConfig.icd10Label}.\n\nХод операции:\n${scenarioConfig.defaultProtocolRu}\n\nНазначения и рекомендации:\n${scenarioConfig.defaultRecommendationsRu}`;
 }
@@ -93,14 +109,14 @@ export function buildSurgeryDiaryText(params: {
 export function buildSurgeryPassportData(params: {
 	apiPassportData: Record<string, unknown> | null;
 	toothFdi: number;
-	currentSystem: SurgeryImplantSystemSpec;
+	currentSystem: SurgeryImplantSystemSpec | null;
 	catalogArticle: string;
 	diameterMm: number;
 	lengthMm: number;
 	torqueNcm: number;
 	lotNumber: string;
 	serialNumber: string;
-	boneDensity: MischBoneDensity;
+	boneDensity: MischBoneDensity | "";
 	isqValue: number;
 	capType: SurgeryCapType;
 	patientName: string;
@@ -131,18 +147,19 @@ export function buildSurgeryPassportData(params: {
 	const { apiPassportData, toothFdi, currentSystem, lotNumber, serialNumber, financials } = params;
 	const dateIso = apiPassportData?.installedAt ? new Date(String(apiPassportData.installedAt)).toISOString() : new Date().toISOString();
 	const effectiveLot = lotNumber || (apiPassportData?.lotNumber ? String(apiPassportData.lotNumber) : "") || generateSystemSurgeryLot(toothFdi, dateIso);
+	const brandValue = currentSystem?.brandName || params.selectedBrand.trim();
 	return {
 		passportId: (apiPassportData?.passportId ? String(apiPassportData.passportId) : null) || `IMP-SSOT-${toothFdi}-${Date.now().toString().slice(-6)}`,
 		toothFdi,
-		brand: currentSystem.brandName,
-		model: currentSystem.popularLines[0] || "Standard",
+		brand: brandValue,
+		model: currentSystem?.popularLines[0] || "",
 		catalogArticle: params.catalogArticle,
 		diameterMm: params.diameterMm,
 		lengthMm: params.lengthMm,
 		torqueNcm: params.torqueNcm,
 		lotNumber: effectiveLot,
 		serialNumber: serialNumber || (apiPassportData?.serialNumber ? String(apiPassportData.serialNumber) : ""),
-		boneDensity: params.boneDensity,
+		boneDensity: params.boneDensity || "D2",
 		isqDay0: params.isqValue,
 		capType: params.capType,
 		patientName: (apiPassportData?.patientName ? String(apiPassportData.patientName) : null) || params.patientName,
@@ -152,8 +169,8 @@ export function buildSurgeryPassportData(params: {
 		dateIso,
 		osteointegrationExpectedDate: computeOsteointegrationExpectedDate(dateIso, toothFdi),
 		isWarehouseOverdraft: Boolean(params.inventoryOverdraftActive),
-		inventoryItemId: params.effectiveInventoryItemId || params.selectedInventoryItemId || params.matchedStockItemId || `inv-${params.selectedBrand.toLowerCase()}-${params.diameterMm * 10}${params.lengthMm}`,
-		expirationDate: currentSystem.defaultExpirationDate,
+		inventoryItemId: params.effectiveInventoryItemId || params.selectedInventoryItemId || params.matchedStockItemId || (brandValue ? `inv-${brandValue.toLowerCase()}-${params.diameterMm * 10}${params.lengthMm}` : ""),
+		expirationDate: currentSystem?.defaultExpirationDate || "",
 		operationPriceRub: financials.operationPriceRub,
 		implantCostRub: financials.implantCostRub,
 		consumablesCostRub: financials.consumablesCostRub,

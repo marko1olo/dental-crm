@@ -467,7 +467,15 @@ export function useDmsStudioState({
 				}
 				showToast("Гарантийное письмо сохранено в системе", "success");
 			} else {
-				const errJson = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
+				let errJson: { message?: string; error?: string } | null = null;
+				try {
+					errJson = (await res.json()) as { message?: string; error?: string } | null;
+				} catch (parseErr) {
+					clientLogger.warn("[useDmsStudioState] Error JSON parse failed", {
+						status: res.status,
+						error: String(parseErr),
+					}, { module: "Insurance" });
+				}
 				const errMsg = errJson?.message || errJson?.error || `HTTP ${res.status}`;
 				clientLogger.warn("[useDmsStudioState] Ошибка сохранения гарантийного письма", { status: res.status, errMsg }, { module: "Insurance" });
 				showToast(`Не удалось сохранить письмо на сервере (${errMsg}). Черновик сохранён локально.`, "warning");

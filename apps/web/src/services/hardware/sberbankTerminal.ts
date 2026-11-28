@@ -448,7 +448,15 @@ export class SberbankTerminalService {
 		});
 
 		if (!res.ok) {
-			const err = await res.json().catch(() => ({}));
+			let err: unknown = null;
+			try {
+				err = await res.json();
+			} catch (parseErr) {
+				logger.warn("[SberbankTerminalService] registerBackendSession error JSON parse failed", {
+					status: res.status,
+					error: String(parseErr),
+				});
+			}
 			logger.warn("[SberbankTerminalService] registerBackendSession failed:", err);
 		}
 	}
@@ -480,9 +488,17 @@ export class SberbankTerminalService {
 				const data = (await res.json()) as SberPosTransactionResponse;
 				return data;
 			}
-			const errPayload = await res.json().catch(() => ({}));
+			let errPayload: { message?: string; error?: string } = {};
+			try {
+				errPayload = (await res.json()) as { message?: string; error?: string };
+			} catch (parseErr) {
+				logger.warn("[SberbankTerminalService] dispatchDriverCommand error JSON parse failed", {
+					status: res.status,
+					error: String(parseErr),
+				});
+			}
 			const msg =
-				(errPayload as { message?: string; error?: string }).message ||
+				errPayload.message ||
 				`Терминал вернул ошибку выполнения команды (HTTP ${res.status})`;
 			this.updateStatus("communication_error", msg);
 			throw new TerminalConnectionError(msg, "TERMINAL_COMMAND_FAILED");
@@ -509,17 +525,20 @@ export class SberbankTerminalService {
 		}
 		this.updateStatus("user_cancelled", "Операция отменена пользователем.");
 
-		try {
-			void fetch(`http://${this.config.hostIp}:${this.config.hostPort}/api/sberpos/cancel`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ terminalId: this.config.terminalId, activeTransactionId: this.activeTransactionId }),
-			}).catch((cancelErr) => {
+		void (async () => {
+			try {
+				const res = await fetch(`http://${this.config.hostIp}:${this.config.hostPort}/api/sberpos/cancel`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ terminalId: this.config.terminalId, activeTransactionId: this.activeTransactionId }),
+				});
+				if (!res.ok) {
+					logger.debug("[SberbankTerminalService] Cancel HTTP error:", res.status);
+				}
+			} catch (cancelErr) {
 				logger.debug("[SberbankTerminalService] Cancel request failed:", cancelErr);
-			});
-		} catch (cancelErr) {
-			logger.debug("[SberbankTerminalService] Cancel broadcast failed:", cancelErr);
-		}
+			}
+		})();
 	}
 }
 

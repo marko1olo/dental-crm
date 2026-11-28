@@ -65,10 +65,13 @@ export function usePatientArchiveAndBlacklistLogic(patientId: string) {
 				showToast(actionFailureToast(newStatus ? "Пациент не добавлен в черный список" : "Блокировка записи не снята", res.status), "error");
 				return;
 			}
-			const data = await res.json().catch((err) => {
-				showToast(actionFailureToast("Ошибка ответа сервера", (err as { status?: number })?.status ?? null), "error");
-				return {} as Record<string, unknown>;
-			});
+			let data: Record<string, unknown> = {};
+			try {
+				data = (await res.json()) as Record<string, unknown>;
+			} catch (err) {
+				logger.error(err);
+				showToast(actionFailureToast("Ошибка ответа сервера", res.status ?? null), "error");
+			}
 			if (!(data.success || data.isBlacklisted !== undefined)) {
 				showToast(unconfirmedActionToast(newStatus ? "Пациент не добавлен в черный список" : "Блокировка записи не снята"), "error");
 				return;

@@ -19,10 +19,9 @@ export const MobileShiftCockpit: React.FC<MobileShiftCockpitProps> = (props) => 
 
 			<div className="mobile-shift-body">
 				<ShiftMetricsHeader {...props} {...state} heroOnly />
+				<ShiftActionsToolbar {...props} {...state} />
 				<MobileShiftCockpitUI {...props} {...state} />
 			</div>
-
-			<ShiftActionsToolbar {...props} {...state} />
 		</main>
 	);
 };

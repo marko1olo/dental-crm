@@ -18,7 +18,7 @@
 		background:
 			linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
 			var(--nav);
-		color: #f8efe1;
+		color: var(--ink);
 		display: flex;
 		flex-wrap: nowrap;
 		flex-direction: column;

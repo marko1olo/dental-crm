@@ -69,4 +69,5 @@ export interface S3StorageConfig {
 	accessKeyId: string;
 	secretAccessKey: string;
 	forcePathStyle?: boolean | undefined;
+	requestTimeoutMs?: number | undefined;
 }

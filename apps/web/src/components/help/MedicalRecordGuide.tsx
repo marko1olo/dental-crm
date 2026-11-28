@@ -153,7 +153,7 @@ export const MedicalRecordGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour 
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 							{/* S: Complaints */}
 							<div className="p-2.5 rounded bg-[var(--paper)] border border-[var(--line)] space-y-1">
-								<div className="font-bold text-[10px] text-teal-700 dark:text-teal-300 uppercase tracking-wider">
+								<div className="font-bold text-[10px] text-teal-700 dark:text-teal-300">
 									S · Жалобы и анамнез
 								</div>
 								<p className="text-[11px] text-[var(--ink)] leading-relaxed">
@@ -165,7 +165,7 @@ export const MedicalRecordGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour 
 
 							{/* O: Objective */}
 							<div className="p-2.5 rounded bg-[var(--paper)] border border-[var(--line)] space-y-1">
-								<div className="font-bold text-[10px] text-teal-700 dark:text-teal-300 uppercase tracking-wider">
+								<div className="font-bold text-[10px] text-teal-700 dark:text-teal-300">
 									O · Объективный статус
 								</div>
 								<p className="text-[11px] text-[var(--ink)] leading-relaxed">
@@ -179,7 +179,7 @@ export const MedicalRecordGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour 
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 							{/* A: Diagnosis */}
 							<div className="p-2.5 rounded bg-[var(--paper)] border border-[var(--line)] space-y-1">
-								<div className="font-bold text-[10px] text-teal-700 dark:text-teal-300 uppercase tracking-wider">
+								<div className="font-bold text-[10px] text-teal-700 dark:text-teal-300">
 									A · Клинический диагноз
 								</div>
 								<div className="text-[11px] font-bold text-[var(--ink)] flex items-center gap-1.5">
@@ -192,7 +192,7 @@ export const MedicalRecordGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour 
 
 							{/* P: Plan & Treatment */}
 							<div className="p-2.5 rounded bg-[var(--paper)] border border-[var(--line)] space-y-1">
-								<div className="font-bold text-[10px] text-teal-700 dark:text-teal-300 uppercase tracking-wider">
+								<div className="font-bold text-[10px] text-teal-700 dark:text-teal-300">
 									P · Протокол лечения
 								</div>
 								<p className="text-[11px] text-[var(--ink)] leading-relaxed">

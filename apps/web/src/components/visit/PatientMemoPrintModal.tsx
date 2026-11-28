@@ -224,33 +224,32 @@ export function PatientMemoPrintModal({
 					})}
 				</div>
 
-				{/* Live Memo Preview Box (White Sheet with authentic printed preview in all themes) */}
-				<div className="flex-1 overflow-y-auto min-h-[280px] max-h-[440px] p-2 pb-8 bg-slate-900/10 dark:bg-slate-950/40 rounded-xl border border-[var(--line)]">
+				{/* Live Memo Preview Box (Theme-adaptive preview + white print output) */}
+				<div className="flex-1 overflow-y-auto min-h-[280px] max-h-[440px] p-2 pb-8 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">
 					<div
-						className="p-5 sm:p-6 pb-8 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs shadow-xl leading-relaxed flex flex-col gap-3.5"
-						style={{ background: "var(--paper-strong, #ffffff)", color: "var(--ink, #0f172a)" }}
+						className="p-5 sm:p-6 pb-8 rounded-xl border border-[var(--line)] print:border-slate-300 bg-[var(--paper-strong)] print:bg-white text-[var(--ink)] print:text-slate-900 text-xs shadow-xl leading-relaxed flex flex-col gap-3.5"
 					>
 						{/* Form Official Header */}
-						<div className="border-b-2 border-slate-900 pb-2 text-[10px] text-slate-700 flex justify-between items-start gap-4">
+						<div className="border-b-2 border-[var(--line)] print:border-slate-900 pb-2 text-[10px] text-[var(--ink-muted)] print:text-slate-700 flex justify-between items-start gap-4">
 							<div>
 								<div
-									className="font-extrabold text-[12px] uppercase text-slate-950 tracking-normal leading-tight"
+									className="font-extrabold text-[12px] text-[var(--ink)] print:text-slate-950 tracking-normal leading-tight"
 									style={{ wordBreak: "normal", overflowWrap: "break-word", hyphens: "none" }}
 								>
-									СТОМАТОЛОГИЧЕСКАЯ КЛИНИКА ДЕНТЕ
+									Стоматологическая клиника ДЕНТЕ
 								</div>
-								<div className="text-[10px] text-slate-600 font-medium mt-0.5">
+								<div className="text-[10px] text-[var(--ink-muted)] print:text-slate-600 font-medium mt-0.5">
 									{clinicPhone} · Режим работы: Пн-Вс 09:00 - 21:00
 								</div>
 							</div>
-							<div className="text-right text-[10px] text-slate-600 shrink-0 font-medium">
+							<div className="text-right text-[10px] text-[var(--ink-muted)] print:text-slate-600 shrink-0 font-medium">
 								{toothNumber ? `Зуб ${toothNumber}` : "Область вмешательства"} · {new Date().toLocaleDateString("ru-RU")}
 							</div>
 						</div>
 
 						{/* Memo Title */}
-						<div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-							<div className="p-1.5 rounded-lg bg-teal-50 text-teal-700 border border-teal-200 shrink-0">
+						<div className="flex items-center gap-2 border-b border-[var(--line)] print:border-slate-200 pb-2">
+							<div className="p-1.5 rounded-lg bg-[var(--teal-surface)] text-[var(--primary)] border border-[var(--primary)]/30 shrink-0">
 								{activeMemo.category === "surgery" ? (
 									<ShieldAlert className="w-4 h-4" />
 								) : activeMemo.category === "endodontics" ? (
@@ -259,22 +258,22 @@ export function PatientMemoPrintModal({
 									<Sparkles className="w-4 h-4" />
 								)}
 							</div>
-							<strong className="text-sm font-extrabold text-slate-950">
+							<strong className="text-sm font-extrabold text-[var(--ink)] print:text-slate-950">
 								{activeMemo.title}
 							</strong>
 						</div>
 
 						<div className="space-y-2">
-							<div className="text-[11px] font-extrabold uppercase text-slate-700 tracking-wider">
+							<div className="text-[11px] font-bold text-[var(--ink-2)] print:text-slate-700">
 								Обязательные правила и рекомендации:
 							</div>
 							<div className="space-y-1.5">
 								{(activeMemo?.keyRules ?? []).map((rule, idx) => (
 									<div
 										key={idx}
-										className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-xs text-slate-900 leading-relaxed flex items-start gap-2"
+										className="p-2.5 rounded-lg border border-[var(--line)] print:border-slate-200 bg-[var(--paper-soft)] print:bg-slate-50 text-xs text-[var(--ink)] print:text-slate-900 leading-relaxed flex items-start gap-2"
 									>
-										<span className="font-mono font-bold text-teal-700 shrink-0">
+										<span className="font-mono font-bold text-[var(--primary)] print:text-teal-700 shrink-0">
 											{idx + 1}.
 										</span>
 										<span>{rule}</span>
@@ -283,12 +282,12 @@ export function PatientMemoPrintModal({
 							</div>
 						</div>
 
-						<div className="p-3 rounded-xl bg-rose-50 border border-rose-200 space-y-1.5 text-slate-900">
-							<div className="text-xs font-extrabold text-rose-900 flex items-center gap-1.5">
-								<AlertTriangle size={15} className="text-rose-600" />
+						<div className="p-3 rounded-xl bg-rose-500/10 print:bg-rose-50 border border-rose-500/30 print:border-rose-200 space-y-1.5 text-[var(--ink)] print:text-slate-900">
+							<div className="text-xs font-extrabold text-rose-600 dark:text-rose-300 print:text-rose-900 flex items-center gap-1.5">
+								<AlertTriangle size={15} className="text-rose-500 print:text-rose-600" />
 								<span>Срочно связаться с клиникой ({clinicPhone}) при:</span>
 							</div>
-							<ul className="m-0 pl-4 text-xs text-rose-900 space-y-1 font-medium">
+							<ul className="m-0 pl-4 text-xs text-rose-700 dark:text-rose-200 print:text-rose-900 space-y-1 font-medium">
 								{(activeMemo?.urgentTriggers ?? []).map((t, idx) => (
 									<li key={idx}>• {t}</li>
 								))}
@@ -315,10 +314,10 @@ export function PatientMemoPrintModal({
 							<button
 								type="button"
 								onClick={handleApplySoap}
-								className="min-h-[48px] px-4 py-2 text-xs sm:text-sm font-bold rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-soft,var(--paper-soft))] active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+								className="min-h-[48px] px-4 py-2 text-xs sm:text-sm font-bold rounded-xl border border-[var(--primary)]/30 bg-[var(--teal-surface)] text-[var(--primary)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
 								data-testid="btn-apply-memo-soap"
 							>
-								<Sparkles size={16} className="text-[var(--teal,var(--brand-primary))]" />
+								<Sparkles size={16} className="text-[var(--primary)]" />
 								<span>В дневник приёма</span>
 							</button>
 						)}
@@ -328,7 +327,7 @@ export function PatientMemoPrintModal({
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[48px] px-4 py-2 text-xs sm:text-sm font-bold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[var(--ink)] transition-colors cursor-pointer"
+							className="min-h-[48px] px-4 py-2 text-xs sm:text-sm font-bold rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--paper-strong)] text-[var(--ink)] transition-colors cursor-pointer"
 						>
 							Закрыть
 						</button>

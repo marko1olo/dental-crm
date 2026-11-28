@@ -50,20 +50,20 @@ export const ReceiptPrintFiscalFooter: React.FC<ReceiptPrintFiscalFooterProps> =
 					<div className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] gap-2.5">
 						{fnsQrSvg && (
 							<div
-								className="w-[130px] h-[130px] p-1.5 bg-white rounded-lg border border-[var(--border,#cbd5e1)] shadow-2xs flex items-center justify-center shrink-0"
+								className="w-[130px] h-[130px] p-1.5 bg-white dark:bg-white rounded-lg border border-[var(--border,#cbd5e1)] shadow-2xs flex items-center justify-center shrink-0"
 								data-testid="fns-fiscal-qr-svg"
 								dangerouslySetInnerHTML={{ __html: fnsQrSvg }}
 							/>
 						)}
 						<div className="space-y-1">
-							<div className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
+							<div className="text-xs font-semibold text-[var(--muted,#64748b)]">
 								Проверка кассового чека ФНС / ОФД:
 							</div>
 							<a
 								href={receipt.ofdUrl}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="text-xs text-[var(--teal,#0d9488)] hover:underline break-all block font-semibold"
+								className="text-xs text-[var(--primary)] hover:underline break-all block font-semibold"
 							>
 								{receipt.ofdUrl}
 							</a>
@@ -71,8 +71,8 @@ export const ReceiptPrintFiscalFooter: React.FC<ReceiptPrintFiscalFooterProps> =
 					</div>
 				)}
 
-				<p className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider pt-1">
-					СПАСИБО ЗА ДОВЕРИЕ КЛИНИКЕ ДЕНТЕ!
+				<p className="text-xs font-semibold text-[var(--muted,#64748b)] pt-1">
+					Спасибо за доверие клинике ДЕНТЕ!
 				</p>
 			</div>
 		</>

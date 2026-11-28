@@ -71,8 +71,14 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 		try {
 			const res = await fetch(`/api/photo-bridge/session/${activeToken}`);
 			if (!res.ok) {
-				const errData = await res.json().catch(() => ({}));
-				throw new Error(errData.message || "Сессия не найдена или срок действия истек.");
+				let errMsg = "Сессия не найдена или срок действия истек.";
+				try {
+					const errData = (await res.json()) as { message?: string };
+					if (errData?.message) errMsg = errData.message;
+				} catch (parseErr) {
+					logger.warn("[MobilePhotoUploadPage] Non-JSON error on session fetch", parseErr);
+				}
+				throw new Error(errMsg);
 			}
 			const data = await res.json();
 			const receivedSlots: MobilePhotoSlot[] | undefined = Array.isArray(data.slots) && data.slots.length > 0
@@ -276,7 +282,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 				<button
 					type="button"
 					onClick={() => token && fetchSession(token)}
-					className="primary-button min-h-[48px] px-6 rounded-xl font-bold flex items-center gap-2 bg-[var(--teal)] text-white shadow-md active:scale-95"
+					className="primary-button min-h-[48px] px-6 rounded-xl font-bold flex items-center gap-2 bg-[var(--primary)] text-white shadow-md active:scale-95"
 				>
 					<RefreshCw size={16} />
 					<span>Попробовать снова</span>
@@ -432,7 +438,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 					type="button"
 					onClick={triggerCamera}
 					aria-disabled={isUploading}
-					className="w-full h-14 rounded-2xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] active:scale-[0.98] text-white font-bold text-base flex items-center justify-center gap-2.5 shadow-md cursor-pointer transition-all"
+					className="w-full h-14 rounded-2xl bg-[var(--primary)] hover:opacity-95 active:scale-[0.98] text-white font-bold text-base flex items-center justify-center gap-2.5 shadow-md cursor-pointer transition-all"
 					data-testid="btn-mobile-take-photo"
 				>
 					{isUploading ? (

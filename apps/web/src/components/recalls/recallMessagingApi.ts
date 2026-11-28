@@ -1,4 +1,5 @@
 import type { PatientRecallRecord } from "./recallRecordTypes";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type { RecallInviteRequest, RecallInviteResponse } from "@dental/shared/recalls";
 import {
 	checkNotificationSpamCollision,
@@ -71,7 +72,12 @@ export async function sendRecallCandidateInvite(
 		body: JSON.stringify({ patientId: params.patientId, channel: params.channel, body: params.body }),
 	});
 
-	const raw = await response.json().catch(() => ({}));
+	let raw: unknown = {};
+	try {
+		raw = await response.json();
+	} catch (parseErr) {
+		clientLogger.warn("[recallMessagingApi] Failed to parse response JSON:", parseErr);
+	}
 	const payload = (
 		raw && typeof raw === "object" && "data" in raw
 			? (raw as { data: Record<string, unknown> }).data

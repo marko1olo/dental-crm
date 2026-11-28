@@ -1,5 +1,13 @@
 import { createHash } from "node:crypto";
-import { calculateWarrantyTerms, generateProstheticWarrantyPassport, generateUuidV7, LAB_WORK_TYPE_LABELS_RU } from "@dental/shared";
+import {
+	calculateWarrantyTerms,
+	formatDateKeyInTimeZone,
+	generateProstheticWarrantyPassport,
+	generateUuidV7,
+	LAB_WORK_TYPE_LABELS_RU,
+	resolveValidIanaTimeZone,
+	todayDateKeyInTimeZone,
+} from "@dental/shared";
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
@@ -18,14 +26,16 @@ import {
 import { getRequestIdentity } from "../../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
+import { clinicTimeZone } from "../../../services/reports/managerReports/timezone.js";
 
-function formatLocalDateToYmd(dateInput: Date | string | null | undefined): string {
-	const d = dateInput ? new Date(dateInput) : new Date();
-	if (Number.isNaN(d.getTime())) return new Date().toISOString().slice(0, 10);
-	const year = d.getFullYear();
-	const month = String(d.getMonth() + 1).padStart(2, "0");
-	const day = String(d.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
+function formatLocalDateToYmd(
+	dateInput: Date | string | null | undefined,
+	timeZone: string,
+): string {
+	if (!dateInput) return todayDateKeyInTimeZone(timeZone);
+	const d = new Date(dateInput);
+	if (Number.isNaN(d.getTime())) return todayDateKeyInTimeZone(timeZone);
+	return formatDateKeyInTimeZone(d, timeZone);
 }
 
 export async function handleGetWarrantyPassport(request: FastifyRequest, reply: FastifyReply) {
@@ -69,6 +79,9 @@ export async function handleGetWarrantyPassport(request: FastifyRequest, reply: 
 
 	try {
 		const txResult = await withTenantWriteCtx(orgId, async (tx) => {
+			const resolvedClinicTimeZone = resolveValidIanaTimeZone(
+				await clinicTimeZone(orgId, tx),
+			);
 			const [order] = await tx
 				.select({
 					id: labOrders.id,
@@ -224,10 +237,15 @@ export async function handleGetWarrantyPassport(request: FastifyRequest, reply: 
 						},
 					];
 
-			const fixationDateIso = formatLocalDateToYmd(order.completedAt ?? order.createdAt);
-			const fixationDateObj = new Date(fixationDateIso);
+			const fixationDateIso = formatLocalDateToYmd(
+				order.completedAt ?? order.createdAt,
+				resolvedClinicTimeZone,
+			);
+			const fixationDateObj = new Date(`${fixationDateIso}T00:00:00.000Z`);
 			const expirationDateObj = new Date(fixationDateObj.getTime());
-			expirationDateObj.setMonth(expirationDateObj.getMonth() + generalTerms.warrantyMonths);
+			expirationDateObj.setUTCMonth(
+				expirationDateObj.getUTCMonth() + generalTerms.warrantyMonths,
+			);
 			const nextRecallDateObj = new Date(fixationDateObj.getTime() + 180 * 24 * 60 * 60 * 1000);
 
 			const integrityHashPayload = JSON.stringify({
@@ -236,7 +254,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest, reply: 
 				certificateNumber,
 				items: itemsPayload,
 				issuedAt: fixationDateIso,
-				expiresAt: expirationDateObj.toISOString().slice(0, 10),
+				expiresAt: formatDateKeyInTimeZone(expirationDateObj, "UTC"),
 				batchCode,
 			});
 			const integritySha256 = createHash("sha256").update(integrityHashPayload).digest("hex");

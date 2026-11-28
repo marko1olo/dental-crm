@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
 
 export const signTreatmentPlanPepSchema = z.object({
 	action: z.enum(["request_code", "confirm"]).default("confirm"),
@@ -15,4 +16,7 @@ export interface ActivePepOtp {
 	phone?: string;
 }
 
-export const activeOtpCache = new Map<string, ActivePepOtp>();
+export const activeOtpCache = new BoundedTtlMap<string, ActivePepOtp>({
+	maxEntries: 5000,
+	ttlMs: 30 * 60_000,
+});

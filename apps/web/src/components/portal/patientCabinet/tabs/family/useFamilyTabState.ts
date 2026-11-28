@@ -75,7 +75,12 @@ export function useFamilyTabState(
 			});
 
 			if (!resp.ok) {
-				const errBody = (await resp.json().catch(() => null)) as { message?: string } | null;
+				let errBody: { message?: string } | null = null;
+				try {
+					errBody = (await resp.json()) as { message?: string } | null;
+				} catch (parseErr) {
+					onShowToast?.(`Ошибка разбора ответа (${resp.status}): ${String(parseErr).slice(0, 40)}`);
+				}
 				throw new Error(errBody?.message || `Ошибка сохранения прав (код ${resp.status})`);
 			}
 
@@ -143,11 +148,21 @@ export function useFamilyTabState(
 			});
 
 			if (!resp.ok) {
-				const errBody = (await resp.json().catch(() => null)) as { message?: string } | null;
+				let errBody: { message?: string } | null = null;
+				try {
+					errBody = (await resp.json()) as { message?: string } | null;
+				} catch (parseErr) {
+					onShowToast?.(`Ошибка разбора ответа (${resp.status}): ${String(parseErr).slice(0, 40)}`);
+				}
 				throw new Error(errBody?.message || `Ошибка добавления члена семьи (код ${resp.status})`);
 			}
 
-			const created = (await resp.json().catch(() => null)) as { memberId?: string } | null;
+			let created: { memberId?: string } | null = null;
+			try {
+				created = (await resp.json()) as { memberId?: string } | null;
+			} catch (parseErr) {
+				onShowToast?.(`Ошибка чтения ответа сервера: ${String(parseErr).slice(0, 40)}`);
+			}
 			const finalMemberId = created?.memberId || memberId;
 
 			const persistedMember: PatientCabinetFamilyMember = {

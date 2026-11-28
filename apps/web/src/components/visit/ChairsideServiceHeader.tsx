@@ -20,13 +20,13 @@ export const ChairsideServiceHeader: React.FC<ChairsideServiceHeaderProps> = ({ 
 					{item.toothCode.includes(",") ? `зубы ${item.toothCode}` : `зуб ${item.toothCode}`}
 				</span>
 			) : (
-				<span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 text-slate-500">
+				<span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--ink-muted)] border border-[var(--line)]">
 					Общая
 				</span>
 			)}
 			<span className="text-xs font-bold text-[var(--ink,#0f172a)] break-words">{item.title}</span>
 			{item.code804n ? (
-				<span className="text-[10px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+				<span className="text-[10px] font-mono text-[var(--ink-muted)] bg-[var(--paper-soft)] px-1.5 py-0.5 rounded border border-[var(--line)]">
 					{item.code804n}
 				</span>
 			) : null}

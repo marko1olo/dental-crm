@@ -33,10 +33,12 @@ export function sendNoActiveVisitRefusal(
 	};
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export function visitRequestBody(value: unknown): Record<string, unknown> {
-	return value && typeof value === "object" && !Array.isArray(value)
-		? (value as Record<string, unknown>)
-		: {};
+	return isRecord(value) ? value : {};
 }
 
 export type VisitPayloadOutcome<T> =
@@ -68,21 +70,35 @@ export function visitDraftDomainMessage(error: unknown): string {
 	return error.message.trim();
 }
 
+function readVisitErrorCode(error: unknown): string | undefined {
+	if (!isRecord(error)) return undefined;
+	if (typeof error.code === "string") return error.code;
+	if (isRecord(error.cause) && typeof error.cause.code === "string") {
+		return error.cause.code;
+	}
+	return undefined;
+}
+
+export interface VisitDraftMutationErrorOptions {
+	/**
+	 * Explicit DI option for isolated unit tests without a running database.
+	 * Production callers keep this `false` so ECONNREFUSED never masks DB outages as 404.
+	 */
+	readonly treatDbUnavailableAsNotFound?: boolean | undefined;
+}
+
 export function sendVisitDraftMutationError(
 	error: unknown,
 	reply: FastifyReply,
 	operation: VisitDraftMutationOperation,
+	options?: VisitDraftMutationErrorOptions,
 ) {
 	const message = visitDraftDomainMessage(error);
-	const errObj = error as Record<string, unknown> | null;
-	const errCode = (errObj?.code ??
-		(errObj?.cause as Record<string, unknown> | undefined)?.code) as
-		| string
-		| undefined;
+	const errCode = readVisitErrorCode(error);
 
 	if (
 		message === "Визит не найден" ||
-		(process.env.NODE_ENV === "test" && errCode === "ECONNREFUSED")
+		(options?.treatDbUnavailableAsNotFound === true && errCode === "ECONNREFUSED")
 	) {
 		return reply.code(404).send({
 			error: "VisitNotFound",

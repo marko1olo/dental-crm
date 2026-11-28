@@ -37,10 +37,11 @@ describe("MDLP / Chestny Znak API Routes", () => {
 			}
 		});
 
-		await registerMdlpRoutes(app);
+		await registerMdlpRoutes(app, { allowInMemoryQueueFallback: true });
 	});
 
 	afterEach(async () => {
+		mdlpQueueService.setAllowInMemoryFallback(false);
 		await app.close();
 	});
 

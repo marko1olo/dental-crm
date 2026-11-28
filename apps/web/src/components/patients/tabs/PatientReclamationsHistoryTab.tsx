@@ -6,6 +6,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { AlertCircle, AlertTriangle, CheckCircle2, FileText, Plus, RefreshCw, ShieldAlert, ShieldCheck, Sparkles, X } from "lucide-react";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 
 export interface PatientReclamationRecord {
@@ -73,8 +74,14 @@ export const PatientReclamationsHistoryTab: React.FC<PatientReclamationsHistoryT
 					headers: denteAdminSecretRequestHeaders(),
 				});
 				if (!response.ok) {
-					const errorData = await response.json().catch(() => null) as { message?: string } | null;
-					throw new Error(errorData?.message || `Сервер ответил статусом ${response.status}`);
+					let msg = `Сервер ответил статусом ${response.status}`;
+					try {
+						const errorData = (await response.json()) as { message?: string } | null;
+						if (errorData?.message) msg = errorData.message;
+					} catch (parseErr) {
+						clientLogger.warn("[PatientReclamationsHistoryTab] Non-JSON error on load:", parseErr);
+					}
+					throw new Error(msg);
 				}
 				const data = (await response.json()) as PatientReclamationRecord[];
 				setReclamations(Array.isArray(data) ? data : []);
@@ -137,8 +144,14 @@ export const PatientReclamationsHistoryTab: React.FC<PatientReclamationsHistoryT
 				});
 
 				if (!res.ok) {
-					const errorJson = await res.json().catch(() => null) as { message?: string } | null;
-					throw new Error(errorJson?.message || `Ошибка сохранения (${res.status})`);
+					let msg = `Ошибка сохранения (${res.status})`;
+					try {
+						const errorJson = (await res.json()) as { message?: string } | null;
+						if (errorJson?.message) msg = errorJson.message;
+					} catch (parseErr) {
+						clientLogger.warn("[PatientReclamationsHistoryTab] Non-JSON error on create:", parseErr);
+					}
+					throw new Error(msg);
 				}
 
 				const created = (await res.json()) as PatientReclamationRecord;
@@ -360,7 +373,7 @@ export const PatientReclamationsHistoryTab: React.FC<PatientReclamationsHistoryT
 							<button
 								type="submit"
 								disabled={isSubmitting}
-								className="h-9 px-4 text-xs font-bold rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white shadow-xs min-h-[36px] flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+								className="h-9 px-4 text-xs font-bold rounded-lg bg-[var(--primary)] hover:opacity-95 text-white shadow-xs min-h-[36px] flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
 							>
 								{isSubmitting ? (
 									<>

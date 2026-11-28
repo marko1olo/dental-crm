@@ -72,7 +72,12 @@ export function useBotPluginsAndLaunch({
 				setLiveNotice(`Бот ${chLabel} успешно активирован в БД DENTE!`);
 				showToast(`Бот ${chLabel} запущен!`, "success");
 			} else {
-				const errData = await res.json().catch(() => ({}));
+				let errData: { message?: string } = {};
+				try {
+					errData = (await res.json()) as { message?: string };
+				} catch (parseErr) {
+					clientLogger.warn("Ошибка разбора ответа запуска бота", parseErr, { module: "useBotPluginsAndLaunch" });
+				}
 				const errMsg = errData.message || "Ошибка сохранения настроек бота.";
 				setLiveNotice(errMsg);
 				showToast(errMsg, "error");

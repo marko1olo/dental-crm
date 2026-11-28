@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { generateUuidV7 } from "@dental/shared";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { isValidRussianPhone } from "../engine/bookingPhoneUtils";
 
 export function useBookingSmsState(
@@ -42,13 +43,22 @@ export function useBookingSmsState(
 					body: JSON.stringify({ phone: patientPhone, organizationId }),
 				});
 				if (!response.ok) {
-					const errData = await response.json().catch(() => ({}));
+					let errData: { message?: string; error?: string } = {};
+					try {
+						errData = (await response.json()) as { message?: string; error?: string };
+					} catch (parseErr) {
+						clientLogger.warn("[useBookingSmsState] send-otp error JSON parse failed", {
+							status: response.status,
+							error: String(parseErr),
+						});
+					}
 					setIsSmsFallbackActive(true);
 					setSmsError(errData?.message || errData?.error || "Служба СМС временно недоступна. Запись переключена в режим предварительной брони.");
 					showToast?.("Служба СМС временно недоступна. Вы можете завершить бронь без СМС — администратор перезвонит вам.", "info");
 					return;
 				}
-			} catch {
+			} catch (err) {
+				clientLogger.warn("[useBookingSmsState] send-otp network failure", { error: String(err) });
 				setIsSmsFallbackActive(true);
 				setSmsError("Сбой связи со службой СМС. Запись переключена в режим предварительной брони.");
 				showToast?.("Сбой связи с СМС-шлюзом. Запись переключена в режим предварительной брони без кода.", "info");
@@ -82,11 +92,20 @@ export function useBookingSmsState(
 					}),
 				});
 				if (!response.ok) {
-					const errData = await response.json().catch(() => ({}));
+					let errData: { message?: string; error?: string } = {};
+					try {
+						errData = (await response.json()) as { message?: string; error?: string };
+					} catch (parseErr) {
+						clientLogger.warn("[useBookingSmsState] verify-otp error JSON parse failed", {
+							status: response.status,
+							error: String(parseErr),
+						});
+					}
 					setSmsError(errData?.message || errData?.error || "Неверный код. Проверьте правильность ввода.");
 					return;
 				}
-			} catch {
+			} catch (err) {
+				clientLogger.warn("[useBookingSmsState] verify-otp network failure", { error: String(err) });
 				setSmsError("Сбой связи с сервером при проверке кода");
 				return;
 			}

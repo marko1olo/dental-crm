@@ -3,6 +3,7 @@ import type { PsoCleaningLog } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { DEFAULT_DOM_PAGE_SIZE, sliceDomList } from "../../../utils/domVirtualizationHelper";
 import type { SanpinAppLogicContext } from "../sanpinConsolidatedExportHelpers";
 import { printPsoJournal } from "./psoPrintHelper";
@@ -75,8 +76,19 @@ export function usePsoRegisterLogic(appLogic?: SanpinAppLogicContext | null) {
 	const fetchLogs = async () => {
 		try {
 			setLoading(true);
-			let res = await fetch("/api/sanpin/sterilization/pso-tests", { headers: getDenteAuthHeaders() }).catch(() => null);
-			if (!res || !res.ok) res = await fetch("/api/registers/pso", { headers: getDenteAuthHeaders() }).catch(() => null);
+			let res: Response | null = null;
+			try {
+				res = await fetch("/api/sanpin/sterilization/pso-tests", { headers: getDenteAuthHeaders() });
+			} catch (err) {
+				clientLogger.warn("[usePsoRegisterLogic] Primary PSO tests fetch error", { error: String(err) });
+			}
+			if (!res || !res.ok) {
+				try {
+					res = await fetch("/api/registers/pso", { headers: getDenteAuthHeaders() });
+				} catch (err) {
+					clientLogger.warn("[usePsoRegisterLogic] Fallback PSO tests fetch error", { error: String(err) });
+				}
+			}
 			if (res && res.ok) {
 				const data = await res.json();
 				setLogs(Array.isArray(data) && data.length > 0 ? data : (isDemoShowcaseMode() ? DEFAULT_PSO_DEMO_LOGS : []));
@@ -85,7 +97,8 @@ export function usePsoRegisterLogic(appLogic?: SanpinAppLogicContext | null) {
 			} else {
 				setLogs([]);
 			}
-		} catch {
+		} catch (err) {
+			clientLogger.warn("[usePsoRegisterLogic] fetchLogs failed", { error: String(err) });
 			setLogs(isDemoShowcaseMode() ? DEFAULT_PSO_DEMO_LOGS : []);
 		} finally {
 			setLoading(false);
@@ -108,14 +121,23 @@ export function usePsoRegisterLogic(appLogic?: SanpinAppLogicContext | null) {
 			};
 
 			const idempotencyKey = crypto.randomUUID();
-			let res = await fetch("/api/sanpin/sterilization/pso/quick-norm", {
-				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }), body: JSON.stringify(payload),
-			}).catch(() => null);
+			let res: Response | null = null;
+			try {
+				res = await fetch("/api/sanpin/sterilization/pso/quick-norm", {
+					method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }), body: JSON.stringify(payload),
+				});
+			} catch (err) {
+				clientLogger.warn("[usePsoRegisterLogic] Primary PSO quick-norm error", { error: String(err) });
+			}
 
 			if (!res || !res.ok) {
-				res = await fetch("/api/registers/pso/quick-norm", {
-					method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }), body: JSON.stringify(payload),
-				}).catch(() => null);
+				try {
+					res = await fetch("/api/registers/pso/quick-norm", {
+						method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }), body: JSON.stringify(payload),
+					});
+				} catch (err) {
+					clientLogger.warn("[usePsoRegisterLogic] Fallback PSO quick-norm error", { error: String(err) });
+				}
 			}
 
 			if (res && res.ok) {
@@ -126,7 +148,8 @@ export function usePsoRegisterLogic(appLogic?: SanpinAppLogicContext | null) {
 			} else {
 				showToast("Ошибка при фиксации контроля очистки на сервере", "error");
 			}
-		} catch {
+		} catch (err) {
+			clientLogger.warn("[usePsoRegisterLogic] handleQuickMarkBatchNorm failed", { error: String(err) });
 			showToast("Сетевая ошибка при отметке партии", "error");
 		} finally {
 			inFlightRef.current = false;

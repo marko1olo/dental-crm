@@ -43,10 +43,9 @@
 
 .schedule-command-grid article span,
 .schedule-shift-summary-grid article span {
-	font-size: 11px;
+	font-size: 12px;
 	font-weight: 600;
 	color: var(--muted);
-	text-transform: uppercase;
 }
 
 .schedule-command-grid article strong,

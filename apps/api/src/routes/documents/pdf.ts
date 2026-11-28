@@ -1,3 +1,4 @@
+import { formatDateKeyInTimeZone, resolveValidIanaTimeZone } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { defineStreamRoute } from "../../core/routeFactories.js";
@@ -11,6 +12,7 @@ import { renderDocumentHtml } from "../../documents/renderDocument.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+import { clinicTimeZone } from "../../services/reports/managerReports/timezone.js";
 import { extractPortalPatient } from "../portal/portalAuthStore.js";
 import { clinicalDocKinds, isReceptionistAllowedPrimaryDoc } from "./query.js";
 import {
@@ -306,18 +308,20 @@ export async function register(app: FastifyInstance) {
 					.send(issuedResult.pdf);
 			}
 
-			const draftSources = await withTenantReadCtx(orgId, async () => {
+			const draftSources = await withTenantReadCtx(orgId, async (tx) => {
 				const draftPatient = await getPatientByIdFromDb(
 					orgId,
 					document.patientId,
 				);
-				if (!draftPatient) return { patient: null, context: null };
+				if (!draftPatient) return { patient: null, context: null, clinicTz: null };
+				const [context, clinicTz] = await Promise.all([
+					resolveDocumentRenderContext(orgId, document.patientId),
+					clinicTimeZone(orgId, tx),
+				]);
 				return {
 					patient: draftPatient,
-					context: await resolveDocumentRenderContext(
-						orgId,
-						document.patientId,
-					),
+					context,
+					clinicTz,
 				};
 			});
 			const patient = draftSources.patient;
@@ -339,7 +343,10 @@ export async function register(app: FastifyInstance) {
 				.replace(/[^a-zа-яё0-9]+/gi, "-")
 				.replace(/^-+|-+$/g, "")
 				.slice(0, 40);
-			const dateSlug = new Date().toISOString().slice(0, 10);
+			const dateSlug = formatDateKeyInTimeZone(
+				new Date(),
+				resolveValidIanaTimeZone(draftSources.clinicTz),
+			);
 			const utf8Filename = `plan-${patientNameSlug || document.id.slice(0, 8)}-${dateSlug}.pdf`;
 			const asciiFallbackFilename = `plan-${document.id.slice(0, 8)}-${dateSlug}.pdf`;
 

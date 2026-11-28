@@ -31,9 +31,9 @@ export const WarrantyItemsTable: React.FC<WarrantyItemsTableProps> = ({
 					<thead>
 						<tr>
 							<th>Зуб</th>
-							<th>Вид работы & код</th>
-							<th>Материал & ЗТЛ</th>
-							<th>Оттенок & LOT (МДЛП)</th>
+							<th>Вид работы и код</th>
+							<th>Материал и ЗТЛ</th>
+							<th>Оттенок и LOT (МДЛП)</th>
 							<th>Гарантия</th>
 							<th>Действия</th>
 						</tr>

@@ -1,4 +1,5 @@
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../../../services/logging/clientLogger.js";
 import type { AutoclaveCycleRecord } from "./types.js";
 
 export async function saveQuickAutoclaveCycleToApi(
@@ -31,7 +32,12 @@ export async function saveQuickAutoclaveCycleToApi(
 		});
 
 		if (!res.ok) {
-			const errBody = await res.json().catch(() => null);
+			let errBody: { message?: string } | null = null;
+			try {
+				errBody = (await res.json()) as { message?: string } | null;
+			} catch (parseErr) {
+				clientLogger.warn("[autoclaveApiActions] Failed to parse error JSON:", parseErr);
+			}
 			return { ok: false, error: errBody?.message || `Ошибка сохранения цикла автоклава (${res.status})` };
 		}
 
@@ -54,7 +60,8 @@ export async function fetchSterilizationLogsFromApi(): Promise<Record<string, un
 		if (!res.ok) return [];
 		const data = await res.json();
 		return Array.isArray(data) ? data : [];
-	} catch {
+	} catch (err) {
+		clientLogger.warn("[autoclaveApiActions] Failed to fetch sterilization logs:", err);
 		return [];
 	}
 }

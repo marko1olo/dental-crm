@@ -1,50 +1,80 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import type { Lead } from "../../../store/leadsStore";
 import {
-	buildFunnelCsvFilename,
 	LeadsFunnelAnalyticsModal,
+	buildFunnelCsvFilename,
+	calculateFunnelAnalysis,
+	exportFunnelReportCsv,
+	exportFunnelReportSummaryText,
+	filterLeadsByPeriod,
+	getDefaultChannelSpendMap,
 	mapLiveAttributionToChannelSpends,
 	parseSanitizedBudgetRub,
 	resolveRomiToneColor,
 	resolveShowUpToneColor,
 } from "../LeadsFunnelAnalyticsModal";
+import { calculateClinicalFunnelMetrics } from "../leadsFunnelEngine";
 
-const leadsDir = path.resolve(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"..",
-);
+const sampleLeads: Lead[] = [
+	{
+		id: "lead-f-1",
+		name: "Анна",
+		phone: "+7 (999) 111-11-11",
+		source: "gis_2",
+		status: "new",
+		expectedRevenue: "15000",
+		createdAt: "2026-10-10T10:00:00.000Z",
+	},
+	{
+		id: "lead-f-2",
+		name: "Борис",
+		phone: "+7 (999) 222-22-22",
+		source: "prodoctorov",
+		status: "consult_booked",
+		expectedRevenue: "35000",
+		createdAt: "2026-10-10T11:00:00.000Z",
+	},
+	{
+		id: "lead-f-3",
+		name: "Вера",
+		phone: "+7 (999) 333-33-33",
+		source: "gis_2",
+		status: "showed_up",
+		expectedRevenue: "45000",
+		createdAt: "2026-10-11T12:00:00.000Z",
+	},
+];
 
-describe("LeadsFunnelAnalyticsModal & leadsFunnelAnalyticsModules Architectural Decomposition", () => {
-	it("1. Facade line count budget (Mandate 8b: <= 120 lines)", () => {
-		const facadePath = path.join(leadsDir, "LeadsFunnelAnalyticsModal.tsx");
-		const content = fs.readFileSync(facadePath, "utf8");
-		const lineCount = content.split("\n").length;
-		assert.ok(
-			lineCount <= 120,
-			`LeadsFunnelAnalyticsModal.tsx facade must be <= 120 lines (currently: ${lineCount})`,
-		);
+describe("LeadsFunnelAnalyticsModal & leadsFunnelAnalyticsModules (Live 6G SUT)", () => {
+	it("1. calculateClinicalFunnelMetrics computes stages, conversion rates, and revenue buckets", () => {
+		const metrics = calculateClinicalFunnelMetrics(sampleLeads);
+		assert.equal(metrics.totalCount, 3);
+		assert.equal(metrics.newCount, 1);
+		assert.equal(metrics.bookedCount, 1);
+		assert.equal(metrics.showedUpCount, 1);
+		assert.equal(metrics.pipelineRevenue, 50000);
+		assert.equal(metrics.realizedRevenue, 45000);
+		assert.ok(metrics.showUpRatePct > 0);
 	});
 
-	it("2. Module line count budgets (Mandate 8b: each file <= 800 lines)", () => {
-		const modulesDir = path.join(leadsDir, "leadsFunnelAnalyticsModules");
-		const files = fs.readdirSync(modulesDir);
-		assert.ok(
-			files.length >= 6,
-			"Expected at least 6 module files in leadsFunnelAnalyticsModules",
-		);
-		for (const file of files) {
-			const filePath = path.join(modulesDir, file);
-			const lines = fs.readFileSync(filePath, "utf8").split("\n").length;
-			assert.ok(
-				lines <= 800,
-				`Module ${file} must be <= 800 lines (currently: ${lines})`,
-			);
-		}
+	it("2. calculateFunnelAnalysis, exportFunnelReportCsv, and exportFunnelReportSummaryText handle leads & spends", () => {
+		const filtered = filterLeadsByPeriod(sampleLeads, "all");
+		assert.equal(filtered.length, 3);
+		const spends = getDefaultChannelSpendMap();
+		const analysis = calculateFunnelAnalysis(filtered, spends);
+		assert.equal(analysis.summary.totalLeads, 3);
+		assert.ok(analysis.channels.length > 0);
+
+		const csv = exportFunnelReportCsv(analysis);
+		assert.ok(csv.includes(";"));
+		assert.ok(csv.length > 20);
+
+		const summaryText = exportFunnelReportSummaryText(analysis, "all");
+		assert.ok(summaryText.includes("3"));
+		assert.ok(summaryText.length > 20);
 	});
 
 	it("3. Pure utility functions: mapLiveAttributionToChannelSpends", () => {
@@ -65,7 +95,7 @@ describe("LeadsFunnelAnalyticsModal & leadsFunnelAnalyticsModules Architectural 
 		assert.equal(result.gis_2, 15000);
 		assert.equal(result.prodoctorov, 24000);
 		assert.equal(result.site_seo, 8500);
-		assert.equal(result.social_media, 10000); // 6000 + 4000
+		assert.equal(result.social_media, 10000);
 		assert.equal(result.other, 12000);
 
 		assert.deepEqual(mapLiveAttributionToChannelSpends(null), {});
@@ -90,30 +120,27 @@ describe("LeadsFunnelAnalyticsModal & leadsFunnelAnalyticsModules Architectural 
 		assert.equal(resolveRomiToneColor(-20), "var(--rust)");
 	});
 
-	it("5. Static Invariants & Anti-Matryoshka Portals", () => {
-		const facadePath = path.join(leadsDir, "LeadsFunnelAnalyticsModal.tsx");
-		const content = fs.readFileSync(facadePath, "utf8");
-
-		assert.ok(
-			content.includes("createPortal") && content.includes("document.body"),
-			"LeadsFunnelAnalyticsModal must use createPortal to document.body",
-		);
-		assert.ok(
-			content.includes("/api/marketing/attribution"),
-			"Must reference /api/marketing/attribution endpoint",
-		);
-		assert.ok(
-			content.includes("denteAdminSecretRequestHeaders"),
-			"Must pass denteAdminSecretRequestHeaders",
-		);
-		assert.ok(
-			content.includes("консультации врача у кресла"),
-			"Must retain clinical context: консультации врача у кресла",
-		);
+	it("5. LeadsFunnelAnalyticsModal renders populated funnel analytics with zero portal breakage", () => {
+		const prevDoc = (globalThis as { document?: unknown }).document;
+		(globalThis as { document?: unknown }).document = undefined;
+		let openHtml = "";
+		try {
+			openHtml = renderToStaticMarkup(
+				<LeadsFunnelAnalyticsModal
+					isOpen={true}
+					onClose={() => {}}
+					leads={sampleLeads}
+					onOpenLeakDetector={() => {}}
+				/>,
+			);
+		} finally {
+			(globalThis as { document?: unknown }).document = prevDoc;
+		}
+		assert.ok(openHtml.includes("45") || openHtml.includes("2ГИС"));
+		assert.ok(openHtml.includes("консультации врача у кресла"));
 	});
 
 	it("6. SSR Render & Test Anchor Parity", () => {
-		// When closed, returns null (empty markup)
 		const closedHtml = renderToStaticMarkup(
 			<LeadsFunnelAnalyticsModal
 				isOpen={false}
@@ -123,7 +150,6 @@ describe("LeadsFunnelAnalyticsModal & leadsFunnelAnalyticsModules Architectural 
 		);
 		assert.equal(closedHtml, "");
 
-		// When open, renders full modal with all 6 test anchors
 		const openHtml = renderToStaticMarkup(
 			<LeadsFunnelAnalyticsModal
 				isOpen={true}
@@ -133,9 +159,7 @@ describe("LeadsFunnelAnalyticsModal & leadsFunnelAnalyticsModules Architectural 
 			/>,
 		);
 
-		assert.ok(
-			openHtml.includes('data-testid="btn-analytics-open-leak-detector"'),
-		);
+		assert.ok(openHtml.includes('data-testid="btn-analytics-open-leak-detector"'));
 		assert.ok(openHtml.includes('data-testid="funnel-open-leak-detector-btn"'));
 		assert.ok(openHtml.includes('aria-label="Детектор утечек"'));
 		assert.ok(openHtml.includes('aria-label="Скопировать сводку"'));

@@ -95,7 +95,7 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
 				<BookingElectronicTicket reference={reference} isUnconfirmed={isUnconfirmed} dateStr={dateStr} timeStr={timeStr} cabinet={cabinet} doctorFullName={doctorFullName} branchName={branchName} branchAddress={branchAddress} patientDisplayName={patientDisplayName} patientDisplayPhone={patientDisplayPhone} />
 				<BookingCalendarExport doctorFullName={doctorFullName} patientDisplayName={patientDisplayName} reference={reference} branchAddress={branchAddress} branchPhone={selectedBranch?.phone} dateStr={dateStr} timeStr={timeStr} startsAt={startsAt} endsAt={endsAt} />
 				<div className="flex items-center justify-between w-full pt-4 border-t border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 flex-wrap gap-2">
-					<button type="button" className="secondary-button flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-slate-100 p-2 min-h-[44px]" onClick={() => window.print()}><Printer size={16} /><span>Распечатать талон</span></button>
+					<button type="button" className="secondary-button flex items-center gap-1.5 text-[var(--ink-muted)] hover:text-[var(--ink)] p-2 min-h-[44px]" onClick={() => window.print()}><Printer size={16} /><span>Распечатать талон</span></button>
 					{onReset && (<button type="button" className="secondary-button flex items-center gap-1.5 text-teal-600 dark:text-teal-400 hover:underline p-2 min-h-[44px]" onClick={onReset}><RotateCcw size={16} /><span>Записаться ещё раз</span></button>)}
 				</div>
 			</section>

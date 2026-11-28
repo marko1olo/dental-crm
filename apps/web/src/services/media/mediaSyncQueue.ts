@@ -171,12 +171,14 @@ export async function uploadSingleMediaItem(
 			throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
 		}
 
-		const rawJson = (await response.json().catch((parseErr: unknown) => {
-			logger.warn("[MediaSyncQueue] Failed to parse media upload JSON response:", parseErr);
-			return null;
-		})) as
+		let rawJson:
 			| { data?: { url?: string; remoteUrl?: string }; url?: string; remoteUrl?: string }
-			| null;
+			| null = null;
+		try {
+			rawJson = (await response.json()) as typeof rawJson;
+		} catch (parseErr: unknown) {
+			logger.warn("[MediaSyncQueue] Failed to parse media upload JSON response:", parseErr);
+		}
 		const data =
 			rawJson && typeof rawJson === "object" && "data" in rawJson && rawJson.data
 				? rawJson.data

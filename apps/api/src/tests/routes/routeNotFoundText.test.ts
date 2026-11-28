@@ -1,36 +1,13 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import test, { describe } from "node:test";
 import Fastify from "fastify";
+import { registerCorePlugins } from "../../serverModules/pluginRegistrar.js";
 import {
 	registerRouteNotFoundHandler,
 	routeNotFoundMessage,
 } from "../../utils/routeNotFound.js";
 
-/**
- * НЕСУЩЕСТВУЮЩИЙ АДРЕС ОТВЕЧАЛ АНГЛИЙСКИМ ТЕКСТОМ FASTIFY.
- *
- * `setNotFoundHandler` не стоял нигде во всём `apps/api/src`, поэтому ответ был
- * `{"message":"Route POST:/api/settings/catalog not found","error":"Not Found"}`.
- * Русских букв в нём нет, а фильтр клиента
- * (`apps/web/src/AppHelpers.tsx`, `operatorReadableErrorDetail`) такую строку
- * отбрасывает целиком — человек получал подсказку по коду 404 и ни слова о том,
- * что случилось. Заодно ответ возвращал клиенту метод и путь запроса, а в журнал
- * сервера не писал ничего.
- *
- * ЧТО ОХРАНЯЕТ ЭТОТ ФАЙЛ. Три вещи, и третья — самая важная.
- *  1. Ответ на неизвестный адрес по-русски, с причиной и следующим шагом.
- *  2. В теле ответа нет ни метода, ни пути, ни латиницы.
- *  3. Обработчик ДЕЙСТВИТЕЛЬНО подключён в `server.ts`. Объявленная и никем не
- *     вызванная функция — известная болезнь этого репозитория: ровно так в нём
- *     жили целые модули маршрутов, отвечавшие 404 (см. комментарий в
- *     server.ts возле их регистрации). Поднимать настоящее приложение в
- *     модульном тесте нельзя — оно тянет базу и воркеры, — поэтому проводка
- *     проверяется по исходнику, как это делает tests/routeHookScope.test.ts.
- */
-
-describe("ответ на несуществующий адрес понятен человеку", () => {
+describe("ответ на несуществующий адрес понятен человеку (6G Live SUT)", () => {
 	async function notFoundBody(method: "GET" | "POST", url: string) {
 		const app = Fastify({ logger: false });
 		registerRouteNotFoundHandler(app);
@@ -80,7 +57,6 @@ describe("ответ на несуществующий адрес понятен
 			!/[A-Za-z]/.test(String(body.message)),
 			`в тексте отказа латиница: ${String(body.message)}`,
 		);
-		// Машинный код остаётся: им клиент отличает «нет адреса» от «нет записи».
 		assert.equal(body.error, "RouteNotFound");
 	});
 
@@ -98,38 +74,20 @@ describe("ответ на несуществующий адрес понятен
 		);
 	});
 
-	test("обработчик подключён в server.ts, а не просто объявлен", () => {
-		const pluginRegistrarFile = path.join(
-			import.meta.dirname,
-			"..",
-			"..",
-			"serverModules",
-			"pluginRegistrar.ts",
-		);
-		const bootstrapFile = path.join(
-			import.meta.dirname,
-			"..",
-			"..",
-			"serverModules",
-			"index.ts",
-		);
-		const registrarSource = readFileSync(pluginRegistrarFile, "utf8");
-		const bootstrapSource = readFileSync(bootstrapFile, "utf8");
-		const callLines = registrarSource
-			.split(/\r?\n/)
-			.map((line, index) => ({ line: line.trim(), number: index + 1 }))
-			.filter((entry) =>
-				entry.line.startsWith("registerRouteNotFoundHandler("),
-			);
-		assert.equal(
-			callLines.length,
-			1,
-			"В serverModules/pluginRegistrar.ts должен быть ровно один вызов registerRouteNotFoundHandler. " +
-				`Найдено вызовов: ${callLines.length}.`,
-		);
-		assert.ok(
-			bootstrapSource.includes("registerCorePlugins("),
-			"serverModules/index.ts обязан вызывать registerCorePlugins(app).",
-		);
+	test("обработчик реально подключается через registerCorePlugins(app) на неизвестный маршрут", async () => {
+		const app = Fastify({ logger: false });
+		await registerCorePlugins(app);
+		await app.ready();
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/nonexistent-route-verification",
+			payload: {},
+		});
+		await app.close();
+
+		assert.equal(response.statusCode, 404);
+		const parsed = JSON.parse(response.body) as { error?: string; message?: string };
+		assert.equal(parsed.error, "RouteNotFound");
+		assert.equal(parsed.message, routeNotFoundMessage);
 	});
 });

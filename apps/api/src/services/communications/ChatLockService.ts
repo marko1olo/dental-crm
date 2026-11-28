@@ -66,11 +66,46 @@ export type ReleaseLockResult =
 			message: string;
 	  };
 
+interface ChatLockDbRow {
+	id: string;
+	organization_id: string;
+	chat_id: string;
+	processing_agent: string | null;
+	lock_acquired_at: Date | string | null;
+	lock_expires_at: Date | string | null;
+	last_processed_at: Date | string | null;
+}
+
+function toNullableDateOrString(value: unknown): Date | string | null {
+	if (value === null || value === undefined) return null;
+	if (value instanceof Date || typeof value === "string") return value;
+	return null;
+}
+
+function parseChatLockDbRow(raw: unknown): ChatLockDbRow | undefined {
+	if (!raw || typeof raw !== "object") return undefined;
+	const fields = new Map<string, unknown>(Object.entries(raw));
+	const id = fields.get("id");
+	if (typeof id !== "string") return undefined;
+	const orgId = fields.get("organization_id");
+	const chatId = fields.get("chat_id");
+	const processingAgent = fields.get("processing_agent");
+	return {
+		id,
+		organization_id: typeof orgId === "string" ? orgId : "",
+		chat_id: typeof chatId === "string" ? chatId : "",
+		processing_agent: typeof processingAgent === "string" ? processingAgent : null,
+		lock_acquired_at: toNullableDateOrString(fields.get("lock_acquired_at")),
+		lock_expires_at: toNullableDateOrString(fields.get("lock_expires_at")),
+		last_processed_at: toNullableDateOrString(fields.get("last_processed_at")),
+	};
+}
+
 export class ChatLockService {
 	/**
 	 * Эксклюзивный захват чата оператором с защитой от состояния гонки (Race Condition).
 	 * Внутри транзакции берется PostgreSQL advisory lock на (organizationId, chatId)
-	 * и выполняется SELECT ... FOR UPDATE.
+	 * и выполняется SELECT ... ORDER BY id ASC FOR UPDATE.
 	 */
 	static async acquireLock(params: {
 		organizationId: string;
@@ -92,20 +127,11 @@ export class ChatLockService {
 				FROM collaborative_chat_processing_states
 				WHERE organization_id = ${organizationId}
 				  AND chat_id = ${chatId}
+				ORDER BY id ASC
 				FOR UPDATE
 			`);
 
-			const existing = (existingResult.rows ?? [])[0] as
-				| {
-						id: string;
-						organization_id: string;
-						chat_id: string;
-						processing_agent: string | null;
-						lock_acquired_at: Date | string | null;
-						lock_expires_at: Date | string | null;
-						last_processed_at: Date | string | null;
-				  }
-				| undefined;
+			const existing = parseChatLockDbRow((existingResult.rows ?? [])[0]);
 
 			const now = new Date();
 			const expiresAt = new Date(now.getTime() + durationMinutes * 60 * 1000);
@@ -201,18 +227,11 @@ export class ChatLockService {
 				FROM collaborative_chat_processing_states
 				WHERE organization_id = ${organizationId}
 				  AND chat_id = ${chatId}
+				ORDER BY id ASC
 				FOR UPDATE
 			`);
 
-			const existing = (existingResult.rows ?? [])[0] as
-				| {
-						id: string;
-						organization_id: string;
-						chat_id: string;
-						processing_agent: string | null;
-						lock_expires_at: Date | string | null;
-				  }
-				| undefined;
+			const existing = parseChatLockDbRow((existingResult.rows ?? [])[0]);
 
 			const now = new Date();
 
@@ -284,18 +303,11 @@ export class ChatLockService {
 				FROM collaborative_chat_processing_states
 				WHERE organization_id = ${organizationId}
 				  AND chat_id = ${chatId}
+				ORDER BY id ASC
 				FOR UPDATE
 			`);
 
-			const existing = (existingResult.rows ?? [])[0] as
-				| {
-						id: string;
-						organization_id: string;
-						chat_id: string;
-						processing_agent: string | null;
-						lock_expires_at: Date | string | null;
-				  }
-				| undefined;
+			const existing = parseChatLockDbRow((existingResult.rows ?? [])[0]);
 
 			const now = new Date();
 
@@ -352,16 +364,11 @@ export class ChatLockService {
 				FROM collaborative_chat_processing_states
 				WHERE organization_id = ${organizationId}
 				  AND chat_id = ${chatId}
+				ORDER BY id ASC
+				LIMIT 1
 			`);
 
-			const existing = (existingResult.rows ?? [])[0] as
-				| {
-						id: string;
-						processing_agent: string | null;
-						lock_acquired_at: Date | string | null;
-						lock_expires_at: Date | string | null;
-				  }
-				| undefined;
+			const existing = parseChatLockDbRow((existingResult.rows ?? [])[0]);
 
 			const now = new Date();
 

@@ -16,6 +16,17 @@ export interface MdlpLogger {
 	error: (objOrMsg: unknown, msg?: string) => void;
 }
 
+function toStructuredLogFields(objOrMsg: unknown): Record<string, unknown> {
+	if (typeof objOrMsg === "object" && objOrMsg !== null && !Array.isArray(objOrMsg)) {
+		const out: Record<string, unknown> = {};
+		for (const [k, v] of Object.entries(objOrMsg)) {
+			out[k] = v;
+		}
+		return out;
+	}
+	return { data: objOrMsg };
+}
+
 function logToApi(
 	method: "debug" | "info" | "warn" | "error",
 	objOrMsg: unknown,
@@ -27,21 +38,27 @@ function logToApi(
 		} else {
 			apiLogger[method](objOrMsg);
 		}
-	} else if (typeof objOrMsg === "object" && objOrMsg !== null) {
-		apiLogger[method](objOrMsg as Record<string, unknown>, msg ?? "");
 	} else {
-		apiLogger[method]({ data: objOrMsg }, msg ?? "");
+		apiLogger[method](toStructuredLogFields(objOrMsg), msg ?? "");
+	}
+}
+
+let suppressVerboseLogs = false;
+
+export function configureMdlpLogger(options: { suppressVerbose?: boolean | undefined }): void {
+	if (options.suppressVerbose !== undefined) {
+		suppressVerboseLogs = options.suppressVerbose;
 	}
 }
 
 let activeLogger: MdlpLogger = {
 	debug: (objOrMsg: unknown, msg?: string) => {
-		if (process.env.NODE_ENV !== "test") {
+		if (!suppressVerboseLogs) {
 			logToApi("debug", objOrMsg, msg);
 		}
 	},
 	info: (objOrMsg: unknown, msg?: string) => {
-		if (process.env.NODE_ENV !== "test") {
+		if (!suppressVerboseLogs) {
 			logToApi("info", objOrMsg, msg);
 		}
 	},

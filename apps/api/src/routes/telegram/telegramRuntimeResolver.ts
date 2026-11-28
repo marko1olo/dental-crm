@@ -10,7 +10,8 @@ import {
 	configuredWebhookSecret,
 	telegramBotConfigId,
 } from "./telegramBotConfigResolver.js";
-import { loadTelegramBotSettingsFromDatabase } from "./telegramDbSync.js";
+import { loadTelegramBotSettingsFromDatabase, isTelegramInMemoryMode } from "./telegramDbSync.js";
+import { createApiLogger } from "../../observability/logger.js";
 import {
 	clinicBotEnvConfigFor,
 	clinicBotEnvConfigForOrganization,
@@ -111,6 +112,7 @@ export function resolveTelegramRuntimeContext(
 	};
 }
 
+const logger = createApiLogger("telegramRuntimeResolver");
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
@@ -160,10 +162,11 @@ export async function resolveTelegramRuntimeContextWithDb(
 			return row ?? null;
 		});
 	} catch (err) {
-		if (
-			isDbConnectionError(err) &&
-			(process.env.NODE_ENV === "test" || !process.env.DATABASE_URL)
-		) {
+		if (isDbConnectionError(err) && isTelegramInMemoryMode()) {
+			logger.warn(
+				{ err, organizationId: targetOrgId },
+				"[TelegramRuntime] DB unavailable in in-memory mode; falling back to sync resolution",
+			);
 			return syncResolution;
 		}
 		throw err;

@@ -107,9 +107,6 @@ export function MaterialBomsQuickCatalogModal({
 					<span style={{ fontSize: "12px", color: "var(--muted)" }}>
 						Найдено позиций: {filteredMaterials.length}
 					</span>
-					<button type="button" className="material-boms-btn material-boms-btn-secondary" onClick={onClose}>
-						Закрыть
-					</button>
 				</div>
 			</div>
 		</div>

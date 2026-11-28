@@ -12,6 +12,24 @@ import {
 	rublesToKopecks,
 	toExactKopecks,
 } from "@dental/shared";
+
+const orgUuidParamsSchema = z.object({
+	organizationId: z.string().uuid(),
+});
+
+const orgLinkUuidParamsSchema = z.object({
+	organizationId: z.string().uuid(),
+	linkId: z.string().uuid(),
+});
+
+const orgServiceUuidParamsSchema = z.object({
+	organizationId: z.string().uuid(),
+	serviceId: z.string().uuid(),
+});
+
+const reorderSuggestionsQuerySchema = z.object({
+	onlyNeedingReorder: z.union([z.boolean(), z.literal("true"), z.literal("false")]).optional(),
+});
 import { defineTenantMutation, defineTenantQuery } from "../../../core/routeFactories.js";
 import {
 	inventoryItems,
@@ -346,7 +364,8 @@ export async function registerTechCardNormHandlers(
 		permission: "inventory.read",
 		authOptions: INVENTORY_READ_AUTH,
 		handler: async ({ tx, organizationId: orgId, request, reply }) => {
-			const query = request.query as { onlyNeedingReorder?: string | boolean };
+			const parsedQuery = reorderSuggestionsQuerySchema.safeParse(request.query ?? {});
+			const query = parsedQuery.success ? parsedQuery.data : {};
 			const onlyNeedingReorder =
 				query.onlyNeedingReorder === "true" ||
 				query.onlyNeedingReorder === true;
@@ -365,10 +384,11 @@ export async function registerTechCardNormHandlers(
 		permission: "inventory.read",
 		authOptions: INVENTORY_READ_AUTH,
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
-			if (!isValidUuid(organizationId)) {
+			const parsedParams = orgUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
 				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
 			}
+			const { organizationId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -395,10 +415,11 @@ export async function registerTechCardNormHandlers(
 		permission: "inventory.read",
 		authOptions: INVENTORY_READ_AUTH,
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId, linkId } = request.params as { organizationId: string; linkId: string };
-			if (!isValidUuid(organizationId) || !isValidUuid(linkId)) {
+			const parsedParams = orgLinkUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
 				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
 			}
+			const { organizationId, linkId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -426,7 +447,11 @@ export async function registerTechCardNormHandlers(
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "optional_header",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
+			const parsedParams = orgUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			const { organizationId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -466,10 +491,11 @@ export async function registerTechCardNormHandlers(
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "exempt_idempotent_put_or_delete",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId, linkId } = request.params as { organizationId: string; linkId: string };
-			if (!isValidUuid(organizationId) || !isValidUuid(linkId)) {
+			const parsedParams = orgLinkUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
 				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
 			}
+			const { organizationId, linkId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -509,10 +535,11 @@ export async function registerTechCardNormHandlers(
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "exempt_idempotent_put_or_delete",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId, linkId } = request.params as { organizationId: string; linkId: string };
-			if (!isValidUuid(organizationId) || !isValidUuid(linkId)) {
+			const parsedParams = orgLinkUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
 				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
 			}
+			const { organizationId, linkId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -541,10 +568,11 @@ export async function registerTechCardNormHandlers(
 		permission: "inventory.read",
 		authOptions: INVENTORY_READ_AUTH,
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId, serviceId } = request.params as { organizationId: string; serviceId: string };
-			if (!isValidUuid(organizationId) || !isValidUuid(serviceId)) {
+			const parsedParams = orgServiceUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
 				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
 			}
+			const { organizationId, serviceId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -573,10 +601,11 @@ export async function registerTechCardNormHandlers(
 		permission: "inventory.read",
 		authOptions: INVENTORY_READ_AUTH,
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
-			if (!isValidUuid(organizationId)) {
+			const parsedParams = orgUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
 				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
 			}
+			const { organizationId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}

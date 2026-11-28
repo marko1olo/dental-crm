@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../../../lib/safeLocalStorage";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { CLINICAL_ROLES, ROLE_DISPLAY_NAMES } from "./roleMatrixConstants";
 import type { RoleCategory, RoleMatrixState, RolePermissionsMap } from "./roleMatrixTypes";
 const STORAGE_KEY = "dente_custom_role_matrix";
@@ -15,7 +16,15 @@ const syncMatrix = async (matrix: Record<string, RolePermissionsMap>): Promise<b
 	if (typeof fetch === "undefined") return true;
 	try {
 		const res = await fetch("/api/settings/role-matrix", { method: "PUT", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": generateUuidV7() }), body: JSON.stringify({ matrix }) });
-		if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { message?: string }).message || `Ошибка сервера (${res.status})`);
+		if (!res.ok) {
+			let errJson: { message?: string } = {};
+			try {
+				errJson = (await res.json()) as { message?: string };
+			} catch (parseErr) {
+				clientLogger.warn("[useRoleMatrixState] Failed to parse sync error JSON:", parseErr);
+			}
+			throw new Error(errJson.message || `Ошибка сервера (${res.status})`);
+		}
 		return true;
 	} catch (e: unknown) {
 		showToast(e instanceof Error ? e.message : "Ошибка сохранения матрицы", "error");
@@ -35,9 +44,18 @@ export function useRoleMatrixState(initialRole: GranularStaffRole = "doctor"): R
 
 	useEffect(() => {
 		if (typeof fetch === "undefined") return;
-		fetch("/api/settings/role-matrix", { headers: getDenteAuthHeaders() }).then((r) => (r.ok ? r.json() : null)).then((d) => {
-			if (d?.matrix && typeof d.matrix === "object") setCustomOverrides(d.matrix);
-		}).catch(() => null);
+		let active = true;
+		(async () => {
+			try {
+				const r = await fetch("/api/settings/role-matrix", { headers: getDenteAuthHeaders() });
+				if (!r.ok) return;
+				const d = (await r.json()) as { matrix?: Record<string, RolePermissionsMap> } | null;
+				if (active && d?.matrix && typeof d.matrix === "object") setCustomOverrides(d.matrix);
+			} catch (err) {
+				clientLogger.warn("[useRoleMatrixState] Failed to load role matrix:", err);
+			}
+		})();
+		return () => { active = false; };
 	}, []);
 
 	const currentPermissions = useMemo<RolePermissionsMap>(() => ({

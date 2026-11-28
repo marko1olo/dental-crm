@@ -31,10 +31,10 @@ export const DoctorShiftPrimaryButtons: React.FC<DoctorShiftPrimaryButtonsProps>
 					cursor: "pointer",
 					whiteSpace: "nowrap",
 					transition: "all 0.15s ease",
-					background: isShiftOpen ? "var(--paper-soft)" : "var(--teal)",
+					background: isShiftOpen ? "var(--paper-soft)" : "var(--primary, #0f766e)",
 					border: isShiftOpen ? "1px solid var(--line)" : "1px solid transparent",
 					color: isShiftOpen ? "var(--ink)" : "#ffffff",
-					boxShadow: isShiftOpen ? "none" : "0 1px 2px rgba(13, 148, 136, 0.25)",
+					boxShadow: isShiftOpen ? "none" : "0 1px 2px rgba(15, 118, 110, 0.25)",
 				}}
 				title={isShiftOpen ? "Завершить рабочую смену врача" : "Открыть рабочую смену врача"}
 				data-testid="shift-toggle-btn"

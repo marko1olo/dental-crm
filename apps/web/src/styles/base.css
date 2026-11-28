@@ -102,15 +102,16 @@ button:disabled {
 
 .skip-link {
 	background: var(--paper-strong);
-	border: 2px solid var(--teal);
+	border: 0;
 	border-radius: 8px;
-	color: var(--teal-dark);
+	color: var(--primary, #0f766e);
 	font-weight: 900;
-	padding: 10px 12px;
+	padding: 0;
 	position: absolute;
 	text-decoration: none;
 	z-index: 1000;
 	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
 	width: 1px;
 	height: 1px;
 	margin: -1px;
@@ -118,7 +119,10 @@ button:disabled {
 }
 
 .skip-link:focus-visible {
+	border: 2px solid var(--primary, #0f766e);
+	padding: 10px 12px;
 	clip: auto;
+	clip-path: none;
 	width: auto;
 	height: auto;
 	margin: 0;

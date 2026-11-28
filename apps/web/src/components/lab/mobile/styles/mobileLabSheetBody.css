@@ -77,7 +77,7 @@
 }
 
 .mobile-lab-status-action-btn.is-active {
-	background: var(--teal-surface, color-mix(in srgb, var(--teal, #0d9488) 10%, transparent));
-	border-color: var(--teal, #0d9488);
-	color: var(--teal, #0d9488);
+	background: var(--teal-surface, color-mix(in srgb, var(--primary) 10%, transparent));
+	border-color: var(--primary);
+	color: var(--primary);
 }

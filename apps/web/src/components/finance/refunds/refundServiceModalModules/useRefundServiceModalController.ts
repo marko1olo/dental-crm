@@ -228,7 +228,15 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 					paymentMethod,
 				});
 			} else {
-				const errData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+				let errData: Record<string, unknown> = {};
+				try {
+					errData = (await res.json()) as Record<string, unknown>;
+				} catch (parseErr) {
+					clientLogger.warn("[useRefundServiceModalController] Error JSON parse failed", {
+						status: res.status,
+						error: String(parseErr),
+					}, { module: "Finance" });
+				}
 				clientLogger.warn("[useRefundServiceModalController] /api/cashbox/refund returned error status", {
 					status: res.status,
 					errData,

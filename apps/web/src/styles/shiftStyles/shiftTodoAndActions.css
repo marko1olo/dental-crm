@@ -37,7 +37,7 @@
 	border: 1px solid var(--line);
 	border-radius: 14px;
 	box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
-	padding: 16px 18px;
+	padding: 12px 14px;
 }
 
 .shift-todo-head {
@@ -45,7 +45,7 @@
 	display: flex;
 	gap: 12px;
 	justify-content: space-between;
-	margin-bottom: 12px;
+	margin-bottom: 8px;
 }
 
 .shift-todo-head h2 { font-size: 16px; font-weight: 700; margin: 0; }
@@ -54,15 +54,15 @@
 .shift-todo-list { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
 
 .shift-todo-item {
-	align-items: center;
+	align-items: start;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
 	border-left: 3px solid var(--line);
 	border-radius: 10px;
 	display: grid;
-	gap: 12px;
-	grid-template-columns: auto minmax(0, 1fr) auto;
-	padding: 11px 13px;
+	gap: 6px 10px;
+	grid-template-columns: auto minmax(0, 1fr);
+	padding: 10px 12px;
 }
 
 .shift-todo-item.priority-urgent { border-left-color: var(--rust); }
@@ -87,9 +87,9 @@
 .shift-todo-text strong { display: block; font-size: 14px; font-weight: 700; }
 .shift-todo-text p { color: var(--muted); font-size: 12.5px; margin: 2px 0 0; }
 .shift-todo-patient { color: var(--teal-dark); display: inline-block; font-size: 12px; font-weight: 700; margin-top: 4px; }
-.shift-todo-go { white-space: nowrap; }
+.shift-todo-go { grid-column: 2; justify-self: start; white-space: nowrap; }
 
 @media (max-width: 640px) {
 	.shift-todo-item { grid-template-columns: auto minmax(0, 1fr); }
-	.shift-todo-go { grid-column: 1 / -1; width: 100%; }
+	.shift-todo-go { grid-column: 1 / -1; width: 100%; justify-self: stretch; }
 }

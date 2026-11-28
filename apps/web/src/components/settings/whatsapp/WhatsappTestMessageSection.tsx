@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { AlertCircle, Check, RefreshCw, Send } from "lucide-react";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { showToast } from "../../GlobalToast.js";
 
 export interface WhatsappTestMessageSectionProps {
@@ -43,7 +44,12 @@ export function WhatsappTestMessageSection({
 				}),
 			});
 
-			const data = await res.json().catch(() => ({}));
+			let data: { ok?: boolean; message?: string } = {};
+			try {
+				data = (await res.json()) as { ok?: boolean; message?: string };
+			} catch (parseErr) {
+				clientLogger.warn("[WhatsappTestMessageSection] Non-JSON test-message response", parseErr);
+			}
 			if (res.ok && data.ok) {
 				setSendResult({
 					ok: true,

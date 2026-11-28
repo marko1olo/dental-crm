@@ -157,7 +157,12 @@ export function useWarrantyRemediationState({
 				});
 
 				if (!reclRes.ok) {
-					const errBody = (await reclRes.json().catch(() => null)) as { message?: string; error?: string } | null;
+					let errBody: { message?: string; error?: string } | null = null;
+					try {
+						errBody = (await reclRes.json()) as { message?: string; error?: string } | null;
+					} catch (parseErr) {
+						clientLogger.warn("[useWarrantyRemediationState] Failed to parse reclamation error JSON:", parseErr);
+					}
 					const errMsg = errBody?.message || errBody?.error || `Код ошибки ${reclRes.status}`;
 					clientLogger.warn("[useWarrantyRemediationState] Ошибка фиксации рекламации", { status: reclRes.status, errMsg }, { module: "Warranty" });
 					showToast(`Внимание: рекламация не зафиксирована на сервере (${errMsg})`, "error");

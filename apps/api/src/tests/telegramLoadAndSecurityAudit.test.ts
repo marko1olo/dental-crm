@@ -467,6 +467,7 @@ describe("High-Density Multi-Tenant Telegram Bot Load & Security Audit Suite", (
 					chatId: "88812345",
 					chatFingerprint: "fp_doctor_phone_1",
 					startPayload: tokenResult.token,
+					allowInMemoryChatLinkFallback: true,
 				});
 
 				assert.strictEqual(firstAuth.success, true, "Первый вход обязан быть успешным");

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { CallerLookupResult, IncomingCallPayload } from "../../../store/telephonyTypes";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 export interface ServerCallerLookupState {
 	serverLookup: CallerLookupResult | null;
@@ -41,16 +42,16 @@ export function useServerCallerLookup(
 				const res = await fetch(`/api/telephony/lookup?${params.toString()}`, {
 					headers,
 					signal: controller.signal,
-				}).catch(() => null);
+				});
 
-				if (!res || !res.ok) return;
+				if (!res.ok) return;
 				const data: CallerLookupResult = await res.json();
 				if (isMounted && data) {
 					setServerLookup(data);
 				}
 			} catch (err: unknown) {
 				if (err instanceof Error && err.name === "AbortError") return;
-				// Quiet fallback to local store/dashboard
+				clientLogger.warn("[useServerCallerLookup] Caller lookup fallback to local store:", err);
 			} finally {
 				if (isMounted) {
 					setIsServerLookupLoading(false);

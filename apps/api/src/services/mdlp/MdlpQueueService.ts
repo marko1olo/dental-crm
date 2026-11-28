@@ -39,6 +39,14 @@ export interface AddToQueueResult {
 	warnings: string[];
 }
 
+export interface MdlpQueueServiceOptions {
+	/**
+	 * Explicit DI switch allowing in-memory fallback when PostgreSQL is unavailable in isolated unit tests.
+	 * Production runtime must keep this `false` so database failures propagate loudly.
+	 */
+	readonly allowInMemoryFallback?: boolean | undefined;
+}
+
 /**
  * MdlpQueueService — Сервис очереди списания медикаментов МДЛП «Честный Знак».
  * Состояние персистентно хранится в таблице PostgreSQL mdlp_items (статус 'queued')
@@ -50,8 +58,21 @@ export class MdlpQueueService {
 		maxEntries: 512,
 		ttlMs: 30 * 60_000,
 	});
-	// Организации (например, синтетические в юнит-тестах), для которых запись в БД не удалась и очередь держится только в кэше
+	// Организации (при явном DI fallback в тестах), для которых запись в БД не удалась и очередь держится только в кэше
 	private readonly unpersistedOrgs = new BoundedStringSet(512, 30 * 60_000);
+	private allowInMemoryFallback: boolean;
+
+	constructor(options: MdlpQueueServiceOptions = {}) {
+		this.allowInMemoryFallback = options.allowInMemoryFallback ?? false;
+	}
+
+	public setAllowInMemoryFallback(allowed: boolean): void {
+		this.allowInMemoryFallback = allowed;
+	}
+
+	public isInMemoryFallbackAllowed(): boolean {
+		return this.allowInMemoryFallback;
+	}
 
 	private getCachedOrgQueue(orgId: string): MdlpCarpuleQueueItem[] {
 		let queue = this.cacheByOrg.get(orgId);
@@ -125,7 +146,7 @@ export class MdlpQueueService {
 			};
 		} catch (err) {
 			mdlpLogger.warn(err, `[MdlpQueueService] DB query failed for org ${orgId}`);
-			if (process.env.NODE_ENV !== "test") throw err;
+			if (!this.allowInMemoryFallback) throw err;
 			return this.getQueue(orgId, options);
 		}
 	}
@@ -246,7 +267,7 @@ export class MdlpQueueService {
 			this.unpersistedOrgs.delete(orgId);
 		} catch (err) {
 			mdlpLogger.warn(err, `[MdlpQueueService] DB persistence failed for SGTIN ${item.sgtin}`);
-			if (process.env.NODE_ENV !== "test") throw err;
+			if (!this.allowInMemoryFallback) throw err;
 			this.unpersistedOrgs.add(orgId);
 		}
 
@@ -349,7 +370,7 @@ export class MdlpQueueService {
 			});
 		} catch (err) {
 			mdlpLogger.warn(err, `[MdlpQueueService] DB remove failed for ${itemIdOrSgtin}`);
-			if (process.env.NODE_ENV !== "test") throw err;
+			if (!this.allowInMemoryFallback) throw err;
 		}
 
 		const queue = this.getCachedOrgQueue(orgId);
@@ -398,7 +419,7 @@ export class MdlpQueueService {
 			count = updated.length;
 		} catch (err) {
 			mdlpLogger.warn(err, `[MdlpQueueService] DB clear failed for org ${orgId}`);
-			if (process.env.NODE_ENV !== "test") throw err;
+			if (!this.allowInMemoryFallback) throw err;
 		}
 
 		const queue = this.getCachedOrgQueue(orgId);

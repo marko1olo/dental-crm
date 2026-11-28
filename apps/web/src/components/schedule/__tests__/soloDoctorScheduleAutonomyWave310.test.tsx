@@ -279,12 +279,12 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 				"Schedule toolbar must be rendered with proper data-testid",
 			);
 			assert.ok(
-				html.includes("sm:min-h-[36px] sm:h-9 sm:max-h-9"),
-				"Schedule toolbar must enforce strictly 36px height (h-9) on desktop",
+				html.includes("flex-wrap") && html.includes("overflow-visible"),
+				"Schedule toolbar must wrap cleanly without clipping or overlapping controls",
 			);
 			assert.ok(
-				html.includes("flex-nowrap"),
-				"Schedule toolbar must never wrap into multiple rows",
+				!html.includes("overflow-hidden"),
+				"Schedule toolbar must never clip right-edge action chips with overflow-hidden",
 			);
 		});
 

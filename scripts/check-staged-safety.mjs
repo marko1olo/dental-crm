@@ -60,6 +60,7 @@ export function isDocOrScriptFile(filePath) {
 	const norm = filePath.replace(/\\/g, "/");
 	if (norm.endsWith(".md") || norm.endsWith(".json") || norm.endsWith(".txt") || norm.endsWith(".sql")) return true;
 	if (norm.startsWith("scripts/") || norm.startsWith("electron/scripts/")) return true;
+	if (norm.startsWith(".agents/") && norm.includes("/scripts/")) return true;
 	if (norm.includes("/sampleData/") || norm.includes("/demo/")) return true;
 	return false;
 }
@@ -277,11 +278,38 @@ export const FORBIDDEN_DIFF_PATTERNS = [
 	},
 	{
 		rule: "ANTI_BLIND_DEV_JARGON",
-		regex: /(?:1[- ]клик|Мандат 8e|modeFit)/i,
+		regex: /(?:1[- ]клик|Мандат 8[a-z]+|modeFit|\bindexeddb\b|копеечн(?:ая|ой|ую|ые)?\s+точност|043\/у|804н|54-ФЗ|257\/у|\bTS3S3510S\b|\bArticaini\b|\bD2\s*\(Misch\))/i,
 		severity: "HIGH",
-		title: "Утечка ТЗ и дев-жаргона в UI",
-		message: "Не выводи внутренние термины («1 клик», «Мандат 8e») на экран врачу! Используй профессиональный медицинский язык.",
+		title: "Утечка ТЗ, номеров приказов, дев-жаргона или зашитых артикулов в UI",
+		message: "Запрещено тащить в UI '1 клик', 'indexeddb', 'копеечную точность', '043/у', '804н', '54-ФЗ' или зашитые артикулы ('TS3S3510S', 'Articaini')! Пиши живым клиническим русским языком.",
+		gateKey: "UI_COPY_AND_BUTTON_PURITY",
+	},
+	{
+		rule: "ANTI_BLIND_SOLID_VAR_TEAL_BTN",
+		regex: /<(?:button|a)\b[^>]*className=[^>]*(?:\bbg-\[var\(--teal(?:,[^\]/]+)?\)\](?!\/)|\bbg-\[#2dd4bf\]|\bbg-teal-[34]00\b)/i,
+		onlyExt: /\.tsx$|\.jsx$/,
+		severity: "CRITICAL",
+		title: "Кислотная циановая кнопка в Dark Mode (bg-[var(--teal)] / #2dd4bf)",
+		message: "bg-[var(--teal)] в тёмной теме = #2dd4bf (вырвиглазный неон с чёрным шрифтом)! Для залитых Primary-кнопок используй строго bg-[var(--primary)] text-white, для бейджей — bg-[var(--teal-surface)].",
 		gateKey: "BUTTON_STYLES",
+	},
+	{
+		rule: "ANTI_BLIND_BLUE_DARK_CARD",
+		regex: /\b(?:bg-\[#(?:1e293b|334155|0f172a)\]|(?:dark:)?bg-slate-800(?![/\w-])|(?:dark:)?bg-slate-900(?![/\w-]))/,
+		onlyExt: /\.tsx$|\.jsx$|\.css$/,
+		severity: "HIGH",
+		title: "Синие карты slate-800/#1e293b в изумрудной тёмной теме",
+		message: "Карточки #1e293b/#334155/dark:bg-slate-800 выглядят как чужеродные синие заплатки поверх тёмно-изумрудного фона DENTE! Используй bg-[var(--paper)] и bg-[var(--paper-soft)].",
+		gateKey: "UI_COPY_AND_BUTTON_PURITY",
+	},
+	{
+		rule: "ANTI_BLIND_GLOBAL_POINTER_COARSE",
+		regex: /\[@media\(pointer:coarse\)\]/,
+		onlyExt: /\.tsx$|\.jsx$/,
+		severity: "HIGH",
+		title: "Глобальный [@media(pointer:coarse)] на компонентах",
+		message: "На ПК >=1024px с сенсорным экраном (pointer:coarse) раздувает все кнопки до 48px и ломает десктопную вёрстку! Используй max-md:* или html.mobile-touch-shell.",
+		gateKey: "UI_XRAY_LAYOUT",
 	},
 ];
 
@@ -435,8 +463,8 @@ export function analyzeDiff(diffText) {
 	for (const line of lines) {
 		if (line.startsWith("diff --git ")) {
 			flushContiguous();
-			// diff --git a/path/to/file b/path/to/file
-			const match = line.match(/b\/(.*)$/);
+			// diff --git a/path/to/file b/path/to/file (anchor on whitespace before b/ so web/, lib/, lab/ never break parsing)
+			const match = line.match(/\s+b\/(.+)$/);
 			currentFile = match ? match[1] : null;
 			currentLineNum = 0;
 			continue;

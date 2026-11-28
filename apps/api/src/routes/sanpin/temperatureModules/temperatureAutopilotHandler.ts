@@ -4,6 +4,7 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
+import { resolveValidIanaTimeZone, todayDateKeyInTimeZone } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
@@ -13,6 +14,7 @@ import {
 	temperatureHumidityLogs,
 } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
+import { clinicTimeZone } from "../../../services/reports/managerReports/timezone.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 
 async function ensureDefaultEquipments(tx: TenantDb, organizationId: string) {
@@ -52,7 +54,7 @@ async function ensureDefaultEquipments(tx: TenantDb, organizationId: string) {
 			})
 			.returning();
 
-		equips = [fridge, room].filter(Boolean) as typeof equips;
+		equips = [fridge, room].filter((item): item is NonNullable<typeof item> => Boolean(item));
 	}
 	return equips;
 }
@@ -65,21 +67,27 @@ export async function handlePostTemperatureShiftAutopilot(req: FastifyRequest, r
 	);
 	if (!organizationId) return;
 
-	const body = (req.body as Record<string, unknown>) || {};
-	const measurementDate = typeof body.date === "string" ? body.date : new Date().toISOString().slice(0, 10);
-	const measurementPeriod: "morning" | "evening" = body.period === "evening" ? "evening" : "morning";
+	const rawBody = req.body;
+	const bodyRecord = typeof rawBody === "object" && rawBody !== null ? rawBody : null;
+	const rawDate = bodyRecord && "date" in bodyRecord ? bodyRecord.date : undefined;
+	const rawPeriod = bodyRecord && "period" in bodyRecord ? bodyRecord.period : undefined;
+	const explicitDate = typeof rawDate === "string" && rawDate.length > 0 ? rawDate : null;
+	const measurementPeriod: "morning" | "evening" = rawPeriod === "evening" ? "evening" : "morning";
 	const operatorId = getRequestIdentity(req).userId ?? null;
 
-	const createdLogs = await withTenantWriteCtx(organizationId, async (tx) => {
+	const { createdLogs, measurementDate } = await withTenantWriteCtx(organizationId, async (tx) => {
+		const resolvedMeasurementDate =
+			explicitDate ??
+			todayDateKeyInTimeZone(resolveValidIanaTimeZone(await clinicTimeZone(organizationId, tx)));
 		const equips = await ensureDefaultEquipments(tx, organizationId);
-		if (equips.length === 0) return [];
+		if (equips.length === 0) return { createdLogs: [], measurementDate: resolvedMeasurementDate };
 
 		const logsToInsert = equips.map((tEquip) => {
 			const isFridge = tEquip.equipmentType.includes("refrigerator");
 			return {
 				organizationId,
 				equipmentId: tEquip.id,
-				measurementDate,
+				measurementDate: resolvedMeasurementDate,
 				measurementPeriod,
 				temperatureCelsius: String(isFridge ? 4.2 : 21.5),
 				relativeHumidityPercent: isFridge ? null : String(48),
@@ -90,7 +98,8 @@ export async function handlePostTemperatureShiftAutopilot(req: FastifyRequest, r
 			};
 		});
 
-		return tx.insert(temperatureHumidityLogs).values(logsToInsert).returning();
+		const inserted = await tx.insert(temperatureHumidityLogs).values(logsToInsert).returning();
+		return { createdLogs: inserted, measurementDate: resolvedMeasurementDate };
 	});
 
 	wsBroker.broadcastToOrganization(organizationId, {

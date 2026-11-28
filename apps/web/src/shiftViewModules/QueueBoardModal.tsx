@@ -31,7 +31,7 @@ export const QueueBoardModal: React.FC<QueueBoardModalProps> = ({
 				<div className="flex items-center justify-between border-b border-[var(--glass-border)] pb-2.5">
 					<h3 className="m-0 font-bold text-sm sm:text-base text-[var(--ink)] flex items-center gap-2">
 						<Monitor size={18} className="text-teal-600" />
-						<span>Оперативная доска смены & ТВ-табло холла</span>
+						<span>Оперативная доска смены и ТВ-табло холла</span>
 					</h3>
 					<button
 						type="button"

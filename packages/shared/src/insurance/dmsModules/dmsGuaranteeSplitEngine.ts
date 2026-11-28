@@ -97,32 +97,32 @@ export function calculateDmsGuaranteeSplit(
 	const isUrgentCare = Boolean(options.isEmergency || options.hasAcutePain);
 
 	const letterMaxKop = letter != null
-		? (typeof (letter as Record<string, unknown>).remainingLimitKopecks === "number" && typeof (letter as Record<string, unknown>).usedKopecks === "number"
-			? Number((letter as Record<string, unknown>).remainingLimitKopecks) + Number((letter as Record<string, unknown>).usedKopecks)
-			: typeof (letter as Record<string, unknown>).limitKopecks === "number"
-			? Number((letter as Record<string, unknown>).limitKopecks)
-			: typeof (letter as Record<string, unknown>).maxCoverageKopecks === "number"
-			? Number((letter as Record<string, unknown>).maxCoverageKopecks)
-			: typeof (letter as Record<string, unknown>).maxApprovedAmountKopecks === "number"
-			? Number((letter as Record<string, unknown>).maxApprovedAmountKopecks)
+		? (typeof letter.remainingLimitKopecks === "number" && typeof letter.usedKopecks === "number"
+			? letter.remainingLimitKopecks + letter.usedKopecks
+			: typeof letter.limitKopecks === "number"
+			? letter.limitKopecks
+			: typeof letter.maxCoverageKopecks === "number"
+			? letter.maxCoverageKopecks
+			: typeof letter.maxApprovedAmountKopecks === "number"
+			? letter.maxApprovedAmountKopecks
 			: letter.maxCoverageRub != null
 			? rublesToKopecks(letter.maxCoverageRub)
 			: null)
 		: null;
 
 	const letterUsedKop = letter != null
-		? (typeof (letter as Record<string, unknown>).usedKopecks === "number"
-			? Number((letter as Record<string, unknown>).usedKopecks)
-			: typeof (letter as Record<string, unknown>).usedAmountKopecks === "number"
-			? Number((letter as Record<string, unknown>).usedAmountKopecks)
+		? (typeof letter.usedKopecks === "number"
+			? letter.usedKopecks
+			: typeof letter.usedAmountKopecks === "number"
+			? letter.usedAmountKopecks
 			: letter.usedAmountRub != null
 			? Math.max(0, rublesToKopecks(letter.usedAmountRub))
 			: 0)
 		: 0;
 
 	let remainingLetterKop = letter != null
-		? (typeof (letter as Record<string, unknown>).remainingLimitKopecks === "number"
-			? Number((letter as Record<string, unknown>).remainingLimitKopecks)
+		? (typeof letter.remainingLimitKopecks === "number"
+			? letter.remainingLimitKopecks
 			: letterMaxKop != null
 			? Math.max(0, letterMaxKop - letterUsedKop)
 			: null)
@@ -465,8 +465,8 @@ export function calculateDmsGuaranteeSplit(
 		// 6. Франшиза гарантийного письма через канонический dmsFranchiseEngine
 		let franchiseDeductionKop = 0;
 		if (letter) {
-			const franchisePctVal = typeof (letter as Record<string, unknown>).defaultFranchisePercent === "number"
-				? Number((letter as Record<string, unknown>).defaultFranchisePercent)
+			const franchisePctVal = typeof letter.defaultFranchisePercent === "number"
+				? letter.defaultFranchisePercent
 				: (letter.franchisePct || 0);
 			if ((letter.franchiseType === "percent" || !letter.franchiseType || letter.franchiseType === "none") && franchisePctVal > 0) {
 				const clampedPct = Math.min(100, Math.max(0, franchisePctVal));

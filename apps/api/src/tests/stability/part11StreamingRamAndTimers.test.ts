@@ -11,6 +11,8 @@ import { readZipEntriesAsync } from "../../ingestion/docExtractor/zipReader.js";
 import { BoundedStringSet, BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { createZipArchive, createZipArchiveAsync } from "../../routes/mobileOta.js";
 import { streamDicomPayloadToDisk } from "../../routes/dicomweb/stowModules/stowStreamWriter.js";
+import { startPoolWatchdog, stopPoolWatchdog } from "../../db/poolWatchdog.js";
+import { CloudRelayClient } from "../../services/cloudRelayClient.js";
 import { NativeS3Adapter } from "../../services/cloudBackup/s3VaultAdapter.js";
 import { dispatchAtolSyncTask } from "../../services/hardware/kktModules/kktProtocolFraming.js";
 import { extractScanFilesFromZipAsync, extractScanFilesFromZipPath } from "../../services/scanner/scannerZipExtractor.js";
@@ -205,5 +207,62 @@ describe("Part 11 Streaming, RAM Bounds, Fetch Timeouts & Graceful Eviction", ()
 		} finally {
 			await fs.unlink(tmpZip).catch(() => undefined);
 		}
+	});
+
+	it("NativeS3Adapter.upload() aborts hung Buffer and stream uploads via AbortSignal timeout", async () => {
+		const origFetch = globalThis.fetch;
+		const signalsObserved: AbortSignal[] = [];
+
+		globalThis.fetch = ((_input: unknown, init?: RequestInit) =>
+			new Promise<Response>((_resolve, reject) => {
+				if (init?.signal) {
+					signalsObserved.push(init.signal);
+					init.signal.addEventListener("abort", () => {
+						reject(init.signal?.reason ?? new Error("s3-aborted"));
+					});
+				}
+			})) as typeof fetch;
+
+		try {
+			const adapter = new NativeS3Adapter({
+				endpoint: "http://127.0.0.1:9000",
+				bucket: "backups",
+				accessKeyId: "key",
+				secretAccessKey: "secret",
+				region: "ru-1",
+				forcePathStyle: true,
+				requestTimeoutMs: 25,
+			});
+
+			await assert.rejects(
+				() => adapter.upload("hung-buf.bin", Buffer.from("abc")),
+				/timed out|aborted/i,
+			);
+			await assert.rejects(
+				() => adapter.upload("hung-stream.bin", Readable.from([Buffer.from("stream-data")])),
+				/timed out|aborted/i,
+			);
+
+			assert.equal(signalsObserved.length, 2);
+			assert.equal(signalsObserved[0]?.aborted, true);
+			assert.equal(signalsObserved[1]?.aborted, true);
+		} finally {
+			globalThis.fetch = origFetch;
+		}
+	});
+
+	it("CloudRelayClient rejects unsupported HTTP methods (405) and PoolWatchdog stops cleanly", async () => {
+		const relay = new CloudRelayClient({
+			enabled: false,
+			relayUrl: "ws://127.0.0.1:1/edge",
+			authToken: "mock-relay-token",
+			clinicId: "clinic-1",
+		});
+		assert.equal(relay.getStatus().enabled, false);
+		relay.stop();
+
+		const watchdog = startPoolWatchdog({ intervalMs: 60_000 });
+		assert.ok(watchdog);
+		stopPoolWatchdog();
 	});
 });

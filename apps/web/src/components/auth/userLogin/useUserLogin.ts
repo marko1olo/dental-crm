@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { DEMO_SHOWCASE_ORG_ID, enableDemoShowcaseMode, isDemoShowcaseMode } from "../../../lib/demoMode";
 import { cacheActiveStaffUser } from "../../../lib/offlineStorage";
 import { DENTE_CLINIC_TOKEN_KEY, DENTE_STAFF_TOKEN_KEY, safeLocalStorageSetItem } from "../../../lib/safeLocalStorage";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import { detectIdentityType, getLiveTimeOfDayGreeting, getQuickResumeData, type IdentityType, type QuickResumeData } from "../authSmartIdentity";
 import type { UserLoginProps } from "./userLoginTypes";
@@ -75,8 +76,14 @@ export function useUserLogin(onSuccess: UserLoginProps["onSuccess"]) {
 					onSuccess(data.clinicProfile, null);
 					return;
 				}
-				const errData = await staffRes.json().catch(() => ({}));
-				throw new Error(errData.message || "Неверный логин или пароль");
+				let errMsg = "Неверный логин или пароль";
+				try {
+					const errData = (await staffRes.json()) as { message?: string };
+					if (errData?.message) errMsg = errData.message;
+				} catch (parseErr) {
+					clientLogger.warn("[useUserLogin] Non-JSON login error response", parseErr);
+				}
+				throw new Error(errMsg);
 			}
 
 			const data = await staffRes.json();

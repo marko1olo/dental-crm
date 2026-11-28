@@ -69,8 +69,8 @@ export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
 			<div className="flex items-start justify-between border-b border-[var(--line)] pb-4 gap-4">
 				<div className="flex flex-col gap-1 min-w-0">
 					<div className="flex items-center gap-2">
-						<span className="w-2.5 h-2.5 rounded-full bg-[var(--teal,#0d9488)] shrink-0" />
-						<h3 className="text-sm font-bold tracking-tight text-[var(--ink)] uppercase leading-snug">
+						<span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)] shrink-0" />
+						<h3 className="text-sm font-bold tracking-tight text-[var(--ink)] leading-snug">
 							{clinicName}
 						</h3>
 					</div>
@@ -86,7 +86,7 @@ export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
 					<div className={`px-2.5 py-1 rounded-lg border text-xs font-mono font-bold ${isSpecial ? "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300" : "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)]"}`}>
 						{resolvedSeriesNumber}
 					</div>
-					<span className={`text-[11px] font-medium mt-1 ${isSpecial ? "text-rose-600 dark:text-rose-400 font-semibold" : "text-[var(--teal,#0d9488)]"}`}>
+					<span className={`text-[11px] font-medium mt-1 ${isSpecial ? "text-rose-600 dark:text-rose-400 font-semibold" : "text-[var(--primary)]"}`}>
 						{isMemoMode ? "Памятка пациента" : isSpecial ? "Срок действия: 15 дней (учётный)" : `Срок действия: ${resolvedValidity} дней`}
 					</span>
 					<span className="text-[10px] text-[var(--muted)]">
@@ -98,7 +98,7 @@ export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
 			{/* Patient & Doctor Context Grid */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs">
 				<div className="flex flex-col gap-1 min-w-0">
-					<span className="text-[10px] uppercase font-semibold text-[var(--muted)]">Пациент:</span>
+					<span className="text-[10px] font-semibold text-[var(--muted)]">Пациент:</span>
 					<span className="font-bold text-[var(--ink)] text-sm leading-snug">
 						{patientName}
 					</span>
@@ -110,7 +110,7 @@ export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
 					</div>
 				</div>
 				<div className="flex flex-col gap-1 sm:text-right min-w-0">
-					<span className="text-[10px] uppercase font-semibold text-[var(--muted)]">Лечащий врач:</span>
+					<span className="text-[10px] font-semibold text-[var(--muted)]">Лечащий врач:</span>
 					<span className="font-bold text-[var(--ink)] text-sm leading-snug truncate">{doctorName}</span>
 					<span className="text-[11px] text-[var(--muted)] truncate">{doctorSpecialty}</span>
 					{isSpecial ? (
@@ -123,12 +123,12 @@ export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
 
 			{/* Document Title Banner */}
 			<div className="text-center py-1.5 border-b border-[var(--line-subtle,var(--line))]">
-				<h4 className={`text-xs uppercase font-extrabold tracking-wider ${isSpecial ? "text-rose-600 dark:text-rose-400" : "text-[var(--ink)]"}`}>
+				<h4 className={`text-xs font-extrabold tracking-normal ${isSpecial ? "text-rose-600 dark:text-rose-400" : "text-[var(--ink)]"}`}>
 					{isMemoMode
-						? "РЕКОМЕНДАЦИИ ПО ПРИЕМУ МЕДИКАМЕНТОВ"
+						? "Рекомендации по приёму медикаментов"
 						: isSpecial
-							? "СПЕЦИАЛЬНЫЙ РЕЦЕПТУРНЫЙ БЛАНК (УЧЁТНЫЙ)"
-							: "РЕЦЕПТУРНЫЙ БЛАНК (НАЗНАЧЕНИЯ ВРАЧА)"}
+							? "Специальный рецептурный бланк (учётный)"
+							: "Рецептурный бланк (назначения врача)"}
 				</h4>
 			</div>
 
@@ -183,7 +183,7 @@ export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
 			<div className="mt-auto pt-4 border-t border-[var(--line)] flex flex-wrap items-center justify-between gap-4">
 				{/* QR Code Verification for Pharmacy */}
 				<div className="flex items-center gap-2.5">
-					<div className="w-11 h-11 p-1 bg-white border border-[var(--line)] rounded-lg flex items-center justify-center text-slate-900">
+					<div className="w-11 h-11 p-1 bg-[var(--paper)] print:bg-white border border-[var(--line)] rounded-lg flex items-center justify-center text-[var(--ink)] print:text-slate-900">
 						<QrCode className="w-9 h-9" />
 					</div>
 					<div className="flex flex-col text-[10px] text-[var(--muted)]">

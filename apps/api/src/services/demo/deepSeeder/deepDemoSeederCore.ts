@@ -7,9 +7,11 @@
  * - coreModules/demoStaffAndChairsSeeder.ts: Organization, clinic, chairs, staff users and RLS table cleanup.
  */
 
+import { resolveValidIanaTimeZone, todayDateKeyInTimeZone } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import { doctorShiftRosters, organizations, patients, users } from "../../../db/schema.js";
+import { clinicTimeZone } from "../../reports/managerReports/timezone.js";
 import { seedClinicalSchedule } from "./clinicalScheduleSeeder.js";
 import {
 	seedCrmLeads,
@@ -194,7 +196,9 @@ export async function ensureDemoShowcaseTenant(
 				.where(eq(users.organizationId, DEMO_SHOWCASE_ORG_ID))
 				.limit(10);
 
-			const todayIso = new Date().toISOString().slice(0, 10);
+			const todayIso = todayDateKeyInTimeZone(
+				resolveValidIanaTimeZone(await clinicTimeZone(DEMO_SHOWCASE_ORG_ID, tx)),
+			);
 			const todayShifts = await tx
 				.select({ id: doctorShiftRosters.id })
 				.from(doctorShiftRosters)

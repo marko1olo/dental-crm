@@ -70,21 +70,20 @@ export class CrdtSyncEngine {
 		this.isOnlineState = options?.initialOnline ?? (typeof g.navigator?.onLine === "boolean" ? g.navigator.onLine : true);
 
 		if (options?.autoSyncIntervalMs && options.autoSyncIntervalMs > 0) {
-			this.autoSyncTimer = setInterval(() => {
+			const timer = setInterval(() => {
 				if (this.isOnlineState && !this.isSyncing) {
 					// heartbeat
 				}
 			}, options.autoSyncIntervalMs);
 			if (
-				typeof this.autoSyncTimer === "object" &&
-				this.autoSyncTimer !== null &&
-				"unref" in this.autoSyncTimer
+				typeof timer === "object" &&
+				timer !== null &&
+				"unref" in timer &&
+				typeof timer.unref === "function"
 			) {
-				const maybeUnref = this.autoSyncTimer.unref;
-				if (typeof maybeUnref === "function") {
-					Reflect.apply(maybeUnref, this.autoSyncTimer, []);
-				}
+				timer.unref();
 			}
+			this.autoSyncTimer = timer;
 		}
 	}
 

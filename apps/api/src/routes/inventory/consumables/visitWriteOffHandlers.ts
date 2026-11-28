@@ -12,7 +12,17 @@ import {
 } from "@dental/shared";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { defineTenantMutation, defineTenantQuery } from "../../../core/routeFactories.js";
+
+const orgUuidParamsSchema = z.object({
+	organizationId: z.string().uuid(),
+});
+
+function readIdempotencyHeader(headers: Record<string, unknown>): string | undefined {
+	const val = headers["idempotency-key"];
+	return typeof val === "string" ? val : undefined;
+}
 import * as schema from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { fefoStockService } from "../../../services/inventory/fefoStockService.js";
@@ -78,7 +88,11 @@ export async function registerVisitWriteOffHandlers(
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "optional_header",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
+			const parsedParams = orgUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			const { organizationId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -143,7 +157,7 @@ export async function registerVisitWriteOffHandlers(
 				visitId: data.visitId,
 				clientMutationId:
 					data.clientMutationId ??
-					(request.headers["idempotency-key"] as string | undefined) ??
+					readIdempotencyHeader(request.headers) ??
 					null,
 				...(data.userId !== undefined
 					? { userId: data.userId }
@@ -182,7 +196,11 @@ export async function registerVisitWriteOffHandlers(
 		permission: "inventory.read",
 		authOptions: INVENTORY_READ_AUTH,
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
+			const parsedParams = orgUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			const { organizationId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -211,7 +229,11 @@ export async function registerVisitWriteOffHandlers(
 		permission: "inventory.read",
 		authOptions: INVENTORY_READ_AUTH,
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
+			const parsedParams = orgUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			const { organizationId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -243,7 +265,11 @@ export async function registerVisitWriteOffHandlers(
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "optional_header",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
+			const parsedParams = orgUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			const { organizationId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -350,7 +376,11 @@ export async function registerVisitWriteOffHandlers(
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "optional_header",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
+			const parsedParams = orgUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			const { organizationId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -382,7 +412,11 @@ export async function registerVisitWriteOffHandlers(
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "optional_header",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
+			const parsedParams = orgUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			const { organizationId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -413,7 +447,11 @@ export async function registerVisitWriteOffHandlers(
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "optional_header",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
+			const parsedParams = orgUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.code(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			const { organizationId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}

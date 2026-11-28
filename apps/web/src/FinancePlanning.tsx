@@ -295,7 +295,7 @@ export function ServiceCatalogStrip({
 						Каталог услуг пуст. Заполните прайс в настройках, чтобы план лечения
 						и оплаты не требовали ручных сумм.
 					</p>
-					<button className="primary-button" type="button" onClick={onGoToPrices}>
+					<button className="secondary-button" type="button" onClick={onGoToPrices}>
 						Открыть прайс
 					</button>
 				</article>

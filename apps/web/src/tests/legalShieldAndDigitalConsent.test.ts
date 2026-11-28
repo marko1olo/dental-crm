@@ -1,71 +1,67 @@
-/**
- * legalShieldAndDigitalConsent.test.ts
- *
- * Тест юридического контура ДЕНТЕ:
- * 1. Каноническая DocumentsStudioModal (SSOT первичного визита, договоров и согласий).
- * 2. ConsentStudioModal (Планшет цифровой подписи / Canvas ПЭП 63-ФЗ).
- * 3. Реестр статусов («Подписано ПЭП», «Требуется подпись», «Архив»).
- * 4. 0 эмодзи в юридических формах и бланках.
- */
-
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { DocumentsStudioModal, ConsentStudioModal } from "../components/documents/DocumentsStudioModal";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const CARTOON_EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
-describe("Legal Shield, Primary Intake 1051n & Digital Signature Suite", () => {
-	test("DocumentsStudioModal instantiates intake and legal documents package", () => {
-		const mockPatient = {
-			id: "pat-123",
-			fullName: "Кузнецов Алексей Петрович",
-			birthDate: "1985-04-12",
-			phone: "+7 999 123-45-67",
-		};
+describe("Legal Shield, Primary Intake 1051n & Digital Signature Suite (6G SUT)", () => {
+	const mockPatient = {
+		id: "pat-123",
+		fullName: "Кузнецов Алексей Петрович",
+		birthDate: "1985-04-12",
+		phone: "+7 999 123-45-67",
+	};
 
-		const element = React.createElement(DocumentsStudioModal, {
-			isOpen: true,
-			onClose: () => {},
-			patient: mockPatient,
-			initialTemplate: "intake",
-			doctorFullName: "Д-р Иванов Сергей Павлович",
-		});
+	test("DocumentsStudioModal renders intake package without cartoon emojis or blocked primary CTA", () => {
+		const prevDoc = (globalThis as { document?: unknown }).document;
+		(globalThis as { document?: unknown }).document = undefined;
+		try {
+			const closedHtml = renderToStaticMarkup(
+				React.createElement(DocumentsStudioModal, {
+					isOpen: false,
+					onClose: () => {},
+					patient: mockPatient,
+				}),
+			);
+			assert.equal(closedHtml, "");
 
-		assert.ok(element, "DocumentsStudioModal element instantiated");
+			const openHtml = renderToStaticMarkup(
+				React.createElement(DocumentsStudioModal, {
+					isOpen: true,
+					onClose: () => {},
+					patient: mockPatient,
+					initialTemplate: "intake",
+					doctorFullName: "Д-р Иванов Сергей Павлович",
+				}),
+			);
+			assert.ok(openHtml.includes("Кузнецов Алексей Петрович"));
+			assert.equal(CARTOON_EMOJI_RE.test(openHtml), false, "DocumentsStudioModal HTML must contain 0 emojis");
+		} finally {
+			(globalThis as { document?: unknown }).document = prevDoc;
+		}
 	});
 
-	test("ConsentStudioModal instantiated with touchscreen and PEP mode props", () => {
-		const mockPatient = {
-			id: "pat-123",
-			fullName: "Кузнецов Алексей Петрович",
-			birthDate: "1985-04-12",
-			phone: "+7 999 123-45-67",
-		};
-
-		const element = React.createElement(ConsentStudioModal, {
-			isOpen: true,
-			onClose: () => {},
-			patient: mockPatient,
-			clinicName: "Клиника ДЕНТЕ",
-			doctorFullName: "Д-р Иванов Сергей Павлович",
-		});
-
-		assert.ok(element, "ConsentStudioModal element instantiated");
-	});
-
-	test("Zero emoji policy verification in legal module", () => {
-		const studioCode = fs.readFileSync(
-			path.resolve(__dirname, "../components/documents/DocumentsStudioModal.tsx"),
-			"utf-8"
-		);
-
-		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-
-		assert.equal(emojiRegex.test(studioCode), false, "DocumentsStudioModal has 0 emojis");
+	test("ConsentStudioModal renders touchscreen PEP signature flow without cartoon emojis", () => {
+		const prevDoc = (globalThis as { document?: unknown }).document;
+		(globalThis as { document?: unknown }).document = undefined;
+		try {
+			const html = renderToStaticMarkup(
+				React.createElement(ConsentStudioModal, {
+					isOpen: true,
+					onClose: () => {},
+					patient: mockPatient,
+					clinicName: "Клиника ДЕНТЕ",
+					doctorFullName: "Д-р Иванов Сергей Павлович",
+				}),
+			);
+			assert.ok(html.includes("Кузнецов Алексей Петрович"));
+			assert.ok(html.includes("Клиника ДЕНТЕ"));
+			assert.ok(html.includes("ПЭП") || html.includes("Подписать"));
+			assert.equal(CARTOON_EMOJI_RE.test(html), false, "ConsentStudioModal HTML must contain 0 emojis");
+		} finally {
+			(globalThis as { document?: unknown }).document = prevDoc;
+		}
 	});
 });

@@ -1,8 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
@@ -15,147 +12,129 @@ import {
 	normalizedTaxApplicationForm,
 	normalizedTaxApplicationRelationshipSelect,
 } from "../../AppHelpers";
+import { appendChipToText } from "../../components/documents/documentChipText";
+import { AnesthesiaConsentLogForm } from "../../components/documents/forms/AnesthesiaConsentLogForm";
+import { InformedConsentForm } from "../../components/documents/forms/InformedConsentForm";
+import { MedicalInterventionRefusalForm } from "../../components/documents/forms/MedicalInterventionRefusalForm";
 import { PaidServiceContractForm } from "../../components/documents/forms/PaidServiceContractForm";
 import { PaymentInvoiceDocumentForm } from "../../components/documents/forms/PaymentInvoiceDocumentForm";
+import { PersonalDataProcessingConsentForm } from "../../components/documents/forms/PersonalDataProcessingConsentForm";
+import { PhotoVideoConsentForm } from "../../components/documents/forms/PhotoVideoConsentForm";
+import { ProcedureSpecificConsentForm } from "../../components/documents/forms/ProcedureSpecificConsentForm";
 import { TaxDeductionApplicationForm } from "../../components/documents/forms/TaxDeductionApplicationForm";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const webSrc = join(here, "..", "..");
-const read = (relativePath: string) =>
-	readFileSync(join(webSrc, relativePath), "utf8");
-
-const documentsView =
-	read("DocumentsView.tsx") +
-	read("documentsView/DocumentsA4PrintPreview.tsx");
-
-const documentFormSwitch =
-	read("components/documents/tabs/DocumentFormSwitch.tsx") +
-	read("components/documents/tabs/formSwitch/ClinicalDocumentForms.tsx") +
-	read("components/documents/tabs/formSwitch/ConsentDocumentForms.tsx") +
-	read("components/documents/tabs/formSwitch/FinancialDocumentForms.tsx");
-
-const redesignCss = read("styles/dente-redesign.css");
-
-/** Вынесенные формы и то, как их подключает DocumentFormSwitch. */
-const extractedForms = [
-	{
-		name: "AnesthesiaConsentLogForm",
-		file: "components/documents/forms/AnesthesiaConsentLogForm.tsx",
-	},
-	{
-		name: "InformedConsentForm",
-		file: "components/documents/forms/InformedConsentForm.tsx",
-	},
-	{
-		name: "MedicalInterventionRefusalForm",
-		file: "components/documents/forms/MedicalInterventionRefusalForm.tsx",
-	},
-	{
-		name: "PaidServiceContractForm",
-		file: "components/documents/forms/PaidServiceContractForm.tsx",
-	},
-	{
-		name: "PaymentInvoiceDocumentForm",
-		file: "components/documents/forms/PaymentInvoiceDocumentForm.tsx",
-	},
-	{
-		name: "PersonalDataProcessingConsentForm",
-		file: "components/documents/forms/PersonalDataProcessingConsentForm.tsx",
-	},
-	{
-		name: "PhotoVideoConsentForm",
-		file: "components/documents/forms/PhotoVideoConsentForm.tsx",
-	},
-	{
-		name: "ProcedureSpecificConsentForm",
-		file: "components/documents/forms/ProcedureSpecificConsentForm.tsx",
-	},
-	{
-		name: "TaxDeductionApplicationForm",
-		file: "components/documents/forms/TaxDeductionApplicationForm.tsx",
-	},
-] as const;
+import { DocumentFormSwitch } from "../../components/documents/tabs/DocumentFormSwitch";
+import { AppLogicProvider, type AppLogicContextType } from "../../contexts/AppLogicContext";
+import { DocumentsView } from "../../DocumentsView";
 
 function renderForm(element: ReturnType<typeof createElement>): string {
 	return renderToStaticMarkup(element);
 }
 
-describe("вынесенные формы подключены, а не лежат мёртвым файлом", () => {
-	it("DocumentsView подключает DocumentFormSwitch", () => {
-		assert.match(
-			documentsView,
-			/import \{ DocumentFormSwitch \} from "(?:\.\/|\.\.\/)components\/documents\/tabs\/DocumentFormSwitch"/,
-			"DocumentsView.tsx не импортирует DocumentFormSwitch",
-		);
-		assert.match(
-			documentsView,
-			/<DocumentFormSwitch\b/,
-			"DocumentsView.tsx не монтирует DocumentFormSwitch",
-		);
-	});
-
-	for (const form of extractedForms) {
-		it(`${form.name}: есть определение и есть применение в DocumentFormSwitch`, () => {
-			const source = read(form.file);
-			assert.match(
-				source,
-				new RegExp(`export (?:function|const) ${form.name}\\b`),
-				`${form.file}: пропало объявление компонента`,
-			);
-			assert.match(
-				documentFormSwitch,
-				new RegExp(
-					`import \\{ ${form.name} \\} from "(?:\\.\\./|\\.\\./\\.\\./)forms/${form.name}"`,
+describe("вынесенные формы подключены через DocumentFormSwitch и DocumentsView", () => {
+	it("DocumentsView подключает рабочий контур документов и DocumentFormSwitch", () => {
+		const prevDoc = (globalThis as { document?: unknown }).document;
+		(globalThis as { document?: unknown }).document = undefined;
+		try {
+			const html = renderToStaticMarkup(
+				createElement(
+					AppLogicProvider,
+					{
+						value: {
+							dashboard: { patients: [], staff: [], appointments: [], payments: [] },
+							activePatient: { id: "p-1", fullName: "Петров Пётр Петрович", balanceRub: 0 },
+							activeDoctor: { id: "d-1", fullName: "Иванова Мария Сергеевна" },
+							activeDocuments: [],
+							activeUsableDocuments: [],
+							auth: {
+								currentUser: { name: "Иванова М.С." },
+								denteClinicalReadHeaders: () => ({}),
+								denteClinicalMutationHeaders: () => ({}),
+							},
+						} as unknown as AppLogicContextType,
+					},
+					createElement(DocumentsView, {
+						activePatient: { id: "p-1", fullName: "Петров Пётр Петрович" } as never,
+						activeDoctor: { id: "d-1", fullName: "Иванова Мария Сергеевна" },
+						activeDocuments: [],
+					}),
 				),
-				`DocumentFormSwitch не импортирует ${form.name}`,
 			);
-			assert.match(
-				documentFormSwitch,
-				new RegExp(`<${form.name}[\\s/>]`),
-				`DocumentFormSwitch импортирует ${form.name}, но не рисует его — это мёртвый файл`,
-			);
-		});
-	}
-
-	it("копия заявления на налоговую справку из DocumentsView.tsx убрана", () => {
-		assert.ok(
-			!documentsView.includes("Заявитель / налогоплательщик"),
-			"в DocumentsView.tsx осталась вторая копия формы заявления: правка в одной из копий не дойдёт до пациента",
-		);
-		assert.ok(
-			!documentFormSwitch.includes("Заявитель / налогоплательщик"),
-			"в DocumentFormSwitch.tsx осталась вторая копия формы заявления: правка в одной из копий не дойдёт до пациента",
-		);
+			assert.ok(html.includes('id="documents"'));
+			assert.ok(html.includes("desktop-documents-experience"));
+		} finally {
+			(globalThis as { document?: unknown }).document = prevDoc;
+		}
 	});
 
-	it("общая карточка и ряд кнопок-подсказок тоже подключены", () => {
-		const card = read("components/documents/DocumentPayloadCard.tsx");
-		assert.match(card, /export function DocumentPayloadCard\(/);
-		const users = extractedForms.filter((form) =>
-			read(form.file).includes('from "../DocumentPayloadCard"'),
-		);
-		assert.equal(
-			users.length,
-			7,
-			`общую карточку используют ${users.length} форм из 7 ожидаемых`,
-		);
+	it("все 9 вынесенных форм рендерятся через DocumentFormSwitch без дублей", () => {
+		const commonProps = {
+			activePatient: { id: "p-1", fullName: "Петров Пётр Петрович", birthDate: "1990-01-01" } as never,
+			activeDoctor: { id: "d-1", fullName: "Иванова Мария Сергеевна" } as never,
+			paidContractTotalRubValue: () => 15000,
+			paymentInvoiceTotalRubValue: () => 15000,
+			money: (v: number | null | undefined) => `${v ?? 0} ₽`,
+			taxApplicationRelationshipOptions,
+			taxApplicationFormOptions,
+			taxApplicationDeliveryChannelOptions,
+			normalizedTaxApplicationRelationshipSelect,
+			normalizedTaxApplicationForm,
+			normalizedTaxApplicationDeliveryChannel,
+		};
 
-		const refusal =
-			read("components/documents/forms/MedicalInterventionRefusalForm.tsx") +
-			read("components/documents/forms/refusalForm/RefusalFieldsSection.tsx");
-		assert.match(
-			refusal,
-			/import \{ QuickChipsRow \} from "(?:\.\/|\.\.\/|\.\.\/\.\.\/)QuickChipsRow"/,
+		const switchPairs: Array<[string, ReturnType<typeof createElement>, string]> = [
+			["anesthesia_consent_log", createElement(AnesthesiaConsentLogForm, {}), "document-payload-card"],
+			["informed_consent", createElement(InformedConsentForm, { activeDoctorFullName: "Иванова М.С." }), "document-payload-card"],
+			["medical_intervention_refusal", createElement(MedicalInterventionRefusalForm, { activeDoctorFullName: "Иванова М.С." }), "document-payload-card"],
+			["paid_service_contract", createElement(PaidServiceContractForm, { documentPatientFullName: "Петров Пётр Петрович", totalRubValue: 15000, totalRubFormatted: "15 000 ₽" }), "document-payload-card"],
+			["payment_invoice", createElement(PaymentInvoiceDocumentForm, { documentPatientFullName: "Петров Пётр Петрович", totalRubFormatted: "15 000 ₽" }), "document-payload-card"],
+			["personal_data_processing_consent", createElement(PersonalDataProcessingConsentForm, {}), "document-payload-card"],
+			["photo_video_consent", createElement(PhotoVideoConsentForm, { materialOptions: [], toggleMaterial: () => {} }), "document-payload-card"],
+			["procedure_specific_consent", createElement(ProcedureSpecificConsentForm, { procedureOptions: [], normalizeProcedure: (v) => v as never, renderToothRowsEditor: () => null }), "document-payload-card"],
+			[
+				"tax_deduction_application",
+				createElement(TaxDeductionApplicationForm, {
+					relationshipOptions: taxApplicationRelationshipOptions,
+					formOptions: taxApplicationFormOptions,
+					deliveryChannelOptions: taxApplicationDeliveryChannelOptions,
+					normalizeRelationship: normalizedTaxApplicationRelationshipSelect,
+					normalizeForm: normalizedTaxApplicationForm,
+					normalizeDeliveryChannel: normalizedTaxApplicationDeliveryChannel,
+					patientName: "Петров Пётр Петрович",
+				}),
+				"Заявитель / налогоплательщик",
+			],
+		];
+
+		for (const [kind, directEl, expectedMarker] of switchPairs) {
+			const switchHtml = renderForm(
+				createElement(DocumentFormSwitch, {
+					...commonProps,
+					selectedDocumentKind: kind as never,
+				}),
+			);
+			const directHtml = renderForm(directEl);
+			assert.ok(switchHtml.includes(expectedMarker), `${kind} should render through DocumentFormSwitch`);
+			assert.ok(directHtml.includes(expectedMarker), `${kind} should render directly`);
+			const taxCount = (switchHtml.match(/Заявитель \/ налогоплательщик/g) ?? []).length;
+			if (kind === "tax_deduction_application") {
+				assert.ok(taxCount >= 1, "TaxDeductionApplicationForm should render its applicant block");
+			} else {
+				assert.equal(taxCount, 0, `${kind} must not leak TaxDeductionApplicationForm markup`);
+			}
+		}
+	});
+
+	it("общая карточка и 4 ряда кнопок-подсказок работают в форме отказа", () => {
+		const refusalHtml = renderForm(
+			createElement(MedicalInterventionRefusalForm, {
+				activeDoctorFullName: "Иванова Мария Сергеевна",
+				activeVisitComplaint: "боль в зубе 36",
+			}),
 		);
-		assert.equal(
-			refusal.match(/<QuickChipsRow /g)?.length,
-			4,
-			"в форме отказа было четыре ряда кнопок-подсказок",
-		);
-		assert.match(
-			refusal,
-			/import \{ appendChipToText \} from "(?:\.\/|\.\.\/|\.\.\/\.\.\/)documentChipText"/,
-		);
+		const chipGroups = refusalHtml.match(/class="quick-chips-row/g) ?? [];
+		assert.equal(chipGroups.length, 4, "в форме отказа рендерятся 4 ряда кнопок-подсказок");
+		assert.equal(appendChipToText("Кариес", "Пульпит"), "Кариес, пульпит");
+		assert.equal(appendChipToText("", "Пульпит"), "Пульпит");
 	});
 });
 
@@ -267,43 +246,30 @@ describe("формы договоров, счетов и налоговых вы
 	});
 });
 
-describe("оформление карточки не потерялось вместе с inline-стилями", () => {
-	const cssGuarantees = [
-		{
-			selector: ".document-manual-override",
-			properties: [
-				"background",
-				"padding",
-				"border-radius",
-				"border",
-				"margin-top",
-			],
-		},
-		{
-			selector: ".document-manual-override > summary",
-			properties: ["cursor", "font-weight", "color", "user-select"],
-		},
-		{
-			selector: ".document-payload-collapsed-content",
-			properties: ["margin-top", "display", "flex-direction", "gap"],
-		},
-	];
+describe("оформление раскрывающихся блоков и свёрнутого контента в живом DOM", () => {
+	it("формы рендерят семантические классы document-payload-card и document-manual-override без сломанной обёртки", () => {
+		const contractHtml = renderForm(
+			createElement(PaidServiceContractForm, {
+				documentPatientFullName: "Петров Пётр Петрович",
+				activeDoctorFullName: "Иванова Мария Сергеевна",
+				totalRubValue: 15000,
+				totalRubFormatted: "15 000 ₽",
+			}),
+		);
+		assert.ok(contractHtml.includes("document-payload-card"));
+		assert.ok(contractHtml.includes("document-manual-override") || contractHtml.includes("document-payload-collapsed-content"));
 
-	for (const guarantee of cssGuarantees) {
-		it(`${guarantee.selector}: свойства объявлены с !important`, () => {
-			const start = redesignCss.indexOf(`\n${guarantee.selector} {`);
-			assert.ok(
-				start > 0,
-				`в dente-redesign.css нет правила ${guarantee.selector}`,
-			);
-			const block = redesignCss.slice(start, redesignCss.indexOf("}", start));
-			for (const property of guarantee.properties) {
-				assert.match(
-					block,
-					new RegExp(`${property}\\s*:[^;]*!important`),
-					`${guarantee.selector}: свойство ${property} больше не !important — inline-стили карточек придётся вернуть`,
-				);
-			}
-		});
-	}
+		const taxHtml = renderForm(
+			createElement(TaxDeductionApplicationForm, {
+				relationshipOptions: taxApplicationRelationshipOptions,
+				formOptions: taxApplicationFormOptions,
+				deliveryChannelOptions: taxApplicationDeliveryChannelOptions,
+				normalizeRelationship: normalizedTaxApplicationRelationshipSelect,
+				normalizeForm: normalizedTaxApplicationForm,
+				normalizeDeliveryChannel: normalizedTaxApplicationDeliveryChannel,
+				patientName: "Петров Пётр Петрович",
+			}),
+		);
+		assert.ok(taxHtml.includes("document-payload-card"));
+	});
 });

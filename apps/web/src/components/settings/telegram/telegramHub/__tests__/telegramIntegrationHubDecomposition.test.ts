@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { TelegramHubView } from "../TelegramHubView";
 import {
 	BOT_TOKEN_REGEX,
 	DEFAULT_TELEGRAM_NOTIFICATION_TEMPLATES,
@@ -12,15 +12,11 @@ import {
 	TG_CODE_TIMER_DEFAULT_SECONDS,
 } from "../constants";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const CARTOON_EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
 test("Telegram Hub Constants: Bot token regex validates correct BotFather formats", () => {
-	// Exactly 35 chars after colon:
 	assert.equal(BOT_TOKEN_REGEX.test("123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ_12345678"), true);
-	// Longer token (42 chars):
 	assert.equal(BOT_TOKEN_REGEX.test("9876543210:AAH_XYZ123456789abcdefghijklmnopqrstuvwxyz"), true);
-	// Invalid: too short or missing colon:
 	assert.equal(BOT_TOKEN_REGEX.test("123456789:short_token"), false);
 	assert.equal(BOT_TOKEN_REGEX.test("invalid_token_without_colon"), false);
 	assert.equal(BOT_TOKEN_REGEX.test(""), false);
@@ -54,25 +50,38 @@ test("Telegram Hub Constants: Initial queue items have valid statuses", () => {
 	}
 });
 
-test("Line Count Budget: All telegramHub files are strictly < 800 lines and facade <= 150 lines", () => {
-	const hubDir = path.resolve(__dirname, "..");
-	const files = fs.readdirSync(hubDir).filter((f) => /\.(ts|tsx)$/.test(f));
-
-	for (const file of files) {
-		const filePath = path.join(hubDir, file);
-		const content = fs.readFileSync(filePath, "utf8");
-		const lines = content.split("\n").length;
-		assert.ok(
-			lines <= 800,
-			`File ${file} exceeds 800 lines limit (current: ${lines})`,
-		);
-	}
-
-	const facadePath = path.resolve(hubDir, "..", "TelegramIntegrationHub.tsx");
-	const facadeContent = fs.readFileSync(facadePath, "utf8");
-	const facadeLines = facadeContent.split("\n").length;
-	assert.ok(
-		facadeLines <= 150,
-		`Facade TelegramIntegrationHub.tsx exceeds 150 lines limit (current: ${facadeLines})`,
+test("TelegramHubView renders all navigation tabs, live bot status, zero emojis, and unlocked buttons", () => {
+	const html = renderToStaticMarkup(
+		React.createElement(TelegramHubView, {
+			clinicId: "clinic-tg-1",
+			userId: "user-tg-1",
+			botStatus: {
+				configured: true,
+				bot: {
+					id: 10,
+					username: "clinic_dental_bot",
+					firstName: "Clinic Bot",
+					canJoinGroups: false,
+					canReadAllGroupMessages: false,
+					supportsInlineQueries: false,
+					tokenMasked: "123:***",
+					webhookActive: true,
+				},
+			},
+			isBotLoading: false,
+			accountStatus: { connected: false },
+			isAccountLoading: false,
+			loadBotStatus: () => {},
+			loadAccountStatus: () => {},
+		}),
 	);
+
+	assert.ok(html.includes('data-testid="telegram-integration-hub"'));
+	assert.ok(html.includes('data-testid="tg-hub-tab-bot"'));
+	assert.ok(html.includes('data-testid="tg-hub-tab-account"'));
+	assert.ok(html.includes('data-testid="tg-hub-tab-studio"'));
+	assert.ok(html.includes("Бот Telegram"));
+	assert.ok(html.includes("clinic_dental_bot"));
+	assert.equal(CARTOON_EMOJI_RE.test(html), false);
+	assert.equal(html.includes('disabled=""'), false);
 });

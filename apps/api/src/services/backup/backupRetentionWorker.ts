@@ -73,7 +73,7 @@ export function startBackupDaemon(): void {
 	);
 	firstRunTimeout?.unref();
 
-	backupInterval = setInterval(() => {
+	const interval = setInterval(() => {
 		void runScheduledBackupCycle().catch((err) => {
 			logger.error(
 				{ err: safeLogError(err) },
@@ -81,7 +81,8 @@ export function startBackupDaemon(): void {
 			);
 		});
 	}, backupIntervalMs());
-	backupInterval?.unref();
+	interval.unref();
+	backupInterval = interval;
 }
 
 export function stopBackupDaemon(): void {

@@ -216,17 +216,25 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({ patientId 
 				});
 				if (cancelled) return;
 				if (res.ok) {
-					const data = await res.json().catch((err: unknown) => {
+					let data: PatientNoShowRiskData | null = null;
+					try {
+						data = (await res.json()) as PatientNoShowRiskData | null;
+					} catch (err: unknown) {
 						logger.error(err);
-						return null;
-					});
+					}
 					if (cancelled) return;
-					if (data) setRiskData(data as PatientNoShowRiskData);
+					if (data) setRiskData(data);
 					else setFailure({ status: res.status });
 				} else if (res.status === 422) {
-					const data = await res.json().catch(() => null);
+					let considered = 0;
+					try {
+						const data = (await res.json()) as { consideredAppointments?: number } | null;
+						considered = data?.consideredAppointments ?? 0;
+					} catch (err: unknown) {
+						logger.warn("[PatientNoShowRisk] Non-JSON 422 response", err);
+					}
 					if (cancelled) return;
-					setRiskData(createNewPatientFallbackRisk(data?.consideredAppointments ?? 0));
+					setRiskData(createNewPatientFallbackRisk(considered));
 				} else {
 					setFailure({ status: res.status });
 				}

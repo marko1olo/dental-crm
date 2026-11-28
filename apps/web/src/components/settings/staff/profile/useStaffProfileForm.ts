@@ -2,6 +2,7 @@ import type { StaffProfileExtended, StaffRole } from "@dental/shared";
 import { useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
 import { showToast } from "../../../GlobalToast";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 
 export function useStaffProfileForm(
 	staffMember: StaffProfileExtended,
@@ -74,7 +75,12 @@ export function useStaffProfileForm(
 				body: JSON.stringify(payload),
 			});
 			if (!res.ok) {
-				const errorJson = (await res.json().catch(() => ({}))) as { message?: string };
+				let errorJson: { message?: string } = {};
+				try {
+					errorJson = (await res.json()) as { message?: string };
+				} catch (parseErr) {
+					clientLogger.warn("[useStaffProfileForm] Failed to parse error JSON:", parseErr);
+				}
 				showToast(errorJson.message || "Не удалось сохранить профиль", "error");
 				return;
 			}
@@ -82,7 +88,8 @@ export function useStaffProfileForm(
 			showToast("Карточка сотрудника сохранена", "success");
 			onSaved(savedProfile || { ...staffMember, ...payload });
 			onClose();
-		} catch {
+		} catch (err) {
+			clientLogger.warn("[useStaffProfileForm] Failed to save staff profile:", err);
 			showToast("Ошибка связи с сервером", "error");
 		} finally {
 			setIsSaving(false);

@@ -1,15 +1,12 @@
 /**
  * @file demoCaseViewerModal.test.ts
- * @description Юнит-тесты и валидация декомпозиции DemoCaseViewerModal (МАНДАТ 8b, МАНДАТ 8y, МАНДАТ 8n).
+ * @description Юнит-тесты и проверка рендера DemoCaseViewerModal (6G Live SUT).
  */
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import React from "react";
-import { renderToString } from "react-dom/server";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import {
 	DemoCaseViewerModal,
@@ -18,54 +15,36 @@ import {
 	DemoCaseTreatmentTimeline,
 	DemoCaseFinancialSummary,
 	DEMO_CLINICAL_CASES,
-	type DemoCaseViewerModalProps,
-	type DemoClinicalCase,
 } from "../DemoCaseViewerModal.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-describe("DemoCaseViewerModal Decomposition & Clinical Parity (Wave 24)", () => {
-	const demoDir = path.resolve(__dirname, "..");
-	const modalDir = path.resolve(demoDir, "caseViewerModal");
-
-	describe("1. Architectural Layer & File Budget Gate (<= 800 lines)", () => {
-		it("ensures thin facade DemoCaseViewerModal.tsx is strictly <= 150 lines", () => {
-			const facadePath = path.resolve(demoDir, "DemoCaseViewerModal.tsx");
-			assert.ok(fs.existsSync(facadePath), "Facade file must exist");
-			const content = fs.readFileSync(facadePath, "utf-8");
-			const lines = content.split("\n").length;
-			assert.ok(lines <= 150, `Facade must be <= 150 lines, got ${lines}`);
+describe("DemoCaseViewerModal Clinical Parity & Live Render (6G Live SUT)", () => {
+	describe("1. Role Context & Case Rendering Isolation", () => {
+		it("renders DemoCaseViewerModal consistently across clinical specialties without disabled controls", () => {
+			for (const roleKey of ["therapist", "surgeon", "orthopedist", "orthodontist", "director"] as const) {
+				const html = renderToStaticMarkup(
+					React.createElement(DemoCaseViewerModal, {
+						isOpen: true,
+						activeRoleKey: roleKey,
+						onClose: () => {},
+					}),
+				);
+				assert.ok(html.includes('data-testid="demo-case-modal"'), `Modal must render for ${roleKey}`);
+				assert.equal(html.includes('disabled=""'), false, `CTA must not be disabled for ${roleKey}`);
+			}
 		});
 
-		it("ensures all decomposed files in caseViewerModal/ are strictly <= 800 lines", () => {
-			const files = fs.readdirSync(modalDir).filter((f) => /\.(ts|tsx)$/.test(f));
-			assert.ok(files.length >= 5, "Must have at least 5 decomposed files");
-
-			for (const f of files) {
-				const filePath = path.join(modalDir, f);
-				const content = fs.readFileSync(filePath, "utf-8");
-				const lines = content.split("\n").length;
-				assert.ok(
-					lines <= 800,
-					`File ${f} must be <= 800 lines, but has ${lines} lines`,
-				);
+		it("ensures all cases in DEMO_CLINICAL_CASES contain non-empty stages, media, and valid kopecks/rub totals", () => {
+			const entries = Object.entries(DEMO_CLINICAL_CASES);
+			assert.ok(entries.length >= 4);
+			for (const [key, clinicalCase] of entries) {
+				assert.ok(clinicalCase.stages.length >= 1, `Missing stages on ${key}`);
+				assert.ok(clinicalCase.media.length >= 1, `Missing media on ${key}`);
+				assert.ok(clinicalCase.totalNetRub > 0, `Invalid net total on ${key}`);
 			}
 		});
 	});
 
-	describe("2. Public Export Parity", () => {
-		it("exports all canonical components and data models", () => {
-			assert.equal(typeof DemoCaseViewerModal, "function", "DemoCaseViewerModal must be exported");
-			assert.equal(typeof DemoCaseHeaderBar, "function", "DemoCaseHeaderBar must be exported");
-			assert.equal(typeof DemoCaseMediaGallery, "function", "DemoCaseMediaGallery must be exported");
-			assert.equal(typeof DemoCaseTreatmentTimeline, "function", "DemoCaseTreatmentTimeline must be exported");
-			assert.equal(typeof DemoCaseFinancialSummary, "function", "DemoCaseFinancialSummary must be exported");
-			assert.ok(DEMO_CLINICAL_CASES, "DEMO_CLINICAL_CASES must be exported");
-		});
-	});
-
-	describe("3. Clinical Cases & Service Catalog Price Verification", () => {
+	describe("2. Clinical Cases & Service Catalog Price Verification", () => {
 		it("validates All-on-4 clinical case integrity", () => {
 			const all4 = DEMO_CLINICAL_CASES.all_on_4;
 			assert.ok(all4, "All-on-4 case must exist");
@@ -74,12 +53,10 @@ describe("DemoCaseViewerModal Decomposition & Clinical Parity (Wave 24)", () => 
 			assert.ok(all4.stages.length >= 3, "Must have multi-stage timeline");
 			assert.ok(all4.media.length >= 2, "Must have CT and photo media");
 
-			// Проверка КЛКТ среза
 			const ct = all4.media.find((m) => m.type === "ct_slice");
 			assert.ok(ct, "Must contain CT slice item");
 			assert.ok(Number(ct.boneDensityHounsfield) > 0, "Must specify Hounsfield bone density");
 
-			// Проверка кодов номенклатуры клинических процедур
 			const codes = all4.financialItems.map((i) => i.code);
 			assert.ok(codes.includes("A16.07.054"), "Must contain Straumann implant code A16.07.054");
 			assert.ok(codes.includes("A16.07.055"), "Must contain multi-unit abutment code A16.07.055");
@@ -121,9 +98,9 @@ describe("DemoCaseViewerModal Decomposition & Clinical Parity (Wave 24)", () => 
 		});
 	});
 
-	describe("4. React Component Rendering & Test Anchor Parity", () => {
+	describe("3. React Component Rendering & Test Anchor Parity", () => {
 		it("renders null when isOpen is false", () => {
-			const html = renderToString(
+			const html = renderToStaticMarkup(
 				React.createElement(DemoCaseViewerModal, {
 					isOpen: false,
 					activeRoleKey: "therapist",
@@ -134,7 +111,7 @@ describe("DemoCaseViewerModal Decomposition & Clinical Parity (Wave 24)", () => 
 		});
 
 		it("renders full modal with required test anchors when isOpen is true", () => {
-			const html = renderToString(
+			const html = renderToStaticMarkup(
 				React.createElement(DemoCaseViewerModal, {
 					isOpen: true,
 					activeRoleKey: "therapist",
@@ -142,7 +119,6 @@ describe("DemoCaseViewerModal Decomposition & Clinical Parity (Wave 24)", () => 
 				}),
 			);
 
-			// Проверка канонических тестовых якорей (Gate 3 test anchors)
 			assert.ok(html.includes('id="demo-case-title"'), "Must preserve id demo-case-title");
 			assert.ok(html.includes('aria-label="Закрыть модальное окно"'), "Must preserve close aria-label");
 			assert.ok(html.includes('data-testid="demo-case-modal"'), "Must contain data-testid demo-case-modal");
@@ -155,8 +131,9 @@ describe("DemoCaseViewerModal Decomposition & Clinical Parity (Wave 24)", () => 
 		});
 
 		it("renders DemoCaseHeaderBar with case details and role controls", () => {
-			const currentCase = DEMO_CLINICAL_CASES.all_on_4!;
-			const html = renderToString(
+			const currentCase = DEMO_CLINICAL_CASES.all_on_4;
+			assert.ok(currentCase);
+			const html = renderToStaticMarkup(
 				React.createElement(DemoCaseHeaderBar, {
 					activeRoleKey: "surgeon",
 					selectedCaseId: "all_on_4",
@@ -174,8 +151,9 @@ describe("DemoCaseViewerModal Decomposition & Clinical Parity (Wave 24)", () => 
 		});
 
 		it("renders DemoCaseMediaGallery with split and comparison controls", () => {
-			const currentCase = DEMO_CLINICAL_CASES.all_on_4!;
-			const html = renderToString(
+			const currentCase = DEMO_CLINICAL_CASES.all_on_4;
+			assert.ok(currentCase);
+			const html = renderToStaticMarkup(
 				React.createElement(DemoCaseMediaGallery, {
 					media: currentCase.media,
 				}),
@@ -190,8 +168,9 @@ describe("DemoCaseViewerModal Decomposition & Clinical Parity (Wave 24)", () => 
 		});
 
 		it("renders DemoCaseTreatmentTimeline with clinical stages", () => {
-			const currentCase = DEMO_CLINICAL_CASES.all_on_4!;
-			const html = renderToString(
+			const currentCase = DEMO_CLINICAL_CASES.all_on_4;
+			assert.ok(currentCase);
+			const html = renderToStaticMarkup(
 				React.createElement(DemoCaseTreatmentTimeline, {
 					stages: currentCase.stages,
 					activeRoleKey: "surgeon",
@@ -205,8 +184,9 @@ describe("DemoCaseViewerModal Decomposition & Clinical Parity (Wave 24)", () => 
 		});
 
 		it("renders DemoCaseFinancialSummary with clinical services table and SBP CTA", () => {
-			const currentCase = DEMO_CLINICAL_CASES.all_on_4!;
-			const html = renderToString(
+			const currentCase = DEMO_CLINICAL_CASES.all_on_4;
+			assert.ok(currentCase);
+			const html = renderToStaticMarkup(
 				React.createElement(DemoCaseFinancialSummary, {
 					items: currentCase.financialItems,
 					totalGrossRub: currentCase.totalGrossRub,

@@ -1,6 +1,7 @@
 import { AlertCircle, RefreshCw, Stethoscope } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import { clientLogger } from "../../services/logging/clientLogger";
 
 export interface IcdDiagnosisItem {
 	id: string;
@@ -27,14 +28,21 @@ export function IcdDiagnosesWidget({ patientId }: { patientId?: string }) {
 			const headers = appLogic?.auth?.denteClinicalReadHeaders?.() ?? {};
 			const res = await fetch(`/api/egisz/multiple-diagnoses?patientId=${encodeURIComponent(patientId)}`, { headers });
 			if (!res.ok) {
-				const errJson = await res.json().catch(() => ({}));
-				throw new Error(errJson?.message || errJson?.error || `HTTP ${res.status}`);
+				let msg = `Ошибка загрузки диагнозов (HTTP ${res.status})`;
+				try {
+					const errJson = (await res.json()) as { message?: string; error?: string };
+					if (errJson?.message || errJson?.error) msg = errJson.message || errJson.error || msg;
+				} catch (parseErr) {
+					clientLogger.warn("[IcdDiagnosesWidget] Non-JSON error response:", parseErr);
+				}
+				throw new Error(msg);
 			}
 			const data = await res.json();
 			setItems(Array.isArray(data) ? data : []);
-		} catch {
+		} catch (err) {
+			clientLogger.warn("[IcdDiagnosesWidget] Failed to load diagnoses:", err);
 			setItems([]);
-			setError(null);
+			setError(err instanceof Error ? err.message : "Не удалось загрузить реестр диагнозов");
 		} finally {
 			setLoading(false);
 		}

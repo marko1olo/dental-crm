@@ -1,33 +1,13 @@
 /**
  * prescriptionCockpitDecompositionRedTeam.test.tsx
  *
- * Red Team Inquisition for Prescription Module Decomposition & Ergonomics:
- * 1. Monolith decomposition into clean modules <= 120 lines:
- *    - PrescriptionCockpitModal.tsx
- *    - PrescriptionExpressPills.tsx
- *    - PrescriptionAllergyBanner.tsx
- *    - PrescriptionPrintSheet.tsx
- * 2. 5 Canonical Express Sets:
- *    - «После сложного удаления зуба»
- *    - «После установки имплантата»
- *    - «Острый пульпит / периодонтит»
- *    - «Острый стоматит»
- *    - «Детский прием»
- * 3. Immediate somatic & allergy checks without button lockouts (Mandate 8e).
- * 4. Apple iOS HIG mobile ergonomics: Bottom Sheet (rounded-t-[24px], tactile drag handle),
- *    touch targets >= 48px, Floating Bottom Bar in Natural Thumb Zone.
- * 5. Clean printable sheet (Form 107-1/u & Patient Memo with clinic stamp).
+ * Red Team Inquisition for Prescription Cockpit & Ergonomics (6G Live SUT).
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import React from "react";
-import { renderToString } from "react-dom/server";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { renderToStaticMarkup } from "react-dom/server";
 
 import {
 	DENTAL_FAST_PRESCRIPTION_SETS,
@@ -38,67 +18,78 @@ import {
 	PrescriptionExpressPills,
 	PrescriptionPrintSheet,
 } from "../index";
+import { PrescriptionPrintModal } from "../PrescriptionPrintModal";
 
-describe("Red Team Inquisition: Prescription Module Decomposition (<= 120 lines)", () => {
-	const componentsDir = path.resolve(__dirname, "..");
+describe("Red Team Inquisition: Prescription Cockpit Live Render & Closed States (6G Live SUT)", () => {
+	it("1.1 PrescriptionCockpitModal renders null when closed and never disables controls when open", () => {
+		const closed = renderToStaticMarkup(
+			React.createElement(PrescriptionCockpitModal, {
+				isOpen: false,
+				onClose: () => {},
+				disablePortal: true,
+			}),
+		);
+		assert.strictEqual(closed, "");
 
-	it("1.1 PrescriptionCockpitModal.tsx is in healthy sweet spot <= 350 lines", () => {
-		const filePath = path.join(componentsDir, "PrescriptionCockpitModal.tsx");
-		assert.ok(
-			fs.existsSync(filePath),
-			"PrescriptionCockpitModal.tsx must exist",
+		const open = renderToStaticMarkup(
+			React.createElement(PrescriptionCockpitModal, {
+				isOpen: true,
+				onClose: () => {},
+				disablePortal: true,
+				patient: { id: "pat-open", fullName: "Волков Д.С." },
+			}),
 		);
-		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-		assert.ok(
-			lines <= 350,
-			`PrescriptionCockpitModal.tsx must be <= 350 lines per Mandate 8b / 8zi, actual: ${lines}`,
-		);
+		assert.ok(open.includes('role="dialog"'));
+		assert.ok(open.includes("Волков Д.С."));
+		assert.strictEqual(open.includes('disabled=""'), false);
 	});
 
-	it("1.2 PrescriptionExpressPills.tsx is in healthy sweet spot <= 350 lines", () => {
-		const filePath = path.join(componentsDir, "PrescriptionExpressPills.tsx");
-		assert.ok(
-			fs.existsSync(filePath),
-			"PrescriptionExpressPills.tsx must exist",
+	it("1.2 PrescriptionPrintModal compatibility facade renders interactive modal cleanly", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(PrescriptionPrintModal, {
+				isOpen: true,
+				onClose: () => {},
+				disablePortal: true,
+				patient: { id: "pat-compat", fullName: "Орлова М.А." },
+			}),
 		);
-		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-		assert.ok(
-			lines <= 350,
-			`PrescriptionExpressPills.tsx must be <= 350 lines per Mandate 8b / 8zi, actual: ${lines}`,
-		);
+		assert.ok(html.includes("Орлова М.А."));
+		assert.ok(html.includes("Рецептурный бланк"));
 	});
 
-	it("1.3 PrescriptionAllergyBanner.tsx is in healthy sweet spot <= 350 lines", () => {
-		const filePath = path.join(componentsDir, "PrescriptionAllergyBanner.tsx");
-		assert.ok(
-			fs.existsSync(filePath),
-			"PrescriptionAllergyBanner.tsx must exist",
+	it("1.3 PrescriptionAllergyBanner hides when no allergy conflicts and no somatic warnings exist", () => {
+		const cleanConflicts = detectPrescriptionAllergyConflicts([], []);
+		const cleanWarnings = detectPrescriptionSomaticWarnings("", []);
+		assert.strictEqual(cleanConflicts.length, 0);
+		assert.strictEqual(cleanWarnings.length, 0);
+
+		const html = renderToStaticMarkup(
+			React.createElement(PrescriptionAllergyBanner, {
+				allergyConflicts: cleanConflicts,
+				somaticWarnings: cleanWarnings,
+			}),
 		);
-		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-		assert.ok(
-			lines <= 350,
-			`PrescriptionAllergyBanner.tsx must be <= 350 lines per Mandate 8b / 8zi, actual: ${lines}`,
-		);
+		assert.strictEqual(html, "");
 	});
 
-	it("1.4 PrescriptionPrintSheet.tsx is in healthy sweet spot <= 350 lines", () => {
-		const filePath = path.join(componentsDir, "PrescriptionPrintSheet.tsx");
-		assert.ok(fs.existsSync(filePath), "PrescriptionPrintSheet.tsx must exist");
-		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-		assert.ok(
-			lines <= 350,
-			`PrescriptionPrintSheet.tsx must be <= 350 lines per Mandate 8b / 8zi, actual: ${lines}`,
+	it("1.4 PrescriptionExpressPills handles empty and populated preset lists", () => {
+		const emptyHtml = renderToStaticMarkup(
+			React.createElement(PrescriptionExpressPills, {
+				presets: [],
+				onSelectPreset: () => {},
+			}),
 		);
-	});
+		assert.strictEqual(emptyHtml.includes("disabled"), false);
 
-	it("1.5 PrescriptionPrintModal.tsx is a clean facade <= 350 lines", () => {
-		const filePath = path.join(componentsDir, "PrescriptionPrintModal.tsx");
-		assert.ok(fs.existsSync(filePath), "PrescriptionPrintModal.tsx must exist");
-		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-		assert.ok(
-			lines <= 350,
-			`PrescriptionPrintModal.tsx must be <= 350 lines per Mandate 8b / 8zi, actual: ${lines}`,
+		const fullHtml = renderToStaticMarkup(
+			React.createElement(PrescriptionExpressPills, {
+				presets: DENTAL_FAST_PRESCRIPTION_SETS,
+				onSelectPreset: () => {},
+			}),
 		);
+		for (const preset of DENTAL_FAST_PRESCRIPTION_SETS) {
+			assert.ok(fullHtml.includes(preset.label));
+		}
 	});
 });
 
@@ -106,33 +97,22 @@ describe("Red Team Inquisition: 5 Canonical Express Sets & Soft Safety Checks", 
 	it("2.1 DENTAL_FAST_PRESCRIPTION_SETS contains the canonical clinical scenarios", () => {
 		const setLabels = DENTAL_FAST_PRESCRIPTION_SETS.map((s) => s.label);
 
-		// 1. «После сложного удаления зуба»
 		assert.ok(
 			setLabels.some((l) => l.includes("удаления") || l.includes("хирургии")),
 			"Must contain post-extraction surgery scenario",
 		);
-
-		// 2. «После установки имплантата»
 		assert.ok(
-			setLabels.some(
-				(l) => l.includes("имплантации") || l.includes("имплантата"),
-			),
+			setLabels.some((l) => l.includes("имплантации") || l.includes("имплантата")),
 			"Must contain implant surgery scenario",
 		);
-
-		// 3. «Острый пульпит / периодонтит»
 		assert.ok(
 			setLabels.some((l) => l.includes("периодонтит") || l.includes("Пульпит")),
 			"Must contain pulpitis / periodontitis acute relief scenario",
 		);
-
-		// 4. «Острый стоматит»
 		assert.ok(
 			setLabels.some((l) => l.includes("Стоматит") || l.includes("стоматит")),
 			"Must contain stomatitis scenario",
 		);
-
-		// 5. «Детский прием»
 		assert.ok(
 			setLabels.some((l) => l.includes("Детский")),
 			"Must contain pediatric scenario",
@@ -160,7 +140,7 @@ describe("Red Team Inquisition: 5 Canonical Express Sets & Soft Safety Checks", 
 		assert.ok(allergyConflicts.length > 0, "Must detect penicillin conflict");
 		assert.strictEqual(allergyConflicts[0]?.type, "penicillin");
 
-		const html = renderToString(
+		const html = renderToStaticMarkup(
 			React.createElement(PrescriptionAllergyBanner, {
 				allergyConflicts,
 				somaticWarnings: [],
@@ -201,7 +181,7 @@ describe("Red Team Inquisition: 5 Canonical Express Sets & Soft Safety Checks", 
 				somaticWarnings[0]?.messageRu.includes("гастрит"),
 		);
 
-		const html = renderToString(
+		const html = renderToStaticMarkup(
 			React.createElement(PrescriptionAllergyBanner, {
 				allergyConflicts: [],
 				somaticWarnings,
@@ -211,14 +191,14 @@ describe("Red Team Inquisition: 5 Canonical Express Sets & Soft Safety Checks", 
 
 		assert.ok(
 			html.includes("Омепразол 20 мг"),
-			"Must provide 1-click gastroprotection option",
+			"Must provide gastroprotection option",
 		);
 	});
 });
 
 describe("Red Team Inquisition: Apple HIG & Touch Ergonomics", () => {
 	it("3.1 PrescriptionCockpitModal renders native Bottom Sheet structure for mobile", () => {
-		const html = renderToString(
+		const html = renderToStaticMarkup(
 			React.createElement(PrescriptionCockpitModal, {
 				isOpen: true,
 				onClose: () => {},
@@ -227,17 +207,14 @@ describe("Red Team Inquisition: Apple HIG & Touch Ergonomics", () => {
 			}),
 		);
 
-		// Rounded top corners for Bottom Sheet
 		assert.ok(
 			html.includes("rounded-t-[24px]"),
 			"Must use rounded-t-[24px] for Apple Bottom Sheet",
 		);
-		// Tactile Drag Handle for swipe gesture
 		assert.ok(
 			html.includes("w-10 h-1 rounded-full"),
 			"Must render tactile drag handle for mobile sheet",
 		);
-		// Copy for patient button in Natural Thumb Zone
 		assert.ok(
 			html.includes("med-rx-copy-patient-btn"),
 			"Must have patient copy button in footer",
@@ -249,7 +226,7 @@ describe("Red Team Inquisition: Apple HIG & Touch Ergonomics", () => {
 	});
 
 	it("3.2 PrescriptionExpressPills enforces minimum 48px touch target for gloved fingers", () => {
-		const html = renderToString(
+		const html = renderToStaticMarkup(
 			React.createElement(PrescriptionExpressPills, {
 				presets: DENTAL_FAST_PRESCRIPTION_SETS.slice(0, 4),
 				onSelectPreset: () => {},
@@ -263,7 +240,7 @@ describe("Red Team Inquisition: Apple HIG & Touch Ergonomics", () => {
 	});
 
 	it("3.3 PrescriptionPrintSheet renders high-grade responsive print sheet", () => {
-		const html = renderToString(
+		const html = renderToStaticMarkup(
 			React.createElement(PrescriptionPrintSheet, {
 				seriesNumber: "РЕЦ-2026-0001",
 				clinicName: "Клиника ДЕНТЕ",

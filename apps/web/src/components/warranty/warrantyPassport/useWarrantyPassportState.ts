@@ -157,10 +157,20 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 				// 1. Загрузка существующих сертификатов пациента
 				const certsRes = await fetch(`/api/warranty/certificates/${patientId}`, { headers });
 				if (certsRes.ok && isMounted) {
-					const certsJson = (await certsRes.json().catch(() => null)) as {
+					let certsJson: {
 						certificates?: HistoricalWarrantyCertificate[];
 						data?: { certificates?: HistoricalWarrantyCertificate[] } | HistoricalWarrantyCertificate[];
-					} | null;
+					} | null = null;
+					try {
+						certsJson = (await certsRes.json()) as {
+							certificates?: HistoricalWarrantyCertificate[];
+							data?: { certificates?: HistoricalWarrantyCertificate[] } | HistoricalWarrantyCertificate[];
+						} | null;
+					} catch (parseErr) {
+						clientLogger.warn("[useWarrantyPassportState] certificates JSON parse failed", {
+							error: String(parseErr),
+						});
+					}
 					const certsPayload = certsJson?.data && !Array.isArray(certsJson.data) ? certsJson.data : certsJson;
 					const certList = Array.isArray(certsJson?.data)
 						? certsJson.data
@@ -177,10 +187,20 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 				// 2. Загрузка рекламаций и осложнений по пациенту
 				const reclRes = await fetch(`/api/patients/${patientId}/reclamations`, { headers });
 				if (reclRes.ok && isMounted) {
-					const reclRaw = (await reclRes.json().catch(() => null)) as
+					let reclRaw:
 						| PatientReclamationResponse[]
 						| { data?: PatientReclamationResponse[]; reclamations?: PatientReclamationResponse[] }
-						| null;
+						| null = null;
+					try {
+						reclRaw = (await reclRes.json()) as
+							| PatientReclamationResponse[]
+							| { data?: PatientReclamationResponse[]; reclamations?: PatientReclamationResponse[] }
+							| null;
+					} catch (parseErr) {
+						clientLogger.warn("[useWarrantyPassportState] reclamations JSON parse failed", {
+							error: String(parseErr),
+						});
+					}
 					const reclJson = Array.isArray(reclRaw)
 						? reclRaw
 						: Array.isArray(reclRaw?.data)

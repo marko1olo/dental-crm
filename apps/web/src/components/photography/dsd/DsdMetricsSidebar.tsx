@@ -121,17 +121,17 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 	};
 
 	return (
-		<div className="flex flex-col h-full bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-l border-[var(--line,#cbd5e1)] dark:border-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 overflow-hidden">
+		<div className="flex flex-col h-full bg-[var(--paper)] border-l border-[var(--line)] text-[var(--ink)] overflow-hidden">
 			{/* Шапка боковой панели */}
-			<div className="p-3 sm:p-4 border-b border-[var(--line,#cbd5e1)] dark:border-slate-800 flex items-center justify-between shrink-0">
+			<div className="p-3 sm:p-4 border-b border-[var(--line)] flex items-center justify-between shrink-0">
 				<div className="flex items-center gap-2">
-					<Sparkles className="w-5 h-5 text-[var(--teal,#0d9488)]" />
+					<Sparkles className="w-5 h-5 text-[var(--primary)]" />
 					<h3 className="text-sm sm:text-base font-bold">Эстетический анализ (DSD)</h3>
 				</div>
 				<button
 					type="button"
 					onClick={onResetToNorm}
-					className="text-xs px-2.5 py-1 rounded-md border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 hover:bg-[var(--paper-strong,#f1f5f9)] dark:hover:bg-slate-700 transition cursor-pointer"
+					className="text-xs px-2.5 py-1 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] transition cursor-pointer"
 					title="Сбросить направляющие к канонической норме"
 				>
 					К норме
@@ -230,7 +230,7 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 						<button
 							type="button"
 							onClick={() => onRotatePhoto(0.5)}
-							className="p-1.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+							className="p-1.5 rounded-lg border border-[var(--line)] hover:bg-[var(--paper-soft)] transition cursor-pointer"
 							title="Поворот +0.5°"
 						>
 							<RotateCw className="w-3.5 h-3.5" />
@@ -275,14 +275,14 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 							W/L: {ratioWH}%
 						</span>
 					</div>
-					<div className="border border-[var(--line,#cbd5e1)] dark:border-slate-800 rounded-lg overflow-hidden text-xs">
-						<div className="grid grid-cols-4 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/60 p-1.5 font-bold text-[11px] text-[var(--muted,#64748b)] border-b border-[var(--line,#cbd5e1)] dark:border-slate-800">
+					<div className="border border-[var(--line)] rounded-lg overflow-hidden text-xs">
+						<div className="grid grid-cols-4 bg-[var(--paper-soft)] p-1.5 font-bold text-[11px] text-[var(--ink-muted)] border-b border-[var(--line)]">
 							<span>Зуб</span>
 							<span>Ширина</span>
 							<span>Высота</span>
 							<span>Пропорция</span>
 						</div>
-						<div className="divide-y divide-[var(--line,#cbd5e1)] dark:divide-slate-800 font-mono text-[11px]">
+						<div className="divide-y divide-[var(--line)] font-mono text-[11px]">
 							<div className="grid grid-cols-4 p-1.5">
 								<span className="font-bold">11 / 21</span>
 								<span>{centralWidthMm} мм</span>
@@ -306,17 +306,17 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 				</div>
 
 				{/* 5. Рекомендация для лаборатории ЗТЛ */}
-				<div className="space-y-2 pt-2 border-t border-[var(--line,#cbd5e1)] dark:border-slate-800">
-					<div className="text-xs font-semibold text-[var(--muted,#64748b)]">
+				<div className="space-y-2 pt-2 border-t border-[var(--line)]">
+					<div className="text-xs font-semibold text-[var(--ink-muted)]">
 						Параметры заказ-наряда ЗТЛ:
 					</div>
 					<div className="grid grid-cols-2 gap-2 text-xs">
 						<div>
-							<label className="text-[11px] text-[var(--muted,#64748b)] block mb-1">Материал</label>
+							<label className="text-[11px] text-[var(--ink-muted)] block mb-1">Материал</label>
 							<select
 								value={selectedMaterial}
 								onChange={(e) => setSelectedMaterial(e.target.value as DsdAestheticMaterial)}
-								className="w-full px-2 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 font-medium cursor-pointer"
+								className="w-full px-2 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium cursor-pointer"
 							>
 								<option value="emax_lithium_disilicate">IPS e.max (Дисиликат)</option>
 								<option value="zirconia_multilayer">Цирконий Multi-layer</option>
@@ -334,8 +334,8 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 										onClick={() => setSelectedVitaShade(shade)}
 										className={`flex-1 py-1 rounded text-xs font-bold border transition cursor-pointer ${
 											selectedVitaShade === shade
-												? 'bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]'
-												: 'border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800'
+												? 'bg-[var(--primary)] text-white border-[var(--primary)]'
+												: 'border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]'
 										}`}
 									>
 										{shade}
@@ -354,19 +354,19 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 							value={doctorNotes}
 							onChange={(e) => setDoctorNotes(e.target.value)}
 							placeholder="Пример: удлинить режущий край 11, 21 на 1.0 мм, закрыть диастему..."
-							className="w-full text-xs p-2 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500"
+							className="w-full text-xs p-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
 						/>
 					</div>
 				</div>
 			</div>
 
 			{/* Подвал действий: 1 Primary CTA + вторичные */}
-			<div className="p-3 sm:p-4 border-t border-[var(--line,#cbd5e1)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-950 flex flex-col gap-2 shrink-0">
+			<div className="p-3 sm:p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-2 shrink-0">
 				<div className="flex items-center gap-2">
 					<button
 						type="button"
 						onClick={handleCopySummary}
-						className="flex-1 py-2 px-3 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[36px]"
+						className="flex-1 py-2 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[36px]"
 					>
 						{isCopied ? <Check className="w-3.5 h-3.5 text-teal-500" /> : <Copy className="w-3.5 h-3.5" />}
 						<span>{isCopied ? 'Скопировано!' : 'Копировать замеры'}</span>

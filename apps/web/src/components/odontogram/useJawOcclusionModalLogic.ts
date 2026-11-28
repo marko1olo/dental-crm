@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { generateUuidV7 } from "@dental/shared";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { showToast } from "../GlobalToast";
 import {
 	LOWER_JAW_PRESETS,
@@ -85,46 +86,58 @@ export function useJawOcclusionModalLogic(
 
 			if (patientId && UUID_PATTERN.test(patientId) && typeof fetch === "function") {
 				const jawNumber = JAW_CODE_TO_NUMBER[activeTab];
-				void fetch("/api/odontogram/status", {
-					method: "POST",
-					headers: {
-						...getDenteAuthHeaders({ "Content-Type": "application/json" }),
-						"Idempotency-Key": generateUuidV7(),
-					},
-					body: JSON.stringify({
-						patientId,
-						toothNumber: jawNumber,
-						state: "Healthy",
-						notes: fullSoap,
-						reason: `Челюстной статус (${activeTab}): ${preset.titleRu}`,
-						clinicalData: {
-							toothNumber: jawNumber,
-							jawCode: activeTab,
-							presetId: preset.id,
-							titleRu: preset.titleRu,
-							mkb10Code: preset.mkb10Code ?? null,
-							isNorm: Boolean(preset.isNorm),
-							recommendedPlanRu: preset.recommendedPlanRu ?? null,
-							notes: fullSoap,
-						},
-					}),
-				})
-					.then(async (res) => {
+				void (async () => {
+					try {
+						const res = await fetch("/api/odontogram/status", {
+							method: "POST",
+							headers: {
+								...getDenteAuthHeaders({ "Content-Type": "application/json" }),
+								"Idempotency-Key": generateUuidV7(),
+							},
+							body: JSON.stringify({
+								patientId,
+								toothNumber: jawNumber,
+								state: "Healthy",
+								notes: fullSoap,
+								reason: `Челюстной статус (${activeTab}): ${preset.titleRu}`,
+								clinicalData: {
+									toothNumber: jawNumber,
+									jawCode: activeTab,
+									presetId: preset.id,
+									titleRu: preset.titleRu,
+									mkb10Code: preset.mkb10Code ?? null,
+									isNorm: Boolean(preset.isNorm),
+									recommendedPlanRu: preset.recommendedPlanRu ?? null,
+									notes: fullSoap,
+								},
+							}),
+						});
 						if (!res.ok) {
-							const errJson = (await res.json().catch(() => null)) as {
-								data?: { message?: string };
-								message?: string;
-							} | null;
+							let errJson: { data?: { message?: string }; message?: string } | null = null;
+							try {
+								errJson = (await res.json()) as {
+									data?: { message?: string };
+									message?: string;
+								} | null;
+							} catch (parseErr) {
+								clientLogger.warn("[useJawOcclusionModalLogic] Error JSON parse failed", {
+									status: res.status,
+									error: String(parseErr),
+								});
+							}
 							const errBody = errJson?.data ?? errJson;
 							showToast(
 								errBody?.message || "Не удалось сохранить челюстной статус в карту пациента",
 								"error",
 							);
 						}
-					})
-					.catch(() => {
+					} catch (err) {
+						clientLogger.warn("[useJawOcclusionModalLogic] Network error saving jaw status", {
+							error: String(err),
+						});
 						showToast("Ошибка сети при сохранении челюстного статуса", "error");
-					});
+					}
+				})();
 			}
 
 			onApply?.({

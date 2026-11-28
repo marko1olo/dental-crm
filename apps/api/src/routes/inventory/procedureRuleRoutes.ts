@@ -1,10 +1,30 @@
 import {
-	isValidUuid,
 	kopecksToNumericString,
 	rublesToKopecks,
 	toExactKopecks,
 } from "@dental/shared";
 import { and, eq, inArray } from "drizzle-orm";
+import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import { z } from "zod";
+import { defineTenantMutation, defineTenantQuery } from "../../core/routeFactories.js";
+
+const orgUuidParamsSchema = z.object({
+	organizationId: z.string().uuid(),
+});
+
+const orgServiceUuidParamsSchema = z.object({
+	organizationId: z.string().uuid(),
+	serviceId: z.string().uuid(),
+});
+
+const orgRuleUuidParamsSchema = z.object({
+	organizationId: z.string().uuid(),
+	ruleId: z.string().uuid(),
+});
+
+const optionalServiceQuerySchema = z.object({
+	serviceId: z.string().uuid().optional(),
+});
 
 function resolveRuleUnitCost(row: {
 	unitCostKopecks: bigint | null;
@@ -25,8 +45,6 @@ function resolveRuleUnitCost(row: {
 		unitCostRub: kopecksToNumericString(toExactKopecks(resolvedKop)),
 	};
 }
-import type { FastifyInstance, FastifyPluginAsync } from "fastify";
-import { defineTenantMutation, defineTenantQuery } from "../../core/routeFactories.js";
 import {
 	inventoryItems,
 	procedureMaterialRules,
@@ -57,18 +75,20 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 		permission: "inventory.read",
 		authOptions: INVENTORY_READ_AUTH,
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
-			if (!isValidUuid(organizationId)) {
+			const parsedParams = orgUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
 				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
 			}
+			const { organizationId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
-			const { serviceId } = request.query as { serviceId?: string };
-			if (serviceId && !isValidUuid(serviceId)) {
+			const parsedQuery = optionalServiceQuerySchema.safeParse(request.query ?? {});
+			if (!parsedQuery.success) {
 				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID услуги (serviceId)" });
 			}
+			const { serviceId } = parsedQuery.data;
 			const conditions = [
 				eq(procedureTechCards.organizationId, organizationId),
 				eq(procedureTechCards.status, "active"),
@@ -137,18 +157,20 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 		permission: "inventory.read",
 		authOptions: INVENTORY_READ_AUTH,
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
-			if (!isValidUuid(organizationId)) {
+			const parsedParams = orgUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
 				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
 			}
+			const { organizationId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
-			const { serviceId } = request.query as { serviceId?: string };
-			if (serviceId && !isValidUuid(serviceId)) {
+			const parsedQuery = optionalServiceQuerySchema.safeParse(request.query ?? {});
+			if (!parsedQuery.success) {
 				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID услуги (serviceId)" });
 			}
+			const { serviceId } = parsedQuery.data;
 
 			const conditions = [
 				eq(procedureMaterialRules.organizationId, organizationId),
@@ -211,7 +233,11 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "optional_header",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
+			const parsedParams = orgUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			const { organizationId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -231,10 +257,11 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 		permission: "inventory.read",
 		authOptions: INVENTORY_READ_AUTH,
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId, serviceId } = request.params as { organizationId: string; serviceId: string };
-			if (!isValidUuid(organizationId) || !isValidUuid(serviceId)) {
+			const parsedParams = orgServiceUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
 				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации или услуги" });
 			}
+			const { organizationId, serviceId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -302,7 +329,11 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "optional_header",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId } = request.params as { organizationId: string };
+			const parsedParams = orgUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
+				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+			}
+			const { organizationId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -473,10 +504,11 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "exempt_idempotent_put_or_delete",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId, ruleId } = request.params as { organizationId: string; ruleId: string };
-			if (!isValidUuid(organizationId) || !isValidUuid(ruleId)) {
+			const parsedParams = orgRuleUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
 				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации или правила" });
 			}
+			const { organizationId, ruleId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -550,10 +582,11 @@ export const procedureRuleRoutes: FastifyPluginAsync = async (
 		authOptions: INVENTORY_WRITE_AUTH,
 		idempotency: "exempt_idempotent_put_or_delete",
 		handler: async ({ tx, organizationId: resolvedOrgId, request, reply }) => {
-			const { organizationId, serviceId } = request.params as { organizationId: string; serviceId: string };
-			if (!isValidUuid(organizationId) || !isValidUuid(serviceId)) {
+			const parsedParams = orgServiceUuidParamsSchema.safeParse(request.params ?? {});
+			if (!parsedParams.success) {
 				return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации или услуги" });
 			}
+			const { organizationId, serviceId } = parsedParams.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}

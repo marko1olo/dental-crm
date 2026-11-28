@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import { communicationTasks } from "../../db/schema.js";
+import { BoundedStringSet } from "../../lib/boundedTtlMap.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 
 const logger = createApiLogger("telegramOutboxDelivery");
@@ -50,7 +51,7 @@ export const telegramPhotoCaptionMaxLength = 1024;
 export const telegramSplitPhotoCaption =
 	"DENTE: сообщение клиники. Полный текст ниже.";
 
-const telegramOutboxDeliveryClaims = new Set<string>();
+const telegramOutboxDeliveryClaims = new BoundedStringSet(5000, 15 * 60_000);
 
 export const telegramOutboxNothingDelivered: TelegramOutboxDeliveredParts = { photoDelivered: false, photoMessageId: null };
 

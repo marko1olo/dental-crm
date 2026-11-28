@@ -78,9 +78,16 @@ export async function executeSaveOrReviseDiary(
 						credentials: "same-origin",
 					});
 					if (diaryLookupRes.ok) {
-						const diaryLookupJson = (await diaryLookupRes.json().catch(() => null)) as {
-							diary?: { id?: string | null } | null;
-						} | null;
+						let diaryLookupJson: { diary?: { id?: string | null } | null } | null = null;
+						try {
+							diaryLookupJson = (await diaryLookupRes.json()) as {
+								diary?: { id?: string | null } | null;
+							} | null;
+						} catch (parseErr) {
+							clientLogger.warn("saveOrReviseDiaryAction: lookup JSON parse failed", {
+								error: String(parseErr),
+							}, { module: "saveOrReviseDiaryAction" });
+						}
 						if (
 							typeof diaryLookupJson?.diary?.id === "string" &&
 							isUuid(diaryLookupJson.diary.id)
@@ -118,10 +125,15 @@ export async function executeSaveOrReviseDiary(
 				});
 
 				if (!reviseRes.ok) {
-					const errJson = (await reviseRes.json().catch(() => null)) as {
-						error?: string;
-						message?: string;
-					} | null;
+					let errJson: { error?: string; message?: string } | null = null;
+					try {
+						errJson = (await reviseRes.json()) as { error?: string; message?: string } | null;
+					} catch (parseErr) {
+						clientLogger.warn("saveOrReviseDiaryAction: revise error JSON parse failed", {
+							status: reviseRes.status,
+							error: String(parseErr),
+						}, { module: "saveOrReviseDiaryAction" });
+					}
 					const errorMsg =
 						errJson?.message ||
 						"Ошибка сохранения ревизии дневника приёма («Исправленному верить»)";
@@ -159,10 +171,15 @@ export async function executeSaveOrReviseDiary(
 				});
 
 				if (!diaryRes.ok) {
-					const errJson = (await diaryRes.json().catch(() => null)) as {
-						error?: string;
-						message?: string;
-					} | null;
+					let errJson: { error?: string; message?: string } | null = null;
+					try {
+						errJson = (await diaryRes.json()) as { error?: string; message?: string } | null;
+					} catch (parseErr) {
+						clientLogger.warn("saveOrReviseDiaryAction: create error JSON parse failed", {
+							status: diaryRes.status,
+							error: String(parseErr),
+						}, { module: "saveOrReviseDiaryAction" });
+					}
 					clientLogger.warn(
 						"saveOrReviseDiaryAction: ошибка сохранения ревизии дневника по visitId в /api/diaries",
 						errJson,
@@ -221,10 +238,15 @@ export async function executeSaveOrReviseDiary(
 		});
 
 		if (!diaryRes.ok) {
-			const errJson = (await diaryRes.json().catch(() => null)) as {
-				error?: string;
-				message?: string;
-			} | null;
+			let errJson: { error?: string; message?: string } | null = null;
+			try {
+				errJson = (await diaryRes.json()) as { error?: string; message?: string } | null;
+			} catch (parseErr) {
+				clientLogger.warn("saveOrReviseDiaryAction: direct diary error JSON parse failed", {
+					status: diaryRes.status,
+					error: String(parseErr),
+				}, { module: "saveOrReviseDiaryAction" });
+			}
 			clientLogger.warn(
 				"saveOrReviseDiaryAction: ошибка сохранения дневника в /api/diaries",
 				errJson,

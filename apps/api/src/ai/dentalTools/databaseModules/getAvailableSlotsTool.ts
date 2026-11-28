@@ -3,9 +3,16 @@
  * Мандаты: 8b (<= 120 строк), 8e (автономия врача), 8n (соло-практика).
  */
 
+import {
+	formatDateKeyInTimeZone,
+	resolveValidIanaTimeZone,
+	todayDateKeyInTimeZone,
+	wallClockToUtcInTimeZone,
+} from "@dental/shared";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { z } from "zod";
 import { appointments } from "../../../db/schema.js";
+import { clinicTimeZone } from "../../../services/reports/managerReports/timezone.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
 import { withToolTenantDb } from "./dbTypes.js";
 
@@ -42,31 +49,51 @@ export async function handleGetAvailableSlots(
 	const doctorId = args.doctorId || context.doctorId || undefined;
 	const duration = args.durationMinutes ?? 30;
 
-	const targetDate = args.date ? new Date(args.date) : new Date();
-	const dayStart = new Date(targetDate);
-	dayStart.setHours(9, 0, 0, 0); // Начало рабочего дня клиники 09:00
-	const dayEnd = new Date(targetDate);
-	dayEnd.setHours(20, 0, 0, 0); // Окончание рабочего дня клиники 20:00
+	const { existingAppointments, dateStr, dayStartMs, dayEndMs } = await withToolTenantDb(
+		context,
+		async (activeDb) => {
+			const tz = resolveValidIanaTimeZone(await clinicTimeZone(orgId, activeDb));
+			const trimmedDate = args.date?.trim();
+			let resolvedDateStr: string;
+			if (trimmedDate && /^\d{4}-\d{2}-\d{2}$/.test(trimmedDate)) {
+				resolvedDateStr = trimmedDate;
+			} else if (trimmedDate) {
+				const parsed = new Date(trimmedDate);
+				resolvedDateStr = Number.isNaN(parsed.getTime())
+					? todayDateKeyInTimeZone(tz)
+					: formatDateKeyInTimeZone(parsed, tz);
+			} else {
+				resolvedDateStr = todayDateKeyInTimeZone(tz);
+			}
 
-	// Чтение существующих записей на день
-	const conditions = [
-		eq(appointments.organizationId, orgId),
-		gte(appointments.startsAt, dayStart),
-		lte(appointments.endsAt, dayEnd),
-	];
-	if (doctorId) {
-		conditions.push(eq(appointments.doctorUserId, doctorId));
-	}
+			const dayStart = wallClockToUtcInTimeZone(resolvedDateStr, 9, 0, tz) ?? new Date();
+			const dayEnd = wallClockToUtcInTimeZone(resolvedDateStr, 20, 0, tz) ?? new Date();
 
-	const existingAppointments = await withToolTenantDb(context, async (activeDb) =>
-		activeDb
-			.select({
-				startsAt: appointments.startsAt,
-				endsAt: appointments.endsAt,
-				status: appointments.status,
-			})
-			.from(appointments)
-			.where(and(...conditions)),
+			const conditions = [
+				eq(appointments.organizationId, orgId),
+				gte(appointments.startsAt, dayStart),
+				lte(appointments.endsAt, dayEnd),
+			];
+			if (doctorId) {
+				conditions.push(eq(appointments.doctorUserId, doctorId));
+			}
+
+			const rows = await activeDb
+				.select({
+					startsAt: appointments.startsAt,
+					endsAt: appointments.endsAt,
+					status: appointments.status,
+				})
+				.from(appointments)
+				.where(and(...conditions));
+
+			return {
+				existingAppointments: rows,
+				dateStr: resolvedDateStr,
+				dayStartMs: dayStart.getTime(),
+				dayEndMs: dayEnd.getTime(),
+			};
+		},
 	);
 
 	const busyIntervals = existingAppointments
@@ -78,10 +105,10 @@ export async function handleGetAvailableSlots(
 
 	// Нарезка слотов по duration минут
 	const slots: AvailableSlotItem[] = [];
-	let current = dayStart.getTime();
+	let current = dayStartMs;
 	const slotDurationMs = duration * 60 * 1000;
 
-	while (current + slotDurationMs <= dayEnd.getTime()) {
+	while (current + slotDurationMs <= dayEndMs) {
 		const slotEnd = current + slotDurationMs;
 		const isBusy = busyIntervals.some(
 			(busy) => current < busy.end && slotEnd > busy.start,
@@ -98,7 +125,6 @@ export async function handleGetAvailableSlots(
 		current += slotDurationMs;
 	}
 
-	const dateStr = targetDate.toISOString().split("T")[0] || "";
 	return {
 		success: true,
 		date: dateStr,

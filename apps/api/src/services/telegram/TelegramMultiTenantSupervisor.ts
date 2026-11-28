@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import type { TelegramBotPresetId } from "@dental/shared";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import {
 	TelegramBotHostingService,
 	type TelegramBotMeResult,
@@ -209,9 +210,24 @@ export type IncomingUpdateDispatchResult = {
  * 6. Graceful fallback на легковесный Polling при локальной разработке.
  */
 export class TelegramMultiTenantSupervisor {
-	private readonly botsById = new Map<string, TenantBotRuntime>();
-	private readonly botsByTokenHash = new Map<string, TenantBotRuntime>();
-	private readonly botsByOrg = new Map<string, Set<string>>();
+	private readonly botsById = new BoundedTtlMap<string, TenantBotRuntime>({
+		maxEntries: 2000,
+		touchOnGet: false,
+		onEvict: (_botId, runtime) => {
+			if (runtime.pollingRunner) {
+				runtime.pollingRunner.stop();
+				runtime.pollingRunner = null;
+			}
+		},
+	});
+	private readonly botsByTokenHash = new BoundedTtlMap<string, TenantBotRuntime>({
+		maxEntries: 2000,
+		touchOnGet: false,
+	});
+	private readonly botsByOrg = new BoundedTtlMap<string, Set<string>>({
+		maxEntries: 2000,
+		touchOnGet: false,
+	});
 	private readonly startedAt = Date.now();
 	private totalUpdatesProcessed = 0;
 	private totalRateLimited = 0;

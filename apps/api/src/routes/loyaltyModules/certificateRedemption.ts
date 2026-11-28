@@ -6,13 +6,16 @@
  */
 
 import {
+	formatDateKeyInTimeZone,
 	parseKopecks,
 	kopecksToNumericString,
 	kopecksToRubles,
+	resolveValidIanaTimeZone,
 	type RedeemCertificateBody,
 } from "@dental/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { withTenantCtx, type TenantDb } from "../../db/rls.js";
+import { clinicTimeZone } from "../../services/reports/managerReports/timezone.js";
 import {
 	cashBoxes,
 	cashBoxShifts,
@@ -274,9 +277,10 @@ export async function executeRedeemGiftCertificate(
 			return { error: true, message: "Сертификат аннулирован администрацией клиники", code: 400 };
 		}
 		if (new Date() > cert.expiresAt) {
+			const clinicTz = resolveValidIanaTimeZone(await clinicTimeZone(orgId, tx));
 			return {
 				error: true,
-				message: `Срок действия сертификата истек ${cert.expiresAt.toISOString().slice(0, 10)}`,
+				message: `Срок действия сертификата истек ${formatDateKeyInTimeZone(cert.expiresAt, clinicTz)}`,
 				code: 400,
 			};
 		}

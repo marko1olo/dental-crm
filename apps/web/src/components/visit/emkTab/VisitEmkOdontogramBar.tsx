@@ -140,19 +140,26 @@ export function VisitEmkOdontogramBar({
 					);
 
 					// Async background persist to PostgreSQL
-					fetch(`/api/patients/${patId}/tooth-states/batch`, {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							...getDenteAuthHeaders(),
-						},
-						body: JSON.stringify({
-							toothNumbers: [num],
-							state: canonicalState,
-						}),
-					}).catch((err) => {
-						logger.warn("[VisitEmkOdontogramBar] Background tooth-state batch sync failed:", err);
-					});
+					void (async () => {
+						try {
+							const res = await fetch(`/api/patients/${patId}/tooth-states/batch`, {
+								method: "POST",
+								headers: {
+									"Content-Type": "application/json",
+									...getDenteAuthHeaders(),
+								},
+								body: JSON.stringify({
+									toothNumbers: [num],
+									state: canonicalState,
+								}),
+							});
+							if (!res.ok) {
+								logger.warn(`[VisitEmkOdontogramBar] Background tooth-state batch sync HTTP ${res.status}`);
+							}
+						} catch (err) {
+							logger.warn("[VisitEmkOdontogramBar] Background tooth-state batch sync failed:", err);
+						}
+					})();
 				}
 
 				// 2. Линейная траектория врача у кресла: автозаполнение дневника приёма (Медицинская карта SOAP)
@@ -310,19 +317,28 @@ export function VisitEmkOdontogramBar({
 				}),
 			);
 
-			fetch(`/api/patients/${patId}/tooth-states/batch`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...getDenteAuthHeaders(),
-				},
-				body: JSON.stringify({
-					toothNumbers: numbers,
-					state: "Healthy",
-				}),
-			}).catch((err) => {
-				logger.warn("[VisitEmkOdontogramBar] Background all-intact batch sync failed:", err);
-			});
+			void (async () => {
+				try {
+					const res = await fetch(`/api/patients/${patId}/tooth-states/batch`, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...getDenteAuthHeaders(),
+						},
+						body: JSON.stringify({
+							toothNumbers: numbers,
+							state: "Healthy",
+						}),
+					});
+					if (!res.ok) {
+						logger.warn("[VisitEmkOdontogramBar] Background all-intact batch sync HTTP error:", {
+							status: res.status,
+						});
+					}
+				} catch (err) {
+					logger.warn("[VisitEmkOdontogramBar] Background all-intact batch sync failed:", err);
+				}
+			})();
 		}
 
 		const normDiag = "K00.0 / Z01.2 Зубной ряд санирован, кариозных полостей и воспаления не выявлено";

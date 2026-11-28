@@ -4,6 +4,7 @@ import type { ImagingStudy } from "@dental/shared";
 import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import {
 	denteClinicalMutationHeaders,
 	denteClinicalReadHeaders,
@@ -174,8 +175,14 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 				if (onStudyUpdated) onStudyUpdated(updated);
 				onClose();
 			} else {
-				const errData = await res.json().catch(() => ({}));
-				showToast(errData.message || "Ошибка при привязке исследования", "error");
+				let errMsg = "Ошибка при привязке исследования";
+				try {
+					const errData = (await res.json()) as { message?: string };
+					if (errData?.message) errMsg = errData.message;
+				} catch (parseErr) {
+					clientLogger.warn("[StudyPatientBindControlModal] Non-JSON bind error response", parseErr);
+				}
+				showToast(errMsg, "error");
 			}
 		} catch {
 			if (!isDemoShowcaseMode()) {
@@ -216,8 +223,14 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 				if (onStudyUpdated) onStudyUpdated(updated);
 				onClose();
 			} else {
-				const errData = await res.json().catch(() => ({}));
-				showToast(errData.message || "Ошибка при отвязке исследования", "error");
+				let errMsg = "Ошибка при отвязке исследования";
+				try {
+					const errData = (await res.json()) as { message?: string };
+					if (errData?.message) errMsg = errData.message;
+				} catch (parseErr) {
+					clientLogger.warn("[StudyPatientBindControlModal] Non-JSON unbind error response", parseErr);
+				}
+				showToast(errMsg, "error");
 			}
 		} catch {
 			if (!isDemoShowcaseMode()) {

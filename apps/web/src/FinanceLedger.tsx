@@ -269,7 +269,7 @@ export function FinanceLedger({
 							появится здесь с чеком, кодом вычета и примечанием.
 						</p>
 						<button
-							className="primary-button"
+							className="secondary-button"
 							type="button"
 							onClick={onFocusPaymentCapture}
 						>

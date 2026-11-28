@@ -1,4 +1,5 @@
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../../../services/logging/clientLogger.js";
 import type { PsoQualityRecord } from "./types.js";
 
 export async function saveQuickPsoRecordToApi(
@@ -25,7 +26,12 @@ export async function saveQuickPsoRecordToApi(
 		});
 
 		if (!res.ok) {
-			const errBody = await res.json().catch(() => null);
+			let errBody: { message?: string } | null = null;
+			try {
+				errBody = (await res.json()) as { message?: string } | null;
+			} catch (parseErr) {
+				clientLogger.warn("[psoApi] Failed to parse error JSON:", parseErr);
+			}
 			return {
 				ok: false,
 				error:
@@ -57,7 +63,8 @@ export async function fetchPsoLogsFromApi(): Promise<
 		if (!res.ok) return [];
 		const data = await res.json();
 		return Array.isArray(data) ? data : [];
-	} catch {
+	} catch (err) {
+		clientLogger.warn("[psoApi] Failed to fetch PSO logs:", err);
 		return [];
 	}
 }

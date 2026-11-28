@@ -2,13 +2,20 @@
  * apps/api/src/routes/sanpin/sterilizationModules/handlers/createAutoclaveBatchCycleHandler.ts
  * Экспресс-запуск нормативного батча автоклава с автофиксацией нормы очистки и списанием расходников.
  */
-import { computePackagingExpirationDate, type SterilizationPackagingType } from "@dental/shared";
+import {
+	computePackagingExpirationDate,
+	resolveValidIanaTimeZone,
+	todayDateKeyInTimeZone,
+	wallClockToUtcInTimeZone,
+	type SterilizationPackagingType,
+} from "@dental/shared";
 import { and, desc, eq, gte } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { onTenantTxCommit, withTenantWriteCtx } from "../../../../db/rls.js";
 import { preSterilizationCleaningLogs, sterilizationLogs } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
+import { clinicTimeZone } from "../../../../services/reports/managerReports/timezone.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { quickNormCycleSchema } from "../schemas/sterilizationBodySchemas.js";
 import { executeSterilizationConsumablesDeduction } from "./sterilizationConsumablesDeduction.js";
@@ -32,8 +39,12 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 	const durationMin = isDelicate ? 20 : isPrion ? 18 : (Number(body.durationMin) || 5);
 	const packagingType = String(body.packagingType || (isDelicate ? "kraft_heat_sealed" : "kraft_self_adhesive"));
 	const now = new Date();
-	const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 	const { log, stockDeduction, cycleNumber, cycleTimeLabel } = await withTenantWriteCtx(organizationId, async (tx) => {
+		const tz = resolveValidIanaTimeZone(await clinicTimeZone(organizationId, tx));
+		const todayKey = todayDateKeyInTimeZone(tz, now);
+		const todayStart =
+			wallClockToUtcInTimeZone(todayKey, 0, 0, tz) ??
+			new Date(now.getFullYear(), now.getMonth(), now.getDate());
 		const [lastCycle] = await tx
 			.select({ cycleNumber: sterilizationLogs.cycleNumber })
 			.from(sterilizationLogs)
@@ -42,7 +53,7 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 			.limit(1);
 
 		const cycleNum = (lastCycle?.cycleNumber ?? 0) + 1;
-		const barcode = String(body.barcode || "").trim() || `BATCH-C${String(cycleNum).padStart(2, "0")}-${now.toISOString().slice(0, 10).replace(/-/g, "")}`;
+		const barcode = String(body.barcode || "").trim() || `BATCH-C${String(cycleNum).padStart(2, "0")}-${todayKey.replace(/-/g, "")}`;
 		const expiresAt = computePackagingExpirationDate(packagingType as SterilizationPackagingType, now);
 		const label = String(body.cycleName || body.shiftCycleName || (now.getHours() < 12 ? "Утренний цикл" : now.getHours() < 17 ? "Дневной цикл" : "Вечерний цикл"));
 		const itemsDescription = String(body.itemsDescription || `${label} автоклавирования (${batchSize} упаковок: смотровые лотки, боры, наконечники, хирургия)`);

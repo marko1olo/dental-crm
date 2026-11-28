@@ -15,7 +15,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import type { ImagingStudyKind } from "@dental/shared";
+import { imagingStudyKindSchema, type ImagingStudyKind } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -25,6 +25,7 @@ import { createImagingStudyInDb } from "../../db/imagingQuery.js";
 import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { patients, xrayScans } from "../../db/schema.js";
 import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
+import { createApiLogger } from "../../observability/logger.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import {
 	InvalidMagicBytesError,
@@ -37,10 +38,38 @@ import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.
 import { parseDicomHeader } from "./dicomParsing.js";
 import type { DicomHeaderMetadata } from "./imagingConstants.js";
 
+const logger = createApiLogger("chunkedUploadRoutes");
 const MAX_CHUNK_BYTES = 64 * 1024 * 1024;
 const MAX_HEIC_DECODE_BYTES = 64 * 1024 * 1024;
 const MAX_TOTAL_CHUNKS = 2048;
 const MAX_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024 * 1024;
+
+const chunkUploadSessionSchema = z.object({
+	uploadId: z.string().uuid(),
+	organizationId: z.string().uuid(),
+	patientId: z.string().uuid(),
+	visitId: z.string().uuid().nullable(),
+	kind: imagingStudyKindSchema,
+	title: z.string(),
+	toothCode: z.string().nullable(),
+	region: z.string().nullable(),
+	fileName: z.string(),
+	fileSizeBytes: z.number().int().nonnegative(),
+	totalChunks: z.number().int().positive(),
+	chunkSizeBytes: z.number().int().positive(),
+	fileSha256: z.string(),
+	createdAt: z.string(),
+	uploadedChunks: z.array(z.number().int().nonnegative()),
+});
+
+const uploadIdParamsSchema = z.object({
+	uploadId: z.string().trim().uuid(),
+});
+
+const chunkPartQuerySchema = z.object({
+	index: z.string().optional(),
+	sha256: z.string().optional(),
+});
 
 interface ChunkUploadSession {
 	readonly uploadId: string;
@@ -124,8 +153,27 @@ async function loadSessionForTenant(
 	if (!existsSync(metaPath)) return null;
 
 	const raw = await fs.readFile(metaPath, "utf8");
-	const parsed = JSON.parse(raw) as ChunkUploadSession;
-	if (!parsed || parsed.organizationId !== organizationId) {
+	let rawJson: unknown;
+	try {
+		rawJson = JSON.parse(raw);
+	} catch (err) {
+		logger.warn({ err, organizationId, uploadId, metaPath }, "Corrupt chunk upload session.json");
+		return null;
+	}
+	const parsedResult = chunkUploadSessionSchema.safeParse(rawJson);
+	if (!parsedResult.success) {
+		logger.warn(
+			{
+				organizationId,
+				uploadId,
+				issue: parsedResult.error.issues[0]?.message ?? "invalid_schema",
+			},
+			"Invalid chunk upload session.json schema",
+		);
+		return null;
+	}
+	const parsed: ChunkUploadSession = parsedResult.data;
+	if (parsed.organizationId !== organizationId) {
 		throw new TenantIsolationError("Доступ к чужой сессии загрузки запрещен.");
 	}
 	activeChunkSessions.set(uploadId, parsed);
@@ -260,8 +308,14 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 		const organizationId = requireOrganizationId(request, reply);
 		if (!organizationId) return;
 
-		const params = request.params as { uploadId?: string };
-		const uploadId = params.uploadId || "";
+		const parsedParams = uploadIdParamsSchema.safeParse(request.params ?? {});
+		if (!parsedParams.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор uploadId (ожидается UUID).",
+			});
+		}
+		const { uploadId } = parsedParams.data;
 		try {
 			const session = await loadSessionForTenant(organizationId, uploadId);
 			if (!session) {
@@ -310,9 +364,16 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 				const organizationId = requireOrganizationId(request, reply);
 				if (!organizationId) return;
 
-				const params = request.params as { uploadId?: string };
-				const query = (request.query || {}) as Record<string, string | undefined>;
-				const uploadId = params.uploadId || "";
+				const parsedParams = uploadIdParamsSchema.safeParse(request.params ?? {});
+				if (!parsedParams.success) {
+					return reply.status(400).send({
+						error: "ValidationError",
+						message: "Некорректный идентификатор uploadId (ожидается UUID).",
+					});
+				}
+				const parsedQuery = chunkPartQuerySchema.safeParse(request.query ?? {});
+				const query = parsedQuery.success ? parsedQuery.data : {};
+				const { uploadId } = parsedParams.data;
 
 				let session: ChunkUploadSession | null = null;
 				try {
@@ -350,13 +411,8 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 				let chunkStream: NodeJS.ReadableStream;
 				if (Buffer.isBuffer(request.body)) {
 					chunkStream = Readable.from(request.body);
-				} else if (
-					request.body !== null &&
-					typeof request.body === "object" &&
-					"pipe" in request.body &&
-					typeof (request.body as { pipe: unknown }).pipe === "function"
-				) {
-					chunkStream = request.body as NodeJS.ReadableStream;
+				} else if (request.body instanceof Readable) {
+					chunkStream = request.body;
 				} else {
 					chunkStream = request.raw;
 				}
@@ -458,8 +514,14 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
-		const params = request.params as { uploadId?: string };
-		const uploadId = params.uploadId || "";
+		const parsedParams = uploadIdParamsSchema.safeParse(request.params ?? {});
+		if (!parsedParams.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор uploadId (ожидается UUID).",
+			});
+		}
+		const { uploadId } = parsedParams.data;
 
 		let session: ChunkUploadSession | null = null;
 		try {

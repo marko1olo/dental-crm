@@ -267,7 +267,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 								<button
 									type="button"
 									onClick={onOpenPhotoModal}
-									className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all flex items-center gap-1.5 min-h-[36px] max-sm:min-h-[44px]"
+									className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--primary)] bg-[var(--teal-surface)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all flex items-center gap-1.5 min-h-[36px] max-sm:min-h-[44px]"
 								>
 									<Camera className="w-3.5 h-3.5" />
 									<span>Фотопротокол (8 проекций)</span>
@@ -453,7 +453,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 									onClick={() => setIsDeciduous((v) => !v)}
 									className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer min-h-[36px] ${
 										isDeciduous
-											? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]"
+											? "border-[var(--primary)] bg-[var(--teal-surface)] text-[var(--primary)]"
 											: "border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]"
 									}`}
 								>
@@ -482,9 +482,9 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 								<button
 									type="button"
 									onClick={() => handleCopyText(formattedBiometricsSoap, "Биометрический анализ скопирован")}
-									className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-1.5 transition-colors cursor-pointer min-h-[36px] shadow-xs"
+									className="secondary-button px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 transition-colors cursor-pointer min-h-[36px] shadow-xs"
 								>
-									<Copy className="w-3.5 h-3.5" />
+									<Copy className="w-3.5 h-3.5 text-[var(--primary)]" />
 									<span>Скопировать в дневник</span>
 								</button>
 							</div>

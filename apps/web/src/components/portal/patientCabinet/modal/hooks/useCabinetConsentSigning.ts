@@ -117,7 +117,12 @@ export function useCabinetConsentSigning(
 					}),
 				});
 				if (!res.ok) {
-					const rawJson = (await res.json().catch(() => null)) as unknown;
+					let rawJson: unknown = null;
+					try {
+						rawJson = await res.json();
+					} catch (parseErr) {
+						clientLogger.warn("[useCabinetConsentSigning] Failed to parse error JSON:", parseErr);
+					}
 					const errJson = (rawJson != null && typeof rawJson === "object" && "data" in rawJson
 						? (rawJson as { data?: unknown }).data
 						: rawJson) as { message?: string; error?: string } | null;

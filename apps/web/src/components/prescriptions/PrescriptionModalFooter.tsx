@@ -58,7 +58,7 @@ export const PrescriptionModalFooter: React.FC<PrescriptionModalFooterProps> = (
 					type="button"
 					data-testid="print-prescription-btn"
 					onClick={onPrintPrescription}
-					className="primary-button btn btn--primary w-full h-12 min-h-[48px] px-4 text-sm font-bold rounded-xl inline-flex items-center justify-center gap-2 bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white shadow-sm cursor-pointer transition-colors"
+					className="primary-button btn btn--primary w-full h-12 min-h-[48px] px-4 text-sm font-bold rounded-xl inline-flex items-center justify-center gap-2 bg-[var(--primary)] hover:opacity-95 text-white shadow-sm cursor-pointer transition-colors"
 				>
 					<Printer className="w-4 h-4 shrink-0" />
 					<span>Печать рецепта</span>
@@ -74,7 +74,7 @@ export const PrescriptionModalFooter: React.FC<PrescriptionModalFooterProps> = (
 					title="Скопировать схему приёма и памятку для отправки пациенту в WhatsApp/Telegram"
 					className="secondary-button btn btn--secondary h-9 min-h-[36px] px-3.5 text-xs font-medium rounded-xl inline-flex items-center gap-1.5 cursor-pointer justify-center"
 				>
-					<Copy className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+					<Copy className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
 					<span>{isMemoCopied ? "Скопировано!" : "Скопировать для пациента"}</span>
 				</button>
 				<button
@@ -82,7 +82,7 @@ export const PrescriptionModalFooter: React.FC<PrescriptionModalFooterProps> = (
 					data-testid="insert-to-diary-btn-desktop"
 					onClick={onInsertToDiary}
 					title="Перенести назначения в дневник приёма (SOAP Plan)"
-					className="secondary-button btn btn--secondary h-9 min-h-[36px] px-3.5 text-xs font-semibold rounded-xl inline-flex items-center gap-1.5 cursor-pointer justify-center hover:border-[var(--teal)]"
+					className="secondary-button btn btn--secondary h-9 min-h-[36px] px-3.5 text-xs font-semibold rounded-xl inline-flex items-center gap-1.5 cursor-pointer justify-center hover:border-[var(--primary)]"
 				>
 					<Check className="w-4 h-4 text-emerald-600 shrink-0" />
 					<span>Перенести в дневник визита</span>
@@ -97,14 +97,14 @@ export const PrescriptionModalFooter: React.FC<PrescriptionModalFooterProps> = (
 					title="Распечатать понятную памятку со схемой приёма для пациента"
 					className="secondary-button btn btn--secondary h-9 min-h-[36px] px-3 text-xs font-medium rounded-xl inline-flex items-center gap-1.5 cursor-pointer justify-center"
 				>
-					<Printer className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+					<Printer className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
 					<span>Печать памятки</span>
 				</button>
 				<button
 					type="button"
 					data-testid="print-prescription-btn-desktop"
 					onClick={onPrintPrescription}
-					className="primary-button btn btn--primary h-9 min-h-[36px] px-4 text-xs font-bold rounded-xl inline-flex items-center gap-1.5 bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white shadow-sm cursor-pointer transition-colors"
+					className="primary-button btn btn--primary h-9 min-h-[36px] px-4 text-xs font-bold rounded-xl inline-flex items-center gap-1.5 bg-[var(--primary)] hover:opacity-95 text-white shadow-sm cursor-pointer transition-colors"
 				>
 					<Printer className="w-4 h-4 shrink-0" />
 					<span>Печать рецепта</span>

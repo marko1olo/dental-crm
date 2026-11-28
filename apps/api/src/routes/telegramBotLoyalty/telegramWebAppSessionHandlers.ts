@@ -29,6 +29,7 @@ import { bookingVerificationEngine } from "../publicBooking/smsVerificationAndSp
 import { extractPortalPatient } from "../portal/portalAuthStore.js";
 import { PORTAL_TOKEN_KIND, PORTAL_TOKEN_TTL_SECONDS } from "../portal/types.js";
 import { calculateAvailableSlots } from "../publicBooking/bookingModules/publicBookingSlotEngine.js";
+import type { TelegramLoyaltyRouteDeps } from "./index.js";
 import {
 	toothComplaintSchema,
 	webAppBookingSchema,
@@ -39,7 +40,10 @@ const webAppSlotsQuerySchema = z.object({
 	organizationId: z.string().uuid("Некорректный идентификатор организации (ожидается UUID)"),
 });
 
-async function resolveWebAppBotToken(organizationId: string): Promise<string | null> {
+async function resolveWebAppBotToken(
+	organizationId: string,
+	resolveFallbackBotToken?: () => string | null,
+): Promise<string | null> {
 	try {
 		const [botConfig] = await withTenantReadCtx(organizationId, async (tx) =>
 			tx
@@ -67,8 +71,7 @@ async function resolveWebAppBotToken(organizationId: string): Promise<string | n
 
 	const envToken = process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN;
 	if (envToken) return envToken;
-	if (process.env.NODE_ENV === "test") return "test_bot_token";
-	return null;
+	return resolveFallbackBotToken?.() ?? null;
 }
 
 async function authorizeWebAppPatientAction(
@@ -80,6 +83,7 @@ async function authorizeWebAppPatientAction(
 		familyMemberPatientId?: string | undefined;
 		bodyInitData?: string | undefined;
 	},
+	deps?: TelegramLoyaltyRouteDeps,
 ): Promise<{ callerPatientId: string } | null> {
 	const portalAuth = await extractPortalPatient(request);
 	let callerPatientId: string | null = null;
@@ -107,7 +111,10 @@ async function authorizeWebAppPatientAction(
 			return null;
 		}
 
-		const botToken = await resolveWebAppBotToken(params.organizationId);
+		const botToken = await resolveWebAppBotToken(
+			params.organizationId,
+			deps?.resolveFallbackBotToken,
+		);
 		if (!botToken) {
 			reply.status(503).send({
 				error: "TELEGRAM_INTEGRATION_NOT_CONFIGURED",
@@ -205,7 +212,11 @@ interface TelegramPatientAdministrativeProfile {
 
 function getAdministrativeProfile(profile: unknown): TelegramPatientAdministrativeProfile {
 	if (profile && typeof profile === "object" && !Array.isArray(profile)) {
-		return profile as TelegramPatientAdministrativeProfile;
+		const out: TelegramPatientAdministrativeProfile = {};
+		for (const [key, value] of Object.entries(profile)) {
+			out[key] = value;
+		}
+		return out;
 	}
 	return {};
 }
@@ -213,7 +224,10 @@ function getAdministrativeProfile(profile: unknown): TelegramPatientAdministrati
 /**
  * Регистрация маршрутов сессии и бронирования Telegram WebApp
  */
-export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance): Promise<void> {
+export async function registerTelegramWebAppSessionRoutes(
+	app: FastifyInstance,
+	deps?: TelegramLoyaltyRouteDeps,
+): Promise<void> {
 	/**
 	 * 1. Сессия Telegram WebApp Mini App:
 	 * Валидирует initData (HMAC-SHA256) или phone/patientId,
@@ -234,7 +248,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 		}
 
 		const { initData, organizationId, patientId, phone, verificationCode } = parsed.data;
-		const botToken = await resolveWebAppBotToken(organizationId);
+		const botToken = await resolveWebAppBotToken(organizationId, deps?.resolveFallbackBotToken);
 
 		if (!botToken) {
 			return reply.status(503).send({
@@ -569,7 +583,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 			organizationId,
 			patientId,
 			bodyInitData: initData,
-		});
+		}, deps);
 		if (!authorized) return;
 
 		const result = await TelegramReferralLoyaltyService.submitToothComplaint(organizationId, patientId, {
@@ -719,7 +733,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 			patientId,
 			familyMemberPatientId,
 			bodyInitData: initData,
-		});
+		}, deps);
 		if (!authorized) return;
 
 		const result = await TelegramReferralLoyaltyService.bookAppointmentFromWebApp(

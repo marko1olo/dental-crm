@@ -47,10 +47,10 @@ export const MobileFilterPopover: React.FC<MobileFilterPopoverProps> = ({
 			</div>
 
 			<div className="space-y-3 pt-1">
-				<label className="flex flex-col gap-1 text-xs text-slate-300">
+				<label className="flex flex-col gap-1 text-xs text-[var(--ink)]">
 					<div className="flex justify-between font-semibold">
 						<span>Яркость:</span>
-						<span className="text-teal-400 font-mono">
+						<span className="text-[var(--primary)] font-mono">
 							{Math.round(brightness * 100)}%
 						</span>
 					</div>
@@ -61,14 +61,14 @@ export const MobileFilterPopover: React.FC<MobileFilterPopoverProps> = ({
 						step="0.05"
 						value={brightness}
 						onChange={(e) => onChangeBrightness(Number(e.target.value))}
-						className="w-full accent-teal-500 h-2 bg-slate-800 rounded-lg cursor-pointer"
+						className="w-full accent-[var(--primary)] h-2 bg-[var(--paper-soft)] rounded-lg cursor-pointer"
 					/>
 				</label>
 
-				<label className="flex flex-col gap-1 text-xs text-slate-300">
+				<label className="flex flex-col gap-1 text-xs text-[var(--ink)]">
 					<div className="flex justify-between font-semibold">
 						<span>Контраст:</span>
-						<span className="text-teal-400 font-mono">
+						<span className="text-[var(--primary)] font-mono">
 							{Math.round(contrast * 100)}%
 						</span>
 					</div>
@@ -79,7 +79,7 @@ export const MobileFilterPopover: React.FC<MobileFilterPopoverProps> = ({
 						step="0.05"
 						value={contrast}
 						onChange={(e) => onChangeContrast(Number(e.target.value))}
-						className="w-full accent-teal-500 h-2 bg-slate-800 rounded-lg cursor-pointer"
+						className="w-full accent-[var(--primary)] h-2 bg-[var(--paper-soft)] rounded-lg cursor-pointer"
 					/>
 				</label>
 

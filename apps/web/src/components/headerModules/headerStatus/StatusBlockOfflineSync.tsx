@@ -74,7 +74,7 @@ export function StatusBlockOfflineSync({ status, onClose }: StatusBlockOfflineSy
 					</strong>
 				</div>
 				<div className="flex items-center justify-between gap-2">
-					<span>Локальная очередь (IndexedDB):</span>
+					<span>Локальная очередь отправки:</span>
 					<strong
 						className={
 							pendingMutationCount > 0
@@ -88,7 +88,7 @@ export function StatusBlockOfflineSync({ status, onClose }: StatusBlockOfflineSy
 				<div className="flex items-center justify-between gap-2" data-testid="cc-l2-offline-buffer-row">
 					<span className="flex items-center gap-1.5">
 						<HardDrive size={11} className="text-[var(--primary)] shrink-0" />
-						<span>Офлайн-буфер (IndexedDB):</span>
+						<span>Локальное хранилище карты:</span>
 					</span>
 					<strong className="text-[var(--ink)] font-mono tabular-nums text-[10px] flex items-center gap-1">
 						<span

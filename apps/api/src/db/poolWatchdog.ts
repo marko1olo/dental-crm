@@ -113,12 +113,13 @@ class ConnectionPoolWatchdog {
 	public start(): void {
 		if (this.timer) return;
 
-		this.timer = setInterval(() => {
+		const timer = setInterval(() => {
 			void this.runProbe();
 		}, this.intervalMs);
 
 		// Unref so background watchdog does not prevent test runners or graceful exit
-		this.timer.unref();
+		timer.unref();
+		this.timer = timer;
 	}
 
 	/**
@@ -215,6 +216,7 @@ class ConnectionPoolWatchdog {
 					);
 				}
 			}, this.probeTimeoutMs);
+			timer.unref?.();
 
 			this.targetPool
 				.query("SELECT 1 AS watchdog_heartbeat")
@@ -235,6 +237,33 @@ class ConnectionPoolWatchdog {
 		});
 	}
 
+	private evictPoolClient(
+		p: InspectablePgPool,
+		client: PgClientInternals,
+		fallbackStream?: PgClientConnectionStream,
+	): void {
+		try {
+			if (typeof p._remove === "function") {
+				p._remove(client);
+			} else if (typeof client.end === "function") {
+				client.end();
+			}
+		} catch (removeErr: unknown) {
+			this.logger?.warn?.(
+				{ error: removeErr },
+				"[PoolWatchdog] Failed to gracefully remove pool client; destroying socket stream.",
+			);
+			try {
+				(fallbackStream ?? client.connection?.stream)?.destroy?.();
+			} catch (destroyErr: unknown) {
+				this.logger?.warn?.(
+					{ error: destroyErr },
+					"[PoolWatchdog] Failed to destroy broken pool socket stream.",
+				);
+			}
+		}
+	}
+
 	/**
 	 * Transparently evicts dead, hung, or half-open client sockets from pg.Pool.
 	 */
@@ -250,19 +279,7 @@ class ConnectionPoolWatchdog {
 					const client = item?.client ?? item;
 					if (client) {
 						drained++;
-						try {
-							if (typeof p._remove === "function") {
-								p._remove(client);
-							} else if (typeof client.end === "function") {
-								client.end();
-							}
-						} catch {
-							try {
-								client.connection?.stream?.destroy();
-							} catch {
-								// Ignore stream destruction errors
-							}
-						}
+						this.evictPoolClient(p, client);
 					}
 				}
 			}
@@ -273,25 +290,14 @@ class ConnectionPoolWatchdog {
 				for (const client of clientItems) {
 					const stream = client?.connection?.stream;
 					if (
+						client &&
 						stream &&
 						(stream.destroyed ||
 							!stream.writable ||
 							!stream.readable)
 					) {
 						drained++;
-						try {
-							if (typeof p._remove === "function") {
-								p._remove(client);
-							} else if (typeof client.end === "function") {
-								client.end();
-							}
-						} catch {
-							try {
-								stream.destroy?.();
-							} catch {
-								// Ignore
-							}
-						}
+						this.evictPoolClient(p, client, stream);
 					}
 				}
 			}

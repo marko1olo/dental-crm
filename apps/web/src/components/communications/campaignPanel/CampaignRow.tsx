@@ -33,7 +33,7 @@ export function CampaignRow({ campaign, busy, openPreview, loadProgress, campaig
 				</button>
 				{campaign.status === "draft" || campaign.status === "scheduled" ? (
 					<>
-						<button className="primary-button" type="button" disabled={busy} onClick={() => void campaignAction(campaign.id, "launch")}>
+						<button className="secondary-button" type="button" disabled={busy} onClick={() => void campaignAction(campaign.id, "launch")}>
 							Запустить
 						</button>
 						<button className="secondary-button" type="button" disabled={busy} onClick={() => void campaignAction(campaign.id, "cancel")}>
@@ -45,7 +45,7 @@ export function CampaignRow({ campaign, busy, openPreview, loadProgress, campaig
 						<button className="secondary-button" type="button" data-testid={`campaign-progress-btn-${campaign.id}`} onClick={() => void loadProgress(campaign.id)}>
 							Ход отправки
 						</button>
-						<button className="primary-button" type="button" disabled={busy} onClick={() => void campaignAction(campaign.id, "cancel")}>
+						<button className="secondary-button" type="button" disabled={busy} onClick={() => void campaignAction(campaign.id, "cancel")}>
 							Остановить
 						</button>
 					</>

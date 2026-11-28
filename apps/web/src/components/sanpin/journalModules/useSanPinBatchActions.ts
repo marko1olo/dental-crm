@@ -77,25 +77,29 @@ export function useSanPinBatchActions(
 				  };
 
 			const idempotencyKey = crypto.randomUUID();
-			let res = await fetch(primaryUrl, {
-				method: "POST",
-				headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
-				body: JSON.stringify(body),
-			}).catch((err) => {
-				clientLogger.warn("[useSanPinBatchActions] Primary autofill request error:", err);
-				return null;
-			});
-
-			if (!res || !res.ok) {
-				res = await fetch(fallbackUrl, {
+			let res: Response | null = null;
+			try {
+				res = await fetch(primaryUrl, {
 					method: "POST",
 					headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
 					body: JSON.stringify(body),
-				}).catch((err) => {
+				});
+			} catch (err) {
+				clientLogger.warn("[useSanPinBatchActions] Primary autofill request error:", err);
+			}
+
+			if (!res || !res.ok) {
+				try {
+					res = await fetch(fallbackUrl, {
+						method: "POST",
+						headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
+						body: JSON.stringify(body),
+					});
+				} catch (err) {
 					clientLogger.warn("[useSanPinBatchActions] Fallback autofill request error:", err);
 					showToast("Ошибка сети при заполнении журнала", "error");
-					return null;
-				});
+					res = null;
+				}
 			}
 
 			if (res && res.ok) {
@@ -137,14 +141,16 @@ export function useSanPinBatchActions(
 			};
 
 			const idempotencyKey = crypto.randomUUID();
-			const res = await fetch("/api/sanpin/sterilization/quick-norm", {
-				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
-				body: JSON.stringify(payload),
-			}).catch((err) => {
+			let res: Response | null = null;
+			try {
+				res = await fetch("/api/sanpin/sterilization/quick-norm", {
+					method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
+					body: JSON.stringify(payload),
+				});
+			} catch (err) {
 				clientLogger.warn("[useSanPinBatchActions] Quick batch network error:", err);
 				showToast("Ошибка сети при проведении цикла автоклава", "error");
-				return null;
-			});
+			}
 
 			if (res && res.ok) {
 				showToast(`${cycleLabel} проведён (${autoId}): ${tempC}°C / ${pressBar} бар, списано`, "success");
@@ -166,14 +172,16 @@ export function useSanPinBatchActions(
 		try {
 			setIsAutofilling(true);
 			const idempotencyKey = crypto.randomUUID();
-			const res = await fetch("/api/sanpin/sterilization/pso/quick-norm", {
-				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
-				body: JSON.stringify({ batchItemCount: 50, testedSampleCount: 5, isAzopyramNegative: true, isPhenolphthaleinNegative: true, detergentBrand: "Биолот 0.5% + Аламинол 1%" }),
-			}).catch((err) => {
+			let res: Response | null = null;
+			try {
+				res = await fetch("/api/sanpin/sterilization/pso/quick-norm", {
+					method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }),
+					body: JSON.stringify({ batchItemCount: 50, testedSampleCount: 5, isAzopyramNegative: true, isPhenolphthaleinNegative: true, detergentBrand: "Биолот 0.5% + Аламинол 1%" }),
+				});
+			} catch (err) {
 				clientLogger.warn("[useSanPinBatchActions] Quick PSO network error:", err);
 				showToast("Ошибка сети при фиксации контроля очистки", "error");
-				return null;
-			});
+			}
 
 			if (res && res.ok) {
 				showToast("Предстерилизационная очистка зафиксирована: азопирам и фенолфталеин отрицательно (100% норма)", "success");

@@ -34,7 +34,7 @@ export const ClinicalDocumentForms: React.FC<DocumentFormSwitchProps> = React.me
 								type="button"
 								data-testid="open-medical-record-studio-from-docs-btn"
 								onClick={() => useUiSurfaceStore.getState().openPrimaryModal("medical_record", { patientId: props.activePatient?.id, doctorFullName: props.activeDoctor?.fullName })}
-								className="dente-btn-primary px-3.5 py-2 text-xs font-semibold whitespace-nowrap shrink-0"
+								className="dente-btn dente-btn-secondary px-3.5 py-2 text-xs font-semibold whitespace-nowrap shrink-0"
 							>
 								Открыть медицинскую карту
 							</button>
@@ -55,7 +55,7 @@ export const ClinicalDocumentForms: React.FC<DocumentFormSwitchProps> = React.me
 								type="button"
 								data-testid="open-medical-record-studio-for-extract-btn"
 								onClick={() => useUiSurfaceStore.getState().openPrimaryModal("medical_record", { patientId: props.activePatient?.id, doctorFullName: props.activeDoctor?.fullName })}
-								className="dente-btn-primary px-3.5 py-2 text-xs font-semibold whitespace-nowrap shrink-0"
+								className="dente-btn dente-btn-secondary px-3.5 py-2 text-xs font-semibold whitespace-nowrap shrink-0"
 							>
 								Открыть медицинскую карту
 							</button>
@@ -89,7 +89,7 @@ export const ClinicalDocumentForms: React.FC<DocumentFormSwitchProps> = React.me
 								type="button"
 								data-testid="open-lab-studio-from-docs-btn"
 								onClick={() => useUiSurfaceStore.getState().openPrimaryModal("lab_order", { initialTab: "print_blank" })}
-								className="dente-btn-primary px-3.5 py-2 text-xs font-semibold whitespace-nowrap shrink-0"
+								className="dente-btn dente-btn-secondary px-3.5 py-2 text-xs font-semibold whitespace-nowrap shrink-0"
 							>
 								Открыть студию ЗТЛ
 							</button>

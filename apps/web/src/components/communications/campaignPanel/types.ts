@@ -1,4 +1,5 @@
 import { actionFailureToast } from "../../../lib/panelStateText";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import type { CommunicationsAuthOptions } from "../../../hooks/domains/useCommunicationsQueries";
 
@@ -120,10 +121,13 @@ function extractHttpStatus(error: unknown): number | null {
 }
 
 export async function readJson<T>(response: Response): Promise<T> {
-	const payload = (await response.json().catch((err: unknown) => {
-		showToast(actionFailureToast("Ошибка ответа сервера", extractHttpStatus(err)), "error");
-		return null;
-	})) as unknown;
+	let payload: unknown = null;
+	try {
+		payload = await response.json();
+	} catch (err: unknown) {
+		clientLogger.warn("[campaignPanel] JSON parse failed", { status: response.status, error: String(err) });
+		showToast(actionFailureToast("Ошибка ответа сервера", extractHttpStatus(err) ?? response.status), "error");
+	}
 	if (!response.ok) {
 		const message = payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
 			? payload.message : `Сервер ответил ${response.status}`;

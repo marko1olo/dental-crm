@@ -80,16 +80,18 @@ export type RequestHeaders = Record<string, string>;
  * экране администратора бесполезен: он не говорит, что делать.
  */
 async function readJson<T>(response: Response): Promise<T> {
-	const payload = (await response.json().catch((err) => {
+	let payload: unknown = null;
+	try {
+		payload = await response.json();
+	} catch (err) {
 		showToast(
 			actionFailureToast(
 				"Ошибка чтения данных",
-				extractErrorStatus(err),
+				extractErrorStatus(err) ?? response.status,
 			),
 			"error",
 		);
-		return null;
-	})) as unknown;
+	}
 	if (!response.ok) {
 		const message =
 			payload &&

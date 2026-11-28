@@ -178,7 +178,7 @@ export function ScheduleUnifiedToolbar(props: ScheduleUnifiedToolbarProps): Reac
 	return (
 		<>
 			<section
-				className={`schedule-unified-toolbar schedule-filter-strip min-h-[48px] h-12 max-h-12 sm:min-h-[36px] sm:h-9 sm:max-h-9 flex flex-nowrap items-center justify-between gap-1 sm:gap-2 px-2 sm:px-3 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden shrink-0 select-none ${
+				className={`schedule-unified-toolbar schedule-filter-strip min-h-[48px] sm:min-h-[40px] h-auto max-h-none flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 px-2 sm:px-4 py-1.5 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-visible shrink-0 select-none ${
 					props.className || ""
 				}`}
 				aria-label="Панель инструментов расписания"
@@ -186,16 +186,18 @@ export function ScheduleUnifiedToolbar(props: ScheduleUnifiedToolbarProps): Reac
 				role="toolbar"
 			>
 				{/* ══════ ОСТРОВ 1: НАВИГАЦИЯ И ДАТА ══════ */}
-				<DateNavigator
-					formattedCurrentDate={formattedCurrentDate}
-					currentDateIso={currentDateIso}
-					todayIso={todayIso}
-					isToday={isToday}
-					onStepDay={handleStepDay}
-					onSetDate={setDateFilter}
-				/>
+				<div className="order-1 shrink-0">
+					<DateNavigator
+						formattedCurrentDate={formattedCurrentDate}
+						currentDateIso={currentDateIso}
+						todayIso={todayIso}
+						isToday={isToday}
+						onStepDay={handleStepDay}
+						onSetDate={setDateFilter}
+					/>
+				</div>
 
-				{/* ══════ ОСТРОВ 2: СКРОЛЛИРУЕМАЯ ПОЛОСА ЧИПОВ ВРАЧЕЙ И КРЕСЕЛ ══════ */}
+				{/* ══════ ОСТРОВ 2: ПОЛОСА ЧИПОВ ВРАЧЕЙ И КРЕСЕЛ (СТРОКА 2, БЕЗ НАЛОЖЕНИЙ) ══════ */}
 				<ScheduleFilterChips
 					isAllActive={isAllActive}
 					onResetAll={handleResetAll}
@@ -217,7 +219,7 @@ export function ScheduleUnifiedToolbar(props: ScheduleUnifiedToolbarProps): Reac
 				/>
 
 				{/* ══════ ОСТРОВ 3: РЕЖИМ СЕТКИ, PRIMARY CTA И МЕНЮ «... ЕЩЁ» ══════ */}
-				<div className="schedule-toolbar-island-actions flex items-center gap-1.5 shrink-0 pl-1.5 border-l border-[var(--line)] bg-[var(--paper)] relative z-10">
+				<div className="schedule-toolbar-island-actions order-2 ml-auto flex items-center gap-1.5 shrink-0 pl-1.5 border-l border-[var(--line)] bg-[var(--paper)] relative z-10">
 					{/* Переключатель режимов: [ Лента | Сетка | Кресла ] */}
 					<ScheduleViewModeSwitch
 						viewMode={props.scheduleViewMode}

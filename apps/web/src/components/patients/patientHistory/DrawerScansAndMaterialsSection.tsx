@@ -44,8 +44,8 @@ export const DrawerScansAndMaterialsSection: React.FC<DrawerScansAndMaterialsSec
 		<>
 			{scansList.length > 0 && (
 				<div className="space-y-2">
-					<div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
-						<Eye className="w-3.5 h-3.5 text-[var(--teal)]" />
+					<div className="text-[11px] font-bold text-[var(--muted)] flex items-center gap-1.5">
+						<Eye className="w-3.5 h-3.5 text-[var(--primary)]" />
 						<span>Прикрепленные снимки ({scansList.length})</span>
 					</div>
 					<div className="grid grid-cols-2 gap-2">
@@ -98,7 +98,7 @@ export const DrawerScansAndMaterialsSection: React.FC<DrawerScansAndMaterialsSec
 
 			{visit.materialsDeducted && visit.materialsDeducted.length > 0 && (
 				<div className="space-y-2">
-					<div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
+					<div className="text-[11px] font-bold text-[var(--muted)] flex items-center gap-1.5">
 						<Package className="w-3.5 h-3.5 text-purple-500" />
 						<span>Списанные материалы со склада</span>
 					</div>

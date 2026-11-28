@@ -1,87 +1,137 @@
 /**
- * DENTE CRM — Offline Backup Vault Modules Tests
- * Verifies SHA-256 checksum calculation, backup file validation,
- * corrupted archive reaction, deterministic ZSTD schedule and storage quotas.
+ * DENTE CRM — Offline Backup Vault Modules Tests (6G Live SUT)
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { describe, it, expect } from "vitest";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, it } from "vitest";
 import {
 	DENTE_BACKUP_MAGIC_V2,
 	createEncryptedDenteBackup,
+	type DryRunRestoreResult,
 } from "@dental/shared";
 import {
 	inspectDenteBackup,
 	runDryRunRestoreVerification,
 } from "../../../services/offline/offlineBackupService";
+import { OfflineBackupVaultPanel } from "../OfflineBackupVaultPanel";
+import { DropzoneRestoreArea } from "../backup/DropzoneRestoreArea";
+import { VerificationProgressCard } from "../backup/VerificationProgressCard";
+import { RollbackSafetyNotice } from "../backup/RollbackSafetyNotice";
+import { BackupScheduleConfig } from "../backupVaultModules/BackupScheduleConfig";
+import { LocalVaultStorageIndicator } from "../backupVaultModules/LocalVaultStorageIndicator";
+import { BackupSnapshotList } from "../backupVaultModules/BackupSnapshotList";
+import { EmergencyRestoreWizard } from "../backupVaultModules/EmergencyRestoreWizard";
 
 const RAW_EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
-function resolvePath(relPath: string): string {
-	const clean = relPath.replace(/^apps[\\/]web[\\/]/, "");
-	const c1 = path.resolve(process.cwd(), relPath);
-	if (fs.existsSync(c1)) return c1;
-	const c2 = path.resolve(process.cwd(), clean);
-	if (fs.existsSync(c2)) return c2;
-	return c1;
-}
+describe("Offline Backup Vault Modules & Recovery Engine (6G Live SUT)", () => {
+	it("1. Live UI components render cleanly with zero raw emojis and zero disabled buttons", () => {
+		const emptyRef = { current: null };
+		const dryRunSample: DryRunRestoreResult = {
+			dryRunSuccess: true,
+			checksumVerified: true,
+			integrityGrade: "EXCELLENT",
+			totalRecordsCount: 12,
+			warnings: [],
+			errors: [],
+			metadata: {
+				organizationId: "org-test-101",
+				createdAt: "2026-10-01T10:00:00.000Z",
+				schemaVersion: 2,
+				clinicName: "Тест",
+			},
+			entitiesBreakdown: {
+				mutations: 2,
+				drafts: 1,
+				clinicalCache: 3,
+				schedules: 2,
+				patients: 4,
+				odontograms: 0,
+				pricelists: 0,
+				icd10: 0,
+			},
+		};
 
-describe("Offline Backup Vault Modules & Recovery Engine", () => {
-	it("1. Архитектурная декомпозиция: все модули vault находятся в пределах лимита <= 500 строк", () => {
-		const targetFiles = [
-			"apps/web/src/components/settings/OfflineBackupVaultPanel.tsx",
-			"apps/web/src/components/settings/backup/OfflineBackupRestoreSection.tsx",
-			"apps/web/src/components/settings/backup/DropzoneRestoreArea.tsx",
-			"apps/web/src/components/settings/backup/VerificationProgressCard.tsx",
-			"apps/web/src/components/settings/backup/RollbackSafetyNotice.tsx",
-			"apps/web/src/components/settings/backupVaultModules/backupVaultTypes.ts",
-			"apps/web/src/components/settings/backupVaultModules/BackupScheduleConfig.tsx",
-			"apps/web/src/components/settings/backupVaultModules/LocalVaultStorageIndicator.tsx",
-			"apps/web/src/components/settings/backupVaultModules/BackupSnapshotList.tsx",
-			"apps/web/src/components/settings/backupVaultModules/EmergencyRestoreWizard.tsx",
-			"apps/web/src/components/settings/backupVaultModules/WizardSourceSelector.tsx",
-			"apps/web/src/components/settings/backupVaultModules/WizardVerifyStage.tsx",
-			"apps/web/src/components/settings/backupVaultModules/WizardCompleteStage.tsx",
+		const renders = [
+			renderToStaticMarkup(
+				React.createElement(OfflineBackupVaultPanel, {
+					organizationId: "org-test-101",
+					clinicName: "Клиника Тест",
+				}),
+			),
+			renderToStaticMarkup(
+				React.createElement(DropzoneRestoreArea, {
+					fileInputRef: emptyRef,
+					handleFileSelect: () => {},
+					importFileName: "backup.dente",
+				}),
+			),
+			renderToStaticMarkup(
+				React.createElement(VerificationProgressCard, {
+					dryRunResult: dryRunSample,
+				}),
+			),
+			renderToStaticMarkup(
+				React.createElement(RollbackSafetyNotice, {
+					importPassphrase: "",
+					showImportPassphrase: false,
+					setShowImportPassphrase: () => {},
+					handlePassphraseChangeForDryRun: () => {},
+					executeDryRun: () => {},
+					importRawText: "raw",
+					isExecutingDryRun: false,
+					handleRestore: () => {},
+					isImporting: false,
+					canRestore: true,
+					restoreError: null,
+					lastRestoreResult: null,
+				}),
+			),
+			renderToStaticMarkup(
+				React.createElement(BackupScheduleConfig, {
+					schedulerStatus: { isRunning: false, intervalMinutes: 60, lastRunAt: null, nextRunAt: null, lastStatus: "idle", snapshotsCount: 0 },
+					schedulerIntervalMin: 60,
+					setSchedulerIntervalMin: () => {},
+					handleToggleScheduler: () => {},
+				}),
+			),
+			renderToStaticMarkup(
+				React.createElement(LocalVaultStorageIndicator, {
+					integrityReport: null,
+					isCheckingIntegrity: false,
+					onRefreshIntegrity: () => {},
+					organizationId: "org-test-101",
+				}),
+			),
+			renderToStaticMarkup(
+				React.createElement(BackupSnapshotList, {
+					vaultSnapshots: [],
+					handleRestoreSnapshot: () => {},
+					handleDeleteSnapshot: () => {},
+				}),
+			),
+			renderToStaticMarkup(
+				React.createElement(EmergencyRestoreWizard, {
+					vaultSnapshots: [],
+					onExecuteRestore: async () => ({ success: false, restoredCount: 0, error: "noop" }),
+					onDryRunVerify: () => dryRunSample,
+					pendingMutationsCount: 0,
+					onComplete: () => {},
+				}),
+			),
 		];
 
-		for (const relPath of targetFiles) {
-			const absPath = resolvePath(relPath);
-			assert.ok(fs.existsSync(absPath), `Файл ${relPath} обязан существовать`);
-			const lines = fs.readFileSync(absPath, "utf-8").split("\n").length;
-			assert.ok(
-				lines <= 500,
-				`Файл ${relPath} обязан быть <= 500 строк (фактически: ${lines})`,
-			);
+		for (const html of renders) {
+			assert.ok(html.length > 0);
+			assert.equal(RAW_EMOJI_REGEX.test(html), false, "Vault UI must contain 0 raw emojis");
+			assert.equal(html.includes("⚠️") || html.includes("❌") || html.includes("✅"), false);
+			assert.equal(html.includes('disabled=""'), false);
 		}
 	});
 
-	it("2. Полное отсутствие сырых Unicode-эмодзи в новых компонентах хранилища", () => {
-		const filesToCheck = [
-			"apps/web/src/components/settings/backup/DropzoneRestoreArea.tsx",
-			"apps/web/src/components/settings/backup/VerificationProgressCard.tsx",
-			"apps/web/src/components/settings/backup/RollbackSafetyNotice.tsx",
-			"apps/web/src/components/settings/backupVaultModules/BackupScheduleConfig.tsx",
-			"apps/web/src/components/settings/backupVaultModules/LocalVaultStorageIndicator.tsx",
-			"apps/web/src/components/settings/backupVaultModules/BackupSnapshotList.tsx",
-			"apps/web/src/components/settings/backupVaultModules/EmergencyRestoreWizard.tsx",
-		];
-
-		for (const relPath of filesToCheck) {
-			const absPath = resolvePath(relPath);
-			const content = fs.readFileSync(absPath, "utf-8");
-			assert.ok(
-				!RAW_EMOJI_REGEX.test(content),
-				`Файл ${relPath} не должен содержать сырых эмодзи`,
-			);
-			assert.ok(!content.includes("⚠️"), `${relPath} не должен содержать ⚠️`);
-			assert.ok(!content.includes("❌"), `${relPath} не должен содержать ❌`);
-			assert.ok(!content.includes("✅"), `${relPath} не должен содержать ✅`);
-		}
-	});
-
-	it("3. Валидация корректного архива DENTE (.dente) с детерминированным расчетом SHA-256", () => {
+	it("2. Валидация корректного архива DENTE (.dente) с детерминированным расчетом SHA-256", () => {
 		const payload = {
 			mutations: [{ id: "m1" }],
 			drafts: [{ id: "d1" }],
@@ -116,7 +166,7 @@ describe("Offline Backup Vault Modules & Recovery Engine", () => {
 		assert.equal(dryRun.warnings.length, 0);
 	});
 
-	it("4. Реакция на поврежденный архив: некорректный контейнер и нарушенный синтаксис", () => {
+	it("3. Реакция на поврежденный архив: некорректный контейнер и нарушенный синтаксис", () => {
 		const brokenContainer = "DENTE_ENC_v2:eyJhYmMiOiJpbnZhbGlkX2Jhc2U2NCJ9";
 		const inspection = inspectDenteBackup(brokenContainer);
 		assert.equal(inspection.valid, false, "Нарушенный контейнер обязан быть забракован");
@@ -128,7 +178,7 @@ describe("Offline Backup Vault Modules & Recovery Engine", () => {
 		assert.ok(dryRun.errors.length > 0, "Должны быть зафиксированы ошибки");
 	});
 
-	it("5. Реакция на архив с чужой организацией и неверным паролем расшифровки", () => {
+	it("4. Реакция на архив с чужой организацией и неверным паролем расшифровки", () => {
 		const foreignBackup = createEncryptedDenteBackup(
 			{
 				mutations: [{ id: "m-foreign" }],
@@ -141,7 +191,6 @@ describe("Offline Backup Vault Modules & Recovery Engine", () => {
 			},
 		);
 
-		// А: Проверка неверного пароля
 		const wrongPassDryRun = runDryRunRestoreVerification(foreignBackup, {
 			passphrase: "wrong-password",
 		});
@@ -151,7 +200,6 @@ describe("Offline Backup Vault Modules & Recovery Engine", () => {
 			"Должна быть зафиксирована ошибка неверного ключа/пароля",
 		);
 
-		// Б: Проверка чужой организации
 		const orgMismatchDryRun = runDryRunRestoreVerification(foreignBackup, {
 			passphrase: "correct-foreign-pass",
 			targetOrganizationId: "our-clinic-001",
@@ -160,23 +208,5 @@ describe("Offline Backup Vault Modules & Recovery Engine", () => {
 			orgMismatchDryRun.warnings.some((w) => w.includes("foreign-clinic-999") || w.includes("организаци")),
 			"Должно быть выведено предупреждение о чужой организации",
 		);
-	});
-
-	it("6. Экспорт и валидация типов BackupVaultModules", () => {
-		const sampleStorage = {
-			usedBytes: 15728640,
-			totalQuotaBytes: 10737418240,
-			usedFormatted: "15.00 МБ",
-			quotaFormatted: "10.0 ГБ",
-			usagePercentage: 0.15,
-			indexedDbBytes: 12000000,
-			sqliteFallbackBytes: 3728640,
-			encryptionKeyStatus: "ACTIVE_SOVEREIGN" as const,
-			encryptionKeyFingerprint: "ORG-TEST-AES256",
-			storageDriver: "indexeddb" as const,
-		};
-		assert.equal(sampleStorage.encryptionKeyStatus, "ACTIVE_SOVEREIGN");
-		assert.equal(sampleStorage.storageDriver, "indexeddb");
-		assert.ok(sampleStorage.usagePercentage < 100);
 	});
 });

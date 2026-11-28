@@ -1,5 +1,9 @@
 import crypto from "node:crypto";
-import { calculatePrescriptionExpiration } from "@dental/shared";
+import {
+	calculatePrescriptionExpiration,
+	formatDateKeyInTimeZone,
+	resolveValidIanaTimeZone,
+} from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import type { TenantDb } from "../../db/rls.js";
@@ -11,6 +15,7 @@ export function calculatePrescriptionValidityAndNumber(
 	formType: string,
 	validityPeriod: string,
 	now: Date,
+	timeZone?: string | null,
 ) {
 	const validityDaysNum =
 		validityPeriod === "days_15"
@@ -21,7 +26,8 @@ export function calculatePrescriptionValidityAndNumber(
 					? 365
 					: 60;
 
-	const expiresAtIso = calculatePrescriptionExpiration(now.toISOString().slice(0, 10), validityDaysNum);
+	const todayKey = formatDateKeyInTimeZone(now, resolveValidIanaTimeZone(timeZone));
+	const expiresAtIso = calculatePrescriptionExpiration(todayKey, validityDaysNum);
 	const expiresAt = new Date(expiresAtIso);
 
 	const year = now.getFullYear();

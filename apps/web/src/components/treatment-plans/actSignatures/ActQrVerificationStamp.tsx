@@ -23,14 +23,14 @@ export const ActQrVerificationStamp: React.FC<ActQrVerificationStampProps> = ({
 			}}
 		>
 			<div className="flex items-center gap-3">
-				<div className="w-12 h-12 bg-white p-1 border border-slate-300 rounded-lg flex items-center justify-center shrink-0 shadow-xs">
-					<QrCode className="w-10 h-10 text-slate-900" />
+				<div className="w-12 h-12 bg-white dark:bg-white p-1 border border-[var(--line)] print:border-slate-300 rounded-lg flex items-center justify-center shrink-0 shadow-xs">
+					<QrCode className="w-10 h-10 text-slate-900 dark:text-slate-900" />
 				</div>
-				<div className="doc-qr-meta text-[10px] leading-tight text-slate-700">
-					<strong className="block text-slate-900" style={{ color: palette.primaryDark }}>
+				<div className="doc-qr-meta text-[10px] leading-tight text-[var(--ink-2)] print:text-slate-700">
+					<strong className="block text-[var(--ink)] print:text-slate-900" style={{ color: palette.primaryDark }}>
 						Электронная верификация акта сдачи-приемки:
 					</strong>
-					<span className="font-mono text-[9px] block truncate max-w-sm text-slate-600 mt-0.5">
+					<span className="font-mono text-[9px] block truncate max-w-sm text-[var(--ink-muted)] print:text-slate-600 mt-0.5">
 						{verificationHash}
 					</span>
 					{actData.isUkepSigned ? (

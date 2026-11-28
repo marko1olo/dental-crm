@@ -8,6 +8,7 @@
 
 import { generateUuidV7, kopecksToRubles } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { showToast } from "../GlobalToast";
 import {
 	ONE_CLICK_LAB_DEFAULTS,
@@ -90,8 +91,14 @@ export async function submitExpressLabOrder({
 		});
 
 		if (!res.ok) {
-			const err = (await res.json().catch(() => ({}))) as { message?: string };
-			throw new Error(err.message || "Ошибка создания наряда ЗТЛ на сервере");
+			let msg = "Ошибка создания наряда ЗТЛ на сервере";
+			try {
+				const err = (await res.json()) as { message?: string };
+				if (err?.message) msg = err.message;
+			} catch (parseErr) {
+				clientLogger.warn("[expressLabOrderHelper] Non-JSON error response:", parseErr);
+			}
+			throw new Error(msg);
 		}
 
 		const savedOrder = (await res.json()) as Record<string, unknown>;

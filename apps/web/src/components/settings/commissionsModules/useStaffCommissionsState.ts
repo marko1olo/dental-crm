@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../../lib/panelStateText";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import {
 	isDoctorLikeRole,
@@ -83,16 +84,22 @@ export function useStaffCommissionsState() {
 					authRef.current?.settingsAdminSecretDomain,
 				),
 			});
-			const payload = (await response.json().catch((err) => {
+			let payload: unknown = null;
+			try {
+				payload = await response.json();
+			} catch (err) {
+				clientLogger.warn("[useStaffCommissionsState] loadRates JSON parse failed", {
+					status: response.status,
+					error: String(err),
+				});
 				showToast(
 					actionFailureToast(
 						"Ошибка ответа сервера",
-						(err as { status?: number })?.status ?? null,
+						(err as { status?: number })?.status ?? response.status,
 					),
 					"error",
 				);
-				return null;
-			})) as unknown;
+			}
 
 			if (!response.ok) {
 				const msg =
@@ -176,16 +183,22 @@ export function useStaffCommissionsState() {
 					labCostDeductionPct: labPct,
 				}),
 			});
-			const payload = (await response.json().catch((err) => {
+			let payload: unknown = null;
+			try {
+				payload = await response.json();
+			} catch (err) {
+				clientLogger.warn("[useStaffCommissionsState] loadRates JSON parse failed", {
+					status: response.status,
+					error: String(err),
+				});
 				showToast(
 					actionFailureToast(
 						"Ошибка ответа сервера",
-						(err as { status?: number })?.status ?? null,
+						(err as { status?: number })?.status ?? response.status,
 					),
 					"error",
 				);
-				return null;
-			})) as unknown;
+			}
 
 			if (!response.ok) {
 				const msg =

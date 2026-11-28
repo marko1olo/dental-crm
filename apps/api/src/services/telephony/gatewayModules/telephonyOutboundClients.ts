@@ -6,6 +6,36 @@ import {
 	type CloudProviderType,
 } from "./telephonyGatewayConfig.js";
 
+async function readTextSafely(response: Response, context: string): Promise<string> {
+	try {
+		return await response.text();
+	} catch (err) {
+		defaultStructuredLogger.warn(
+			{ err, context, status: response.status },
+			`[Telephony] Failed to read response text (${context})`,
+		);
+		return "";
+	}
+}
+
+async function readJsonRecordSafely(
+	response: Response,
+	context: string,
+): Promise<Record<string, unknown>> {
+	try {
+		const parsed: unknown = await response.json();
+		return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+			? (parsed as Record<string, unknown>)
+			: {};
+	} catch (err) {
+		defaultStructuredLogger.warn(
+			{ err, context, status: response.status },
+			`[Telephony] Failed to parse JSON response (${context})`,
+		);
+		return {};
+	}
+}
+
 export async function dispatchMangoCallback(params: {
 	callId: string;
 	apiKey: string;
@@ -40,13 +70,13 @@ export async function dispatchMangoCallback(params: {
 	);
 
 	if (!response.ok) {
-		const text = await response.text().catch(() => "");
+		const text = await readTextSafely(response, "Mango error body");
 		throw new Error(
 			`Mango HTTP ${response.status}: ${text || response.statusText}`,
 		);
 	}
 
-	const data = (await response.json().catch(() => ({}))) as unknown;
+	const data = await readJsonRecordSafely(response, "Mango success body");
 	return { success: true, data };
 }
 
@@ -75,13 +105,13 @@ export async function dispatchZadarmaCallback(params: {
 	});
 
 	if (!response.ok) {
-		const text = await response.text().catch(() => "");
+		const text = await readTextSafely(response, "Zadarma error body");
 		throw new Error(
 			`Zadarma HTTP ${response.status}: ${text || response.statusText}`,
 		);
 	}
 
-	const data = (await response.json().catch(() => ({}))) as unknown;
+	const data = await readJsonRecordSafely(response, "Zadarma success body");
 	return { success: true, data };
 }
 
@@ -110,19 +140,19 @@ export async function dispatchUisCallback(params: {
 	});
 
 	if (!response.ok) {
-		const text = await response.text().catch(() => "");
+		const text = await readTextSafely(response, "UIS error body");
 		throw new Error(
 			`UIS HTTP ${response.status}: ${text || response.statusText}`,
 		);
 	}
 
-	const data = (await response.json().catch(() => ({}))) as {
-		error?: { message?: string };
-	};
-	if (data?.error) {
-		throw new Error(
-			`UIS API error: ${data.error.message || JSON.stringify(data.error)}`,
-		);
+	const data = await readJsonRecordSafely(response, "UIS success body");
+	if (typeof data.error === "object" && data.error !== null) {
+		const errMsg =
+			"message" in data.error && typeof data.error.message === "string"
+				? data.error.message
+				: JSON.stringify(data.error);
+		throw new Error(`UIS API error: ${errMsg}`);
 	}
 	return { success: true, data };
 }
@@ -205,6 +235,7 @@ export async function initiateOutboundCall(params: {
 	patientId?: string | null | undefined;
 	patientName?: string | undefined;
 	staffUserId?: string | null | undefined;
+	dryRun?: boolean | undefined;
 	logger?: {
 		warn: (obj: unknown, msg?: string) => void;
 		error: (obj: unknown, msg?: string) => void;
@@ -253,8 +284,7 @@ export async function initiateOutboundCall(params: {
 		}
 	}
 
-	const forceLive = process.env.TELEPHONY_FORCE_LIVE_DISPATCH === "1";
-	const isTestEnv = process.env.NODE_ENV === "test" && !forceLive;
+	const isDryRun = params.dryRun === true;
 	const log = params.logger || defaultStructuredLogger;
 
 	if (provider === "mango") {
@@ -274,7 +304,7 @@ export async function initiateOutboundCall(params: {
 			};
 		}
 
-		if (!isTestEnv) {
+		if (!isDryRun) {
 			try {
 				await dispatchMangoCallback({
 					callId,
@@ -312,7 +342,7 @@ export async function initiateOutboundCall(params: {
 			};
 		}
 
-		if (!isTestEnv) {
+		if (!isDryRun) {
 			try {
 				await dispatchZadarmaCallback({
 					callId,
@@ -348,7 +378,7 @@ export async function initiateOutboundCall(params: {
 			};
 		}
 
-		if (!isTestEnv) {
+		if (!isDryRun) {
 			try {
 				await dispatchUisCallback({
 					callId,
@@ -387,7 +417,7 @@ export async function initiateOutboundCall(params: {
 			};
 		}
 
-		if (!isTestEnv) {
+		if (!isDryRun) {
 			try {
 				await dispatchAsteriskOriginate({
 					callId,

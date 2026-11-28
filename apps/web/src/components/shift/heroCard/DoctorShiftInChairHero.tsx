@@ -40,7 +40,7 @@ export const DoctorShiftInChairHero: React.FC<DoctorShiftInChairHeroProps> = ({
 		</div>
 		<div className="hero-actions">
 			<button
-				className="primary-button min-h-[36px] h-9 px-4 py-1.5 rounded-lg text-xs md:text-sm font-semibold focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors inline-flex items-center gap-1.5"
+				className="secondary-button min-h-[36px] h-9 px-4 py-1.5 rounded-lg text-xs md:text-sm font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] focus:ring-2 focus:ring-[var(--primary)] focus:outline-none transition-colors inline-flex items-center gap-1.5"
 				type="button"
 				onClick={() => onOpenVisit(currentPatient.id)}
 			>

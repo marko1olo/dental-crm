@@ -53,7 +53,12 @@ export async function persistShiftSanpinAutoClose(
 				interface SanpinPersistResponse {
 					readonly messageRu?: string;
 				}
-				const json = (await res.json().catch(() => ({}))) as SanpinPersistResponse | null;
+				let json: SanpinPersistResponse | null = null;
+				try {
+					json = (await res.json()) as SanpinPersistResponse | null;
+				} catch (parseErr) {
+					clientLogger.warn("[shiftAutoCloserEngine] Не удалось разобрать JSON-ответ /api/registers/sanpin:", parseErr);
+				}
 				const msg = json?.messageRu || `Смена ${date} зафиксирована в журналах СанПиН.`;
 				options.onToast?.(msg, "success");
 				return {

@@ -215,39 +215,34 @@ export class LanMeshService {
 		this.broadcastBeacon();
 
 		// Schedule periodic UDP discovery beacons (every 3 seconds)
-		this.beaconTimer = setInterval(() => {
+		this.beaconTimer = this.startUnrefInterval(() => {
 			this.broadcastBeacon();
 		}, 3000);
-		this.beaconTimer.unref?.();
 
 		// If Master role: broadcast lease heartbeat immediately and schedule every leaseHeartbeatIntervalMs
 		if (this.role === "master") {
 			this.broadcastLeaseHeartbeat();
-			this.leaseHeartbeatTimer = setInterval(() => {
+			this.leaseHeartbeatTimer = this.startUnrefInterval(() => {
 				this.broadcastLeaseHeartbeat();
 			}, this.leaseHeartbeatIntervalMs);
-			this.leaseHeartbeatTimer.unref?.();
 		}
 
 		// If lease failover enabled: schedule lease health checks (every 2.5s)
 		if (this.enableLeaseFailover) {
-			this.leaseHealthCheckTimer = setInterval(() => {
+			this.leaseHealthCheckTimer = this.startUnrefInterval(() => {
 				this.checkMasterLeaseHealth();
 			}, this.leaseFailoverCheckIntervalMs);
-			this.leaseHealthCheckTimer.unref?.();
 		}
 
 		// Schedule peer pruning (every 5 seconds)
-		this.pruneTimer = setInterval(() => {
+		this.pruneTimer = this.startUnrefInterval(() => {
 			this.topologyManager.pruneStalePeers();
 		}, 5000);
-		this.pruneTimer.unref?.();
 
 		// Schedule offline mutation flush retry (every 4 seconds)
-		this.flushTimer = setInterval(() => {
+		this.flushTimer = this.startUnrefInterval(() => {
 			void this.flushOfflineMutationQueue();
 		}, 4000);
-		this.flushTimer.unref?.();
 
 		// Run subnet HTTP active probe non-blockingly
 		void this.probeSubnetHttp();
@@ -404,6 +399,12 @@ export class LanMeshService {
 		}
 	}
 
+	private startUnrefInterval(fn: () => void, intervalMs: number): NodeJS.Timeout {
+		const timer = setInterval(fn, intervalMs);
+		timer.unref();
+		return timer;
+	}
+
 	/**
 	 * Evaluates Master lease freshness and triggers instant consensus election if Master missed 2 consecutive heartbeats (10s threshold).
 	 */
@@ -420,10 +421,9 @@ export class LanMeshService {
 			);
 			this.broadcastLeaseHeartbeat();
 			if (!this.leaseHeartbeatTimer) {
-				this.leaseHeartbeatTimer = setInterval(() => {
+				this.leaseHeartbeatTimer = this.startUnrefInterval(() => {
 					this.broadcastLeaseHeartbeat();
 				}, this.leaseHeartbeatIntervalMs);
-				this.leaseHeartbeatTimer.unref?.();
 			}
 		} else if (!this.topologyManager.isTemporaryMasterActive() && this.role !== "master" && this.leaseHeartbeatTimer) {
 			clearInterval(this.leaseHeartbeatTimer);

@@ -1,9 +1,25 @@
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { afterEach, beforeEach, describe, test } from "node:test";
 import { mdlpDisposalService, mdlpQueueService } from "./index.js";
 
 describe("MdlpDisposalService & MdlpQueueService Tests", () => {
 	const testOrgId = "a0000000-0000-4000-8000-000000000001";
+
+	beforeEach(() => {
+		mdlpQueueService.setAllowInMemoryFallback(true);
+	});
+
+	afterEach(() => {
+		mdlpQueueService.setAllowInMemoryFallback(false);
+	});
+
+	test("MdlpQueueService fails loudly on DB errors when allowInMemoryFallback is false (production default)", async () => {
+		mdlpQueueService.setAllowInMemoryFallback(false);
+		assert.equal(mdlpQueueService.isInMemoryFallbackAllowed(), false);
+		await assert.rejects(
+			() => mdlpQueueService.getQueueAsync("not-a-valid-uuid"),
+		);
+	});
 
 	test("mdlpQueueService manages queue, detects duplicates and computes stats", () => {
 		mdlpQueueService.clearQueue(testOrgId);

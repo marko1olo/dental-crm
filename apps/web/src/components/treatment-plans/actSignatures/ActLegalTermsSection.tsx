@@ -8,13 +8,13 @@ export interface ActLegalTermsSectionProps {
 export const ActLegalTermsSection: React.FC<ActLegalTermsSectionProps> = ({ palette }) => {
 	return (
 		<div
-			className="pt-3 border-t border-slate-300 text-xs text-slate-900 space-y-3 print:space-y-2 mb-6 print:mb-4 break-inside-avoid"
+			className="pt-3 border-t border-[var(--line)] print:border-slate-300 text-xs text-[var(--ink)] print:text-slate-900 space-y-3 print:space-y-2 mb-6 print:mb-4 break-inside-avoid"
 			style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
 		>
 			<div className="font-bold text-[11px]" style={{ color: palette.primaryDark }}>
 				3. Условия сдачи-приемки и гарантийные обязательства
 			</div>
-			<ol className="list-decimal pl-4 space-y-1.5 text-justify leading-relaxed text-[11px] text-slate-700">
+			<ol className="list-decimal pl-4 space-y-1.5 text-justify leading-relaxed text-[11px] text-[var(--ink-2)] print:text-slate-700">
 				<li>
 					Вышеперечисленные медицинские услуги оказаны Исполнителем надлежащим образом, в полном объеме, своевременно и в строгом соответствии с клиническими рекомендациями (протоколами лечения) и стандартами медицинской помощи РФ.
 				</li>

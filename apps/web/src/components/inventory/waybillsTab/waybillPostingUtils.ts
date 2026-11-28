@@ -76,7 +76,15 @@ export async function postWaybillToApi(waybill: AcceptanceWaybillDocument, organ
 			body: JSON.stringify(payload),
 		});
 		if (!res.ok) {
-			const errJson = await res.json().catch(() => ({}));
+			let errJson: { message?: string; error?: string } = {};
+			try {
+				errJson = (await res.json()) as { message?: string; error?: string };
+			} catch (parseErr) {
+				clientLogger.warn("[waybillPostingUtils] postWaybill error JSON parse failed", {
+					status: res.status,
+					error: String(parseErr),
+				}, { module: "Inventory" });
+			}
 			const msg = errJson?.message || errJson?.error || `Ошибка проведения накладной (${res.status})`;
 			clientLogger.warn("[waybillPostingUtils] postWaybill HTTP error", { status: res.status, msg }, { module: "Inventory" });
 			showToast(msg, "error");

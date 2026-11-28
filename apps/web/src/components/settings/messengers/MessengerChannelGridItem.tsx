@@ -51,7 +51,7 @@ export const MessengerChannelGridItem: React.FC<Props> = ({ channel, isTesting, 
 							</span>
 						)}
 						{channel.status === "unconfigured" && (
-							<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+							<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--paper-soft)] text-[var(--ink-muted)] border border-[var(--line)]">
 								<span>{channel.statusText}</span>
 							</span>
 						)}
@@ -76,7 +76,7 @@ export const MessengerChannelGridItem: React.FC<Props> = ({ channel, isTesting, 
 				<button
 					type="button"
 					onClick={() => onSelectTab(channel.configTab)}
-					className="h-8 min-h-[36px] px-3 rounded-lg bg-[var(--teal)] text-[var(--on-teal)] text-xs font-semibold inline-flex items-center gap-1 ml-auto cursor-pointer"
+					className="h-8 min-h-[36px] px-3 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold inline-flex items-center gap-1 ml-auto cursor-pointer"
 				>
 					<span>Настроить</span>
 					<ArrowRight size={12} />

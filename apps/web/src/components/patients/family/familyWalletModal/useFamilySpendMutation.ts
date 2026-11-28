@@ -11,6 +11,7 @@ import {
 import { useCallback, useRef, useState } from "react";
 import { money } from "../../../../AppHelpers";
 import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { showToast } from "../../../GlobalToast";
 import type { UseFamilySpendMutationArgs } from "./types";
 
@@ -77,10 +78,15 @@ export function useFamilySpendMutation(args: UseFamilySpendMutationArgs) {
 			});
 
 			if (!res.ok) {
-				const err = (await res.json().catch(() => null)) as Record<
-					string,
-					string
-				> | null;
+				let err: Record<string, string> | null = null;
+				try {
+					err = (await res.json()) as Record<string, string> | null;
+				} catch (parseErr) {
+					clientLogger.warn("[useFamilySpendMutation] Spend error JSON parse failed", {
+						status: res.status,
+						error: String(parseErr),
+					});
+				}
 				throw new Error(
 					err?.message || err?.error || `Ошибка списания (${res.status})`,
 				);

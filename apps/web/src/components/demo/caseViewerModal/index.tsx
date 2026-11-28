@@ -208,7 +208,7 @@ export const DemoCaseViewerModal: React.FC<DemoCaseViewerModalProps> = ({
 							transition: "all 0.15s ease",
 						}}
 					>
-						КТ & Фотопротокол До/После ({currentCase.media.length})
+						КТ и фотопротокол До/После ({currentCase.media.length})
 					</button>
 
 					<button

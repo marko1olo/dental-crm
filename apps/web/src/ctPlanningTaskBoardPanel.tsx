@@ -1,11 +1,14 @@
 import type React from "react";
 import { useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { Check, CheckCircle2, ListPlus } from "lucide-react";
 import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
 } from "./lib/safeLocalStorage";
-import { denteAdminSecretRequestHeaders } from "./lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "./lib/denteRequestHeaders";
+import { clientLogger } from "./services/logging/clientLogger";
+import { showToast } from "./components/GlobalToast";
 import type { CtPlanningTaskCard, CtPlanningTaskSnapshot } from "./ctPlanningState";
 
 export type CtPlanningTaskBoardPanelProps = {
@@ -41,27 +44,15 @@ export function CtPlanningTaskBoardPanel({
 		const dueDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 		const priority = "urgent";
 
-		// Optimistic notification
-		setToastMessage("Задача «Снимок КТ / планирование» создана в CRM");
-		setTimeout(() => setToastMessage(null), 3500);
-
-		if (onTaskCreated) {
-			onTaskCreated({ title, priority, status: "open" });
-		}
-
 		// Sync with backend / localStorage
 		try {
-			const storedToken =
-				safeLocalStorageGetItem("dental_crm_token") || safeLocalStorageGetItem("token");
 			const headers: Record<string, string> = {
 				"Content-Type": "application/json",
-				...denteAdminSecretRequestHeaders(),
+				"Idempotency-Key": generateUuidV7(),
+				...denteClinicalMutationHeaders(),
 			};
-			if (storedToken) {
-				headers.Authorization = `Bearer ${storedToken}`;
-			}
 
-			await fetch("/api/tasks", {
+			const res = await fetch("/api/tasks", {
 				method: "POST",
 				headers,
 				body: JSON.stringify({
@@ -72,12 +63,40 @@ export function CtPlanningTaskBoardPanel({
 					priority,
 					category: "imaging",
 				}),
-			}).catch(() => null);
+			});
+			if (!res.ok) {
+				let msg = `Не удалось создать задачу в CRM (HTTP ${res.status})`;
+				try {
+					const rawErr: unknown = await res.json();
+					if (typeof rawErr === "object" && rawErr !== null) {
+						const dataObj =
+							"data" in rawErr && typeof rawErr.data === "object" && rawErr.data !== null
+								? rawErr.data
+								: rawErr;
+						if ("message" in dataObj && typeof dataObj.message === "string") {
+							msg = dataObj.message;
+						} else if ("message" in rawErr && typeof rawErr.message === "string") {
+							msg = rawErr.message;
+						} else if ("error" in rawErr && typeof rawErr.error === "string") {
+							msg = rawErr.error;
+						}
+					}
+				} catch (parseErr) {
+					clientLogger.warn("[CtPlanningTaskBoardPanel] Failed to parse task error JSON:", parseErr);
+				}
+				throw new Error(msg);
+			}
 
-			// Also persist to local tickets fallback for offline/test reliability
+			setToastMessage("Задача «Снимок КТ / планирование» создана в CRM");
+			setTimeout(() => setToastMessage(null), 3500);
+			if (onTaskCreated) {
+				onTaskCreated({ title, priority, status: "open" });
+			}
+
 			try {
 				const existingStr = safeLocalStorageGetItem("dental_patient_tickets") || "[]";
-				const tickets = JSON.parse(existingStr);
+				const parsedTickets: unknown = JSON.parse(existingStr);
+				const tickets = Array.isArray(parsedTickets) ? parsedTickets : [];
 				tickets.unshift({
 					id: `ticket-ct-${Date.now()}`,
 					patientId: patientId || "demo-patient",
@@ -89,11 +108,12 @@ export function CtPlanningTaskBoardPanel({
 					createdAt: new Date().toISOString(),
 				});
 				safeLocalStorageSetItem("dental_patient_tickets", JSON.stringify(tickets));
-			} catch {
-				// Ignore json parse error
+			} catch (cacheErr) {
+				clientLogger.warn("[CtPlanningTaskBoardPanel] Failed to update local ticket cache:", cacheErr);
 			}
-		} catch {
-			// Non-blocking network failure fallback
+		} catch (err) {
+			clientLogger.warn("[CtPlanningTaskBoardPanel] Failed to create CT planning task:", err);
+			showToast(err instanceof Error ? err.message : "Не удалось создать задачу в CRM", "error");
 		}
 	};
 
@@ -251,14 +271,14 @@ export function CtPlanningTaskBoardPanel({
 								) : null}
 
 								{/* Direct 1-click action: Max 1 button per card (Mandate 8d & 8e) */}
-								<div className="mt-2 pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
+								<div className="mt-2 pt-1 border-t border-[var(--line)] flex items-center justify-end">
 									<button
 										type="button"
 										onClick={() => handleCompleteCard(task.id)}
 										className={`h-6 px-2 text-[11px] font-medium rounded transition-colors inline-flex items-center gap-1 cursor-pointer ${
 											isDone
-												? "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-												: "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900"
+												? "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+												: "bg-[var(--primary-soft)] text-[var(--primary)] border border-[var(--line)] hover:opacity-90"
 										}`}
 										title={isDone ? "Вернуть в работу" : "Завершить задачу"}
 										data-testid={`ct-task-toggle-${task.id}`}
@@ -272,7 +292,7 @@ export function CtPlanningTaskBoardPanel({
 					})}
 				</section>
 			) : (
-				<div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">
+				<div className="p-4 text-center text-xs text-[var(--ink-muted)] rounded-lg border border-dashed border-[var(--line)]">
 					{filterStatus === "completed"
 						? "Нет выполненных задач КТ-планирования"
 						: "Все задачи КТ-планирования выполнены"}

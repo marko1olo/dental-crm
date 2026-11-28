@@ -12,7 +12,7 @@ import { useAppStore } from "../../store/appStore";
 import {
 	SURGERY_SCENARIOS, SURGERY_IMPLANT_SYSTEMS, SURGERY_DEFAULT_BATCHES,
 	SURGERY_GRAFT_CATALOG, SURGERY_MEMBRANE_CATALOG, SURGERY_SUTURE_CATALOG,
-	getImplantSystemById, calculateSurgeryFinancials, buildSurgicalPostOpMemoText, generateSystemSurgeryLot,
+	findImplantSystemById, calculateSurgeryFinancials, buildSurgicalPostOpMemoText, generateSystemSurgeryLot,
 	type SurgeryScenarioType, type SurgeryCapType, type MischBoneDensity,
 } from "./surgeryCatalogData";
 import { isUuid, resolveEffectiveSurgeryPatientId } from "./resolveSurgeryPatient";
@@ -35,7 +35,9 @@ export {
 	type BuildImplantBatchPayloadArgs, type ChairsideSurgerySavedProtocolData, type UseSurgeryHubStateParams,
 };
 
-const DEFAULT_IMPLANT_SYSTEM_BRAND = SURGERY_IMPLANT_SYSTEMS[0]?.brandName ?? "Osstem";
+function isPlainRecord(val: unknown): val is Record<string, unknown> {
+	return typeof val === "object" && val !== null && !Array.isArray(val);
+}
 
 export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 	const {
@@ -54,7 +56,10 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 	const appActivePatientId = useAppStore((s) => s.activePatientId);
 	const appActiveDoctorName = useAppStore((s) => s.activeDoctorName);
 	const appDashboard = useAppStore((s) => s.dashboard);
-	const initialSystem = useMemo(() => getImplantSystemById(initialBrand || DEFAULT_IMPLANT_SYSTEM_BRAND), [initialBrand]);
+	const initialSystem = useMemo(
+		() => (initialBrand?.trim() ? findImplantSystemById(initialBrand) : null),
+		[initialBrand],
+	);
 
 	const [manualPatient, setManualPatient] = useState<SurgeryPatientOption | null>(null);
 	const [manualDoctor, setManualDoctor] = useState<SurgeryDoctorOption | null>(null);
@@ -63,6 +68,20 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 	const [patientSearchQuery, setPatientSearchQuery] = useState<string>("");
 	const [isLoadingPatients, setIsLoadingPatients] = useState<boolean>(false);
 	const [isLoadingDoctors, setIsLoadingDoctors] = useState<boolean>(false);
+	const [apiLoadError, setApiLoadError] = useState<string | null>(null);
+	const lastNotifiedErrorRef = useRef<string | null>(null);
+
+	const reportApiLoadError = useCallback((context: string, err: unknown) => {
+		const msg = err instanceof Error && err.message
+			? err.message
+			: "Ошибка загрузки данных хирургического хаба";
+		clientLogger.warn(`[useSurgeryHubState] ${context}`, err, { module: "useSurgeryHubState" });
+		setApiLoadError(msg);
+		if (lastNotifiedErrorRef.current !== msg) {
+			lastNotifiedErrorRef.current = msg;
+			showToast(msg, "error");
+		}
+	}, []);
 
 	const effectivePatient = useMemo(() => {
 		if (manualPatient) return { id: manualPatient.id, name: manualPatient.fullName, isBound: isUuid(manualPatient.id) || Boolean(manualPatient.id) };
@@ -85,7 +104,8 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 		if (manualDoctor) return { id: manualDoctor.id, name: manualDoctor.fullName, isBound: Boolean(manualDoctor.id) };
 		if (propDoctorName?.trim()) return { id: propDoctorId?.trim() || "", name: propDoctorName.trim(), isBound: true };
 		if (appActiveDoctorName?.trim()) return { id: propDoctorId?.trim() || "", name: appActiveDoctorName.trim(), isBound: true };
-		const visit = appDashboard?.activeVisit as Record<string, unknown> | null | undefined;
+		const rawVisit: unknown = appDashboard?.activeVisit;
+		const visit = isPlainRecord(rawVisit) ? rawVisit : null;
 		const visitDoctorName = typeof visit?.doctorName === "string" ? visit.doctorName.trim() : "";
 		if (visitDoctorName) {
 			const visitDoctorId = typeof visit?.doctorId === "string" ? visit.doctorId : (propDoctorId?.trim() || "");
@@ -104,16 +124,19 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 		return permanent.length > 0 ? permanent : [46];
 	});
 	const [isOverdraftNoticeDismissed, setIsOverdraftNoticeDismissed] = useState<boolean>(false);
-	const [selectedBrand, setSelectedBrand] = useState<string>(initialBrand || initialSystem.brandName);
-	const [diameterMm, setDiameterMm] = useState<number>(initialDiameterMm || initialSystem.defaultDiameterMm);
-	const [lengthMm, setLengthMm] = useState<number>(initialLengthMm || initialSystem.defaultLengthMm);
-	const [torqueNcm, setTorqueNcm] = useState<number>(initialTorqueNcm || initialSystem.defaultTorqueNcm);
-	const [boneDensity, setBoneDensity] = useState<MischBoneDensity>("D2");
-	const [isqValue, setIsqValue] = useState<number>(74);
+	const [selectedBrand, setSelectedBrand] = useState<string>(initialBrand?.trim() || initialSystem?.brandName || "");
+	const [diameterMm, setDiameterMm] = useState<number>(initialDiameterMm ?? initialSystem?.defaultDiameterMm ?? 0);
+	const [lengthMm, setLengthMm] = useState<number>(initialLengthMm ?? initialSystem?.defaultLengthMm ?? 0);
+	const [torqueNcm, setTorqueNcm] = useState<number>(initialTorqueNcm ?? initialSystem?.defaultTorqueNcm ?? 0);
+	const [boneDensity, setBoneDensity] = useState<MischBoneDensity | "">("");
+	const [anesthesiaProtocol, setAnesthesiaProtocol] = useState<string>("");
+	const [incisionProtocol, setIncisionProtocol] = useState<string>("");
+	const [boneBedProtocol, setBoneBedProtocol] = useState<string>("");
+	const [isqValue, setIsqValue] = useState<number>(0);
 	const [capType, setCapType] = useState<SurgeryCapType>("fdm");
-	const [lotNumber, setLotNumber] = useState<string>(() => initialLotNumber || generateSystemSurgeryLot(initialTooth));
+	const [lotNumber, setLotNumber] = useState<string>(() => initialLotNumber || "");
 	const [serialNumber, setSerialNumber] = useState<string>("");
-	const [catalogArticle, setCatalogArticle] = useState<string>(initialSystem.defaultArticle);
+	const [catalogArticle, setCatalogArticle] = useState<string>(initialSystem?.defaultArticle || "");
 	const [isGuidedSurgery, setIsGuidedSurgery] = useState<boolean>(false);
 	const [guidedSleeveDiameterMm, setGuidedSleeveDiameterMm] = useState<number>(5.0);
 	const [guidedSleeveOffsetMm, setGuidedSleeveOffsetMm] = useState<number>(2.0);
@@ -145,12 +168,19 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 		const timer = setTimeout(() => {
 			setIsLoadingPatients(true);
 			void fetchSurgeryPatients(patientSearchQuery)
-				.then((rows) => { if (!isCancelled) setLivePatients(rows); })
-				.catch((err) => { clientLogger.warn("[useSurgeryHubState] Ошибка загрузки пациентов", err, { module: "useSurgeryHubState" }); })
+				.then((rows) => {
+					if (!isCancelled) {
+						setLivePatients(rows);
+						setApiLoadError(null);
+					}
+				})
+				.catch((err) => {
+					if (!isCancelled) reportApiLoadError("Ошибка загрузки пациентов", err);
+				})
 				.finally(() => { if (!isCancelled) setIsLoadingPatients(false); });
 		}, patientSearchQuery.trim() ? 220 : 0);
 		return () => { isCancelled = true; clearTimeout(timer); };
-	}, [isOpen, patientSearchQuery]);
+	}, [isOpen, patientSearchQuery, reportApiLoadError]);
 
 	useEffect(() => {
 		if (!isOpen || typeof fetch !== "function") return;
@@ -158,15 +188,16 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 		setIsLoadingDoctors(true);
 		void fetchSurgeryDoctors()
 			.then((rows) => { if (!isCancelled) setLiveDoctors(rows); })
-			.catch((err) => { clientLogger.warn("[useSurgeryHubState] Ошибка загрузки врачей", err, { module: "useSurgeryHubState" }); })
+			.catch((err) => { if (!isCancelled) reportApiLoadError("Ошибка загрузки врачей", err); })
 			.finally(() => { if (!isCancelled) setIsLoadingDoctors(false); });
 		void fetchSurgeryImplantStock()
 			.then((implants) => { if (!isCancelled && implants.length > 0) setStockImplants(implants); })
-			.catch((err) => { clientLogger.warn("[useSurgeryHubState] Ошибка загрузки остатков имплантов", err, { module: "useSurgeryHubState" }); });
+			.catch((err) => { if (!isCancelled) reportApiLoadError("Ошибка загрузки остатков имплантов", err); });
 		void fetchSurgeryPricelist()
-			.then((map) => { if (!isCancelled && map.size > 0) setLivePricelistMap(map); });
+			.then((map) => { if (!isCancelled && map.size > 0) setLivePricelistMap(map); })
+			.catch((err) => { if (!isCancelled) reportApiLoadError("Ошибка загрузки прейскуранта", err); });
 		return () => { isCancelled = true; };
-	}, [isOpen]);
+	}, [isOpen, reportApiLoadError]);
 
 	useEffect(() => {
 		if (!isOpen || typeof fetch !== "function" || !isUuid(effectivePatient.id)) return;
@@ -198,12 +229,13 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 				if (matched.serialNumber) setSerialNumber(String(matched.serialNumber));
 				if (matched.catalogArticle) setCatalogArticle(String(matched.catalogArticle));
 			})
-			.catch((err) => { clientLogger.warn("[useSurgeryHubState] Ошибка гидратации имплантов", err, { module: "useSurgeryHubState" }); });
+			.catch((err) => { if (!isCancelled) reportApiLoadError("Ошибка гидратации имплантов пациента", err); });
 		return () => { isCancelled = true; };
-	}, [isOpen, effectivePatient.id, toothFdi]);
+	}, [isOpen, effectivePatient.id, toothFdi, reportApiLoadError]);
 
 	const matchedStockItem = useMemo(() => {
-		const brandLower = selectedBrand.toLowerCase();
+		const brandLower = selectedBrand.trim().toLowerCase();
+		if (!brandLower) return null;
 		if (stockImplants.length > 0) {
 			const exact = stockImplants.find((item) => {
 				const name = (item.name || "").toLowerCase();
@@ -234,12 +266,15 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 	}, [selectedInventoryItemId, matchedStockItem]);
 
 	const scenarioConfig = SURGERY_SCENARIOS[activeScenario];
-	const currentSystem = useMemo(() => getImplantSystemById(selectedBrand), [selectedBrand]);
+	const currentSystem = useMemo(
+		() => (selectedBrand.trim() ? findImplantSystemById(selectedBrand) : null),
+		[selectedBrand],
+	);
 
 	const resetDraftState = useCallback(() => {
 		let resetTooth = initialTooth || 46;
 		if (initialScenario === "implant" && resetTooth >= 51 && resetTooth <= 85) resetTooth = 46;
-		const sys = getImplantSystemById(initialBrand || DEFAULT_IMPLANT_SYSTEM_BRAND);
+		const sys = initialBrand?.trim() ? findImplantSystemById(initialBrand) : null;
 		setActiveScenario(initialScenario);
 		setActiveTab(initialTab);
 		setToothFdi(resetTooth);
@@ -247,16 +282,19 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 		const sanitizedTeeth = initialScenario === "implant" ? rawTeeth.filter((t) => t < 51 || t > 85) : rawTeeth;
 		setSelectedTeeth(sanitizedTeeth.length > 0 ? sanitizedTeeth : [resetTooth]);
 		setIsOverdraftNoticeDismissed(false);
-		setSelectedBrand(initialBrand || sys.brandName);
-		setDiameterMm(initialDiameterMm || sys.defaultDiameterMm);
-		setLengthMm(initialLengthMm || sys.defaultLengthMm);
-		setTorqueNcm(initialTorqueNcm || sys.defaultTorqueNcm);
-		setBoneDensity("D2");
-		setIsqValue(74);
+		setSelectedBrand(initialBrand?.trim() || sys?.brandName || "");
+		setDiameterMm(initialDiameterMm ?? sys?.defaultDiameterMm ?? 0);
+		setLengthMm(initialLengthMm ?? sys?.defaultLengthMm ?? 0);
+		setTorqueNcm(initialTorqueNcm ?? sys?.defaultTorqueNcm ?? 0);
+		setBoneDensity("");
+		setAnesthesiaProtocol("");
+		setIncisionProtocol("");
+		setBoneBedProtocol("");
+		setIsqValue(0);
 		setCapType("fdm");
-		setLotNumber(initialLotNumber || generateSystemSurgeryLot(resetTooth));
+		setLotNumber(initialLotNumber || "");
 		setSerialNumber("");
-		setCatalogArticle(sys.defaultArticle);
+		setCatalogArticle(sys?.defaultArticle || "");
 		setIsGuidedSurgery(false);
 		setGuidedSleeveDiameterMm(5.0);
 		setGuidedSleeveOffsetMm(2.0);
@@ -268,6 +306,8 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 		setManualPatient(null);
 		setManualDoctor(null);
 		setPatientSearchQuery("");
+		setApiLoadError(null);
+		lastNotifiedErrorRef.current = null;
 	}, [initialTooth, initialScenario, initialTab, initialTeeth, initialBrand, initialDiameterMm, initialLengthMm, initialTorqueNcm, initialLotNumber]);
 
 	const buildCurrentFlatSpec = useCallback((): ToothImplantSpec => ({
@@ -355,7 +395,8 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 	const handleSelectBrand = useCallback((brand: string) => {
 		setSelectedBrand(brand);
 		setSelectedInventoryItemId(null);
-		const sys = getImplantSystemById(brand);
+		const sys = findImplantSystemById(brand);
+		if (!sys) return;
 		setDiameterMm(sys.defaultDiameterMm);
 		setLengthMm(sys.defaultLengthMm);
 		setCatalogArticle(sys.defaultArticle);
@@ -367,12 +408,18 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 
 	const handleApplyPhysiologicalNorm = useCallback(() => {
 		if (activeScenario === "implant") {
-			setTorqueNcm(35); setCapType("fdm"); setBoneDensity("D2"); setIsqValue(74);
+			setAnesthesiaProtocol("Инфильтрационная анестезия 1.7 мл");
+			setIncisionProtocol("По гребню альвеолы, лоскут отслоен");
+			setBoneBedProtocol("Препарирование фрезами с NaCl 0.9%");
+			setTorqueNcm(35);
+			setCapType("fdm");
+			setBoneDensity("D2");
+			setIsqValue(74);
 			showToast("✓ Стандартный протокол имплантации без осложнений: 35 Н·см, ФДМ, D2 (ISQ 74)", "success");
 		} else if (activeScenario === "extraction") {
 			showToast("✓ Стандартное атравматичное удаление: кюретаж, гемостаз, швы ПГА 4-0", "success");
 		} else if (activeScenario === "sinus_gbr") {
-			showToast("✓ Стандартный синус-лифтинг: ксеногенный гранулят 0.5 г + резорбируемая мембрана 16×22", "success");
+			showToast("✓ Стандартный синус-лифтинг: ксеногенный гранулят 0.5 г и резорбируемая мембрана 16×22", "success");
 		} else {
 			showToast("✓ Стандартная периостотомия: разрез по переходной складке, дренаж", "success");
 		}
@@ -382,7 +429,8 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 		activeScenario, scenarioConfig, toothFdi, selectedTeeth, getToothSpec,
 		doctorName: effectiveDoctor.name, patientName: effectivePatient.name, selectedBrand,
 		diameterMm, lengthMm, catalogArticle, lotNumber, torqueNcm, isqValue, boneDensity, capType, selectedSuture,
-	}), [activeScenario, scenarioConfig, toothFdi, selectedTeeth, getToothSpec, effectiveDoctor.name, effectivePatient.name, selectedBrand, diameterMm, lengthMm, catalogArticle, lotNumber, torqueNcm, isqValue, boneDensity, capType, selectedSuture]);
+		anesthesiaProtocol, incisionProtocol, boneBedProtocol,
+	}), [activeScenario, scenarioConfig, toothFdi, selectedTeeth, getToothSpec, effectiveDoctor.name, effectivePatient.name, selectedBrand, diameterMm, lengthMm, catalogArticle, lotNumber, torqueNcm, isqValue, boneDensity, capType, selectedSuture, anesthesiaProtocol, incisionProtocol, boneBedProtocol]);
 
 	const liveScenarioEntry = livePricelistMap.get(scenarioConfig.serviceCode);
 
@@ -416,7 +464,8 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 				if (!targetId) { showToast("Пациент не выбран. Выберите пациента из списка для сохранения протокола.", "error"); return; }
 				const apiRes = await submitSurgeryToApi({
 					targetId, activeScenario, scenarioConfig, toothFdi, teethToProcess, getToothSpec,
-					implantBrandId: currentSystem.id, effectiveInventoryItemId, boneDensity, isGuidedSurgery,
+					implantBrandId: currentSystem?.id || selectedBrand.trim(), effectiveInventoryItemId,
+					boneDensity: boneDensity || "D2", isGuidedSurgery,
 					guidedSleeveDiameterMm, guidedSleeveOffsetMm, surgicalGuideTemplateId,
 					selectedGraft, selectedMembrane, selectedSuture,
 					...(liveScenarioEntry
@@ -445,7 +494,7 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 			isSavingRef.current = false;
 			setIsSaving(false);
 		}
-	}, [onSaveProtocol, activeScenario, toothFdi, selectedTeeth, passportData, diaryText, onInsertIntoDiary, scenarioConfig, inventoryOverdraftActive, currentSystem.id, lotNumber, boneDensity, selectedGraft, selectedMembrane, selectedSuture, liveScenarioEntry, effectivePatient.id, effectivePatient.name, handleClose, effectiveInventoryItemId, getToothSpec, isGuidedSurgery, guidedSleeveDiameterMm, guidedSleeveOffsetMm, surgicalGuideTemplateId]);
+	}, [onSaveProtocol, activeScenario, toothFdi, selectedTeeth, passportData, diaryText, onInsertIntoDiary, scenarioConfig, inventoryOverdraftActive, currentSystem?.id, selectedBrand, lotNumber, boneDensity, selectedGraft, selectedMembrane, selectedSuture, liveScenarioEntry, effectivePatient.id, effectivePatient.name, handleClose, effectiveInventoryItemId, getToothSpec, isGuidedSurgery, guidedSleeveDiameterMm, guidedSleeveOffsetMm, surgicalGuideTemplateId]);
 
 	const memoText = useMemo(() => buildSurgicalPostOpMemoText(activeScenario, {
 		patientName: effectivePatient.name, toothFdi, doctorName: effectiveDoctor.name, implantBrand: selectedBrand, capType, hasSutures: true,
@@ -484,11 +533,13 @@ export function useSurgeryHubState(params: UseSurgeryHubStateParams) {
 	}, [activeScenario, activeEditingTooth, buildCurrentFlatSpec, handleSelectActiveEditingTooth]);
 
 	return {
-		effectivePatient, effectiveDoctor, livePatients, liveDoctors, isLoadingPatients, isLoadingDoctors,
+		effectivePatient, effectiveDoctor, livePatients, liveDoctors, isLoadingPatients, isLoadingDoctors, apiLoadError,
 		patientSearchQuery, setPatientSearchQuery, selectPatient: setManualPatient, selectDoctor: setManualDoctor,
 		activeScenario, scenarioConfig, activeTab, setActiveTab, toothFdi, selectedTeeth, activeEditingTooth,
 		perToothSpecs, getToothSpec, isOverdraftNoticeDismissed, dismissOverdraftNotice: () => setIsOverdraftNoticeDismissed(true),
-		selectedBrand, diameterMm, lengthMm, torqueNcm, boneDensity, isqValue, capType, lotNumber, serialNumber, catalogArticle,
+		selectedBrand, diameterMm, lengthMm, torqueNcm, boneDensity, setBoneDensity,
+		anesthesiaProtocol, setAnesthesiaProtocol, incisionProtocol, setIncisionProtocol, boneBedProtocol, setBoneBedProtocol,
+		isqValue, capType, lotNumber, serialNumber, catalogArticle,
 		isGuidedSurgery, setIsGuidedSurgery, guidedSleeveDiameterMm, setGuidedSleeveDiameterMm,
 		guidedSleeveOffsetMm, setGuidedSleeveOffsetMm, surgicalGuideTemplateId, setSurgicalGuideTemplateId,
 		selectedGraft, setSelectedGraft, selectedMembrane, setSelectedMembrane,

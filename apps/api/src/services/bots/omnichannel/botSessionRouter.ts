@@ -1,10 +1,14 @@
 import crypto from "node:crypto";
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import { wsBroker } from "../../websocketBroker.js";
 import { ChatLockService } from "../../communications/ChatLockService.js";
 import type {
 	BotChannel,
 	OmnichannelBotRuntime,
 } from "../types.js";
+
+const botRouterLogger = createApiLogger("botSessionRouter");
 
 /**
  * Token Bucket алгоритм для защиты от флуда и соблюдения лимитов Bot API.
@@ -54,9 +58,18 @@ export interface InterceptedChatPublic {
  * Управление сессиями ботов, рантаймами в памяти и перехватом чатов оператором клиники.
  */
 export class BotSessionRouter {
-	private readonly runtimes = new Map<string, OmnichannelBotRuntime>();
-	private readonly rateLimiters = new Map<string, TokenBucket>();
-	private readonly interceptedChats = new Map<string, InterceptedChatEntry>();
+	private readonly runtimes = new BoundedTtlMap<string, OmnichannelBotRuntime>({
+		maxEntries: 2000,
+		touchOnGet: false,
+	});
+	private readonly rateLimiters = new BoundedTtlMap<string, TokenBucket>({
+		maxEntries: 2000,
+		ttlMs: 24 * 60 * 60_000,
+	});
+	private readonly interceptedChats = new BoundedTtlMap<string, InterceptedChatEntry>({
+		maxEntries: 5000,
+		ttlMs: 60 * 60_000,
+	});
 
 	public isChatIntercepted(channel: BotChannel, organizationId: string, senderId: string): boolean {
 		const key = `${channel}:${organizationId}:${senderId}`;
@@ -91,8 +104,11 @@ export class BotSessionRouter {
 				});
 				return true;
 			}
-		} catch {
-			// В unit-тестах без БД используется локальный кеш
+		} catch (err) {
+			botRouterLogger.debug(
+				{ err: safeLogError(err), channel, organizationId, senderId },
+				"ChatLockService lookup failed; falling back to local intercept cache",
+			);
 		}
 		return false;
 	}
@@ -117,8 +133,11 @@ export class BotSessionRouter {
 			chatId,
 			agentName: operatorName,
 			durationMinutes: 60,
-		}).catch(() => {
-			// Изоляция от падений БД: in-memory лок уже активен
+		}).catch((err) => {
+			botRouterLogger.debug(
+				{ err: safeLogError(err), channel, organizationId, senderId },
+				"Async ChatLockService.acquireLock failed; in-memory takeover active",
+			);
 		});
 
 		wsBroker.broadcastToOrganization(organizationId, {
@@ -143,7 +162,12 @@ export class BotSessionRouter {
 			organizationId,
 			chatId,
 			force: true,
-		}).catch(() => {});
+		}).catch((err) => {
+			botRouterLogger.debug(
+				{ err: safeLogError(err), channel, organizationId, senderId },
+				"Async ChatLockService.releaseLock failed",
+			);
+		});
 
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "INBOX_CHAT_RELEASED",

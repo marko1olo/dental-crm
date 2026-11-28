@@ -1,3 +1,5 @@
+import { clientLogger } from "../../services/logging/clientLogger";
+
 export interface RecallStatusUpdateRequest {
 	readonly patientId: string;
 	readonly status: string;
@@ -30,7 +32,12 @@ export async function sendRecallCandidateStatusUpdate(
 			body: JSON.stringify({ status: params.status, channel: params.channel, note: params.note }),
 		},
 	);
-	const raw = await response.json().catch(() => ({}));
+	let raw: unknown = {};
+	try {
+		raw = await response.json();
+	} catch (parseErr) {
+		clientLogger.warn("[recallStatusUpdateApi] Failed to parse response JSON:", parseErr);
+	}
 	const payload = (
 		raw && typeof raw === "object" && "data" in raw
 			? (raw as { data: Record<string, unknown> }).data

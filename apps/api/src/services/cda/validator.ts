@@ -10,7 +10,7 @@ import {
 	validateFdiToothNumber,
 	type CdaValidationResult,
 } from "@dental/shared/cda";
-import { validateRussianInn, validateRussianOgrn } from "@dental/shared";
+import { formatDateKeyInTimeZone, validateRussianInn, validateRussianOgrn } from "@dental/shared";
 
 export {
 	validateFdiToothNumber as validateFdiTooth,
@@ -71,7 +71,12 @@ export function validateCdaParams(p: CdaValidationInput): CdaValidationResult {
 			patientId: flat.patientId,
 			name: flat.patientName || { first: "", last: "" },
 			snils: flat.patientSnils,
-			birthDate: typeof flat.patientBirthDate === "string" ? flat.patientBirthDate : (flat.patientBirthDate ? new Date(flat.patientBirthDate).toISOString().slice(0, 10) : "1980-01-01"),
+			birthDate:
+				typeof flat.patientBirthDate === "string"
+					? flat.patientBirthDate
+					: flat.patientBirthDate
+						? formatDateKeyInTimeZone(flat.patientBirthDate, "Europe/Samara")
+						: "1980-01-01",
 			gender: flat.patientGender,
 		},
 		doctor: {

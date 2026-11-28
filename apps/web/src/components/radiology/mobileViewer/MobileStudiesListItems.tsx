@@ -55,7 +55,7 @@ export const MobileStudiesListItems: React.FC<MobileStudiesListItemsProps> = ({
 						data-testid={`mobile-study-item-${study.id}`}
 					>
 						<div className="flex items-center gap-3 min-w-0 flex-1">
-							<div className="w-12 h-12 rounded-xl bg-slate-900 border border-[var(--line)] overflow-hidden shrink-0 flex items-center justify-center">
+							<div className="w-12 h-12 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] overflow-hidden shrink-0 flex items-center justify-center">
 								{study.previewUrl ? (
 									<img
 										src={study.previewUrl}
@@ -63,7 +63,7 @@ export const MobileStudiesListItems: React.FC<MobileStudiesListItemsProps> = ({
 										className="w-full h-full object-cover"
 									/>
 								) : (
-									<span className="text-[10px] font-bold text-teal-400 uppercase">
+									<span className="text-[10px] font-bold text-[var(--primary)]">
 										{study.kind.slice(0, 3)}
 									</span>
 								)}

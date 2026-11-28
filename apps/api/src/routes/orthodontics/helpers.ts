@@ -1,3 +1,4 @@
+import { shiftCalendarDay, todayDateKeyInTimeZone } from "@dental/shared";
 import type { OrthodonticProgressRecord } from "./types.js";
 
 /**
@@ -71,7 +72,7 @@ export function parseOrthoData(raw: unknown): OrthodonticProgressRecord | null {
 		totalAligners: hasAlignerSignals
 			? (Number.isFinite(totalAlignersNum) && totalAlignersNum > 0 ? totalAlignersNum : 24)
 			: undefined,
-		startDate: String(parsed.startDate ?? parsed.start ?? (new Date().toISOString().split("T")[0] ?? "")),
+		startDate: String(parsed.startDate ?? parsed.start ?? todayDateKeyInTimeZone("Europe/Samara")),
 		currentStage: Number.isFinite(currentStage) && currentStage > 0 ? currentStage : 1,
 		stageTitle: parsed.stageTitle ? String(parsed.stageTitle) : "Диагностика и начало нивелирования",
 		archwire: parsed.archwire ? String(parsed.archwire) : undefined,
@@ -99,20 +100,19 @@ export function createInitialOrthoRecord(params?: {
 	applianceCategory?: "brackets" | "aligners" | "plate" | undefined;
 	totalAligners?: number | undefined;
 	wearDaysPerAligner?: number | undefined;
+	timeZone?: string | null | undefined;
 }): OrthodonticProgressRecord {
 	const isAligners = params?.applianceCategory === "aligners" || Boolean(params?.totalAligners);
 	return {
 		currentAligner: isAligners ? 1 : undefined,
 		totalAligners: isAligners ? (params?.totalAligners || 24) : undefined,
-		startDate: new Date().toISOString().split("T")[0] || "",
+		startDate: todayDateKeyInTimeZone(params?.timeZone ?? "Europe/Samara"),
 		currentStage: 1,
 		stageTitle: "Диагностика и начало нивелирования",
 		wearDaysPerAligner: isAligners ? (params?.wearDaysPerAligner || 14) : undefined,
 	};
 }
 
-export function calculateNextDate(daysToAdd: number): string {
-	const d = new Date();
-	d.setDate(d.getDate() + daysToAdd);
-	return d.toISOString().split("T")[0] || "";
+export function calculateNextDate(daysToAdd: number, timeZone?: string | null): string {
+	return shiftCalendarDay(todayDateKeyInTimeZone(timeZone ?? "Europe/Samara"), daysToAdd);
 }

@@ -7,6 +7,8 @@ import {
 	buildFiscalReceiptPayloadSignature,
 	type CreateFiscalReceiptPayloadInput,
 	kopecksToNumericString,
+	resolveValidIanaTimeZone,
+	todayDateKeyInTimeZone,
 	verifyFiscalCompositeIdempotencyKey,
 } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
@@ -16,6 +18,7 @@ import { withTenantCtx } from "../../../../db/rls.js";
 import { fiscalReceiptQueue } from "../../../../db/schema.js";
 import { LanKktDriverService } from "../../../../services/hardware/index.js";
 import { FiscalReceiptFactory } from "../../../../services/kkt/FiscalReceiptFactory.js";
+import { clinicTimeZone } from "../../../../services/reports/managerReports/timezone.js";
 import { isValidUuid } from "../../../../utils/httpIdempotency.js";
 import {
 	fiscalCorrectionPayloadSchema,
@@ -38,16 +41,17 @@ export async function handleFiscalSelfCorrection(
 	const rawBody = request.body;
 	const body: Record<string, unknown> =
 		rawBody && typeof rawBody === "object" && !Array.isArray(rawBody)
-			? (rawBody as Record<string, unknown>)
+			? Object.fromEntries(Object.entries(rawBody))
 			: {};
+	const rawDocDate =
+		typeof body["correctionDocDate"] === "string"
+			? body["correctionDocDate"]
+			: todayDateKeyInTimeZone(resolveValidIanaTimeZone(await clinicTimeZone(orgId)));
 	const normalizedInput = {
 		...body,
 		isCorrection: true,
 		correctionType: "self_initiated",
-		correctionDocDate:
-			typeof body["correctionDocDate"] === "string"
-				? body["correctionDocDate"]
-				: new Date().toISOString().slice(0, 10),
+		correctionDocDate: rawDocDate,
 		correctionDocNumber:
 			typeof body["correctionDocNumber"] === "string"
 				? body["correctionDocNumber"]

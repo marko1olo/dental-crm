@@ -171,16 +171,23 @@ export function useChairsideErgonomics(): UseChairsideErgonomicsReturn {
 			const rawBarcode = custom.detail?.raw;
 			if (!rawBarcode || typeof rawBarcode !== "string" || !rawBarcode.trim()) return;
 
-			fetch("/api/mdlp/queue/add", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({ rawBarcode: rawBarcode.trim() }),
-			}).catch((err: unknown) => {
-				logger.debug("[Chairside] Background MDLP queueing failed silently:", err);
-			});
+			void (async () => {
+				try {
+					const res = await fetch("/api/mdlp/queue/add", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...denteAdminSecretRequestHeaders(),
+						},
+						body: JSON.stringify({ rawBarcode: rawBarcode.trim() }),
+					});
+					if (!res.ok) {
+						logger.debug("[Chairside] Background MDLP queueing returned HTTP", res.status);
+					}
+				} catch (err: unknown) {
+					logger.debug("[Chairside] Background MDLP queueing failed silently:", err);
+				}
+			})();
 		};
 
 		window.addEventListener("dente:clipboard-image-pasted", handlePasteEvent);

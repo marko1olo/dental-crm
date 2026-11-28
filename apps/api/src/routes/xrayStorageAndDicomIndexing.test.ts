@@ -23,56 +23,35 @@ import {
 } from "../tests/support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../tests/support/tenantTestApp.js";
 
-// Валидный 1x1 PNG для тестов
 const TINY_PNG_BASE64 =
 	"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
 const TINY_PNG_DATA_URI = `data:image/png;base64,${TINY_PNG_BASE64}`;
 const TINY_PNG_BUFFER = Buffer.from(TINY_PNG_BASE64, "base64");
 
-describe("МАНДАТ 8l: Редтим-аудит схемы БД радиологии и PACS", () => {
+async function readBinaryArtifact(location: string): Promise<Buffer> {
+	return fs.readFile(location);
+}
+
+describe("МАНДАТ 8l: Редтим-аудит схемы БД радиологии и PACS (6G Live SUT)", () => {
 	it("1.1 Таблица imaging_studies содержит поле doctorId (nullable FK на users) и нужные индексы", () => {
-		// Проверка поля doctorId
 		assert.ok(imagingStudies.doctorId, "imagingStudies.doctorId должно быть объявлено");
 		assert.strictEqual(imagingStudies.doctorId.name, "doctor_id");
-
-		// Проверка колонок для индексов
 		assert.ok(imagingStudies.dicomStudyUid, "imagingStudies.dicomStudyUid должно существовать");
 		assert.ok(imagingStudies.createdAt, "imagingStudies.createdAt должно существовать");
 		assert.ok(imagingStudies.patientId, "imagingStudies.patientId должно существовать");
 	});
 
 	it("1.2 Таблица imaging_instances доработана для послойной индексации DICOM срезов", () => {
-		assert.ok(imagingInstances.sopInstanceUid, "sopInstanceUid должно быть объявлено");
 		assert.strictEqual(imagingInstances.sopInstanceUid.name, "sop_instance_uid");
-
-		assert.ok(imagingInstances.seriesId, "seriesId должно быть объявлено");
 		assert.strictEqual(imagingInstances.seriesId.name, "series_id");
-
-		assert.ok(imagingInstances.instanceNumber, "instanceNumber должно быть объявлено");
 		assert.strictEqual(imagingInstances.instanceNumber.name, "instance_number");
-
-		assert.ok(imagingInstances.sliceLocation, "sliceLocation должно быть объявлено");
 		assert.strictEqual(imagingInstances.sliceLocation.name, "slice_location");
-
-		assert.ok(imagingInstances.storageKey, "storageKey должно быть объявлено");
 		assert.strictEqual(imagingInstances.storageKey.name, "storage_key");
-
-		assert.ok(imagingInstances.fileSizeBytes, "fileSizeBytes должно быть объявлено");
 		assert.strictEqual(imagingInstances.fileSizeBytes.name, "file_size_bytes");
-
-		assert.ok(imagingInstances.windowCenter, "windowCenter должно быть объявлено");
 		assert.strictEqual(imagingInstances.windowCenter.name, "window_center");
-
-		assert.ok(imagingInstances.windowWidth, "windowWidth должно быть объявлено");
 		assert.strictEqual(imagingInstances.windowWidth.name, "window_width");
-
-		assert.ok(imagingInstances.rows, "rows должно быть объявлено");
 		assert.strictEqual(imagingInstances.rows.name, "rows");
-
-		assert.ok(imagingInstances.cols, "cols должно быть объявлено");
 		assert.strictEqual(imagingInstances.cols.name, "cols");
-
-		// Обратная совместимость с существующими полями
 		assert.ok(imagingInstances.dicomSopInstanceUid, "dicomSopInstanceUid сохранено");
 		assert.ok(imagingInstances.storagePath, "storagePath сохранено");
 		assert.ok(imagingInstances.columns, "columns сохранено");
@@ -80,11 +59,8 @@ describe("МАНДАТ 8l: Редтим-аудит схемы БД радиол�
 
 	it("1.3 Таблица xray_scans содержит поля для объектного хранилища без base64", () => {
 		assert.ok(xrayScans.storagePath, "storagePath должно существовать");
-		assert.ok(xrayScans.fileUrl, "fileUrl должно существовать");
 		assert.strictEqual(xrayScans.fileUrl.name, "file_url");
-		assert.ok(xrayScans.fileSizeBytes, "fileSizeBytes должно существовать");
 		assert.strictEqual(xrayScans.fileSizeBytes.name, "file_size_bytes");
-		assert.ok(xrayScans.sha256, "sha256 должно существовать");
 		assert.strictEqual(xrayScans.sha256.name, "sha256");
 	});
 });
@@ -117,7 +93,6 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 	};
 
 	before(async () => {
-		process.env.NODE_ENV = "test";
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
@@ -164,13 +139,13 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 	});
 
 	after(async () => {
-		for (const file of createdTestFiles) {
+		for (const artifact of createdTestFiles) {
 			try {
-				if (existsSync(file)) {
-					await fs.unlink(file);
+				if (existsSync(artifact)) {
+					await fs.unlink(artifact);
 				}
-			} catch {
-				// игнорируем ошибку очистки
+			} catch (err) {
+				console.warn("[xrayStorageAndDicomIndexing.test] cleanup failed:", err);
 			}
 		}
 		await purgeFixtureOrganizations([TEST_ORG_ID]);
@@ -187,14 +162,13 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 
 		createdTestFiles.push(stored.storagePath);
 
-		assert.ok(existsSync(stored.storagePath), "Файл должен физически существовать на диске");
+		assert.strictEqual(existsSync(stored.storagePath), true, "Файл должен физически существовать на диске");
 		assert.strictEqual(stored.fileSizeBytes, TINY_PNG_BUFFER.length);
-		assert.ok(stored.storagePath.includes(TEST_ORG_ID), "Путь должен содержать ID организации");
+		assert.strictEqual(stored.storagePath.includes(TEST_ORG_ID), true, "Путь должен содержать ID организации");
 		assert.strictEqual(typeof stored.sha256, "string");
 		assert.strictEqual(stored.sha256.length, 64);
 
-		// Проверка целостности содержимого
-		const diskContent = await fs.readFile(stored.storagePath);
+		const diskContent = await readBinaryArtifact(stored.storagePath);
 		assert.deepStrictEqual(diskContent, TINY_PNG_BUFFER);
 	});
 
@@ -214,15 +188,11 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 			},
 		});
 
-		if (response.statusCode !== 201) {
-			console.log("POST /api/imaging/studies error:", response.statusCode, response.body);
-		}
-		assert.strictEqual(response.statusCode, 201);
-		const body = JSON.parse(response.body);
+		assert.strictEqual(response.statusCode, 201, response.body);
+		const body = JSON.parse(response.body) as { id: string; previewUrl: string; viewerUrl: string; storagePath: string };
 		assert.ok(body.id, "Ответ должен содержать ID созданного снимка");
 		createdScanId = body.id;
 
-		// КРИТИЧЕСКАЯ ПРОВЕРКА МАНДАТА 8l: В ЖИВОЙ БАЗЕ POSTGRESQL НЕ ДОЛЖЕН ПИСАТЬСЯ BASE64!
 		const [savedRow] = await withFixtureTenant(TEST_ORG_ID, async () => {
 			return db
 				.select()
@@ -232,22 +202,11 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 		});
 
 		assert.ok(savedRow, "Строка снимка обязана существовать в PostgreSQL");
-		assert.strictEqual(
-			savedRow.imageDataUri,
-			null,
-			"КРИТИЧЕСКИЙ АУДИТ: imageDataUri в колонке PostgreSQL ОБЯЗАН быть null (ликвидация WAL-блоата)!",
-		);
-		assert.ok(
-			typeof savedRow.storagePath === "string" && savedRow.storagePath.length > 0,
-			"storagePath в PostgreSQL должен быть валидной строкой пути к файлу",
-		);
-		assert.ok(
-			existsSync(savedRow.storagePath),
-			"Файл снимка обязан физически существовать на диске хранилища PACS",
-		);
+		assert.strictEqual(savedRow.imageDataUri, null);
+		assert.ok(typeof savedRow.storagePath === "string" && savedRow.storagePath.length > 0);
+		assert.strictEqual(existsSync(savedRow.storagePath), true);
 		createdTestFiles.push(savedRow.storagePath);
 
-		// Клиент получает канонический ImagingStudy с previewUrl / viewerUrl на /api/imaging/studies/:id/file
 		assert.strictEqual(body.previewUrl, `/api/imaging/studies/${body.id}/file`);
 		assert.strictEqual(body.viewerUrl, `/api/imaging/studies/${body.id}/file`);
 		assert.strictEqual(body.storagePath, savedRow.storagePath);
@@ -269,7 +228,6 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 	});
 
 	it("2.4 Обратная совместимость: старые записи с imageDataUri в базе отдаются без сбоев", async () => {
-		// Сеем legacy-запись (до миграции), где файл на диске отсутствует, но есть imageDataUri в базе
 		await withFixtureTenant(TEST_ORG_ID, async () => {
 			await db
 				.insert(xrayScans)
@@ -277,7 +235,7 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 					id: LEGACY_SCAN_ID,
 					organizationId: TEST_ORG_ID,
 					patientId: TEST_PATIENT_ID,
-					imageDataUri: TINY_PNG_DATA_URI, // Legacy base64
+					imageDataUri: TINY_PNG_DATA_URI,
 					storagePath: null,
 					fileUrl: null,
 					originalFilename: "legacy_xray.png",
@@ -289,7 +247,6 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 				.onConflictDoNothing();
 		});
 
-		// Проверяем /file на обратную совместимость
 		const response = await app.inject({
 			method: "GET",
 			url: `/api/imaging/studies/${LEGACY_SCAN_ID}/file`,
@@ -311,7 +268,7 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 		});
 
 		assert.strictEqual(response.statusCode, 200);
-		const body = JSON.parse(response.body);
+		const body = JSON.parse(response.body) as { previewUrl: string; viewerUrl: string; storagePath: string };
 
 		assert.strictEqual(body.previewUrl, `/api/imaging/studies/${createdScanId}/file`);
 		assert.strictEqual(body.viewerUrl, `/api/imaging/studies/${createdScanId}/file`);

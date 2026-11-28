@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { FDI_TOOTH_NAMES } from "../radiologyMath";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
 import { DEFAULT_RVG_FILTERS, type RvgFilterValues } from "../RvgFiltersToolbar";
@@ -78,7 +79,12 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 				}),
 			});
 			if (!res.ok) {
-				const errBody = (await res.json().catch(() => ({}))) as { message?: string };
+				let errBody: { message?: string } = {};
+				try {
+					errBody = (await res.json()) as { message?: string };
+				} catch (parseErr) {
+					clientLogger.warn("[useDirectRvgCapture] Failed to parse error JSON:", parseErr);
+				}
 				throw new Error(errBody.message || `HTTP ${res.status}`);
 			}
 			const data = (await res.json()) as {

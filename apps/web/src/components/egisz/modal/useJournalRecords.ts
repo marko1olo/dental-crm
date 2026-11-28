@@ -75,8 +75,16 @@ export function useJournalRecords(
 				}),
 			});
 			if (!res.ok) {
-				const errJson = (await res.json().catch(() => null)) as { message?: string } | null;
-				throw new Error(errJson?.message || `Ошибка сервера (${res.status})`);
+				let serverMsg = "";
+				try {
+					const rawErr: unknown = await res.json();
+					if (typeof rawErr === "object" && rawErr !== null && "message" in rawErr && typeof rawErr.message === "string") {
+						serverMsg = rawErr.message;
+					}
+				} catch (parseErr) {
+					clientLogger.warn("[useJournalRecords] Не удалось разобрать ответ ошибки диспетчера ЕГИСЗ:", parseErr);
+				}
+				throw new Error(serverMsg || `Ошибка сервера (${res.status})`);
 			}
 			const outboxDocs = await fetchOutboxRecordsFromBackend(clinic);
 			setRecords(outboxDocs || []);

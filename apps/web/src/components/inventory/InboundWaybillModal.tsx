@@ -407,7 +407,12 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 				return;
 			}
 
-			const resData = await res.json().catch(() => payload);
+			let resData: unknown = payload;
+			try {
+				resData = await res.json();
+			} catch (parseErr) {
+				clientLogger.warn("[InboundWaybillModal] Non-JSON success response; falling back to submitted payload", parseErr, { module: "Inventory" });
+			}
 			if (onInvoicePosted) await onInvoicePosted(resData);
 			if (onWaybillPosted) await onWaybillPosted(resData);
 			onClose();

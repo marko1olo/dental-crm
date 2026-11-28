@@ -41,16 +41,16 @@ export const DicomViewerModalHeader: React.FC<DicomViewerModalHeaderProps> = ({
 	const handleNormaClick = onInsertNormaToEmk ?? onInsertNormaTo043 ?? (() => {});
 
 	return (
-		<div className="h-[42px] min-h-[42px] bg-slate-950 border-b border-slate-800 flex items-center justify-between px-3 gap-2 select-none flex-nowrap shrink-0 overflow-x-auto">
+		<div className="h-[42px] min-h-[42px] bg-[var(--paper)] border-b border-[var(--line)] flex items-center justify-between px-3 gap-2 select-none flex-nowrap shrink-0 overflow-x-auto">
 			<div className="flex items-center gap-2 shrink-0">
-				<span className="bg-[var(--teal)] text-white font-extrabold text-[11px] px-2 py-0.5 rounded">RVG / DICOM</span>
-				<div className="flex items-center gap-0.5 bg-slate-900 rounded-lg p-0.5 border border-slate-700">
-					<button type="button" onClick={() => onSwitchViewMode("2d")} className={`h-6 px-2 text-[11px] font-bold rounded cursor-pointer ${viewMode === "2d" ? "bg-teal-900 text-teal-300" : "text-slate-400"}`}>2D Срез</button>
-					<button type="button" data-testid="btn-dicom-switch-mpr" onClick={() => onSwitchViewMode("3d_mpr")} className="h-6 px-2 text-[11px] font-bold rounded cursor-pointer inline-flex items-center gap-1 text-slate-400 hover:text-teal-300" title="Открыть каноническую 3D/MPR студию КЛКТ"><Layers size={11} /> 3D/MPR студия</button>
+				<span className="bg-[var(--primary)] text-white font-extrabold text-[11px] px-2 py-0.5 rounded">RVG / DICOM</span>
+				<div className="flex items-center gap-0.5 bg-[var(--paper-soft)] rounded-lg p-0.5 border border-[var(--line)]">
+					<button type="button" onClick={() => onSwitchViewMode("2d")} className={`h-6 px-2 text-[11px] font-bold rounded cursor-pointer ${viewMode === "2d" ? "bg-[var(--teal-surface)] text-[var(--primary)]" : "text-[var(--ink-muted)]"}`}>2D Срез</button>
+					<button type="button" data-testid="btn-dicom-switch-mpr" onClick={() => onSwitchViewMode("3d_mpr")} className="h-6 px-2 text-[11px] font-bold rounded cursor-pointer inline-flex items-center gap-1 text-[var(--ink-muted)] hover:text-[var(--primary)]" title="Открыть каноническую 3D/MPR студию КЛКТ"><Layers size={11} /> 3D/MPR студия</button>
 				</div>
 				<div className="hidden sm:flex flex-col ml-1 max-w-[200px]">
-					<div className="text-[11px] font-bold text-slate-100 truncate">{title} {toothFdiCode ? `· Зуб ${toothFdiCode}` : ""}</div>
-					<div className="text-[10px] text-slate-400 truncate">{patientName ? `${patientName} · ` : ""}{studyDate || "сегодня"}</div>
+					<div className="text-[11px] font-bold text-[var(--ink)] truncate">{title} {toothFdiCode ? `· Зуб ${toothFdiCode}` : ""}</div>
+					<div className="text-[10px] text-[var(--ink-muted)] truncate">{patientName ? `${patientName} · ` : ""}{studyDate || "сегодня"}</div>
 				</div>
 			</div>
 
@@ -59,19 +59,19 @@ export const DicomViewerModalHeader: React.FC<DicomViewerModalHeaderProps> = ({
 			</div>
 
 			<div className="flex items-center gap-1.5 shrink-0">
-				<button type="button" data-testid="btn-dicom-norma-043" data-testid-emk="btn-dicom-norma-emk" onClick={handleNormaClick} className={`h-7 px-2.5 text-xs font-bold rounded-lg border cursor-pointer inline-flex items-center gap-1.5 ${isNormaApplied ? "border-emerald-500 bg-emerald-950/40 text-emerald-300" : "border-emerald-600 bg-emerald-900 text-emerald-200"}`}>
-					{isNormaApplied ? <CheckCircle2 size={13} /> : <Zap size={13} className="text-emerald-400" />}
+				<button type="button" data-testid="btn-dicom-norma-043" data-testid-emk="btn-dicom-norma-emk" onClick={handleNormaClick} className={`h-7 px-2.5 text-xs font-bold rounded-lg border cursor-pointer inline-flex items-center gap-1.5 ${isNormaApplied ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200"}`}>
+					{isNormaApplied ? <CheckCircle2 size={13} /> : <Zap size={13} className="text-emerald-500" />}
 					<span>{isNormaApplied ? "Норма внесена" : "Норма: патологии нет"}</span>
 				</button>
 
 				<div className="relative" ref={protocolsDropdownRef}>
 					<button type="button" data-testid="btn-dicom-protocols-menu" onClick={() => setIsProtocolsDropdownOpen((p) => !p)} className={btnStyle}>
-						<FileText size={13} className="text-[var(--teal)]" /> <span>Протоколы</span> <ChevronDown size={11} />
+						<FileText size={13} className="text-[var(--primary)]" /> <span>Протоколы</span> <ChevronDown size={11} />
 					</button>
 					{isProtocolsDropdownOpen && (
-						<div className="absolute top-full right-0 mt-1 min-w-[240px] bg-slate-900 border border-slate-700 rounded-lg shadow-2xl z-[40] p-1 flex flex-col gap-0.5">
+						<div className="absolute top-full right-0 mt-1 min-w-[240px] bg-[var(--paper)] border border-[var(--line)] rounded-lg shadow-2xl z-[40] p-1 flex flex-col gap-0.5">
 							{RADIOLOGY_STANDARD_PROTOCOLS.map((preset) => (
-								<button key={preset.id} type="button" onClick={() => onApplyProtocol(preset)} data-testid={`btn-dicom-protocol-${preset.id}`} className={`w-full text-left px-2 py-1.5 rounded text-xs flex items-center gap-2 cursor-pointer ${appliedProtocolId === preset.id ? "bg-teal-900 text-teal-200" : "text-slate-200 hover:bg-slate-800"}`}>
+								<button key={preset.id} type="button" onClick={() => onApplyProtocol(preset)} data-testid={`btn-dicom-protocol-${preset.id}`} className={`w-full text-left px-2 py-1.5 rounded text-xs flex items-center gap-2 cursor-pointer ${appliedProtocolId === preset.id ? "bg-[var(--teal-surface)] text-[var(--primary)]" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}>
 									<Check size={12} className={appliedProtocolId === preset.id ? "opacity-100" : "opacity-0"} />
 									<span>{preset.titleRu}</span>
 								</button>

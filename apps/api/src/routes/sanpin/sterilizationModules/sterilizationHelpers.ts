@@ -5,6 +5,7 @@
  * Мандат 8b: строго <= 120 строк.
  */
 
+import { formatDateKeyInTimeZone, resolveValidIanaTimeZone } from "@dental/shared";
 import type {
 	AutoProvisionSterilizationLogParams,
 	EvaluateSterilizationLogInput,
@@ -85,12 +86,15 @@ export function evaluateSterilizationLogForLinking(
  * Формирует ответ на списание/вскрытие крафт-пакета медсестрой.
  * Поддерживает как поштучные штрихкоды, так и списание партии смены без обязательного сканера.
  */
-export function buildUnsealKraftPackageResponse(params: UnsealKraftPackageParams): UnsealKraftPackageResponse {
+export function buildUnsealKraftPackageResponse(
+	params: UnsealKraftPackageParams & { timeZone?: string | null | undefined },
+): UnsealKraftPackageResponse {
 	const now = params.now ?? new Date();
 	const operator = params.operatorName || "Медсестра ЦСО";
+	const tz = resolveValidIanaTimeZone(params.timeZone, "Europe/Samara");
 	const effectiveBarcode =
 		(params.barcode || "").trim() ||
-		`BATCH-SHIFT-${now.toISOString().slice(0, 10).replace(/-/g, "")}`;
+		`BATCH-SHIFT-${formatDateKeyInTimeZone(now, tz).replace(/-/g, "")}`;
 	return {
 		success: true,
 		barcode: effectiveBarcode,

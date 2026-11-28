@@ -72,28 +72,28 @@ export const SensorStudyMobileStudiesDrawer: React.FC<SensorStudyMobileStudiesDr
 
 			{/* Drawer Surface */}
 			<div
-				className="relative z-10 w-full max-h-[82dvh] flex flex-col rounded-t-[24px] bg-[#0f172a] border-t border-[#334155] shadow-2xl animate-in slide-in-from-bottom duration-250 p-4 pb-[max(20px,env(safe-area-inset-bottom))]"
+				className="relative z-10 w-full max-h-[82dvh] flex flex-col rounded-t-[24px] bg-[var(--paper)] border-t border-[var(--line)] shadow-2xl animate-in slide-in-from-bottom duration-250 p-4 pb-[max(20px,env(safe-area-inset-bottom))]"
 				role="dialog"
 				aria-modal="true"
 				aria-label="Галерея рентгеновских снимков пациента"
 			>
 				{/* Tactile Drag Handle */}
 				<div className="flex justify-center pb-2 cursor-grab">
-					<div className="w-10 h-1.5 rounded-full bg-slate-500/50" />
+					<div className="w-10 h-1.5 rounded-full bg-[var(--line)]" />
 				</div>
 
 				{/* Header */}
-				<div className="flex items-center justify-between pb-3 border-b border-slate-700/60">
+				<div className="flex items-center justify-between pb-3 border-b border-[var(--line)]">
 					<div className="flex items-center gap-2">
-						<Layers size={17} className="text-teal-400" />
-						<h3 className="text-sm font-bold text-white tracking-tight">
+						<Layers size={17} className="text-[var(--primary)]" />
+						<h3 className="text-sm font-bold text-[var(--ink)] tracking-tight">
 							Снимки пациента ({studies.length})
 						</h3>
 					</div>
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full flex items-center justify-center bg-slate-800 text-slate-300 hover:text-white cursor-pointer"
+						className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full flex items-center justify-center bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)] cursor-pointer"
 						aria-label="Закрыть шторку"
 					>
 						<X size={16} />
@@ -103,7 +103,7 @@ export const SensorStudyMobileStudiesDrawer: React.FC<SensorStudyMobileStudiesDr
 				{/* List of studies (Grouped Cards) */}
 				<div className="flex-1 overflow-y-auto py-3 space-y-2.5 overscroll-contain">
 					{studies.length === 0 ? (
-						<div className="py-8 text-center text-slate-400 text-xs">
+						<div className="py-8 text-center text-[var(--ink-muted)] text-xs">
 							У пациента пока нет сохранённых снимков
 						</div>
 					) : (
@@ -182,7 +182,7 @@ export const SensorStudyMobileStudiesDrawer: React.FC<SensorStudyMobileStudiesDr
 					<button
 						type="button"
 						onClick={() => fileInputRef.current?.click()}
-						className="w-full h-12 rounded-xl bg-teal-600 hover:bg-teal-500 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all"
+						className="w-full min-h-[44px] h-11 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:scale-95 text-white text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all"
 						data-testid="mobile-btn-upload-dicom"
 					>
 						<UploadCloud size={17} />

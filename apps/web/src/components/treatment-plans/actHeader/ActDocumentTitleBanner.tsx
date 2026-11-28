@@ -39,14 +39,14 @@ export const ActDocumentTitleBanner: React.FC<ActDocumentTitleBannerProps> = ({
 						<FileText className="w-3.5 h-3.5" />
 						<span>Акт&nbsp;№&nbsp;{actData.actNumber}</span>
 					</span>
-					<span className="text-xs font-bold text-slate-800">
+					<span className="text-xs font-bold text-[var(--ink)] print:text-slate-800">
 						к&nbsp;Договору на оказание платных медицинских услуг №&nbsp;
 						{actData.contractNumber} от {contractDateFormatted}&nbsp;г.
 					</span>
 				</div>
-				<div className="text-xs font-semibold text-slate-600">
+				<div className="text-xs font-semibold text-[var(--ink-muted)] print:text-slate-600">
 					Дата составления:{" "}
-					<strong className="text-slate-900 font-mono">
+					<strong className="text-[var(--ink)] print:text-slate-900 font-mono">
 						{actData.actDate}&nbsp;г.
 					</strong>
 					{address ? ` (${address.split(",")[0]?.trim()})` : ""}
@@ -55,17 +55,17 @@ export const ActDocumentTitleBanner: React.FC<ActDocumentTitleBannerProps> = ({
 
 			<div className="doc-official-title-box text-center my-4 print:my-2">
 				<h1
-					className="text-base sm:text-lg font-black tracking-tight text-slate-900"
+					className="text-base sm:text-lg font-black tracking-tight text-[var(--ink)] print:text-slate-900"
 					style={{ color: palette.primaryDark }}
 				>
 					Акт сдачи-приемки оказанных стоматологических услуг
 				</h1>
-				<div className="doc-form-sub text-xs font-semibold text-slate-600 mt-1">
+				<div className="doc-form-sub text-xs font-semibold text-[var(--ink-muted)] print:text-slate-600 mt-1">
 					И накладная на списание материалов и медикаментов (ТМЦ) •
 					Этап&nbsp;№&nbsp;{actData.stageNumber} («
 					{actData.stageTitle.replace(/^Этап\s*\d+\s*[:.—-]\s*/i, "")}»)
 				</div>
-				<p className="text-[10px] text-slate-500 mt-0.5">
+				<p className="text-[10px] text-[var(--ink-muted)] print:text-slate-500 mt-0.5">
 					Составлен в соответствии с правилами оказания платных медицинских услуг и планом лечения
 				</p>
 			</div>

@@ -45,6 +45,28 @@ export interface PublicBookingPageProps {
 	readonly defaultMode?: "booking" | "cabinet";
 }
 
+interface CabinetPrimarySubmitButtonProps {
+	readonly label: string;
+	readonly onClick: () => void;
+	readonly ariaBusy?: boolean | undefined;
+}
+
+const CabinetPrimarySubmitButton: React.FC<CabinetPrimarySubmitButtonProps> = ({
+	label,
+	onClick,
+	ariaBusy,
+}) => (
+	<button
+		type="button"
+		onClick={onClick}
+		aria-busy={ariaBusy}
+		className="w-full py-3.5 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-[var(--primary)]/20 transition-all cursor-pointer"
+	>
+		<span>{label}</span>
+		<ArrowRight className="w-4 h-4" />
+	</button>
+);
+
 /**
  * PublicBookingPage — каноническая страница публичной онлайн-записи и личного кабинета пациента.
  * Четкое разделение: страница /book (PublicBookingPage) и встраиваемый виджет (PublicBookingWidget).
@@ -208,10 +230,21 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 			if (res.ok || res.status === 202) {
 				setOtpSent(true);
 			} else {
-				const errJson = await res.json().catch(() => null);
-				setAuthError(errJson?.error || "Не удалось отправить SMS-код подтверждения");
+				let errMessage: string | undefined;
+				try {
+					const errJson = (await res.json()) as { error?: string } | null;
+					errMessage = errJson?.error;
+				} catch (parseErr) {
+					clientLogger.warn("[PublicBookingPage] Failed to parse send-otp error response", parseErr, {
+						module: "PublicBookingPage",
+					});
+				}
+				setAuthError(errMessage || "Не удалось отправить SMS-код подтверждения");
 			}
-		} catch {
+		} catch (err) {
+			clientLogger.warn("[PublicBookingPage] Network error sending OTP", err, {
+				module: "PublicBookingPage",
+			});
 			setAuthError("Сетевая ошибка при отправке SMS-кода");
 		} finally {
 			setIsLoading(false);
@@ -251,9 +284,20 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 					return;
 				}
 			}
-			const errJson = await res.json().catch(() => null);
-			setAuthError(errJson?.error || "Неверный или просроченный SMS-код");
-		} catch {
+			let errMessage: string | undefined;
+			try {
+				const errJson = (await res.json()) as { error?: string } | null;
+				errMessage = errJson?.error;
+			} catch (parseErr) {
+				clientLogger.warn("[PublicBookingPage] Failed to parse verify-otp error response", parseErr, {
+					module: "PublicBookingPage",
+				});
+			}
+			setAuthError(errMessage || "Неверный или просроченный SMS-код");
+		} catch (err) {
+			clientLogger.warn("[PublicBookingPage] Network error verifying OTP", err, {
+				module: "PublicBookingPage",
+			});
 			setAuthError("Сетевая ошибка при проверке SMS-кода");
 		} finally {
 			setIsLoading(false);
@@ -465,14 +509,10 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 								<div className="p-4 rounded-xl bg-teal-50/80 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-sm text-teal-900 dark:text-teal-200 text-center">
 									Сессия личного кабинета активна
 								</div>
-								<button
-									type="button"
+								<CabinetPrimarySubmitButton
+									label="Открыть кабинет пациента"
 									onClick={() => setIsCabinetModalOpen(true)}
-									className="w-full py-3.5 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-[var(--primary)]/20 transition-all cursor-pointer"
-								>
-									<span>Открыть кабинет пациента</span>
-									<ArrowRight className="w-4 h-4" />
-								</button>
+								/>
 								<button
 									type="button"
 									onClick={handleLogout}
@@ -500,15 +540,11 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 										/>
 									</div>
 								</div>
-								<button
-									type="button"
+								<CabinetPrimarySubmitButton
+									label={isLoading ? "Отправка кода..." : "Получить код входа"}
 									onClick={handleSendOtp}
-									aria-busy={isLoading}
-									className="w-full py-3.5 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-[var(--primary)]/20 transition-all cursor-pointer"
-								>
-									<span>{isLoading ? "Отправка кода..." : "Получить код входа"}</span>
-									<ArrowRight className="w-4 h-4" />
-								</button>
+									ariaBusy={isLoading}
+								/>
 								{patientData && (
 									<button
 										type="button"
@@ -545,15 +581,11 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 										/>
 									</div>
 								</div>
-								<button
-									type="button"
+								<CabinetPrimarySubmitButton
+									label={isLoading ? "Проверка..." : "Войти в кабинет"}
 									onClick={handleVerifyOtp}
-									aria-busy={isLoading}
-									className="w-full py-3.5 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-[var(--primary)]/20 transition-all cursor-pointer"
-								>
-									<span>{isLoading ? "Проверка..." : "Войти в кабинет"}</span>
-									<ArrowRight className="w-4 h-4" />
-								</button>
+									ariaBusy={isLoading}
+								/>
 								<button
 									type="button"
 									onClick={() => {

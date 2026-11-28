@@ -27,7 +27,7 @@ trigger: always_on
 - Возможности ИИ: уровень доверия/подтверждения мутаций, живая индикация генерации/записи, история/поиск/память диалогов; на ПК (Desktop Electron) — локальные инструменты файлов/диффов/логов.
 
 ## 4. НЕПРИКОСНОВЕННЫЕ ИНВАРИАНТЫ
-1. **Авторизация и честные ошибки:** `apiAuthFetch` / клиенты Copilot ОБЯЗАНЫ передавать `staffToken || clinicToken` в `Authorization` (НИКОГДА `clinicToken` первым, иначе `403`!), проверять `res.ok`, не глотать `4xx`/`5xx`.
-2. **Чистота кода:** Модули `<= 300–500L`, длина строки `< 240` символов (0 однострочного спагетти!). Токены 8am (`var(--primary)`, `var(--paper)`, `var(--danger)`), 1 Primary CTA.
+1. Авторизация и честные I/O: `denteClinical*Headers` / клиенты Copilot передают `staffToken || clinicToken` в `Authorization` (НИКОГДА `clinicToken` первым или `denteAdminSecretRequestHeaders` в клинике!), `Idempotency-Key` UUIDv7 на мутациях, проверяют `res.ok`, запрещены `fetch().catch(() => null)`, `res.json().catch(() => [])`, `if (!res.ok) return []`, слепые `res.json() as T` (только `unwrapEnvelope` + Zod/guard) и закрытие модалок/фейк-успех при `4xx/5xx`.
+2. Чистота UI и кода: модули `<= 300–500L`, строка `< 240` симв.; 1 Primary CTA `#0d9488` с белым текстом (0 кислотного `#2dd4bf`, 0 заборов Primary в таблицах, 0 дублей кнопок, 0 серых «битых» табов dark mode, 0 наезда FAB на мобильные карточки и 0 правого клиппинга); 0 `&`/`>`/кривых падежей.
 3. Аллергии/стоп-факторы, FDI, МКБ-10 и `*Kopecks` (`BIGINT`) неприкосновенны; двухфазное `confirmation_required` для мутаций БД.
-4. Запрет `setTimeout(1500)`-симуляций и моков: путь реален (`Prompt -> Tool -> Fastify -> PG18 -> UI`); Desktop I/O в вебе возвращает `DESKTOP_DENIED`.
+4. Запрет `setTimeout(1500)` и фейковых БД-фолбэков (`8z/8wy`): путь реален (`Prompt -> Tool -> Fastify -> PG18 -> UI`), Desktop I/O в вебе даёт `DESKTOP_DENIED`.

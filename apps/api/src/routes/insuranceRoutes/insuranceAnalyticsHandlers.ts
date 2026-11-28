@@ -1,10 +1,13 @@
 import {
 	calculateDmsRegistryTotals,
 	calculateItemDmsSplit,
+	formatDateKeyInTimeZone,
 	generateDmsRegistryCsv,
 	generateDmsRegistryXml,
 	kopecksToRubles,
+	resolveValidIanaTimeZone,
 	rublesToKopecks,
+	todayDateKeyInTimeZone,
 	type DmsRegistryClinicInfo,
 	type DmsRegistryData,
 	type DmsRegistryInsuranceCompanyInfo,
@@ -264,6 +267,7 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 			chiefAccountantNameRu: org?.signatoryName || "",
 		};
 
+		const resolvedClinicTimeZone = resolveValidIanaTimeZone(clinicRow?.timezone);
 		// 3. Данные страховой компании
 		const insurerTitle =
 			contract?.companyName ||
@@ -277,7 +281,7 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 				? "Б/Н"
 				: `ДМС-${now.getFullYear()}/СВОД`;
 		const contractDate = contract?.createdAt
-			? contract.createdAt.toISOString().slice(0, 10)
+			? formatDateKeyInTimeZone(contract.createdAt, resolvedClinicTimeZone)
 			: `${now.getFullYear()}-01-01`;
 
 		const insuranceCompanyInfo: DmsRegistryInsuranceCompanyInfo = {
@@ -352,9 +356,9 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 
 		for (const tr of treatments) {
 			const visitDateIso = tr.visitSignedAt
-				? tr.visitSignedAt.toISOString().slice(0, 10)
+				? formatDateKeyInTimeZone(tr.visitSignedAt, resolvedClinicTimeZone)
 				: tr.visitCreatedAt
-					? tr.visitCreatedAt.toISOString().slice(0, 10)
+					? formatDateKeyInTimeZone(tr.visitCreatedAt, resolvedClinicTimeZone)
 					: startDateStr;
 
 			if (visitDateIso < startDateStr || visitDateIso > endDateStr) {
@@ -593,7 +597,7 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 
 		const totals = calculateDmsRegistryTotals(canonicalRecords);
 		const registryNumber = `РЕЕСТР-${startDateStr.replace(/-/g, "")}-${(insurerKey || "ALL").toUpperCase().slice(0, 8)}`;
-		const registryDate = now.toISOString().slice(0, 10);
+		const registryDate = todayDateKeyInTimeZone(resolvedClinicTimeZone, now);
 
 		const registryData: DmsRegistryData = {
 			registryNumber,

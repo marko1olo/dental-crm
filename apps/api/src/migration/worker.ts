@@ -194,11 +194,12 @@ async function processRun(
 			workerId: null,
 			heartbeatAt: null,
 			finishedAt: new Date(),
-			errorClass: isPhaseError
-				? (error as MigrationPhaseError).code
-				: error instanceof Error
-					? error.constructor.name
-					: "UnknownError",
+			errorClass:
+				error instanceof MigrationPhaseError
+					? error.code
+					: error instanceof Error
+						? error.constructor.name
+						: "UnknownError",
 			errorMessage: message.slice(0, 2000),
 		}).catch((updateError: unknown) => {
 			// Если и запись об ошибке не удалась, прогон останется loading с
@@ -292,11 +293,12 @@ export async function startMigrationWorker(): Promise<void> {
 			);
 	};
 	void cleanup();
-	state.cleanupTimer = setInterval(
+	const cleanupTimer = setInterval(
 		() => void cleanup(),
 		UPLOAD_CLEANUP_INTERVAL_MS,
 	);
-	state.cleanupTimer.unref();
+	cleanupTimer.unref();
+	state.cleanupTimer = cleanupTimer;
 
 	logger.info({ workerId: WORKER_ID }, "Воркер миграции запущен");
 	schedule(0);

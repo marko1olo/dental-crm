@@ -58,14 +58,14 @@ export const ActMinimalCleanHeader: React.FC<ActClinicHeaderProps> = ({
 	website,
 }) => {
 	return (
-		<header className="doc-header-minimal-clean flex items-start justify-between border-b pb-3 mb-4 border-slate-300">
+		<header className="doc-header-minimal-clean flex items-start justify-between border-b pb-3 mb-4 border-[var(--line)] print:border-slate-300">
 			<div>
-				<div className="doc-brand-title text-lg font-black text-slate-900">{clinicName}</div>
-				<div className="doc-clinic-meta text-[11px] text-slate-600">
+				<div className="doc-brand-title text-lg font-black text-[var(--ink)] print:text-slate-900">{clinicName}</div>
+				<div className="doc-clinic-meta text-[11px] text-[var(--ink-muted)] print:text-slate-600">
 					{legalName} • ИНН: {inn} • {address}
 				</div>
 			</div>
-			<div className="text-right doc-clinic-meta text-[11px] text-slate-600">
+			<div className="text-right doc-clinic-meta text-[11px] text-[var(--ink-muted)] print:text-slate-600">
 				<div>Лицензия: {license}</div>
 				<div>Тел: <strong>{phone}</strong> • {website}</div>
 			</div>

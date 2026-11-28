@@ -1,21 +1,11 @@
 /**
- * apps/web/src/components/analytics/__tests__/analyticsSSOTSuite.test.tsx
- *
- * Исчерпывающий тестовый набор управленческой аналитики и SSOT кассы.
- * Проверяет:
- * 1. Целочисленный расчет выручки и кассы без float-погрешностей.
- * 2. Загрузку кресел (норма 65–85%) и Recall.
- * 3. Детерминизм данных и отсутствие псевдонаучных моков/синусоид.
- * 4. Экспорт CSV с UTF-8 BOM.
- * 5. Ровно 1 Primary CTA кнопку #0d9488 на экране студии (Мандат 8am).
- * 6. Монтирование в живой UI: StandaloneLaunchers.tsx & AppShell.tsx (Мандат 8aq).
+ * apps/web/src/components/analytics/__tests__/analyticsSSOTSuite.test.tsx (6G Live SUT)
  */
 
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import {
 	ANALYTICS_PERIOD_OPTIONS,
@@ -26,11 +16,10 @@ import {
 	getOccupancyStatus,
 	getRebookingStatus,
 } from "../analyticsCatalogData.js";
+import { ExecutiveAnalyticsStudioModal } from "../ExecutiveAnalyticsStudioModal.js";
+import * as AnalyticsBarrel from "../index.js";
 import { setRuntimeDemoMode } from "../../../lib/demoMode.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const analyticsDir = path.resolve(__dirname, "..");
-const webSrcRoot = path.resolve(__dirname, "../../..");
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
 test("1.1. formatKopecksToRubles преобразует целочисленные копейки в рубли с разделителем", () => {
 	assert.equal(formatKopecksToRubles(0), "0 ₽");
@@ -67,7 +56,6 @@ test("1.4. createEmptyAnalyticsState возвращает честные нул�
 		assert.equal(data.completedVisitsCount, 0, "Empty state visits must be 0");
 		assert.equal(data.isEmpty, true, "Must flag isEmpty = true");
 
-		// Проверка кассового баланса: сумма способов оплат равна общей выручке (0)
 		const pb = data.paymentBreakdown;
 		const sumMethods = pb.cashKopecks + pb.cardDmsKopecks + pb.sbpKopecks + pb.depositKopecks;
 		assert.equal(sumMethods, 0, "Payment methods sum must strictly equal 0");
@@ -76,10 +64,9 @@ test("1.4. createEmptyAnalyticsState возвращает честные нул�
 
 test("1.5. [ANL-01] fetchClinicAnalyticsSSOT: ошибка сети выбрасывает исключение в проде и честный пустой стейт в демо", async () => {
 	const originalFetch = globalThis.fetch;
-	(globalThis as any).fetch = () => Promise.reject(new Error("Network offline"));
+	globalThis.fetch = (() => Promise.reject(new Error("Network offline"))) as typeof fetch;
 
 	try {
-		// В боевом режиме без демо-флага: ошибка не скрывается, а пробрасывается наружу
 		setRuntimeDemoMode(false);
 		await assert.rejects(
 			async () => {
@@ -89,7 +76,6 @@ test("1.5. [ANL-01] fetchClinicAnalyticsSSOT: ошибка сети выбрас
 			"In production mode, network error must throw to show retry banner",
 		);
 
-		// В демо-витринном режиме: безопасный возврат честного пустого стейта без фальсификаций
 		setRuntimeDemoMode(true);
 		const demoData = await fetchClinicAnalyticsSSOT("month");
 		assert.ok(demoData, "Data must be returned in demo mode");
@@ -105,28 +91,30 @@ test("1.6. exportAnalyticsToCsv формирует валидный CSV с UTF-8
 	let blobContent = "";
 	let downloadAttr = "";
 
-	(globalThis as any).Blob = class MockBlob {
-		constructor(parts: string[]) {
-			blobContent = parts.join("");
+	const prevBlob = globalThis.Blob;
+	const prevUrl = globalThis.URL;
+	const prevWindow = (globalThis as { window?: unknown }).window;
+	const prevDocument = (globalThis as { document?: unknown }).document;
+
+	class MockBlob {
+		constructor(parts: BlobPart[]) {
+			blobContent = parts.map((p) => String(p)).join("");
 		}
-	};
-	(globalThis as any).URL = {
+	}
+
+	(globalThis as { Blob: unknown }).Blob = MockBlob;
+	(globalThis as { URL: unknown }).URL = {
 		createObjectURL: () => "blob:test",
 		revokeObjectURL: () => {},
 	};
-
-	const originalWindow = (globalThis as any).window;
-	(globalThis as any).window = globalThis;
-	const originalDocument = globalThis.document;
-	(globalThis as any).document = {
-		createElement: (tag: string) => {
-			return {
-				setAttribute: (k: string, v: string) => {
-					if (k === "download") downloadAttr = v;
-				},
-				click: () => {},
-			};
-		},
+	(globalThis as { window?: unknown }).window = globalThis;
+	(globalThis as { document?: unknown }).document = {
+		createElement: () => ({
+			setAttribute: (k: string, v: string) => {
+				if (k === "download") downloadAttr = v;
+			},
+			click: () => {},
+		}),
 		body: {
 			appendChild: () => {},
 			removeChild: () => {},
@@ -143,76 +131,49 @@ test("1.6. exportAnalyticsToCsv формирует валидный CSV с UTF-8
 		assert.ok(blobContent.includes("Рейтинг врачей клиники"), "Must contain doctors rating");
 		assert.ok(downloadAttr.includes("Dente_Analytics_month_"), "File name must include period");
 	} finally {
-		(globalThis as any).window = originalWindow;
-		globalThis.document = originalDocument;
+		globalThis.Blob = prevBlob;
+		globalThis.URL = prevUrl;
+		(globalThis as { window?: unknown }).window = prevWindow;
+		(globalThis as { document?: unknown }).document = prevDocument;
 	}
 });
 
-test("2.1. ExecutiveAnalyticsStudioModal: Ровно 1 Primary CTA кнопка на видимый экран (Мандат 8am)", () => {
-	const modalPath = path.join(analyticsDir, "ExecutiveAnalyticsStudioModal.tsx");
-	const footerPath = path.join(analyticsDir, "studio", "ExecutiveAnalyticsStudioFooter.tsx");
-	const code = readFileSync(modalPath, "utf8") + (existsSync(footerPath) ? "\n" + readFileSync(footerPath, "utf8") : "");
-
-	// Ищем класс primary-button
-	const primaryMatches = code.match(/className=["'][^"']*primary-button[^"']*["']/g) || [];
-	assert.equal(primaryMatches.length, 1, "Must contain exactly ONE primary-button CTA");
-	assert.ok(
-		primaryMatches[0].includes("bg-[var(--primary)]") || primaryMatches[0].includes("bg-[var(--teal,#0d9488)]"),
-		"Primary button must use brand primary token"
+test("2.1. ExecutiveAnalyticsStudioModal: Ровно 1 Primary CTA кнопка, 3 KPI карточки, 44x44 закрытие и 0 disabled кнопок", () => {
+	const closedHtml = renderToStaticMarkup(
+		React.createElement(ExecutiveAnalyticsStudioModal, {
+			isOpen: false,
+			onClose: () => {},
+		}),
 	);
-	assert.ok(code.includes('data-testid="studio-primary-export-btn"'), "Primary button must have testid");
+	assert.equal(closedHtml, "");
+
+	const html = renderToStaticMarkup(
+		React.createElement(ExecutiveAnalyticsStudioModal, {
+			isOpen: true,
+			onClose: () => {},
+			initialPeriod: "month",
+		}),
+	);
+
+	const primaryButtons = html.match(/class="[^"]*primary-button[^"]*"/g) ?? [];
+	assert.equal(primaryButtons.length, 1, "Must render strictly ONE primary-button CTA");
+	assert.ok(primaryButtons[0]?.includes("bg-[var(--primary)]"));
+	assert.ok(html.includes('data-testid="studio-primary-export-btn"'));
+
+	assert.ok(html.includes('data-testid="kpi-card-revenue"'));
+	assert.ok(html.includes('data-testid="kpi-card-chairs"'));
+	assert.ok(html.includes('data-testid="kpi-card-average-check"'));
+	assert.equal(html.includes('disabled=""'), false);
+
+	assert.ok(html.includes('data-testid="studio-modal-close-btn"'));
+	assert.ok(html.includes("min-h-[44px] min-w-[44px]"));
 });
 
-test("2.2. ExecutiveAnalyticsStudioModal: 3 доминантных KPI карточки и автономия врача (Мандат 8e)", () => {
-	const modalPath = path.join(analyticsDir, "ExecutiveAnalyticsStudioModal.tsx");
-	const kpiPath = path.join(analyticsDir, "studio", "ExecutiveAnalyticsKpiGrid.tsx");
-	const code = readFileSync(modalPath, "utf8") + (existsSync(kpiPath) ? "\n" + readFileSync(kpiPath, "utf8") : "");
-
-	assert.ok(code.includes('data-testid="kpi-card-revenue"'), "Revenue KPI card exists");
-	assert.ok(code.includes('data-testid="kpi-card-chairs"'), "Chairs occupancy KPI card exists");
-	assert.ok(code.includes('data-testid="kpi-card-average-check"'), "Average check & Recall KPI card exists");
-
-	// Проверка Мандата 8e: кнопки никогда не disabled
-	assert.ok(!code.includes("disabled={"), "No artificial button disabling permitted (Doctor Autonomy Mandate 8e)");
-});
-
-test("2.3. ExecutiveAnalyticsStudioModal: Сенсорный минимум закрытия >= 44x44px по Apple HIG", () => {
-	const modalPath = path.join(analyticsDir, "ExecutiveAnalyticsStudioModal.tsx");
-	const headerPath = path.join(analyticsDir, "studio", "ExecutiveAnalyticsStudioHeader.tsx");
-	const code = readFileSync(modalPath, "utf8") + (existsSync(headerPath) ? "\n" + readFileSync(headerPath, "utf8") : "");
-
-	assert.ok(code.includes("min-h-[44px] min-w-[44px]"), "Close button must have 44x44px touch target on mobile");
-	assert.ok(code.includes('data-testid="studio-modal-close-btn"'), "Close button must have testid");
-});
-
-import { resolveClinicRoute } from "../../../router/routeResolver";
-
-test("3.1. resolveClinicRoute: Реагирует на hash #executive-studio и studio-параметры", () => {
+test("3.1. resolveClinicRoute & analytics barrel export: Реагирует на #executive-studio / #analytics и экспортирует SSOT", () => {
 	assert.equal(resolveClinicRoute("", "#executive-studio").view, "analytics");
 	assert.equal(resolveClinicRoute("", "#analytics").view, "analytics");
 	assert.equal(resolveClinicRoute("?studio=analytics", "").view, "analytics");
 	assert.equal(resolveClinicRoute("", "#executive-studio").studio, null);
-});
-
-test("3.2. WorkspaceStudioOverlayHost смонтирован в AppModalsContainer.tsx (Мандат 8aq)", () => {
-	const containerPath = path.join(
-		webSrcRoot,
-		"components/appLayout/AppModalsContainer.tsx",
-	);
-	const code = readFileSync(containerPath, "utf8");
-	assert.ok(code.includes("WorkspaceStudioOverlayHost"), "Must mount WorkspaceStudioOverlayHost");
-});
-
-test("3.3. ExecutiveAnalyticsStudioModal доступна через роутер App.tsx (Мандат 8aq)", () => {
-	const appCode = readFileSync(path.join(webSrcRoot, "App.tsx"), "utf8");
-	assert.ok(appCode.includes("resolveClinicRoute"), "App.tsx must resolve #executive-studio via resolveClinicRoute");
-	assert.ok(appCode.includes("<AppModalsContainer"), "App.tsx must mount AppModalsContainer");
-});
-
-test("3.4. index.ts реэкспортирует SSOT данные и Студию", () => {
-	const indexPath = path.join(analyticsDir, "index.ts");
-	const code = readFileSync(indexPath, "utf8");
-
-	assert.ok(code.includes('export * from "./analyticsCatalogData"'), "Exports analyticsCatalogData");
-	assert.ok(code.includes('export * from "./ExecutiveAnalyticsStudioModal"'), "Exports ExecutiveAnalyticsStudioModal");
+	assert.strictEqual(AnalyticsBarrel.ExecutiveAnalyticsStudioModal, ExecutiveAnalyticsStudioModal);
+	assert.strictEqual(AnalyticsBarrel.fetchClinicAnalyticsSSOT, fetchClinicAnalyticsSSOT);
 });

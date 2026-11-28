@@ -67,13 +67,13 @@
 	background: rgba(15, 118, 110, 0.25);
 	color: #ffffff;
 	transform: translateX(3px);
-	box-shadow: inset 3px 0 0 var(--teal);
+	box-shadow: inset 3px 0 0 var(--primary);
 }
 
 .nav-item.active {
 	background: rgba(15, 118, 110, 0.3);
 	color: #ffffff;
-	box-shadow: inset 3px 0 0 var(--teal);
+	box-shadow: inset 3px 0 0 var(--primary);
 	position: relative;
 }
 
@@ -84,7 +84,7 @@
 	top: 4px;
 	bottom: 4px;
 	width: 3px;
-	background: var(--teal);
+	background: var(--primary);
 	border-radius: 0 2px 2px 0;
 }
 
@@ -293,7 +293,8 @@ body {
 /* Buttons with Micro-animations */
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .primary-button {
-	background: linear-gradient(135deg, var(--teal-fill), var(--teal-dark));
+	background: var(--primary, #0f766e);
+	color: var(--primary-fg, #ffffff);
 	border: none;
 	box-shadow: 0 4px 12px var(--teal-glow);
 	transition: all var(--transition-fast);

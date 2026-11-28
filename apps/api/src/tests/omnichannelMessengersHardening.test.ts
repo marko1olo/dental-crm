@@ -129,8 +129,9 @@ describe("Omnichannel & Messengers Hardening Verification Suite", () => {
 			false,
 		);
 
-		assert.ok(res);
-		assert.ok(res.patientName);
+		assert.equal(typeof res, "object");
+		assert.equal(res.patientName, "Тестовый Пациент");
+		assert.equal("patientId" in res, true);
 	});
 
 	// =========================================================================

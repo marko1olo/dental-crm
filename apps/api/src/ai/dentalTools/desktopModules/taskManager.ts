@@ -4,6 +4,7 @@
  */
 
 import type { ChildProcess } from "node:child_process";
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
 import { aiLogger } from "../../aiLogger.js";
 import type { WorkstationTask } from "./desktopTypes.js";
 import { workstationSchedules } from "./scheduleManager.js";
@@ -15,7 +16,10 @@ import {
 
 export class WorkstationTaskManager {
 	private static instance: WorkstationTaskManager;
-	private tasks = new Map<string, WorkstationTask>();
+	private tasks = new BoundedTtlMap<string, WorkstationTask>({
+		maxEntries: 1000,
+		ttlMs: 24 * 60 * 60_000,
+	});
 	private counter = 0;
 
 	private constructor() {}

@@ -74,7 +74,7 @@ export function DentalLabPhotoReference({
 						{onShadePhotoChange && (
 							<button
 								type="button" onClick={() => onShadePhotoChange(`photos/vita_${selectedShade.toLowerCase()}_shade_reference.jpg`)}
-								className="min-h-[36px] px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+								className="min-h-[36px] px-2 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-[11px] font-bold hover:bg-[var(--paper-soft)] transition cursor-pointer"
 								data-testid="shade-selector-sample-photo-btn"
 							>
 								Образец

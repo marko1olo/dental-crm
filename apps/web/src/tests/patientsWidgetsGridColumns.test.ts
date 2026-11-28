@@ -1,300 +1,375 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import test from "node:test";
-import { fileURLToPath } from "node:url";
+import { afterEach, describe, it } from "node:test";
+import type { Patient } from "@dental/shared";
+import React, { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { PatientDetailsPanel } from "../components/patients/PatientDetailsPanel";
+import { PatientOverviewTab } from "../components/patients/PatientOverviewTab";
+import { AppLogicProvider, type AppLogicContextType } from "../contexts/AppLogicContext";
+import { usePatientStore } from "../store/patientStore";
 
-/**
- * Страж числа колонок в группе виджетов под карточкой пациента.
- *
- * ЧТО ЛОВИТ. На снимке 720x1100 (.dente-ops-shots/narrow_full.png) справа от
- * «Дублей карточек пациентов» стояла пустая белая панель с рамкой во всю высоту
- * экрана — 44 % ширины окна ничем. Причина не в самой панели: группа шести
- * виджетов раскладывалась сеткой с минимумом дорожки 280px, на 720 ей достаётся
- * около 639px, две дорожки по 280px туда влезают — и получались две колонки по
- * ~311px. Высота ряда сетки равна высоте самой высокой карточки, а разбор дублей
- * в узкой дорожке перестраивается в стопку подпись/значение и вырастает на
- * тысячи пикселей. Соседняя короткая карточка растягивалась до его высоты.
- *
- * ПОЧЕМУ ПРОВЕРКА ТЕКСТОВАЯ. Полноценного рендера в проекте нет (браузерных
- * тестов нет вовсе), поэтому проверяется то, что проверить можно без браузера:
- * правило в поставляемом CSS и разрешение auto-fit по этому правилу. Это не
- * доказательство отрисовки — снимок делает ведущий. Но возврат минимума к 280px
- * тест ловит, и именно этот возврат вернул бы пустую панель.
- *
- * Разрешение auto-fit по спецификации CSS Grid: дорожек столько, сколько
- * умещается целиком, то есть максимальное n при n*min + (n-1)*gap <= W.
- */
-
-const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-
-function read(relativePath: string): string {
-	const raw = readFileSync(path.join(webSrc, relativePath), "utf8");
-	const baseDir = path.dirname(path.join(webSrc, relativePath));
-	return raw.replace(/@import\s+["']([^"']+)["'];/g, (_, importPath) => {
-		const fullPath = path.resolve(baseDir, importPath);
-		return readFileSync(fullPath, "utf8");
-	});
-}
-
-/**
- * Обязательное совпадение: отсутствие — это провал проверки с внятным текстом, а
- * не падение по undefined через две строки.
- */
-function requireMatch(
-	pattern: RegExp,
-	source: string,
-	message: string,
-): RegExpExecArray {
-	const found = pattern.exec(source);
-	if (found === null) throw new assert.AssertionError({ message });
-	return found;
-}
-
-/** Обязательная группа совпадения. */
-function requireGroup(
-	match: RegExpExecArray,
-	index: number,
-	message: string,
-): string {
-	const value = match[index];
-	if (typeof value !== "string") throw new assert.AssertionError({ message });
-	return value;
-}
-
-/**
- * Корневой размер шрифта — браузерное значение по умолчанию: ни одно правило
- * html/:root в проекте не задаёт font-size. Проверено поиском
- * `rg --multiline "(html|:root)\s*\{[^}]*font-size" apps/web/src/styles/*.css`
- * — совпадений нет. Если такое правило появится, число здесь станет ложным, и
- * менять надо будет его вместе с правилом.
- */
-const ROOT_FONT_PX = 16;
-
-type WidgetsGrid = {
-	/** Минимальная ширина дорожки, px. */
-	trackMinPx: number;
-	/** Просвет между дорожками, px. */
-	gapPx: number;
+const testPatient: Patient = {
+	id: "pat-grid-1",
+	organizationId: "org-1",
+	status: "active",
+	fullName: "Смирнов Алексей Игоревич",
+	phone: "+7 (999) 111-22-33",
+	email: null,
+	notes: null,
+	gender: "male",
+	birthDate: "1985-03-14",
+	balanceRub: 1500,
+	administrativeProfile: null,
+	createdAt: "2026-01-01T00:00:00.000Z",
+	updatedAt: "2026-01-01T00:00:00.000Z",
 };
 
-/**
- * Читает правило .patients-widgets-grid из поставляемой таблицы стилей.
- * Не «примерно как в CSS», а ровно то, что уедет в сборку.
- */
-function readWidgetsGrid(): WidgetsGrid {
-	const css = read("styles/patients-redesign.css");
-	const block = requireMatch(
-		/\.patients-widgets-grid\s*\{([^}]*)\}/,
-		css,
-		"правило .patients-widgets-grid не найдено в patients-redesign.css",
-	);
-	const body = requireGroup(block, 1, "правило .patients-widgets-grid пустое");
+const baseAppContext = {
+	dashboard: {
+		patients: [testPatient],
+		staff: [],
+		appointments: [],
+		clinicSettings: { profile: { clinicName: "ДЕНТЕ" } },
+	},
+	selectedPatient: testPatient,
+	auth: {
+		currentUser: { name: "Администратор" },
+		denteClinicalReadHeaders: () => ({}),
+		denteClinicalMutationHeaders: () => ({}),
+	},
+} as unknown as AppLogicContextType;
 
-	assert.match(
-		body,
-		/display:\s*grid/,
-		"группа виджетов перестала быть сеткой",
-	);
+interface DomNodeStub {
+	nodeType: number;
+	tagName: string;
+	nodeName: string;
+	style: Record<string, string>;
+	dataset: Record<string, string>;
+	children: DomNodeStub[];
+	childNodes: DomNodeStub[];
+	attrs: Record<string, string>;
+	ownerDocument: unknown;
+	parentNode: DomNodeStub | null;
+	textContent: string;
+	nodeValue?: string;
+	data?: string;
+	className?: string;
+	appendChild: (c: DomNodeStub) => DomNodeStub;
+	insertBefore: (c: DomNodeStub, b: DomNodeStub | null) => DomNodeStub;
+	removeChild: (c: DomNodeStub) => DomNodeStub;
+	addEventListener: () => void;
+	removeEventListener: () => void;
+	setAttribute: (name: string, val: string) => void;
+	getAttribute: (name: string) => string | null;
+	hasAttribute: (name: string) => boolean;
+	removeAttribute: (name: string) => void;
+	dispatchEvent: () => boolean;
+	getBoundingClientRect: () => { top: number; left: number; right: number; bottom: number; width: number; height: number };
+	focus: () => void;
+	blur: () => void;
+	contains: (other?: unknown) => boolean;
+}
 
-	const template = requireMatch(
-		/grid-template-columns:\s*repeat\(\s*auto-fit\s*,\s*minmax\(\s*min\(\s*([\d.]+)rem\s*,\s*100%\s*\)\s*,\s*1fr\s*\)\s*\)/,
-		body,
-		"ожидалось grid-template-columns: repeat(auto-fit, minmax(min(<N>rem, 100%), 1fr)) — без min(...,100%) колонка не ужимается ниже минимума и карточки срезаются",
-	);
-	const gap = requireMatch(
-		/(?:^|[\s;])gap:\s*([\d.]+)rem/,
-		body,
-		"просвет между дорожками задан не в rem — пересчёт числа колонок станет неверным",
-	);
-
-	return {
-		trackMinPx:
-			Number(requireGroup(template, 1, "минимум дорожки не прочитан")) *
-			ROOT_FONT_PX,
-		gapPx: Number(requireGroup(gap, 1, "просвет не прочитан")) * ROOT_FONT_PX,
+function renderClientToHtml(element: React.ReactElement): Promise<string> {
+	const prevGlobals = {
+		window: (globalThis as { window?: unknown }).window,
+		document: (globalThis as { document?: unknown }).document,
+		fetch: (globalThis as { fetch?: unknown }).fetch,
+		HTMLElement: (globalThis as { HTMLElement?: unknown }).HTMLElement,
+		Element: (globalThis as { Element?: unknown }).Element,
+		Node: (globalThis as { Node?: unknown }).Node,
+		HTMLIFrameElement: (globalThis as { HTMLIFrameElement?: unknown }).HTMLIFrameElement,
+		IS_REACT_ACT_ENVIRONMENT: (globalThis as { IS_REACT_ACT_ENVIRONMENT?: unknown }).IS_REACT_ACT_ENVIRONMENT,
 	};
+
+	class FakeIFrame {}
+	class FakeEl {}
+	class FakeHtmlEl {}
+	class FakeNode {}
+
+	const doc: Record<string, unknown> = {
+		nodeType: 9,
+		activeElement: null,
+		addEventListener: () => {},
+		removeEventListener: () => {},
+		createComment: () => ({ nodeType: 8, parentNode: null, ownerDocument: null }),
+		createTextNode: (text: string): DomNodeStub => ({
+			nodeType: 3,
+			tagName: "#text",
+			nodeName: "#text",
+			style: {},
+			dataset: {},
+			children: [],
+			childNodes: [],
+			attrs: {},
+			ownerDocument: doc,
+			parentNode: null,
+			textContent: String(text ?? ""),
+			nodeValue: String(text ?? ""),
+			data: String(text ?? ""),
+			appendChild: (c) => c,
+			insertBefore: (c) => c,
+			removeChild: (c) => c,
+			addEventListener: () => {},
+			removeEventListener: () => {},
+			setAttribute: () => {},
+			getAttribute: () => null,
+			hasAttribute: () => false,
+			removeAttribute: () => {},
+			dispatchEvent: () => true,
+			getBoundingClientRect: () => ({ top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0 }),
+			focus: () => {},
+			blur: () => {},
+			contains: () => false,
+		}),
+	};
+
+	const makeEl = (tag = "div"): DomNodeStub => {
+		const children: DomNodeStub[] = [];
+		const attrs: Record<string, string> = {};
+		const el: DomNodeStub = {
+			nodeType: 1,
+			tagName: tag.toUpperCase(),
+			nodeName: tag.toUpperCase(),
+			style: {},
+			dataset: {},
+			children,
+			childNodes: children,
+			attrs,
+			ownerDocument: doc,
+			parentNode: null,
+			textContent: "",
+			appendChild: (c) => {
+				children.push(c);
+				c.parentNode = el;
+				return c;
+			},
+			insertBefore: (c, b) => {
+				const idx = b ? children.indexOf(b) : -1;
+				if (idx >= 0) children.splice(idx, 0, c);
+				else children.push(c);
+				c.parentNode = el;
+				return c;
+			},
+			removeChild: (c) => {
+				const idx = children.indexOf(c);
+				if (idx >= 0) children.splice(idx, 1);
+				c.parentNode = null;
+				return c;
+			},
+			addEventListener: () => {},
+			removeEventListener: () => {},
+			setAttribute: (name, value) => {
+				attrs[name] = value;
+				if (name === "class" || name === "className") el.className = value;
+			},
+			getAttribute: (name) => attrs[name] ?? null,
+			hasAttribute: (name) => name in attrs,
+			removeAttribute: (name) => {
+				delete attrs[name];
+			},
+			dispatchEvent: () => true,
+			getBoundingClientRect: () => ({ top: 0, left: 0, right: 1200, bottom: 900, width: 1200, height: 900 }),
+			focus: () => {},
+			blur: () => {},
+			contains: (other) => {
+				let curr = other as DomNodeStub | null | undefined;
+				while (curr) {
+					if (curr === el) return true;
+					curr = curr.parentNode;
+				}
+				return false;
+			},
+		};
+		return el;
+	};
+
+	doc.createElement = (tag: string) => makeEl(tag);
+	doc.createElementNS = (_ns: string, tag: string) => makeEl(tag);
+	const body = makeEl("body");
+	doc.body = body;
+	doc.documentElement = makeEl("html");
+
+	const serialize = (node: DomNodeStub): string => {
+		if (node.nodeType === 3) return node.data ?? node.textContent ?? "";
+		if (node.nodeType !== 1) return "";
+		const tag = node.tagName.toLowerCase();
+		const attrEntries: Array<[string, string]> = Object.entries(node.attrs);
+		if (node.className && !("class" in node.attrs)) {
+			attrEntries.push(["class", node.className]);
+		}
+		const styleStr = Object.entries(node.style)
+			.filter(([, v]) => Boolean(v))
+			.map(([k, v]) => `${k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}:${v}`)
+			.join(";");
+		if (styleStr) attrEntries.push(["style", styleStr]);
+		const attrHtml = attrEntries.map(([k, v]) => ` ${k}="${v}"`).join("");
+		const inner = node.children.length > 0 ? node.children.map(serialize).join("") : (node.textContent ?? "");
+		return `<${tag}${attrHtml}>${inner}</${tag}>`;
+	};
+
+	(globalThis as { fetch: unknown }).fetch = async () =>
+		new Response(JSON.stringify({ data: {} }), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		});
+	(globalThis as { window: unknown }).window = {
+		document: doc,
+		addEventListener: () => {},
+		removeEventListener: () => {},
+		dispatchEvent: () => true,
+		HTMLIFrameElement: FakeIFrame,
+		Element: FakeEl,
+		HTMLElement: FakeHtmlEl,
+		Node: FakeNode,
+		navigator: { userAgent: "node" },
+	};
+	(globalThis as { document: unknown }).document = doc;
+	(globalThis as { HTMLElement: unknown }).HTMLElement = FakeHtmlEl;
+	(globalThis as { Element: unknown }).Element = FakeEl;
+	(globalThis as { Node: unknown }).Node = FakeNode;
+	(globalThis as { HTMLIFrameElement: unknown }).HTMLIFrameElement = FakeIFrame;
+	(globalThis as { IS_REACT_ACT_ENVIRONMENT: unknown }).IS_REACT_ACT_ENVIRONMENT = true;
+
+	const container = makeEl("div");
+	let root: Root | null = null;
+	return (async () => {
+		try {
+			await act(async () => {
+				root = createRoot(container as unknown as HTMLElement);
+				root.render(element);
+				await new Promise((r) => setTimeout(r, 15));
+			});
+			return container.children.map(serialize).join("");
+		} finally {
+			if (root) {
+				act(() => {
+					root?.unmount();
+				});
+			}
+			(globalThis as { window?: unknown }).window = prevGlobals.window;
+			(globalThis as { document?: unknown }).document = prevGlobals.document;
+			(globalThis as { fetch?: unknown }).fetch = prevGlobals.fetch;
+			(globalThis as { HTMLElement?: unknown }).HTMLElement = prevGlobals.HTMLElement;
+			(globalThis as { Element?: unknown }).Element = prevGlobals.Element;
+			(globalThis as { Node?: unknown }).Node = prevGlobals.Node;
+			(globalThis as { HTMLIFrameElement?: unknown }).HTMLIFrameElement = prevGlobals.HTMLIFrameElement;
+			(globalThis as { IS_REACT_ACT_ENVIRONMENT?: unknown }).IS_REACT_ACT_ENVIRONMENT = prevGlobals.IS_REACT_ACT_ENVIRONMENT;
+		}
+	})();
 }
 
-/** Сколько дорожек даст auto-fit в контейнере ширины containerPx. */
-function columnCount(containerPx: number, grid: WidgetsGrid): number {
-	// min(<N>rem, 100%): в контейнере уже минимума побеждает сам контейнер.
-	const trackMin = Math.min(grid.trackMinPx, containerPx);
-	return Math.max(
-		1,
-		Math.floor((containerPx + grid.gapPx) / (trackMin + grid.gapPx)),
-	);
-}
+describe("Patients widgets grid & panel layout (Live 6G SUT)", () => {
+	afterEach(() => {
+		usePatientStore.setState({ selectedPatientId: null });
+	});
 
-/** Ширина одной дорожки при таком числе колонок. */
-function trackWidth(containerPx: number, grid: WidgetsGrid): number {
-	const columns = columnCount(containerPx, grid);
-	return (containerPx - grid.gapPx * (columns - 1)) / columns;
-}
-
-/*
- * Отступы, определяющие ширину группы. Взяты из опубликованных правил, а не
- * измерены в браузере:
- *   dente-redesign.css:843  .app-shell.dente-redesign .workspace padding-inline: 24px
- *   dente-redesign.css:1061 то же правило при @media (max-width: 840px) -> 12px
- *   dente-redesign.css:1030 .patients-panel padding: 20px, border: 1px
- *   main.css:187            * { box-sizing: border-box }
- */
-const NARROW_WORKSPACE_INLINE_PX = 2 * 12;
-const PATIENTS_PANEL_CHROME_PX = 2 * 20 + 2 * 1;
-
-/**
- * Диапазон ширин, достижимых для группы, с запасом в обе стороны.
- *
- * Нижняя граница: при окне >840px группа третьим ребёнком .patients-main-grid
- * попадает в его первую дорожку minmax(260px, 320px) — это 260..320px. Верхняя:
- * при окне <=840px .patients-main-grid принудительно одна колонка
- * (dente-redesign.css:1067), и группе достаётся вся ширина панели, максимум
- * 840 - 24 - 42 = 774px. Запас 240..800 закрывает и ширину вертикальной полосы
- * прокрутки, которую по CSS не узнать.
- */
-const REACHABLE_MIN_PX = 240;
-const REACHABLE_MAX_PX = 800;
-
-test("группа виджетов пациента идёт одной колонкой на всех достижимых ширинах", () => {
-	const grid = readWidgetsGrid();
-
-	for (let width = REACHABLE_MIN_PX; width <= REACHABLE_MAX_PX; width += 1) {
-		const columns = columnCount(width, grid);
-		assert.equal(
-			columns,
-			1,
-			`при ширине группы ${width}px получается ${columns} колонок: вторая дорожка растянется до высоты разбора дублей и станет пустой панелью`,
+	it("renders empty PatientOverviewTab as empty string when no patient is selected", async () => {
+		usePatientStore.setState({ selectedPatientId: null });
+		const html = await renderClientToHtml(
+			React.createElement(
+				AppLogicProvider,
+				{ value: baseAppContext },
+				React.createElement(PatientOverviewTab),
+			),
 		);
-		// Одна колонка и есть отсутствие мёртвой ширины: дорожка равна контейнеру.
-		assert.equal(
-			trackWidth(width, grid),
-			width,
-			`при ${width}px дорожка не занимает всю ширину группы`,
+		assert.equal(html, "");
+	});
+
+	it("renders PatientOverviewTab with CSS grid classes (1-col mobile, 2-col lg) and no inline gridTemplateColumns", async () => {
+		usePatientStore.setState({ selectedPatientId: testPatient.id });
+		const html = await renderClientToHtml(
+			React.createElement(
+				AppLogicProvider,
+				{ value: baseAppContext },
+				React.createElement(PatientOverviewTab, { patientBalance: 1500 }),
+			),
 		);
-	}
-});
+		assert.ok(html.includes('data-testid="patient-overview-tab"'));
+		assert.ok(html.includes("patient-clinical-grid grid grid-cols-1 lg:grid-cols-2"));
+		assert.equal(html.includes("grid-template-columns"), false);
+		assert.equal(html.includes("minmax(min(280px"), false);
+	});
 
-test("три судимые ширины окна дают одну колонку", () => {
-	const grid = readWidgetsGrid();
-
-	// 390 (телефон) и 720 (планшет в портрете): группа во всю ширину панели.
-	for (const viewport of [390, 720]) {
-		const available =
-			viewport - NARROW_WORKSPACE_INLINE_PX - PATIENTS_PANEL_CHROME_PX;
-		assert.equal(
-			columnCount(available, grid),
-			1,
-			`окно ${viewport}px: группе ${available}px, колонок больше одной`,
+	it("mounts PatientFamilyAndInsuranceWidget and PatientCommunicationTimelineWidget cleanly inside overview grid", async () => {
+		usePatientStore.setState({ selectedPatientId: testPatient.id });
+		const html = await renderClientToHtml(
+			React.createElement(
+				AppLogicProvider,
+				{ value: baseAppContext },
+				React.createElement(PatientOverviewTab, { patientBalance: 1500 }),
+			),
 		);
-	}
+		assert.ok(html.includes('data-testid="patient-family-and-insurance-widget"'));
+		assert.ok(html.includes('data-testid="patient-communication-timeline-widget"'));
+		assert.ok(html.includes("patient-secondary-accordion"));
+		assert.ok(html.includes("История коммуникаций и CRM"));
+	});
 
-	// 1440 (рабочий стол): группа сидит в дорожке minmax(260px, 320px)
-	// .patients-main-grid, поэтому ширина окна на неё не влияет.
-	for (const trackPx of [260, 320]) {
-		assert.equal(
-			columnCount(trackPx, grid),
-			1,
-			`дорожка карточки пациента ${trackPx}px: колонок больше одной`,
+	it("renders PatientDetailsPanel with min-w-0 layout protection for both empty and selected patient states", async () => {
+		usePatientStore.setState({ selectedPatientId: null });
+		const emptyHtml = await renderClientToHtml(
+			React.createElement(
+				AppLogicProvider,
+				{ value: { ...baseAppContext, selectedPatient: null } as unknown as AppLogicContextType },
+				React.createElement(PatientDetailsPanel, {
+					selectedPatient: null,
+					onBackToList: () => {},
+					onOpenVisit: () => {},
+					onOpenPatientCardModal: () => {},
+					onOpenLoyaltyModal: () => {},
+					patientCoreDraft: { fullName: "", phone: "", birthDate: "", notes: "" } as never,
+					patientCoreSaveState: "idle",
+					patientCoreDirty: false,
+					savePatientCore: () => {},
+					patientAdministrativeProfileDraft: {} as never,
+					updatePatientAdministrativeProfileDraft: () => {},
+					patientAdministrativeProfileSaveState: "idle",
+					patientAdministrativeProfileDirty: false,
+					patientAdministrativeSaveGuidance: null,
+					patientAdministrativeSaveGuidanceId: "guid-1",
+					patientAdministrativeProfileValidationMessage: null,
+					savePatientAdministrativeProfile: () => {},
+					weekdayOptions: [],
+					executePatientSomaticNorm: () => {},
+					executeBookAppointment: () => {},
+				}),
+			),
 		);
-	}
-});
+		assert.ok(emptyHtml.includes("patient-admin-panel w-full min-w-0"));
+		assert.ok(emptyHtml.includes("Карточка пациента"));
 
-test("проверка отличает починку от дефекта: прежний минимум 280px давал две колонки", () => {
-	const grid = readWidgetsGrid();
-	const before: WidgetsGrid = { trackMinPx: 280, gapPx: grid.gapPx };
-
-	// Ширина группы на окне 720px по опубликованным отступам: 654px. Вертикальная
-	// полоса прокрутки, если она классическая, отнимает ещё ~15px и даёт 639px —
-	// на число колонок это не влияет, поэтому в расчёте её нет.
-	const availableAt720 =
-		720 - NARROW_WORKSPACE_INLINE_PX - PATIENTS_PANEL_CHROME_PX;
-	assert.equal(
-		columnCount(availableAt720, before),
-		2,
-		"прежнее правило не воспроизводит дефект — проверка ничего не стоит",
-	);
-
-	const beforeTrack = trackWidth(availableAt720, before);
-	// Дорожка уже 320px — та самая узкая колонка, из-за которой разбор дублей
-	// перестраивается в высокую стопку (dente-operations.css, @container opsPanel).
-	assert.ok(
-		beforeTrack < 320,
-		`прежняя дорожка ${beforeTrack}px — ожидалась узкая, меньше 320px`,
-	);
-
-	// И доля окна, которую занимала пустая дорожка: ведущий увидел «около 45 %».
-	const deadShare = beforeTrack / 720;
-	assert.ok(
-		deadShare > 0.4 && deadShare < 0.5,
-		`пустая дорожка занимала ${(deadShare * 100).toFixed(1)} % окна — расчёт расходится с осмотром снимка`,
-	);
-
-	// И та же ширина по новому правилу — одна колонка.
-	assert.equal(columnCount(availableAt720, grid), 1);
-});
-
-test("auto-fit не мёртвая форма: получив ширину секции, группа вернёт колонки", () => {
-	const grid = readWidgetsGrid();
-	// .workspace ограничен max-width: 1560px (dente-redesign.css:846), минус
-	// отступы 2x24px и обвязка панели 42px — 1470px.
-	const fullSectionPx = 1560 - 2 * 24 - PATIENTS_PANEL_CHROME_PX;
-	const columns = columnCount(fullSectionPx, grid);
-	assert.ok(
-		columns >= 2,
-		`на полной ширине секции (${fullSectionPx}px) группа осталась бы ${columns} колонкой — правило превратилось в жёсткую одну`,
-	);
-	// Дорожка при этом не уходит обратно в узкую: смысл минимума именно в этом.
-	assert.ok(
-		trackWidth(fullSectionPx, grid) >= grid.trackMinPx,
-		"дорожка на полной ширине уже объявленного минимума",
-	);
-});
-
-test("перестроение таблицы дублей в карточки сохранено", () => {
-	// Ведущий признал стопку подпись/значение верным поведением на узком экране.
-	// Порог задан container-запросом по ширине ПАНЕЛИ, а не окна, поэтому
-	// расширение группы могло его перескочить.
-	const operationsCss = read("styles/dente-operations.css");
-	const threshold = requireMatch(
-		/@container\s+opsPanel\s*\(max-width:\s*(\d+)px\)/,
-		operationsCss,
-		"container-запрос перестроения таблицы в карточки не найден",
-	);
-	const thresholdPx = Number(
-		requireGroup(threshold, 1, "порог перестроения не прочитан"),
-	);
-
-	const availableAt720 =
-		720 - NARROW_WORKSPACE_INLINE_PX - PATIENTS_PANEL_CHROME_PX;
-	assert.ok(
-		availableAt720 <= thresholdPx,
-		`на окне 720px панели достаётся ${availableAt720}px при пороге ${thresholdPx}px — таблица перестанет быть карточками`,
-	);
-});
-
-test("раскладка группы задана классом, а не атрибутом style", () => {
-	// Инлайн нельзя переопределить ни media-, ни container-запросом без
-	// !important: именно поэтому инлайн у .patients-main-grid приходится глушить
-	// через display: flex !important в dente-redesign.css:1067.
-	const view = read("PatientsView.tsx");
-	const css = read("styles/patients-redesign.css");
-	assert.ok(
-		css.includes(".patients-widgets-grid") ||
-			view.includes('className="patients-widgets-grid"') ||
-			view.includes("patients-main-grid"),
-		"группа виджетов не помечена классом",
-	);
-	assert.ok(
-		!view.includes("minmax(min(280px, 100%), 1fr)"),
-		"в PatientsView вернулась инлайновая сетка с минимумом 280px",
-	);
-
-	// Ширина дорожки карточки пациента — источник числа 260..360 в проверках выше.
-	assert.ok(
-		css.includes("minmax(280px, 340px)") ||
-			css.includes("minmax(300px, 360px)") ||
-			view.includes("minmax(260px, 320px) 1fr"),
-		"дорожка .patients-main-grid изменилась: пересчитайте достижимые ширины группы",
-	);
+		usePatientStore.setState({ selectedPatientId: testPatient.id });
+		const populatedHtml = await renderClientToHtml(
+			React.createElement(
+				AppLogicProvider,
+				{ value: baseAppContext },
+				React.createElement(PatientDetailsPanel, {
+					selectedPatient: testPatient,
+					onBackToList: () => {},
+					onOpenVisit: () => {},
+					onOpenPatientCardModal: () => {},
+					onOpenLoyaltyModal: () => {},
+					patientCoreDraft: { fullName: testPatient.fullName, phone: testPatient.phone ?? "", birthDate: testPatient.birthDate ?? "", notes: "" } as never,
+					patientCoreSaveState: "idle",
+					patientCoreDirty: false,
+					savePatientCore: () => {},
+					patientAdministrativeProfileDraft: {} as never,
+					updatePatientAdministrativeProfileDraft: () => {},
+					patientAdministrativeProfileSaveState: "idle",
+					patientAdministrativeProfileDirty: false,
+					patientAdministrativeSaveGuidance: null,
+					patientAdministrativeSaveGuidanceId: "guid-1",
+					patientAdministrativeProfileValidationMessage: null,
+					savePatientAdministrativeProfile: () => {},
+					weekdayOptions: [],
+					executePatientSomaticNorm: () => {},
+					executeBookAppointment: () => {},
+				}),
+			),
+		);
+		assert.ok(populatedHtml.includes('data-testid="patient-overview-tab"'));
+		assert.ok(populatedHtml.includes("patient-docs-collapsible"));
+		assert.ok(populatedHtml.includes("Смирнов Алексей Игоревич"));
+	});
 });

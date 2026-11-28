@@ -70,7 +70,7 @@ export const ClinicalTasksDesktopTableRow: React.FC<ClinicalTasksDesktopTableRow
 				{isOpen ? (
 					<button
 						type="button"
-						className="primary-button task-action-btn"
+						className="secondary-button task-action-btn"
 						data-testid={`btn-complete-task-${task.id}`}
 						onClick={() => void onCompleteTask(task.id)}
 						title="Завершить задачу"

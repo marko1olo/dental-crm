@@ -183,13 +183,11 @@ export class SanpinDaemonScheduler {
 		this.active = true;
 
 		const interval = this.config.intervalMs ?? this.defaultIntervalMs;
-		this.timer = setInterval(() => {
+		const timer = setInterval(() => {
 			void this.tick();
 		}, interval);
-
-		if (this.timer.unref) {
-			this.timer.unref();
-		}
+		timer.unref();
+		this.timer = timer;
 
 		this.log("Started SanPiN & Inventory background daemon scheduler loop.");
 	}

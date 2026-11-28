@@ -4,7 +4,7 @@
  */
 
 import { and, eq, lt, ne, sql } from "drizzle-orm";
-import { formatKopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { formatDateKeyInTimeZone, formatKopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { type TenantDb } from "../../../db/client.js";
 import { isReservationMatchingChair } from "../../../db/appointmentsQueryModules/scheduleReservationLockHelpers.js";
 import { withSavepoint } from "../../../db/rls.js";
@@ -650,7 +650,7 @@ export async function calculateAvailableSlots(
 		success: true,
 		organizationId,
 		startDate: effectiveStartStr,
-		endDate: effectiveEndCalendar.toISOString().slice(0, 10),
+		endDate: formatDateKeyInTimeZone(effectiveEndCalendar, "UTC"),
 		totalAvailableSlots,
 		doctors: doctorsWithSlots,
 	};

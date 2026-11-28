@@ -1,15 +1,19 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { DEFAULT_SOMATIC_HEALTHY_NORM } from "../safetyMath";
+import { PatientCardModalFooter } from "../patientCardModalModules/PatientCardModalFooter";
 import { PatientPassportAddressStep } from "../patientCreation/PatientPassportAddressStep";
+import type { UsePatientCreationFormResult } from "../patientCreation/usePatientCreationTypes";
+import { PatientSafetyBanner } from "../tabs/generalInfo/PatientSafetyBanner";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const patientsDir = path.resolve(__dirname, "..");
+const mockCreationForm = {
+	handleCreate: async () => {},
+	handleCreateAndBook: async () => {},
+	handleCreateAndOpenVisit: async () => {},
+	isPatientCreating: false,
+} as unknown as UsePatientCreationFormResult;
 
 describe("Red Team Inquisitor: Patient Registry & Somatic Autonomy", () => {
 	it("1. PatientPassportAddressStep renders semantic <details> with exact accordion title", () => {
@@ -70,28 +74,65 @@ describe("Red Team Inquisitor: Patient Registry & Somatic Autonomy", () => {
 		assert.ok(htmlOpen.includes("Паспорт РФ"), "Must contain Passport field");
 		assert.ok(htmlOpen.includes("Полис ОМС / ДМС"), "Must contain OMS/DMS field");
 		assert.ok(htmlOpen.includes("Адрес регистрации / проживания"), "Must contain Address field");
-		assert.ok(!htmlOpen.includes("ЕГИСЗ"), "Must not leak raw bureaucratic acronym ЕГИСЗ in labels");
+		assert.equal(htmlOpen.includes("ЕГИСЗ"), false, "Must not leak raw bureaucratic acronym ЕГИСЗ in labels");
 	});
 
-	it("2. PatientCreationModal / PatientCardModal never disables primary save buttons (Mandate 8e)", () => {
-		const modalPath = path.resolve(patientsDir, "PatientCardModal.tsx");
-		const footerPath = path.resolve(patientsDir, "patientCardModalModules/PatientCardModalFooter.tsx");
-		const content = fs.existsSync(footerPath)
-			? fs.readFileSync(footerPath, "utf-8")
-			: fs.readFileSync(modalPath, "utf-8");
+	it("2. PatientCardModalFooter renders unblocked primary save and creation CTAs (Mandate 8e)", () => {
+		const createHtml = renderToStaticMarkup(
+			React.createElement(PatientCardModalFooter, {
+				isCreateMode: true,
+				creationForm: mockCreationForm,
+				onClose: () => {},
+				onSave: () => {},
+			}),
+		);
+		const submitBtn = createHtml.match(/<button[^>]*data-testid="patient-creation-submit-btn"[^>]*>/);
+		const visitBtn = createHtml.match(/<button[^>]*data-testid="patient-creation-submit-and-visit-btn"[^>]*>/);
+		assert.ok(submitBtn, "Must render patient-creation-submit-btn");
+		assert.ok(visitBtn, "Must render patient-creation-submit-and-visit-btn");
+		assert.equal(/\bdisabled\b/.test(submitBtn[0]), false, "Create button must never be disabled");
+		assert.equal(/\bdisabled\b/.test(visitBtn[0]), false, "Create-and-visit button must never be disabled");
+		assert.ok(submitBtn[0].includes("bg-[var(--primary)]"), "Single primary CTA uses var(--primary)");
 
-		assert.ok(content.includes('data-testid="patient-creation-submit-btn"'));
-		assert.ok(content.includes('data-testid="patient-creation-submit-and-visit-btn"'));
-		assert.ok(!content.includes('data-testid="patient-creation-submit-btn"\n\t\t\t\t\t\t\tdisabled={true}'));
-		assert.ok(!content.includes('data-testid="patient-creation-submit-and-visit-btn"\n\t\t\t\t\t\t\tdisabled={true}'));
+		const editHtml = renderToStaticMarkup(
+			React.createElement(PatientCardModalFooter, {
+				isCreateMode: false,
+				creationForm: mockCreationForm,
+				isDirty: true,
+				saveState: "saving",
+				onClose: () => {},
+				onSave: () => {},
+			}),
+		);
+		const saveBtn = editHtml.match(/<button[^>]*data-testid="btn-save-patient-card"[^>]*>/);
+		assert.ok(saveBtn);
+		assert.equal(/\bdisabled\b/.test(saveBtn[0]), false, "Save button must stay unblocked even while saving");
+		assert.ok(editHtml.includes("Сохранение..."));
 	});
 
-	it("3. Somatic Health Norm provides 1-click healthy status without blocking alerts", () => {
-		const bannerPath = path.resolve(patientsDir, "tabs/generalInfo/PatientSafetyBanner.tsx");
-		const content = fs.readFileSync(bannerPath, "utf-8");
+	it("3. PatientSafetyBanner renders 1-click healthy norm trigger without blocking alerts", () => {
+		const fullHtml = renderToStaticMarkup(
+			React.createElement(PatientSafetyBanner, {
+				currentProfile: { ...DEFAULT_SOMATIC_HEALTHY_NORM },
+				mode: "full",
+				onToggleAllergy: () => {},
+				onApplySomaticNorm: () => {},
+			}),
+		);
+		assert.ok(fullHtml.includes('data-testid="btn-somatic-healthy-norm"'));
+		assert.ok(fullHtml.includes("Норма"));
 
-		assert.ok(content.includes('data-testid="btn-somatic-healthy-norm"'));
-		assert.ok(content.includes("Соматически здоров. Аллергоанамнез не отягощен") || content.includes("Физиологическая норма"));
-		assert.ok(content.includes("onApplySomaticNorm"));
+		const compactRiskHtml = renderToStaticMarkup(
+			React.createElement(PatientSafetyBanner, {
+				currentProfile: {
+					...DEFAULT_SOMATIC_HEALTHY_NORM,
+					hasPenicillinAllergy: true,
+				},
+				mode: "compact",
+				onToggleAllergy: () => {},
+				onApplySomaticNorm: () => {},
+			}),
+		);
+		assert.ok(compactRiskHtml.includes('data-testid="btn-somatic-healthy-norm"'));
 	});
 });

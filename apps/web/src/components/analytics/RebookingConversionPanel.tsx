@@ -320,7 +320,7 @@ export const RebookingConversionPanel: React.FC<RebookingConversionPanelProps> =
 				<div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
 					<label
 						className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] cursor-pointer select-none"
-						title="Мандат 8n: В соло-режиме (1–2 кресла) 100% повторных записей атрибутируются врачу"
+						title="В соло-режиме (1–2 кресла) 100% повторных записей атрибутируются врачу"
 					>
 						<input
 							type="checkbox"

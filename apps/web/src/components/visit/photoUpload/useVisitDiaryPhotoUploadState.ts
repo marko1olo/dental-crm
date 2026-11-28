@@ -84,9 +84,16 @@ export function useVisitDiaryPhotoUploadState({
 					setLoadState({ phase: "failed", status });
 					return;
 				}
-				const data = (await res.json().catch(() => null)) as {
+				let data: {
 					files?: Attachment[];
-				} | null;
+				} | null = null;
+				try {
+					data = (await res.json()) as {
+						files?: Attachment[];
+					} | null;
+				} catch (parseErr) {
+					logger.warn("[useVisitDiaryPhotoUploadState] Failed to parse attachments JSON:", parseErr);
+				}
 				const files = Array.isArray(data?.files) ? data?.files : null;
 				if (!files) {
 					setLoadState({ phase: "failed", status });

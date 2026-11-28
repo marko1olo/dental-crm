@@ -7,6 +7,7 @@
 
 import { generateUuidV7 } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 
 export interface SurgicalMaterialDeductionItem {
 	readonly name: string;
@@ -86,13 +87,15 @@ export async function quickDeductSurgicalMaterials(
 				}),
 			});
 			if (res.ok) {
-				const body = (await res.json().catch(() => null)) as { isOverdraft?: boolean } | null;
-				if (body?.isOverdraft !== undefined) {
-					isOverdraft = Boolean(body.isOverdraft);
+				const rawJson: unknown = await res.json();
+				const payload = typeof rawJson === "object" && rawJson !== null && "data" in rawJson ? rawJson.data : rawJson;
+				if (typeof payload === "object" && payload !== null && "isOverdraft" in payload && payload.isOverdraft !== undefined) {
+					isOverdraft = Boolean(payload.isOverdraft);
 				}
 			}
-		} catch {
+		} catch (err) {
 			/* Soft Negative Stock: офлайн или сбой сети не блокирует операцию врача (Мандат 8e) */
+			clientLogger.warn("[surgeryMaterialDeductionService] Сетевой фолбэк списания расходников:", err);
 			isOverdraft = Boolean(params.hasWarehouseDelay);
 		}
 	}

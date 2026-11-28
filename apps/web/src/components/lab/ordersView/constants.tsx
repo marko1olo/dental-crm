@@ -64,7 +64,7 @@ export function getStatusBadge(status?: string): React.ReactNode {
 	switch (status) {
 		case "draft":
 			return (
-				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-800 dark:bg-slate-950/40 dark:text-slate-300">
+				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-[var(--paper-soft)] text-[var(--ink-muted)] border border-[var(--line)]">
 					Черновик
 				</span>
 			);
@@ -131,7 +131,7 @@ export function getStatusBadge(status?: string): React.ReactNode {
 			);
 		default:
 			return (
-				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300">
+				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-[var(--paper-soft)] text-[var(--ink-muted)] border border-[var(--line)]">
 					{status || "Черновик"}
 				</span>
 			);

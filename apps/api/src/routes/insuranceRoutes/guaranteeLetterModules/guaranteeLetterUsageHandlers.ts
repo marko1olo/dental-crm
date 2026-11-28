@@ -1,12 +1,15 @@
 import {
 	kopecksToRubles,
+	resolveValidIanaTimeZone,
 	rublesToKopecks,
+	todayDateKeyInTimeZone,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { withTenantWriteCtx } from "../../../db/rls.js";
 import { dmsGuaranteeLetters } from "../../../db/schema.js";
+import { clinicTimeZone } from "../../../services/reports/managerReports/timezone.js";
 import { recordUsageBodySchema } from "../types.js";
 import { isValidUuid, resolveDbKopecks } from "./guaranteeLetterFormatters.js";
 
@@ -152,7 +155,8 @@ export async function handleRecordGuaranteeLetterUsage(
 			};
 		}
 
-		const todayIso = new Date().toISOString().slice(0, 10);
+		const clinicTz = resolveValidIanaTimeZone(await clinicTimeZone(orgId, tx));
+		const todayIso = todayDateKeyInTimeZone(clinicTz);
 		if (letter.validFrom && letter.validFrom > todayIso) {
 			if (isUrgentCare) {
 				return {

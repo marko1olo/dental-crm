@@ -41,6 +41,9 @@ const FORBIDDEN_BUTTON_CLASSES = [
 	/\bhover:bg-purple-100\b/,
 	/\bbg-orange-100\b/,
 	/\bhover:bg-orange-100\b/,
+	/\bbg-\[#2dd4bf\](?!\/)/i,
+	/\bbg-teal-400\b/,
+	/\bbg-teal-300\b/,
 ];
 
 /**

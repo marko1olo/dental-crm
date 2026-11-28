@@ -55,7 +55,7 @@ export function FilmstripStudyCard({
 
 				<span
 					style={{ backgroundColor: badge.bg, color: badge.color }}
-					className="absolute top-1 left-1 px-1 py-0.2 rounded font-bold text-[9px] uppercase tracking-wider backdrop-blur-sm"
+					className="absolute top-1 left-1 px-1 py-0.2 rounded font-bold text-[9px] tracking-normal backdrop-blur-sm"
 				>
 					{badge.label.replace("-СЕНСОР", "")}
 				</span>
@@ -75,14 +75,14 @@ export function FilmstripStudyCard({
 				)}
 			</div>
 
-			<div className="flex flex-col p-1 bg-[#0b1320] border-t border-[#1e293b] leading-tight text-[10px]">
-				<div className="flex items-center justify-between text-slate-200 font-semibold truncate">
+			<div className="flex flex-col p-1 bg-[var(--paper)] border-t border-[var(--line)] leading-tight text-[10px]">
+				<div className="flex items-center justify-between text-[var(--ink)] font-semibold truncate">
 					<span className="truncate">{dateStr}</span>
-					{timeStr && <span className="text-slate-400 text-[9px] ml-1">{timeStr}</span>}
+					{timeStr && <span className="text-[var(--ink-muted)] text-[9px] ml-1">{timeStr}</span>}
 				</div>
-				<div className="flex items-center justify-between text-slate-400 text-[9px] mt-0.5">
+				<div className="flex items-center justify-between text-[var(--ink-muted)] text-[9px] mt-0.5">
 					<span className="truncate">{study.title || study.studyDescription || badge.label}</span>
-					{isActive && <span className="text-[#00C853] font-bold text-[8px] uppercase">Активен</span>}
+					{isActive && <span className="text-emerald-500 font-bold text-[8px]">Активен</span>}
 				</div>
 			</div>
 		</div>

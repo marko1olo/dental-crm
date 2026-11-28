@@ -19,6 +19,8 @@ const CHECKS = [
 	{ id: "TYPE_RATCHET", name: "Type Ratchet (Mandate 8bh)", cmd: "node --max-old-space-size=2048 scripts/check-type-ratchet.mjs" },
 	{ id: "TYPE_RATCHET", name: "Quality Ratchet v2 (AST: prod + tests + floors)", cmd: "node --max-old-space-size=2048 scripts/quality-ratchet.mjs --no-tighten" },
 	{ id: "MOCK_DEFAULTS", name: "Mock Defaults Hunter (Mandate 8bh)", cmd: "node --max-old-space-size=2048 scripts/check-mock-defaults.mjs" },
+	{ id: "BUTTON_STYLES", name: "Canonical Button Styles", cmd: "node --max-old-space-size=2048 scripts/check-button-styles.mjs" },
+	{ id: "UI_COPY_AND_BUTTON_PURITY", name: "Frontend AST UI Purity & Copy Ratchet", cmd: "node --max-old-space-size=2048 scripts/check-ui-purity.mjs --ratchet --no-tighten" },
 	{ id: "SINGLE_DOORS", name: "Single-Door SSOT Guardian", cmd: "node --max-old-space-size=2048 scripts/check-single-doors.mjs" },
 	{ id: "DICE_AUDIT", name: "Monte Carlo Dice Reality Audit (Кубик Тимаэрта)", cmd: "node --max-old-space-size=2048 scripts/dice-audit.mjs" },
 ];

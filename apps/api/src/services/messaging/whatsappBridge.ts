@@ -8,6 +8,7 @@
  */
 
 import { wsBroker } from "../websocketBroker.js";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import type { ChatOptions } from "../../ai/omniGatewayTypes.js";
 
@@ -265,9 +266,14 @@ export class WhatsAppTriageAnalyzer {
 	}
 }
 
+const MAX_PENDING_CARDS_PER_ORG = 200;
+
 export class WhatsAppBridge {
 	private readonly triageAnalyzer = new WhatsAppTriageAnalyzer();
-	private readonly pendingCards = new Map<string, WhatsAppApprovalCardData[]>();
+	private readonly pendingCards = new BoundedTtlMap<string, WhatsAppApprovalCardData[]>({
+		maxEntries: 2000,
+		ttlMs: 24 * 60 * 60_000,
+	});
 
 	public getTriageAnalyzer(): WhatsAppTriageAnalyzer {
 		return this.triageAnalyzer;
@@ -362,8 +368,10 @@ export class WhatsAppBridge {
 		hitlCardCreated = true;
 
 		const existing = this.pendingCards.get(message.organizationId) ?? [];
-		existing.push(hitlCard);
-		this.pendingCards.set(message.organizationId, existing);
+		const nextCards = existing.length >= MAX_PENDING_CARDS_PER_ORG
+			? [...existing.slice(-(MAX_PENDING_CARDS_PER_ORG - 1)), hitlCard]
+			: [...existing, hitlCard];
+		this.pendingCards.set(message.organizationId, nextCards);
 
 		return {
 			messageId: message.messageId,

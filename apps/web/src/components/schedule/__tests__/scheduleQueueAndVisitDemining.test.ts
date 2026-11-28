@@ -1,11 +1,19 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import type { Dashboard, Invoice } from "@dental/shared";
 import type { DayGroupingDay } from "../scheduleDayGrouping";
 import { calculateShiftQueueCounts } from "../view/useScheduleDayQueue";
-import { usePrimaryIntakePrint, type PrintablePatient, type ClinicPrintProfileDraft } from "../../documents/primaryIntakePackagePrintEngine";
-import type { VisitPostCompletionContext, CompletedPlanItemReference } from "../../visit/completionModules/visitCompletionPipeline";
-import type { ScheduleLogicContext } from "../view/scheduleModalsModules/scheduleModalsTypes";
+import {
+	generatePrimaryIntakePackageHtml,
+	resolveClinicPrintPayload,
+	usePrimaryIntakePrint,
+	type PrintablePatient,
+	type ClinicPrintProfileDraft,
+} from "../../documents/primaryIntakePackagePrintEngine";
+import { buildQuickBookingPayload } from "../quickBookingSubmitPayload";
+import { appendReasonPreset, hasTreatmentPlanStageContext } from "../quickBookingService/quickServiceHelpers";
 
 describe("Sanitary Sentinel: Schedule Queue, Intake Print & Visit Completion Demining Suite", () => {
 	it("1. useScheduleDayQueue calculates counts cleanly with structured payments and invoices", () => {
@@ -134,7 +142,7 @@ describe("Sanitary Sentinel: Schedule Queue, Intake Print & Visit Completion Dem
 		assert.equal(shiftQueueCounts.awaitingPayment, 0);
 	});
 
-	it("3. usePrimaryIntakePrint resolves clinic payload and handles blank and filled patient packages", () => {
+	it("3. resolveClinicPrintPayload and generatePrimaryIntakePackageHtml render complete and blank packages", () => {
 		const clinicDraft: ClinicPrintProfileDraft = {
 			clinicName: "Клиника Денте",
 			legalName: "ООО Стоматология Денте",
@@ -145,6 +153,11 @@ describe("Sanitary Sentinel: Schedule Queue, Intake Print & Visit Completion Dem
 			phone: "+7 (495) 123-45-67",
 			directorFullName: "Иванов И.И.",
 		};
+
+		const resolvedClinic = resolveClinicPrintPayload(clinicDraft);
+		assert.equal(resolvedClinic.clinicName, "Клиника Денте");
+		assert.equal(resolvedClinic.inn, "7701234567");
+		assert.equal(resolveClinicPrintPayload(null).clinicName, "Стоматологическая клиника");
 
 		const patient: PrintablePatient = {
 			fullName: "Петров Петр Петрович",
@@ -162,57 +175,149 @@ describe("Sanitary Sentinel: Schedule Queue, Intake Print & Visit Completion Dem
 			},
 		};
 
-		const intakePrint = usePrimaryIntakePrint({
-			patient,
-			clinicProfileDraft: clinicDraft,
+		const htmlFilled = generatePrimaryIntakePackageHtml({
+			patient: {
+				fullName: patient.fullName,
+				birthDate: patient.birthDate,
+				phone: patient.phone,
+				snils: patient.snils,
+				address: patient.address,
+			},
+			representative: null,
+			clinic: resolvedClinic,
 			doctorFullName: "Д-р Смирнов А.В.",
-			isNormApplied: true,
+			intakeNormApplied: true,
 		});
+		assert.ok(htmlFilled.includes("Петров Петр Петрович"));
+		assert.ok(htmlFilled.includes("7701234567"));
 
-		assert.equal(intakePrint.clinicPrintPayload.clinicName, "Клиника Денте");
-		assert.equal(intakePrint.clinicPrintPayload.inn, "7701234567");
-		assert.equal(typeof intakePrint.handleBatchPrint, "function");
-		assert.equal(typeof intakePrint.handlePrintBlankPackage, "function");
+		const htmlBlank = generatePrimaryIntakePackageHtml({
+			patient: null,
+			representative: null,
+			clinic: resolvedClinic,
+			doctorFullName: null,
+			intakeNormApplied: false,
+		});
+		assert.ok(htmlBlank.includes("<!DOCTYPE html>"));
+		assert.ok(htmlBlank.includes("ООО Стоматология Денте"));
+
+		function HookProbe() {
+			const result = usePrimaryIntakePrint({
+				patient,
+				clinicProfileDraft: clinicDraft,
+				doctorFullName: "Д-р Смирнов А.В.",
+				isNormApplied: true,
+			});
+			return React.createElement("span", { "data-clinic": result.clinicPrintPayload.clinicName });
+		}
+		const hookHtml = renderToStaticMarkup(React.createElement(HookProbe));
+		assert.ok(hookHtml.includes('data-clinic="Клиника Денте"'));
 	});
 
-	it("4. VisitPostCompletionContext and CompletedPlanItemReference enforce strict typing", () => {
-		const itemRef: CompletedPlanItemReference = {
-			id: "plan-item-1",
-			itemId: "item-1",
-			name: "Лечение кариеса",
-			priceRub: 3500,
-		};
-		assert.equal(itemRef.id, "plan-item-1");
-		assert.equal(itemRef.priceRub, 3500);
-
-		const mockCtx: Partial<VisitPostCompletionContext> = {
-			effectiveVisitId: "00000000-0000-0000-0000-000000000001",
-			effectivePatientId: "00000000-0000-0000-0000-000000000002",
-			effectiveCompletedPlan: [itemRef],
-		};
-		assert.equal(mockCtx.effectiveCompletedPlan?.length, 1);
+	it("4. calculateShiftQueueCounts counts arrived, in_treatment and unpaid awaitingPayment invoices", () => {
+		const mockGroups: DayGroupingDay[] = [
+			{
+				dateKey: "2026-11-13",
+				title: "13 ноября, пятница",
+				relativeLabel: "сегодня",
+				relation: "today",
+				appointmentCount: 3,
+				overlapCount: 0,
+				bookedMinutes: 90,
+				freeGapMinutes: 0,
+				rows: [
+					{
+						kind: "appointment",
+						appointment: {
+							id: "appt-a",
+							startsAt: "2026-11-13T09:00:00.000Z",
+							endsAt: "2026-11-13T09:30:00.000Z",
+							status: "arrived",
+							doctorUserId: "doc-1",
+							chairId: "chair-1",
+							patientId: "pat-1",
+						},
+					},
+					{
+						kind: "appointment",
+						appointment: {
+							id: "appt-b",
+							startsAt: "2026-11-13T09:30:00.000Z",
+							endsAt: "2026-11-13T10:00:00.000Z",
+							status: "in_treatment",
+							doctorUserId: "doc-1",
+							chairId: "chair-1",
+							patientId: "pat-2",
+						},
+					},
+					{
+						kind: "appointment",
+						appointment: {
+							id: "appt-c",
+							startsAt: "2026-11-13T10:00:00.000Z",
+							endsAt: "2026-11-13T10:30:00.000Z",
+							status: "completed",
+							doctorUserId: "doc-1",
+							chairId: "chair-1",
+							patientId: "pat-3",
+						},
+					},
+				],
+			},
+		];
+		const mockInvoices = [
+			{
+				id: "inv-unpaid",
+				appointmentId: "appt-c",
+				patientId: "pat-3",
+				status: "draft",
+				totalAmount: 4500,
+				totalKopecks: 450000,
+			} as unknown as Invoice,
+		];
+		const counts = calculateShiftQueueCounts(
+			mockGroups,
+			null,
+			null,
+			{ appointments: [], invoices: mockInvoices } as unknown as Dashboard,
+		);
+		assert.equal(counts.arrived, 1);
+		assert.equal(counts.inTreatment, 1);
+		assert.equal(counts.awaitingPayment, 1);
 	});
 
-	it("5. ScheduleLogicContext provides clean typing for conflict resolution", () => {
-		let appliedSlotTime = "";
-		let appliedApptId: string | undefined = "";
+	it("5. quickServiceHelpers and buildQuickBookingPayload link treatment plan stages cleanly", () => {
+		assert.equal(appendReasonPreset("", "Осмотр"), "Осмотр");
+		assert.equal(appendReasonPreset("Осмотр", "Кариес"), "Осмотр, кариес");
+		assert.equal(hasTreatmentPlanStageContext(null), false);
 
-		const logicContext: ScheduleLogicContext = {
-			slotConflict: {
-				message: "Пересечение слота с другим приёмом",
-				suggestedSlots: ["10:30", "11:00"],
-				appointmentId: "appt-conflict",
-			},
-			setSlotConflict: () => {},
-			applySuggestedSlot: (slotTime, apptId) => {
-				appliedSlotTime = slotTime;
-				appliedApptId = apptId;
-			},
-		};
-
-		assert.equal(logicContext.slotConflict?.message, "Пересечение слота с другим приёмом");
-		logicContext.applySuggestedSlot?.("11:00", "appt-conflict");
-		assert.equal(appliedSlotTime, "11:00");
-		assert.equal(appliedApptId, "appt-conflict");
+		const stagePayload = buildQuickBookingPayload({
+			params: {
+				doctorUserId: "doc-1",
+				dutyDoctorId: "",
+				doctors: [{ id: "doc-1" }],
+				chairId: "chair-1",
+				chairs: [{ id: "chair-1" }],
+				assistantUserId: "",
+				isSoloClinic: false,
+				reason: "Протезирование",
+				comment: "",
+				status: "planned",
+				initialSlot: {
+					treatmentPlanId: "tp-9",
+					stageId: "22222222-2222-4222-8222-222222222222",
+					stageTitle: "Коронки",
+					services: [{ id: "s1", title: "Циркониевая коронка" }],
+				},
+			} as never,
+			activePatientId: "pat-1",
+			startsAtIso: "2026-11-13T11:00:00.000Z",
+			endsAtIso: "2026-11-13T12:00:00.000Z",
+			isEmergency: false,
+			overbookOverride: false,
+		});
+		assert.equal(stagePayload.treatmentPlanId, "tp-9");
+		assert.equal(stagePayload.stageId, "22222222-2222-4222-8222-222222222222");
+		assert.ok(stagePayload.comment.includes("Коронки"));
 	});
 });

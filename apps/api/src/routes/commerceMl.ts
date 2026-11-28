@@ -10,13 +10,16 @@ import {
 	oneCChartOfAccountsSchema,
 	oneCClinicProfileSchema,
 	oneCCommerceMlPackageSchema,
+	resolveValidIanaTimeZone,
 	rublesToKopecks,
 	sha256Hex,
+	todayDateKeyInTimeZone,
 	validatePackageIntegrity,
 } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
 import { defineStreamRoute } from "../core/routeFactories.js";
 import { getRequestIdentity } from "../security/identity.js";
+import { clinicTimeZone } from "../services/reports/managerReports/timezone.js";
 import {
 	CommerceMlService,
 	oneCSyncPayloadSchema,
@@ -270,6 +273,11 @@ function parseInboundCommerceMlSyncXml(
 	return { ok: true, payload: validated.data };
 }
 
+async function resolveTodayIsoInClinicZone(organizationId: string): Promise<string> {
+	const tz = resolveValidIanaTimeZone(await clinicTimeZone(organizationId));
+	return todayDateKeyInTimeZone(tz);
+}
+
 export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<void> {
 	if (!app.hasContentTypeParser("application/xml")) {
 		app.addContentTypeParser(
@@ -297,8 +305,8 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 			});
 		}
 
-		const todayIso = new Date().toISOString().slice(0, 10);
-		const startDateIso = inputData.startDateIso || todayIso;
+		const startDateIso =
+			inputData.startDateIso || (await resolveTodayIsoInClinicZone(authOrgId));
 		const endDateIso = inputData.endDateIso || startDateIso;
 
 		const result = await CommerceMlService.buildCommerceMlPackage({
@@ -747,7 +755,9 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 					details: parsedQuery.error.issues,
 				});
 			}
-			const todayIso = new Date().toISOString().slice(0, 10);
+			const todayIso = parsedQuery.data.startDateIso
+				? parsedQuery.data.startDateIso
+				: await resolveTodayIsoInClinicZone(access.organizationId);
 
 			const result = await CommerceMlService.buildCommerceMlPackage({
 				organizationId: access.organizationId,
@@ -790,7 +800,9 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 					details: parsedQuery.error.issues,
 				});
 			}
-			const todayIso = new Date().toISOString().slice(0, 10);
+			const todayIso = parsedQuery.data.startDateIso
+				? parsedQuery.data.startDateIso
+				: await resolveTodayIsoInClinicZone(access.organizationId);
 
 			const result = await CommerceMlService.buildCommerceMlPackage({
 				organizationId: access.organizationId,
@@ -825,7 +837,9 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 					details: parsedQuery.error.issues,
 				});
 			}
-			const todayIso = new Date().toISOString().slice(0, 10);
+			const todayIso = parsedQuery.data.startDateIso
+				? parsedQuery.data.startDateIso
+				: await resolveTodayIsoInClinicZone(access.organizationId);
 
 			const result = await CommerceMlService.buildCommerceMlPackage({
 				organizationId: access.organizationId,

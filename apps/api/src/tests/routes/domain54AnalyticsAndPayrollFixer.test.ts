@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { calculateDoctorPeriodPayroll } from "@dental/shared";
+import { calculateDoctorPeriodPayroll, calculateLabWageDeductionKopecks } from "@dental/shared";
 
 describe("Domain 54 Fixer Surgeon Verifications: Analytics, PnL & Doctor Payroll", () => {
 	it("[SEV-1.1] Deducts unallocated dental lab (ЗТЛ) costs from overall doctor payout without evaporation", () => {
@@ -72,19 +72,46 @@ describe("Domain 54 Fixer Surgeon Verifications: Analytics, PnL & Doctor Payroll
 	});
 
 	it("[SEV-2.4] Honest clinic margin allows negative values without forced zero clamp", () => {
-		const revenue = 1000;
-		const labOrdersCostRub = 600;
-		const doctorPayrollRub = 500;
-		const materialsCostRub = 100;
+		const res = calculateLabWageDeductionKopecks({
+			patientPriceKopecks: 0,
+			labCostKopecks: 50000,
+			doctorSharePercent: 20,
+			isWarranty: true,
+		});
+		assert.equal(res.clinicMarginKopecks, -50000, "Warranty margin must be negative reflecting real loss");
+		assert.equal(res.doctorWageKopecks, 0);
+	});
 
-		// 1000р - 600р - 500р - 100р = -200р убытка клиники.
-		const clinicMarginRub = revenue > 0
-			? revenue - labOrdersCostRub - doctorPayrollRub - materialsCostRub
-			: 0;
+	it("[ROT-015] Standard lab wage deduction calculates exact kopeck margin and doctor fee", () => {
+		const res = calculateLabWageDeductionKopecks({
+			patientPriceKopecks: 100000,
+			labCostKopecks: 30000,
+			doctorSharePercent: 25,
+			isWarranty: false,
+		});
+		assert.equal(res.doctorWageKopecks, 17500, "Doctor receives 25% of net 70000 kop = 17500 kop");
+		assert.equal(res.clinicMarginKopecks, 52500, "Clinic retains 75% of net 70000 kop = 52500 kop");
+	});
 
-		assert.equal(clinicMarginRub, -200, "Margin must be -200, reflecting real loss without false zero masking");
-		const percentFactor = 100;
-		const margin = revenue > 0 ? Math.round((clinicMarginRub * percentFactor) / revenue) : null;
-		assert.equal(margin, -20, "Margin percent must be -20%");
+	it("[ROT-015] Lab cost equal to revenue leaves zero margin and zero doctor fee", () => {
+		const res = calculateLabWageDeductionKopecks({
+			patientPriceKopecks: 50000,
+			labCostKopecks: 50000,
+			doctorSharePercent: 30,
+			isWarranty: false,
+		});
+		assert.equal(res.doctorWageKopecks, 0);
+		assert.equal(res.clinicMarginKopecks, 0);
+	});
+
+	it("[ROT-015] Zero lab cost gives doctor exact percentage of patient gross price", () => {
+		const res = calculateLabWageDeductionKopecks({
+			patientPriceKopecks: 200000,
+			labCostKopecks: 0,
+			doctorSharePercent: 35,
+			isWarranty: false,
+		});
+		assert.equal(res.doctorWageKopecks, 70000);
+		assert.equal(res.clinicMarginKopecks, 130000);
 	});
 });

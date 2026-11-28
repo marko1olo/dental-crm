@@ -100,7 +100,7 @@ export const ClinicalPlanningButtons: React.FC<
 							Смета плана лечения
 						</span>
 						<span className="text-[10px] font-normal text-slate-700 dark:text-slate-300 truncate">
-							Калькулятор этапов с копеечной точностью
+							Калькулятор этапов с точным расчётом
 						</span>
 					</div>
 				</button>

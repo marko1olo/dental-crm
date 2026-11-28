@@ -1,100 +1,145 @@
 /**
  * apps/web/src/components/patients/family/__tests__/familyWalletCanonical.test.ts
  *
- * Red Team Inquisitor Test Suite:
- * 1. Canonical SSOT exports from components/patients/family/
- * 2. Backward compatibility shim from components/patient/
- * 3. 0% commission intra-family pooled deposit arithmetic
- * 4. Exact integer calculations & kopeck precision
+ * Canonical Family Wallet & Patient Balance Badge Live Tests:
+ * 1. FamilyWalletModal rendering in closed & inline modes
+ * 2. PatientFamilyAndInsuranceWidget integration and positive/negative balance badges
+ * 3. 0% commission intra-family pooled deposit arithmetic in exact kopecks
+ * 4. PatientSearchResultRow renders explicit 'Депозит:' and 'Долг:' badges
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks, type Patient } from "@dental/shared";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { PatientFamilyAndInsuranceWidget } from "../../PatientFamilyAndInsuranceWidget";
+import { PatientSearchResultRow } from "../../patientSearchAutocomplete/PatientSearchResultRow";
+import { FamilyWalletModal } from "../FamilyWalletModal";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const familyDir = path.resolve(__dirname, "..");
-const patientDir = path.resolve(familyDir, "../../patient");
+const basePatient: Patient = {
+	id: "pat-fw-1",
+	organizationId: "00000000-0000-0000-0000-000000000001",
+	status: "active",
+	fullName: "Иванова Мария Петровна",
+	phone: "+7 (999) 123-45-67",
+	email: null,
+	notes: null,
+	gender: "female",
+	birthDate: "1990-05-10",
+	balanceRub: 15000,
+	administrativeProfile: null,
+	createdAt: "2026-01-01T00:00:00.000Z",
+	updatedAt: "2026-01-01T00:00:00.000Z",
+};
 
 describe("Family Wallet SSOT & Pooled Deposit Architecture", () => {
-	it("verifies canonical FamilyWalletModal exists in components/patients/family/", () => {
-		const modalPath = path.resolve(familyDir, "FamilyWalletModal.tsx");
-		assert.ok(
-			fs.existsSync(modalPath),
-			"Canonical FamilyWalletModal.tsx must exist in components/patients/family/",
+	it("renders closed FamilyWalletModal cleanly as empty string without throwing", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(FamilyWalletModal, {
+				isOpen: false,
+				onClose: () => {},
+				patientId: basePatient.id,
+				patientName: basePatient.fullName,
+			}),
 		);
-
-		const content = fs.readFileSync(modalPath, "utf-8");
-		assert.ok(
-			content.includes("FamilyWalletModal"),
-			"Must export FamilyWalletModal component",
-		);
+		assert.equal(html, "");
 	});
 
-	it("verifies legacy components/patient/ clone folder is eliminated", () => {
-		assert.equal(
-			fs.existsSync(patientDir),
-			false,
-			"Legacy clone components/patient/ must be eradicated from workspace",
+	it("renders inline FamilyWalletModal with pooled balance controls when opened", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(FamilyWalletModal, {
+				isOpen: true,
+				inline: true,
+				onClose: () => {},
+				patientId: basePatient.id,
+				patientName: basePatient.fullName,
+				familyData: {
+					id: "fam-1",
+					name: "Семья Ивановых",
+					balance: 15000,
+					headPatientId: basePatient.id,
+					members: [
+						{
+							id: basePatient.id,
+							fullName: basePatient.fullName,
+							personalBalanceRub: 15000,
+							roleRu: "Глава семьи",
+						},
+					],
+				},
+			}),
 		);
+		assert.ok(html.includes("family-wallet-inline-view"));
+		assert.ok(html.includes("Иванова Мария Петровна") || html.includes("Семья"));
 	});
 
-	it("verifies PatientFamilyAndInsuranceWidget imports FamilyWalletModal from canonical ./family/", () => {
-		const widgetPath = path.resolve(familyDir, "../PatientFamilyAndInsuranceWidget.tsx");
-		assert.ok(fs.existsSync(widgetPath), "PatientFamilyAndInsuranceWidget.tsx must exist");
-
-		const content = fs.readFileSync(widgetPath, "utf-8");
-		assert.ok(
-			content.includes('from "./family/FamilyWalletModal"'),
-			"PatientFamilyAndInsuranceWidget must import FamilyWalletModal from ./family/FamilyWalletModal instead of ../patient/",
+	it("renders PatientFamilyAndInsuranceWidget with positive, negative, and zero balance badges", () => {
+		const positiveHtml = renderToStaticMarkup(
+			React.createElement(PatientFamilyAndInsuranceWidget, {
+				patient: basePatient,
+				patientBalance: 12500,
+			}),
 		);
+		assert.ok(positiveHtml.includes('data-testid="patient-family-and-insurance-widget"'));
+		assert.ok(positiveHtml.includes("Финансы, семейный счёт и страхование ДМС/ОМС"));
+		assert.match(positiveHtml, /\+12[\s\u00A0]?500\s?₽/);
+
+		const debtHtml = renderToStaticMarkup(
+			React.createElement(PatientFamilyAndInsuranceWidget, {
+				patient: basePatient,
+				patientBalance: -3400,
+			}),
+		);
+		assert.match(debtHtml, /-3[\s\u00A0]?400\s?₽/);
 	});
 
 	it("validates family pooled deposit calculations (kopeck precision, 0% commission)", () => {
-		const toKopecks = (rubles: number): number => rublesToKopecks(rubles);
-		const toRubles = (kopecks: number): number => kopecksToRubles(kopecks);
+		const momKopecks = rublesToKopecks(15000.5);
+		const costKopecks = rublesToKopecks(4250.75);
+		const commissionPercent = 0;
+		const commissionKopecks = Math.round(costKopecks * (commissionPercent / 100));
 
-		const momBalanceRub = 15000.5;
-		const childTreatmentCostRub = 4250.75;
-		const commissionPercent = 0; // 0% intra-family commission
-
-		const momKopecks = toKopecks(momBalanceRub);
-		const costKopecks = toKopecks(childTreatmentCostRub);
-		const commissionKopecks = Math.round(
-			costKopecks * (commissionPercent / 100),
-		);
-
-		assert.equal(
-			commissionKopecks,
-			0,
-			"Intra-family commission must be exactly 0%",
-		);
+		assert.equal(commissionKopecks, 0, "Intra-family commission must be exactly 0%");
 
 		const remainingKopecks = momKopecks - costKopecks;
-		const remainingRub = toRubles(remainingKopecks);
+		const remainingRub = kopecksToRubles(remainingKopecks);
 
-		assert.equal(
-			remainingKopecks,
-			1074975,
-			"Remaining kopecks must be exact integer",
-		);
-		assert.equal(remainingRub, 10749.75, "Remaining rubles must be 10749.75");
+		assert.equal(remainingKopecks, 1074975);
+		assert.equal(remainingRub, 10749.75);
 	});
 
-	it("verifies PatientSearchAutocomplete displays explicit 'Депозит:' and 'Долг:' badges", () => {
-		const autocompletePath = path.resolve(
-			familyDir,
-			"../PatientSearchAutocomplete.tsx",
+	it("renders PatientSearchResultRow with explicit 'Депозит:' and 'Долг:' badges", () => {
+		const depositRowHtml = renderToStaticMarkup(
+			React.createElement(PatientSearchResultRow, {
+				item: {
+					patient: { ...basePatient, balanceRub: 4500 },
+					score: 100,
+					fullNameHighlights: [{ text: basePatient.fullName, isMatch: true }],
+					phoneHighlights: [],
+				},
+				isSelected: false,
+				somaticBadge: null,
+				onSelect: () => {},
+				onMouseEnter: () => {},
+			}),
 		);
-		const content = fs.readFileSync(autocompletePath, "utf-8");
+		assert.ok(depositRowHtml.includes("Депозит:"));
 
-		assert.ok(
-			content.includes("Депозит:") || content.includes("balance > 0"),
-			"Autocomplete must support clear deposit/debt indication",
+		const debtRowHtml = renderToStaticMarkup(
+			React.createElement(PatientSearchResultRow, {
+				item: {
+					patient: { ...basePatient, balanceRub: -2000 },
+					score: 90,
+					fullNameHighlights: [{ text: basePatient.fullName, isMatch: false }],
+					phoneHighlights: [],
+				},
+				isSelected: true,
+				somaticBadge: null,
+				onSelect: () => {},
+				onMouseEnter: () => {},
+			}),
 		);
+		assert.ok(debtRowHtml.includes("Долг:"));
 	});
 });

@@ -660,4 +660,66 @@ describe("Fastify API Route Contracts & Error Hardening (CWE-209 & SQL 22P02 Def
 			assert.match(body.message, /Некорректный идентификатор пациента/);
 		});
 	});
+
+	// ==========================================
+	// 12. Batch A Zod Route Validation (Inventory & Visit Open)
+	// ==========================================
+	describe("12. Batch A Zod Route Validation (Inventory & Visit Open)", () => {
+		test("GET /api/inventory/not-a-uuid/rules returns 400 ValidationError", async () => {
+			const res = await app.inject({
+				method: "GET",
+				url: "/api/inventory/not-a-uuid/rules",
+				headers: staffHeaders,
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			assert.strictEqual(JSON.parse(res.body).error, "ValidationError");
+		});
+
+		test("GET /api/inventory/:org/rules?serviceId=not-a-uuid returns 400 ValidationError", async () => {
+			const res = await app.inject({
+				method: "GET",
+				url: `/api/inventory/${ORG_ID}/rules?serviceId=not-a-uuid`,
+				headers: staffHeaders,
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			assert.strictEqual(JSON.parse(res.body).error, "ValidationError");
+		});
+
+		test("POST /api/inventory/not-a-uuid/storno returns 400 ValidationError", async () => {
+			const res = await app.inject({
+				method: "POST",
+				url: "/api/inventory/not-a-uuid/storno",
+				headers: staffHeaders,
+				payload: {},
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			assert.strictEqual(JSON.parse(res.body).error, "ValidationError");
+		});
+
+		test("GET /api/appointments/not-a-uuid/visit returns 400 VisitValidationError", async () => {
+			const res = await app.inject({
+				method: "GET",
+				url: "/api/appointments/not-a-uuid/visit",
+				headers: staffHeaders,
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			assert.strictEqual(JSON.parse(res.body).error, "VisitValidationError");
+		});
+
+		test("POST /api/appointments/not-a-uuid/visit returns 400 VisitValidationError", async () => {
+			const res = await app.inject({
+				method: "POST",
+				url: "/api/appointments/not-a-uuid/visit",
+				headers: staffHeaders,
+				payload: {},
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			assert.strictEqual(JSON.parse(res.body).error, "VisitValidationError");
+		});
+	});
 });

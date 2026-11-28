@@ -353,7 +353,7 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 									<div
 										data-testid="tax-sheet-qr"
 										data-preserve-white="true"
-										className="w-14 h-14 bg-white rounded-lg p-0.5 flex items-center justify-center flex-shrink-0 border border-[var(--line)] overflow-hidden"
+										className="w-14 h-14 bg-white dark:bg-white rounded-lg p-0.5 flex items-center justify-center flex-shrink-0 border border-[var(--line)] overflow-hidden"
 										dangerouslySetInnerHTML={{ __html: qrSvg }}
 									/>
 									<div className="text-[11px] text-[var(--ink-muted)] leading-tight">

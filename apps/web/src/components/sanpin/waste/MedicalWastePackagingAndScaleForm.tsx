@@ -67,7 +67,7 @@ export const MedicalWastePackagingAndScaleForm: React.FC<MedicalWastePackagingAn
 					type="button"
 					onClick={handleShiftDefaultClick}
 					data-testid="waste-shift-default-btn"
-					className="min-h-[40px] px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-xs flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all shrink-0"
+					className="min-h-[40px] px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--primary)] hover:opacity-95 shadow-xs flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all shrink-0"
 					title="Зарегистрировать отходы смены (Класс Б, 1 желтый пакет 10 л / 1.5 кг)"
 				>
 					<CheckCircle2 size={15} />
@@ -82,13 +82,13 @@ export const MedicalWastePackagingAndScaleForm: React.FC<MedicalWastePackagingAn
 					onClick={() => handleClassQuickSelect("class_B", 1.5, "yellow_bag")}
 					className={`p-2.5 rounded-xl border text-left flex flex-col gap-0.5 cursor-pointer touch-manipulation transition-all ${
 						selectedClass === "class_B"
-							? "border-[var(--teal,#0d9488)] bg-teal-500/10 shadow-2xs"
+							? "border-[var(--primary)] bg-[var(--teal-surface)] shadow-2xs"
 							: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)]/30"
 					}`}
 				>
 					<div className="flex items-center justify-between">
 						<span className="font-bold text-xs text-[var(--ink,#0f172a)]">Класс Б (1.5 кг)</span>
-						<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700">Опасные</span>
+						<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300">Опасные</span>
 					</div>
 					<span className="text-[11px] text-[var(--muted,#64748b)]">1 желтый пакет 10 л • Вата, салфетки, перчатки</span>
 				</button>
@@ -98,13 +98,13 @@ export const MedicalWastePackagingAndScaleForm: React.FC<MedicalWastePackagingAn
 					onClick={() => handleClassQuickSelect("class_A", 2.0, "white_bag")}
 					className={`p-2.5 rounded-xl border text-left flex flex-col gap-0.5 cursor-pointer touch-manipulation transition-all ${
 						selectedClass === "class_A"
-							? "border-[var(--teal,#0d9488)] bg-teal-500/10 shadow-2xs"
+							? "border-[var(--primary)] bg-[var(--teal-surface)] shadow-2xs"
 							: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)]/30"
 					}`}
 				>
 					<div className="flex items-center justify-between">
 						<span className="font-bold text-xs text-[var(--ink,#0f172a)]">Класс А (2.0 кг)</span>
-						<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-700">Неопасные</span>
+						<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink-muted)] border border-[var(--line)]">Неопасные</span>
 					</div>
 					<span className="text-[11px] text-[var(--muted,#64748b)]">1 белый пакет 10 л • Бумага, картон, бытовые</span>
 				</button>

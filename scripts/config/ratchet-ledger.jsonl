@@ -1,3 +1,6 @@
 {"at":"2026-11-27T16:03:40.587Z","kind":"test-removal","testsFloorFrom":20368,"testsFloorTo":20302,"reason":"Consolidated redundant inventory deduction modules into procedureApplyDeductionHandler"}
 {"at":"2026-11-27T16:03:41.000Z","kind":"prod-files-removal","prodFilesFloorFrom":11432,"prodFilesFloorTo":11430,"reason":"Consolidated redundant procedure deduction files into unified deduction handler"}
 {"at":"2026-11-27T19:33:40.067Z","kind":"test-removal","testsFloorFrom":20320,"testsFloorTo":20120,"reason":"Wave8 Batch B: remove 8 redundant 100% source-grep duplicate test files after verifying coverage via real SSR/SUT suites"}
+{"at":"2026-11-28T16:01:00.000Z","kind":"prod-files-removal","prodFilesFloorFrom":11433,"prodFilesFloorTo":11432,"reason":"Wave 9/10: consolidated redundant clinical module file into unified studio handler"}
+{"at":"2026-11-28T16:01:00.000Z","kind":"test-removal","testsFloorFrom":20120,"testsFloorTo":19983,"reason":"Wave 9/10: remove 240 source-grep and 166 phantom duplicate tests per Mandate 8bk after 6G real SUT migration"}
+{"at":"2026-11-28T16:03:23.627Z","kind":"test-removal","testsFloorFrom":19983,"testsFloorTo":19981,"reason":"Wave 9/10: remove 240 source-grep and 166 phantom duplicate tests per Mandate 8bk after 6G real SUT migration"}

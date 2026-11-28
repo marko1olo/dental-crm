@@ -66,11 +66,11 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = (props) => {
 					<button
 						type="button"
 						onClick={onPay}
-						className="h-8 min-h-[32px] max-md:h-11 max-md:min-h-[44px] px-3.5 py-1.5 max-md:py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-medium flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+						className="h-8 min-h-[32px] max-md:h-11 max-md:min-h-[44px] px-3.5 py-1.5 max-md:py-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
 						data-testid={`btn-pay-invoice-${inv.id}`}
 						title="Принять оплату (касса / карта / сплит)"
 					>
-						<CreditCard className="w-4 h-4 shrink-0" />
+						<CreditCard className="w-4 h-4 text-[var(--primary)] shrink-0" />
 						<span>Оплатить</span>
 					</button>
 				)}

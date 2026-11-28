@@ -29,15 +29,15 @@ export const OdontogramPrintTable: React.FC<OdontogramPrintTableProps> = ({ teet
 	const pathologyTeeth = teethData.filter((t) => t.state && t.state !== "Healthy");
 
 	return (
-		<div className="mt-4 pt-3 border-t border-slate-200 text-xs" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
+		<div className="mt-4 pt-3 border-t border-[var(--line)] print:border-slate-200 text-xs" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
 			<div className="mb-3">
-				<h3 className="font-bold text-slate-900 mb-1.5 text-[11px] tracking-wide">
+				<h3 className="font-bold text-[var(--ink)] print:text-slate-900 mb-1.5 text-[11px] tracking-wide">
 					Условные обозначения патологий и состояний зубов:
 				</h3>
 				<div className="flex flex-wrap items-center gap-3 text-[11px]">
 					{LEGEND_ITEMS.map((item) => (
 						<div key={item.label} className="flex items-center gap-1.5">
-							<span className={`w-3 h-3 rounded-full ${item.color} inline-block shrink-0 border border-slate-400`} />
+							<span className={`w-3 h-3 rounded-full ${item.color} inline-block shrink-0 border border-[var(--line)] print:border-slate-400`} />
 							<span>{item.label}</span>
 						</div>
 					))}
@@ -45,21 +45,21 @@ export const OdontogramPrintTable: React.FC<OdontogramPrintTableProps> = ({ teet
 			</div>
 
 			<div>
-				<h3 className="font-bold text-slate-900 mb-1.5 text-[11px] tracking-wide">
+				<h3 className="font-bold text-[var(--ink)] print:text-slate-900 mb-1.5 text-[11px] tracking-wide">
 					Таблица выявленных патологий и анатомический статус:
 				</h3>
 				{pathologyTeeth.length === 0 ? (
-					<div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 text-xs italic">
+					<div className="p-2.5 rounded-lg border border-[var(--line)] print:border-slate-200 bg-[var(--paper-soft)] print:bg-slate-50 text-[var(--ink-muted)] print:text-slate-600 text-xs italic">
 						Все зубы зубного ряда интактны (клинически здоровы, патологий не выявлено).
 					</div>
 				) : (
-					<table className="w-full border-collapse text-left text-xs border border-slate-300">
+					<table className="w-full border-collapse text-left text-xs border border-[var(--line)] print:border-slate-300">
 						<thead>
-							<tr className="bg-slate-100 border-b border-slate-300 text-slate-900 font-bold">
-								<th className="py-1.5 px-2 border-r border-slate-300 w-16 text-center">Зуб</th>
-								<th className="py-1.5 px-2 border-r border-slate-300">Народное / Обиходное название</th>
-								<th className="py-1.5 px-2 border-r border-slate-300">Анатомическое название</th>
-								<th className="py-1.5 px-2 border-r border-slate-300">Поверхности</th>
+							<tr className="bg-[var(--paper-soft)] print:bg-slate-100 border-b border-[var(--line)] print:border-slate-300 text-[var(--ink)] print:text-slate-900 font-bold">
+								<th className="py-1.5 px-2 border-r border-[var(--line)] print:border-slate-300 w-16 text-center">Зуб</th>
+								<th className="py-1.5 px-2 border-r border-[var(--line)] print:border-slate-300">Народное / Обиходное название</th>
+								<th className="py-1.5 px-2 border-r border-[var(--line)] print:border-slate-300">Анатомическое название</th>
+								<th className="py-1.5 px-2 border-r border-[var(--line)] print:border-slate-300">Поверхности</th>
 								<th className="py-1.5 px-2">Клинический статус / Диагноз</th>
 							</tr>
 						</thead>
@@ -69,12 +69,12 @@ export const OdontogramPrintTable: React.FC<OdontogramPrintTableProps> = ({ teet
 								const anatName = getToothAnatomicalNameRu(t.toothNumber);
 								const surfacesStr = t.surfaces && t.surfaces.length > 0 ? t.surfaces.join(", ") : "—";
 								return (
-									<tr key={t.toothNumber} className="border-b border-slate-200 even:bg-slate-50">
-										<td className="py-1.5 px-2 font-mono font-bold text-center border-r border-slate-200">{t.toothNumber}</td>
-										<td className="py-1.5 px-2 font-medium border-r border-slate-200">{folkAndAnat}</td>
-										<td className="py-1.5 px-2 text-slate-700 border-r border-slate-200">{anatName}</td>
-										<td className="py-1.5 px-2 text-slate-600 border-r border-slate-200">{surfacesStr}</td>
-										<td className="py-1.5 px-2 font-bold text-slate-900">
+									<tr key={t.toothNumber} className="border-b border-[var(--line)] print:border-slate-200 even:bg-[var(--paper-soft)]/60 print:even:bg-slate-50">
+										<td className="py-1.5 px-2 font-mono font-bold text-center border-r border-[var(--line)] print:border-slate-200">{t.toothNumber}</td>
+										<td className="py-1.5 px-2 font-medium border-r border-[var(--line)] print:border-slate-200">{folkAndAnat}</td>
+										<td className="py-1.5 px-2 text-[var(--ink-2)] print:text-slate-700 border-r border-[var(--line)] print:border-slate-200">{anatName}</td>
+										<td className="py-1.5 px-2 text-[var(--ink-muted)] print:text-slate-600 border-r border-[var(--line)] print:border-slate-200">{surfacesStr}</td>
+										<td className="py-1.5 px-2 font-bold text-[var(--ink)] print:text-slate-900">
 											{TOOTH_STATE_LABELS[t.state as ToothState] || t.state}
 										</td>
 									</tr>

@@ -5,6 +5,7 @@
  * форматирование ролей персонала и хранилище одноразовых токенов в памяти.
  */
 
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
 import type {
 	MedicalSecrecySanitizeResult,
 	StaffAuthTokenRecord,
@@ -144,7 +145,10 @@ export function sanitizeStaffPushFor323FZ(text: string): MedicalSecrecySanitizeR
 // ХРАНИЛИЩЕ ОДНОРАЗОВЫХ ТОКЕНОВ В ПАМЯТИ (ДЛЯ ТЕСТОВ И АВТОНОМНОГО ОФЛАЙНА)
 // ============================================================================
 
-export const inMemoryStaffTokens = new Map<string, StaffAuthTokenRecord>();
+export const inMemoryStaffTokens = new BoundedTtlMap<string, StaffAuthTokenRecord>({
+	maxEntries: 1000,
+	ttlMs: 24 * 60 * 60 * 1000,
+});
 
 export function clearInMemoryStaffTokensForTest(): void {
 	inMemoryStaffTokens.clear();

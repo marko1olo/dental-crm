@@ -46,7 +46,7 @@ export const ScheduleClipboardTable: React.FC<ScheduleClipboardTableProps> = ({
 							<td data-label="Действия">
 								<div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
 									<button
-										className="primary-button pointer-coarse:min-h-[44px]"
+										className="secondary-button pointer-coarse:min-h-[44px]"
 										type="button"
 										aria-busy={busyId === item.id || undefined}
 										onClick={() => onPasteItem(item)}

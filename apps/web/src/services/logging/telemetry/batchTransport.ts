@@ -190,22 +190,32 @@ export function sendTelemetryBeaconFallback(events: StaffActionAuditEntry[]): bo
 	try {
 		const correlationId = generateCorrelationId("staff_audit");
 		const payload = JSON.stringify({ events });
-		void fetch("/api/audit/events/batch", {
-			method: "POST",
-			keepalive: true,
-			credentials: "include",
-			headers: denteClinicalMutationHeaders({
-				"Content-Type": "application/json",
-				[CORRELATION_ID_HEADER]: correlationId,
-				"Idempotency-Key": generateUuidV7(),
-			}),
-			body: payload,
-		}).catch((err) => {
-			activeLoggerBridge?.warn(
-				"[StaffTelemetry] Keepalive dispatch failed during page unload",
-				err,
-			);
-		});
+		void (async () => {
+			try {
+				const res = await fetch("/api/audit/events/batch", {
+					method: "POST",
+					keepalive: true,
+					credentials: "include",
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						[CORRELATION_ID_HEADER]: correlationId,
+						"Idempotency-Key": generateUuidV7(),
+					}),
+					body: payload,
+				});
+				if (!res.ok) {
+					activeLoggerBridge?.warn(
+						"[StaffTelemetry] Keepalive dispatch returned HTTP error",
+						res.status,
+					);
+				}
+			} catch (err) {
+				activeLoggerBridge?.warn(
+					"[StaffTelemetry] Keepalive dispatch failed during page unload",
+					err,
+				);
+			}
+		})();
 		return true;
 	} catch (err) {
 		activeLoggerBridge?.warn(

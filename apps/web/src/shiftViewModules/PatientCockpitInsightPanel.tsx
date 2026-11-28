@@ -37,10 +37,8 @@ export const PatientCockpitInsightPanel: React.FC<PatientCockpitInsightPanelProp
 			<div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "7px" }}>
 				<span
 					style={{
-						fontSize: "10.5px",
-						fontWeight: 800,
-						textTransform: "uppercase",
-						letterSpacing: "0.06em",
+						fontSize: "11px",
+						fontWeight: 700,
 						color: isHigh ? "var(--bad-fg)" : isWatch ? "var(--warn-fg)" : "var(--muted)",
 						flexShrink: 0,
 					}}

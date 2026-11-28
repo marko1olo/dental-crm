@@ -5,6 +5,8 @@
  * Ограничение: максимум 5 неудачных попыток ввода PIN, затем блокировка на 5 минут (300 секунд).
  */
 
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
+
 interface RateLimitEntry {
 	failedAttempts: number;
 	lockoutUntil: number;
@@ -17,16 +19,27 @@ const PIN_LOCKOUT_MS = 5 * 60 * 1000; // 5 минут (300 секунд)
 const PIN_WINDOW_MS = 10 * 60 * 1000; // Окно сброса счётчика при отсутствии активности
 export const MAX_PIN_RATE_LIMIT_ENTRIES = 5000; // Лимит записей в памяти для защиты от OOM
 
-const pinRateLimitMap = new Map<string, RateLimitEntry>();
+const pinRateLimitMap = new BoundedTtlMap<string, RateLimitEntry>({
+	maxEntries: MAX_PIN_RATE_LIMIT_ENTRIES,
+	ttlMs: PIN_WINDOW_MS,
+});
 let lastPeriodicCleanup = 0;
 let cleanupIntervalTimer: NodeJS.Timeout | null = null;
 
 function ensureCleanupTimer(): void {
 	if (!cleanupIntervalTimer && typeof setInterval === "function") {
-		cleanupIntervalTimer = setInterval(() => {
+		const timer = setInterval(() => {
 			cleanupExpiredPinRateLimits();
 		}, 60_000);
-		cleanupIntervalTimer.unref?.();
+		timer.unref();
+		cleanupIntervalTimer = timer;
+	}
+}
+
+export function stopPinRateLimiterCleanup(): void {
+	if (cleanupIntervalTimer) {
+		clearInterval(cleanupIntervalTimer);
+		cleanupIntervalTimer = null;
 	}
 }
 
@@ -35,7 +48,7 @@ function ensureCleanupTimer(): void {
  */
 export function cleanupExpiredPinRateLimits(currentTime?: number): number {
 	const now = currentTime ?? Date.now();
-	let evictedCount = 0;
+	let evictedCount = pinRateLimitMap.pruneExpired(now);
 
 	for (const [key, entry] of pinRateLimitMap.entries()) {
 		if (entry.lockoutUntil > 0) {
@@ -51,7 +64,7 @@ export function cleanupExpiredPinRateLimits(currentTime?: number): number {
 
 	// LRU eviction if size still exceeds MAX_PIN_RATE_LIMIT_ENTRIES
 	while (pinRateLimitMap.size >= MAX_PIN_RATE_LIMIT_ENTRIES) {
-		const oldestKey = pinRateLimitMap.keys().next().value;
+		const oldestKey = pinRateLimitMap.keys()[0];
 		if (oldestKey !== undefined) {
 			pinRateLimitMap.delete(oldestKey);
 			evictedCount++;

@@ -27,7 +27,7 @@ export const MessengersOverviewHeader: React.FC<Props> = ({
 						<h3 className="font-bold text-base leading-tight text-[var(--ink)] m-0">
 							Центр каналов связи и оповещений
 						</h3>
-						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-[var(--line)]">
+						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]">
 							<ShieldCheck size={12} className="text-emerald-500" />
 							<span>Защита данных</span>
 						</span>
@@ -50,7 +50,7 @@ export const MessengersOverviewHeader: React.FC<Props> = ({
 							<span>{pendingCount} Ожидает</span>
 						</span>
 					)}
-					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200">
+					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] text-[var(--ink-muted)] border border-[var(--line)]">
 						<span className="w-2 h-2 rounded-full bg-slate-400" />
 						<span>{unconfiguredCount} Откл.</span>
 					</span>

@@ -25,7 +25,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 const labelStyle: React.CSSProperties = {
-	fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase",
+	fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)",
 };
 
 export const ClinicalMetaAndAnamnesis: React.FC<ClinicalMetaAndAnamnesisProps> = ({
@@ -52,7 +52,7 @@ export const ClinicalMetaAndAnamnesis: React.FC<ClinicalMetaAndAnamnesisProps> =
 					</select>
 				</div>
 				<div>
-					<label style={labelStyle}>Пациент (ФИО & Карта)</label>
+					<label style={labelStyle}>Пациент (ФИО и карта)</label>
 					<input type="text" value={patient.patientFullName} onChange={(e) => onPatientChange({ ...patient, patientFullName: e.target.value })} style={inputStyle} />
 				</div>
 				<div>

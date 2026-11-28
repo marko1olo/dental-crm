@@ -79,7 +79,6 @@ export const InvoiceCardIdentity: React.FC<InvoiceCardIdentityProps> = ({
 				<div className="mt-1">
 					<FiscalReceiptStatusBadge
 						status={inv.fiscalStatus ?? (isPaid ? "fiscalized" : "pending")}
-						receiptNumber={inv.number}
 					/>
 				</div>
 			</div>

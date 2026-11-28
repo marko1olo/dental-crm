@@ -46,7 +46,7 @@ export function OrthopedicPassportHeader({
 					<div className="text-[10px] text-[var(--ink-muted)] mt-0.5">LOT: <strong className="font-mono text-[var(--ink)]">{batchLot}</strong></div>
 				</div>
 				<div
-					className="w-[68px] h-[68px] p-1 bg-white border border-[var(--line)] rounded-lg flex flex-col items-center justify-center shrink-0 shadow-2xs"
+					className="w-[68px] h-[68px] p-1 bg-white dark:bg-white border border-[var(--line)] rounded-lg flex flex-col items-center justify-center shrink-0 shadow-2xs"
 					title="QR-код проверки подлинности гарантийного сертификата"
 					data-testid="passport-qr-code"
 				>

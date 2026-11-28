@@ -19,21 +19,52 @@ import * as net from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-
+import { z } from "zod";
 import {
 	type AutoclavePouchLabelPayload,
 	buildEscPosHardwareTestPatternBuffer,
 	createSampleAutoclavePouchLabelPayload,
+	deviceInterfaceSchema,
+	deviceStatusSchema,
+	deviceTypeSchema,
 	ESC_POS_STATUS_COMMANDS,
 	generateAutoclavePouchLabelBuffer,
 	type HardwareDeviceDescriptor,
 	type HardwareDiscoveryOptions,
 	type HardwareDiscoveryResult,
+	labelPrinterEmulationSchema,
 	parseEscPosStatusByte,
 	type PrinterStatusReport,
 	type TestPrintResult,
 	type TestPrintTarget,
+	thermalPaperWidthMmSchema,
 } from "@dental/shared";
+import { BoundedTtlMap } from "../lib/boundedTtlMap.js";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const logger = createApiLogger("hardwareDiscoveryService");
+
+const hardwareDeviceDescriptorSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	type: deviceTypeSchema,
+	interface: deviceInterfaceSchema,
+	status: deviceStatusSchema,
+	isDefault: z.boolean(),
+	manufacturer: z.string().optional(),
+	model: z.string().optional(),
+	port: z.string().optional(),
+	ipAddress: z.string().optional(),
+	rawTcpPort: z.number().optional(),
+	serialNumber: z.string().optional(),
+	emulation: labelPrinterEmulationSchema.optional(),
+	paperWidthMm: thermalPaperWidthMmSchema.optional(),
+	details: z.record(z.string(), z.unknown()).optional(),
+});
+
+const probeScriptOutputSchema = z.object({
+	devices: z.array(hardwareDeviceDescriptorSchema),
+});
 
 // ============================================================================
 // 1. SCRIPT LOCATOR
@@ -53,8 +84,11 @@ function resolveRepoScriptsDir(): string {
 		if (fs.existsSync(relativeDir)) {
 			return relativeDir;
 		}
-	} catch {
-		// Ignore
+	} catch (err: unknown) {
+		logger.warn(
+			{ err: safeLogError(err) },
+			"[hardwareDiscoveryService] Failed to resolve scripts directory relative to module URL",
+		);
 	}
 
 	return cwdCandidate;
@@ -81,8 +115,11 @@ export async function probeRawTcpPrinterStatus(
 				resolved = true;
 				try {
 					socket.destroy();
-				} catch {
-					// Ignore
+				} catch (destroyErr: unknown) {
+					logger.warn(
+						{ err: safeLogError(destroyErr), ip, port },
+						"[hardwareDiscoveryService] Failed to destroy TCP status socket",
+					);
 				}
 				resolve(result);
 			}
@@ -155,8 +192,11 @@ export async function sendRawBytesToTcpPrinter(
 				resolved = true;
 				try {
 					socket.destroy();
-				} catch {
-					// Ignore
+				} catch (destroyErr: unknown) {
+					logger.warn(
+						{ err: safeLogError(destroyErr), ip, port },
+						"[hardwareDiscoveryService] Failed to destroy TCP send socket",
+					);
 				}
 				resolve(res);
 			}
@@ -232,12 +272,13 @@ export interface HardwareDiscoveryServiceDeps {
 }
 
 export class HardwareDiscoveryService {
-	private readonly cachedResultsByTenant = new Map<
+	private readonly cachedResultsByTenant = new BoundedTtlMap<
 		string,
-		{ result: HardwareDiscoveryResult; timestamp: number }
-	>();
-	private readonly cacheTtlMs = 5000; // 5 seconds cache to avoid WMI spam
-	private readonly maxCacheEntries = 64;
+		HardwareDiscoveryResult
+	>({
+		maxEntries: 64,
+		ttlMs: 5000,
+	});
 	private readonly spoolerTransport?: HardwareSpoolerTransport | undefined;
 
 	constructor(deps?: HardwareDiscoveryServiceDeps) {
@@ -251,10 +292,9 @@ export class HardwareDiscoveryService {
 		options: HardwareDiscoveryOptions = {},
 	): Promise<HardwareDiscoveryResult> {
 		const tenantKey = options.organizationId?.trim() || "default";
-		const now = Date.now();
 		const cached = this.cachedResultsByTenant.get(tenantKey);
-		if (cached && now - cached.timestamp < this.cacheTtlMs && !options.probeNetworkTcp) {
-			return cached.result;
+		if (cached && !options.probeNetworkTcp) {
+			return cached;
 		}
 
 		const platform = os.platform();
@@ -297,16 +337,7 @@ export class HardwareDiscoveryService {
 			summary,
 		};
 
-		if (this.cachedResultsByTenant.size >= this.maxCacheEntries) {
-			const oldestKey = this.cachedResultsByTenant.keys().next().value;
-			if (oldestKey) {
-				this.cachedResultsByTenant.delete(oldestKey);
-			}
-		}
-		this.cachedResultsByTenant.set(tenantKey, {
-			result,
-			timestamp: now,
-		});
+		this.cachedResultsByTenant.set(tenantKey, result);
 
 		return result;
 	}
@@ -345,10 +376,17 @@ export class HardwareDiscoveryService {
 				);
 			});
 
-			const parsed = JSON.parse(output.trim()) as HardwareDiscoveryResult;
-			return Array.isArray(parsed.devices) ? [...parsed.devices] : [];
-		} catch {
-			// Fallback: return empty or fallback in-memory state
+			const parsed = probeScriptOutputSchema.safeParse(JSON.parse(output.trim()));
+			if (!parsed.success) {
+				logger.warn(
+					{ issue: parsed.error.issues[0]?.message ?? "invalid_schema" },
+					"probeWindowsHardware returned invalid device probe payload",
+				);
+				return [];
+			}
+			return [...parsed.data.devices];
+		} catch (err) {
+			logger.warn({ err }, "probeWindowsHardware failed");
 			return [];
 		}
 	}
@@ -387,9 +425,17 @@ export class HardwareDiscoveryService {
 				);
 			});
 
-			const parsed = JSON.parse(output.trim()) as HardwareDiscoveryResult;
-			return Array.isArray(parsed.devices) ? [...parsed.devices] : [];
-		} catch {
+			const parsed = probeScriptOutputSchema.safeParse(JSON.parse(output.trim()));
+			if (!parsed.success) {
+				logger.warn(
+					{ issue: parsed.error.issues[0]?.message ?? "invalid_schema" },
+					"probePosixHardware returned invalid device probe payload",
+				);
+				return [];
+			}
+			return [...parsed.data.devices];
+		} catch (err) {
+			logger.warn({ err }, "probePosixHardware failed");
 			return [];
 		}
 	}
@@ -610,7 +656,11 @@ export class HardwareDiscoveryService {
 						)
 						.trim();
 					isInstalled = checkOutput.length > 0;
-				} catch {
+				} catch (err) {
+					logger.warn(
+						{ err, printerName: target.systemPrinterName },
+						"sendTestPrint printer availability check failed",
+					);
 					isInstalled = false;
 				}
 
@@ -658,8 +708,11 @@ export class HardwareDiscoveryService {
 							if (fs.existsSync(tempFile)) {
 								fs.unlinkSync(tempFile);
 							}
-						} catch {
-							// best-effort temp spool cleanup
+						} catch (cleanupErr) {
+							logger.warn(
+								{ err: cleanupErr, tempFile },
+								"sendTestPrint failed to cleanup temp spool file",
+							);
 						}
 					}
 				}

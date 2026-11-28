@@ -1,22 +1,6 @@
 /**
  * dicomCrawlerDaemon.test.ts — Инструментальная Red Team Инквизиция автономного
- * демона поиска КТ, Zero-Viewer фильтрации и дедупликации архивов.
- *
- * ПРОВЕРКИ И ИНВАРИАНТЫ:
- * 1. Валидация Part 10 (магические 4 байта 'DICM' на 128-м байте) и сигнатур ZIP.
- * 2. Тотальная фильтрация встроенных вьюеров и мусора (Zero-Viewer Bleed):
- *    - Запрет на распаковку Viewer.exe, setup.msi, autorun.inf, Launch.bat, VACAL.dll, manual.pdf.
- *    - В целевой кэш попадают ИСКЛЮЧИТЕЛЬНО срезы .dcm и DICOMDIR.
- *    - Счетчики totalJunkFilesSkipped и totalJunkBytesFiltered фиксируют мусор.
- * 3. Инспекция ZIP без распаковки (Central Directory & Offset 128 Magic):
- *    - Определение КТ не по размеру файла, а по заголовкам срезов внутри архива.
- *    - Мгновенная отбраковка не-DICOM архивов (бэкапы, фото, документы).
- * 4. Исключение дубликатов (Deduplication Law):
- *    - Архив и распакованная папка с одинаковым StudyInstanceUID дают ровно 1 запись.
- *    - Проверка в обоих направлениях (Папка -> Архив и Архив -> Папка).
- *    - Проверка базы данных PostgreSQL 18: ZERO DUPLICATES в schema.imagingStudies.
- * 5. Автоматическая распаковка новых КТ архивов в кэш без мусора.
- * 6. Сквозное сканирование scanNow и сбор телеметрии.
+ * демона поиска КТ, Zero-Viewer фильтрации и дедупликации архивов (6G Live SUT).
  */
 
 import assert from "node:assert/strict";
@@ -37,10 +21,10 @@ import * as schema from "../../../db/schema.js";
 import { eq, like } from "drizzle-orm";
 import { fixtureUuid, withFixtureTenant } from "../../../tests/support/fixtureOrganizations.js";
 
-/**
- * Создание валидного бинарного буфера среза DICOM Part 10 с явным Meta-заголовком (Group 0002)
- * и тегами пациента/исследования.
- */
+function listDirectoryEntries(target: string): string[] {
+	return readdirSync(target);
+}
+
 function createSyntheticDicomSlice(
 	studyUid = "1.2.840.113619.2.55.1.100",
 	patientName = "Sidorov^Ivan",
@@ -61,31 +45,25 @@ function createSyntheticDicomSlice(
 		elements.push(hdr, paddedVal);
 	}
 
-	// 1. File Meta Information (Group 0002) — строго по стандарту DICOM Part 10
-	addElement(0x0002, 0x0002, "UI", "1.2.840.10008.5.1.4.1.1.2"); // Media Storage SOP Class UID (CT)
-	addElement(0x0002, 0x0003, "UI", sopUid); // Media Storage SOP Instance UID
-	addElement(0x0002, 0x0010, "UI", "1.2.840.10008.1.2.1"); // Transfer Syntax UID (Explicit VR Little Endian)
+	addElement(0x0002, 0x0002, "UI", "1.2.840.10008.5.1.4.1.1.2");
+	addElement(0x0002, 0x0003, "UI", sopUid);
+	addElement(0x0002, 0x0010, "UI", "1.2.840.10008.1.2.1");
 
-	// 2. Study & Patient Dataset
-	addElement(0x0008, 0x0016, "UI", "1.2.840.10008.5.1.4.1.1.2"); // SOP Class UID
-	addElement(0x0008, 0x0018, "UI", sopUid); // SOP Instance UID
-	addElement(0x0008, 0x0020, "DA", "20260915"); // Study Date
-	addElement(0x0008, 0x0060, "CS", modality); // Modality
-	addElement(0x0010, 0x0010, "PN", patientName); // Patient's Name
-	addElement(0x0010, 0x0020, "LO", "PAT-998877"); // Patient ID
-	addElement(0x0010, 0x0030, "DA", "19800520"); // Patient's Birth Date
-	addElement(0x0020, 0x000d, "UI", studyUid); // Study Instance UID
-	addElement(0x0020, 0x000e, "UI", `${studyUid}.series1`); // Series Instance UID
+	addElement(0x0008, 0x0016, "UI", "1.2.840.10008.5.1.4.1.1.2");
+	addElement(0x0008, 0x0018, "UI", sopUid);
+	addElement(0x0008, 0x0020, "DA", "20260915");
+	addElement(0x0008, 0x0060, "CS", modality);
+	addElement(0x0010, 0x0010, "PN", patientName);
+	addElement(0x0010, 0x0020, "LO", "PAT-998877");
+	addElement(0x0010, 0x0030, "DA", "19800520");
+	addElement(0x0020, 0x000d, "UI", studyUid);
+	addElement(0x0020, 0x000e, "UI", `${studyUid}.series1`);
 
-	// 128 байт Preamble + 4 байта сигнатура 'DICM'
 	const preamble = Buffer.alloc(128, 0);
 	const magic = Buffer.from("DICM", "ascii");
 	return Buffer.concat([preamble, magic, ...elements]);
 }
 
-/**
- * Создание валидного в памяти ZIP-архива без внешних сторонних библиотек
- */
 function createSyntheticZipBuffer(entries: { name: string; content: Buffer }[]): Buffer {
 	const localHeaders: Buffer[] = [];
 	const centralHeaders: Buffer[] = [];
@@ -96,21 +74,21 @@ function createSyntheticZipBuffer(entries: { name: string; content: Buffer }[]):
 		const compData = zlib.deflateRawSync(entry.content);
 
 		const localHdr = Buffer.alloc(30);
-		localHdr.writeUInt32LE(0x04034b50, 0); // signature
-		localHdr.writeUInt16LE(20, 4); // version needed
-		localHdr.writeUInt16LE(0, 6); // flags
-		localHdr.writeUInt16LE(8, 8); // compression: deflate
-		localHdr.writeUInt16LE(0, 10); // time
-		localHdr.writeUInt16LE(0, 12); // date
-		localHdr.writeUInt32LE(0, 14); // crc32
-		localHdr.writeUInt32LE(compData.length, 18); // comp size
-		localHdr.writeUInt32LE(entry.content.length, 22); // uncomp size
-		localHdr.writeUInt16LE(nameBuf.length, 26); // name len
-		localHdr.writeUInt16LE(0, 28); // extra len
+		localHdr.writeUInt32LE(0x04034b50, 0);
+		localHdr.writeUInt16LE(20, 4);
+		localHdr.writeUInt16LE(0, 6);
+		localHdr.writeUInt16LE(8, 8);
+		localHdr.writeUInt16LE(0, 10);
+		localHdr.writeUInt16LE(0, 12);
+		localHdr.writeUInt32LE(0, 14);
+		localHdr.writeUInt32LE(compData.length, 18);
+		localHdr.writeUInt32LE(entry.content.length, 22);
+		localHdr.writeUInt16LE(nameBuf.length, 26);
+		localHdr.writeUInt16LE(0, 28);
 		localHeaders.push(localHdr, nameBuf, compData);
 
 		const cdHdr = Buffer.alloc(46);
-		cdHdr.writeUInt32LE(0x02014b50, 0); // signature
+		cdHdr.writeUInt32LE(0x02014b50, 0);
 		cdHdr.writeUInt16LE(20, 4);
 		cdHdr.writeUInt16LE(20, 6);
 		cdHdr.writeUInt16LE(0, 8);
@@ -126,7 +104,7 @@ function createSyntheticZipBuffer(entries: { name: string; content: Buffer }[]):
 		cdHdr.writeUInt16LE(0, 34);
 		cdHdr.writeUInt16LE(0, 36);
 		cdHdr.writeUInt32LE(0, 38);
-		cdHdr.writeUInt32LE(offset, 42); // local header offset
+		cdHdr.writeUInt32LE(offset, 42);
 		centralHeaders.push(cdHdr, nameBuf);
 
 		offset += 30 + nameBuf.length + compData.length;
@@ -148,15 +126,15 @@ function createSyntheticZipBuffer(entries: { name: string; content: Buffer }[]):
 }
 
 describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspection & Dedup)", () => {
-	let tempDir: string;
-	let cacheDir: string;
+	let tempRoot: string;
+	let cacheBucket: string;
 	let crawler: DicomCrawlerDaemon;
 	let testOrgId: string;
 
 	before(async () => {
-		tempDir = await mkdtemp(path.join(os.tmpdir(), "dicom_crawler_inquisition_"));
-		cacheDir = path.join(tempDir, "cache");
-		await mkdir(cacheDir, { recursive: true });
+		tempRoot = await mkdtemp(path.join(os.tmpdir(), "dicom_crawler_inquisition_"));
+		cacheBucket = path.join(tempRoot, "cache");
+		await mkdir(cacheBucket, { recursive: true });
 
 		testOrgId = fixtureUuid("dicomCrawlerDaemon", 1);
 		await withFixtureTenant(testOrgId, async (tx) => {
@@ -168,8 +146,8 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 
 		crawler = new DicomCrawlerDaemon({
 			enabled: false,
-			watchPaths: [tempDir],
-			cacheDir,
+			watchPaths: [tempRoot],
+			cacheDir: cacheBucket,
 			autoUnpack: true,
 			defaultOrganizationId: testOrgId,
 		});
@@ -182,17 +160,16 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 					.delete(schema.imagingStudies)
 					.where(like(schema.imagingStudies.studyInstanceUid, "1.2.840.113619.2.55.1.%"));
 			});
-		} catch {
-			// игнорируем
+		} catch (err) {
+			console.warn("[dicomCrawlerDaemon.test] DB cleanup warning:", err);
 		}
 		try {
-			await rm(tempDir, { recursive: true, force: true });
-		} catch {
-			// игнорируем
+			await rm(tempRoot, { recursive: true, force: true });
+		} catch (err) {
+			console.warn("[dicomCrawlerDaemon.test] FS cleanup warning:", err);
 		}
 	});
 
-	// ─── РАЗДЕЛ 1: СИГНАТУРЫ И БАЗОВАЯ ВАЛИДАЦИЯ PART 10 ──────────────────────
 	describe("1. DICOM Part 10 Magic & Archive Signatures", () => {
 		it("hasDicomPart10Magic и isZipArchiveMagic безошибочно валидируют сигнатуры", () => {
 			const dicomBuf = createSyntheticDicomSlice();
@@ -201,16 +178,15 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 			const zipBuf = createSyntheticZipBuffer([{ name: "test.txt", content: Buffer.from("data") }]);
 			assert.equal(isZipArchiveMagic(zipBuf), true, "ZIP архив обязан иметь сигнатуру 0x50 0x4B");
 
-			// Ложные срабатывания (False Positives)
 			assert.equal(hasDicomPart10Magic(Buffer.from("Random text string without dicom preamble")), false);
 			assert.equal(hasDicomPart10Magic(Buffer.alloc(131, 0)), false, "Буфер < 132 байт не должен приниматься");
 			assert.equal(hasDicomPart10Magic(Buffer.alloc(132, 0)), false, "Буфер с нулями без 'DICM' не должен приниматься");
 
 			const falseMagic = Buffer.alloc(132, 0);
-			falseMagic[128] = 0x44; // 'D'
-			falseMagic[129] = 0x49; // 'I'
-			falseMagic[130] = 0x43; // 'C'
-			falseMagic[131] = 0x58; // 'X' вместо 'M'
+			falseMagic[128] = 0x44;
+			falseMagic[129] = 0x49;
+			falseMagic[130] = 0x43;
+			falseMagic[131] = 0x58;
 			assert.equal(hasDicomPart10Magic(falseMagic), false, "Несовпадение символа в сигнатуре отбраковывается");
 		});
 
@@ -231,16 +207,13 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 		});
 	});
 
-	// ─── РАЗДЕЛ 2: ТОТАЛЬНАЯ ФИЛЬТРАЦИЯ МУСОРА И ВСТРОЕННЫХ ВЬЮЕРОВ (ZERO-VIEWER BLEED) ──
-	describe("2. Zero-Viewer Bleed & Total Junk Purge (Пользовательский приказ 1:1)", () => {
+	describe("2. Zero-Viewer Bleed & Total Junk Purge", () => {
 		it("отфильтровывает 100% встроенных ридеров и мусора (Viewer.exe, setup.msi, autorun.inf, Launch.bat, VACAL.dll, manual.pdf)", async () => {
 			const studyUid = "1.2.840.113619.2.55.1.77700";
 			const slice1 = createSyntheticDicomSlice(studyUid, "Ivanova^Elena", "CT", `${studyUid}.slice1`);
 			const slice2 = createSyntheticDicomSlice(studyUid, "Ivanova^Elena", "CT", `${studyUid}.slice2`);
 			const dicomdir = createSyntheticDicomSlice(studyUid, "Ivanova^Elena", "CT", `${studyUid}.dicomdir`);
 
-			// Архив набит типичным сторонним софтом томографов других клиник:
-			// Ez3D-i/Viewer.exe, Romexis/setup.msi, autorun.inf, Launch.bat, System/VACAL.dll, manual.pdf
 			const junkZipBuffer = createSyntheticZipBuffer([
 				{ name: "DICOM/CT_0001.dcm", content: slice1 },
 				{ name: "DICOM/CT_0002.dcm", content: slice2 },
@@ -253,32 +226,22 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 				{ name: "manual.pdf", content: Buffer.from("%PDF-1.5 Instruction manual for viewer...") },
 			]);
 
-			const zipPath = path.join(tempDir, "Tomograph_With_Junk_Viewers.zip");
-			await writeFile(zipPath, junkZipBuffer);
+			const zipArchive = path.join(tempRoot, "Tomograph_With_Junk_Viewers.zip");
+			await writeFile(zipArchive, junkZipBuffer);
 
-			const targetUnpackDir = path.join(tempDir, "unpacked_zero_viewer");
+			const unpackDest = path.join(tempRoot, "unpacked_zero_viewer");
 			const initialSkipped = crawler.getStatus().totalJunkFilesSkipped;
 			const initialBytes = crawler.getStatus().totalJunkBytesFiltered;
 
-			const extracted = await crawler.unpackZipArchive(zipPath, targetUnpackDir);
+			const extracted = await crawler.unpackZipArchive(zipArchive, unpackDest);
 
-			// 1. Возвращенный список файлов содержит ИСКЛЮЧИТЕЛЬНО валидные срезы и DICOMDIR
 			assert.equal(extracted.length, 3, "Должно быть распаковано ровно 3 DICOM-файла (2 среза + DICOMDIR)");
-			const baseNames = extracted.map((f) => path.basename(f));
-			assert.ok(baseNames.includes("CT_0001.dcm"), "CT_0001.dcm обязан быть извлечен");
-			assert.ok(baseNames.includes("CT_0002.dcm"), "CT_0002.dcm обязан быть извлечен");
-			assert.ok(baseNames.includes("DICOMDIR"), "DICOMDIR обязан быть извлечен");
+			const baseNames = extracted.map((f) => path.basename(f)).sort();
+			assert.deepStrictEqual(baseNames, ["CT_0001.dcm", "CT_0002.dcm", "DICOMDIR"]);
 
-			// 2. Проверка файлов на диске: ни один исполняемый или мусорный файл НЕ должен проникнуть!
-			const filesOnDisk = readdirSync(targetUnpackDir);
-			assert.equal(filesOnDisk.includes("Viewer.exe"), false, "Viewer.exe КАТЕГОРИЧЕСКИ НЕ ДОЛЖЕН БЫТЬ НА ДИСКЕ!");
-			assert.equal(filesOnDisk.includes("setup.msi"), false, "setup.msi КАТЕГОРИЧЕСКИ НЕ ДОЛЖЕН БЫТЬ НА ДИСКЕ!");
-			assert.equal(filesOnDisk.includes("autorun.inf"), false, "autorun.inf КАТЕГОРИЧЕСКИ НЕ ДОЛЖЕН БЫТЬ НА ДИСКЕ!");
-			assert.equal(filesOnDisk.includes("Launch.bat"), false, "Launch.bat КАТЕГОРИЧЕСКИ НЕ ДОЛЖЕН БЫТЬ НА ДИСКЕ!");
-			assert.equal(filesOnDisk.includes("VACAL.dll"), false, "VACAL.dll КАТЕГОРИЧЕСКИ НЕ ДОЛЖЕН БЫТЬ НА ДИСКЕ!");
-			assert.equal(filesOnDisk.includes("manual.pdf"), false, "manual.pdf КАТЕГОРИЧЕСКИ НЕ ДОЛЖЕН БЫТЬ НА ДИСКЕ!");
+			const filesOnDisk = listDirectoryEntries(unpackDest).sort();
+			assert.deepStrictEqual(filesOnDisk, ["CT_0001.dcm", "CT_0002.dcm", "DICOMDIR"]);
 
-			// 3. Счетчики пропущенного мусора
 			const currentStatus = crawler.getStatus();
 			const skippedDelta = currentStatus.totalJunkFilesSkipped - initialSkipped;
 			const bytesDelta = currentStatus.totalJunkBytesFiltered - initialBytes;
@@ -288,7 +251,6 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 		});
 	});
 
-	// ─── РАЗДЕЛ 3: ИНСПЕКЦИЯ АРХИВОВ БЕЗ РАСПАКОВКИ (CENTRAL DIRECTORY & OFFSET 128) ───
 	describe("3. Fast Archive Inspection without Unpacking", () => {
 		it("inspectZipForDicom читает оглавление и 128-й байт первого среза без распаковки гигабайтов", async () => {
 			const studyUid = "1.2.840.113619.2.55.1.99911";
@@ -302,10 +264,10 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 				{ name: "Romexis/setup.msi", content: Buffer.alloc(1024, 0x00) },
 			]);
 
-			const zipPath = path.join(tempDir, "Inspection_Fast_Test.zip");
-			await writeFile(zipPath, zipBuffer);
+			const zipArchive = path.join(tempRoot, "Inspection_Fast_Test.zip");
+			await writeFile(zipArchive, zipBuffer);
 
-			const inspection = await crawler.inspectZipForDicom(zipPath);
+			const inspection = await crawler.inspectZipForDicom(zipArchive);
 
 			assert.equal(inspection.isDicomArchive, true, "Архив с DICM должен быть подтвержден как КТ");
 			assert.equal(inspection.studyInstanceUid, studyUid, "StudyInstanceUID совпадает");
@@ -322,63 +284,57 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 				{ name: "software/setup.exe", content: Buffer.alloc(1024, 0x4d) },
 			]);
 
-			const fakeZipPath = path.join(tempDir, "Non_Dicom_Backup.zip");
-			await writeFile(fakeZipPath, fakeZipBuffer);
+			const fakeZipArchive = path.join(tempRoot, "Non_Dicom_Backup.zip");
+			await writeFile(fakeZipArchive, fakeZipBuffer);
 
-			const inspection = await crawler.inspectZipForDicom(fakeZipPath);
+			const inspection = await crawler.inspectZipForDicom(fakeZipArchive);
 			assert.equal(inspection.isDicomArchive, false, "Не-DICOM архив обязан быть отклонен");
 			assert.equal(inspection.sliceCount, 0, "Срезы должны быть 0");
 		});
 
 		it("мгновенно возвращает false для поврежденных файлов и файлов < 132 байт", async () => {
-			const tinyPath = path.join(tempDir, "tiny.zip");
-			await writeFile(tinyPath, Buffer.from("PK tiny"));
-			const resTiny = await crawler.inspectZipForDicom(tinyPath);
+			const tinyArchive = path.join(tempRoot, "tiny.zip");
+			await writeFile(tinyArchive, Buffer.from("PK tiny"));
+			const resTiny = await crawler.inspectZipForDicom(tinyArchive);
 			assert.equal(resTiny.isDicomArchive, false);
 
-			const nonExistentPath = path.join(tempDir, "missing_file_xyz.zip");
-			const resMissing = await crawler.inspectZipForDicom(nonExistentPath);
+			const nonExistentArchive = path.join(tempRoot, "missing_file_xyz.zip");
+			const resMissing = await crawler.inspectZipForDicom(nonExistentArchive);
 			assert.equal(resMissing.isDicomArchive, false);
 		});
 	});
 
-	// ─── РАЗДЕЛ 4: ЗАКОН ДЕДУПЛИКАЦИИ (DEDUPLICATION LAW) ────────────────────────
 	describe("4. Deduplication Law (Архив vs Распакованная папка — ровно 1 запись)", () => {
 		it("Сценарий А: Сначала папка, затем архив -> регистрируется ровно 1 запись, дубликаты исключены", async () => {
 			const sharedStudyUid = "1.2.840.113619.2.55.1.55501";
 			const slice = createSyntheticDicomSlice(sharedStudyUid, "Kuznetsov^Sergey", "CT");
 
-			// 1. Создаем распакованную папку
-			const folderPath = path.join(tempDir, "Kuznetsov_Folder_First");
-			await mkdir(folderPath, { recursive: true });
-			await writeFile(path.join(folderPath, "CT_0001.dcm"), slice);
+			const folderCandidate = path.join(tempRoot, "Kuznetsov_Folder_First");
+			await mkdir(folderCandidate, { recursive: true });
+			await writeFile(path.join(folderCandidate, "CT_0001.dcm"), slice);
 
-			// 2. Создаем архив с тем же исследованием
 			const zipBuffer = createSyntheticZipBuffer([
 				{ name: "CT_0001.dcm", content: slice },
 			]);
-			const archivePath = path.join(tempDir, "Kuznetsov_Archive_Second.zip");
-			await writeFile(archivePath, zipBuffer);
+			const archiveCandidate = path.join(tempRoot, "Kuznetsov_Archive_Second.zip");
+			await writeFile(archiveCandidate, zipBuffer);
 
-			// Шаг 1: Обрабатываем распакованную папку
 			const folderResult = await withFixtureTenant(testOrgId, async () => {
-				return crawler.processFolderCandidate(folderPath, testOrgId);
+				return crawler.processFolderCandidate(folderCandidate, testOrgId);
 			});
 			assert.ok(folderResult, "Папка должна быть зарегистрирована");
 			assert.equal(folderResult?.studyInstanceUid, sharedStudyUid);
 			assert.equal(folderResult?.status, "registered");
 
-			// Шаг 2: Обрабатываем архив с тем же UID
 			const archiveResult = await withFixtureTenant(testOrgId, async () => {
-				return crawler.processArchiveCandidate(archivePath, testOrgId);
+				return crawler.processArchiveCandidate(archiveCandidate, testOrgId);
 			});
 			assert.ok(archiveResult, "Архив должен быть обработан");
 			assert.equal(archiveResult?.studyInstanceUid, sharedStudyUid);
 			assert.equal(archiveResult?.status, "duplicate_resolved", "Статус должен быть duplicate_resolved");
-			assert.equal(archiveResult?.archivePath, archivePath, "Архив связан с записью");
-			assert.equal(archiveResult?.unpackedFolderPath, folderPath, "Папка связана с записью");
+			assert.equal(archiveResult?.archivePath, archiveCandidate, "Архив связан с записью");
+			assert.equal(archiveResult?.unpackedFolderPath, folderCandidate, "Папка связана с записью");
 
-			// Шаг 3: Проверяем базу данных PostgreSQL — ровно 1 строка!
 			const dbRecords = await withFixtureTenant(testOrgId, async () => {
 				return db
 					.select()
@@ -396,29 +352,26 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 			const zipBuffer = createSyntheticZipBuffer([
 				{ name: "CT_0001.dcm", content: slice },
 			]);
-			const archivePath = path.join(tempDir, "Smirnov_Archive_First.zip");
-			await writeFile(archivePath, zipBuffer);
+			const archiveCandidate = path.join(tempRoot, "Smirnov_Archive_First.zip");
+			await writeFile(archiveCandidate, zipBuffer);
 
-			const folderPath = path.join(tempDir, "Smirnov_Folder_Second");
-			await mkdir(folderPath, { recursive: true });
-			await writeFile(path.join(folderPath, "CT_0001.dcm"), slice);
+			const folderCandidate = path.join(tempRoot, "Smirnov_Folder_Second");
+			await mkdir(folderCandidate, { recursive: true });
+			await writeFile(path.join(folderCandidate, "CT_0001.dcm"), slice);
 
-			// Шаг 1: Обрабатываем архив
 			const archiveResult = await withFixtureTenant(testOrgId, async () => {
-				return crawler.processArchiveCandidate(archivePath, testOrgId);
+				return crawler.processArchiveCandidate(archiveCandidate, testOrgId);
 			});
 			assert.ok(archiveResult, "Архив должен быть успешно обработан и распакован");
 			assert.equal(archiveResult?.studyInstanceUid, sharedStudyUid);
 
-			// Шаг 2: Обрабатываем появившуюся позже папку
 			const folderResult = await withFixtureTenant(testOrgId, async () => {
-				return crawler.processFolderCandidate(folderPath, testOrgId);
+				return crawler.processFolderCandidate(folderCandidate, testOrgId);
 			});
 			assert.ok(folderResult, "Папка должна быть обработана");
 			assert.equal(folderResult?.studyInstanceUid, sharedStudyUid);
 			assert.equal(folderResult?.status, "duplicate_resolved", "Статус папки должен стать duplicate_resolved");
 
-			// Шаг 3: Проверяем БД — ровно 1 строка!
 			const dbRecords = await withFixtureTenant(testOrgId, async () => {
 				return db
 					.select()
@@ -430,7 +383,6 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 		});
 	});
 
-	// ─── РАЗДЕЛ 5: АВТОМАТИЧЕСКАЯ РАСПАКОВКА В КЭШ ─────────────────────────────
 	describe("5. Automatic Unpacking to Protected Cache (.data/dicom_cache/)", () => {
 		it("Новый найденный КТ-архив распаковывается в cache/<StudyInstanceUID>/ (только чистые .dcm)", async () => {
 			const studyUid = "1.2.840.113619.2.55.1.88888";
@@ -444,34 +396,28 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 				{ name: "autorun.inf", content: Buffer.from("[autorun]") },
 			]);
 
-			const archivePath = path.join(tempDir, "Morozov_New_CT.zip");
-			await writeFile(archivePath, zipBuffer);
+			const archiveLocation = path.join(tempRoot, "Morozov_New_CT.zip");
+			await writeFile(archiveLocation, zipBuffer);
 
 			const study = await withFixtureTenant(testOrgId, async () => {
-				return crawler.processArchiveCandidate(archivePath, testOrgId);
+				return crawler.processArchiveCandidate(archiveLocation, testOrgId);
 			});
 
 			assert.ok(study, "Исследование должно быть зарегистрировано");
 			assert.equal(study?.status, "unpacked", "Статус исследования должен быть 'unpacked'");
-			assert.ok(study?.unpackedFolderPath, "unpackedFolderPath обязан быть заполнен");
+			const unpackedLocation = study?.unpackedFolderPath;
+			assert.ok(unpackedLocation, "unpackedFolderPath обязан быть заполнен");
+			assert.equal(existsSync(unpackedLocation), true, "Каталог кэша обязан существовать");
 
-			// Проверяем файлы в кэше
-			assert.ok(existsSync(study.unpackedFolderPath!), "Каталог кэша обязан существовать");
-			const cachedFiles = readdirSync(study.unpackedFolderPath!);
-			assert.ok(cachedFiles.includes("CT_0001.dcm"), "Срез CT_0001.dcm должен быть в кэше");
-			assert.ok(cachedFiles.includes("CT_0002.dcm"), "Срез CT_0002.dcm должен быть в кэше");
-
-			// Проверяем полное отсутствие мусора
-			assert.equal(cachedFiles.includes("Viewer.exe"), false, "Viewer.exe не должен попасть в кэш!");
-			assert.equal(cachedFiles.includes("autorun.inf"), false, "autorun.inf не должен попасть в кэш!");
+			const cachedEntries = listDirectoryEntries(unpackedLocation).sort();
+			assert.deepStrictEqual(cachedEntries, ["CT_0001.dcm", "CT_0002.dcm"]);
 		});
 	});
 
-	// ─── РАЗДЕЛ 6: СКВОЗНОЕ СКАНИРОВАНИЕ scanNow И ТЕЛЕМЕТРИЯ ───────────────────
 	describe("6. Full Directory Scan & Operational Telemetry", () => {
 		it("scanNow обходит директорию, формирует отчет и собирает телеметрию", async () => {
 			const report = await withFixtureTenant(testOrgId, async () => {
-				return crawler.scanNow([tempDir]);
+				return crawler.scanNow([tempRoot]);
 			});
 
 			assert.ok(report.scannedDirectoriesCount >= 1, "Должен быть просканирован минимум 1 каталог");
@@ -491,7 +437,6 @@ describe("Red Team Inquisition: DicomCrawlerDaemon (Zero-Viewer Purge, Inspectio
 			});
 			assert.equal(updated.autoUnpack, false);
 
-			// Возвращаем autoUnpack для стабильности окружения
 			crawler.updateConfig({ autoUnpack: true, pollIntervalMinutes: 15 });
 		});
 	});

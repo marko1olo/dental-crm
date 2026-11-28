@@ -2,6 +2,7 @@ import type { Patient } from "@dental/shared";
 import { User, Users, Settings } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { FamilyWalletModal } from "../family/FamilyWalletModal";
 import type { FamilyGroupData } from "../familyWidget/familyWidgetTypes";
 
@@ -33,13 +34,19 @@ export function MobilePatientFamilySection({
 				headers: denteAdminSecretRequestHeaders(),
 			});
 			if (res.ok) {
-				const raw = await res.json().catch(() => null);
-				const data = raw && typeof raw === "object" && "data" in raw ? raw.data : raw;
-				setFamilyData(data as FamilyGroupData | null);
+				let raw: unknown = null;
+				try {
+					raw = await res.json();
+				} catch (parseErr) {
+					clientLogger.warn("[MobilePatientFamilySection] Failed to parse family JSON", parseErr);
+				}
+				const data = raw && typeof raw === "object" && "data" in raw ? (raw as { data?: unknown }).data : raw;
+				setFamilyData((data as FamilyGroupData | null) ?? null);
 			} else {
 				setFamilyData(null);
 			}
-		} catch {
+		} catch (err) {
+			clientLogger.warn("[MobilePatientFamilySection] Failed to fetch family group", err);
 			setFamilyData(null);
 		}
 	}, [patient?.id]);

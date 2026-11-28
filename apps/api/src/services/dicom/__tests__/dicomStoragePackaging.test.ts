@@ -1,12 +1,12 @@
 /**
  * dicomStoragePackaging.test.ts — Исчерпывающий Red Team тест кроссплатформенного системного
- * хранения КТ (Windows & macOS), упаковки 1 мультифрейма vs 400 срезов, именования и ярлыков DENTE.
+ * хранения КТ (Windows & macOS), упаковки 1 мультифрейма vs 400 срезов, именования и ярлыков DENTE (6G Live SUT).
  */
 
 import assert from "node:assert/strict";
 import { describe, it, before, after } from "node:test";
-import { mkdtemp, rm, writeFile, mkdir, readdir, readFile, stat } from "node:fs/promises";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { mkdtemp, rm, readFile, stat } from "node:fs/promises";
+import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import {
@@ -15,7 +15,6 @@ import {
 	sanitizePathSegment,
 	formatDicomModalityRussian,
 	formatDicomDateIso,
-	formatPatientNameForFolder,
 	extractShortStudyUid,
 	buildStudyStorageFolderName,
 	generateWindowsUrlShortcut,
@@ -24,15 +23,18 @@ import {
 	buildStudyManifest,
 	formatStudyManifestJson,
 } from "@dental/shared";
-import {
-	DicomStoragePackagingService,
-	dicomStoragePackagingService,
-} from "../DicomStoragePackagingService.js";
+import { DicomStoragePackagingService } from "../DicomStoragePackagingService.js";
 import { DicomCrawlerDaemon } from "../DicomCrawlerDaemon.js";
 
-/**
- * Создание валидного синтетического DICOM-среза
- */
+function listSliceEntries(folder: string): string[] {
+	return readdirSync(folder);
+}
+
+async function readManifestJson(location: string): Promise<Record<string, unknown>> {
+	const raw = await readFile(location, "utf8");
+	return JSON.parse(raw) as Record<string, unknown>;
+}
+
 function createSyntheticSliceBuffer(
 	studyUid: string,
 	instanceNumber: number,
@@ -68,23 +70,22 @@ function createSyntheticSliceBuffer(
 }
 
 describe("Red Team Inquisition: Cross-Platform System Storage & DICOM Packaging (Windows & macOS)", () => {
-	let tempRootDir: string;
+	let tempRootBucket: string;
 	let packagingService: DicomStoragePackagingService;
 
 	before(async () => {
-		tempRootDir = await mkdtemp(path.join(os.tmpdir(), "dicom_pkg_test_"));
+		tempRootBucket = await mkdtemp(path.join(os.tmpdir(), "dicom_pkg_test_"));
 		packagingService = new DicomStoragePackagingService();
 	});
 
 	after(async () => {
 		try {
-			await rm(tempRootDir, { recursive: true, force: true });
-		} catch {
-			// ignore cleanup errors
+			await rm(tempRootBucket, { recursive: true, force: true });
+		} catch (err) {
+			console.warn("[dicomStoragePackaging.test] cleanup warning:", err);
 		}
 	});
 
-	// ─── 1. КРОССПЛАТФОРМЕННЫЕ СИСТЕМНЫЕ ПАПКИ ХРАНЕНИЯ ─────────────────────────
 	describe("1. Cross-Platform System Storage Resolution (Windows, macOS, Linux)", () => {
 		it("Windows: при наличии прав разрешает %PROGRAMDATA%\\DenteDental\\DICOM", () => {
 			const res = resolveSystemDicomStorageDir({
@@ -164,7 +165,6 @@ describe("Red Team Inquisition: Cross-Platform System Storage & DICOM Packaging 
 		});
 	});
 
-	// ─── 2. ПУТИ СКАНИРОВАНИЯ И ГОРЯЧИЕ ПАПКИ НА MACOS ───────────────────────────
 	describe("2. macOS Watch Paths & External Volumes (/Volumes, OsiriX, Horos)", () => {
 		const crawler = new DicomCrawlerDaemon();
 
@@ -180,21 +180,17 @@ describe("Red Team Inquisition: Cross-Platform System Storage & DICOM Packaging 
 			assert.ok(macPaths.includes("/Library/Application Support/OsiriX"));
 			assert.ok(macPaths.includes("/Library/Application Support/Horos"));
 
-			// Проверка отсутствия Windows обратных слэшей в путях macOS
 			for (const p of macPaths) {
 				assert.equal(p.includes("\\"), false, `Путь macOS не должен содержать обратных слэшей: ${p}`);
 			}
 		});
 
 		it("getDefaultHotFolders на macOS включает Downloads, Desktop и OsiriX Data", () => {
-			const hot = crawler.getDefaultHotFolders("darwin", "/Users/radiologist");
-			// На Windows-хосте папки /Users/radiologist физически не существуют, поэтому проверяем getMacWatchPaths
 			const macAll = crawler.getMacWatchPaths("/Users/radiologist");
 			assert.ok(macAll.some((p) => p.includes("OsiriX Data")));
 		});
 	});
 
-	// ─── 3. ИМЕНОВАНИЕ ПАПОК, КИРИЛЛИЦА И САНИТАЙЗИНГ ────────────────────────────
 	describe("3. Folder Naming, Cyrillic Transliteration & Sanitization", () => {
 		it("формирует красивое имя папки: [Дата]_[ФИО]_[Модальность]_[Срезы]_[Короткий_UID]", () => {
 			const folderName = buildStudyStorageFolderName({
@@ -253,8 +249,7 @@ describe("Red Team Inquisition: Cross-Platform System Storage & DICOM Packaging 
 		});
 	});
 
-	// ─── 4. ЯРЛЫКИ ПРЯМОГО ОТКРЫТИЯ В НАШЕЙ ПРОГРАММЕ (1-CLICK LAUNCHERS) ────────
-	describe("4. 1-Click Desktop Launchers (Windows .url, macOS .webloc, .command)", () => {
+	describe("4. Desktop Launchers (Windows .url, macOS .webloc, .command)", () => {
 		const studyUid = "1.2.840.113619.2.55.1.99001122";
 
 		it("generateWindowsUrlShortcut создает валидный Windows Internet Shortcut", () => {
@@ -278,7 +273,7 @@ describe("Red Team Inquisition: Cross-Platform System Storage & DICOM Packaging 
 
 			assert.ok(content.includes('<?xml version="1.0" encoding="UTF-8"?>'));
 			assert.ok(content.includes('<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"'));
-			assert.ok(content.includes("<plist version=\"1.0\">"));
+			assert.ok(content.includes('<plist version="1.0">'));
 			assert.ok(content.includes("<key>URL</key>"));
 			assert.ok(content.includes(`http://127.0.0.1:5173/?studyId=${studyUid}&amp;cbct=1#radiology`), "Символ & обязан быть заэкранирован как &amp; в XML");
 		});
@@ -294,7 +289,6 @@ describe("Red Team Inquisition: Cross-Platform System Storage & DICOM Packaging 
 		});
 	});
 
-	// ─── 5. МАНИФЕСТ ИССЛЕДОВАНИЯ STUDY_MANIFEST.JSON ───────────────────────────
 	describe("5. Study Manifest (study_manifest.json)", () => {
 		it("buildStudyManifest формирует полную медицинскую и файловую структуру", () => {
 			const manifest = buildStudyManifest({
@@ -335,7 +329,6 @@ describe("Red Team Inquisition: Cross-Platform System Storage & DICOM Packaging 
 		});
 	});
 
-	// ─── 6. УПАКОВКА 1 МУЛЬТИФРЕЙМОВОГО ФАЙЛА DICOM (СЛУЧАЙ 1) ───────────────────
 	describe("6. Case 1: Packaging Single Multi-Frame DICOM File (volume_multiframe.dcm)", () => {
 		it("упаковывает 1 большой мультифреймовый DICOM в красивую папку с ярлыками и volume_multiframe.dcm", async () => {
 			const studyUid = "1.2.840.113619.2.55.1.single_mf_100";
@@ -353,44 +346,37 @@ describe("Red Team Inquisition: Cross-Platform System Storage & DICOM Packaging 
 				sliceThickness: 0.15,
 				kvp: 85,
 				ma: 7,
-				customStorageRootDir: tempRootDir,
+				customStorageRootDir: tempRootBucket,
 			});
 
-			// 1. Проверка структуры результата
 			assert.equal(result.layout, "single_multiframe");
 			assert.equal(result.slicesCount, 1);
 			assert.ok(result.folderName.startsWith("2026-10-03_Кузнецов_Сергей_КЛКТ_1ср_"));
 			assert.ok(existsSync(result.studyFolder));
 
-			// 2. Проверка volume_multiframe.dcm
-			const volumePath = path.join(result.studyFolder, "volume_multiframe.dcm");
-			assert.ok(existsSync(volumePath), "volume_multiframe.dcm обязан существовать на диске");
-			const volumeStat = await stat(volumePath);
+			const volumeOutput = path.join(result.studyFolder, "volume_multiframe.dcm");
+			assert.ok(existsSync(volumeOutput), "volume_multiframe.dcm обязан существовать на диске");
+			const volumeStat = await stat(volumeOutput);
 			assert.equal(volumeStat.size, multiFrameBuffer.length);
 
-			// 3. Проверка ярлыков прямого запуска
 			assert.ok(existsSync(path.join(result.studyFolder, "Открыть в DENTE.url")), "Ярлык Windows .url обязан существовать");
 			assert.ok(existsSync(path.join(result.studyFolder, "Открыть в DENTE.webloc")), "Ярлык macOS .webloc обязан существовать");
 			assert.ok(existsSync(path.join(result.studyFolder, "Открыть_в_DENTE.command")), "Скрипт macOS .command обязан существовать");
 
-			// 4. Проверка манифеста
-			const manifestPath = path.join(result.studyFolder, "study_manifest.json");
-			assert.ok(existsSync(manifestPath), "study_manifest.json обязан существовать");
-			const manifestRaw = await readFile(manifestPath, "utf8");
-			const manifest = JSON.parse(manifestRaw);
+			const manifestLocation = path.join(result.studyFolder, "study_manifest.json");
+			assert.ok(existsSync(manifestLocation), "study_manifest.json обязан существовать");
+			const manifest = await readManifestJson(manifestLocation);
 			assert.equal(manifest.patientFullName, "Кузнецов Сергей");
 			assert.equal(manifest.packageLayout, "single_multiframe");
-			assert.equal(manifest.files.primaryFileOrDirectory, "volume_multiframe.dcm");
+			assert.equal((manifest.files as { primaryFileOrDirectory?: string }).primaryFileOrDirectory, "volume_multiframe.dcm");
 		});
 	});
 
-	// ─── 7. УПАКОВКА 400 МЕЛКИХ СРЕЗОВ В slices/ (СЛУЧАЙ 2) ──────────────────────
 	describe("7. Case 2: Packaging 400 Slices into slices/ Subfolder (slice_0001.dcm ... slice_0400.dcm)", () => {
 		it("упаковывает 400 мелких срезов в slices/ с DICOMDIR, ярлыками и манифестом", async () => {
 			const studyUid = "1.2.840.113619.2.55.1.slices_400_test";
 			const TOTAL_SLICES = 400;
 
-			// Генерируем 400 синтетических срезов
 			const sliceBuffers: Array<{ buffer: Buffer; instanceNumber: number }> = [];
 			for (let i = 1; i <= TOTAL_SLICES; i++) {
 				sliceBuffers.push({
@@ -413,42 +399,35 @@ describe("Red Team Inquisition: Cross-Platform System Storage & DICOM Packaging 
 				sliceThickness: 0.2,
 				kvp: 95,
 				ma: 10,
-				customStorageRootDir: tempRootDir,
+				customStorageRootDir: tempRootBucket,
 			});
 
-			// 1. Проверка структуры результата
 			assert.equal(result.layout, "series_slices");
 			assert.equal(result.slicesCount, 400);
 			assert.ok(result.folderName.startsWith("2026-10-03_Захаров_Иван_КЛКТ_400ср_"));
 			assert.ok(existsSync(result.studyFolder));
 
-			// 2. Проверка подпапки slices/
-			const slicesDir = path.join(result.studyFolder, "slices");
-			assert.ok(existsSync(slicesDir), "Подпапка slices/ обязана существовать");
-			const sliceFiles = readdirSync(slicesDir);
+			const slicesRoot = path.join(result.studyFolder, "slices");
+			assert.ok(existsSync(slicesRoot), "Подпапка slices/ обязана существовать");
+			const sliceFiles = listSliceEntries(slicesRoot).sort();
 			assert.equal(sliceFiles.length, 400, "В подпапке slices/ должно быть ровно 400 файлов");
+			assert.equal(sliceFiles[0], "slice_0001.dcm");
+			assert.equal(sliceFiles[399], "slice_0400.dcm");
 
-			// Проверка первого и последнего среза
-			assert.ok(sliceFiles.includes("slice_0001.dcm"), "slice_0001.dcm обязан присутствовать");
-			assert.ok(sliceFiles.includes("slice_0400.dcm"), "slice_0400.dcm обязан присутствовать");
+			const dicomdirOut = path.join(result.studyFolder, "DICOMDIR");
+			assert.ok(existsSync(dicomdirOut), "DICOMDIR обязан быть в корне папки исследования");
 
-			// 3. Проверка DICOMDIR в корне папки
-			const dicomdirPath = path.join(result.studyFolder, "DICOMDIR");
-			assert.ok(existsSync(dicomdirPath), "DICOMDIR обязан быть в корне папки исследования");
-
-			// 4. Проверка ярлыков прямого запуска
 			assert.ok(existsSync(path.join(result.studyFolder, "Открыть в DENTE.url")), "Ярлык Windows .url обязан присутствовать");
 			assert.ok(existsSync(path.join(result.studyFolder, "Открыть в DENTE.webloc")), "Ярлык macOS .webloc обязан присутствовать");
 			assert.ok(existsSync(path.join(result.studyFolder, "Открыть_в_DENTE.command")), "Скрипт macOS .command обязан присутствовать");
 
-			// 5. Проверка манифеста
-			const manifestPath = path.join(result.studyFolder, "study_manifest.json");
-			assert.ok(existsSync(manifestPath), "study_manifest.json обязан существовать");
-			const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+			const manifestLocation = path.join(result.studyFolder, "study_manifest.json");
+			assert.ok(existsSync(manifestLocation), "study_manifest.json обязан существовать");
+			const manifest = await readManifestJson(manifestLocation);
 			assert.equal(manifest.patientFullName, "Захаров Иван");
 			assert.equal(manifest.sliceCount, 400);
 			assert.equal(manifest.packageLayout, "series_slices");
-			assert.equal(manifest.files.primaryFileOrDirectory, "slices/");
+			assert.equal((manifest.files as { primaryFileOrDirectory?: string }).primaryFileOrDirectory, "slices/");
 		});
 	});
 });

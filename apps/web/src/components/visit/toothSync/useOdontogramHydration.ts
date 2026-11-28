@@ -108,7 +108,12 @@ export function useOdontogramHydration({
 						showToast("Не удалось загрузить зубную формулу пациента", "error");
 						return;
 					}
-					const data = (await res.json().catch(() => null)) as { success?: boolean; states?: ToothData[] } | null;
+					let data: { success?: boolean; states?: ToothData[] } | null = null;
+					try {
+						data = (await res.json()) as { success?: boolean; states?: ToothData[] } | null;
+					} catch (parseErr) {
+						clientLogger.warn("Failed to parse tooth states JSON", parseErr, { module: "useOdontogramHydration" });
+					}
 					if (data?.success && Array.isArray(data.states)) {
 						if (data.states.length > 0) {
 							saveStoredTeethData(patientId, data.states);

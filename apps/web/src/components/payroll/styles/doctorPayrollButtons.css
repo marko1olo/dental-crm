@@ -10,7 +10,7 @@
 	border-radius: 12px;
 	font-size: 13px;
 	font-weight: 700;
-	background-color: var(--teal);
+	background-color: var(--primary, #0f766e);
 	color: #ffffff;
 	border: 1px solid transparent;
 	display: inline-flex;
@@ -24,7 +24,7 @@
 }
 
 .dente-btn-primary:hover:not(:disabled) {
-	opacity: 0.94;
+	background-color: var(--primary-hover, #115e59);
 	transform: translateY(-0.5px);
 }
 

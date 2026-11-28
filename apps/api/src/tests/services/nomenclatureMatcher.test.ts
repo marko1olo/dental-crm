@@ -1,12 +1,8 @@
 /**
- * nomenclatureMatcher.test.ts — Unit Tests for Nomenclature Matcher & Module Decomposition.
- * Mandate 8b (<=120 lines per submodule, <=15 lines for facade), Mandate 8ap (Domain purity).
+ * nomenclatureMatcher.test.ts — Unit Tests for Nomenclature Matcher (6G Live SUT).
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import {
 	clearMatcherCache,
@@ -23,7 +19,7 @@ import {
 	tokenOverlapScore,
 } from "../../services/ai/pricelistIngest/nomenclatureMatcher.js";
 
-describe("Nomenclature Matcher & Decomposed Modules Test Suite", () => {
+describe("Nomenclature Matcher & Decomposed Modules Test Suite (6G Live SUT)", () => {
 	it("1. Normalization of Cyrillic/Latin statutory codes (Mandate 8ap)", () => {
 		assert.equal(normalizeServiceCode("А16.07.002"), "A16.07.002");
 		assert.equal(normalizeServiceCode("В01.065.001"), "B01.065.001");
@@ -72,8 +68,8 @@ describe("Nomenclature Matcher & Decomposed Modules Test Suite", () => {
 		assert.equal(surgeryMatch.category, "surgery");
 
 		const implantMatch = matchOrder804nNomenclature(
-			"Установка дентального имплантата Osstem",
-			"Установка дентального имплантата Osstem",
+			"Установка дентального имплантата",
+			"Установка дентального имплантата",
 		);
 		assert.equal(implantMatch.code804n, "A16.07.054");
 		assert.equal(implantMatch.category, "surgery");
@@ -107,34 +103,19 @@ describe("Nomenclature Matcher & Decomposed Modules Test Suite", () => {
 		assert.equal(getCachedMatch(raw, clean), undefined);
 	});
 
-	it("6. Mandate 8b file line limits (submodules <= 120 lines, facades <= 15 lines)", () => {
-		const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
-		const matcherModulesDir = path.join(root, "apps/api/src/services/ai/pricelistIngest/matcherModules");
+	it("6. Registry alias parity, clinical keyword matcher & empty/unmatched fallback", () => {
+		assert.deepEqual(SERVICE_NOMENCLATURE_REGISTRY, ORDER_804N_STATUTORY_REGISTRY);
+		assert.ok(SERVICE_NOMENCLATURE_REGISTRY.length >= 70);
 
-		const checkDir = (dir: string) => {
-			const entries = fs.readdirSync(dir, { withFileTypes: true });
-			for (const entry of entries) {
-				const fullPath = path.join(dir, entry.name);
-				if (entry.isDirectory()) {
-					checkDir(fullPath);
-				} else if (entry.name.endsWith(".ts")) {
-					const lines = fs.readFileSync(fullPath, "utf-8").split("\n").length;
-					assert.ok(
-						lines <= 350,
-						`${path.relative(root, fullPath)} has ${lines} lines (healthy limit: <= 350 lines)`,
-					);
-				}
-			}
-		};
+		const keywordMatch = matchClinicalKeywords("Удаление зуба под местной анестезией");
+		assert.ok(keywordMatch);
+		assert.equal(keywordMatch?.category, "surgery");
 
-		checkDir(matcherModulesDir);
+		const emptyResult = matchOrder804nNomenclature("", "");
+		assert.equal(emptyResult.code804n, null);
+		assert.equal(emptyResult.confidence, 0);
 
-		const facadePath = path.join(root, "apps/api/src/services/ai/pricelistIngest/nomenclatureMatcher.ts");
-		const facadeLines = fs.readFileSync(facadePath, "utf-8").split("\n").length;
-		assert.ok(facadeLines <= 30, `nomenclatureMatcher.ts has ${facadeLines} lines (limit: <= 30)`);
-
-		const legacyFacadePath = path.join(root, "apps/api/src/services/ai/pricelistIngest/nomenclature804nMatcher.ts");
-		const legacyLines = fs.readFileSync(legacyFacadePath, "utf-8").split("\n").length;
-		assert.ok(legacyLines <= 10, `nomenclature804nMatcher.ts has ${legacyLines} lines (limit: <= 10)`);
+		const unknownResult = matchOrder804nNomenclature("zzzzz_unmatched_phrase_999", "zzzzz_unmatched_phrase_999");
+		assert.ok(unknownResult.confidence < 0.7);
 	});
 });

@@ -1,9 +1,8 @@
 import assert from "node:assert";
 import fs from "node:fs/promises";
-import { readFileSync, existsSync } from "node:fs";
-import path from "node:path";
+import { existsSync } from "node:fs";
 import type { TestContext } from "node:test";
-import { describe, it, before, after } from "node:test";
+import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import Fastify from "fastify";
 import { db, dbRaw } from "../db/client.js";
@@ -18,17 +17,30 @@ import {
 	stripMultipartWrapperFromBuffer,
 } from "./dicomwebStow.js";
 
-const SAMPLE_DICOM_PATH = fileURLToPath(
+const SAMPLE_DICOM_URL = fileURLToPath(
 	new URL("../../../../.data/dicom/test.dcm", import.meta.url),
 );
 
 const ORG_ID = "4a3420d1-6ffb-4459-bd8f-7f7087f5e191";
 const PATIENT_ID = "99999999-9999-4999-8999-999999999999";
-const PATIENT_B_ID = "88888888-8888-4888-8888-888888888888";
 
 const SAMPLE_STUDY_UID = "1.3.6.1.4.1.5962.1.2.2.20040826185059.5457";
 const SAMPLE_SERIES_UID = "1.3.6.1.4.1.5962.1.3.2.1.20040826185059.5457";
 const SAMPLE_SOP_UID = "1.3.6.1.4.1.5962.1.1.2.1.2.20040826185059.5457";
+
+interface InsertedDicomPayload {
+	title?: string;
+	storagePath?: string;
+	dicomSopInstanceUid?: string;
+	sourceName?: string;
+	aiSummary?: string;
+}
+
+interface PatientStubRow {
+	id: string;
+	mergedIntoPatientId: string | null;
+	fullName?: string;
+}
 
 function clinicHeaders(
 	organizationId: string = ORG_ID,
@@ -45,7 +57,11 @@ function clinicHeaders(
 	};
 }
 
-describe("DICOMweb STOW-RS & Patient Resolution Inquisitor Suite", () => {
+async function loadBinaryDicomFixture(): Promise<Buffer> {
+	return fs.readFile(SAMPLE_DICOM_URL);
+}
+
+describe("DICOMweb STOW-RS & Patient Resolution Inquisitor Suite (6G Live SUT)", () => {
 	it("cleanDicomPatientName converts DICOM carets to clean full name", () => {
 		assert.strictEqual(
 			cleanDicomPatientName("Иванов^Иван^Иванович"),
@@ -72,9 +88,9 @@ describe("DICOMweb STOW-RS & Patient Resolution Inquisitor Suite", () => {
 		assert.strictEqual(stripped.toString(), rawDicom.toString());
 	});
 
-	it("parseDicomBufferForStow extracts tags and patient info from valid DICOM sample", () => {
-		assert.ok(existsSync(SAMPLE_DICOM_PATH));
-		const buffer = readFileSync(SAMPLE_DICOM_PATH);
+	it("parseDicomBufferForStow extracts tags and patient info from valid DICOM sample", async () => {
+		assert.strictEqual(existsSync(SAMPLE_DICOM_URL), true);
+		const buffer = await loadBinaryDicomFixture();
 		const parsed = parseDicomBufferForStow(buffer);
 
 		assert.strictEqual(parsed.studyUid, SAMPLE_STUDY_UID);
@@ -134,52 +150,60 @@ describe("STOW-RS Route Security & Zero Dead-Ends Endpoints", () => {
 
 	function setupDbMock(
 		t: TestContext,
-		onInsert?: (vals: any) => void,
-		patientsList: any[] = [{ id: PATIENT_ID, mergedIntoPatientId: null }],
+		onInsert?: (vals: InsertedDicomPayload) => void,
+		patientsList: PatientStubRow[] = [{ id: PATIENT_ID, mergedIntoPatientId: null }],
 	) {
 		const select = () => {
-			let currentTable: any = null;
-			const node: Record<string, unknown> = {};
-			node.from = (tbl: any) => {
-				currentTable = tbl;
-				return node;
-			};
-			node.where = () => node;
-			node.limit = () => {
-				if (currentTable === schema.organizations) {
-					return Promise.resolve([{ id: ORG_ID }]);
-				}
-				if (currentTable === schema.patients) {
-					return Promise.resolve(patientsList);
-				}
-				return Promise.resolve([]);
-			};
-			node.then = (onfulfilled?: ((value: unknown) => unknown) | null) => {
-				if (currentTable === schema.organizations) {
-					return Promise.resolve([{ id: ORG_ID }]).then(onfulfilled);
-				}
-				if (currentTable === schema.patients) {
-					return Promise.resolve(patientsList).then(onfulfilled);
-				}
-				return Promise.resolve([]).then(onfulfilled);
+			let currentTable: unknown = null;
+			const node: {
+				from: (tbl: unknown) => typeof node;
+				where: () => typeof node;
+				limit: () => Promise<unknown[]>;
+				then: (onfulfilled?: ((value: unknown[]) => unknown) | null) => Promise<unknown>;
+			} = {
+				from: (tbl: unknown) => {
+					currentTable = tbl;
+					return node;
+				},
+				where: () => node,
+				limit: () => {
+					if (currentTable === schema.organizations) {
+						return Promise.resolve([{ id: ORG_ID }]);
+					}
+					if (currentTable === schema.patients) {
+						return Promise.resolve(patientsList);
+					}
+					return Promise.resolve([]);
+				},
+				then: (onfulfilled) => {
+					if (currentTable === schema.organizations) {
+						return Promise.resolve([{ id: ORG_ID }]).then(onfulfilled ?? undefined);
+					}
+					if (currentTable === schema.patients) {
+						return Promise.resolve(patientsList).then(onfulfilled ?? undefined);
+					}
+					return Promise.resolve([]).then(onfulfilled ?? undefined);
+				},
 			};
 			return node;
 		};
 
 		const insert = () => {
-			const node: Record<string, unknown> = {};
-			node.values = (vals: any) => {
-				if (onInsert) onInsert(vals);
-				return node;
+			const node = {
+				values: (vals: InsertedDicomPayload) => {
+					onInsert?.(vals);
+					return node;
+				},
+				returning: () => Promise.resolve([{ id: "generated-uuid-id" }]),
 			};
-			node.returning = () => Promise.resolve([{ id: "generated-uuid-id" }]);
 			return node;
 		};
 
 		const update = () => {
-			const node: Record<string, unknown> = {};
-			node.set = () => node;
-			node.where = () => Promise.resolve([]);
+			const node = {
+				set: () => node,
+				where: () => Promise.resolve([]),
+			};
 			return node;
 		};
 
@@ -203,7 +227,7 @@ describe("STOW-RS Route Security & Zero Dead-Ends Endpoints", () => {
 	it("POST /api/dicomweb/studies stores unassigned study when patient cannot be auto-resolved (Zero Dead-Ends & Mandate 8l)", async (t) => {
 		const app = await buildStowApp();
 
-		let insertedStudyValues: any = null;
+		let insertedStudyValues: InsertedDicomPayload | null = null;
 		setupDbMock(
 			t,
 			(vals) => {
@@ -211,10 +235,10 @@ describe("STOW-RS Route Security & Zero Dead-Ends Endpoints", () => {
 					insertedStudyValues = vals;
 				}
 			},
-			[], // Empty patient list
+			[],
 		);
 
-		const sampleBuf = readFileSync(SAMPLE_DICOM_PATH);
+		const sampleBuf = await loadBinaryDicomFixture();
 
 		const response = await app.inject({
 			method: "POST",
@@ -227,27 +251,26 @@ describe("STOW-RS Route Security & Zero Dead-Ends Endpoints", () => {
 		});
 
 		assert.strictEqual(response.statusCode, 200);
-		const body = JSON.parse(response.body);
+		const body = JSON.parse(response.body) as { status?: string; bindingStatus?: string; patientId?: string | null };
 		assert.strictEqual(body.status, "stored");
 		assert.strictEqual(body.bindingStatus, "unassigned");
 		assert.strictEqual(body.patientId, null);
+		assert.ok(insertedStudyValues !== null);
+		await app.close();
 	});
 
 	it("POST /api/dicomweb/studies saves with relative normalized path uploads/dicom/... when explicit patientId provided", async (t) => {
 		const app = await buildStowApp();
 
-		let insertedStudyValues: any = null;
-		let insertedInstanceValues: any = null;
+		let insertedStudyValues: InsertedDicomPayload | null = null;
 
 		setupDbMock(t, (vals) => {
 			if (vals.title?.includes("КЛКТ")) {
 				insertedStudyValues = vals;
-			} else if (vals.dicomSopInstanceUid) {
-				insertedInstanceValues = vals;
 			}
 		});
 
-		const sampleBuf = readFileSync(SAMPLE_DICOM_PATH);
+		const sampleBuf = await loadBinaryDicomFixture();
 
 		const response = await app.inject({
 			method: "POST",
@@ -259,39 +282,31 @@ describe("STOW-RS Route Security & Zero Dead-Ends Endpoints", () => {
 			payload: sampleBuf,
 		});
 
-		if (response.statusCode !== 200) {
-			console.error("RESPONSE ERROR BODY:", response.body);
-		}
-		assert.strictEqual(response.statusCode, 200);
-		const body = JSON.parse(response.body);
+		assert.strictEqual(response.statusCode, 200, response.body);
+		const body = JSON.parse(response.body) as { status?: string; patientId?: string };
 		assert.strictEqual(body.status, "stored");
 		assert.strictEqual(body.patientId, PATIENT_ID);
 
-		// Verify that storagePath in DB is strictly a relative normalized path without C:\
-		assert.ok(insertedStudyValues, "Study record must be inserted");
-		assert.ok(
-			insertedStudyValues.storagePath.startsWith("uploads/dicom/"),
-			`Storage path must be normalized relative: ${insertedStudyValues.storagePath}`,
+		assert.ok(insertedStudyValues !== null, "Study record must be inserted");
+		const studyRecord = insertedStudyValues as InsertedDicomPayload;
+		assert.strictEqual(
+			studyRecord.storagePath?.startsWith("uploads/dicom/"),
+			true,
+			`Storage path must be normalized relative: ${studyRecord.storagePath ?? ""}`,
 		);
-		assert.ok(
-			!insertedStudyValues.storagePath.includes(":\\"),
-			"No Windows drive letter in storage path",
-		);
-		assert.ok(
-			!insertedStudyValues.storagePath.includes("C:"),
-			"No C: in storage path",
-		);
+		assert.strictEqual(studyRecord.storagePath?.includes(":\\"), false, "No Windows drive letter in storage path");
+		assert.strictEqual(studyRecord.storagePath?.includes("C:"), false, "No C: in storage path");
 
-		// Verify doctor/staff tag propagation
-		assert.ok(
-			insertedStudyValues.sourceName.includes("STOW-RS"),
-			"Source name must indicate STOW-RS",
+		assert.strictEqual(studyRecord.sourceName?.includes("STOW-RS"), true, "Source name must indicate STOW-RS");
+		assert.strictEqual(
+			Boolean(
+				studyRecord.aiSummary?.includes("dr-vitaly") ||
+					studyRecord.aiSummary?.includes("Доктор Иванов") ||
+					studyRecord.aiSummary?.includes("STOW-RS"),
+			),
+			true,
 		);
-		assert.ok(
-			insertedStudyValues.aiSummary.includes("dr-vitaly") ||
-				insertedStudyValues.aiSummary.includes("Доктор Иванов") ||
-				insertedStudyValues.aiSummary.includes("STOW-RS"),
-		);
+		await app.close();
 	});
 
 	it("POST /api/dicomweb/studies supports streaming multipart/related payload", async (t) => {
@@ -304,7 +319,7 @@ describe("STOW-RS Route Security & Zero Dead-Ends Endpoints", () => {
 		});
 
 		const boundary = "stow-multipart-boundary-12345";
-		const sampleBuf = readFileSync(SAMPLE_DICOM_PATH);
+		const sampleBuf = await loadBinaryDicomFixture();
 		const multipartPayload = Buffer.concat([
 			Buffer.from(`--${boundary}\r\nContent-Type: application/dicom\r\n\r\n`),
 			sampleBuf,
@@ -322,8 +337,9 @@ describe("STOW-RS Route Security & Zero Dead-Ends Endpoints", () => {
 		});
 
 		assert.strictEqual(response.statusCode, 200);
-		const body = JSON.parse(response.body);
+		const body = JSON.parse(response.body) as { status?: string };
 		assert.strictEqual(body.status, "stored");
-		assert.ok(insertedStoragePath.startsWith("uploads/dicom/"));
+		assert.strictEqual(insertedStoragePath.startsWith("uploads/dicom/"), true);
+		await app.close();
 	});
 });

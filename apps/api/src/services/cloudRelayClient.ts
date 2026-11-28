@@ -59,12 +59,35 @@ export type RelayOutboundMessage =
 	| { readonly type: "PING"; readonly timestamp: number }
 	| TunnelResponsePayload;
 
-function isTunnelRequestPayload(msg: Record<string, unknown>): msg is Record<string, unknown> & TunnelRequestPayload {
+type TunnelHttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
+function toTunnelHttpMethod(method: string): TunnelHttpMethod | null {
+	const upper = method.toUpperCase();
+	if (
+		upper === "GET" ||
+		upper === "POST" ||
+		upper === "PUT" ||
+		upper === "PATCH" ||
+		upper === "DELETE"
+	) {
+		return upper;
+	}
+	return null;
+}
+
+function isTunnelRequestPayload(msg: object): msg is TunnelRequestPayload {
 	return (
+		"type" in msg &&
 		msg.type === "HTTP_REQUEST" &&
+		"id" in msg &&
 		typeof msg.id === "string" &&
+		"clinicId" in msg &&
+		typeof msg.clinicId === "string" &&
+		"method" in msg &&
 		typeof msg.method === "string" &&
+		"url" in msg &&
 		typeof msg.url === "string" &&
+		"headers" in msg &&
 		typeof msg.headers === "object" &&
 		msg.headers !== null
 	);
@@ -262,7 +285,7 @@ export class CloudRelayClient {
 				}
 			});
 		} catch (err: unknown) {
-			this.lastError = (err as Error).message;
+			this.lastError = err instanceof Error ? err.message : String(err);
 			this.scheduleReconnect();
 		}
 	}
@@ -270,7 +293,7 @@ export class CloudRelayClient {
 	private startHeartbeat(): void {
 		this.stopHeartbeat();
 		this.missedPongs = 0;
-		this.pingTimer = setInterval(() => {
+		const pingTimer = setInterval(() => {
 			if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
 			if (this.missedPongs >= 2) {
@@ -288,7 +311,8 @@ export class CloudRelayClient {
 			this.missedPongs++;
 			this.sendMessage({ type: "PING", timestamp: Date.now() });
 		}, this.config.pingIntervalMs ?? 20000);
-		this.pingTimer.unref();
+		pingTimer.unref();
+		this.pingTimer = pingTimer;
 	}
 
 	private stopHeartbeat(): void {
@@ -322,31 +346,36 @@ export class CloudRelayClient {
 	}
 
 	private async handleMessage(rawText: string): Promise<void> {
-		let message: Record<string, unknown>;
+		let parsed: unknown;
 		try {
-			message = JSON.parse(rawText) as Record<string, unknown>;
-		} catch (_e) {
+			parsed = JSON.parse(rawText);
+		} catch (err: unknown) {
+			if (this.app?.log) this.app.log.debug({ err: safeLogError(err) }, "Ignoring malformed JSON message from cloud relay");
+			else fallbackLogger.debug({ err: safeLogError(err) }, "Ignoring malformed JSON message from cloud relay");
+			return;
+		}
+		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
 			return;
 		}
 
-		if (message.type === "PING") {
+		if ("type" in parsed && parsed.type === "PING") {
 			this.sendMessage({ type: "PONG", timestamp: Date.now() });
 			return;
 		}
 
-		if (message.type === "PONG") {
+		if ("type" in parsed && parsed.type === "PONG") {
 			this.missedPongs = 0;
 			// Калибровка часов (CR2032 BIOS Clock Skew)
-			if (typeof message.timestamp === "number") {
+			if ("timestamp" in parsed && typeof parsed.timestamp === "number") {
 				const localNow = Date.now();
-				const serverTime = message.timestamp;
+				const serverTime = parsed.timestamp;
 				setNetworkClockSkewMs(serverTime - localNow);
 			}
 			return;
 		}
 
-		if (isTunnelRequestPayload(message)) {
-			await this.processTunnelRequest(message);
+		if (isTunnelRequestPayload(parsed)) {
+			await this.processTunnelRequest(parsed);
 		}
 	}
 
@@ -413,14 +442,28 @@ export class CloudRelayClient {
 			let isBase64 = false;
 
 			if (this.app) {
+				const injectMethod = toTunnelHttpMethod(req.method);
+				if (!injectMethod) {
+					this.sendMessage({
+						type: "HTTP_RESPONSE",
+						id: req.id,
+						statusCode: 405,
+						headers: { "content-type": "application/json" },
+						body: JSON.stringify({
+							error: "MethodNotAllowed",
+							message: `Неподдерживаемый HTTP-метод туннеля: ${req.method}`,
+						}),
+					});
+					return;
+				}
 				// Прямое быстрое локальное внедрение в Fastify без сетевого сокета
 				const injectOptions: {
-					method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+					method: TunnelHttpMethod;
 					url: string;
 					headers?: Record<string, string>;
 					payload?: string | Buffer;
 				} = {
-					method: req.method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+					method: injectMethod,
 					url: req.url,
 					headers: sanitizedHeaders,
 				};
@@ -459,37 +502,51 @@ export class CloudRelayClient {
 					req.url,
 					this.config.localBaseUrl || `http://127.0.0.1:${defaultPort}`,
 				).toString();
-				const fetchOptions: RequestInit = {
-					method: req.method,
-					headers: sanitizedHeaders,
-					signal: AbortSignal.timeout(30_000),
-				};
+				const controller = new AbortController();
+				const timeoutMs = 30_000;
+				const timeoutId = setTimeout(() => {
+					controller.abort(new Error(`Local Fastify tunnel fetch timed out after ${timeoutMs}ms`));
+				}, timeoutMs);
+				timeoutId.unref?.();
 
-				if (req.body && req.method !== "GET" && req.method !== "HEAD") {
-					fetchOptions.body = req.isBase64
-						? Buffer.from(req.body, "base64")
-						: req.body;
-				}
+				try {
+					const fetchOptions: RequestInit = {
+						method: req.method,
+						headers: sanitizedHeaders,
+						signal: controller.signal,
+					};
 
-				const res = await fetch(targetUrl, fetchOptions);
-				statusCode = res.status;
+					if (req.body && req.method !== "GET" && req.method !== "HEAD") {
+						fetchOptions.body = req.isBase64
+							? Buffer.from(req.body, "base64")
+							: req.body;
+					}
 
-				responseHeaders = {};
-				res.headers.forEach((val, key) => {
-					responseHeaders[key] = val;
-				});
+					const res = await fetch(targetUrl, {
+						...fetchOptions,
+						signal: controller.signal,
+					});
+					statusCode = res.status;
 
-				const contentType = res.headers.get("content-type") || "";
-				if (
-					contentType.includes("image/") ||
-					contentType.includes("octet-stream") ||
-					contentType.includes("model/")
-				) {
-					const arrayBuffer = await res.arrayBuffer();
-					responseBody = Buffer.from(arrayBuffer).toString("base64");
-					isBase64 = true;
-				} else {
-					responseBody = await res.text();
+					responseHeaders = {};
+					res.headers.forEach((val, key) => {
+						responseHeaders[key] = val;
+					});
+
+					const contentType = res.headers.get("content-type") || "";
+					if (
+						contentType.includes("image/") ||
+						contentType.includes("octet-stream") ||
+						contentType.includes("model/")
+					) {
+						const arrayBuffer = await res.arrayBuffer();
+						responseBody = Buffer.from(arrayBuffer).toString("base64");
+						isBase64 = true;
+					} else {
+						responseBody = await res.text();
+					}
+				} finally {
+					clearTimeout(timeoutId);
 				}
 			}
 

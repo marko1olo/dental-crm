@@ -1,9 +1,7 @@
 /* shiftConsumables.css — Shift Consumables, Steppers & Soft Overdraft (Mandate 8b <= 120 lines) */
 .mobile-shift-section-title {
-	font-size: 12.5px;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
+	font-size: 13px;
+	font-weight: 600;
 	color: var(--muted);
 	padding: 0 4px;
 	margin: 0;

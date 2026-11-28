@@ -9,6 +9,7 @@ import { Activity, ChevronDown, ChevronUp, ExternalLink, FileText, Check } from 
 import { showToast } from "../../GlobalToast";
 import { useVisitStore } from "../../../store/visitStore";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { WarmAccordionSection } from "./toothDrawerTypes";
 
 export interface ToothDrawerPerioAccordionProps {
@@ -203,8 +204,14 @@ export const ToothDrawerPerioAccordion: React.FC<ToothDrawerPerioAccordionProps>
 			})
 				.then(async (res) => {
 					if (!res.ok) {
-						const errData = await res.json().catch(() => null);
-						showToast(errData?.message || "Ошибка сохранения статуса пародонта", "error");
+						let msg = "Ошибка сохранения статуса пародонта";
+						try {
+							const errData = (await res.json()) as { message?: string };
+							if (errData?.message) msg = errData.message;
+						} catch (parseErr) {
+							clientLogger.warn("[ToothDrawerPerioAccordion] Non-JSON error response:", parseErr);
+						}
+						showToast(msg, "error");
 					}
 				})
 				.catch((err) => {

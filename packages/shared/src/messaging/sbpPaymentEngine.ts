@@ -451,6 +451,9 @@ export class SbpQrEngine {
 	}
 }
 
+export const SbpPaymentEngine = SbpQrEngine;
+export type SbpPaymentEngine = SbpQrEngine;
+
 // ─── High-Level Payment Package Generator ───
 
 /**

@@ -20,6 +20,7 @@ import { computeSnapshotIndices, type PeriodontogramSnapshotIndices } from "../p
 import {
 	ensurePerioPatientExists,
 	isPerioDemoContext,
+	type PerioDemoContextOptions,
 	resolveExistingPerioUserId,
 } from "./periodontogramDemoHelper.js";
 import {
@@ -41,6 +42,7 @@ export async function createDraftWithInitialTeeth(
 	visitId?: string | null,
 	rawPatientId?: string | null,
 	executor: TenantDb | typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0] = db,
+	demoOptions?: PerioDemoContextOptions,
 ) {
 	const executeDraftCreation = async (
 		tx: TenantDb | typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
@@ -64,7 +66,7 @@ export async function createDraftWithInitialTeeth(
 			statesMap.set(row.toothNumber, row.state);
 		}
 
-		await ensurePerioPatientExists(tx, orgId, patientId, rawPatientId);
+		await ensurePerioPatientExists(tx, orgId, patientId, rawPatientId, demoOptions);
 		const [newDraft] = await tx
 			.insert(periodontogramSnapshots)
 			.values({
@@ -136,6 +138,7 @@ export async function upsertPatientFullPeriodontogram({
 	autoClose = false,
 	psrData,
 	tx: externalTx,
+	demoOptions,
 }: UpsertPatientFullPeriodontogramParams) {
 	try {
 		const run = async (tx: TenantDb) => {
@@ -151,7 +154,7 @@ export async function upsertPatientFullPeriodontogram({
 				.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
 				.limit(1);
 
-			if (!existingPatient && !isPerioDemoContext(orgId, patientId, rawPatientId)) {
+			if (!existingPatient && !isPerioDemoContext(orgId, patientId, rawPatientId, demoOptions)) {
 				const err = new Error("Пациент не найден") as Error & { statusCode?: number; code?: string };
 				err.statusCode = 404;
 				err.code = "PatientNotFound";
@@ -179,6 +182,7 @@ export async function upsertPatientFullPeriodontogram({
 					visitId,
 					rawPatientId,
 					tx,
+					demoOptions,
 				);
 			}
 			// Update visitId if provided and different

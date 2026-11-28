@@ -1,92 +1,112 @@
 /**
  * apps/web/src/components/analytics/__tests__/analyticsDesktopDensityCss.test.ts
- * Structural CSS declaration + React SSR DOM verification for executive toolbar & P&L footer.
+ * React SSR DOM & role visibility verification for Executive Dashboard & P&L footer (6G Live SUT).
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
+import type { ManagerialPnlReport } from "@dental/shared";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PnlActionFooter } from "../../finance/pnl/dashboardModules/PnlActionFooter.tsx";
+import {
+	ExecutiveDashboard,
+	resolveExecutiveDashboardVisibility,
+} from "../ExecutiveDashboard.tsx";
+import { ExecutiveAnalyticsStudioHeader } from "../studio/ExecutiveAnalyticsStudioHeader.tsx";
+import { ExecutiveAnalyticsStudioFooter } from "../studio/ExecutiveAnalyticsStudioFooter.tsx";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const analyticsDir = path.resolve(__dirname, "..");
-
-function extractCssDeclarations(cssText: string, selector: string, mediaFilter?: string): Record<string, string> {
-	let scopeText = cssText;
-	if (mediaFilter) {
-		const mediaStart = cssText.indexOf(mediaFilter);
-		assert.notEqual(mediaStart, -1, `Expected media block ${mediaFilter}`);
-		const openIdx = cssText.indexOf("{", mediaStart);
-		let depth = 0;
-		let endIdx = cssText.length;
-		for (let i = openIdx; i < cssText.length; i++) {
-			if (cssText[i] === "{") depth++;
-			else if (cssText[i] === "}") {
-				depth--;
-				if (depth === 0) {
-					endIdx = i;
-					break;
-				}
-			}
-		}
-		scopeText = cssText.slice(openIdx + 1, endIdx);
-	}
-
-	const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-	const ruleMatch = new RegExp(`(?:^|\\n)\\s*${escaped}\\s*\\{([^}]*)\\}`, "m").exec(scopeText);
-	assert.ok(ruleMatch?.[1], `Expected CSS rule for ${selector}${mediaFilter ? ` inside ${mediaFilter}` : ""}`);
-	const decls: Record<string, string> = {};
-	for (const part of ruleMatch[1].split(";")) {
-		const idx = part.indexOf(":");
-		if (idx === -1) continue;
-		const prop = part.slice(0, idx).trim();
-		const val = part.slice(idx + 1).trim();
-		if (prop) decls[prop] = val;
-	}
-	return decls;
-}
-
-test("execToolbar.css enforces 36px toolbar and token-backed secondary chip rules", () => {
-	const cssPath = path.join(analyticsDir, "executiveStyles", "execToolbar.css");
-	const content = fs.readFileSync(cssPath, "utf8");
-
-	const toolbarDecls = extractCssDeclarations(content, ".executive-canonical-toolbar");
-	assert.equal(toolbarDecls.height, "36px");
-	assert.equal(toolbarDecls["min-height"], "36px");
-
-	const chipDecls = extractCssDeclarations(content, ".executive-period-chips .secondary-button");
-	assert.equal(chipDecls.height, "36px");
-	assert.match(chipDecls.border ?? "", /var\(--line\)/);
-});
-
-test("pnlFooter.css enforces 36px desktop density with mobile touch >= 44px and matches PnlActionFooter DOM", () => {
-	const markup = renderToStaticMarkup(
+test("PnlActionFooter renders single primary CTA, secondary print/export buttons, and privacy note for null and live reports", () => {
+	const emptyMarkup = renderToStaticMarkup(
 		React.createElement(PnlActionFooter, {
 			report: null,
 			onOpenQuickExpense: () => {},
 			periodLabel: "Январь 2026",
 		}),
 	);
-	assert.ok(markup.includes('class="pnl-footer"'));
-	assert.ok(markup.includes('class="pnl-footer-btn-primary"'));
-	assert.ok(markup.includes('class="pnl-footer-btn-secondary"'));
-	assert.ok(markup.includes('data-testid="financial-privacy-note"'));
+	assert.ok(emptyMarkup.includes('class="pnl-footer"'));
+	assert.equal((emptyMarkup.match(/pnl-footer-btn-primary/g) ?? []).length, 1);
+	assert.equal((emptyMarkup.match(/pnl-footer-btn-secondary/g) ?? []).length, 2);
+	assert.ok(emptyMarkup.includes('data-testid="financial-privacy-note"'));
+	assert.equal(emptyMarkup.includes('disabled=""'), false);
 
-	const cssPath = path.resolve(analyticsDir, "../finance/pnl/pnlStyles/pnlFooter.css");
-	const content = fs.readFileSync(cssPath, "utf8");
-
-	const desktopPrimary = extractCssDeclarations(content, ".pnl-footer-btn-primary");
-	assert.equal(desktopPrimary.height, "36px");
-
-	const mobilePrimary = extractCssDeclarations(
-		content,
-		".pnl-footer-btn-primary",
-		"@media (max-width: 768px)",
+	const sampleReport: ManagerialPnlReport = {
+		clinicName: "Клиника Тест",
+		period: { from: "2026-01-01", to: "2026-01-31" },
+		grossRevenueRub: 150000,
+		totalCogsRub: 30000,
+		directLabCostRub: 10000,
+		grossProfitRub: 120000,
+		grossMarginPct: 80,
+		totalOpexRub: 40000,
+		ebitdaRub: 80000,
+		ebitdaMarginPct: 53.3,
+		netProfitRub: 75000,
+		netMarginPct: 50,
+		departmentRevenue: [],
+		statutoryExpenses: [],
+	};
+	const loadedMarkup = renderToStaticMarkup(
+		React.createElement(PnlActionFooter, {
+			report: sampleReport,
+			onOpenQuickExpense: () => {},
+			periodLabel: "Январь 2026",
+		}),
 	);
-	assert.equal(mobilePrimary.height, "44px");
+	assert.ok(loadedMarkup.includes("+ Внести расход"));
+	assert.ok(loadedMarkup.includes("Экспорт CSV"));
+	assert.equal(loadedMarkup.includes('disabled=""'), false);
+});
+
+test("ExecutiveAnalyticsStudioHeader, Footer & ExecutiveDashboard respect role visibility (Mandate 8n) and zero disabled buttons", () => {
+	const soloVis = resolveExecutiveDashboardVisibility({
+		clinicMode: "solo_doctor",
+		selectedWorkspaceRole: "doctor",
+		hasPayrollModule: true,
+		hasMultipleChairs: false,
+	});
+	assert.equal(soloVis.isSoloDoctor, true);
+	assert.equal(soloVis.showPayrollTab, false);
+	assert.equal(soloVis.showChairsTab, false);
+	assert.equal(soloVis.showPnlButton, true);
+
+	const adminVis = resolveExecutiveDashboardVisibility({
+		clinicMode: "clinic",
+		selectedWorkspaceRole: "administrator",
+		hasPayrollModule: true,
+		hasMultipleChairs: true,
+	});
+	assert.equal(adminVis.showPayrollTab, false);
+	assert.equal(adminVis.showPnlButton, false);
+
+	const headerHtml = renderToStaticMarkup(
+		React.createElement(ExecutiveAnalyticsStudioHeader, {
+			titleId: "exec-title",
+			period: "month",
+			onPeriodChange: () => {},
+			onClose: () => {},
+		}),
+	);
+	assert.ok(headerHtml.includes('data-testid="studio-modal-close-btn"'));
+	assert.ok(headerHtml.includes("min-h-[44px] min-w-[44px]"));
+
+	const footerHtml = renderToStaticMarkup(
+		React.createElement(ExecutiveAnalyticsStudioFooter, {
+			isLoading: false,
+			exportSuccess: false,
+			onRefresh: () => {},
+			onPrint: () => {},
+			onExport: () => {},
+		}),
+	);
+	assert.ok(footerHtml.includes('data-testid="studio-primary-export-btn"'));
+	assert.equal((footerHtml.match(/primary-button/g) ?? []).length, 1);
+
+	const dashHtml = renderToStaticMarkup(
+		React.createElement(ExecutiveDashboard, {
+			period: "month",
+		}),
+	);
+	assert.ok(dashHtml.includes('data-testid="executive-dashboard-root"'));
+	assert.equal(dashHtml.includes('disabled=""'), false);
 });

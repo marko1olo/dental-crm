@@ -1,7 +1,8 @@
+import { resolveValidIanaTimeZone, shiftCalendarDay, todayDateKeyInTimeZone } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../../db/client.js";
 import { withTenantWriteCtx } from "../../../../db/rls.js";
 import { sterilizerEquipments } from "../../../../db/schema.js";
+import { clinicTimeZone } from "../../../../services/reports/managerReports/timezone.js";
 
 export async function executeEquipmentLifecycleAction(
 	id: string,
@@ -13,7 +14,9 @@ export async function executeEquipmentLifecycleAction(
 		decommissioningDate?: string | null | undefined;
 	},
 ) {
-	const today = new Date().toISOString().slice(0, 10);
+	const today = todayDateKeyInTimeZone(
+		resolveValidIanaTimeZone(await clinicTimeZone(organizationId)),
+	);
 
 	if (body.action === "put_in_maintenance") {
 		const [updated] = await withTenantWriteCtx(organizationId, async (tx) => {
@@ -37,7 +40,7 @@ export async function executeEquipmentLifecycleAction(
 	}
 
 	if (body.action === "return_to_service") {
-		const next6Months = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+		const next6Months = shiftCalendarDay(today, 180);
 		const [updated] = await withTenantWriteCtx(organizationId, async (tx) => {
 			return tx
 				.update(sterilizerEquipments)

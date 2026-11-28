@@ -129,12 +129,12 @@ export function CephTab1TopControls({
 						onClick={onRunAiAutoPlacement}
 						disabled={isAiInferring}
 						data-testid="tab1-ai-autoplacement-btn"
-						className={`h-9 px-3.5 rounded-lg text-sm font-medium flex items-center gap-2 shadow-xs transition-all cursor-pointer border border-[var(--line)] whitespace-nowrap bg-[var(--primary)] text-white hover:brightness-105 ${
+						className={`h-9 px-3.5 rounded-lg text-sm font-medium flex items-center gap-2 shadow-xs transition-all cursor-pointer border border-[var(--line)] whitespace-nowrap bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] ${
 							isAiInferring ? "animate-pulse cursor-wait" : ""
 						}`}
 						title="Применить анатомический шаблон нормы I класса"
 					>
-						<Zap size={14} className={isAiInferring ? "animate-spin text-amber-300" : "text-amber-300 fill-amber-300 shrink-0"} />
+						<Zap size={14} className={isAiInferring ? "animate-spin text-[var(--primary)]" : "text-[var(--primary)] shrink-0"} />
 						<span>{isAiInferring ? "Применение..." : "Применить анатомический шаблон нормы"}</span>
 					</button>
 				</div>
@@ -202,7 +202,7 @@ export function CephTab1TopControls({
 					<button
 						type="button"
 						onClick={onNavigateToMetrics}
-						className="px-2.5 py-1 rounded bg-[var(--primary)] hover:brightness-105 text-white font-bold text-[11px] transition-colors shrink-0 cursor-pointer"
+						className="px-2.5 py-1 rounded bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] font-bold text-[11px] transition-colors shrink-0 cursor-pointer"
 					>
 						Смотреть углы →
 					</button>

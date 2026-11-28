@@ -23,6 +23,7 @@ import {
 	type SystemBackgroundJob,
 	systemBackgroundJobs,
 } from "../../db/schema.js";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 
 export type JobStatus =
 	| "pending"
@@ -109,7 +110,10 @@ export function calculateExponentialBackoffWithJitter(
 }
 
 export class TaskQueueService {
-	private static handlers = new Map<string, TaskHandler>();
+	private static handlers = new BoundedTtlMap<string, TaskHandler>({
+		maxEntries: 500,
+		touchOnGet: false,
+	});
 
 	/**
 	 * Регистрация исполнителя для именованной задачи.

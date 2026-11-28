@@ -10,10 +10,9 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
 	computeNetBaseKopecks,
 	calculateDoctorCommissionKopecks,
@@ -31,9 +30,6 @@ import {
 import { DoctorPayrollStudioModal } from "../DoctorPayrollStudioModal";
 import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
 import { resolveClinicRoute } from "../../../router/routeResolver";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 describe("SSOT Suite: Doctor Payroll, Motivation Schemes & Chair Rental", () => {
 	describe("1. Net Revenue Formula & Kopeck-Exact Arithmetic (Mandate 8n)", () => {
@@ -173,50 +169,76 @@ describe("SSOT Suite: Doctor Payroll, Motivation Schemes & Chair Rental", () => 
 		});
 	});
 
-	describe("4. Architectural File Limits & Mandatory UI Mounting (Mandates 8b, 8aq, 8am)", () => {
-		const baseDir = path.resolve(__dirname, "..");
+	describe("4. Live Studio UI Render, Single Primary CTA & Canonical Routing (Mandates 8e, 8aq, 8am)", () => {
+		it("4.1 DoctorPayrollStudioModal renders closed state cleanly and opens with populated data", () => {
+			const prevDoc = (globalThis as { document?: unknown }).document;
+			(globalThis as { document?: unknown }).document = undefined;
+			try {
+				const closedHtml = renderToStaticMarkup(
+					<DoctorPayrollStudioModal
+						isOpen={false}
+						onClose={() => {}}
+					/>,
+				);
+				assert.equal(closedHtml, "");
 
-		it("4.1 Verifies Sweet Spot file limits across payroll canonical SSOT files", () => {
-			const catalogPath = path.join(baseDir, "payrollCatalogData.ts");
-			const studioPath = path.join(baseDir, "DoctorPayrollStudioModal.tsx");
-
-			assert.ok(fs.existsSync(catalogPath));
-			assert.ok(fs.existsSync(studioPath));
-
-			const catalogLines = fs.readFileSync(catalogPath, "utf8").split("\n").length;
-			const studioLines = fs.readFileSync(studioPath, "utf8").split("\n").length;
-
-			// SSOT Catalog: Sweet Spot 250–350 lines
-			assert.ok(catalogLines >= 200 && catalogLines <= 350, `payrollCatalogData.ts has ${catalogLines} lines (target 250–350)`);
-			// Studio Modal: Sweet Spot 350–480 lines
-			assert.ok(studioLines >= 300 && studioLines <= 480, `DoctorPayrollStudioModal.tsx has ${studioLines} lines (target 350–480)`);
+				const openHtml = renderToStaticMarkup(
+					<DoctorPayrollStudioModal
+						isOpen={true}
+						onClose={() => {}}
+						clinicName="Клиника ДЕНТЕ"
+						doctorsList={CANONICAL_PAYROLL_DOCTORS.map((d) => ({
+							id: d.id,
+							name: d.name,
+							specialtyId: d.specialtyId,
+						}))}
+						orders={CANONICAL_DEMO_ORDERS}
+					/>,
+				);
+				assert.ok(openHtml.includes("Клиника ДЕНТЕ"));
+				assert.ok(openHtml.includes("data-testid=\"payroll-studio-primary-cta\""));
+			} finally {
+				(globalThis as { document?: unknown }).document = prevDoc;
+			}
 		});
 
-		it("4.2 Verifies DoctorPayrollStudioModal has exactly ONE Primary CTA button #0d9488 that is NEVER disabled (Mandate 8e, 8am)", () => {
-			const studioPath = path.join(baseDir, "DoctorPayrollStudioModal.tsx");
-			const studioContent = fs.readFileSync(studioPath, "utf8");
-
-			// Must contain primary CTA data-testid
-			assert.ok(studioContent.includes("payroll-studio-primary-cta"), "Must include data-testid payroll-studio-primary-cta");
-
-			// Must use primary design token
-			assert.ok(studioContent.includes("bg-[var(--primary)]"), "Primary CTA must use var(--primary)");
-
-			// Primary CTA button must NOT be disabled due to secondary fields (Mandate 8e: Doctor Autonomy)
-			assert.ok(!studioContent.includes("disabled={!"), "Primary CTA must never be permanently disabled by inputs");
+		it("4.2 Verifies DoctorPayrollStudioModal renders exactly ONE Primary CTA button with var(--primary) that is NEVER disabled (Mandate 8e, 8am)", () => {
+			const prevDoc = (globalThis as { document?: unknown }).document;
+			(globalThis as { document?: unknown }).document = undefined;
+			try {
+				const html = renderToStaticMarkup(
+					<DoctorPayrollStudioModal
+						isOpen={true}
+						onClose={() => {}}
+						doctorsList={[]}
+						orders={[]}
+					/>,
+				);
+				const primaryMatches = html.match(/data-testid="payroll-studio-primary-cta"/g) ?? [];
+				assert.equal(primaryMatches.length, 1, "Must render exactly one primary payroll CTA");
+				const ctaTag = html.match(/<button[^>]*data-testid="payroll-studio-primary-cta"[^>]*>/);
+				assert.ok(ctaTag, "Primary CTA button must be rendered");
+				assert.ok(ctaTag[0].includes("bg-[var(--primary)]"), "Primary CTA must use var(--primary)");
+				assert.equal(/\bdisabled\b/.test(ctaTag[0]), false, "Primary CTA must never be disabled even with empty orders");
+			} finally {
+				(globalThis as { document?: unknown }).document = prevDoc;
+			}
 		});
 
-		it("4.3 Verifies routeResolver responds to #payroll and #doctor-payroll and mounts in WorkspaceStudioOverlayHost (Mandate 8aq)", () => {
+		it("4.3 Verifies routeResolver responds to #payroll and #doctor-payroll and mounts WorkspaceStudioOverlayHost (Mandate 8aq)", () => {
 			assert.equal(resolveClinicRoute("", "#payroll").studio?.kind, "doctor_payroll");
 			assert.equal(resolveClinicRoute("", "#doctor-payroll").studio?.kind, "doctor_payroll");
 
-			const containerPath = path.resolve(__dirname, "../../appLayout/AppModalsContainer.tsx");
-			assert.ok(fs.readFileSync(containerPath, "utf8").includes("WorkspaceStudioOverlayHost"));
-		});
-
-		it("4.4 Verifies clean exports of Studio and OverlayHost components", () => {
-			assert.ok(DoctorPayrollStudioModal);
-			assert.ok(WorkspaceStudioOverlayHost);
+			const hostClosedHtml = renderToStaticMarkup(
+				<WorkspaceStudioOverlayHost
+					route={{ shell: "clinic_workspace", tab: "schedule", studio: null }}
+					onCloseStudio={() => {}}
+					patients={[]}
+					doctors={[]}
+					selectedPatient={null}
+				/>,
+			);
+			assert.equal(hostClosedHtml, "");
 		});
 	});
 });

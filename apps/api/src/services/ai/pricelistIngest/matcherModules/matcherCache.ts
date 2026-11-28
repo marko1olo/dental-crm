@@ -4,10 +4,14 @@
  * Strictly <= 120 lines.
  */
 
+import { BoundedTtlMap } from "../../../../lib/boundedTtlMap.js";
 import type { NomenclatureMatchResult } from "./matcherTypes.js";
 
 const MAX_CACHE_SIZE = 5000;
-const matcherCache = new Map<string, NomenclatureMatchResult>();
+const matcherCache = new BoundedTtlMap<string, NomenclatureMatchResult>({
+	maxEntries: MAX_CACHE_SIZE,
+	ttlMs: 60 * 60_000,
+});
 
 function buildCacheKey(rawLine: string, cleanedTitle: string): string {
 	return `${rawLine.trim()}:::${cleanedTitle.trim()}`;
@@ -32,12 +36,6 @@ export function setCachedMatch(
 	cleanedTitle: string,
 	result: NomenclatureMatchResult,
 ): void {
-	if (matcherCache.size >= MAX_CACHE_SIZE) {
-		const firstKey = matcherCache.keys().next().value;
-		if (firstKey !== undefined) {
-			matcherCache.delete(firstKey);
-		}
-	}
 	const key = buildCacheKey(rawLine, cleanedTitle);
 	matcherCache.set(key, result);
 }

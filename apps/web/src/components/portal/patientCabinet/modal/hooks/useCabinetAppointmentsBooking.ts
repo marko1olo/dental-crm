@@ -38,7 +38,15 @@ export function useCabinetAppointmentsBooking(
 							reason: req.reason,
 						}),
 					});
-					const json = await res.json().catch(() => null);
+					let json: { message?: string } | null = null;
+					try {
+						json = (await res.json()) as { message?: string } | null;
+					} catch (parseErr) {
+						clientLogger.warn("[PatientCabinetModal] reschedule JSON parse failed", {
+							status: res.status,
+							error: String(parseErr),
+						});
+					}
 					if (res.ok) {
 						setData((prev) => ({
 							...prev,
@@ -105,7 +113,15 @@ export function useCabinetAppointmentsBooking(
 								comment: req.comment || undefined,
 							}),
 						});
-						const json = await res.json().catch(() => null);
+						let json: { appointment?: { id: string }; message?: string } | null = null;
+						try {
+							json = (await res.json()) as { appointment?: { id: string }; message?: string } | null;
+						} catch (parseErr) {
+							clientLogger.warn("[PatientCabinetModal] book JSON parse failed", {
+								status: res.status,
+								error: String(parseErr),
+							});
+						}
 						if (res.ok && json?.appointment) {
 							const newApt: PatientAppointment = {
 								id: json.appointment.id,
@@ -157,7 +173,15 @@ export function useCabinetAppointmentsBooking(
 						body: JSON.stringify({ reason }),
 					});
 					if (!res.ok) {
-						const errJson = (await res.json().catch(() => null)) as { message?: string } | null;
+						let errJson: { message?: string } | null = null;
+						try {
+							errJson = (await res.json()) as { message?: string } | null;
+						} catch (parseErr) {
+							clientLogger.warn("[PatientCabinetModal] cancel error JSON parse failed", {
+								status: res.status,
+								error: String(parseErr),
+							});
+						}
 						handleShowCabinetToast(errJson?.message || "Не удалось отменить запись. Попробуйте позже.");
 						return;
 					}

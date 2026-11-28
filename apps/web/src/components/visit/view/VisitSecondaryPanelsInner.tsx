@@ -297,7 +297,7 @@ export function VisitSecondaryPanelsInner({
 								color: "var(--ink, #0f172a)",
 							}}
 						>
-							План лечения & Контроль цен прайса
+							План лечения и контроль цен прайса
 						</div>
 						<div
 							style={{
