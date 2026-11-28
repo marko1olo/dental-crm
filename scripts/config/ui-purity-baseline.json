@@ -1,15 +1,15 @@
 {
   "version": 1,
   "description": "DENTE Frontend UI Purity Ratchet (0-tolerance rules stay 0; remaining limits only fall).",
-  "updatedAt": "2026-11-28T14:08:12.194Z",
+  "updatedAt": "2026-11-28T16:06:53.940Z",
   "limits": {
     "circus_or_neon_button": 0,
     "table_row_primary_fence": 0,
-    "solid_var_teal_button": 99,
+    "solid_var_teal_button": 95,
     "gradient_on_control": 0,
     "unthemed_light_control": 0,
-    "unthemed_dark_text": 11,
-    "blue_dark_card_surface": 40,
+    "unthemed_dark_text": 1,
+    "blue_dark_card_surface": 38,
     "monster_zindex_override": 0,
     "unlayered_css_utility": 0,
     "duplicate_modal_close": 0,
@@ -18,14 +18,14 @@
     "ui_dev_jargon": 0,
     "ui_reg_code_leak": 0,
     "ui_hardcoded_brand": 0,
-    "ui_cyrillic_ampersand": 27,
+    "ui_cyrillic_ampersand": 5,
     "ui_button_ascii_arrow": 0,
     "ui_broken_plural": 0,
-    "all_caps_ui_text": 45,
-    "hardcoded_bg_white_ui": 4,
+    "all_caps_ui_text": 43,
+    "hardcoded_bg_white_ui": 1,
     "segmented_primary_abuse": 0,
     "reverse_auth_token_order": 0,
-    "swallowed_fetch_or_json_fallback": 101,
+    "swallowed_fetch_or_json_fallback": 33,
     "browser_blocking_dialog": 0
   }
 }
