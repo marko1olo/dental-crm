@@ -27,7 +27,7 @@ export const ExtractionHemostasisSelector: React.FC<ExtractionHemostasisSelector
 }) => {
 	return (
 		<div className="space-y-1.5" data-testid="extraction-hemostasis-section">
-			<span className="text-[11px] font-bold text-[var(--muted)]">Местный гемостаз & Лунка:</span>
+			<span className="text-[11px] font-bold text-[var(--muted)]">Местный гемостаз и лунка:</span>
 			<div className="flex items-center gap-2 flex-wrap" role="toolbar" aria-label="Опции гемостаза">
 				{SURGICAL_HEMOSTASIS_OPTIONS.map((opt) => {
 					const isSel = selectedHemostasis.includes(opt.id);

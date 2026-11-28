@@ -240,7 +240,7 @@ export class InfodentExtractors {
 			const amountRub = kopecksToRubles(amountKopecks);
 			const paidAt =
 				InfodentCsvParser.normalizeDate(getValue("paidAt")) ||
-				new Date().toISOString().slice(0, 10);
+				todayDateKeyInTimeZone("Europe/Samara");
 
 			const rawMethod = getValue("method").toLowerCase();
 			let method: InfodentPaymentRecord["method"] = "cash";

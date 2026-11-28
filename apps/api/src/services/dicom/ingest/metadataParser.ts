@@ -383,9 +383,14 @@ export async function recordStudySanpinDose(
 			break;
 	}
 
+	const resolvedClinicTz = resolveValidIanaTimeZone(
+		await clinicTimeZone(organizationId, executor !== db ? executor : undefined),
+	);
 	const dateStr = study.capturedAt
-		? (typeof study.capturedAt === "string" ? study.capturedAt.slice(0, 10) : study.capturedAt.toISOString().slice(0, 10))
-		: new Date().toISOString().slice(0, 10);
+		? typeof study.capturedAt === "string"
+			? study.capturedAt.slice(0, 10)
+			: formatDateKeyInTimeZone(study.capturedAt, resolvedClinicTz)
+		: todayDateKeyInTimeZone(resolvedClinicTz);
 
 	const metadata: SanpinDoseMetadataInput = {
 		studyInstanceUid: study.dicomStudyUid || `study-${study.id}`,

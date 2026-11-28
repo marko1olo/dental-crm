@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
-import { cleanDemoShowcaseTables, type DemoCleanupTx } from "../coreModules/demoStaffAndChairsSeeder.js";
+import { cleanDemoShowcaseTables, type DemoCleanupTx } from "../deepSeeder/coreModules/demoStaffAndChairsSeeder.js";
 
 describe("demoStaffAndChairsSeeder SQL Parameterization & Allowlist Safety", () => {
 	it("executes parameterized table lookup and deletes only allowlisted tables with bound UUID parameter", async () => {

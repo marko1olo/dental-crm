@@ -192,7 +192,7 @@ export const PatientPhotosTab: React.FC<PatientPhotosTabProps> = ({
 							onClick={onOpenPhotoStudio}
 							className="group relative rounded-xl overflow-hidden border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,#0d9488)] transition-all cursor-pointer shadow-xs flex flex-col"
 						>
-							<div className="relative aspect-4/3 w-full bg-slate-900 overflow-hidden flex items-center justify-center">
+							<div className="relative aspect-4/3 w-full bg-[var(--paper-soft)] overflow-hidden flex items-center justify-center">
 								<img
 									src={item.url}
 									alt={item.name}

@@ -14,7 +14,7 @@ export const SomaticAnamnesisCardView: React.FC<SomaticAnamnesisCardProps> = (pr
 
 	return (
 		<div
-			className={`somatic-anamnesis-card flex flex-col gap-4 w-full p-4 sm:p-5 rounded-2xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper,#ffffff)] dark:bg-slate-900 shadow-sm ${className}`}
+			className={`somatic-anamnesis-card flex flex-col gap-4 w-full p-4 sm:p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm ${className}`}
 			data-testid="somatic-anamnesis-card"
 			data-patient-id={patientId ?? undefined}
 		>

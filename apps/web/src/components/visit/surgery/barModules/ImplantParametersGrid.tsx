@@ -33,7 +33,7 @@ export const ImplantParametersGrid: React.FC<ImplantParametersGridProps> = ({
 		<>
 			{/* Размер (Ø × длина) */}
 			<div className="space-y-1">
-				<span className="text-[11px] font-bold text-[var(--muted)]">Размер (Ø × Длина):</span>
+				<span className="text-[11px] font-bold text-[var(--muted)]">Размер (Ø × длина):</span>
 				<div className="flex items-center gap-1 flex-wrap">
 					{IMPLANT_SIZES.map((sz) => (
 						<button
@@ -77,7 +77,7 @@ export const ImplantParametersGrid: React.FC<ImplantParametersGridProps> = ({
 
 			{/* Заглушка / Швы */}
 			<div className="space-y-1">
-				<span className="text-[11px] font-bold text-[var(--muted)]">Формирователь & Швы:</span>
+				<span className="text-[11px] font-bold text-[var(--muted)]">Формирователь и швы:</span>
 				<div className="flex items-center gap-1 flex-wrap">
 					<button
 						type="button"

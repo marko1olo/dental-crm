@@ -23,7 +23,7 @@ export const SinusMembraneSelector: React.FC<SinusMembraneSelectorProps> = ({
 }) => {
 	return (
 		<div className="space-y-1.5" data-testid="sinus-membrane-section">
-			<span className="text-[11px] font-bold text-[var(--muted)]">Барьерная мембрана & Пины:</span>
+			<span className="text-[11px] font-bold text-[var(--muted)]">Барьерная мембрана и пины:</span>
 			<div className="flex items-center gap-2 flex-wrap">
 				{MEMBRANE_OPTIONS.map((m) => {
 					const isSel = selectedMembrane.includes(m.short) || selectedMembrane === m.label;

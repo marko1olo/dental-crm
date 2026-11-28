@@ -165,8 +165,8 @@ export const OdontogramQuickTextInput: React.FC<OdontogramQuickTextInputProps> =
 							</span>
 						);
 					})}
-					<span className="text-[10px] text-slate-400 dark:text-slate-500 ml-auto">
-						Нажмите <kbd className="px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-mono text-[9px]">Enter</kbd>
+					<span className="text-[10px] text-[var(--ink-muted)] ml-auto">
+						Нажмите <kbd className="px-1 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] font-mono text-[9px]">Enter</kbd>
 					</span>
 				</div>
 			)}

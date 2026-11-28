@@ -268,7 +268,9 @@ export class NdflTaxService {
 			let receiptDate = "";
 			if (pay.paidAt) {
 				const d = new Date(pay.paidAt);
-				receiptDate = Number.isNaN(d.getTime()) ? "" : (d.toISOString().split("T")[0] || "");
+				receiptDate = Number.isNaN(d.getTime())
+					? ""
+					: formatDateKeyInTimeZone(d, resolvedClinicTimeZone);
 			}
 			const fiscalDocNum =
 				pay.fiscalReceipt?.fd ||

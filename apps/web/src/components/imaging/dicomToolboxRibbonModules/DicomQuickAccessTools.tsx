@@ -26,12 +26,12 @@ export const DicomQuickAccessTools: React.FC<DicomQuickAccessToolsProps> = ({
 }) => {
 	const toolBtnClass = (tool: DicomToolType, activeClass: string) =>
 		`icon-button h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border ${
-			activeTool === tool ? activeClass : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+			activeTool === tool ? activeClass : "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 		}`;
 
 	return (
 		<div className="flex items-center gap-1 shrink-0">
-			<button type="button" onClick={() => onSelectTool("pan")} className={toolBtnClass("pan", "bg-teal-900/80 border-[var(--teal)] text-teal-300")} title="Рука (Pan)">
+			<button type="button" onClick={() => onSelectTool("pan")} className={toolBtnClass("pan", "bg-teal-900/80 border-[var(--primary)] text-teal-200")} title="Рука (Pan)">
 				<Hand size={15} />
 			</button>
 			<button type="button" onClick={() => onSelectTool("ruler")} className={toolBtnClass("ruler", "bg-sky-900/80 border-sky-500 text-sky-200")} title="Линейка (мм)">
@@ -43,15 +43,15 @@ export const DicomQuickAccessTools: React.FC<DicomQuickAccessToolsProps> = ({
 			<button type="button" onClick={() => onSelectTool("root_canal_tracer")} className={toolBtnClass("root_canal_tracer", "bg-rose-900/80 border-rose-500 text-rose-200")} title="Трассировка канала">
 				<PenTool size={15} />
 			</button>
-			<button type="button" onClick={() => onInstantScreenCapture(true)} className="icon-button h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" title="Снимок экрана в буфер">
+			<button type="button" onClick={() => onInstantScreenCapture(true)} className="icon-button h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]" title="Снимок экрана в буфер">
 				<Camera size={15} />
 			</button>
-			<button type="button" data-testid="btn-dicom-hu-profile" id="btn-ez3d-hu-profile" onClick={onOpenHuProfile} className="secondary-button h-8 px-2.5 rounded-lg inline-flex items-center gap-1.5 border border-[var(--teal)]/40 bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal)]/20 text-[13px] font-semibold cursor-pointer transition-colors" title="Плотность HU">
-				<Activity size={14} className="text-[var(--teal)]" />
+			<button type="button" data-testid="btn-dicom-hu-profile" id="btn-ez3d-hu-profile" onClick={onOpenHuProfile} className="secondary-button h-8 px-2.5 rounded-lg inline-flex items-center gap-1.5 border border-[var(--primary)]/40 bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/20 text-[13px] font-semibold cursor-pointer transition-colors" title="Плотность HU">
+				<Activity size={14} className="text-[var(--primary)]" />
 				<span>Плотность HU</span>
 			</button>
 			<div className="relative" ref={measureMenuRef}>
-				<button type="button" data-testid="btn-dicom-measurement-dropdown" id="btn-ez3d-measurement-dropdown" onClick={onToggleMeasureMenu} className={`secondary-button h-8 px-2.5 rounded-lg inline-flex items-center gap-1 border text-[13px] font-medium cursor-pointer transition-colors ${isMeasureMenuOpen ? "bg-teal-900/80 border-[var(--teal)] text-teal-200" : "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"}`}>
+				<button type="button" data-testid="btn-dicom-measurement-dropdown" id="btn-ez3d-measurement-dropdown" onClick={onToggleMeasureMenu} className={`secondary-button h-8 px-2.5 rounded-lg inline-flex items-center gap-1 border text-[13px] font-medium cursor-pointer transition-colors ${isMeasureMenuOpen ? "bg-[var(--primary)]/15 border-[var(--primary)] text-[var(--primary)]" : "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}>
 					<span>▾ Измерение</span>
 				</button>
 				<DicomMeasureDropdown isOpen={isMeasureMenuOpen} onClose={onCloseMeasureMenu} onSelectTool={onSelectTool} onOpenHuProfile={onOpenHuProfile} onInstantScreenCapture={onInstantScreenCapture} />

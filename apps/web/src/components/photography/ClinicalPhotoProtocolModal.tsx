@@ -269,7 +269,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 						/>
 					)}
 					{activeViewMode === 'dsd' && (
-						<div className="w-full h-full min-h-[500px] flex max-sm:flex-col overflow-hidden bg-slate-950">
+						<div className="w-full h-full min-h-[500px] flex max-sm:flex-col overflow-hidden bg-[var(--paper-soft)]">
 							<div className="flex-1 relative flex items-center justify-center p-2 sm:p-4 overflow-hidden">
 								{(() => {
 									const effectiveDsdImage =
@@ -281,21 +281,21 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 										return (
 											<div
 												data-testid="dsd-empty-prompt"
-												className="flex flex-col items-center justify-center w-full h-full text-slate-400 gap-3 p-6 text-center"
+												className="flex flex-col items-center justify-center w-full h-full text-[var(--ink-muted)] gap-3 p-6 text-center"
 											>
-												<div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-cyan-400">
+												<div className="w-16 h-16 rounded-2xl bg-[var(--paper)] border border-[var(--line)] flex items-center justify-center text-[var(--primary)]">
 													<Camera size={32} />
 												</div>
-												<div className="text-base font-semibold text-slate-200">
+												<div className="text-base font-semibold text-[var(--ink)]">
 													Фотография улыбки не загружена
 												</div>
-												<div className="text-xs text-slate-400 max-w-sm">
+												<div className="text-xs text-[var(--ink-muted)] max-w-sm">
 													Загрузите портретное фото пациента с улыбкой в ячейку «Портрет с улыбкой» для построения эстетических ориентиров DSD.
 												</div>
 												<button
 													type="button"
 													onClick={() => setActiveViewMode('grid')}
-													className="mt-2 px-4 py-2 rounded-xl text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition-colors"
+													className="mt-2 px-4 py-2 rounded-xl text-xs font-semibold bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white transition-colors"
 												>
 													Перейти к загрузке фото
 												</button>
@@ -316,7 +316,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 									);
 								})()}
 							</div>
-							<div className="w-full sm:w-[360px] lg:w-[400px] shrink-0 h-full border-l border-[var(--line,#cbd5e1)] dark:border-slate-800">
+							<div className="w-full sm:w-[360px] lg:w-[400px] shrink-0 h-full border-l border-[var(--line)]">
 								<DsdMetricsSidebar
 									landmarks={dsdLandmarks}
 									calibration={dsdCalibration}

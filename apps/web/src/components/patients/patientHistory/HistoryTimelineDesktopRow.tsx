@@ -68,7 +68,7 @@ export const HistoryTimelineDesktopRow: React.FC<HistoryTimelineDesktopRowProps>
 					<span>{visit.doctorName}</span>
 				</span>
 
-				<span className="clinical-pill text-[10px] hidden lg:inline-flex bg-slate-100 dark:bg-slate-800 text-[var(--muted)]">
+				<span className="clinical-pill text-[10px] hidden lg:inline-flex bg-[var(--paper-soft)] text-[var(--ink-muted)]">
 					{visit.specialtyLabelRu}
 				</span>
 			</div>

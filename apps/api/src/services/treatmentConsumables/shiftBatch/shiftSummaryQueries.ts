@@ -28,9 +28,23 @@ export async function getShiftConsumablesSummary(
 	dateStr?: string | null,
 ): Promise<ShiftConsumablesSummaryResult> {
 	const now = new Date();
-	const effectiveDate = dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? dateStr : now.toISOString().slice(0, 10);
-	const startOfDay = new Date(`${effectiveDate}T00:00:00.000Z`);
-	const endOfDay = new Date(`${effectiveDate}T23:59:59.999Z`);
+	const [clinicRow] = await tx
+		.select({ timezone: clinics.timezone })
+		.from(clinics)
+		.where(eq(clinics.organizationId, organizationId))
+		.limit(1);
+	const resolvedClinicTz = resolveValidIanaTimeZone(clinicRow?.timezone);
+	const effectiveDate =
+		dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)
+			? dateStr
+			: todayDateKeyInTimeZone(resolvedClinicTz, now);
+	const startOfDay =
+		wallClockToUtcInTimeZone(effectiveDate, 0, 0, resolvedClinicTz) ??
+		new Date(`${effectiveDate}T00:00:00.000Z`);
+	const nextDayStart =
+		wallClockToUtcInTimeZone(shiftCalendarDay(effectiveDate, 1), 0, 0, resolvedClinicTz) ??
+		new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+	const endOfDay = new Date(nextDayStart.getTime() - 1);
 
 	const existingShiftTx = await tx
 		.select({ id: inventoryTransactions.id })

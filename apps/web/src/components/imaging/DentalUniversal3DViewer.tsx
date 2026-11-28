@@ -474,7 +474,7 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 							<button
 								type="button"
 								onClick={handleLoadDemoPreset}
-								className="h-9 px-3.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-300 text-xs font-medium transition-all cursor-pointer"
+								className="h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium transition-all cursor-pointer"
 								data-testid="load-demo-3d-model-btn"
 							>
 								Загрузить демо-образец
@@ -488,13 +488,13 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 			{isLoading && (
 				<div
 					className={`absolute inset-0 z-40 flex flex-col items-center justify-center ${
-						isLowSpec ? "bg-slate-950" : "bg-slate-950/70 backdrop-blur-xs"
+						isLowSpec ? "bg-black/80" : "bg-black/70 backdrop-blur-xs"
 					}`}
 					data-testid="viewer3d-loader"
 				>
-					<div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-2xl flex flex-col items-center gap-2.5 max-w-[280px] text-center">
+					<div className="p-4 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl flex flex-col items-center gap-2.5 max-w-[280px] text-center">
 						<Loader2 className="w-8 h-8 text-[var(--primary)] animate-spin" />
-						<p className="text-xs font-semibold text-slate-200">{loadingMessage}</p>
+						<p className="text-xs font-semibold text-[var(--ink)]">{loadingMessage}</p>
 					</div>
 				</div>
 			)}

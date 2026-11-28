@@ -22,13 +22,13 @@ export const VisitSurgeryHeader: React.FC<VisitSurgeryHeaderProps> = ({
 				</div>
 				<div>
 					<h3 className="text-base font-semibold text-[var(--ink)] flex items-center gap-2">
-						<span>Хирургический протокол & Имплантологический кокпит</span>
+						<span>Хирургический протокол и имплантологический кокпит</span>
 						<span className="text-xs px-2.5 py-0.5 rounded-lg font-mono font-medium bg-[var(--primary)] text-white">
 							{`Зуб FDI #${effectiveTooth}`}
 						</span>
 					</h3>
 					<p className="text-xs text-[var(--muted)]">
-						Клинические протоколы операций • Безбарьерный софт для хирурга
+						Клинические протоколы хирургического приёма
 					</p>
 				</div>
 			</div>

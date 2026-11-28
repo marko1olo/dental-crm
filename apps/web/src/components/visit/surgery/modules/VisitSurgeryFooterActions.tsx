@@ -70,7 +70,7 @@ export const VisitSurgeryFooterActions: React.FC<VisitSurgeryFooterActionsProps>
 				<button
 					type="button"
 					onClick={() => executePrintIds(patientName, doctorName, s.currentNorm.title, s.effectiveTooth)}
-					className={`${BTN_BASE} border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--primary)]`}
+					className={`${BTN_BASE} border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--primary)]`}
 					data-testid="btn-tab-print-ids"
 					title="Печать комплекта ИДС и памятки пациента (3 бланка)"
 				>
@@ -101,7 +101,7 @@ export const VisitSurgeryFooterActions: React.FC<VisitSurgeryFooterActionsProps>
 									: undefined,
 						})
 					}
-					className={`${BTN_BASE} border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--primary)]`}
+					className={`${BTN_BASE} border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--primary)]`}
 					data-testid="btn-tab-print-protocol"
 					title="Печать протокола операции"
 				>
@@ -115,7 +115,7 @@ export const VisitSurgeryFooterActions: React.FC<VisitSurgeryFooterActionsProps>
 					className={`${BTN_BASE} ${
 						s.isMaterialsDeducted
 							? "border-[var(--primary)] bg-[var(--primary-soft,rgba(var(--primary-rgb),0.1))] text-[var(--primary)]"
-							: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--primary)]"
+							: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--primary)]"
 					}`}
 					data-testid="btn-tab-deduct-materials"
 					title="Списание материалов операции со склада"
@@ -128,7 +128,7 @@ export const VisitSurgeryFooterActions: React.FC<VisitSurgeryFooterActionsProps>
 					<button
 						type="button"
 						onClick={() => s.setIsImplantModalOpen(true)}
-						className={`${BTN_BASE} border-[var(--primary)] bg-[var(--primary-soft,rgba(var(--primary-rgb),0.1))] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white`}
+						className={`${BTN_BASE} border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--primary)]`}
 						data-testid="btn-open-implant-passport-modal open-implant-passport-modal-btn"
 						title="Открыть хирургический паспорт имплантата"
 					>
@@ -140,12 +140,12 @@ export const VisitSurgeryFooterActions: React.FC<VisitSurgeryFooterActionsProps>
 				<button
 					type="button"
 					onClick={handleAddServices}
-					className={`${BTN_BASE} border-[var(--primary)] bg-[var(--paper-soft)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white`}
+					className={`${BTN_BASE} border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--primary)]`}
 					data-testid="btn-tab-add-to-invoice-surgery"
 					title="Добавить хирургические услуги в смету визита"
 				>
 					<Plus size={16} />
-					<span>+ В смету</span>
+					<span>В смету</span>
 				</button>
 
 				<button

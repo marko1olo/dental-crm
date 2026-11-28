@@ -23,40 +23,40 @@ export const StaffChatMessageItem: React.FC<StaffChatMessageItemProps> = ({
 		>
 			<div className="flex items-center justify-between mb-1.5">
 				<div className="flex items-center gap-2 flex-wrap">
-					<span className="text-xs font-bold text-slate-900 dark:text-slate-100">{m.senderName}</span>
-					<span className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded font-medium">
+					<span className="text-xs font-bold text-[var(--ink)]">{m.senderName}</span>
+					<span className="text-[10px] text-[var(--ink-muted)] bg-[var(--paper-soft)] border border-[var(--line)] px-1.5 py-0.5 rounded font-medium">
 						{m.senderRole}
 					</span>
-					{isPing && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-teal-500/20 text-teal-800 dark:text-teal-300">ИНТЕРКОМ</span>}
+					{isPing && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-teal-500/20 text-teal-800 dark:text-teal-300">Интерком</span>}
 					{isUrgent && (
 						<span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-amber-500/20 text-amber-800 dark:text-amber-300 flex items-center gap-1">
-							<AlertTriangle size={10} /> СРОЧНО
+							<AlertTriangle size={10} /> Срочно
 						</span>
 					)}
 					{isCritical && (
 						<span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-rose-500/30 text-rose-800 dark:text-rose-200 flex items-center gap-1">
-							<ShieldAlert size={10} /> ЭКСТРЕННО
+							<ShieldAlert size={10} /> Экстренно
 						</span>
 					)}
 				</div>
-				<span className="text-[11px] text-slate-400">
+				<span className="text-[11px] text-[var(--ink-muted)]">
 					{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
 				</span>
 			</div>
 
-			<div className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">{m.content}</div>
+			<div className="text-xs text-[var(--ink)] leading-relaxed whitespace-pre-wrap">{m.content}</div>
 
 			{m.patientAttachment && (
-				<div className="mt-2.5 p-2.5 rounded-xl bg-white dark:bg-slate-800/90 border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] flex items-center justify-between shadow-2xs">
+				<div className="mt-2.5 p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between shadow-2xs">
 					<div className="flex items-center gap-2.5">
-						<div className="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-600 dark:text-teal-400">
+						<div className="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center text-[var(--primary)]">
 							<User size={16} />
 						</div>
 						<div>
-							<div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+							<div className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 								<span>{m.patientAttachment.fullName}</span>
 								{m.patientAttachment.hasAllergyAlert && (
-									<span className="text-[9px] px-1 py-0.2 rounded bg-rose-500/20 text-rose-800 dark:text-rose-300 font-bold">АЛЛЕРГИЯ</span>
+									<span className="text-[9px] px-1 py-0.2 rounded bg-rose-500/20 text-rose-800 dark:text-rose-300 font-bold">Аллергия</span>
 								)}
 							</div>
 							<div className="text-[10px] text-slate-500 dark:text-slate-400">

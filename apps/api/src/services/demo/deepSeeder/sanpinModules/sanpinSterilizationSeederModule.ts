@@ -143,7 +143,7 @@ export async function seedSanpinRegisters(
 					cycleMode: "dry_heat_180",
 					passedIndicator: true,
 					status: "passed",
-					barcode: `DNT-STER-C001-${yesterday.toISOString().slice(0, 10).replace(/-/g, "")}-E5F6`,
+					barcode: `DNT-STER-C001-${yesterdayStr.replace(/-/g, "")}-E5F6`,
 					expiresAt: expTwentyDays,
 					operatorId: operatorUserId,
 					timestamp: yesterday,

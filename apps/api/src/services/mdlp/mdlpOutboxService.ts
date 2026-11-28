@@ -215,8 +215,14 @@ export class MdlpOutboxService {
 		}
 
 		const now = new Date();
+		const [clinicRow] = await tx
+			.select({ timezone: clinics.timezone })
+			.from(clinics)
+			.where(eq(clinics.organizationId, organizationId))
+			.limit(1);
+		const resolvedClinicTz = resolveValidIanaTimeZone(clinicRow?.timezone);
 		const docNum = `VI-${visitId.slice(0, 8).toUpperCase()}`;
-		const docDate = now.toISOString().slice(0, 10);
+		const docDate = todayDateKeyInTimeZone(resolvedClinicTz, now);
 
 		// Генерируем официальную структуру документа Схемы 10560
 		const schemaDoc = generateMdlpSchema10560Payload({

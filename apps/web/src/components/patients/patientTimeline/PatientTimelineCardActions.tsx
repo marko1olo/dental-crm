@@ -23,7 +23,7 @@ export const PatientTimelineCardActions: React.FC<PatientTimelineCardActionsProp
 	onOpenControl,
 }) => {
 	return (
-		<div className="flex items-center gap-1.5 pt-1 border-t border-[#172338]">
+		<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--line)]">
 			{isCbct ? (
 				<div className="flex items-center gap-1 flex-1">
 					<button
@@ -47,7 +47,7 @@ export const PatientTimelineCardActions: React.FC<PatientTimelineCardActionsProp
 								title: `3D КТ - ${study.title || "Исследование"}`,
 							});
 						}}
-						className="h-6 px-1.5 rounded text-[10px] font-bold bg-[#1e293b] hover:bg-[#334155] text-cyan-300 border border-cyan-500/30 inline-flex items-center justify-center gap-0.5 cursor-pointer transition-colors"
+						className="h-6 px-1.5 rounded text-[10px] font-bold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)] inline-flex items-center justify-center gap-0.5 cursor-pointer transition-colors"
 						data-testid={`btn-timeline-launch-popout-${study.id}`}
 						title="Открыть на 2-м мониторе (в отдельном окне)"
 					>

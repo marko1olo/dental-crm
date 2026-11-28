@@ -29,7 +29,16 @@ export async function executeShiftBatchDeduction(
 ): Promise<ExecuteShiftBatchDeductionResult> {
 	const { organizationId, date, userId, items, notes, idempotencyKey, clientMutationId } = params;
 	const now = new Date();
-	const effectiveDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : now.toISOString().slice(0, 10);
+	let resolvedDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+	if (!resolvedDate) {
+		const [clinicRow] = await tx
+			.select({ timezone: clinics.timezone })
+			.from(clinics)
+			.where(eq(clinics.organizationId, organizationId))
+			.limit(1);
+		resolvedDate = todayDateKeyInTimeZone(resolveValidIanaTimeZone(clinicRow?.timezone), now);
+	}
+	const effectiveDate = resolvedDate;
 
 	await tx.execute(
 		sql`SELECT pg_advisory_xact_lock(hashtext(${organizationId} || ':shift_deduct:' || ${effectiveDate}))`,

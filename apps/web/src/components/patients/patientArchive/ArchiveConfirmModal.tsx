@@ -29,7 +29,7 @@ export const ArchiveConfirmModal: React.FC<ArchiveConfirmModalProps> = ({
 	onCancel,
 }) => {
 	return (
-		<div className="mt-3 p-3 rounded-lg border bg-rose-50 border-rose-200 dark:bg-slate-800 dark:border-rose-800 space-y-2">
+		<div className="mt-3 p-3 rounded-lg border bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800 space-y-2">
 			<div className="flex items-center space-x-2 text-rose-800 dark:text-rose-300 font-bold text-xs">
 				<AlertTriangle className="w-4 h-4" />
 				<span>{!isBlacklisted ? "Архивация пациента" : "Подтверждение действия"}</span>
