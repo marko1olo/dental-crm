@@ -27,7 +27,7 @@ export const MobileShowcaseCanvas: React.FC<MobileShowcaseCanvasProps> = ({
 							style={{ filter: computedFilter }}
 						/>
 					) : (
-						<div className="w-64 h-64 rounded-2xl bg-slate-900 border border-teal-500/30 flex items-center justify-center text-teal-400 text-sm font-semibold text-center p-4">
+						<div className="w-64 h-64 rounded-2xl bg-[var(--paper)] border border-[var(--primary)]/30 flex items-center justify-center text-[var(--primary)] text-sm font-semibold text-center p-4">
 							Интраоральный снимок готов к объяснению плана лечения
 						</div>
 					)}
@@ -38,9 +38,9 @@ export const MobileShowcaseCanvas: React.FC<MobileShowcaseCanvasProps> = ({
 				</div>
 			) : (
 				<div className="w-full h-full max-h-[60vh] grid grid-cols-2 gap-2">
-					<div className="relative flex flex-col items-center justify-center bg-slate-950 rounded-2xl overflow-hidden border border-white/10">
-						<div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/70 text-[10px] font-bold text-slate-300 font-mono">
-							ДО ЛЕЧЕНИЯ
+					<div className="relative flex flex-col items-center justify-center bg-[var(--paper-soft)] rounded-2xl overflow-hidden border border-[var(--line)]">
+						<div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/70 text-[10px] font-bold text-slate-200 font-mono">
+							До лечения
 						</div>
 						{comparisonStudy.previewUrl ? (
 							<img
@@ -49,12 +49,12 @@ export const MobileShowcaseCanvas: React.FC<MobileShowcaseCanvasProps> = ({
 								className="w-full h-full object-contain"
 							/>
 						) : (
-							<span className="text-xs text-slate-500">Архивный снимок</span>
+							<span className="text-xs text-[var(--ink-muted)]">Архивный снимок</span>
 						)}
 					</div>
-					<div className="relative flex flex-col items-center justify-center bg-slate-950 rounded-2xl overflow-hidden border border-teal-500/40">
-						<div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-teal-600/90 text-[10px] font-bold text-white font-mono">
-							СЕГОДНЯ
+					<div className="relative flex flex-col items-center justify-center bg-[var(--paper-soft)] rounded-2xl overflow-hidden border border-[var(--primary)]/40">
+						<div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-[var(--primary)] text-[10px] font-bold text-white font-mono">
+							Сегодня
 						</div>
 						{effectivePreviewUrl ? (
 							<img

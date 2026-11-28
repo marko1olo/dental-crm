@@ -371,7 +371,7 @@ export class MdlpDisposalService {
 			(input.visitId
 				? `VI-${input.visitId.slice(0, 8).toUpperCase()}`
 				: `MED-${now.getFullYear()}-${now.getTime().toString(36).toUpperCase()}`);
-		const docDate = input.docDate ?? now.toISOString().slice(0, 10);
+		let docDate = input.docDate ?? "";
 		const crptReceiptNumber = input.crptReceiptNumber ?? null;
 
 		const updatedItems: Record<string, unknown>[] = [];
@@ -380,6 +380,10 @@ export class MdlpDisposalService {
 
 		// Persist each item in PostgreSQL, lock queued items, and deduct from FEFO warehouse stock within an atomic transaction
 		await withTenantCtx(orgId, async (tx) => {
+			if (!docDate) {
+				const resolvedClinicTz = resolveValidIanaTimeZone(await clinicTimeZone(orgId, tx));
+				docDate = todayDateKeyInTimeZone(resolvedClinicTz, now);
+			}
 			const rawItems: MdlpSingleDisposeInput[] = [];
 
 			if (input.useQueue) {

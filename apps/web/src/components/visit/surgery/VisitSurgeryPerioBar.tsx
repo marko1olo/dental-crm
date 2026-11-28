@@ -100,7 +100,7 @@ export const VisitSurgeryPerioBar: React.FC<VisitSurgeryPerioBarProps> = ({
 		<div className="space-y-3 text-xs">
 			{isEmergency ? (
 				<div className="space-y-1.5" data-testid="emergency-controls">
-					<span className="text-[11px] font-bold text-[var(--muted)]">Экстренная тактика & Дренирование:</span>
+					<span className="text-[11px] font-bold text-[var(--muted)]">Экстренная тактика и дренирование:</span>
 					<div className="flex items-center gap-2 flex-wrap">
 						<button
 							type="button"
@@ -182,7 +182,7 @@ export const VisitSurgeryPerioBar: React.FC<VisitSurgeryPerioBarProps> = ({
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--primary)]">
 					{isEmergency ? <ShieldAlert size={16} /> : <Activity size={16} />}
-					<span>{isEmergency ? "Экстренная хирургическая помощь:" : "Пародонтальная хирургия & Пластика мягких тканей:"}</span>
+					<span>{isEmergency ? "Экстренная хирургическая помощь:" : "Пародонтальная хирургия и пластика мягких тканей:"}</span>
 					<span className="px-2 py-0.5 rounded-md bg-[var(--paper)] border border-[var(--line)] text-[11px] font-semibold text-[var(--ink)]">
 						{norm.shortBadge}
 					</span>
@@ -251,7 +251,7 @@ export const VisitSurgeryPerioBar: React.FC<VisitSurgeryPerioBarProps> = ({
 				isOpen={isMobileSheetOpen}
 				onClose={() => setIsMobileSheetOpen(false)}
 				title={`${norm.title} (FDI #${effectiveTooth})`}
-				subtitle="Параметры операции, швы и тактика (Apple iOS HIG)"
+				subtitle="Параметры операции, швы и тактика"
 				testId="perio-bottom-sheet"
 				footer={
 					<div className="flex items-center gap-2 w-full">
