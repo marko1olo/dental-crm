@@ -20,11 +20,17 @@ import {
 import { showToast } from "../../../components/GlobalToast";
 import { DEFAULT_SOLO_CHAIR } from "../../../components/schedule/ScheduleGrid";
 import {
+	isDashboardPayload,
+	isPlainRecord,
+	parseJsonEnvelope,
+} from "../../../lib/apiResponseHandler";
+import {
 	enqueueOfflineAppointment,
 	generateOfflineAppointmentId,
 	type OfflineAppointmentItem,
 } from "../../../offline/offlineAppointmentQueue";
 import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { type ScheduleStore, useScheduleStore } from "../../../store/scheduleStore";
 import { useSettingsStore } from "../../../store/settingsStore";
 import { emptyAppointmentScheduleDraft } from "../../../utils/draftDefaults";
@@ -239,14 +245,17 @@ export function useAppointmentMutations({
 			if (!response.ok) {
 				setScheduleAdminSecretDemand((await scheduleAdminSecretRefusal(response)) ?? "");
 				if (response.status === 409) {
-					const errPayload = (await response.clone().json().catch(() => null)) as {
-						message?: string;
-						suggestedSlots?: string[];
-					} | null;
-					if (Array.isArray(errPayload?.suggestedSlots)) {
+					let errPayload: unknown = null;
+					try {
+						errPayload = await response.clone().json();
+					} catch (parseErr: unknown) {
+						clientLogger.debug("[useAppointmentMutations] Failed to parse 409 conflict payload", parseErr, { module: "Schedule" });
+					}
+					if (isPlainRecord(errPayload) && Array.isArray(errPayload.suggestedSlots)) {
+						const suggestedSlots = errPayload.suggestedSlots.filter((s): s is string => typeof s === "string");
 						setSlotConflict({
-							message: errPayload.message || "Слот уже занят",
-							suggestedSlots: errPayload.suggestedSlots,
+							message: typeof errPayload.message === "string" && errPayload.message ? errPayload.message : "Слот уже занят",
+							suggestedSlots,
 							appointmentId,
 						});
 					}
@@ -255,8 +264,11 @@ export function useAppointmentMutations({
 			}
 			appointmentMutationIdRef.current = null;
 			setScheduleAdminSecretDemand("");
-			const payload = await response.json();
-			const nextDashboard = payload as Dashboard;
+			const nextDashboard = await parseJsonEnvelope(
+				response,
+				isDashboardPayload,
+				"Запись не сохранена",
+			);
 			setDashboard(nextDashboard);
 			const savedAppointment = nextDashboard.appointments?.find(
 				(appointment) => appointment.id === appointmentId,
@@ -457,17 +469,17 @@ export function useAppointmentMutations({
 					(await scheduleAdminSecretRefusal(response)) ?? "",
 				);
 				if (response.status === 409) {
-					const errPayload = (await response
-						.clone()
-						.json()
-						.catch(() => null)) as {
-						message?: string;
-						suggestedSlots?: string[];
-					} | null;
-					if (Array.isArray(errPayload?.suggestedSlots)) {
+					let errPayload: unknown = null;
+					try {
+						errPayload = await response.clone().json();
+					} catch (parseErr: unknown) {
+						clientLogger.debug("[useAppointmentMutations] Failed to parse 409 conflict payload", parseErr, { module: "Schedule" });
+					}
+					if (isPlainRecord(errPayload) && Array.isArray(errPayload.suggestedSlots)) {
+						const suggestedSlots = errPayload.suggestedSlots.filter((s): s is string => typeof s === "string");
 						setSlotConflict({
-							message: errPayload.message || "Слот уже занят",
-							suggestedSlots: errPayload.suggestedSlots,
+							message: typeof errPayload.message === "string" && errPayload.message ? errPayload.message : "Слот уже занят",
+							suggestedSlots,
 						});
 					}
 				}
@@ -477,11 +489,12 @@ export function useAppointmentMutations({
 			}
 			appointmentMutationIdRef.current = null;
 			setScheduleAdminSecretDemand("");
-			const payload = await response.json();
-			const nextDashboard = payload as Dashboard;
+			const nextDashboard = await parseJsonEnvelope(
+				response,
+				isDashboardPayload,
+				"Запись не создана",
+			);
 			if (
-				nextDashboard &&
-				typeof nextDashboard === "object" &&
 				!Array.isArray(nextDashboard.appointments)
 			) {
 				nextDashboard.appointments = [];
@@ -590,7 +603,7 @@ export function useAppointmentMutations({
 				};
 
 				const nextAppointments = [...(dashboard?.appointments ?? []), createdAppointmentModel];
-				const nextDashboard = { ...(dashboard ?? {}), appointments: nextAppointments } as Dashboard;
+				const nextDashboard: Dashboard = { ...dashboard, appointments: nextAppointments };
 				setDashboard(nextDashboard);
 
 				newAppointmentDraftUserEditedRef.current = false;

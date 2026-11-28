@@ -5,6 +5,11 @@
  */
 
 import { generateUuidV7 } from "@dental/shared";
+import {
+	isPlainRecord,
+	parseJsonEnvelope,
+	readApiErrorMessage,
+} from "../../lib/apiResponseHandler";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 
 export interface CloseSettlementPeriodParams {
@@ -50,6 +55,39 @@ export interface CloseSettlementPeriodResult {
 	readonly message: string;
 }
 
+function isSettlementStatementPayload(
+	value: unknown,
+): value is SettlementStatementPayload {
+	return (
+		isPlainRecord(value) &&
+		typeof value.id === "string" &&
+		typeof value.period === "string" &&
+		typeof value.isFinalized === "boolean"
+	);
+}
+
+function isCloseSettlementPeriodResult(
+	value: unknown,
+): value is CloseSettlementPeriodResult {
+	return (
+		isPlainRecord(value) &&
+		typeof value.ok === "boolean" &&
+		typeof value.statementId === "string" &&
+		typeof value.closedAppointmentsCount === "number" &&
+		(value.statement === null || isSettlementStatementPayload(value.statement))
+	);
+}
+
+function isReopenSettlementPeriodResult(
+	value: unknown,
+): value is { ok: boolean; isFinalized: boolean } {
+	return (
+		isPlainRecord(value) &&
+		typeof value.ok === "boolean" &&
+		typeof value.isFinalized === "boolean"
+	);
+}
+
 export async function closeSettlementPeriodApi(
 	params: CloseSettlementPeriodParams,
 ): Promise<CloseSettlementPeriodResult> {
@@ -70,11 +108,14 @@ export async function closeSettlementPeriodApi(
 	});
 
 	if (!res.ok) {
-		const errData = await res.json().catch(() => null);
-		throw new Error(errData?.message || `Ошибка закрытия периода: HTTP ${res.status}`);
+		throw new Error(await readApiErrorMessage(res, "Ошибка закрытия периода"));
 	}
 
-	return (await res.json()) as CloseSettlementPeriodResult;
+	return parseJsonEnvelope(
+		res,
+		isCloseSettlementPeriodResult,
+		"Ошибка закрытия периода",
+	);
 }
 
 export async function reopenSettlementPeriodApi(
@@ -96,9 +137,12 @@ export async function reopenSettlementPeriodApi(
 	});
 
 	if (!res.ok) {
-		const errData = await res.json().catch(() => null);
-		throw new Error(errData?.message || `Ошибка открытия периода: HTTP ${res.status}`);
+		throw new Error(await readApiErrorMessage(res, "Ошибка открытия периода"));
 	}
 
-	return (await res.json()) as { ok: boolean; isFinalized: boolean };
+	return parseJsonEnvelope(
+		res,
+		isReopenSettlementPeriodResult,
+		"Ошибка открытия периода",
+	);
 }

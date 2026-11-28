@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { Dashboard } from "@dental/shared";
 import { WorkflowResponseError, responseErrorMessage } from "../../AppHelpers";
-import { actionFailureToast } from "../../lib/panelStateText";
+import {
+	getErrorStatus,
+	isDashboardPayload,
+	parseJsonEnvelope,
+} from "../../lib/apiResponseHandler";
 import { logger } from "../../utils/logger";
 import {
 	cacheClinicDashboard,
@@ -86,7 +90,11 @@ export function useDashboardLoaderLogic({
 					);
 					throw new WorkflowResponseError(message, response.status);
 				}
-				const payload = (await response.json()) as Dashboard;
+				const payload = await parseJsonEnvelope(
+					response,
+					isDashboardPayload,
+					"Данные клиники не загружены",
+				);
 				// Пока ждали ответ, стартовал более свежий запрос — его результат
 				// актуальнее, этот молча игнорируем.
 				if (isStaleResponse()) return;
@@ -101,7 +109,7 @@ export function useDashboardLoaderLogic({
 			} catch (err) {
 				if (isStaleResponse() || (err instanceof Error && err.name === "AbortError")) return;
 				logger.error("[Dente] Не удалось загрузить данные клиники:", err);
-				const status = (err as { status?: number })?.status ?? null;
+				const status = getErrorStatus(err);
 				const isAuthError =
 					status === 401 ||
 					status === 403 ||

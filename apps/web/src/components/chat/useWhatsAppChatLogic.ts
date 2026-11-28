@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { openWhatsAppChat } from "../../store/telephonyStore";
 import { initiateOutboundCall } from "../telephony/initiateOutboundCall";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import {
+	isPlainRecord,
+	parseJsonEnvelope,
+	readApiErrorMessage,
+	unwrapApiEnvelope,
+} from "../../lib/apiResponseHandler";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import { clientLogger } from "../../services/logging/clientLogger";
 import {
@@ -23,6 +33,35 @@ interface RawInboxMessage {
 	direction?: string;
 	status?: string;
 	createdAt?: string;
+}
+
+function isRawInboxMessage(value: unknown): value is RawInboxMessage {
+	return isPlainRecord(value);
+}
+
+interface SendMessageResponsePayload {
+	readonly warning?: string | undefined;
+}
+
+function isSendMessageResponsePayload(value: unknown): value is SendMessageResponsePayload {
+	return isPlainRecord(value);
+}
+
+interface UploadMediaResponsePayload {
+	readonly ok?: boolean | undefined;
+	readonly mediaUrl?: string | undefined;
+	readonly message?: string | undefined;
+}
+
+function isUploadMediaResponsePayload(value: unknown): value is UploadMediaResponsePayload {
+	return isPlainRecord(value);
+}
+
+function normalizeMessageStatus(rawStatus: unknown): "sent" | "delivered" | "read" | "failed" {
+	if (rawStatus === "failed") return "failed";
+	if (rawStatus === "delivered") return "delivered";
+	if (rawStatus === "read") return "read";
+	return "sent";
 }
 
 export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
@@ -69,17 +108,17 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 		try {
 			const res = await fetch(
 				`/api/communications/inbox/${encodeURIComponent(effectivePatientId)}`,
-				{ headers: denteAdminSecretRequestHeaders() },
+				{ headers: denteClinicalReadHeaders() },
 			);
 			if (res.ok) {
-				const data = (await res.json()) as
-					| RawInboxMessage[]
-					| { messages?: RawInboxMessage[] };
-				const list = (Array.isArray(data)
-					? data
-					: Array.isArray(data.messages)
-						? data.messages
-						: []) as RawInboxMessage[];
+				const raw: unknown = await res.json();
+				const unwrapped = unwrapApiEnvelope(raw);
+				const listCandidate = Array.isArray(unwrapped)
+					? unwrapped
+					: isPlainRecord(unwrapped) && Array.isArray(unwrapped.messages)
+						? unwrapped.messages
+						: [];
+				const list = listCandidate.filter(isRawInboxMessage);
 				const parsed: ChatMessage[] = list.map((m, idx) => {
 					const sender = m.direction === "inbound" ? "patient" : "clinic";
 					const senderName: string =
@@ -89,11 +128,7 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 					const status =
 						m.direction === "inbound"
 							? undefined
-							: m.status === "failed"
-								? ("failed" as const)
-								: m.status === "delivered" || m.status === "read"
-									? (m.status as "delivered" | "read")
-									: ("sent" as const);
+							: normalizeMessageStatus(m.status);
 					return {
 						id: m.id || `msg-${Date.now()}-${idx}-${++chatMsgSeq}`,
 						sender,
@@ -105,10 +140,14 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 				});
 				setMessages(parsed);
 			} else {
+				const errMsg = await readApiErrorMessage(res, "Не удалось загрузить переписку");
+				clientLogger.warn("[useWhatsAppChatLogic] Ошибка загрузки переписки", { status: res.status, message: errMsg }, { module: "Chat" });
+				showToast(errMsg, "error");
 				setMessages([]);
 			}
 		} catch (err) {
 			clientLogger.error("Failed to load WhatsApp conversation thread:", err);
+			showToast("Сбой сети при загрузке переписки", "error");
 			setMessages([]);
 		} finally {
 			setIsLoading(false);
@@ -178,20 +217,28 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 				`/api/communications/inbox/${encodeURIComponent(effectivePatientId)}/send`,
 				{
 					method: "POST",
-					headers: {
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
-						...denteAdminSecretRequestHeaders(),
-					},
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify(payload),
 				},
 			);
 			if (!res.ok) {
-				const data = await res.json().catch(() => ({}));
-				showToast(data.message || (templateLabel ? "Ошибка отправки шаблона через шлюз" : "Ошибка отправки сообщения через шлюз"), "error");
+				const errMsg = await readApiErrorMessage(
+					res,
+					templateLabel ? "Ошибка отправки шаблона через шлюз" : "Ошибка отправки сообщения через шлюз",
+				);
+				clientLogger.warn("[useWhatsAppChatLogic] Ошибка отправки сообщения", { status: res.status, message: errMsg }, { module: "Chat" });
+				showToast(errMsg, "error");
 				setMessages((prev) => prev.map((m) => (m.id === newMsgId ? { ...m, status: "failed" } : m)));
 				return;
 			}
-			const data = await res.json().catch(() => ({}));
+			const data = await parseJsonEnvelope(
+				res,
+				isSendMessageResponsePayload,
+				"Ошибка отправки сообщения через шлюз",
+			);
 			if (data.warning) showToast(data.warning, "info");
 			showToast(
 				templateLabel
@@ -268,10 +315,10 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 			try {
 				const res = await fetch("/api/whatsapp/media/upload", {
 					method: "POST",
-					headers: {
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
-						...denteAdminSecretRequestHeaders(),
-					},
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify({
 						patientId: effectivePatientId,
 						fileName: file.name,
@@ -280,13 +327,20 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 					}),
 				});
 
-				const data = (await res.json().catch(() => ({}))) as {
-					ok?: boolean;
-					mediaUrl?: string;
-					message?: string;
-				};
+				if (!res.ok) {
+					const errMsg = await readApiErrorMessage(res, "Ошибка загрузки файла на сервер");
+					clientLogger.warn("[useWhatsAppChatLogic] Ошибка загрузки файла", { status: res.status, message: errMsg }, { module: "Chat" });
+					showToast(errMsg, "error");
+					return;
+				}
 
-				if (res.ok && data.mediaUrl) {
+				const data = await parseJsonEnvelope(
+					res,
+					isUploadMediaResponsePayload,
+					"Ошибка загрузки файла на сервер",
+				);
+
+				if (data.mediaUrl) {
 					const fullAttachmentText = `[Вложение: ${file.name}] ${data.mediaUrl}`;
 					setInputText((prev) =>
 						prev ? `${prev}\n${fullAttachmentText}` : fullAttachmentText,

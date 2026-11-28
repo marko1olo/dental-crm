@@ -6,23 +6,19 @@
 import { useMemo } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../components/GlobalToast";
+import {
+	getErrorStatus,
+	isPlainRecord,
+	parseJsonEnvelope,
+	unwrapApiEnvelope,
+} from "../lib/apiResponseHandler";
 import { applyClinicModeToFlags } from "../lib/clinicCapabilities";
-/*
- * Заголовки авторизации. Все три запроса ниже уходили БЕЗ них, и это отменяло
- * модульность целиком: GET /api/workspace/profile отвечает 401, если не может
- * определить организацию (routes/workspaceProfile.ts:564), поэтому набор модулей
- * никогда не доезжал с сервера и оставался значениями по умолчанию, где включено
- * всё. Проверено живым запросом: без заголовков 401, с токенами клиники и
- * сотрудника — настоящий набор. Именно поэтому выключенный склад оставался в
- * меню в чистом браузере, хотя признак в базе был false.
- * denteAdminSecretRequestHeaders отправляет оба токена и уже используется в
- * проекте для таких запросов — четвёртый вариант заголовков не заводим.
- */
-// Repointed 2026-07-28 at the import-free module. This single line was the runtime edge that
-// closed AppHelpers -> workspaceShell -> useWorkspaceProfile -> AppHelpers, a real static cycle
-// madge never printed. Nothing else here reaches AppHelpers.
-import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../lib/denteRequestHeaders";
 import { actionFailureToast } from "../lib/panelStateText";
 import { useSettingsStore } from "../store/settingsStore";
 import { logger } from "../utils/logger";
@@ -68,6 +64,7 @@ interface WorkspaceProfileStore extends WorkspaceFeatureFlags {
 		key: keyof WorkspaceFeatureFlags,
 		value: boolean | string | number,
 	) => void;
+	applyPartialFlags: (partial: Partial<WorkspaceFeatureFlags>) => void;
 	reset: () => void;
 }
 
@@ -119,6 +116,8 @@ export const useWorkspaceProfileStore = create<WorkspaceProfileStore>()(
 				}),
 
 			setFlag: (key, value) => set((s) => ({ ...s, [key]: value })),
+
+			applyPartialFlags: (partial) => set((s) => ({ ...s, ...partial })),
 
 			reset: () => set({ ...DEFAULT_FLAGS, loaded: false }),
 		}),
@@ -205,6 +204,52 @@ export function useWorkspaceProfile() {
 	);
 }
 
+function parseWorkspaceFlagsPayload(value: unknown): WorkspaceFeatureFlags | null {
+	const unwrapped = unwrapApiEnvelope(value);
+	const candidate =
+		isPlainRecord(unwrapped) && isPlainRecord(unwrapped.flags)
+			? unwrapped.flags
+			: unwrapped;
+	if (!isPlainRecord(candidate)) return null;
+	// Require at least one recognized WorkspaceFeatureFlags key to reject arbitrary JSON objects
+	const hasFlagKey = Object.keys(DEFAULT_FLAGS).some((key) => key in candidate);
+	if (!hasFlagKey) return null;
+	return {
+		hasAssistants: typeof candidate.hasAssistants === "boolean" ? candidate.hasAssistants : DEFAULT_FLAGS.hasAssistants,
+		hasMultipleChairs: typeof candidate.hasMultipleChairs === "boolean" ? candidate.hasMultipleChairs : DEFAULT_FLAGS.hasMultipleChairs,
+		hasDentalLab: typeof candidate.hasDentalLab === "boolean" ? candidate.hasDentalLab : DEFAULT_FLAGS.hasDentalLab,
+		hasInsuranceCoPay: typeof candidate.hasInsuranceCoPay === "boolean" ? candidate.hasInsuranceCoPay : DEFAULT_FLAGS.hasInsuranceCoPay,
+		hasInstallments: typeof candidate.hasInstallments === "boolean" ? candidate.hasInstallments : DEFAULT_FLAGS.hasInstallments,
+		hasOrthodontics: typeof candidate.hasOrthodontics === "boolean" ? candidate.hasOrthodontics : DEFAULT_FLAGS.hasOrthodontics,
+		hasGnathology: typeof candidate.hasGnathology === "boolean" ? candidate.hasGnathology : DEFAULT_FLAGS.hasGnathology,
+		hasTasks: typeof candidate.hasTasks === "boolean" ? candidate.hasTasks : DEFAULT_FLAGS.hasTasks,
+		hasReclamations: typeof candidate.hasReclamations === "boolean" ? candidate.hasReclamations : DEFAULT_FLAGS.hasReclamations,
+		workspacePreset: typeof candidate.workspacePreset === "string" ? candidate.workspacePreset : DEFAULT_FLAGS.workspacePreset,
+		onboardingCompleted: typeof candidate.onboardingCompleted === "boolean" ? candidate.onboardingCompleted : DEFAULT_FLAGS.onboardingCompleted,
+		hasPediatricMode: typeof candidate.hasPediatricMode === "boolean" ? candidate.hasPediatricMode : DEFAULT_FLAGS.hasPediatricMode,
+		isOmniRole: typeof candidate.isOmniRole === "boolean" ? candidate.isOmniRole : DEFAULT_FLAGS.isOmniRole,
+		numberOfDoctors: typeof candidate.numberOfDoctors === "number" ? candidate.numberOfDoctors : DEFAULT_FLAGS.numberOfDoctors,
+		hasPayrollModule: typeof candidate.hasPayrollModule === "boolean" ? candidate.hasPayrollModule : DEFAULT_FLAGS.hasPayrollModule,
+		hasMarketingModule: typeof candidate.hasMarketingModule === "boolean" ? candidate.hasMarketingModule : DEFAULT_FLAGS.hasMarketingModule,
+		hasAnalyticsModule: typeof candidate.hasAnalyticsModule === "boolean" ? candidate.hasAnalyticsModule : DEFAULT_FLAGS.hasAnalyticsModule,
+		hasCsoScanner: typeof candidate.hasCsoScanner === "boolean" ? candidate.hasCsoScanner : DEFAULT_FLAGS.hasCsoScanner,
+		hasLeadsKanban: typeof candidate.hasLeadsKanban === "boolean" ? candidate.hasLeadsKanban : DEFAULT_FLAGS.hasLeadsKanban,
+		hasOmnichannel: typeof candidate.hasOmnichannel === "boolean" ? candidate.hasOmnichannel : DEFAULT_FLAGS.hasOmnichannel,
+		hasInventoryModule: typeof candidate.hasInventoryModule === "boolean" ? candidate.hasInventoryModule : DEFAULT_FLAGS.hasInventoryModule,
+		aiEnableTreatmentPlan: typeof candidate.aiEnableTreatmentPlan === "boolean" ? candidate.aiEnableTreatmentPlan : DEFAULT_FLAGS.aiEnableTreatmentPlan,
+		aiEnableRecommendations: typeof candidate.aiEnableRecommendations === "boolean" ? candidate.aiEnableRecommendations : DEFAULT_FLAGS.aiEnableRecommendations,
+		aiEnableDocuments: typeof candidate.aiEnableDocuments === "boolean" ? candidate.aiEnableDocuments : DEFAULT_FLAGS.aiEnableDocuments,
+		hasEngineeringStatus: typeof candidate.hasEngineeringStatus === "boolean" ? candidate.hasEngineeringStatus : DEFAULT_FLAGS.hasEngineeringStatus,
+		hasClinicalRules: typeof candidate.hasClinicalRules === "boolean" ? candidate.hasClinicalRules : DEFAULT_FLAGS.hasClinicalRules,
+		hasReferralModule: typeof candidate.hasReferralModule === "boolean" ? candidate.hasReferralModule : DEFAULT_FLAGS.hasReferralModule,
+		hasBpmWorkflows: typeof candidate.hasBpmWorkflows === "boolean" ? candidate.hasBpmWorkflows : DEFAULT_FLAGS.hasBpmWorkflows,
+	};
+}
+
+function isWorkspaceFlagsPayload(value: unknown): value is WorkspaceFeatureFlags {
+	return parseWorkspaceFlagsPayload(value) !== null;
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Utility: apply a named preset to the server and update local store
 // ──────────────────────────────────────────────────────────────────────────────
@@ -221,8 +266,9 @@ export async function applyWorkspacePreset(
 	try {
 		const res = await fetch(`/api/workspace/preset/${presetName}`, {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			}),
 			body: JSON.stringify(extraData || {}),
 		});
@@ -241,13 +287,17 @@ export async function applyWorkspacePreset(
 				`Пресет рабочего места не применён (${presetName}): ${reason}. Берём локальный набор.`,
 			);
 		}
-		const body = await res.json();
-		flags = body.flags as WorkspaceFeatureFlags;
+		const body = await parseJsonEnvelope(
+			res,
+			isWorkspaceFlagsPayload,
+			`Некорректный ответ при применении пресета (${presetName})`,
+		);
+		flags = parseWorkspaceFlagsPayload(body) ?? { ...DEFAULT_FLAGS };
 	} catch (error) {
 		showToast(
 			actionFailureToast(
 				"Ошибка выполнения операции",
-				(error as { status?: number })?.status ?? null,
+				getErrorStatus(error),
 			),
 			"error",
 		);
@@ -352,10 +402,11 @@ function workspaceProfileServerDetail(rawBody: string): string | null {
 	let payload: Record<string, unknown> | null = null;
 	try {
 		const parsed: unknown = JSON.parse(rawBody);
-		if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-			payload = parsed as Record<string, unknown>;
+		if (isPlainRecord(parsed)) {
+			payload = parsed;
 		}
-	} catch {
+	} catch (err: unknown) {
+		logger.debug("Ошибка разбора ответа профиля рабочего места:", err);
 		payload = null;
 	}
 	const candidate =
@@ -389,8 +440,9 @@ export async function saveWorkspaceFlags(
 	try {
 		const response = await fetch("/api/workspace/profile", {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			}),
 			body: JSON.stringify(partial),
 		});
@@ -413,7 +465,8 @@ export async function saveWorkspaceFlags(
 					"Набор модулей не сохранён: сервер не принял запрос. Обновите страницу и повторите.";
 			}
 		}
-	} catch {
+	} catch (err: unknown) {
+		logger.warn("Сбой сети при сохранении набора модулей:", err);
 		failureText =
 			"Набор модулей не сохранён: сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть, и повторите.";
 	}
@@ -423,13 +476,7 @@ export async function saveWorkspaceFlags(
 	 * прыгать обратно под пальцем, пока человек читает сообщение об ошибке. Но
 	 * теперь вызывающая сторона знает, что на сервер не ушло, и говорит об этом.
 	 */
-	const store = useWorkspaceProfileStore.getState();
-	for (const [k, v] of Object.entries(partial)) {
-		store.setFlag(
-			k as keyof WorkspaceFeatureFlags,
-			v as boolean | string | number,
-		);
-	}
+	useWorkspaceProfileStore.getState().applyPartialFlags(partial);
 
 	return { savedOnServer, failureText };
 }
@@ -440,7 +487,7 @@ export async function saveWorkspaceFlags(
 export async function loadWorkspaceProfile(): Promise<void> {
 	try {
 		const res = await fetch("/api/workspace/profile", {
-			headers: denteAdminSecretRequestHeaders(),
+			headers: denteClinicalReadHeaders(),
 		});
 		if (!res.ok) {
 			/*
@@ -454,9 +501,16 @@ export async function loadWorkspaceProfile(): Promise<void> {
 			);
 			return;
 		}
-		const flags = (await res.json()) as WorkspaceFeatureFlags;
-		useWorkspaceProfileStore.getState().hydrate(flags);
-	} catch {
-		// До сервера не дошли: остаются сохранённые ранее значения.
+		const flags = await parseJsonEnvelope(
+			res,
+			isWorkspaceFlagsPayload,
+			"Некорректный ответ профиля рабочего места",
+		);
+		const normalized = parseWorkspaceFlagsPayload(flags);
+		if (normalized) {
+			useWorkspaceProfileStore.getState().hydrate(normalized);
+		}
+	} catch (err: unknown) {
+		logger.warn("Не удалось загрузить профиль рабочего места с сервера:", err);
 	}
 }

@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
+import {
+	isPlainRecord,
+	readApiErrorMessage,
+	unwrapApiEnvelope,
+} from "../../../lib/apiResponseHandler.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { isDemoShowcaseMode } from "../../../utils/demoModeEngine.js";
-import { logger } from "../../../utils/logger.js";
+import { showToast } from "../../GlobalToast.js";
 import type { InventoryItem } from "../inventoryDataMappers.js";
 import {
 	buildCanonicalFallbackBomRules,
@@ -9,6 +15,15 @@ import {
 } from "./materialBomTypes.js";
 import { useMaterialBomsComputations } from "./useMaterialBomsComputations.js";
 import { useMaterialBomsMutations } from "./useMaterialBomsMutations.js";
+
+function isBomRuleItem(value: unknown): value is ProcedureMaterialRuleViewItem {
+	return (
+		isPlainRecord(value) &&
+		typeof value.id === "string" &&
+		typeof value.serviceId === "string" &&
+		typeof value.inventoryItemId === "string"
+	);
+}
 
 export interface UseMaterialBomsDataParams {
 	readonly orgId: string;
@@ -24,33 +39,55 @@ export function useMaterialBomsData({
 	const [rules, setRules] = useState<ProcedureMaterialRuleViewItem[]>([]);
 	const [warehouseItems, setWarehouseItems] = useState<InventoryItem[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [loadError, setLoadError] = useState<string | null>(null);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
 	const fetchAllRules = useCallback(async () => {
 		try {
 			setIsLoading(true);
+			setLoadError(null);
 			let loadedRules: ProcedureMaterialRuleViewItem[] = [];
 			let rawItems: Record<string, unknown>[] = [];
+			const isDemo = isDemoShowcaseMode();
 
 			if (orgId) {
 				const [rulesRes, itemsRes] = await Promise.all([
-					fetch(`/api/inventory/${orgId}/rules`, { headers: getHeaders() }).catch(() => null),
-					fetch(`/api/inventory/${orgId}`, { headers: getHeaders() }).catch(() => null),
+					fetch(`/api/inventory/${orgId}/rules`, { headers: getHeaders() }),
+					fetch(`/api/inventory/${orgId}`, { headers: getHeaders() }),
 				]);
 
-				if (rulesRes?.ok) {
-					const data = await rulesRes.json();
-					if (Array.isArray(data) && data.length > 0) loadedRules = data;
+				if (!rulesRes.ok) {
+					const msg = await readApiErrorMessage(
+						rulesRes,
+						"Не удалось загрузить техкарты материалов",
+					);
+					throw new Error(msg);
+				}
+				if (!itemsRes.ok) {
+					const msg = await readApiErrorMessage(
+						itemsRes,
+						"Не удалось загрузить остатки склада",
+					);
+					throw new Error(msg);
 				}
 
-				if (itemsRes?.ok) {
-					const itemsData = await itemsRes.json();
-					rawItems = Array.isArray(itemsData) ? itemsData : itemsData?.items && Array.isArray(itemsData.items) ? itemsData.items : [];
+				const rawRulesJson: unknown = await rulesRes.json();
+				const unwrappedRules = unwrapApiEnvelope(rawRulesJson);
+				if (Array.isArray(unwrappedRules)) {
+					loadedRules = unwrappedRules.filter(isBomRuleItem);
 				}
+
+				const rawItemsJson: unknown = await itemsRes.json();
+				const unwrappedItems = unwrapApiEnvelope(rawItemsJson);
+				const itemsCandidate = Array.isArray(unwrappedItems)
+					? unwrappedItems
+					: isPlainRecord(unwrappedItems) && Array.isArray(unwrappedItems.items)
+						? unwrappedItems.items
+						: [];
+				rawItems = itemsCandidate.filter(isPlainRecord);
 			}
 
-			const isDemo = isDemoShowcaseMode();
 			if (loadedRules.length === 0 && isDemo) {
 				loadedRules = buildCanonicalFallbackBomRules();
 			}
@@ -58,7 +95,7 @@ export function useMaterialBomsData({
 
 			if (rawItems.length > 0) {
 				setWarehouseItems(
-					rawItems.map((r: Record<string, unknown>) => ({
+					rawItems.map((r) => ({
 						id: String(r.id ?? ""),
 						name: String(r.name ?? ""),
 						stockQuantity: Number(r.stockQuantity ?? r.currentQty ?? 0),
@@ -73,13 +110,17 @@ export function useMaterialBomsData({
 			} else {
 				setWarehouseItems([]);
 			}
-		} catch (e) {
-			logger.warn("Ошибка загрузки техкарт материалов", e);
+		} catch (e: unknown) {
+			const msg =
+				e instanceof Error ? e.message : "Ошибка загрузки техкарт материалов";
+			clientLogger.warn("[useMaterialBomsData] Ошибка загрузки техкарт материалов", e, {
+				module: "Inventory",
+			});
+			setLoadError(msg);
 			if (isDemoShowcaseMode()) {
 				setRules(buildCanonicalFallbackBomRules());
 			} else {
-				setRules([]);
-				setWarehouseItems([]);
+				showToast(msg, "error");
 			}
 		} finally {
 			setIsLoading(false);
@@ -87,7 +128,7 @@ export function useMaterialBomsData({
 	}, [orgId, getHeaders]);
 
 	useEffect(() => {
-		fetchAllRules();
+		void fetchAllRules();
 	}, [fetchAllRules]);
 
 	const mutations = useMaterialBomsMutations({
@@ -102,6 +143,7 @@ export function useMaterialBomsData({
 		rules,
 		warehouseItems,
 		isLoading,
+		loadError,
 		searchQuery,
 		setSearchQuery,
 		selectedCategory,

@@ -1,4 +1,9 @@
-import type { Dashboard, Patient } from "@dental/shared";
+import {
+	generateUuidV7,
+	patientSchema,
+	type Dashboard,
+	type Patient,
+} from "@dental/shared";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { PatientAdministrativeProfileDraft } from "../../../../AppConstants";
 import {
@@ -13,6 +18,10 @@ import {
 } from "../../../../AppHelpers";
 import { showToast } from "../../../../components/GlobalToast";
 import { shouldResetPatientDraftState } from "../../../../components/patients/patientDraftResetDecision.js";
+import {
+	getErrorStatus,
+	parseJsonEnvelope,
+} from "../../../../lib/apiResponseHandler";
 import { actionFailureToast } from "../../../../lib/panelStateText";
 import { usePatientStore } from "../../../../store/patientStore";
 import { fetchWithHandling } from "../../../../utils/networkUtils";
@@ -103,6 +112,7 @@ export function usePatientAdministrativeSave({
 					method: "PUT",
 					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 					}),
 					body: JSON.stringify(
 						buildPatientAdministrativeProfilePayload(
@@ -116,7 +126,11 @@ export function usePatientAdministrativeSave({
 					await responseErrorMessage(response, "Данные пациента не сохранены"),
 				);
 			}
-			const savedPatient = (await response.json()) as Patient;
+			const savedPatient = await parseJsonEnvelope(
+				response,
+				patientSchema,
+				"Данные пациента не сохранены",
+			);
 			setDashboard((current) =>
 				current
 					? {
@@ -147,7 +161,7 @@ export function usePatientAdministrativeSave({
 			showToast(
 				actionFailureToast(
 					"Данные пациента не сохранены",
-					(saveError as { status?: number })?.status ?? null,
+					getErrorStatus(saveError),
 				),
 				"error",
 			);

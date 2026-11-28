@@ -12,6 +12,12 @@ import {
 	recordInstallmentPayment, TREATMENT_INSTALLMENT_PRESETS,
 } from "../installmentsEngine.js";
 import { rublesToKopecks, kopecksToRubles, percentageOfKopecks, basisPointsFromPercent } from "@dental/shared";
+import {
+	isPlainRecord,
+	readApiErrorMessage,
+} from "../../../lib/apiResponseHandler.js";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { showToast } from "../../GlobalToast.js";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext.js";
 import { usePatientInstallmentsApi, isUuid } from "../usePatientInstallmentsApi.js";
@@ -116,22 +122,35 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 	useEffect(() => {
 		if (!isOpen) return undefined;
 		let cancelled = false;
-		const headers = appLogic?.auth?.denteClinicalReadHeaders?.() ?? {};
-		fetch("/api/cash/cash-box", { credentials: "same-origin", headers })
-			.then(async (res) => {
-				if (!res.ok) return;
-				const json = (await res.json()) as { data?: unknown } | unknown;
-				const raw =
-					json && typeof json === "object" && "data" in json
-						? (json as { data?: unknown }).data
-						: json;
+		const headers =
+			appLogic?.auth?.denteClinicalReadHeaders?.() ?? denteClinicalReadHeaders();
+		const loadCashBoxes = async () => {
+			try {
+				const res = await fetch("/api/cash/cash-box", {
+					credentials: "same-origin",
+					headers,
+				});
+				if (!res.ok) {
+					const errMsg = await readApiErrorMessage(
+						res,
+						"Не удалось загрузить список касс",
+					);
+					clientLogger.warn(
+						"[usePatientInstallmentsState] Ошибка загрузки касс",
+						{ status: res.status, message: errMsg },
+						{ module: "Billing" },
+					);
+					if (!cancelled) {
+						showToast(errMsg, "error");
+					}
+					return;
+				}
+				const json: unknown = await res.json();
+				const raw = isPlainRecord(json) && json.data !== undefined ? json.data : json;
 				if (!cancelled && Array.isArray(raw)) {
 					setCashBoxes(
 						raw
-							.filter(
-								(b): b is Record<string, unknown> =>
-									Boolean(b) && typeof b === "object",
-							)
+							.filter(isPlainRecord)
 							.map((b) => ({
 								id: String(b.id ?? ""),
 								type: String(b.type ?? "main"),
@@ -141,10 +160,18 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 							.filter((b) => b.id.length > 0),
 					);
 				}
-			})
-			.catch(() => {
-				// Best-effort cashbox lookup
-			});
+			} catch (err: unknown) {
+				clientLogger.warn(
+					"[usePatientInstallmentsState] Сетевая ошибка загрузки касс",
+					err,
+					{ module: "Billing" },
+				);
+				if (!cancelled) {
+					showToast("Не удалось загрузить список касс (проверьте сеть)", "error");
+				}
+			}
+		};
+		void loadCashBoxes();
 		return () => {
 			cancelled = true;
 		};

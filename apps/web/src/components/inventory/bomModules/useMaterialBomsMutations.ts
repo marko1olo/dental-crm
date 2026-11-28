@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { generateUuidV7 } from "@dental/shared";
+import {
+	isPlainRecord,
+	readApiErrorMessage,
+	unwrapApiEnvelope,
+} from "../../../lib/apiResponseHandler.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { isDemoShowcaseMode } from "../../../utils/demoModeEngine.js";
-import { logger } from "../../../utils/logger.js";
 import { showToast } from "../../GlobalToast.js";
 import {
 	buildCanonicalFallbackBomRules,
@@ -38,32 +43,44 @@ export function useMaterialBomsMutations({
 						"Content-Type": "application/json",
 						"Idempotency-Key": generateUuidV7(),
 					}),
-				}).catch(() => null);
+				});
 
-				if (res && res.ok) {
-					const data = await res.json();
-					showToast(data.message || "Типовые нормы расхода успешно добавлены", "success");
+				if (res.ok) {
+					const raw: unknown = await res.json();
+					const unwrapped = unwrapApiEnvelope(raw);
+					const successMsg =
+						isPlainRecord(unwrapped) && typeof unwrapped.message === "string"
+							? unwrapped.message
+							: "Типовые нормы расхода успешно добавлены";
+					showToast(successMsg, "success");
 					await fetchAllRules();
 					return;
 				}
-				const errBody = await res?.json().catch(() => null);
+				const serverErr = await readApiErrorMessage(
+					res,
+					"Не удалось добавить типовые нормы расхода на сервере",
+				);
+				clientLogger.warn(
+					"[useMaterialBomsMutations] Сервер отклонил сидирование техкарт",
+					{ status: res.status, message: serverErr },
+					{ module: "Inventory" },
+				);
 				if (isDemoShowcaseMode()) {
 					setRules(buildCanonicalFallbackBomRules());
 					showToast("Типовые нормы расхода добавлены (демо-режим)", "info");
 					return;
 				}
-				showToast(
-					errBody?.message || "Не удалось добавить типовые нормы расхода на сервере",
-					"error",
-				);
+				showToast(serverErr, "error");
 			} else if (isDemoShowcaseMode()) {
 				setRules(buildCanonicalFallbackBomRules());
 				showToast("Типовые нормы расхода добавлены (демо-режим)", "info");
 			} else {
 				showToast("Выберите организацию для настройки техкарт", "warning");
 			}
-		} catch (e) {
-			logger.warn("Ошибка сетевого сидирования техкарт", e);
+		} catch (e: unknown) {
+			clientLogger.warn("[useMaterialBomsMutations] Ошибка сетевого сидирования техкарт", e, {
+				module: "Inventory",
+			});
 			if (isDemoShowcaseMode()) {
 				setRules(buildCanonicalFallbackBomRules());
 				showToast("Типовые нормы расхода добавлены (демо-режим)", "info");
@@ -103,11 +120,15 @@ export function useMaterialBomsMutations({
 				setModalState(null);
 				await fetchAllRules();
 			} else {
-				showToast("Ошибка сохранения нормы", "error");
+				const errMsg = await readApiErrorMessage(res, "Ошибка сохранения нормы");
+				clientLogger.warn("[useMaterialBomsMutations] Ошибка сохранения нормы", { status: res.status, message: errMsg }, { module: "Inventory" });
+				showToast(errMsg, "error");
 			}
-		} catch (e) {
-			logger.error("Ошибка сохранения нормы", e);
-			showToast("Системная ошибка", "error");
+		} catch (e: unknown) {
+			clientLogger.error("[useMaterialBomsMutations] Ошибка сохранения нормы", e, {
+				module: "Inventory",
+			});
+			showToast("Ошибка сети при сохранении нормы расхода", "error");
 		} finally {
 			setIsSaving(false);
 		}
@@ -127,11 +148,15 @@ export function useMaterialBomsMutations({
 				setConfirmDeleteId(null);
 				await fetchAllRules();
 			} else {
-				showToast("Ошибка удаления нормы", "error");
+				const errMsg = await readApiErrorMessage(res, "Ошибка удаления нормы");
+				clientLogger.warn("[useMaterialBomsMutations] Ошибка удаления нормы", { status: res.status, message: errMsg }, { module: "Inventory" });
+				showToast(errMsg, "error");
 			}
-		} catch (e) {
-			logger.error("Ошибка удаления нормы", e);
-			showToast("Системная ошибка", "error");
+		} catch (e: unknown) {
+			clientLogger.error("[useMaterialBomsMutations] Ошибка удаления нормы", e, {
+				module: "Inventory",
+			});
+			showToast("Ошибка сети при удалении нормы расхода", "error");
 		}
 	};
 

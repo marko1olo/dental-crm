@@ -1,4 +1,9 @@
-import type { Dashboard, Patient } from "@dental/shared";
+import {
+	generateUuidV7,
+	patientSchema,
+	type Dashboard,
+	type Patient,
+} from "@dental/shared";
 import { useEffect, useRef } from "react";
 import type { PatientCoreDraft } from "../../../../AppConstants";
 import {
@@ -14,10 +19,36 @@ import {
 } from "../../../../AppHelpers";
 import { showToast } from "../../../../components/GlobalToast";
 import { shouldResetPatientDraftState } from "../../../../components/patients/patientDraftResetDecision.js";
+import {
+	getErrorStatus,
+	isPlainRecord,
+	parseJsonEnvelope,
+	readApiErrorPayload,
+} from "../../../../lib/apiResponseHandler";
 import { actionFailureToast } from "../../../../lib/panelStateText";
 import { usePatientStore } from "../../../../store/patientStore";
 import { fetchWithHandling } from "../../../../utils/networkUtils";
 import type { PatientMutationAuthContext } from "../patientLogicTypes";
+
+class PatientConflictError extends Error {
+	public readonly status: number;
+	public readonly duplicateData: unknown;
+
+	constructor(message: string, status: number, duplicateData: unknown) {
+		super(message);
+		this.name = "PatientConflictError";
+		this.status = status;
+		this.duplicateData = duplicateData;
+	}
+}
+
+function isDuplicatePatientError(
+	err: unknown,
+): err is { status?: number; duplicateData?: unknown } {
+	if (err instanceof PatientConflictError) return true;
+	if (!isPlainRecord(err)) return false;
+	return err.status === 409 || Boolean(err.duplicateData);
+}
 
 export interface UsePatientCoreSaveProps {
 	dashboard: Dashboard | null | undefined;
@@ -119,6 +150,7 @@ export function usePatientCoreSave({
 					method: "PUT",
 					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 					}),
 					body: JSON.stringify(payload),
 				},
@@ -131,7 +163,11 @@ export function usePatientCoreSave({
 					),
 				);
 			}
-			const savedPatient = (await response.json()) as Patient;
+			const savedPatient = await parseJsonEnvelope(
+				response,
+				patientSchema,
+				"Карточка пациента не сохранена",
+			);
 			setDashboard((current) =>
 				current
 					? {
@@ -158,7 +194,7 @@ export function usePatientCoreSave({
 			showToast(
 				actionFailureToast(
 					"Карточка пациента не сохранена",
-					(saveError as { status?: number })?.status ?? null,
+					getErrorStatus(saveError),
 				),
 				"error",
 			);
@@ -216,24 +252,24 @@ export function usePatientCoreSave({
 				method: "POST",
 				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 				}),
 				body: JSON.stringify(payload),
 			});
 			if (!response.ok) {
-				const errorJson = await response.json().catch(() => null);
+				const errorJson = await readApiErrorPayload(response);
 				const errorMsg =
-					errorJson?.message ||
-					(await responseErrorMessage(response, "Пациент не создан"));
+					isPlainRecord(errorJson) && typeof errorJson.message === "string" && errorJson.message.trim() !== ""
+						? errorJson.message
+						: await responseErrorMessage(response, "Пациент не создан");
 				setError(errorMsg);
-				const conflictError = new Error(errorMsg) as Error & {
-					status?: number;
-					duplicateData?: unknown;
-				};
-				conflictError.status = response.status;
-				conflictError.duplicateData = errorJson;
-				throw conflictError;
+				throw new PatientConflictError(errorMsg, response.status, errorJson);
 			}
-			const patient = (await response.json()) as Patient;
+			const patient = await parseJsonEnvelope(
+				response,
+				patientSchema,
+				"Пациент не создан",
+			);
 			setNewPatientName("");
 			setNewPatientPhone("");
 			setNewPatientBirthDate("");
@@ -258,14 +294,13 @@ export function usePatientCoreSave({
 			setError(null);
 			return patient;
 		} catch (patientError: unknown) {
-			const candidate = patientError as { status?: number; duplicateData?: unknown } | null | undefined;
-			if (candidate?.status === 409 || candidate?.duplicateData) {
+			if (isDuplicatePatientError(patientError)) {
 				throw patientError;
 			}
 			showToast(
 				actionFailureToast(
 					"Пациент не создан",
-					candidate?.status ?? null,
+					getErrorStatus(patientError),
 				),
 				"error",
 			);

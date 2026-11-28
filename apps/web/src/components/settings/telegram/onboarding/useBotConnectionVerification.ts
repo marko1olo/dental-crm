@@ -1,7 +1,27 @@
 import { useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
+import {
+	isPlainRecord,
+	parseJsonEnvelope,
+	readApiErrorMessage,
+} from "../../../../lib/apiResponseHandler";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
+import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import type { BotChannelType } from "../BotMessagePreviewCard";
 import type { BotConnectionStatus } from "./types";
+
+interface BotVerifyResponse {
+	readonly ok: boolean;
+	readonly username?: string | undefined;
+	readonly bot?: { readonly username?: string | undefined } | undefined;
+	readonly error?: string | undefined;
+	readonly message?: string | undefined;
+}
+
+function isBotVerifyResponse(value: unknown): value is BotVerifyResponse {
+	return isPlainRecord(value) && typeof value.ok === "boolean";
+}
 
 export interface BotConnectionParentPropsBag {
 	telegramStatus?: {
@@ -50,53 +70,65 @@ export function useBotConnectionVerification({
 
 		try {
 			if (activeChannel === "telegram") {
-				const headers: Record<string, string> = { "Content-Type": "application/json" };
-				if (typeof window !== "undefined") {
-					const token = localStorage.getItem("dente_token") || localStorage.getItem("token");
-					if (token) headers.Authorization = `Bearer ${token}`;
-					const orgId = localStorage.getItem("dente_organization_id");
-					if (orgId) headers["x-organization-id"] = orgId;
-					const clinicToken = localStorage.getItem("dente_clinic_token");
-					if (clinicToken) headers["x-dente-clinic-token"] = clinicToken;
-				}
-
 				const response = await fetch("/api/telegram/bot/verify", {
 					method: "POST",
-					headers,
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify({ token: trimmed }),
 				});
-				const data = (await response.json().catch(() => ({}))) as {
-					ok: boolean;
-					username?: string;
-					bot?: { username?: string };
-					error?: string;
-					message?: string;
-				};
 
-				if (response.ok && data.ok) {
-					const uname = data.bot?.username || data.username || "clinic_bot";
-					setConnectionStatus("connected");
-					setBotUsername(uname);
-					setStatusMessage(`Бот @${uname} успешно подтвержден через Telegram getMe!`);
-					if (typeof parentProps?.setTelegramBotTokenDraft === "function") {
-						parentProps.setTelegramBotTokenDraft(trimmed);
+				if (!response.ok) {
+					const errMsg = await readApiErrorMessage(
+						response,
+						"Ошибка проверки токена бота Telegram.",
+					);
+					clientLogger.warn(
+						"[useBotConnectionVerification] Сервер отклонил проверку токена бота",
+						{ status: response.status, message: errMsg },
+						{ module: "Telegram" },
+					);
+					if (!isDemoShowcaseMode()) {
+						setConnectionStatus("error");
+						setStatusMessage(errMsg);
+						return;
 					}
-					if (typeof parentProps?.markTelegramSettingsDirty === "function") {
-						parentProps.markTelegramSettingsDirty();
+				} else {
+					const data = await parseJsonEnvelope(
+						response,
+						isBotVerifyResponse,
+						"Ошибка проверки токена бота Telegram.",
+					);
+					if (data.ok) {
+						const uname = data.bot?.username || data.username || "clinic_bot";
+						setConnectionStatus("connected");
+						setBotUsername(uname);
+						setStatusMessage(`Бот @${uname} успешно подтвержден через Telegram getMe!`);
+						if (typeof parentProps?.setTelegramBotTokenDraft === "function") {
+							parentProps.setTelegramBotTokenDraft(trimmed);
+						}
+						if (typeof parentProps?.markTelegramSettingsDirty === "function") {
+							parentProps.markTelegramSettingsDirty();
+						}
+						return;
 					}
-					return;
-				}
-
-				if (!isDemoShowcaseMode()) {
-					setConnectionStatus("error");
-					setStatusMessage(data.error || data.message || "Ошибка проверки токена бота Telegram.");
-					return;
+					if (!isDemoShowcaseMode()) {
+						setConnectionStatus("error");
+						setStatusMessage(data.error || data.message || "Ошибка проверки токена бота Telegram.");
+						return;
+					}
 				}
 			}
-		} catch (err) {
+		} catch (err: unknown) {
+			clientLogger.warn(
+				"[useBotConnectionVerification] Сетевой сбой при проверке токена бота",
+				err,
+				{ module: "Telegram" },
+			);
 			if (!isDemoShowcaseMode()) {
 				setConnectionStatus("error");
-				setStatusMessage(`Сетевая ошибка при проверке токена: ${String(err)}`);
+				setStatusMessage(`Сетевая ошибка при проверке токена: ${err instanceof Error ? err.message : String(err)}`);
 				return;
 			}
 		}

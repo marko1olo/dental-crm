@@ -19,8 +19,11 @@ export function buildMissingSpanItems(
 
 	// Паттерн: 3 отсутствующих зуба подряд (мостовидный протез на 2 имплантатах)
 	if (currentSpan.length === 3) {
-		const [tooth1, tooth2, tooth3] = currentSpan as [number, number, number];
-		const defImp = DENTAL_SERVICES_CATALOG.DentalImplantation!;
+		const [tooth1, tooth2, tooth3] = currentSpan;
+		if (tooth1 === undefined || tooth2 === undefined || tooth3 === undefined) {
+			return { stage2, stage3 };
+		}
+		const defImp = DENTAL_SERVICES_CATALOG.DentalImplantation;
 
 		stage2.push(
 			createPlanItem("s2-implant-span-" + tooth1, 2, "stage_2_surgery", defImp, tooth1, catalog, validDiscountPct, {
@@ -35,7 +38,7 @@ export function buildMissingSpanItems(
 			}),
 		);
 
-		const defBridge = DENTAL_SERVICES_CATALOG.BridgeProsthesis!;
+		const defBridge = DENTAL_SERVICES_CATALOG.BridgeProsthesis;
 		stage3.push(
 			createPlanItem("s3-bridge-span-" + tooth1 + "-" + tooth3, 3, "stage_3_orthopedics", defBridge, tooth1, catalog, validDiscountPct, {
 				customTitle: `Мостовидный протез из диоксида циркония на 2 имплантатах (3 единицы: №${tooth1}, №${tooth2}, №${tooth3})`,
@@ -51,7 +54,7 @@ export function buildMissingSpanItems(
 	for (const missingT of currentSpan) {
 		const toothObj = effectiveTeeth.find((t) => t.toothNumber === missingT);
 		if (toothObj?.boneLossLevel && toothObj.boneLossLevel >= 2) {
-			const defBone = DENTAL_SERVICES_CATALOG.BoneGraftingSinusLift!;
+			const defBone = DENTAL_SERVICES_CATALOG.BoneGraftingSinusLift;
 			stage2.push(
 				createPlanItem("s2-bone-graft-" + missingT, 2, "stage_2_surgery", defBone, missingT, catalog, validDiscountPct, {
 					customTitle: "Костная пластика / синус-лифтинг в области зуба №" + missingT,
@@ -60,7 +63,7 @@ export function buildMissingSpanItems(
 			);
 		}
 
-		const defExt = DENTAL_SERVICES_CATALOG.SimpleExtraction!;
+		const defExt = DENTAL_SERVICES_CATALOG.SimpleExtraction;
 		stage2.push(
 			createPlanItem("s2-extract-prep-" + missingT, 2, "stage_2_surgery", defExt, missingT, catalog, validDiscountPct, {
 				customTitle: "Подготовка костного ложа / атравматичное удаление корня №" + missingT,
@@ -68,7 +71,7 @@ export function buildMissingSpanItems(
 			}),
 		);
 
-		const defGuide = DENTAL_SERVICES_CATALOG.SurgicalNavigationGuide!;
+		const defGuide = DENTAL_SERVICES_CATALOG.SurgicalNavigationGuide;
 		stage2.push(
 			createPlanItem("s2-guide-" + missingT, 2, "stage_2_surgery", defGuide, missingT, catalog, validDiscountPct, {
 				customTitle: "Навигационный хирургический 3D-шаблон (позиция №" + missingT + ")",
@@ -76,7 +79,7 @@ export function buildMissingSpanItems(
 			}),
 		);
 
-		const defImp = DENTAL_SERVICES_CATALOG.DentalImplantation!;
+		const defImp = DENTAL_SERVICES_CATALOG.DentalImplantation;
 		stage2.push(
 			createPlanItem("s2-implant-" + missingT, 2, "stage_2_surgery", defImp, missingT, catalog, validDiscountPct, {
 				customTitle: "Дентальная имплантация в области зуба №" + missingT + " (Osstem TS-III / Dentium)",
@@ -84,7 +87,7 @@ export function buildMissingSpanItems(
 			}),
 		);
 
-		const defImpCrown = DENTAL_SERVICES_CATALOG.ImplantCrownProsthetics!;
+		const defImpCrown = DENTAL_SERVICES_CATALOG.ImplantCrownProsthetics;
 		stage3.push(
 			createPlanItem("s3-implant-crown-" + missingT, 3, "stage_3_orthopedics", defImpCrown, missingT, catalog, validDiscountPct, {
 				customTitle: "Протезирование на имплантате коронкой из диоксида циркония (№" + missingT + ")",

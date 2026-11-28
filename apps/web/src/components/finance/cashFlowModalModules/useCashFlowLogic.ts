@@ -6,6 +6,10 @@ import {
 } from "@dental/shared";
 import { useEffect, useState } from "react";
 import {
+	isPlainRecord,
+	readApiErrorMessage,
+} from "../../../lib/apiResponseHandler";
+import {
 	denteClinicalMutationHeaders,
 	denteClinicalReadHeaders,
 } from "../../../lib/denteRequestHeaders";
@@ -42,30 +46,34 @@ export function useCashFlowLogic(props: CashFlowModalProps) {
 	const [cashFlowPerson, setCashFlowPerson] = useState<string>("");
 	const [isProcessing, setIsProcessing] = useState<boolean>(false);
 	const [cashBoxes, setCashBoxes] = useState<CashBoxSummary[]>([]);
+	const [cashBoxesLoadError, setCashBoxesLoadError] = useState<string | null>(null);
 	const [fromCashBoxId, setFromCashBoxId] = useState<string>("");
 	const [toCashBoxId, setToCashBoxId] = useState<string>("");
 
 	useEffect(() => {
 		if (!isOpen) return;
 		let active = true;
+		setCashBoxesLoadError(null);
 		const loadCashBoxes = async () => {
 			try {
 				const res = await fetch("/api/cash/cash-box", {
 					credentials: "same-origin",
 					headers: denteClinicalReadHeaders(),
 				});
-				if (!res.ok) return;
-				const json = (await res.json()) as { data?: unknown } | unknown;
-				const raw =
-					json && typeof json === "object" && "data" in json
-						? (json as { data?: unknown }).data
-						: json;
+				if (!res.ok) {
+					const errMsg = await readApiErrorMessage(res, "Не удалось загрузить список касс");
+					clientLogger.warn("[useCashFlowLogic] Ошибка загрузки касс", { status: res.status, message: errMsg }, { module: "Finance" });
+					if (active) {
+						setCashBoxesLoadError(errMsg);
+						showToast(errMsg, "error");
+					}
+					return;
+				}
+				const json: unknown = await res.json();
+				const raw = isPlainRecord(json) && json.data !== undefined ? json.data : json;
 				if (!active || !Array.isArray(raw)) return;
 				const parsed: CashBoxSummary[] = raw
-					.filter(
-						(item): item is Record<string, unknown> =>
-							Boolean(item) && typeof item === "object",
-					)
+					.filter(isPlainRecord)
 					.map((item) => ({
 						id: String(item.id ?? ""),
 						name: String(item.name ?? "Касса"),
@@ -78,8 +86,15 @@ export function useCashFlowLogic(props: CashFlowModalProps) {
 					setFromCashBoxId((prev) => prev || parsed[0]?.id || "");
 					setToCashBoxId((prev) => prev || parsed[1]?.id || parsed[0]?.id || "");
 				}
-			} catch {
-				// Best-effort preload for transfer selector
+			} catch (err: unknown) {
+				clientLogger.warn("[useCashFlowLogic] Сетевая ошибка загрузки списка касс", err, {
+					module: "Finance",
+				});
+				if (active) {
+					const msg = "Не удалось загрузить список касс (проверьте сеть)";
+					setCashBoxesLoadError(msg);
+					showToast(msg, "error");
+				}
 			}
 		};
 		void loadCashBoxes();
@@ -138,13 +153,12 @@ export function useCashFlowLogic(props: CashFlowModalProps) {
 						reasonText: cashFlowBasis.trim() || "Межкассовое перемещение средств",
 					}),
 				});
-				const rawJson = (await res.json().catch(() => null)) as
-					| { data?: { message?: string; error?: string }; message?: string; error?: string }
-					| null;
-				const json = rawJson?.data ?? rawJson;
 				if (!res.ok) {
 					throw new Error(
-						json?.message || "Не удалось выполнить перевод между кассами",
+						await readApiErrorMessage(
+							res,
+							"Не удалось выполнить перевод между кассами",
+						),
 					);
 				}
 				showToast(
@@ -219,6 +233,7 @@ export function useCashFlowLogic(props: CashFlowModalProps) {
 		cashFlowPerson,
 		setCashFlowPerson,
 		cashBoxes,
+		cashBoxesLoadError,
 		fromCashBoxId,
 		setFromCashBoxId,
 		toCashBoxId,

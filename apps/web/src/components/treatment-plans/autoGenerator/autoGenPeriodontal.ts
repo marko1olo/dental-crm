@@ -30,7 +30,7 @@ export function buildPeriodontalAndHygieneItems(
 
 		if (hasBoneLoss || hasMobility || hasFurcation) {
 			hasPeriodontalNeeds = true;
-			const defSrp = DENTAL_SERVICES_CATALOG.PeriodontalScalingSRP!;
+			const defSrp = DENTAL_SERVICES_CATALOG.PeriodontalScalingSRP;
 			stage1PerioItems.push(
 				createPlanItem(
 					"s1-perio-srp-" + tooth.toothNumber,
@@ -48,7 +48,7 @@ export function buildPeriodontalAndHygieneItems(
 			);
 
 			if (hasBoneLoss && (tooth.boneLossLevel ?? 0) >= 2) {
-				const defCurettage = DENTAL_SERVICES_CATALOG.PeriodontalClosedCurettage!;
+				const defCurettage = DENTAL_SERVICES_CATALOG.PeriodontalClosedCurettage;
 				stage1PerioItems.push(
 					createPlanItem(
 						"s1-perio-curettage-" + tooth.toothNumber,
@@ -68,7 +68,7 @@ export function buildPeriodontalAndHygieneItems(
 
 			// Шинирование стекловолокном проводится при подвижности II степени (при III степени зуб подлежит удалению)
 			if (hasMobility && (tooth.mobility ?? 0) === 2) {
-				const defSplint = DENTAL_SERVICES_CATALOG.PeriodontalSplinting!;
+				const defSplint = DENTAL_SERVICES_CATALOG.PeriodontalSplinting;
 				stage1PerioItems.push(
 					createPlanItem(
 						"s1-perio-splint-" + tooth.toothNumber,
@@ -89,12 +89,12 @@ export function buildPeriodontalAndHygieneItems(
 	}
 
 	// 2. Базовая гигиена и 3D КЛКТ диагностика
-	const defCT = DENTAL_SERVICES_CATALOG.DiagnosticsCT!;
+	const defCT = DENTAL_SERVICES_CATALOG.DiagnosticsCT;
 	stage1PerioItems.unshift(
 		createPlanItem("s1-ct-diag", 1, "stage_1_therapy", defCT, undefined, catalog, validDiscountPct, { isDemoMode: isDemo }),
 	);
 
-	const defHygiene = DENTAL_SERVICES_CATALOG.HygieneComplex!;
+	const defHygiene = DENTAL_SERVICES_CATALOG.HygieneComplex;
 	stage1PerioItems.push(
 		createPlanItem(
 			"s1-hygiene",

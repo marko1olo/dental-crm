@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { ManagerialPnlReport } from "@dental/shared";
+import { formatDateKeyInTimeZone, type ManagerialPnlReport } from "@dental/shared";
 import { fetchManagerialPnl } from "../../../lib/managerialPnlApi";
 import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
@@ -33,24 +33,24 @@ export function getDatesForPnlPreset(
 	const m = referenceDate.getMonth();
 
 	if (preset === "current_month") {
-		const from = new Date(Date.UTC(y, m, 1)).toISOString().split("T")[0]!;
-		const to = new Date(Date.UTC(y, m + 1, 0)).toISOString().split("T")[0]!;
+		const from = formatDateKeyInTimeZone(new Date(y, m, 1));
+		const to = formatDateKeyInTimeZone(new Date(y, m + 1, 0));
 		return { from, to };
 	}
 	if (preset === "prev_month") {
-		const from = new Date(Date.UTC(y, m - 1, 1)).toISOString().split("T")[0]!;
-		const to = new Date(Date.UTC(y, m, 0)).toISOString().split("T")[0]!;
+		const from = formatDateKeyInTimeZone(new Date(y, m - 1, 1));
+		const to = formatDateKeyInTimeZone(new Date(y, m, 0));
 		return { from, to };
 	}
 	if (preset === "quarter") {
 		const quarterStartMonth = Math.floor(m / 3) * 3;
-		const from = new Date(Date.UTC(y, quarterStartMonth, 1)).toISOString().split("T")[0]!;
-		const to = new Date(Date.UTC(y, quarterStartMonth + 3, 0)).toISOString().split("T")[0]!;
+		const from = formatDateKeyInTimeZone(new Date(y, quarterStartMonth, 1));
+		const to = formatDateKeyInTimeZone(new Date(y, quarterStartMonth + 3, 0));
 		return { from, to };
 	}
 	// "year"
-	const from = new Date(Date.UTC(y, 0, 1)).toISOString().split("T")[0]!;
-	const to = new Date(Date.UTC(y, 11, 31)).toISOString().split("T")[0]!;
+	const from = formatDateKeyInTimeZone(new Date(y, 0, 1));
+	const to = formatDateKeyInTimeZone(new Date(y, 11, 31));
 	return { from, to };
 }
 

@@ -21,11 +21,66 @@ import { kopecksToRubles, type CashAdvanceAllocationPolicy, type IdentSalaryMode
 import { printDoctorPayslip, buildDoctorPayrollCalculation, EMPTY_DOCTOR_PAYROLL_SUMMARY } from "./doctorPayrollModalUtils";
 import { closeSettlementPeriodApi } from "./closeSettlementPeriodApi";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import {
+	isPlainRecord,
+	readApiErrorMessage,
+	unwrapApiEnvelope,
+} from "../../lib/apiResponseHandler";
+import { clientLogger } from "../../services/logging/clientLogger";
+import { showToast } from "../GlobalToast";
 import { DoctorPayrollTabPanel } from "./DoctorPayrollTabPanel";
 import { AssistantPayrollTable } from "../analytics/AssistantPayrollTable";
 import type { AssistantPayrollItem } from "../analytics/doctorPayrollExportUtils";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import "./styles/doctorPayrollStudio.css";
+
+function toSpecialtyId(raw: string): PayrollDoctorProfile["specialtyId"] {
+	switch (raw) {
+		case "orthopedics":
+		case "therapy":
+		case "surgery":
+		case "hygiene":
+		case "solo_rental":
+			return raw;
+		default:
+			return "therapy";
+	}
+}
+
+function buildFullDoctorSummary(
+	cached: Partial<DoctorPayrollSummary>,
+	doctor: PayrollDoctorProfile,
+	payoutStatus: PayrollPayoutStatus,
+): DoctorPayrollSummary {
+	return {
+		doctorId: cached.doctorId ?? doctor.id,
+		doctorName: cached.doctorName ?? doctor.name,
+		schemeType: cached.schemeType ?? "net_percentage",
+		totalGrossKopecks: cached.totalGrossKopecks ?? 0,
+		totalLabCostKopecks: cached.totalLabCostKopecks ?? 0,
+		totalMaterialCostKopecks: cached.totalMaterialCostKopecks ?? 0,
+		totalNetBaseKopecks: cached.totalNetBaseKopecks ?? 0,
+		doctorAccruedKopecks: cached.doctorAccruedKopecks ?? 0,
+		chairRentalKopecks: cached.chairRentalKopecks ?? 0,
+		advanceKopecks: cached.advanceKopecks ?? 0,
+		ndfl13TaxKopecks: cached.ndfl13TaxKopecks ?? 0,
+		payoutKopecks: cached.payoutKopecks ?? 0,
+		serviceSalaryPriceKopecks: cached.serviceSalaryPriceKopecks ?? 0,
+		priorDebtDeductedKopecks: cached.priorDebtDeductedKopecks ?? 0,
+		negativeCarryOverKopecks: cached.negativeCarryOverKopecks ?? 0,
+		payoutStatus,
+		servicesCount: cached.servicesCount ?? 0,
+		minimumGuaranteeApplied: Boolean(cached.minimumGuaranteeApplied),
+	};
+}
+
+function isAssistantPayrollItem(value: unknown): value is AssistantPayrollItem {
+	return (
+		isPlainRecord(value) &&
+		typeof value.assistantId === "string" &&
+		typeof value.assistantName === "string"
+	);
+}
 
 export interface DoctorPayrollStudioModalProps {
 	/** Whether the modal dialog is visibly mounted in DOM */
@@ -77,30 +132,19 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 
 	const doctors: readonly PayrollDoctorProfile[] = useMemo(() => {
 		if (doctorsList && doctorsList.length > 0) {
-			return doctorsList.map((d) => {
-				const specId: PayrollDoctorProfile["specialtyId"] = [
-					"orthopedics",
-					"therapy",
-					"surgery",
-					"hygiene",
-					"solo_rental",
-				].includes(d.specialtyId)
-					? (d.specialtyId as PayrollDoctorProfile["specialtyId"])
-					: "therapy";
-				return {
-					id: d.id,
-					name: d.name,
-					initials: d.name.slice(0, 2),
-					specialtyId: specId,
-					specialtyTitleRu: d.name,
-					commissionPercent: 25,
-					payoutModel: "percentage" as const,
-					motivationScheme: "net_percentage" as const,
-					defaultShiftRateKop: 0,
-					minGuaranteeMonthlyKop: 0,
-					taxRegime: "employee" as const,
-				};
-			});
+			return doctorsList.map((d) => ({
+				id: d.id,
+				name: d.name,
+				initials: d.name.slice(0, 2),
+				specialtyId: toSpecialtyId(d.specialtyId),
+				specialtyTitleRu: d.name,
+				commissionPercent: 25,
+				payoutModel: "percentage" as const,
+				motivationScheme: "net_percentage" as const,
+				defaultShiftRateKop: 0,
+				minGuaranteeMonthlyKop: 0,
+				taxRegime: "employee" as const,
+			}));
 		}
 		if (apiDoctors.length > 0) return apiDoctors;
 		return isDemo ? CANONICAL_PAYROLL_DOCTORS : [];
@@ -133,6 +177,8 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	}, [isOpen, initialIdentSalaryModel, initialCashAdvancePolicy]);
 	const [payoutStatus, setPayoutStatus] = useState<PayrollPayoutStatus>("accrued");
 	const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+	const [loadErrorMsg, setLoadErrorMsg] = useState<string | null>(null);
+	const [reloadNonce, setReloadNonce] = useState<number>(0);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
 
 	const activeDoctorId = useMemo(() => (selectedDoctorId && doctors.some((d) => d.id === selectedDoctorId)) ? selectedDoctorId : (doctors[0]?.id ?? ""), [doctors, selectedDoctorId]);
@@ -141,18 +187,47 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 
 	useEffect(() => {
 		if (isDemo || !isOpen) return;
+		if (doctorsList && doctorsList.length > 0) return;
 		let cancelled = false;
-		if (!doctorsList || doctorsList.length === 0) {
-			void fetch("/api/v1/doctors", { headers: getDenteAuthHeaders() }).then((r) => r.ok ? r.json() : null).then((data) => {
-				if (!cancelled && data?.doctors?.length > 0) setApiDoctors(data.doctors);
-			}).catch(() => {});
-		}
+		const loadDoctors = async () => {
+			try {
+				const r = await fetch("/api/v1/doctors", { headers: getDenteAuthHeaders() });
+				if (!r.ok) {
+					const errMsg = await readApiErrorMessage(r, "Не удалось загрузить список врачей");
+					clientLogger.warn("[DoctorPayrollStudioModal] Ошибка загрузки врачей", { status: r.status, message: errMsg }, { module: "Payroll" });
+					if (!cancelled) {
+						setLoadErrorMsg(errMsg);
+						showToast(errMsg, "error");
+					}
+					return;
+				}
+				const raw: unknown = await r.json();
+				const unwrapped = unwrapApiEnvelope(raw);
+				const doctorsCandidate = isPlainRecord(unwrapped) && Array.isArray(unwrapped.doctors)
+					? unwrapped.doctors
+					: Array.isArray(unwrapped)
+						? unwrapped
+						: null;
+				if (!cancelled && doctorsCandidate && doctorsCandidate.length > 0) {
+					setApiDoctors(doctorsCandidate);
+				}
+			} catch (err: unknown) {
+				clientLogger.warn("[DoctorPayrollStudioModal] Сетевая ошибка загрузки списка врачей", err, { module: "Payroll" });
+				if (!cancelled) {
+					const msg = "Не удалось загрузить список врачей (проверьте сеть)";
+					setLoadErrorMsg(msg);
+					showToast(msg, "error");
+				}
+			}
+		};
+		void loadDoctors();
 		return () => { cancelled = true; };
-	}, [isDemo, isOpen, doctorsList]);
+	}, [isDemo, isOpen, doctorsList, reloadNonce]);
 
 	useEffect(() => {
 		if (isDemo || !isOpen) return;
 		let cancelled = false;
+		setLoadErrorMsg(null);
 		const queryObj: Record<string, string> = {
 			doctorId: "all",
 			from: periodDates.startIso,
@@ -164,37 +239,89 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 			queryObj.commissionPercent = String(activeTabCustomPercent);
 		}
 		const query = new URLSearchParams(queryObj);
-		void fetch(`/api/v1/payroll/calculations?${query.toString()}`, { headers: getDenteAuthHeaders() }).then((r) => r.ok ? r.json() : null).then((data) => {
-			if (cancelled || !data) return;
-			if (Array.isArray(data.orders)) setApiOrders(data.orders);
-			if (Array.isArray(data.closedPeriods)) setApiClosedPeriods(data.closedPeriods);
-			if (data.doctorSummaries && typeof data.doctorSummaries === "object") {
-				setApiDoctorSummaries(data.doctorSummaries);
-				if (selectedDoctor && data.doctorSummaries[selectedDoctor.id]) setApiSummary(data.doctorSummaries[selectedDoctor.id]);
-			} else if (data.summary && typeof data.summary === "object" && data.summary.doctorId !== "all") {
-				setApiSummary(data.summary);
+		const loadCalculations = async () => {
+			try {
+				const r = await fetch(`/api/v1/payroll/calculations?${query.toString()}`, { headers: getDenteAuthHeaders() });
+				if (!r.ok) {
+					const errMsg = await readApiErrorMessage(r, "Не удалось загрузить расчёт зарплаты с сервера");
+					clientLogger.warn("[DoctorPayrollStudioModal] Ошибка загрузки расчёта ЗП", { status: r.status, message: errMsg }, { module: "Payroll" });
+					if (!cancelled) {
+						setLoadErrorMsg(errMsg);
+						showToast(errMsg, "error");
+					}
+					return;
+				}
+				const raw: unknown = await r.json();
+				const data = unwrapApiEnvelope(raw);
+				if (cancelled || !isPlainRecord(data)) return;
+				if (Array.isArray(data.orders)) setApiOrders(data.orders);
+				if (Array.isArray(data.closedPeriods)) setApiClosedPeriods(data.closedPeriods);
+				if (isPlainRecord(data.doctorSummaries)) {
+					const summariesMap: Record<string, Partial<DoctorPayrollSummary>> = {};
+					for (const [docId, entry] of Object.entries(data.doctorSummaries)) {
+						if (isPlainRecord(entry)) {
+							summariesMap[docId] = entry;
+						}
+					}
+					setApiDoctorSummaries(summariesMap);
+					if (selectedDoctor && summariesMap[selectedDoctor.id]) {
+						const docEntry = summariesMap[selectedDoctor.id];
+						if (docEntry) {
+							setApiSummary(buildFullDoctorSummary(docEntry, selectedDoctor, payoutStatus));
+						}
+					}
+				} else if (isPlainRecord(data.summary) && data.summary.doctorId !== "all" && selectedDoctor) {
+					setApiSummary(buildFullDoctorSummary(data.summary, selectedDoctor, payoutStatus));
+				}
+			} catch (err: unknown) {
+				clientLogger.warn("[DoctorPayrollStudioModal] Сетевая ошибка загрузки расчёта ЗП", err, { module: "Payroll" });
+				if (!cancelled) {
+					const msg = "Ошибка сети при загрузке расчёта зарплаты с сервера";
+					setLoadErrorMsg(msg);
+					showToast(msg, "error");
+				}
 			}
-		}).catch(() => {});
+		};
+
 		const reportPeriod = periodPreset === "shift" ? "day" : "month";
 		const assistantQuery = new URLSearchParams({
 			period: reportPeriod,
 			from: periodDates.startIso,
 			to: periodDates.endIso,
 		});
-		void fetch(`/api/reports/assistant-payroll?${assistantQuery.toString()}`, {
-			headers: getDenteAuthHeaders(),
-		})
-			.then((r) => (r.ok ? r.json() : null))
-			.then((raw) => {
-				if (cancelled || !raw) return;
-				const payload = raw && typeof raw === "object" && "data" in raw ? (raw.data ?? raw) : raw;
-				if (payload && typeof payload === "object" && Array.isArray((payload as { rows?: unknown }).rows)) {
-					setAssistantRows((payload as { rows: AssistantPayrollItem[] }).rows);
+		const loadAssistantPayroll = async () => {
+			try {
+				const r = await fetch(`/api/reports/assistant-payroll?${assistantQuery.toString()}`, {
+					headers: getDenteAuthHeaders(),
+				});
+				if (!r.ok) {
+					const errMsg = await readApiErrorMessage(r, "Не удалось загрузить ведомость ассистентов");
+					clientLogger.warn("[DoctorPayrollStudioModal] Ошибка загрузки ведомости ассистентов", { status: r.status, message: errMsg }, { module: "Payroll" });
+					if (!cancelled) {
+						setLoadErrorMsg((prev) => prev ?? errMsg);
+						showToast(errMsg, "warning");
+					}
+					return;
 				}
-			})
-			.catch(() => {});
+				const raw: unknown = await r.json();
+				const payload = unwrapApiEnvelope(raw);
+				if (!cancelled && isPlainRecord(payload) && Array.isArray(payload.rows)) {
+					setAssistantRows(payload.rows.filter(isAssistantPayrollItem));
+				}
+			} catch (err: unknown) {
+				clientLogger.warn("[DoctorPayrollStudioModal] Сетевая ошибка загрузки ведомости ассистентов", err, { module: "Payroll" });
+				if (!cancelled) {
+					const msg = "Ошибка сети при загрузке ведомости ассистентов";
+					setLoadErrorMsg((prev) => prev ?? msg);
+					showToast(msg, "warning");
+				}
+			}
+		};
+
+		void loadCalculations();
+		void loadAssistantPayroll();
 		return () => { cancelled = true; };
-	}, [isDemo, isOpen, periodDates, periodPreset, selectedDoctor, activeTabCustomPercent, identSalaryModel, cashAdvancePolicy]);
+	}, [isDemo, isOpen, periodDates, periodPreset, selectedDoctor, activeTabCustomPercent, identSalaryModel, cashAdvancePolicy, payoutStatus, reloadNonce]);
 
 	const effectiveDoctorSummary: DoctorPayrollSummary = useMemo(() => {
 		if (activeTabDoctorSummary && selectedDoctor && activeTabDoctorSummary.doctorId === selectedDoctor.id) {
@@ -228,26 +355,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	}[] = useMemo(() => doctors.map((doc) => {
 		const cached = (!isDemo && apiDoctorSummaries[doc.id]) ? apiDoctorSummaries[doc.id] : undefined;
 		const docSummary: DoctorPayrollSummary = cached
-			? {
-				doctorId: cached.doctorId ?? doc.id,
-				doctorName: cached.doctorName ?? doc.name,
-				schemeType: cached.schemeType ?? "net_percentage",
-				totalGrossKopecks: cached.totalGrossKopecks ?? 0,
-				totalLabCostKopecks: cached.totalLabCostKopecks ?? 0,
-				totalMaterialCostKopecks: cached.totalMaterialCostKopecks ?? 0,
-				totalNetBaseKopecks: cached.totalNetBaseKopecks ?? 0,
-				doctorAccruedKopecks: cached.doctorAccruedKopecks ?? 0,
-				chairRentalKopecks: cached.chairRentalKopecks ?? 0,
-				advanceKopecks: cached.advanceKopecks ?? 0,
-				ndfl13TaxKopecks: cached.ndfl13TaxKopecks ?? 0,
-				payoutKopecks: cached.payoutKopecks ?? 0,
-				serviceSalaryPriceKopecks: cached.serviceSalaryPriceKopecks ?? 0,
-				priorDebtDeductedKopecks: cached.priorDebtDeductedKopecks ?? 0,
-				negativeCarryOverKopecks: cached.negativeCarryOverKopecks ?? 0,
-				payoutStatus,
-				servicesCount: cached.servicesCount ?? 0,
-				minimumGuaranteeApplied: Boolean(cached.minimumGuaranteeApplied),
-			}
+			? buildFullDoctorSummary(cached, doc, payoutStatus)
 			: calculateDoctorPayrollSummary({
 				orders: effectiveOrders,
 				doctor: doc,
@@ -349,6 +457,15 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 				</div>
 
 				<div className="payroll-studio-body">
+					{loadErrorMsg && (
+						<div className="p-3 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 bg-[var(--danger-soft)] border-[var(--danger)]/30 text-[var(--danger)]" role="alert">
+							<div className="flex items-center gap-2">
+								<X className="w-4 h-4 shrink-0" />
+								<span>{loadErrorMsg}</span>
+							</div>
+							<button type="button" onClick={() => setReloadNonce((n) => n + 1)} className="px-2.5 py-1 rounded-lg bg-[var(--danger)] text-white hover:opacity-90 text-xs font-semibold cursor-pointer shrink-0 transition-colors">Повторить</button>
+						</div>
+					)}
 					{feedbackMsg && (
 						<div className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 ${feedbackMsg.startsWith("Ошибка") ? "bg-[var(--danger-soft)] border-[var(--danger)]/30 text-[var(--danger)]" : "bg-[var(--primary)]/15 border-[var(--primary)]/30 text-[var(--primary)]"}`} role="alert">
 							<div className="flex items-center gap-2">
@@ -434,7 +551,12 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 								periodDates={periodDates}
 								clinicName={clinicName}
 								isRkoPaid={payoutStatus === "paid_rko"}
-								apiSummary={selectedDoctor && apiDoctorSummaries[selectedDoctor.id] ? (apiDoctorSummaries[selectedDoctor.id] as DoctorPayrollSummary) : undefined}
+								apiSummary={(() => {
+									const summaryEntry = selectedDoctor ? apiDoctorSummaries[selectedDoctor.id] : undefined;
+									return selectedDoctor && summaryEntry
+										? buildFullDoctorSummary(summaryEntry, selectedDoctor, payoutStatus)
+										: undefined;
+								})()}
 								isDemo={isDemo}
 								rub={rub}
 								allDoctorsSummaries={allDoctorsSummaries}

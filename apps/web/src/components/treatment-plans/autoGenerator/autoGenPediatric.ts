@@ -21,7 +21,7 @@ export function buildDeciduousToothItems(
 	const state: ToothState | string = tooth.state || "Healthy";
 
 	if (state === "Caries") {
-		const defPedCaries = DENTAL_SERVICES_CATALOG.PediatricCariesTherapy!;
+		const defPedCaries = DENTAL_SERVICES_CATALOG.PediatricCariesTherapy;
 		stage1.push(
 			createPlanItem(
 				"s1-ped-caries-" + num,
@@ -38,7 +38,7 @@ export function buildDeciduousToothItems(
 			),
 		);
 	} else if (state === "Pulpitis") {
-		const defPulpotomy = DENTAL_SERVICES_CATALOG.PediatricPulpitisPulpotomy!;
+		const defPulpotomy = DENTAL_SERVICES_CATALOG.PediatricPulpitisPulpotomy;
 		stage1.push(
 			createPlanItem(
 				"s1-ped-pulpotomy-" + num,
@@ -54,7 +54,7 @@ export function buildDeciduousToothItems(
 				},
 			),
 		);
-		const defPedCrown = DENTAL_SERVICES_CATALOG.PediatricCrownSSC!;
+		const defPedCrown = DENTAL_SERVICES_CATALOG.PediatricCrownSSC;
 		stage3.push(
 			createPlanItem(
 				"s3-ped-crown-" + num,
@@ -77,7 +77,7 @@ export function buildDeciduousToothItems(
 		state === "Retained" ||
 		state === "Missing"
 	) {
-		const defPedExt = DENTAL_SERVICES_CATALOG.PediatricExtraction!;
+		const defPedExt = DENTAL_SERVICES_CATALOG.PediatricExtraction;
 		stage2.push(
 			createPlanItem(
 				"s2-ped-extract-" + num,

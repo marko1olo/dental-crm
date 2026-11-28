@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
-import { denteClinicalReadHeaders, denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { readApiErrorMessage } from "../../lib/apiResponseHandler";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { showToast } from "../GlobalToast";
 import type { DentalLabOrderData, Canonical5LabStatus } from "../lab/labMath";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
@@ -11,6 +17,17 @@ import {
 	scheduleLabAppointment,
 	transitionLabOrderStatus,
 } from "./labOrders/labOrderActions";
+
+function resolveTargetOrderId(
+	orderOrId: DentalLabOrderData | LabOrder | string | undefined,
+	fallbackOrderId: string | null,
+): string | null {
+	if (typeof orderOrId === "string") return orderOrId;
+	if (orderOrId && typeof orderOrId === "object" && "id" in orderOrId && typeof orderOrId.id === "string") {
+		return orderOrId.id;
+	}
+	return fallbackOrderId;
+}
 
 export interface LabOrderPromptState {
 	title: string;
@@ -149,7 +166,8 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 	}, [orders]);
 
 	const handleStatusTransition = (orderId: string, targetStatus: string) => {
-		void transitionLabOrderStatus(orderId, targetStatus as Canonical5LabStatus, () => void fetchOrders());
+		const normalized: Canonical5LabStatus | string = targetStatus;
+		void transitionLabOrderStatus(orderId, normalized, () => void fetchOrders());
 	};
 
 	const handleScheduleAppointment = (order: LabOrder) => {
@@ -254,16 +272,21 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 
 				const res = await fetch(`/api/lab/orders/${orderId}/status`, {
 					method: "PATCH",
-					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify(body),
 				});
 
 				if (!res.ok) {
-					const err = await res.json().catch(() => ({}));
-					throw new Error(err.message || "Ошибка обновления дат примерок");
+					const errMsg = await readApiErrorMessage(res, "Ошибка обновления дат примерок");
+					clientLogger.warn("[useLabOrdersPanelLogic] Ошибка обновления дат примерок", { status: res.status, message: errMsg }, { module: "Lab" });
+					throw new Error(errMsg);
 				}
 				void fetchOrders();
 			} catch (err: unknown) {
+				clientLogger.warn("[useLabOrdersPanelLogic] Сбой сохранения дат примерок", err, { module: "Lab" });
 				const msg = err instanceof Error ? err.message : "Сбой сети при сохранении дат примерок";
 				showToast(msg, "error");
 				throw err;
@@ -279,7 +302,7 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 		handleOpenPrintOrder,
 		handleOpenTrackingDrawer,
 		handleAttachBitePhoto: async (orderOrId?: DentalLabOrderData | LabOrder | string, photoUrl?: string) => {
-			const targetId = typeof orderOrId === "string" ? orderOrId : (orderOrId as { id?: string })?.id ?? openMenuOrderId;
+			const targetId = resolveTargetOrderId(orderOrId, openMenuOrderId);
 			setOpenMenuOrderId(null);
 			if (!targetId) {
 				showToast("Выберите наряд ЗТЛ для прикрепления фото", "warning");
@@ -289,21 +312,28 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 				try {
 					const res = await fetch(`/api/lab/orders/${targetId}/status`, {
 						method: "PATCH",
-						headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+						headers: denteClinicalMutationHeaders({
+							"Content-Type": "application/json",
+							"Idempotency-Key": generateUuidV7(),
+						}),
 						body: JSON.stringify({ notes: `Фото прикуса: ${photoUrl.trim()}` }),
 					});
-					if (!res.ok) throw new Error("Ошибка сохранения фото");
+					if (!res.ok) {
+						const errMsg = await readApiErrorMessage(res, "Ошибка сохранения фото");
+						throw new Error(errMsg);
+					}
 					showToast("Фото прикуса сохранено в аудит-логе наряда", "success");
 					void fetchOrders();
-				} catch {
-					showToast("Сбой сети при сохранении фото прикуса", "error");
+				} catch (err: unknown) {
+					clientLogger.warn("[useLabOrdersPanelLogic] Сбой прикрепления фото прикуса", err, { module: "Lab" });
+					showToast(err instanceof Error ? err.message : "Сбой сети при сохранении фото прикуса", "error");
 				}
 			} else {
 				showToast("Фото прикуса зафиксировано", "info");
 			}
 		},
 		handleTechnicianComment: async (orderOrId?: DentalLabOrderData | LabOrder | string, comment?: string) => {
-			const targetId = typeof orderOrId === "string" ? orderOrId : (orderOrId as { id?: string })?.id ?? openMenuOrderId;
+			const targetId = resolveTargetOrderId(orderOrId, openMenuOrderId);
 			setOpenMenuOrderId(null);
 			if (!targetId) {
 				showToast("Выберите наряд ЗТЛ для отправки комментария", "warning");
@@ -313,22 +343,26 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 			try {
 				const res = await fetch(`/api/lab/orders/${targetId}/status`, {
 					method: "PATCH",
-					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify({ notes: noteText, labComments: noteText }),
 				});
 				if (!res.ok) {
-					const err = await res.json().catch(() => ({}));
-					throw new Error(err.message || "Ошибка отправки комментария технику");
+					const errMsg = await readApiErrorMessage(res, "Ошибка отправки комментария технику");
+					throw new Error(errMsg);
 				}
 				showToast("Комментарий технику сохранен в наряде и журнале аудита", "success");
 				void fetchOrders();
 			} catch (err: unknown) {
+				clientLogger.warn("[useLabOrdersPanelLogic] Сбой отправки комментария технику", err, { module: "Lab" });
 				const msg = err instanceof Error ? err.message : "Сбой сети при сохранении комментария";
 				showToast(msg, "error");
 			}
 		},
 		handleRepeatFitting: async (orderOrId?: DentalLabOrderData | LabOrder | string, reason?: string) => {
-			const targetId = typeof orderOrId === "string" ? orderOrId : (orderOrId as { id?: string })?.id ?? openMenuOrderId;
+			const targetId = resolveTargetOrderId(orderOrId, openMenuOrderId);
 			setOpenMenuOrderId(null);
 			if (!targetId) {
 				showToast("Выберите наряд ЗТЛ для повторной примерки", "warning");
@@ -337,7 +371,10 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 			try {
 				const res = await fetch(`/api/lab/orders/${targetId}/status`, {
 					method: "PATCH",
-					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify({
 						status: "fitting",
 						stage: "correction_required",
@@ -345,18 +382,19 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 					}),
 				});
 				if (!res.ok) {
-					const err = await res.json().catch(() => ({}));
-					throw new Error(err.message || "Ошибка перевода статуса наряда");
+					const errMsg = await readApiErrorMessage(res, "Ошибка перевода статуса наряда");
+					throw new Error(errMsg);
 				}
 				showToast("Наряд переведен на повторную примерку (статус: fitting)", "info");
 				void fetchOrders();
 			} catch (err: unknown) {
+				clientLogger.warn("[useLabOrdersPanelLogic] Сбой назначения повторной примерки", err, { module: "Lab" });
 				const msg = err instanceof Error ? err.message : "Сбой сети при назначении повторной примерки";
 				showToast(msg, "error");
 			}
 		},
 		handleReclamation: async (orderOrId?: DentalLabOrderData | LabOrder | string, reason?: string) => {
-			const targetId = typeof orderOrId === "string" ? orderOrId : (orderOrId as { id?: string })?.id ?? openMenuOrderId;
+			const targetId = resolveTargetOrderId(orderOrId, openMenuOrderId);
 			setOpenMenuOrderId(null);
 			if (!targetId) {
 				showToast("Выберите наряд ЗТЛ для рекламации", "warning");
@@ -365,7 +403,10 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 			try {
 				const res = await fetch(`/api/lab/orders/${targetId}/status`, {
 					method: "PATCH",
-					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify({
 						status: "refitting",
 						stage: "correction_remake",
@@ -373,12 +414,13 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 					}),
 				});
 				if (!res.ok) {
-					const err = await res.json().catch(() => ({}));
-					throw new Error(err.message || "Ошибка отправки рекламации в ЗТЛ");
+					const errMsg = await readApiErrorMessage(res, "Ошибка отправки рекламации в ЗТЛ");
+					throw new Error(errMsg);
 				}
 				showToast("Рекламация успешно направлена в ЗТЛ (статус: переделка / refitting)", "warning");
 				void fetchOrders();
 			} catch (err: unknown) {
+				clientLogger.warn("[useLabOrdersPanelLogic] Сбой отправки рекламации в ЗТЛ", err, { module: "Lab" });
 				const msg = err instanceof Error ? err.message : "Сбой сети при отправке рекламации";
 				showToast(msg, "error");
 			}

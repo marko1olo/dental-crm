@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
+import {
+	isPlainRecord,
+	readApiErrorMessage,
+	unwrapApiEnvelope,
+} from "../../lib/apiResponseHandler.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import { useInventoryStore } from "../../store/inventoryStore.js";
 import { isDemoShowcaseMode } from "../../utils/demoModeEngine.js";
+import { showToast } from "../GlobalToast.js";
 import { buildCanonicalFallbackWarehouseItems } from "./bomModules/materialBomTypes.js";
 import {
 	type InventoryItem,
@@ -40,13 +47,23 @@ export function useInventoryStockFetcher(
 				headers: getHeaders(),
 			});
 			if (!res.ok) {
-				const errJson = await res.json().catch(() => null);
-				throw new Error(
-					errJson?.message || errJson?.error || `Ошибка загрузки склада (${res.status})`,
+				const errMsg = await readApiErrorMessage(
+					res,
+					`Ошибка загрузки склада (${res.status})`,
 				);
+				throw new Error(errMsg);
 			}
-			const data = await res.json().catch(() => []);
-			const parsed = Array.isArray(data) ? data.map(inventoryItemFromServer) : [];
+			const rawJson: unknown = await res.json();
+			const unwrapped = unwrapApiEnvelope(rawJson);
+			const listCandidate = Array.isArray(unwrapped)
+				? unwrapped
+				: isPlainRecord(unwrapped) && Array.isArray(unwrapped.items)
+					? unwrapped.items
+					: null;
+			if (!listCandidate) {
+				throw new Error("Сервер вернул некорректный формат остатков склада");
+			}
+			const parsed = listCandidate.map(inventoryItemFromServer);
 			const finalItems =
 				parsed.length > 0
 					? parsed
@@ -70,12 +87,19 @@ export function useInventoryStockFetcher(
 			);
 			setLoadError(null);
 		} catch (err: unknown) {
-			setLoadError(
+			const msg =
 				err instanceof Error
 					? err.message
-					: "Не удалось загрузить остатки со склада",
-			);
-			setItems(isDemoShowcaseMode() ? buildCanonicalFallbackWarehouseItems() : []);
+					: "Не удалось загрузить остатки со склада";
+			clientLogger.warn("[useInventoryStockFetcher] Ошибка загрузки остатков склада", err, {
+				module: "Inventory",
+			});
+			setLoadError(msg);
+			if (isDemoShowcaseMode()) {
+				setItems(buildCanonicalFallbackWarehouseItems());
+			} else {
+				showToast(msg, "error");
+			}
 		} finally {
 			setIsLoading(false);
 		}
@@ -83,7 +107,7 @@ export function useInventoryStockFetcher(
 
 	useEffect(() => {
 		if (effectiveOrgId) {
-			fetchItems();
+			void fetchItems();
 			return;
 		}
 		setIsLoading(false);
@@ -92,7 +116,7 @@ export function useInventoryStockFetcher(
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		const handleReload = () => {
-			fetchItems();
+			void fetchItems();
 		};
 		window.addEventListener("dente-inventory-reload", handleReload);
 		return () => window.removeEventListener("dente-inventory-reload", handleReload);

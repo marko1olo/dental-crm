@@ -7,16 +7,23 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { AlertCircle, Check, Loader2, Lock, User, UserCheck, X } from "lucide-react";
-import {
-	DENTE_CLINIC_TOKEN_KEY,
-	DENTE_STAFF_TOKEN_KEY,
-	safeLocalStorageGetItem,
-} from "../../lib/safeLocalStorage";
+import { AlertCircle, Check, Loader2, Lock, UserCheck, X } from "lucide-react";
+import { generateUuidV7, staffRoleSchema, type StaffRole } from "@dental/shared";
 import { setCachedAuthTokens } from "../../lib/apiAuthFetch";
+import {
+	isPlainRecord,
+	parseJsonEnvelope,
+	readApiErrorMessage,
+	unwrapApiEnvelope,
+} from "../../lib/apiResponseHandler";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../lib/denteRequestHeaders";
 import { cacheActiveStaffUser, getCachedStaffList } from "../../lib/offlineStorage";
+import { clientLogger } from "../../services/logging/clientLogger";
+import { showToast } from "../GlobalToast";
 import { staffRoleLabels } from "../../workspaceUiLabels";
-import type { StaffRole } from "@dental/shared";
 
 export interface ChairsideStaffMember {
 	readonly id: string;
@@ -25,6 +32,39 @@ export interface ChairsideStaffMember {
 	readonly email?: string | null | undefined;
 	readonly phone?: string | null | undefined;
 	readonly active?: boolean | undefined;
+}
+
+interface StaffSwitchResponse {
+	readonly staffToken?: string | undefined;
+	readonly user?: ChairsideStaffMember | undefined;
+	readonly message?: string | undefined;
+}
+
+function isChairsideStaffMember(value: unknown): value is ChairsideStaffMember {
+	if (!isPlainRecord(value)) return false;
+	if (typeof value.id !== "string" || value.id.length === 0) return false;
+	if (typeof value.fullName !== "string") return false;
+	return staffRoleSchema.safeParse(value.role).success;
+}
+
+function parseStaffListPayload(value: unknown): ChairsideStaffMember[] | null {
+	const unwrapped = unwrapApiEnvelope(value);
+	const listCandidate = Array.isArray(unwrapped)
+		? unwrapped
+		: isPlainRecord(unwrapped) && Array.isArray(unwrapped.staff)
+			? unwrapped.staff
+			: null;
+	if (!listCandidate) return null;
+	return listCandidate.filter(isChairsideStaffMember);
+}
+
+function isStaffSwitchResponse(value: unknown): value is StaffSwitchResponse {
+	if (!isPlainRecord(value)) return false;
+	const validToken =
+		value.staffToken === undefined || typeof value.staffToken === "string";
+	const validUser =
+		value.user === undefined || isChairsideStaffMember(value.user);
+	return validToken && validUser;
 }
 
 export interface ChairsideQuickSwitchModalProps {
@@ -43,6 +83,7 @@ export function ChairsideQuickSwitchModal({
 	const [pinCode, setPinCode] = useState<string>("");
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [loadWarning, setLoadWarning] = useState<string | null>(null);
 
 	// Сброс состояния при открытии/закрытии (Мандат 8bn: Zero-Leak Draft)
 	useEffect(() => {
@@ -50,32 +91,83 @@ export function ChairsideQuickSwitchModal({
 			setSelectedStaff(null);
 			setPinCode("");
 			setErrorMessage(null);
+			setLoadWarning(null);
 			setIsLoading(false);
 			return;
 		}
 
-		// Загрузка доступного персонала из кэша или API
-		const cached = getCachedStaffList() as ChairsideStaffMember[] | null;
-		if (cached && Array.isArray(cached) && cached.length > 0) {
-			setStaffList(cached.filter((s) => s.active !== false));
-		}
+		let cancelled = false;
 
-		// Асинхронное обновление списка сотрудников
-		const clinicToken = safeLocalStorageGetItem(DENTE_CLINIC_TOKEN_KEY);
-		fetch("/api/settings/staff", {
-			headers: {
-				"x-dente-clinic-token": clinicToken || "",
-			},
-		})
-			.then((res) => (res.ok ? res.json() : null))
-			.then((data) => {
-				if (Array.isArray(data)) {
-					setStaffList(data.filter((s) => s.active !== false));
+		// Загрузка доступного персонала из кэша как мгновенный fallback
+		const rawCached = getCachedStaffList();
+		const cachedActive = Array.isArray(rawCached)
+			? rawCached.filter(isChairsideStaffMember).filter((s) => s.active !== false)
+			: [];
+		if (cachedActive.length > 0) {
+			setStaffList(cachedActive);
+		}
+		setLoadWarning(null);
+
+		const loadStaff = async () => {
+			try {
+				const res = await fetch("/api/settings/staff", {
+					headers: denteClinicalReadHeaders(),
+				});
+				if (!res.ok) {
+					const msg = await readApiErrorMessage(
+						res,
+						"Не удалось обновить список сотрудников",
+					);
+					clientLogger.warn(
+						"[ChairsideQuickSwitchModal] Ошибка загрузки списка сотрудников",
+						{ status: res.status, message: msg },
+						{ module: "Auth" },
+					);
+					if (!cancelled) {
+						const warningText =
+							res.status === 401 || res.status === 403
+								? "Нет доступа к серверному списку сотрудников. Войдите в кабинет клиники."
+								: cachedActive.length > 0
+									? `${msg}. Показан сохранённый список.`
+									: msg;
+						setLoadWarning(warningText);
+						showToast(warningText, res.status === 401 || res.status === 403 ? "error" : "warning");
+					}
+					return;
 				}
-			})
-			.catch(() => {
-				// В офлайн-режиме используем кэш
-			});
+
+				const parsedList = await parseJsonEnvelope(
+					res,
+					(payload): payload is ChairsideStaffMember[] =>
+						parseStaffListPayload(payload) !== null,
+					"Не удалось разобрать список сотрудников",
+				);
+				if (!cancelled) {
+					const normalized = parseStaffListPayload(parsedList) ?? [];
+					setStaffList(normalized.filter((s) => s.active !== false));
+					setLoadWarning(null);
+				}
+			} catch (err: unknown) {
+				clientLogger.warn(
+					"[ChairsideQuickSwitchModal] Сетевой сбой при загрузке списка сотрудников",
+					err,
+					{ module: "Auth" },
+				);
+				if (!cancelled) {
+					const fallbackMsg =
+						cachedActive.length > 0
+							? "Нет связи с сервером — показан сохранённый список сотрудников"
+							: "Ошибка сети при загрузке списка сотрудников";
+					setLoadWarning(fallbackMsg);
+					showToast(fallbackMsg, "warning");
+				}
+			}
+		};
+
+		void loadStaff();
+		return () => {
+			cancelled = true;
+		};
 	}, [isOpen]);
 
 	if (!isOpen) return null;
@@ -108,16 +200,12 @@ export function ChairsideQuickSwitchModal({
 		setErrorMessage(null);
 
 		try {
-			const clinicToken = safeLocalStorageGetItem(DENTE_CLINIC_TOKEN_KEY);
-			const staffToken = safeLocalStorageGetItem(DENTE_STAFF_TOKEN_KEY);
-
 			const response = await fetch("/api/auth/staff/switch-role", {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
-					"x-dente-clinic-token": clinicToken || "",
-					"x-dente-staff-token": staffToken || "",
-				},
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					targetRole: selectedStaff.role,
 					targetUserId: selectedStaff.id,
@@ -125,14 +213,26 @@ export function ChairsideQuickSwitchModal({
 				}),
 			});
 
-			const result = await response.json();
-
 			if (!response.ok) {
-				const msg = result.message || "Неверный PIN-код или ошибка авторизации";
+				const msg = await readApiErrorMessage(
+					response,
+					"Неверный PIN-код или ошибка авторизации",
+				);
+				clientLogger.warn(
+					"[ChairsideQuickSwitchModal] Ошибка переключения сотрудника",
+					{ status: response.status, message: msg },
+					{ module: "Auth" },
+				);
 				setErrorMessage(msg);
-				setIsLoading(false);
+				showToast(msg, "error");
 				return;
 			}
+
+			const result = await parseJsonEnvelope(
+				response,
+				isStaffSwitchResponse,
+				"Некорректный ответ при смене сотрудника",
+			);
 
 			// Успешная смена: обновляем токен и активного пользователя
 			if (result.staffToken) {
@@ -154,7 +254,17 @@ export function ChairsideQuickSwitchModal({
 			onSuccess?.(result.user || selectedStaff);
 			onClose();
 		} catch (err: unknown) {
-			setErrorMessage("Ошибка сети при смене сотрудника");
+			clientLogger.warn(
+				"[ChairsideQuickSwitchModal] Сбой сети при переключении сотрудника",
+				err,
+				{ module: "Auth" },
+			);
+			const msg =
+				err instanceof Error && err.message
+					? err.message
+					: "Ошибка сети при смене сотрудника";
+			setErrorMessage(msg);
+			showToast(msg, "error");
 		} finally {
 			setIsLoading(false);
 		}
@@ -198,6 +308,15 @@ export function ChairsideQuickSwitchModal({
 
 				{/* Тело модалки */}
 				<div className="p-6 overflow-y-auto space-y-4">
+					{loadWarning ? (
+						<div
+							className="p-3 rounded-xl bg-[var(--warn-bg)] border border-[var(--warn-fg)]/20 text-[var(--warn-fg)] text-xs flex items-center gap-2"
+							role="status"
+						>
+							<AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+							<span>{loadWarning}</span>
+						</div>
+					) : null}
 					{errorMessage ? (
 						<div
 							className="p-3 rounded-xl bg-[var(--bad-bg)] border border-[var(--bad-fg)]/20 text-[var(--bad-fg)] text-xs flex items-center gap-2"

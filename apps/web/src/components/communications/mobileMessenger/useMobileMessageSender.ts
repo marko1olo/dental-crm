@@ -1,10 +1,35 @@
 import type React from "react";
 import { useCallback, useRef, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { generateUuidV7 } from "@dental/shared";
+import {
+	isPlainRecord,
+	parseJsonEnvelope,
+	readApiErrorMessage,
+} from "../../../lib/apiResponseHandler";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import type { QuickTemplateItem } from "../../chat/whatsAppChatTemplates";
 import type { ChatChannel, MobileChatMessageItem } from "./types";
+
+interface MobileSendPayload {
+	readonly warning?: string | undefined;
+	readonly event?: { readonly status?: MobileChatMessageItem["status"] | undefined } | undefined;
+}
+
+function isMobileSendPayload(value: unknown): value is MobileSendPayload {
+	return isPlainRecord(value);
+}
+
+interface MobileUploadPayload {
+	readonly ok?: boolean | undefined;
+	readonly mediaUrl?: string | undefined;
+	readonly message?: string | undefined;
+}
+
+function isMobileUploadPayload(value: unknown): value is MobileUploadPayload {
+	return isPlainRecord(value);
+}
 
 export function useMobileMessageSender(
 	selectedPatientId: string | null,
@@ -56,16 +81,24 @@ export function useMobileMessageSender(
 		try {
 			const res = await fetch(`/api/communications/inbox/${encodeURIComponent(selectedPatientId)}/send`, {
 				method: "POST",
-				headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" },
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({ message: fullText, channel: activeChannel }),
 			});
 			if (!res.ok) {
-				const data = await res.json().catch(() => ({}));
-				showToast(data.message || "Ошибка отправки через шлюз", "error");
+				const errMsg = await readApiErrorMessage(res, "Ошибка отправки через шлюз");
+				clientLogger.warn("[useMobileMessageSender] Ошибка отправки сообщения", { status: res.status, message: errMsg }, { module: "Chat" });
+				showToast(errMsg, "error");
 				setChatMessages((prev) => prev.map((m) => (m.id === newMsg.id ? { ...m, status: "failed" } : m)));
 				return;
 			}
-			const data = await res.json().catch(() => ({}));
+			const data = await parseJsonEnvelope(
+				res,
+				isMobileSendPayload,
+				"Ошибка отправки через шлюз",
+			);
 			if (data.warning) showToast(data.warning, "info");
 			setChatMessages((prev) => prev.map((m) => (m.id === newMsg.id ? { ...m, status: data.event?.status ?? "sent" } : m)));
 			showToast(`Сообщение отправлено в ${communicationChannelLabels[activeChannel] || activeChannel}`, "success");
@@ -111,10 +144,10 @@ export function useMobileMessageSender(
 					try {
 						const res = await fetch("/api/whatsapp/media/upload", {
 							method: "POST",
-							headers: {
+							headers: denteClinicalMutationHeaders({
 								"Content-Type": "application/json",
-								...denteAdminSecretRequestHeaders(),
-							},
+								"Idempotency-Key": generateUuidV7(),
+							}),
 							body: JSON.stringify({
 								patientId: selectedPatientId,
 								fileName: file.name,
@@ -122,19 +155,26 @@ export function useMobileMessageSender(
 								base64Data,
 							}),
 						});
-						const data = (await res.json().catch(() => ({}))) as {
-							ok?: boolean;
-							mediaUrl?: string;
-							message?: string;
-						};
-						if (res.ok && data.mediaUrl) {
+						if (!res.ok) {
+							const errMsg = await readApiErrorMessage(res, "Ошибка загрузки файла");
+							clientLogger.warn("[useMobileMessageSender] Ошибка загрузки файла", { status: res.status, message: errMsg }, { module: "Chat" });
+							showToast(errMsg, "error");
+							return;
+						}
+						const data = await parseJsonEnvelope(
+							res,
+							isMobileUploadPayload,
+							"Ошибка загрузки файла",
+						);
+						if (data.mediaUrl) {
 							setAttachedFileName(file.name);
 							setAttachedMediaUrl(data.mediaUrl);
 							showToast(`Файл «${file.name}» загружен и прикреплен`, "success");
 						} else {
 							showToast(data.message || "Ошибка загрузки файла", "error");
 						}
-					} catch {
+					} catch (err: unknown) {
+						clientLogger.warn("[useMobileMessageSender] Сбой сети при загрузке файла", err, { module: "Chat" });
 						showToast("Сбой сети при загрузке файла", "error");
 					}
 				};
@@ -150,10 +190,10 @@ export function useMobileMessageSender(
 			fileInputRef.current.click();
 			return;
 		}
-		const input = document.getElementById(
-			"mobile-chat-file-input",
-		) as HTMLInputElement | null;
-		input?.click();
+		const input = document.getElementById("mobile-chat-file-input");
+		if (input instanceof HTMLInputElement) {
+			input.click();
+		}
 	}, []);
 
 	return {

@@ -1,15 +1,46 @@
-import type {
-	Dashboard,
-	DenteTelegramBotStatus,
-	DenteTelegramChatLinkListResponse,
-	DenteTelegramLinkCodeListResponse,
-	DenteTelegramOutboxResponse,
+import {
+	denteTelegramBotStatusSchema,
+	denteTelegramChatLinkListResponseSchema,
+	denteTelegramFeatureSchema,
+	denteTelegramLinkCodeListResponseSchema,
+	denteTelegramOutboxResponseSchema,
+	type Dashboard,
+	type DenteTelegramBotStatus,
+	type DenteTelegramChatLinkListResponse,
+	type DenteTelegramFeature,
+	type DenteTelegramLinkCodeListResponse,
+	type DenteTelegramOutboxResponse,
 } from "@dental/shared";
 import { responseErrorMessage, type TelegramFeaturePlan } from "../../AppHelpers.js";
+import { isPlainRecord, parseJsonEnvelope } from "../../lib/apiResponseHandler.js";
 import type {
 	TelegramOutboxStatusFilter,
 	TelegramOutboxTemplateFilter,
 } from "../../utils/TelegramHelpers.js";
+
+function isStringArray(value: unknown): value is string[] {
+	return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isTelegramFeaturePlan(value: unknown): value is TelegramFeaturePlan {
+	if (!isPlainRecord(value)) return false;
+	if (typeof value.productName !== "string") return false;
+	if (value.botUsername !== null && typeof value.botUsername !== "string") return false;
+	if (!isStringArray(value.modes)) return false;
+	if (
+		!Array.isArray(value.enabledFeatures) ||
+		!value.enabledFeatures.every((f): f is DenteTelegramFeature =>
+			denteTelegramFeatureSchema.safeParse(f).success,
+		)
+	) {
+		return false;
+	}
+	return (
+		isStringArray(value.patientSafeActions) &&
+		isStringArray(value.staffSafeActions) &&
+		isStringArray(value.blockedByDefault)
+	);
+}
 
 /**
  * Управление состоянием вебхуков, эндпоинтов и формированием параметров запросов.
@@ -138,12 +169,20 @@ export async function fetchTelegramControlPlaneBundle(
 	if (!linkCodesResponse.ok) throw new Error(await responseErrorMessage(linkCodesResponse, "Коды Telegram"));
 	if (!chatLinksResponse.ok) throw new Error(await responseErrorMessage(chatLinksResponse, "Связанные Telegram-чаты"));
 
+	const [status, featurePlan, outbox, linkCodeLedger, chatLinkLedger] = await Promise.all([
+		parseJsonEnvelope(statusResponse, denteTelegramBotStatusSchema, "Статус Telegram"),
+		parseJsonEnvelope(featurePlanResponse, isTelegramFeaturePlan, "План Telegram"),
+		parseJsonEnvelope(outboxResponse, denteTelegramOutboxResponseSchema, "Очередь Telegram"),
+		parseJsonEnvelope(linkCodesResponse, denteTelegramLinkCodeListResponseSchema, "Коды Telegram"),
+		parseJsonEnvelope(chatLinksResponse, denteTelegramChatLinkListResponseSchema, "Связанные Telegram-чаты"),
+	]);
+
 	return {
-		status: (await statusResponse.json()) as DenteTelegramBotStatus,
-		featurePlan: (await featurePlanResponse.json()) as TelegramFeaturePlan,
-		outbox: (await outboxResponse.json()) as DenteTelegramOutboxResponse,
-		linkCodeLedger: (await linkCodesResponse.json()) as DenteTelegramLinkCodeListResponse,
-		chatLinkLedger: (await chatLinksResponse.json()) as DenteTelegramChatLinkListResponse,
+		status,
+		featurePlan,
+		outbox,
+		linkCodeLedger,
+		chatLinkLedger,
 	};
 }
 
@@ -159,5 +198,9 @@ export async function putTelegramSettingsRequest(
 	if (!response.ok) {
 		throw new Error(await responseErrorMessage(response, "Настройки Telegram не сохранены"));
 	}
-	return (await response.json()) as DenteTelegramBotStatus;
+	return parseJsonEnvelope(
+		response,
+		denteTelegramBotStatusSchema,
+		"Настройки Telegram не сохранены",
+	);
 }

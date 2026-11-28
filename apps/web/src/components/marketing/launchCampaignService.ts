@@ -5,6 +5,12 @@
  */
 
 import { generateUuidV7 } from "@dental/shared";
+import {
+	isPlainRecord,
+	parseJsonEnvelope,
+	readApiErrorMessage,
+} from "../../lib/apiResponseHandler";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type { MarketingPromo, MessageChannel } from "./marketingTypes";
 
 export interface LaunchCampaignResult {
@@ -19,6 +25,63 @@ export interface LaunchCampaignIdempotencyKeys {
 	readonly createTemplateKey?: string | undefined;
 	readonly createCampaignKey?: string | undefined;
 	readonly launchKey?: string | undefined;
+}
+
+interface TemplateListPayload {
+	readonly templates?: Array<{ id: string; title: string; channel: string }> | undefined;
+}
+
+function isTemplateListPayload(value: unknown): value is TemplateListPayload {
+	if (!isPlainRecord(value)) return false;
+	if (value.templates === undefined) return true;
+	return (
+		Array.isArray(value.templates) &&
+		value.templates.every(
+			(t) =>
+				isPlainRecord(t) &&
+				typeof t.id === "string" &&
+				typeof t.title === "string" &&
+				typeof t.channel === "string",
+		)
+	);
+}
+
+interface CreatedTemplatePayload {
+	readonly template?: { id: string } | undefined;
+}
+
+function isCreatedTemplatePayload(value: unknown): value is CreatedTemplatePayload {
+	if (!isPlainRecord(value)) return false;
+	if (value.template === undefined) return true;
+	return isPlainRecord(value.template) && typeof value.template.id === "string";
+}
+
+interface CreatedCampaignPayload {
+	readonly campaign?: { id: string } | undefined;
+}
+
+function isCreatedCampaignPayload(value: unknown): value is CreatedCampaignPayload {
+	if (!isPlainRecord(value)) return false;
+	if (value.campaign === undefined) return true;
+	return isPlainRecord(value.campaign) && typeof value.campaign.id === "string";
+}
+
+interface LaunchResponsePayload {
+	readonly queued?: number | undefined;
+	readonly alreadyQueued?: number | undefined;
+	readonly matched?: number | undefined;
+	readonly message?: string | undefined;
+}
+
+function isLaunchResponsePayload(value: unknown): value is LaunchResponsePayload {
+	if (!isPlainRecord(value)) return false;
+	const numOrUndef = (v: unknown) => v === undefined || typeof v === "number";
+	return (
+		numOrUndef(value.queued) &&
+		numOrUndef(value.alreadyQueued) &&
+		numOrUndef(value.matched) &&
+		(value.message === undefined || typeof value.message === "string")
+	);
 }
 
 export async function launchMarketingCampaign(params: {
@@ -42,13 +105,23 @@ export async function launchMarketingCampaign(params: {
 	const tplRes = await fetch("/api/communications/templates", { headers });
 	let templateId: string | undefined;
 	if (tplRes.ok) {
-		const tplData = (await tplRes.json()) as { templates?: Array<{ id: string; title: string; channel: string }> };
+		const tplData = await parseJsonEnvelope(
+			tplRes,
+			isTemplateListPayload,
+			"Не удалось разобрать шаблоны рассылки",
+		);
 		const existing = (tplData.templates ?? []).find(
 			(t) => t.title === promo.title && t.channel === channel,
 		);
 		if (existing) {
 			templateId = existing.id;
 		}
+	} else {
+		clientLogger.warn(
+			"[launchMarketingCampaign] Не удалось получить список шаблонов, создаём новый",
+			{ status: tplRes.status },
+			{ module: "Marketing" },
+		);
 	}
 
 	if (!templateId) {
@@ -74,10 +147,20 @@ export async function launchMarketingCampaign(params: {
 			}),
 		});
 
-		if (createTplRes.ok) {
-			const createdData = (await createTplRes.json()) as { template?: { id: string } };
-			templateId = createdData.template?.id;
+		if (!createTplRes.ok) {
+			throw new Error(
+				await readApiErrorMessage(
+					createTplRes,
+					"Не удалось подготовить шаблон сообщения для выбранного канала",
+				),
+			);
 		}
+		const createdData = await parseJsonEnvelope(
+			createTplRes,
+			isCreatedTemplatePayload,
+			"Не удалось подготовить шаблон сообщения",
+		);
+		templateId = createdData.template?.id;
 	}
 
 	if (!templateId) {
@@ -103,11 +186,19 @@ export async function launchMarketingCampaign(params: {
 	});
 
 	if (!createCampaignRes.ok) {
-		const errData = (await createCampaignRes.json().catch(() => null)) as { message?: string } | null;
-		throw new Error(errData?.message || "Не удалось создать кампанию рассылки");
+		throw new Error(
+			await readApiErrorMessage(
+				createCampaignRes,
+				"Не удалось создать кампанию рассылки",
+			),
+		);
 	}
 
-	const campaignData = (await createCampaignRes.json()) as { campaign?: { id: string } };
+	const campaignData = await parseJsonEnvelope(
+		createCampaignRes,
+		isCreatedCampaignPayload,
+		"Не удалось создать кампанию рассылки",
+	);
 	const campaignId = campaignData.campaign?.id;
 	if (!campaignId) {
 		throw new Error("Сервер не вернул идентификатор созданной кампании");
@@ -123,16 +214,16 @@ export async function launchMarketingCampaign(params: {
 	});
 
 	if (!launchRes.ok) {
-		const errData = (await launchRes.json().catch(() => null)) as { message?: string } | null;
-		throw new Error(errData?.message || "Не удалось запустить кампанию рассылки");
+		throw new Error(
+			await readApiErrorMessage(launchRes, "Не удалось запустить кампанию рассылки"),
+		);
 	}
 
-	const launchResult = (await launchRes.json()) as {
-		queued?: number;
-		alreadyQueued?: number;
-		matched?: number;
-		message?: string;
-	};
+	const launchResult = await parseJsonEnvelope(
+		launchRes,
+		isLaunchResponsePayload,
+		"Не удалось разобрать результат запуска кампании",
+	);
 
 	return {
 		ok: true,

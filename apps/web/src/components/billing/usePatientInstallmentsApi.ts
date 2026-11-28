@@ -19,6 +19,12 @@ import {
 } from "./installmentsEngine.js";
 import { generateUuidV7, rublesToKopecks } from "@dental/shared";
 import {
+	isPlainRecord,
+	parseJsonEnvelope,
+	readApiErrorMessage,
+	unwrapApiEnvelope,
+} from "../../lib/apiResponseHandler.js";
+import {
 	denteClinicalMutationHeaders,
 	denteClinicalReadHeaders,
 } from "../../lib/denteRequestHeaders.js";
@@ -60,6 +66,80 @@ export interface ServerContractRecord {
 	readonly signedAt: string | Date;
 	readonly notes?: string | null | undefined;
 	readonly createdAt: string | Date;
+}
+
+function isServerContractRecord(value: unknown): value is ServerContractRecord {
+	return (
+		isPlainRecord(value) &&
+		typeof value.id === "string" &&
+		typeof value.contractNumber === "string" &&
+		typeof value.patientId === "string"
+	);
+}
+
+function isServerTrancheRecord(value: unknown): value is ServerTrancheRecord {
+	return (
+		isPlainRecord(value) &&
+		typeof value.id === "string" &&
+		typeof value.contractId === "string" &&
+		typeof value.trancheNumber === "number"
+	);
+}
+
+interface ContractSummaryEntry {
+	readonly contract: ServerContractRecord;
+	readonly patientName?: string | undefined;
+	readonly patientPhone?: string | undefined;
+}
+
+function isContractSummaryList(value: unknown): value is ContractSummaryEntry[] {
+	const unwrapped = unwrapApiEnvelope(value);
+	return (
+		Array.isArray(unwrapped) &&
+		unwrapped.every((item) => isPlainRecord(item) && isServerContractRecord(item.contract))
+	);
+}
+
+interface ContractDetailPayload {
+	readonly contract: ServerContractRecord;
+	readonly patientName?: string | undefined;
+	readonly patientPhone?: string | undefined;
+	readonly tranches: ServerTrancheRecord[];
+}
+
+function parseContractDetailPayload(value: unknown): ContractDetailPayload | null {
+	const unwrapped = unwrapApiEnvelope(value);
+	if (!isPlainRecord(unwrapped) || !isServerContractRecord(unwrapped.contract)) {
+		return null;
+	}
+	const tranches = Array.isArray(unwrapped.tranches)
+		? unwrapped.tranches.filter(isServerTrancheRecord)
+		: [];
+	return {
+		contract: unwrapped.contract,
+		...(typeof unwrapped.patientName === "string" ? { patientName: unwrapped.patientName } : {}),
+		...(typeof unwrapped.patientPhone === "string" ? { patientPhone: unwrapped.patientPhone } : {}),
+		tranches,
+	};
+}
+
+function isContractDetailPayload(value: unknown): value is ContractDetailPayload {
+	return parseContractDetailPayload(value) !== null;
+}
+
+interface CreateContractPayload {
+	readonly contract: ServerContractRecord;
+	readonly tranches: ServerTrancheRecord[];
+}
+
+function isCreateContractPayload(value: unknown): value is CreateContractPayload {
+	const unwrapped = unwrapApiEnvelope(value);
+	return (
+		isPlainRecord(unwrapped) &&
+		isServerContractRecord(unwrapped.contract) &&
+		(unwrapped.tranches === undefined ||
+			(Array.isArray(unwrapped.tranches) && unwrapped.tranches.every(isServerTrancheRecord)))
+	);
 }
 
 export function mapServerContractToInstallmentPlan(serverData: {
@@ -148,16 +228,17 @@ export function usePatientInstallmentsApi(options: {
 				headers,
 			});
 			if (!res.ok) {
-				clientLogger.warn("[usePatientInstallmentsApi] Ошибка загрузки договоров рассрочки", { status: res.status }, { module: "Billing" });
+				const errMsg = await readApiErrorMessage(res, "Ошибка загрузки договоров рассрочки");
+				clientLogger.warn("[usePatientInstallmentsApi] Ошибка загрузки договоров рассрочки", { status: res.status, message: errMsg }, { module: "Billing" });
+				showToast(errMsg, "error");
 				return null;
 			}
-			const json = (await res.json()) as
-				| Array<{ contract: ServerContractRecord; patientName?: string | undefined; patientPhone?: string | undefined }>
-				| {
-						data?: Array<{ contract: ServerContractRecord; patientName?: string | undefined; patientPhone?: string | undefined }> | undefined;
-				  };
-			const contractList = Array.isArray(json) ? json : json.data;
-			if (!contractList || contractList.length === 0) return null;
+			const contractList = await parseJsonEnvelope(
+				res,
+				isContractSummaryList,
+				"Некорректный ответ сервера при загрузке договоров рассрочки",
+			);
+			if (contractList.length === 0) return null;
 
 			// Grab the latest contract and fetch detailed tranches
 			const latest = contractList[0];
@@ -166,30 +247,20 @@ export function usePatientInstallmentsApi(options: {
 				headers,
 			});
 			if (!detailRes.ok) {
-				clientLogger.warn("[usePatientInstallmentsApi] Ошибка загрузки деталей договора рассрочки", { status: detailRes.status }, { module: "Billing" });
+				const errMsg = await readApiErrorMessage(detailRes, "Ошибка загрузки деталей договора рассрочки");
+				clientLogger.warn("[usePatientInstallmentsApi] Ошибка загрузки деталей договора рассрочки", { status: detailRes.status, message: errMsg }, { module: "Billing" });
+				showToast(errMsg, "error");
 				return null;
 			}
-			const detailJson = (await detailRes.json()) as {
-				data?: {
-					contract: ServerContractRecord;
-					patientName?: string;
-					patientPhone?: string;
-					tranches: ServerTrancheRecord[];
-				};
-				contract?: ServerContractRecord;
-				patientName?: string;
-				patientPhone?: string;
-				tranches?: ServerTrancheRecord[];
-			};
-			const detailPayload = detailJson.data ?? (detailJson.contract ? {
-				contract: detailJson.contract,
-				...(detailJson.patientName !== undefined ? { patientName: detailJson.patientName } : {}),
-				...(detailJson.patientPhone !== undefined ? { patientPhone: detailJson.patientPhone } : {}),
-				tranches: detailJson.tranches ?? [],
-			} : null);
-			if (!detailPayload) return null;
+			const detailPayload = await parseJsonEnvelope(
+				detailRes,
+				isContractDetailPayload,
+				"Некорректный формат деталей договора рассрочки",
+			);
+			const normalizedDetail = parseContractDetailPayload(detailPayload);
+			if (!normalizedDetail) return null;
 
-			return mapServerContractToInstallmentPlan(detailPayload);
+			return mapServerContractToInstallmentPlan(normalizedDetail);
 		} catch (err: unknown) {
 			clientLogger.warn("[usePatientInstallmentsApi] Не удалось загрузить активный договор рассрочки", err, {
 				module: "Billing",
@@ -236,39 +307,33 @@ export function usePatientInstallmentsApi(options: {
 					}),
 				});
 				if (!res.ok) {
-					let errJson: { message?: string; error?: string } | null = null;
-					try {
-						errJson = (await res.json()) as { message?: string; error?: string } | null;
-					} catch (parseErr) {
-						clientLogger.debug("[usePatientInstallmentsApi] Error JSON parse failed", parseErr, { module: "Billing" });
-					}
-					const errMsg = errJson?.message || errJson?.error || `Ошибка оформления рассрочки (HTTP ${res.status})`;
+					const errMsg = await readApiErrorMessage(
+						res,
+						"Ошибка оформления рассрочки",
+					);
 					clientLogger.warn("[usePatientInstallmentsApi] Ошибка создания договора рассрочки", { status: res.status, errMsg }, { module: "Billing" });
 					showToast(errMsg, "error");
 					return null;
 				}
-				const rawJson = (await res.json()) as {
-					data?: { contract?: ServerContractRecord; tranches?: ServerTrancheRecord[] };
-					contract?: ServerContractRecord;
-					tranches?: ServerTrancheRecord[];
-				};
-				const payload = rawJson.data ?? rawJson;
-				const contract = payload.contract ?? rawJson.contract;
-				const tranches = payload.tranches ?? rawJson.tranches ?? [];
-				if (!contract) {
-					clientLogger.warn("[usePatientInstallmentsApi] Пустой ответ при создании договора рассрочки", rawJson, { module: "Billing" });
-					showToast("Сервер вернул некорректный ответ при оформлении рассрочки", "error");
-					return null;
-				}
+				const payload = await parseJsonEnvelope(
+					res,
+					isCreateContractPayload,
+					"Сервер вернул некорректный ответ при оформлении рассрочки",
+				);
 				return mapServerContractToInstallmentPlan({
-					contract,
-					tranches,
+					contract: payload.contract,
+					tranches: payload.tranches ?? [],
 				});
 			} catch (err: unknown) {
 				clientLogger.warn("[usePatientInstallmentsApi] Не удалось создать договор рассрочки", err, {
 					module: "Billing",
 				});
-				showToast("Сетевой сбой при оформлении рассрочки. Повторите попытку.", "error");
+				showToast(
+					err instanceof Error && err.message
+						? err.message
+						: "Сетевой сбой при оформлении рассрочки. Повторите попытку.",
+					"error",
+				);
 				return null;
 			} finally {
 				setIsLoading(false);
@@ -304,13 +369,11 @@ export function usePatientInstallmentsApi(options: {
 					body: JSON.stringify({ cashBoxId, amountPaidKopecks }),
 				});
 				if (!res.ok) {
-					let errorJson: { message?: string } | null = null;
-					try {
-						errorJson = (await res.json()) as { message?: string } | null;
-					} catch (parseErr) {
-						clientLogger.debug("[usePatientInstallmentsApi] Pay error JSON parse failed", parseErr, { module: "Billing" });
-					}
-					throw new Error(errorJson?.message || `Ошибка оплаты транша рассрочки (HTTP ${res.status})`);
+					const errMsg = await readApiErrorMessage(
+						res,
+						"Ошибка оплаты транша рассрочки",
+					);
+					throw new Error(errMsg);
 				}
 				return true;
 			} catch (err: unknown) {

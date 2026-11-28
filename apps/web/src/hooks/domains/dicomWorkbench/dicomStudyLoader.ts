@@ -5,21 +5,31 @@
  * DICOMweb connector checks, manifests, and workstation readiness.
  */
 
-import type {
-	DicomFirstFramePreviewResponse,
-	DicomFolderWorkupPlanResponse,
-	DicomRenderCachePlanResponse,
-	DicomSeriesPreviewResponse,
-	DicomViewerLaunchManifestResponse,
-	DicomViewerToolStateBundleResponse,
-	DicomViewerWorkbenchManifestResponse,
-	DicomWebConnectorCheckResponse,
-	DicomWorkbenchBundle,
-	DicomWorkbenchBundleListResponse,
-	DicomWorkbenchBundleResponse,
-	DicomWorkstationClientFacts,
-	DicomWorkstationReadinessResponse,
-	ImagingViewerSessionState,
+import {
+	dicomFirstFramePreviewResponseSchema,
+	dicomFolderWorkupPlanResponseSchema,
+	dicomRenderCachePlanResponseSchema,
+	dicomSeriesPreviewResponseSchema,
+	dicomViewerLaunchManifestResponseSchema,
+	dicomViewerToolStateBundleResponseSchema,
+	dicomViewerWorkbenchManifestResponseSchema,
+	dicomWebConnectorCheckResponseSchema,
+	dicomWorkbenchBundleListResponseSchema,
+	dicomWorkbenchBundleResponseSchema,
+	dicomWorkstationReadinessResponseSchema,
+	type DicomFirstFramePreviewResponse,
+	type DicomFolderWorkupPlanResponse,
+	type DicomRenderCachePlanResponse,
+	type DicomSeriesPreviewResponse,
+	type DicomViewerLaunchManifestResponse,
+	type DicomViewerToolStateBundleResponse,
+	type DicomViewerWorkbenchManifestResponse,
+	type DicomWebConnectorCheckResponse,
+	type DicomWorkbenchBundle,
+	type DicomWorkbenchBundleListResponse,
+	type DicomWorkstationClientFacts,
+	type DicomWorkstationReadinessResponse,
+	type ImagingViewerSessionState,
 } from "@dental/shared";
 import type {
 	DicomFirstFramePreviewOptions,
@@ -35,6 +45,7 @@ import {
 	responseErrorMessage,
 	saveLocalImagingFolderDraft,
 } from "../../../AppHelpers";
+import { parseJsonEnvelope } from "../../../lib/apiResponseHandler";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import type { DicomAuthContext } from "./types";
 
@@ -107,7 +118,11 @@ export async function fetchDicomFirstFramePreviewApi(
 			await responseErrorMessage(response, "Первый срез снимков не показан"),
 		);
 	}
-	return (await response.json()) as DicomFirstFramePreviewResponse;
+	return parseJsonEnvelope(
+		response,
+		dicomFirstFramePreviewResponseSchema,
+		"Первый срез снимков не показан",
+	);
 }
 
 /**
@@ -151,7 +166,11 @@ export async function fetchDicomFolderWorkupApi(
 	}
 	return {
 		client,
-		result: (await response.json()) as DicomFolderWorkupPlanResponse,
+		result: await parseJsonEnvelope(
+			response,
+			dicomFolderWorkupPlanResponseSchema,
+			"План папки снимков не подготовлен",
+		),
 	};
 }
 
@@ -202,7 +221,11 @@ export async function fetchDicomSeriesPreviewApi(
 			await responseErrorMessage(response, "Серии снимков не разобраны"),
 		);
 	}
-	return (await response.json()) as DicomSeriesPreviewResponse;
+	return parseJsonEnvelope(
+		response,
+		dicomSeriesPreviewResponseSchema,
+		"Серии снимков не разобраны",
+	);
 }
 
 /**
@@ -237,7 +260,11 @@ export async function checkDicomWebConnectorApi(
 			),
 		);
 	}
-	return (await response.json()) as DicomWebConnectorCheckResponse;
+	return parseJsonEnvelope(
+		response,
+		dicomWebConnectorCheckResponseSchema,
+		"Проверка архива снимков не выполнена",
+	);
 }
 
 /**
@@ -286,7 +313,11 @@ export async function fetchDicomViewerWorkbenchManifestApi(
 			),
 		);
 	}
-	return (await response.json()) as DicomViewerWorkbenchManifestResponse;
+	return parseJsonEnvelope(
+		response,
+		dicomViewerWorkbenchManifestResponseSchema,
+		"Просмотр КЛКТ/КТ не подготовлен",
+	);
 }
 
 /**
@@ -330,7 +361,11 @@ export async function fetchDicomViewerLaunchManifestApi(
 			),
 		);
 	}
-	return (await response.json()) as DicomViewerLaunchManifestResponse;
+	return parseJsonEnvelope(
+		response,
+		dicomViewerLaunchManifestResponseSchema,
+		"План открытия снимков не создан",
+	);
 }
 
 /**
@@ -372,7 +407,11 @@ export async function fetchDicomViewerToolStateBundleApi(
 			),
 		);
 	}
-	return (await response.json()) as DicomViewerToolStateBundleResponse;
+	return parseJsonEnvelope(
+		response,
+		dicomViewerToolStateBundleResponseSchema,
+		"Состояние просмотра снимков не собрано",
+	);
 }
 
 /**
@@ -408,7 +447,11 @@ export async function fetchDicomWorkstationReadinessApi(
 			),
 		);
 	}
-	return (await response.json()) as DicomWorkstationReadinessResponse;
+	return parseJsonEnvelope(
+		response,
+		dicomWorkstationReadinessResponseSchema,
+		"Готовность станции просмотра не проверена",
+	);
 }
 
 /**
@@ -444,7 +487,11 @@ export async function fetchDicomRenderCachePlanApi(
 			),
 		);
 	}
-	return (await response.json()) as DicomRenderCachePlanResponse;
+	return parseJsonEnvelope(
+		response,
+		dicomRenderCachePlanResponseSchema,
+		"План быстрой загрузки снимков не построен",
+	);
 }
 
 /**
@@ -466,7 +513,11 @@ export async function fetchDicomWorkbenchBundlesApi(
 			),
 		);
 	}
-	return (await response.json()) as DicomWorkbenchBundleListResponse;
+	return parseJsonEnvelope(
+		response,
+		dicomWorkbenchBundleListResponseSchema,
+		"Список сохраненных наборов просмотра не загружен",
+	);
 }
 
 /**
@@ -500,7 +551,11 @@ export async function saveDicomWorkbenchBundleApi(
 			),
 		);
 	}
-	const result = (await response.json()) as DicomWorkbenchBundleResponse;
+	const result = await parseJsonEnvelope(
+		response,
+		dicomWorkbenchBundleResponseSchema,
+		"Набор просмотра КЛКТ/КТ-срезов не сохранен",
+	);
 	return result.bundle;
 }
 
