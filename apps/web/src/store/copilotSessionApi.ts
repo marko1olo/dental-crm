@@ -7,7 +7,11 @@
  */
 
 import { generateUuidV7 } from "@dental/shared";
-import { denteClinicalMutationHeaders } from "../lib/denteRequestHeaders";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../lib/denteRequestHeaders";
+import { resolveApiOrigin, resolveApiUrl } from "../lib/resolveApiUrl";
 import { showToast } from "../components/GlobalToast";
 import { logger } from "../utils/logger";
 import type { CopilotThread, AiMemoryFact } from "./copilotStore";
@@ -23,29 +27,40 @@ export function isSessionUuid(id: string): boolean {
 	return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
 }
 
-function getAuthHeaders(): Record<string, string> {
+function getReadAuthHeaders(): Record<string, string> {
+	return denteClinicalReadHeaders({
+		Accept: "application/json",
+	});
+}
+
+function getMutationAuthHeaders(): Record<string, string> {
 	return denteClinicalMutationHeaders({
 		"Content-Type": "application/json",
 	});
 }
 
+function readProp(obj: unknown, key: string): unknown {
+	if (!obj || typeof obj !== "object") return undefined;
+	return Reflect.get(obj, key);
+}
+
 function unwrapEnvelope<T>(json: unknown): T {
-	if (json && typeof json === "object" && "data" in json && (json as Record<string, unknown>).data !== undefined) {
-		return (json as Record<string, unknown>).data as T;
+	if (json && typeof json === "object" && "data" in json && readProp(json, "data") !== undefined) {
+		return readProp(json, "data") as T;
 	}
 	return json as T;
 }
 
 export async function fetchRemoteSessions(params?: { patientId?: string; q?: string }): Promise<CopilotThread[] | null> {
 	try {
-		const url = new URL("/api/agent/sessions", typeof window !== "undefined" ? window.location.origin : "http://127.0.0.1:3000");
+		const url = new URL("/api/agent/sessions", resolveApiOrigin());
 		if (params?.patientId) url.searchParams.set("patientId", params.patientId);
 		if (params?.q) url.searchParams.set("q", params.q);
 
-		const res = await fetch(url.pathname + url.search, {
+		const res = await fetch(url.toString(), {
 			method: "GET",
 			credentials: "include",
-			headers: getAuthHeaders(),
+			headers: getReadAuthHeaders(),
 		});
 
 		if (!res.ok) return null;
@@ -61,14 +76,21 @@ export async function fetchRemoteSessions(params?: { patientId?: string; q?: str
 					: [];
 
 		return rawSessions.map((s: unknown): CopilotThread => {
-			const item = typeof s === "object" && s !== null ? (s as Record<string, unknown>) : {};
-			const id = typeof item.id === "string" ? item.id : "";
-			const title = typeof item.summary === "string" && item.summary ? item.summary : "Клинический диалог";
-			const updatedAt = typeof item.updatedAt === "string" ? new Date(item.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Только что";
-			const createdAt = typeof item.createdAt === "string" ? item.createdAt : new Date().toISOString();
-			const patientId = typeof item.patientId === "string" ? item.patientId : undefined;
-			const patientName = typeof item.patientName === "string" ? item.patientName : (patientId ? "Пациент" : undefined);
-			const messageCount = typeof item.messageCount === "number" ? item.messageCount : 0;
+			const rawId = readProp(s, "id");
+			const rawSummary = readProp(s, "summary");
+			const rawUpdatedAt = readProp(s, "updatedAt");
+			const rawCreatedAt = readProp(s, "createdAt");
+			const rawPatientId = readProp(s, "patientId");
+			const rawPatientName = readProp(s, "patientName");
+			const rawMessageCount = readProp(s, "messageCount");
+
+			const id = typeof rawId === "string" ? rawId : "";
+			const title = typeof rawSummary === "string" && rawSummary ? rawSummary : "Клинический диалог";
+			const updatedAt = typeof rawUpdatedAt === "string" ? new Date(rawUpdatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Только что";
+			const createdAt = typeof rawCreatedAt === "string" ? rawCreatedAt : new Date().toISOString();
+			const patientId = typeof rawPatientId === "string" ? rawPatientId : undefined;
+			const patientName = typeof rawPatientName === "string" ? rawPatientName : (patientId ? "Пациент" : undefined);
+			const messageCount = typeof rawMessageCount === "number" ? rawMessageCount : 0;
 			const thread: CopilotThread = {
 				id,
 				title,
@@ -89,15 +111,16 @@ export async function fetchRemoteSessions(params?: { patientId?: string; q?: str
 export async function createRemoteSession(payload: {
 	id: string;
 	patientId?: string | null;
-	title?: string;
-	summary?: string;
 	activeView?: string;
+	summary?: string;
+	title?: string;
 }): Promise<boolean> {
 	if (!isSessionUuid(payload.id)) return false;
 	try {
-		const res = await fetch("/api/agent/sessions", {
+		const res = await fetch(resolveApiUrl("/api/agent/sessions"), {
 			method: "POST",
-			headers: { ...getAuthHeaders(), "Idempotency-Key": generateUuidV7() },
+			credentials: "include",
+			headers: { ...getMutationAuthHeaders(), "Idempotency-Key": generateUuidV7() },
 			body: JSON.stringify(payload),
 		});
 		if (!res.ok) {
@@ -120,9 +143,10 @@ export async function updateRemoteSession(id: string, patch: {
 }): Promise<boolean> {
 	if (!isSessionUuid(id)) return false;
 	try {
-		const res = await fetch(`/api/agent/sessions/${encodeURIComponent(id)}`, {
+		const res = await fetch(resolveApiUrl(`/api/agent/sessions/${encodeURIComponent(id)}`), {
 			method: "PATCH",
-			headers: { ...getAuthHeaders(), "Idempotency-Key": generateUuidV7() },
+			credentials: "include",
+			headers: { ...getMutationAuthHeaders(), "Idempotency-Key": generateUuidV7() },
 			body: JSON.stringify(patch),
 		});
 		if (!res.ok) {
@@ -141,9 +165,10 @@ export async function updateRemoteSession(id: string, patch: {
 export async function deleteRemoteSession(id: string): Promise<boolean> {
 	if (!isSessionUuid(id)) return false;
 	try {
-		const res = await fetch(`/api/agent/sessions/${encodeURIComponent(id)}`, {
+		const res = await fetch(resolveApiUrl(`/api/agent/sessions/${encodeURIComponent(id)}`), {
 			method: "DELETE",
-			headers: { ...getAuthHeaders(), "Idempotency-Key": generateUuidV7() },
+			credentials: "include",
+			headers: { ...getMutationAuthHeaders(), "Idempotency-Key": generateUuidV7() },
 		});
 		if (!res.ok) {
 			logger.error(`[copilotSessionApi] deleteRemoteSession HTTP ${res.status}`);
@@ -161,10 +186,10 @@ export async function deleteRemoteSession(id: string): Promise<boolean> {
 export async function fetchRemoteMessages(sessionId: string): Promise<unknown[] | null> {
 	if (!isSessionUuid(sessionId)) return null;
 	try {
-		const res = await fetch(`/api/agent/sessions/${encodeURIComponent(sessionId)}/messages`, {
+		const res = await fetch(resolveApiUrl(`/api/agent/sessions/${encodeURIComponent(sessionId)}/messages`), {
 			method: "GET",
 			credentials: "include",
-			headers: getAuthHeaders(),
+			headers: getReadAuthHeaders(),
 		});
 		if (!res.ok) return null;
 		const rawJson: unknown = await res.json();
@@ -186,9 +211,10 @@ export async function appendRemoteMessage(sessionId: string, message: {
 }): Promise<boolean> {
 	if (!isSessionUuid(sessionId)) return false;
 	try {
-		const res = await fetch(`/api/agent/sessions/${encodeURIComponent(sessionId)}/messages`, {
+		const res = await fetch(resolveApiUrl(`/api/agent/sessions/${encodeURIComponent(sessionId)}/messages`), {
 			method: "POST",
-			headers: { ...getAuthHeaders(), "Idempotency-Key": generateUuidV7() },
+			credentials: "include",
+			headers: { ...getMutationAuthHeaders(), "Idempotency-Key": generateUuidV7() },
 			body: JSON.stringify(message),
 		});
 		if (!res.ok) {
@@ -206,10 +232,10 @@ export async function appendRemoteMessage(sessionId: string, message: {
 
 export async function fetchRemoteMemoryFacts(): Promise<AiMemoryFact[] | null> {
 	try {
-		const res = await fetch("/api/agent/memory", {
+		const res = await fetch(resolveApiUrl("/api/agent/memory"), {
 			method: "GET",
 			credentials: "include",
-			headers: getAuthHeaders(),
+			headers: getReadAuthHeaders(),
 		});
 		if (!res.ok) return null;
 		const rawJson: unknown = await res.json();
@@ -226,9 +252,10 @@ export async function fetchRemoteMemoryFacts(): Promise<AiMemoryFact[] | null> {
 
 export async function saveRemoteMemoryFacts(memoryFacts: AiMemoryFact[]): Promise<boolean> {
 	try {
-		const res = await fetch("/api/agent/memory", {
+		const res = await fetch(resolveApiUrl("/api/agent/memory"), {
 			method: "PUT",
-			headers: { ...getAuthHeaders(), "Idempotency-Key": generateUuidV7() },
+			credentials: "include",
+			headers: { ...getMutationAuthHeaders(), "Idempotency-Key": generateUuidV7() },
 			body: JSON.stringify({ memoryFacts }),
 		});
 		if (!res.ok) {
@@ -248,10 +275,10 @@ type CopilotSessionSettingsMap = { [key: string]: unknown };
 
 export async function fetchRemoteSettings(): Promise<Record<string, unknown> | null> {
 	try {
-		const res = await fetch("/api/agent/settings", {
+		const res = await fetch(resolveApiUrl("/api/agent/settings"), {
 			method: "GET",
 			credentials: "include",
-			headers: getAuthHeaders(),
+			headers: getReadAuthHeaders(),
 		});
 		if (!res.ok) return null;
 		const rawJson: unknown = await res.json();
@@ -271,9 +298,10 @@ export async function fetchRemoteSettings(): Promise<Record<string, unknown> | n
 
 export async function saveRemoteSettings(settings: Record<string, unknown>): Promise<boolean> {
 	try {
-		const res = await fetch("/api/agent/settings", {
+		const res = await fetch(resolveApiUrl("/api/agent/settings"), {
 			method: "PUT",
-			headers: { ...getAuthHeaders(), "Idempotency-Key": generateUuidV7() },
+			credentials: "include",
+			headers: { ...getMutationAuthHeaders(), "Idempotency-Key": generateUuidV7() },
 			body: JSON.stringify({ settings }),
 		});
 		if (!res.ok) {
@@ -299,7 +327,7 @@ export async function executeRemoteAgentAction(payload: {
 	patientId?: string;
 	runtimeMode: "web_browser" | "desktop_native";
 }): Promise<{ ok: boolean; errorText?: string }> {
-	const res = await fetch("/api/agent/action", {
+	const res = await fetch(resolveApiUrl("/api/agent/action"), {
 		method: "POST",
 		credentials: "include",
 		headers: denteClinicalMutationHeaders({
@@ -334,10 +362,10 @@ export async function executeRemoteAgentAction(payload: {
 
 export async function fetchSpeechGatewayHealth(): Promise<Record<string, unknown> | null> {
 	try {
-		const res = await fetch("/api/speech/gateway-health", {
+		const res = await fetch(resolveApiUrl("/api/speech/gateway-health"), {
 			method: "GET",
 			credentials: "include",
-			headers: denteClinicalMutationHeaders({
+			headers: denteClinicalReadHeaders({
 				Accept: "application/json",
 			}),
 		});

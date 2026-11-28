@@ -5,7 +5,7 @@
  */
 
 .copilot-studio-overlay {
-  position: fixed; inset: 0; z-index: 99990;
+  position: fixed; inset: 0; z-index: 100;
   display: flex; justify-content: flex-end; pointer-events: auto;
 }
 @media (max-width: 768px) {

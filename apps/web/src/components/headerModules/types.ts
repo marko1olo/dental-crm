@@ -44,12 +44,6 @@ export interface HeaderBrandingProps {
 	onCabinetChange?: ((cabinet: string) => void) | undefined;
 }
 
-export interface HeaderGlobalSearchProps {
-	className?: string | undefined;
-	placeholder?: string | undefined;
-	onSelectPatient?: ((patientId: string) => void) | undefined;
-}
-
 export interface HeaderSystemStatusProps {
 	className?: string | undefined;
 	onLockSession?: (() => void) | undefined;

@@ -190,24 +190,25 @@ describe("AI Copilot Workstation Settings & History Inquisitor", () => {
 		try {
 			setRuntimeDemoMode(false);
 			globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-				const url = String(input);
-				if (url.startsWith("/api/agent/sessions?") || url === "/api/agent/sessions") {
+				const rawUrl = String(input);
+				const pathname = rawUrl.startsWith("http") ? new URL(rawUrl).pathname : rawUrl.split("?")[0]!;
+				if (pathname.includes("/messages")) {
+					return new Response(JSON.stringify({ data: { messages: [{ id: "m-1", role: "user", content: "Привет" }] } }), { status: 200 });
+				}
+				if ((pathname.startsWith("/api/agent/sessions") || pathname === "/api/agent/sessions") && init?.method !== "DELETE") {
 					return new Response(
 						JSON.stringify({ data: { sessions: [{ id: uuidA, summary: "План имплантации", updatedAt: new Date().toISOString() }] } }),
 						{ status: 200 },
 					);
 				}
-				if (url.includes("/messages")) {
-					return new Response(JSON.stringify({ data: { messages: [{ id: "m-1", role: "user", content: "Привет" }] } }), { status: 200 });
-				}
-				if (url === "/api/agent/memory") {
+				if (pathname === "/api/agent/memory") {
 					return new Response(JSON.stringify({ data: { memoryFacts: [{ id: "f-1", fact: "Предпочтение Ультракаина" }] } }), { status: 200 });
 				}
-				if (url === "/api/agent/settings") {
+				if (pathname === "/api/agent/settings") {
 					return new Response(JSON.stringify({ data: { settings: { trustLevel: "autonomous", speedMode: "deep_reasoning" } } }), { status: 200 });
 				}
 				if (init?.method === "DELETE") {
-					deletedIds.push(url);
+					deletedIds.push(rawUrl);
 					return new Response(JSON.stringify({ ok: true }), { status: 200 });
 				}
 				return new Response("{}", { status: 404 });
@@ -261,8 +262,9 @@ describe("AI Copilot Workstation Settings & History Inquisitor", () => {
 		try {
 			setRuntimeDemoMode(false);
 			globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-				const url = String(input);
-				if (url.endsWith("/api/agent/confirm")) {
+				const rawUrl = String(input);
+				const pathname = rawUrl.startsWith("http") ? new URL(rawUrl).pathname : rawUrl.split("?")[0]!;
+				if (pathname === "/api/agent/confirm") {
 					return new Response(
 						JSON.stringify({
 							ok: false,
@@ -272,7 +274,7 @@ describe("AI Copilot Workstation Settings & History Inquisitor", () => {
 						{ status: 403 },
 					);
 				}
-				if (url === "/api/agent/action") {
+				if (pathname === "/api/agent/action") {
 					const parsed = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
 					capturedActionBodies.push(parsed);
 					if (capturedActionBodies.length === 1) {
@@ -331,13 +333,14 @@ describe("AI Copilot Workstation Settings & History Inquisitor", () => {
 		try {
 			setRuntimeDemoMode(false);
 			globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-				const url = String(input);
-				if (url === "/api/agent/settings" && init?.method === "PUT") {
+				const rawUrl = String(input);
+				const pathname = rawUrl.startsWith("http") ? new URL(rawUrl).pathname : rawUrl.split("?")[0]!;
+				if (pathname === "/api/agent/settings" && init?.method === "PUT") {
 					const parsed = JSON.parse(String(init.body ?? "{}")) as { settings: Record<string, unknown> };
 					putPayloads.push(parsed.settings);
 					return new Response(JSON.stringify({ ok: true, settings: parsed.settings }), { status: 200 });
 				}
-				if (url === "/api/agent/settings") {
+				if (pathname === "/api/agent/settings") {
 					return new Response(
 						JSON.stringify({
 							ok: true,
@@ -350,7 +353,7 @@ describe("AI Copilot Workstation Settings & History Inquisitor", () => {
 						{ status: 200 },
 					);
 				}
-				if (url.startsWith("/api/agent/sessions")) {
+				if (pathname.startsWith("/api/agent/sessions")) {
 					return new Response(
 						JSON.stringify({
 							data: {
@@ -360,7 +363,7 @@ describe("AI Copilot Workstation Settings & History Inquisitor", () => {
 						{ status: 200 },
 					);
 				}
-				if (url === "/api/agent/memory") {
+				if (pathname === "/api/agent/memory") {
 					return new Response(JSON.stringify({ data: { memoryFacts: [] } }), { status: 200 });
 				}
 				return new Response("{}", { status: 404 });

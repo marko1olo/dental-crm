@@ -51,7 +51,11 @@ export async function handleCaptureWorkstationScreen(
 
 	let targetFolder = path.join(process.cwd(), "scratch", "captures");
 	if (args.saveToPatientDropzone && (args.patientId || context.patientId)) {
-		targetFolder = getTenantDropzonePath(context.organizationId, args.patientId || context.patientId);
+		targetFolder = getTenantDropzonePath(
+			context.organizationId,
+			args.patientId || context.patientId,
+			context.localDropzonePath,
+		);
 	}
 
 	try {

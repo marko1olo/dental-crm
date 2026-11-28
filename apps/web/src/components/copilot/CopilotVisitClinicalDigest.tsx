@@ -419,7 +419,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 				{[
 					{
 						id: "st-norm",
-						label: effectiveTooth ? `✓ Норма (Зуб ${effectiveTooth})` : "✓ Полная норма (интактный)",
+						label: effectiveTooth ? `Норма (Зуб ${effectiveTooth})` : "Полная норма (интактный)",
 						prompt: effectiveTooth
 							? `Зафиксируй зуб ${effectiveTooth}: норма, интактный, без патологии`
 							: "Осмотр полости рта: зубы интактны, кариозных поражений нет, слизистая бледно-розовая, норма",

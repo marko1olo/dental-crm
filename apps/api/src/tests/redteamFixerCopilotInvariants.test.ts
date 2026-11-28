@@ -11,8 +11,6 @@
 
 import assert from "node:assert/strict";
 import { describe, it, beforeEach } from "node:test";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import Fastify from "fastify";
 import { isValidUuid, isValidUuidV7, generateUuidV7 } from "@dental/shared";
 import { ensureValidUuid, UUID_REGEX } from "../ai/session/copilotSessionTypes.js";
@@ -72,17 +70,32 @@ describe("Red Team Fixer Copilot Invariants", () => {
 		assert.ok(isValidUuidV7(fallback3));
 	});
 
-	it("3. Source code invariant: agentToolsAndActionRoutes.ts contains ZERO 'default-session'", () => {
-		const filePath = resolve(process.cwd(), "apps/api/src/routes/agent/agentToolsAndActionRoutes.ts");
-		const content = readFileSync(filePath, "utf-8");
-		assert.ok(
-			!content.includes("default-session"),
-			"Forbidden string 'default-session' must be completely eliminated from agentToolsAndActionRoutes.ts",
-		);
-		assert.ok(
-			content.includes("ensureValidUuid(body.sessionId)"),
-			"Must use ensureValidUuid(body.sessionId) to guard session identifier",
-		);
+	it("3. POST /api/agent/action normalizes legacy 'default-session' into a valid UUIDv7 at runtime", async () => {
+		const app = Fastify();
+		await app.register(registerAgentRoutes);
+		await app.ready();
+
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/agent/action",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+				[STAFF_TOKEN_HEADER]: validDoctorToken,
+				"Content-Type": "application/json",
+			},
+			payload: {
+				sessionId: "default-session",
+				toolName: "calculate_anesthesia",
+				args: {
+					patientWeightKg: 70,
+					drugName: "Артикаин 4%",
+				},
+			},
+		});
+
+		assert.equal(res.statusCode, 200);
+		assert.equal(res.body.includes("default-session"), false);
+		await app.close();
 	});
 
 	it("4. POST /api/agent/action with direct tool execution handles missing sessionId without crashing", async () => {

@@ -86,7 +86,11 @@ export type OpenPatientDropzoneFolderInput = z.infer<typeof openPatientDropzoneF
 
 export async function handleOpenPatientDropzoneFolder(args: OpenPatientDropzoneFolderInput, context: DentalToolContext) {
 	if (!checkIsLocalWorkstation(context)) return DESKTOP_DENIED_RESPONSE;
-	const targetPath = getTenantDropzonePath(context.organizationId, args.patientId);
+	const targetPath = getTenantDropzonePath(
+		context.organizationId,
+		args.patientId,
+		context.localDropzonePath,
+	);
 	try {
 		if (!fs.existsSync(targetPath)) await fs.promises.mkdir(targetPath, { recursive: true });
 		const cmd = process.platform === "win32" ? "explorer.exe" : process.platform === "darwin" ? "open" : "xdg-open";

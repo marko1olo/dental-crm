@@ -5,6 +5,7 @@
 
 import { generateUuidV7 } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { resolveApiUrl } from "../../../lib/resolveApiUrl";
 import { readEventStream } from "../useCopilotModules/copilotStreamReader";
 
 export const UUID_V1_TO_V8_REGEX =
@@ -74,6 +75,7 @@ export interface StreamCopilotChatOptions {
   temperature?: number | undefined;
   contextLimitTokens?: number | undefined;
   showTypingAnimation?: boolean | undefined;
+  localDropzonePath?: string | undefined;
   patientAllergies?: readonly string[] | string[] | undefined;
   allergies?: readonly string[] | string[] | undefined;
   somaticHistory?: string | readonly string[] | string[] | undefined;
@@ -176,6 +178,7 @@ export async function streamCopilotChat(
     temperature: options.temperature ?? (raw.temperature as number | undefined),
     contextLimitTokens: options.contextLimitTokens ?? (raw.contextLimitTokens as number | undefined),
     showTypingAnimation: options.showTypingAnimation ?? (raw.showTypingAnimation as boolean | undefined),
+    localDropzonePath: options.localDropzonePath ?? (raw.localDropzonePath as string | undefined),
     patientAllergies: allergiesList && allergiesList.length > 0 ? [...allergiesList] : undefined,
     allergies: allergiesList && allergiesList.length > 0 ? [...allergiesList] : undefined,
     somaticHistory: options.somaticHistory ?? (raw.somaticHistory as string | string[] | undefined),
@@ -186,13 +189,12 @@ export async function streamCopilotChat(
     byokBaseUrl: options.byokBaseUrl ?? (raw.byokBaseUrl as string | undefined),
   };
 
-  const baseUrl = (options.apiBaseUrl || "").replace(/\/+$/, "");
   const targetPath = options.endpoint || "/api/agent/chat";
-  const endpoint = targetPath.startsWith("/") ? targetPath : `/${targetPath}`;
-  const url = `${baseUrl}${endpoint}`;
+  const url = resolveApiUrl(targetPath, options.apiBaseUrl);
 
   const fetchInit: RequestInit = {
     method: "POST",
+    credentials: "include",
     headers: requestHeaders,
     body: JSON.stringify(payload),
     ...(options.signal ? { signal: options.signal } : {}),

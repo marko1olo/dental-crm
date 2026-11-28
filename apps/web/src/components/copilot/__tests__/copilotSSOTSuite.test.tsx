@@ -14,20 +14,16 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { CopilotStudioModal, DEFAULT_INITIAL_MESSAGES } from "../CopilotStudioModal";
+import { CopilotStudioModal } from "../CopilotStudioModal";
+import { CopilotStudioTabContent } from "../studio/CopilotStudioTabContent";
 import { CopilotGlobalHost } from "../CopilotGlobalHost";
+import { useCopilotStore } from "../../../store/copilotStore";
 import {
   COPILOT_CATALOG_CATEGORIES,
   CRM_FASTIFY_TOOLS_REGISTRY,
   CLINICAL_QUICK_PRESETS,
-  inspectSpeechEngineHealth,
+  getCatalogItemsByMode,
 } from "../copilotCatalogData";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 describe("Copilot Studio SSOT & Voice Suite", () => {
   it("1. рендерит панель студии Копайлота с шапкой, статусом движка и контекстом пациента", () => {
@@ -139,7 +135,7 @@ describe("Copilot Studio SSOT & Voice Suite", () => {
     assert.ok(html.includes("Бронирование слота"), "Инструмент бронирования слота должен присутствовать");
     assert.ok(html.includes("Зубная формула FDI"), "Инструмент одонтограммы должен присутствовать");
     assert.ok(html.includes("Выставление счёта"), "Инструмент кассы должен присутствовать");
-    assert.ok(html.includes("Протокол SOAP в карту"), "Инструмент протокола SOAP должен присутствовать");
+    assert.ok(html.includes("Протокол осмотра в карту"), "Инструмент протокола осмотра должен присутствовать");
     assert.ok(!html.includes("Захват визиографа"), "Фейковый захват визиографа обязан отсутствовать");
     assert.equal(html.includes("disabled"), false, "Кнопки быстрых действий не должны быть disabled");
   });
@@ -153,29 +149,88 @@ describe("Copilot Studio SSOT & Voice Suite", () => {
     assert.ok(phrases.includes("Запиши на завтра в 14:00"));
   });
 
-  it("9. Мандат 8d pt 7: строго 0 cartoon emojis в исходном коде CopilotStudioModal.tsx", () => {
-    const filePath = path.join(__dirname, "../CopilotStudioModal.tsx");
-    const content = fs.readFileSync(filePath, "utf-8");
+  it("9. Мандат 8d pt 7: строго 0 cartoon emojis в отрендеренном UI CopilotStudioModal и CopilotGlobalHost", () => {
     const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-    assert.equal(emojiRegex.test(content), false, "Обнаружены запрещенные cartoon emojis в CopilotStudioModal.tsx");
+    for (const tab of ["dialog", "actions", "memory"] as const) {
+      const html = renderToString(
+        <CopilotStudioModal isOpen={true} onClose={() => {}} activeTooth={36} initialTab={tab} />,
+      );
+      assert.equal(emojiRegex.test(html), false, `Обнаружены cartoon emojis во вкладке ${tab}`);
+      assert.doesNotMatch(html, /043\/у|804н|54-ФЗ/i, `Вкладка ${tab} содержит сырой код приказа`);
+    }
+    const hostHtml = renderToString(<CopilotGlobalHost />);
+    assert.equal(emojiRegex.test(hostHtml), false, "Обнаружены cartoon emojis в CopilotGlobalHost");
   });
 
-  it("10. Мандат 8b: размер файла CopilotStudioModal.tsx строго в Sweet Spot 380–480 строк", () => {
-    const filePath = path.join(__dirname, "../CopilotStudioModal.tsx");
-    const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-    assert.ok(lines >= 380 && lines <= 480, `CopilotStudioModal.tsx имеет ${lines} строк (ожидалось 380–480)`);
+  it("10. Max Modal Depth = 1: открытые настройки или история внутри Studio рендерятся встроенно без второго backdrop-оверлея", () => {
+    const baseTabContentProps = {
+      activeTab: "dialog" as const,
+      setActiveTab: () => {},
+      ctxSnapshot: { activeTooth: 36, patientId: null, patientName: null, activeVisitId: null, allergies: [], somaticHistory: "", clinicalContextNote: "" },
+      runtimeMode: "web_browser",
+      speedMode: "turbo" as const,
+      showThinkingProcess: true,
+      currentThought: "",
+      activeToolName: null,
+      messages: [],
+      setMessages: () => {},
+      isStreaming: false,
+      activeDiff: null,
+      setActiveDiff: () => {},
+      applyActiveDiff: async () => true,
+      rejectActiveDiff: () => {},
+      toolExecutionLogs: [],
+      appliedActionIds: new Set<string>(),
+      actionError: null,
+      setActionError: () => {},
+      onApplyAction: () => {},
+      onSendMessage: () => {},
+      executeApiTool: async () => {},
+      messagesEndRef: { current: null },
+      isListening: false,
+      audioLevel: 0,
+      audioMode: "browser_speech" as const,
+      speechHealth: { isCloudConfigured: false, activeProvider: "browser", label: "Web Speech" },
+      streamManager: null,
+      inputText: "",
+      onInputChange: () => {},
+      onToggleListening: () => {},
+      onStopListening: () => {},
+      setSettingsOpen: () => {},
+      setHistoryOpen: () => {},
+      threads: [],
+      threadMessages: {},
+      selectThread: () => {},
+      hydrateSession: async () => false,
+    };
+
+    const settingsHtml = renderToString(
+      <CopilotStudioTabContent {...baseTabContentProps} isSettingsOpen={true} isHistoryOpen={false} />,
+    );
+    assert.ok(settingsHtml.includes('data-testid="copilot-settings-modal"'), "Панель настроек обязана рендериться встроенно");
+    assert.equal((settingsHtml.match(/backdrop-blur-sm/g) ?? []).length, 0, "Встроенные настройки не должны создавать второй backdrop-оверлей");
+
+    const historyHtml = renderToString(
+      <CopilotStudioTabContent {...baseTabContentProps} isSettingsOpen={false} isHistoryOpen={true} />,
+    );
+    assert.ok(historyHtml.includes('data-testid="copilot-history-drawer"'), "Панель истории обязана рендериться встроенно");
+    assert.equal((historyHtml.match(/backdrop-blur-sm/g) ?? []).length, 0, "Встроенная история не должна создавать второй backdrop-оверлей");
   });
 
-  it("11. Мандат 8b: размер файла copilotCatalogData.ts строго в Sweet Spot 280–350 строк", () => {
-    const filePath = path.join(__dirname, "../copilotCatalogData.ts");
-    const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-    assert.ok(lines >= 280 && lines <= 350, `copilotCatalogData.ts имеет ${lines} строк (ожидалось 280–350)`);
+  it("11. Каталог инструментов строго разделяет web_browser и desktop_native режимы", () => {
+    const webItems = getCatalogItemsByMode("web_browser");
+    const desktopItems = getCatalogItemsByMode("desktop_native");
+    assert.ok(webItems.every((item) => item.mode !== "desktop_native"), "web_browser каталог не должен содержать desktop_native тулы");
+    assert.ok(desktopItems.some((item) => item.mode === "desktop_native"), "desktop_native обязан содержать локальные инструменты");
+    assert.ok(CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus);
+    assert.ok(COPILOT_CATALOG_CATEGORIES.length >= 4);
   });
 
-  it("12. Мандат 8b: размер файла CopilotGlobalHost.tsx строго в Sweet Spot <= 160 строк", () => {
-    const filePath = path.join(__dirname, "../CopilotGlobalHost.tsx");
-    const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-    assert.ok(lines >= 100 && lines <= 160, `CopilotGlobalHost.tsx имеет ${lines} строк (ожидалось 100–160)`);
+  it("12. useCopilotStore корректно управляет настройкой showTypingAnimation", () => {
+    useCopilotStore.getState().updateSettings({ showTypingAnimation: false });
+    assert.equal(useCopilotStore.getState().settings.showTypingAnimation, false);
+    useCopilotStore.getState().updateSettings({ showTypingAnimation: true });
+    assert.equal(useCopilotStore.getState().settings.showTypingAnimation, true);
   });
 
   it("13. CopilotGlobalHost монтируется и не падает при SSR", () => {

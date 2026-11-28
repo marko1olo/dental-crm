@@ -31,6 +31,7 @@ export interface DentalToolContext {
 	activeVisitId?: string | undefined;
 	activeTooth?: number | null | undefined;
 	runtimeMode?: AgentRuntimeMode | undefined;
+	localDropzonePath?: string | undefined;
 	patientAllergies?: string[] | undefined;
 	somaticHistory?: string[] | string | undefined;
 	db?: TenantDb | typeof db | undefined;

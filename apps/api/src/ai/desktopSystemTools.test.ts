@@ -145,20 +145,42 @@ describe("Desktop Agent Harness — Red Team Безопасность и Вал�
 		assert.ok(pathOrg1.includes(TEST_PATIENT_ID));
 	});
 
-	test("checkIsLocalWorkstation: строго разграничивает web_browser и desktop_native", () => {
-		assert.strictEqual(checkIsLocalWorkstation(WEB_CTX), false);
-		assert.strictEqual(checkIsLocalWorkstation(DESKTOP_CTX), true);
+	test("checkIsLocalWorkstation: строго разграничивает web_browser и desktop_native и требует серверный флаг", () => {
+		const prevDesktopExe = process.env.IS_DESKTOP_EXE;
+		const prevWorkstation = process.env.WORKSTATION_MODE;
+		try {
+			delete process.env.IS_DESKTOP_EXE;
+			delete process.env.WORKSTATION_MODE;
+			// Без серверного флага даже desktop_native + allowLocalExecution обязаны возвращать false (P0-1)
+			assert.strictEqual(checkIsLocalWorkstation(WEB_CTX), false);
+			assert.strictEqual(checkIsLocalWorkstation(DESKTOP_CTX), false);
+
+			process.env.IS_DESKTOP_EXE = "true";
+			assert.strictEqual(checkIsLocalWorkstation(WEB_CTX), false);
+			assert.strictEqual(checkIsLocalWorkstation(DESKTOP_CTX), true);
+		} finally {
+			if (prevDesktopExe !== undefined) process.env.IS_DESKTOP_EXE = prevDesktopExe;
+			else delete process.env.IS_DESKTOP_EXE;
+			if (prevWorkstation !== undefined) process.env.WORKSTATION_MODE = prevWorkstation;
+			else delete process.env.WORKSTATION_MODE;
+		}
 	});
 });
 
 describe("Desktop Agent Harness — Файловый I/O (File Engine)", () => {
+	let prevDesktopExe: string | undefined;
+
 	beforeEach(async () => {
+		prevDesktopExe = process.env.IS_DESKTOP_EXE;
+		process.env.IS_DESKTOP_EXE = "true";
 		if (!fs.existsSync(SCRATCH_DIR)) {
 			await fs.promises.mkdir(SCRATCH_DIR, { recursive: true });
 		}
 	});
 
 	afterEach(async () => {
+		if (prevDesktopExe !== undefined) process.env.IS_DESKTOP_EXE = prevDesktopExe;
+		else delete process.env.IS_DESKTOP_EXE;
 		if (fs.existsSync(SCRATCH_DIR)) {
 			await fs.promises.rm(SCRATCH_DIR, { recursive: true, force: true });
 		}

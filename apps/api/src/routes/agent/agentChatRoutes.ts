@@ -6,8 +6,10 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
+import type { TenantDb } from "../../db/client.js";
 import { runAgentHarness, type AgentHarnessEvent } from "../../ai/agentHarness.js";
 import type { GranularAgentPermissions } from "../../ai/harness/harnessTypes.js";
 import type { AgentRuntimeMode } from "../../ai/dentalTools.js";
@@ -85,7 +87,6 @@ export const agentChatBodySchema = z
 		patientAllergies: z.array(z.string()).optional(),
 		allergies: z.array(z.string()).optional(),
 		somaticHistory: z.union([z.string(), z.array(z.string())]).optional(),
-		swarmRole: z.enum(["orchestrator", "triage", "odontogram_inquisitor", "billing_sentinel", "vision_specialist"]).optional(),
 		fallbackToDeterministicAgent: z.boolean().optional(),
 		modelRoutingMode: z.enum(["server_managed", "custom_byok"]).optional(),
 		byokProvider: z.string().optional(),
@@ -95,6 +96,7 @@ export const agentChatBodySchema = z
 		temperature: z.number().min(0).max(2).optional(),
 		contextLimitTokens: z.number().int().positive().optional(),
 		showTypingAnimation: z.boolean().optional(),
+		localDropzonePath: z.string().max(500).optional(),
 	})
 	.strict();
 
@@ -102,19 +104,40 @@ export function formatSseMessage(event: string, data: unknown): string {
 	return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
+function isLoopbackIp(ip: string | undefined): boolean {
+	if (!ip) return false;
+	const normalized = ip.trim().toLowerCase();
+	return (
+		normalized === "127.0.0.1" ||
+		normalized === "::1" ||
+		normalized === "::ffff:127.0.0.1" ||
+		normalized === "localhost"
+	);
+}
+
 export function resolveRuntimeMode(
 	request: FastifyRequest,
 	bodyRuntimeMode?: string,
 ): AgentRuntimeMode {
-	const headerRuntime = request.headers["x-agent-runtime"];
-	if (
-		headerRuntime === "desktop_native" ||
-		bodyRuntimeMode === "desktop_native" ||
-		process.env.IS_DESKTOP_EXE === "true"
-	) {
-		return "desktop_native";
+	const serverAllowsDesktop =
+		process.env.IS_DESKTOP_EXE === "true" ||
+		process.env.WORKSTATION_MODE === "true";
+	const remoteIp = request.ip || request.socket?.remoteAddress;
+	if (!serverAllowsDesktop || !isLoopbackIp(remoteIp)) {
+		return "web_browser";
 	}
-	return "web_browser";
+	const headerRuntime = request.headers["x-agent-runtime"];
+	const requestedMode =
+		bodyRuntimeMode ??
+		(typeof headerRuntime === "string" ? headerRuntime : undefined);
+	if (
+		requestedMode === "web_browser" ||
+		requestedMode === "chairside_tablet" ||
+		requestedMode === "mobile_tablet"
+	) {
+		return "web_browser";
+	}
+	return "desktop_native";
 }
 
 export function normalizeIncomingBody(
@@ -171,6 +194,7 @@ async function loadAgentChatContextFromDb(params: {
 	sessionId: string | undefined;
 	incomingMessages: AgentRouterChatMessage[];
 	logger: FastifyRequest["log"];
+	runReadTx?: (<T>(fn: (tx: TenantDb) => Promise<T>) => Promise<T>) | undefined;
 }): Promise<{
 	mergedMessages: AgentRouterChatMessage[];
 	initialSummary: string | undefined;
@@ -190,6 +214,7 @@ async function loadAgentChatContextFromDb(params: {
 	defaultContextLimitTokens: number | undefined;
 	defaultShowTypingAnimation: boolean | undefined;
 	defaultRuntimeMode: AgentRuntimeMode | undefined;
+	defaultLocalDropzonePath: string | undefined;
 }> {
 	const result: {
 		mergedMessages: AgentRouterChatMessage[];
@@ -210,6 +235,7 @@ async function loadAgentChatContextFromDb(params: {
 		defaultContextLimitTokens: number | undefined;
 		defaultShowTypingAnimation: boolean | undefined;
 		defaultRuntimeMode: AgentRuntimeMode | undefined;
+		defaultLocalDropzonePath: string | undefined;
 	} = {
 		mergedMessages: params.incomingMessages,
 		initialSummary: undefined,
@@ -229,10 +255,15 @@ async function loadAgentChatContextFromDb(params: {
 		defaultContextLimitTokens: undefined,
 		defaultShowTypingAnimation: undefined,
 		defaultRuntimeMode: undefined,
+		defaultLocalDropzonePath: undefined,
 	};
 
 	try {
-		await withTenantCtx(params.organizationId, async (tx) => {
+		const executeRead =
+			params.runReadTx ??
+			(<T>(fn: (tx: TenantDb) => Promise<T>) =>
+				withTenantCtx(params.organizationId, fn));
+		await executeRead(async (tx) => {
 			const prefRecord = await getDoctorPreferencesFromDb(
 				params.organizationId,
 				params.doctorId ?? null,
@@ -309,6 +340,12 @@ async function loadAgentChatContextFromDb(params: {
 				) {
 					result.defaultRuntimeMode = copilotSettings.runtimeMode;
 				}
+				if (
+					typeof copilotSettings.localDropzonePath === "string" &&
+					copilotSettings.localDropzonePath.trim().length > 0
+				) {
+					result.defaultLocalDropzonePath = copilotSettings.localDropzonePath.trim();
+				}
 			}
 
 			result.defaultMemoryFacts = extractMemoryFactStrings(prefs.copilotMemoryFacts);
@@ -379,327 +416,325 @@ async function loadAgentChatContextFromDb(params: {
 	return result;
 }
 
-export async function handleAgentChat(
-	request: FastifyRequest,
-	reply: FastifyReply,
+export async function registerAgentChatRoutes(
+	server: FastifyInstance,
 ): Promise<void> {
-	const resolvedOrgId = await requireResolvedOrganizationId(
-		request,
-		reply,
-		"agent chat",
-	);
-	if (!resolvedOrgId) return;
+	defineStreamRoute(server, {
+		method: "POST",
+		path: "/api/agent/chat",
+		permission: "agent.write",
+		authOptions: { allowClinicTokenWithoutStaff: true },
+		handler: async ({ principal, organizationId, runReadTx, request, reply }) => {
+			if (!organizationId) {
+				return reply.code(401).send({
+					error: "Unauthorized",
+					message: "Требуется авторизация клиники",
+				});
+			}
 
-	const normalizedBody = normalizeIncomingBody(
-		request.body,
-		request.params as { sessionId?: string } | undefined,
-		request.headers as Record<string, string | string[] | undefined>,
-	);
+			const normalizedBody = normalizeIncomingBody(
+				request.body,
+				request.params as { sessionId?: string } | undefined,
+				request.headers as Record<string, string | string[] | undefined>,
+			);
 
-	const parseResult = agentChatBodySchema.safeParse(normalizedBody);
-	if (!parseResult.success) {
-		return reply.code(400).send({
-			error: "ValidationError",
-			message: "Некорректное тело запроса для агента",
-			details: parseResult.error.format(),
-		});
-	}
+			const parseResult = agentChatBodySchema.safeParse(normalizedBody);
+			if (!parseResult.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректное тело запроса для агента",
+					details: parseResult.error.format(),
+				});
+			}
 
-	const body = parseResult.data;
-	const identity = getRequestIdentity(request);
-	const doctorId = identity.userId || undefined;
-	const rawSessionId = body.sessionId || body.conversationId;
-	const effectiveSessionId = ensureValidUuid(rawSessionId);
+			const body = parseResult.data;
+			const doctorId = principal?.userId || undefined;
+			const rawSessionId = body.sessionId || body.conversationId;
+			const effectiveSessionId = ensureValidUuid(rawSessionId);
 
-	const hydratedContext = await loadAgentChatContextFromDb({
-		organizationId: resolvedOrgId,
-		doctorId,
-		sessionId: effectiveSessionId,
-		incomingMessages: body.messages as AgentRouterChatMessage[],
-		logger: request.log,
-	});
-	const runtimeMode = resolveRuntimeMode(request, body.runtimeMode ?? hydratedContext.defaultRuntimeMode);
-
-	const firstUserContent = body.messages.find((m) => m.role === "user")?.content;
-	const initialSessionSummary =
-		typeof firstUserContent === "string" && firstUserContent.trim().length > 0
-			? firstUserContent.trim().slice(0, 140)
-			: null;
-
-	try {
-		await getOrCreateSessionInDb(effectiveSessionId, resolvedOrgId, {
-			userId: doctorId ?? null,
-			patientId: body.patientId ?? null,
-			summary: initialSessionSummary,
-		});
-	} catch (persistErr: unknown) {
-		request.log.warn(
-			{ err: persistErr, sessionId: effectiveSessionId },
-			"[agentChatRoutes] Failed to ensure copilot session in PostgreSQL",
-		);
-	}
-
-	const normalizedTrust = body.trustLevel ?? hydratedContext.defaultTrustLevel;
-	const effectiveGranularPermissions = body.granularPermissions ?? hydratedContext.defaultGranularPermissions;
-	const effectiveCustomInstructions = body.customInstructions ?? hydratedContext.defaultCustomInstructions;
-	const effectiveMemoryFacts = body.memoryFacts ?? hydratedContext.defaultMemoryFacts;
-	const effectiveDoctorSpecialization = body.doctorSpecialization ?? hydratedContext.defaultDoctorSpecialization;
-	const effectiveSpeedMode = body.speedMode ?? hydratedContext.defaultSpeedMode;
-	const effectiveMaskPhiData = body.maskPhiData ?? hydratedContext.defaultMaskPhiData;
-	const effectiveInitialSummary = body.initialSummary ?? hydratedContext.initialSummary;
-	const effectiveModelRoutingMode = body.modelRoutingMode ?? hydratedContext.defaultModelRoutingMode;
-	const effectiveByokProvider = body.byokProvider ?? hydratedContext.defaultByokProvider;
-	const effectiveByokApiKey =
-		(body.byokApiKey && body.byokApiKey.trim().length > 0 ? body.byokApiKey.trim() : undefined) ??
-		hydratedContext.defaultByokApiKey;
-	const effectiveByokModel = body.byokModel ?? hydratedContext.defaultByokModel;
-	const effectiveByokBaseUrl = body.byokBaseUrl ?? hydratedContext.defaultByokBaseUrl;
-	const effectiveTemperature = body.temperature ?? hydratedContext.defaultTemperature;
-	const effectiveContextLimitTokens = body.contextLimitTokens ?? hydratedContext.defaultContextLimitTokens;
-	const effectiveShowTypingAnimation = body.showTypingAnimation ?? hydratedContext.defaultShowTypingAnimation;
-
-	const isSseRequested =
-		body.stream === true ||
-		(request.headers.accept?.includes("text/event-stream") ?? false);
-
-	const abortController = new AbortController();
-	request.raw.on("close", () => {
-		abortController.abort();
-	});
-
-	const ensureSessionPersistedForConfirmation = (): string => effectiveSessionId;
-
-	// STREAMING SSE MODE
-	if (isSseRequested) {
-		reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-		reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
-		reply.raw.setHeader("Connection", "keep-alive");
-		reply.raw.setHeader("X-Accel-Buffering", "no");
-		reply.raw.flushHeaders?.();
-
-		try {
-			const harnessResult = await runAgentHarness({
-				messages: hydratedContext.mergedMessages,
-				context: {
-					organizationId: resolvedOrgId,
-					doctorId,
-					patientId: body.patientId,
-					activeVisitId: body.activeVisitId,
-					patientAllergies: body.patientAllergies || body.allergies,
-					somaticHistory: body.somaticHistory,
-					runtimeMode,
-				},
-				runtimeMode,
-				maskPhiData: effectiveMaskPhiData,
-				enableAutoCompaction: body.enableAutoCompaction,
-				compactThresholdTokens: body.compactThresholdTokens,
-				slidingWindowRetainedTurns: body.slidingWindowRetainedTurns,
-				initialSummary: effectiveInitialSummary,
-				trustLevel: normalizedTrust,
-				granularPermissions: effectiveGranularPermissions,
-				customInstructions: effectiveCustomInstructions,
-				memoryFacts: effectiveMemoryFacts,
-				doctorSpecialization: effectiveDoctorSpecialization,
-				speedMode: effectiveSpeedMode,
-				activeTooth: body.activeTooth,
-				swarmRole: body.swarmRole,
-				fallbackToDeterministicAgent: body.fallbackToDeterministicAgent,
-				modelRoutingMode: effectiveModelRoutingMode,
-				byokProvider: effectiveByokProvider,
-				byokApiKey: effectiveByokApiKey,
-				byokModel: effectiveByokModel,
-				byokBaseUrl: effectiveByokBaseUrl,
+			const hydratedContext = await loadAgentChatContextFromDb({
+				organizationId,
+				doctorId,
 				sessionId: effectiveSessionId,
-				temperature: effectiveTemperature,
-				contextLimitTokens: effectiveContextLimitTokens,
-				showTypingAnimation: effectiveShowTypingAnimation,
-				signal: abortController.signal,
-				onEvent: (event: AgentHarnessEvent) => {
+				incomingMessages: body.messages as AgentRouterChatMessage[],
+				logger: request.log,
+				runReadTx,
+			});
+			const runtimeMode = resolveRuntimeMode(request, body.runtimeMode ?? hydratedContext.defaultRuntimeMode);
+			const effectiveLocalDropzonePath = body.localDropzonePath ?? hydratedContext.defaultLocalDropzonePath;
+
+			const firstUserContent = body.messages.find((m) => m.role === "user")?.content;
+			const initialSessionSummary =
+				typeof firstUserContent === "string" && firstUserContent.trim().length > 0
+					? firstUserContent.trim().slice(0, 140)
+					: null;
+
+			try {
+				await getOrCreateSessionInDb(effectiveSessionId, organizationId, {
+					userId: doctorId ?? null,
+					patientId: body.patientId ?? null,
+					summary: initialSessionSummary,
+				});
+			} catch (persistErr: unknown) {
+				request.log.warn(
+					{ err: persistErr, sessionId: effectiveSessionId },
+					"[agentChatRoutes] Failed to ensure copilot session in PostgreSQL",
+				);
+			}
+
+			const normalizedTrust = body.trustLevel ?? hydratedContext.defaultTrustLevel;
+			const effectiveGranularPermissions = body.granularPermissions ?? hydratedContext.defaultGranularPermissions;
+			const effectiveCustomInstructions = body.customInstructions ?? hydratedContext.defaultCustomInstructions;
+			const effectiveMemoryFacts = body.memoryFacts ?? hydratedContext.defaultMemoryFacts;
+			const effectiveDoctorSpecialization = body.doctorSpecialization ?? hydratedContext.defaultDoctorSpecialization;
+			const effectiveSpeedMode = body.speedMode ?? hydratedContext.defaultSpeedMode;
+			const effectiveMaskPhiData = body.maskPhiData ?? hydratedContext.defaultMaskPhiData;
+			const effectiveInitialSummary = body.initialSummary ?? hydratedContext.initialSummary;
+			const effectiveModelRoutingMode = body.modelRoutingMode ?? hydratedContext.defaultModelRoutingMode;
+			const effectiveByokProvider = body.byokProvider ?? hydratedContext.defaultByokProvider;
+			const effectiveByokApiKey =
+				(body.byokApiKey && body.byokApiKey.trim().length > 0 ? body.byokApiKey.trim() : undefined) ??
+				hydratedContext.defaultByokApiKey;
+			const effectiveByokModel = body.byokModel ?? hydratedContext.defaultByokModel;
+			const effectiveByokBaseUrl = body.byokBaseUrl ?? hydratedContext.defaultByokBaseUrl;
+			const effectiveTemperature = body.temperature ?? hydratedContext.defaultTemperature;
+			const effectiveContextLimitTokens = body.contextLimitTokens ?? hydratedContext.defaultContextLimitTokens;
+			const effectiveShowTypingAnimation = body.showTypingAnimation ?? hydratedContext.defaultShowTypingAnimation;
+
+			const isSseRequested =
+				body.stream === true ||
+				(request.headers.accept?.includes("text/event-stream") ?? false);
+
+			const abortController = new AbortController();
+			request.raw.on("close", () => {
+				abortController.abort();
+			});
+
+			const ensureSessionPersistedForConfirmation = (): string => effectiveSessionId;
+
+			// STREAMING SSE MODE
+			if (isSseRequested) {
+				reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+				reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
+				reply.raw.setHeader("Connection", "keep-alive");
+				reply.raw.setHeader("X-Accel-Buffering", "no");
+				reply.raw.flushHeaders?.();
+
+				try {
+					const harnessResult = await runAgentHarness({
+						messages: hydratedContext.mergedMessages,
+						context: {
+							organizationId,
+							doctorId,
+							patientId: body.patientId,
+							activeVisitId: body.activeVisitId,
+							patientAllergies: body.patientAllergies || body.allergies,
+							somaticHistory: body.somaticHistory,
+							runtimeMode,
+							localDropzonePath: effectiveLocalDropzonePath,
+						},
+						runtimeMode,
+						maskPhiData: effectiveMaskPhiData,
+						enableAutoCompaction: body.enableAutoCompaction,
+						compactThresholdTokens: body.compactThresholdTokens,
+						slidingWindowRetainedTurns: body.slidingWindowRetainedTurns,
+						initialSummary: effectiveInitialSummary,
+						trustLevel: normalizedTrust,
+						granularPermissions: effectiveGranularPermissions,
+						customInstructions: effectiveCustomInstructions,
+						memoryFacts: effectiveMemoryFacts,
+						doctorSpecialization: effectiveDoctorSpecialization,
+						speedMode: effectiveSpeedMode,
+						activeTooth: body.activeTooth,
+						fallbackToDeterministicAgent: body.fallbackToDeterministicAgent,
+						modelRoutingMode: effectiveModelRoutingMode,
+						byokProvider: effectiveByokProvider,
+						byokApiKey: effectiveByokApiKey,
+						byokModel: effectiveByokModel,
+						byokBaseUrl: effectiveByokBaseUrl,
+						sessionId: effectiveSessionId,
+						temperature: effectiveTemperature,
+						contextLimitTokens: effectiveContextLimitTokens,
+						showTypingAnimation: effectiveShowTypingAnimation,
+						signal: abortController.signal,
+						onEvent: (event: AgentHarnessEvent) => {
+							if (!reply.raw.writableEnded) {
+								if (event.type === "tool_start") {
+									reply.raw.write(formatSseMessage("tool_call_started", { name: event.tool, arguments: event.args }));
+									reply.raw.write(formatSseMessage("tool_start", event));
+								} else if (event.type === "tool_end") {
+									reply.raw.write(formatSseMessage("tool_call_finished", { name: event.tool, result: event.result }));
+									reply.raw.write(formatSseMessage("tool_end", event));
+								} else if (event.type === "confirmation_required") {
+									const sessId = ensureSessionPersistedForConfirmation();
+									defaultCopilotActionManager.registerPending(
+										sessId,
+										event.callId,
+										event.tool,
+										event.args,
+										{ organizationId, userId: doctorId },
+									);
+									reply.raw.write(formatSseMessage("confirmation_required", { ...event, sessionId: sessId }));
+								} else if (event.type === "done") {
+									const donePayload = effectiveSessionId ? { ...event, sessionId: effectiveSessionId } : event;
+									reply.raw.write(formatSseMessage("final", donePayload));
+									reply.raw.write(formatSseMessage("done", donePayload));
+								} else {
+									reply.raw.write(formatSseMessage(event.type, event));
+								}
+							}
+						},
+					});
+
+					const targetSessionId = effectiveSessionId;
+					if (targetSessionId) {
+						try {
+							const lastUserPrompt = [...body.messages].reverse().find((m) => m.role === "user")?.content;
+							if (lastUserPrompt && typeof lastUserPrompt === "string" && lastUserPrompt.trim().length > 0) {
+								await addMessageToDb({
+									sessionId: targetSessionId,
+									organizationId,
+									role: "user",
+									content: lastUserPrompt.trim(),
+									autoCompact: false,
+								});
+							}
+							if (harnessResult?.text && typeof harnessResult.text === "string" && harnessResult.text.trim().length > 0) {
+								await addMessageToDb({
+									sessionId: targetSessionId,
+									organizationId,
+									role: "assistant",
+									content: harnessResult.text.trim(),
+									toolCalls: harnessResult.toolCalls?.length
+										? harnessResult.toolCalls.map((tc): Record<string, unknown> => ({
+												tool: tc.tool,
+												args: tc.args,
+												result: tc.result,
+										  }))
+										: null,
+									autoCompact: body.enableAutoCompaction ?? true,
+								});
+							}
+						} catch (persistErr) {
+							request.log.warn({ err: persistErr, targetSessionId }, "[agentChatRoutes] Failed to persist SSE copilot messages to PostgreSQL");
+						}
+					}
+				} catch (err: unknown) {
+					const msg = err instanceof Error ? err.message : String(err);
 					if (!reply.raw.writableEnded) {
-						if (event.type === "tool_start") {
-							reply.raw.write(formatSseMessage("tool_call_started", { name: event.tool, arguments: event.args }));
-							reply.raw.write(formatSseMessage("tool_start", event));
-						} else if (event.type === "tool_end") {
-							reply.raw.write(formatSseMessage("tool_call_finished", { name: event.tool, result: event.result }));
-							reply.raw.write(formatSseMessage("tool_end", event));
-						} else if (event.type === "confirmation_required") {
+						reply.raw.write(formatSseMessage("error", { error: msg }));
+					}
+				} finally {
+					if (!reply.raw.writableEnded) {
+						reply.raw.end();
+					}
+				}
+				return reply;
+			}
+
+			// STANDARD JSON MODE
+			try {
+				const result = await runAgentHarness({
+					messages: hydratedContext.mergedMessages,
+					context: {
+						organizationId,
+						doctorId,
+						patientId: body.patientId,
+						activeVisitId: body.activeVisitId,
+						patientAllergies: body.patientAllergies || body.allergies,
+						somaticHistory: body.somaticHistory,
+						runtimeMode,
+						localDropzonePath: effectiveLocalDropzonePath,
+					},
+					runtimeMode,
+					maskPhiData: effectiveMaskPhiData,
+					enableAutoCompaction: body.enableAutoCompaction,
+					compactThresholdTokens: body.compactThresholdTokens,
+					slidingWindowRetainedTurns: body.slidingWindowRetainedTurns,
+					initialSummary: effectiveInitialSummary,
+					trustLevel: normalizedTrust,
+					granularPermissions: effectiveGranularPermissions,
+					customInstructions: effectiveCustomInstructions,
+					memoryFacts: effectiveMemoryFacts,
+					doctorSpecialization: effectiveDoctorSpecialization,
+					speedMode: effectiveSpeedMode,
+					activeTooth: body.activeTooth,
+					fallbackToDeterministicAgent: body.fallbackToDeterministicAgent,
+					modelRoutingMode: effectiveModelRoutingMode,
+					byokProvider: effectiveByokProvider,
+					byokApiKey: effectiveByokApiKey,
+					byokModel: effectiveByokModel,
+					byokBaseUrl: effectiveByokBaseUrl,
+					sessionId: effectiveSessionId,
+					temperature: effectiveTemperature,
+					contextLimitTokens: effectiveContextLimitTokens,
+					showTypingAnimation: effectiveShowTypingAnimation,
+					signal: abortController.signal,
+					onEvent: (event: AgentHarnessEvent) => {
+						if (event.type === "confirmation_required") {
 							const sessId = ensureSessionPersistedForConfirmation();
 							defaultCopilotActionManager.registerPending(
 								sessId,
 								event.callId,
 								event.tool,
 								event.args,
-								{ organizationId: resolvedOrgId, userId: doctorId },
+								{ organizationId, userId: doctorId },
 							);
-							reply.raw.write(formatSseMessage("confirmation_required", { ...event, sessionId: sessId }));
-						} else if (event.type === "done") {
-							const donePayload = effectiveSessionId ? { ...event, sessionId: effectiveSessionId } : event;
-							reply.raw.write(formatSseMessage("final", donePayload));
-							reply.raw.write(formatSseMessage("done", donePayload));
-						} else {
-							reply.raw.write(formatSseMessage(event.type, event));
 						}
+					},
+				});
+
+				const targetSessionId = effectiveSessionId;
+				if (targetSessionId) {
+					try {
+						const lastUserPrompt = [...body.messages].reverse().find((m) => m.role === "user")?.content;
+						if (lastUserPrompt && typeof lastUserPrompt === "string" && lastUserPrompt.trim().length > 0) {
+							await addMessageToDb({
+								sessionId: targetSessionId,
+								organizationId,
+								role: "user",
+								content: lastUserPrompt.trim(),
+								autoCompact: false,
+							});
+						}
+						if (result?.text && typeof result.text === "string" && result.text.trim().length > 0) {
+							await addMessageToDb({
+								sessionId: targetSessionId,
+								organizationId,
+								role: "assistant",
+								content: result.text.trim(),
+								toolCalls: result.toolCalls?.length
+									? result.toolCalls.map((tc): Record<string, unknown> => ({
+											tool: tc.tool,
+											args: tc.args,
+											result: tc.result,
+									  }))
+									: null,
+								autoCompact: body.enableAutoCompaction ?? true,
+							});
+						}
+					} catch (persistErr) {
+						request.log.warn({ err: persistErr, targetSessionId }, "[agentChatRoutes] Failed to persist JSON copilot messages to PostgreSQL");
 					}
-				},
-			});
-
-			const targetSessionId = effectiveSessionId;
-			if (targetSessionId) {
-				try {
-					const lastUserPrompt = [...body.messages].reverse().find((m) => m.role === "user")?.content;
-					if (lastUserPrompt && typeof lastUserPrompt === "string" && lastUserPrompt.trim().length > 0) {
-						await addMessageToDb({
-							sessionId: targetSessionId,
-							organizationId: resolvedOrgId,
-							role: "user",
-							content: lastUserPrompt.trim(),
-							autoCompact: false,
-						});
-					}
-					if (harnessResult?.text && typeof harnessResult.text === "string" && harnessResult.text.trim().length > 0) {
-						await addMessageToDb({
-							sessionId: targetSessionId,
-							organizationId: resolvedOrgId,
-							role: "assistant",
-							content: harnessResult.text.trim(),
-							toolCalls: harnessResult.toolCalls?.length
-								? harnessResult.toolCalls.map((tc): Record<string, unknown> => ({
-										tool: tc.tool,
-										args: tc.args,
-										result: tc.result,
-								  }))
-								: null,
-							autoCompact: body.enableAutoCompaction ?? true,
-						});
-					}
-				} catch (persistErr) {
-					request.log.warn({ err: persistErr, targetSessionId }, "[agentChatRoutes] Failed to persist SSE copilot messages to PostgreSQL");
 				}
-			}
-		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : String(err);
-			if (!reply.raw.writableEnded) {
-				reply.raw.write(formatSseMessage("error", { error: msg }));
-			}
-		} finally {
-			if (!reply.raw.writableEnded) {
-				reply.raw.end();
-			}
-		}
-		return;
-	}
 
-	// STANDARD JSON MODE
-	try {
-		const result = await runAgentHarness({
-			messages: hydratedContext.mergedMessages,
-			context: {
-				organizationId: resolvedOrgId,
-				doctorId,
-				patientId: body.patientId,
-				activeVisitId: body.activeVisitId,
-				patientAllergies: body.patientAllergies || body.allergies,
-				somaticHistory: body.somaticHistory,
-				runtimeMode,
-			},
-			runtimeMode,
-			maskPhiData: effectiveMaskPhiData,
-			enableAutoCompaction: body.enableAutoCompaction,
-			compactThresholdTokens: body.compactThresholdTokens,
-			slidingWindowRetainedTurns: body.slidingWindowRetainedTurns,
-			initialSummary: effectiveInitialSummary,
-			trustLevel: normalizedTrust,
-			granularPermissions: effectiveGranularPermissions,
-			customInstructions: effectiveCustomInstructions,
-			memoryFacts: effectiveMemoryFacts,
-			doctorSpecialization: effectiveDoctorSpecialization,
-			speedMode: effectiveSpeedMode,
-			activeTooth: body.activeTooth,
-			swarmRole: body.swarmRole,
-			fallbackToDeterministicAgent: body.fallbackToDeterministicAgent,
-			modelRoutingMode: effectiveModelRoutingMode,
-			byokProvider: effectiveByokProvider,
-			byokApiKey: effectiveByokApiKey,
-			byokModel: effectiveByokModel,
-			byokBaseUrl: effectiveByokBaseUrl,
-			sessionId: effectiveSessionId,
-			temperature: effectiveTemperature,
-			contextLimitTokens: effectiveContextLimitTokens,
-			showTypingAnimation: effectiveShowTypingAnimation,
-			signal: abortController.signal,
-			onEvent: (event: AgentHarnessEvent) => {
-				if (event.type === "confirmation_required") {
-					const sessId = ensureSessionPersistedForConfirmation();
-					defaultCopilotActionManager.registerPending(
-						sessId,
-						event.callId,
-						event.tool,
-						event.args,
-						{ organizationId: resolvedOrgId, userId: doctorId },
-					);
-				}
-			},
-		});
-
-		const targetSessionId = effectiveSessionId;
-		if (targetSessionId) {
-			try {
-				const lastUserPrompt = [...body.messages].reverse().find((m) => m.role === "user")?.content;
-				if (lastUserPrompt && typeof lastUserPrompt === "string" && lastUserPrompt.trim().length > 0) {
-					await addMessageToDb({
-						sessionId: targetSessionId,
-						organizationId: resolvedOrgId,
-						role: "user",
-						content: lastUserPrompt.trim(),
-						autoCompact: false,
-					});
-				}
-				if (result?.text && typeof result.text === "string" && result.text.trim().length > 0) {
-					await addMessageToDb({
-						sessionId: targetSessionId,
-						organizationId: resolvedOrgId,
-						role: "assistant",
-						content: result.text.trim(),
-						toolCalls: result.toolCalls?.length
-							? result.toolCalls.map((tc): Record<string, unknown> => ({
-									tool: tc.tool,
-									args: tc.args,
-									result: tc.result,
-							  }))
-							: null,
-						autoCompact: body.enableAutoCompaction ?? true,
-					});
-				}
-			} catch (persistErr) {
-				request.log.warn({ err: persistErr, targetSessionId }, "[agentChatRoutes] Failed to persist JSON copilot messages to PostgreSQL");
+				return reply.code(200).send({
+					...(targetSessionId ? { sessionId: targetSessionId } : {}),
+					text: result.text,
+					toolCalls: result.toolCalls,
+					iterations: result.iterations,
+					runtimeMode,
+					compacted: result.compacted,
+					summary: result.summary,
+					tokenUsage: result.tokenUsage,
+				});
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : String(err);
+				return reply.code(500).send({
+					error: "AgentExecutionError",
+					message: msg,
+				});
 			}
-		}
-
-		return reply.code(200).send({
-			...(targetSessionId ? { sessionId: targetSessionId } : {}),
-			text: result.text,
-			toolCalls: result.toolCalls,
-			iterations: result.iterations,
-			runtimeMode,
-			compacted: result.compacted,
-			summary: result.summary,
-			tokenUsage: result.tokenUsage,
-		});
-	} catch (err: unknown) {
-		const msg = err instanceof Error ? err.message : String(err);
-		return reply.code(500).send({
-			error: "AgentExecutionError",
-			message: msg,
-		});
-	}
-}
-
-export async function registerAgentChatRoutes(
-	server: FastifyInstance,
-): Promise<void> {
-	server.post(
-		"/api/agent/chat",
-		{ config: { tenantTxSelfManaged: true } },
-		handleAgentChat,
-	);
+		},
+	});
 }

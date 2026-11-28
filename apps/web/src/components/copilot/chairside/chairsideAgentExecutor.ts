@@ -7,6 +7,8 @@
  * - TABOO OF THE CREATOR: Strictly preserve anesthesia dosage and pediatric teeth logic.
  */
 
+import { generateUuidV7 } from "@dental/shared";
+import { resolveApiUrl } from "../../../lib/resolveApiUrl";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
 import { useCopilotStore } from "../../../store/copilotStore";
 import { clientLogger } from "../../../services/logging/clientLogger";
@@ -129,26 +131,23 @@ export async function executeCopilotAgentRequest(
     const chatPayload = {
       message: text,
       messages: [{ role: "user" as const, content: text }],
-      patientId: patientId?.trim() || undefined,
-      activeVisitId: visitId || undefined,
-      activeTooth: effectiveTooth,
-      toothNumber: effectiveTooth,
-      allergies: patientAllergies && patientAllergies.length > 0 ? [...patientAllergies] : undefined,
+      ...(patientId?.trim() ? { patientId: patientId.trim() } : {}),
+      ...(visitId ? { activeVisitId: visitId } : {}),
+      ...(effectiveTooth !== undefined ? { activeTooth: effectiveTooth } : {}),
+      ...(patientAllergies && patientAllergies.length > 0 ? { allergies: [...patientAllergies] } : {}),
+      ...(patientSomaticHistory ? { somaticHistory: patientSomaticHistory } : {}),
       stream: false,
       maskPhiData,
       trustLevel: activeMode,
-      context: {
-        activeTooth: effectiveTooth,
-        patientId: patientId?.trim() || undefined,
-        visitId,
-        allergies: patientAllergies && patientAllergies.length > 0 ? [...patientAllergies] : undefined,
-        somaticHistory: patientSomaticHistory,
-      },
     };
 
-    const response = await fetch("/api/agent/chat", {
+    const response = await fetch(resolveApiUrl("/api/agent/chat"), {
       method: "POST",
-      headers,
+      credentials: "include",
+      headers: {
+        ...headers,
+        "Idempotency-Key": generateUuidV7(),
+      },
       body: JSON.stringify(chatPayload),
     });
 

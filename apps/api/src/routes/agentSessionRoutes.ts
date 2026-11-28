@@ -9,21 +9,15 @@
  * - DELETE /api/agent/sessions/:id          — Delete session and cascade its messages
  * - GET    /api/agent/sessions/:id/messages — Get message history for session
  * - POST   /api/agent/sessions/:id/messages — Append message to session
- *
- * Compliance:
- * - Mandate 8b: File size <= 350 lines.
- * - Mandate 8wy: Real PostgreSQL persistence with in-memory resilient fallback.
- * - Mandate 8e: Frictionless doctor experience with instant response.
  */
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { and, desc, eq, exists, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { requireResolvedOrganizationId } from "../accessGuard.js";
-import { getRequestIdentity } from "../security/identity.js";
-import { withTenantCtx } from "../db/rls.js";
+import { defineTenantMutation, defineTenantQuery } from "../core/routeFactories.js";
+import { withSavepoint } from "../db/rls.js";
 import { copilotMessages, copilotSessions } from "../db/schema/copilot.js";
-import { patients } from "../db/schema/patients.js";
+import { BoundedTtlMap } from "../lib/boundedTtlMap.js";
 import {
 	createSessionInDb,
 	deleteSessionFromDb,
@@ -64,16 +58,31 @@ interface MemoryMessage {
 	createdAt: Date;
 }
 
-const fallbackSessions = new Map<string, MemorySession>();
-const fallbackMessages = new Map<string, MemoryMessage[]>();
-
 export const MAX_FALLBACK_SESSIONS = 500;
 export const MAX_FALLBACK_MESSAGES_PER_SESSION = 100;
 export const FALLBACK_SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+const fallbackMessages = new BoundedTtlMap<string, MemoryMessage[]>({
+	maxEntries: MAX_FALLBACK_SESSIONS,
+	ttlMs: FALLBACK_SESSION_TTL_MS,
+	touchOnGet: true,
+});
+
+const fallbackSessions = new BoundedTtlMap<string, MemorySession>({
+	maxEntries: MAX_FALLBACK_SESSIONS,
+	ttlMs: FALLBACK_SESSION_TTL_MS,
+	touchOnGet: true,
+	onEvict: (id) => {
+		if (typeof id === "string") {
+			fallbackMessages.delete(id);
+		}
+	},
+});
+
 export function cleanupExpiredFallbackSessions(currentTime?: number): number {
 	const now = currentTime ?? Date.now();
-	let evicted = 0;
+	let evicted = fallbackSessions.pruneExpired(now);
+	evicted += fallbackMessages.pruneExpired(now);
 
 	for (const [id, session] of fallbackSessions.entries()) {
 		if (now - session.updatedAt.getTime() > FALLBACK_SESSION_TTL_MS) {
@@ -83,23 +92,11 @@ export function cleanupExpiredFallbackSessions(currentTime?: number): number {
 		}
 	}
 
-	while (fallbackSessions.size >= MAX_FALLBACK_SESSIONS) {
-		const oldestId = fallbackSessions.keys().next().value;
-		if (oldestId !== undefined) {
-			fallbackSessions.delete(oldestId);
-			fallbackMessages.delete(oldestId);
-			evicted++;
-		} else {
-			break;
-		}
-	}
-
 	return evicted;
 }
 
 export function saveFallbackSession(session: MemorySession): void {
 	cleanupExpiredFallbackSessions();
-	fallbackSessions.delete(session.id);
 	fallbackSessions.set(session.id, session);
 }
 
@@ -114,7 +111,6 @@ export function appendFallbackMessage(sessionId: string, message: MemoryMessage)
 	const session = fallbackSessions.get(sessionId);
 	if (session) {
 		session.updatedAt = message.createdAt;
-		fallbackSessions.delete(sessionId);
 		fallbackSessions.set(sessionId, session);
 	}
 }
@@ -181,7 +177,8 @@ function getMemorySessions(
 	query: { patientId?: string | undefined; q?: string | undefined; limit: number; offset: number },
 ): MemorySession[] {
 	const needle = query.q?.trim().toLowerCase();
-	return Array.from(fallbackSessions.values())
+	return fallbackSessions
+		.values()
 		.filter((s) => s.organizationId === orgId)
 		.filter((s) => !query.patientId || s.patientId === query.patientId)
 		.filter((s) => {
@@ -205,13 +202,12 @@ const SESSION_PREFIXES = [
 export async function registerAgentSessionRoutes(server: FastifyInstance): Promise<void> {
 	for (const prefix of SESSION_PREFIXES) {
 		// ─── GET sessions ──────────────────────────────────────────────────────────
-		server.get(
-			prefix,
-			{ config: { tenantTxSelfManaged: true } },
-			async (request: FastifyRequest, reply: FastifyReply) => {
-				const resolvedOrgId = await requireResolvedOrganizationId(request, reply, "list agent sessions");
-				if (!resolvedOrgId) return;
-
+		defineTenantQuery(server, {
+			method: "GET",
+			path: prefix,
+			permission: "agent.read",
+			authOptions: { allowClinicTokenWithoutStaff: true },
+			handler: async ({ tx, principal, organizationId, request, reply }) => {
 				const parseResult = listSessionsQuerySchema.safeParse(request.query ?? {});
 				if (!parseResult.success) {
 					return reply.code(400).send({
@@ -228,15 +224,15 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 
 					if (searchNeedle) {
 						const pattern = `%${searchNeedle}%`;
-						const rows = await withTenantCtx(resolvedOrgId, async (tx) => {
+						const rows = await withSavepoint(tx, async (spTx) => {
 							const conditions = [
-								eq(copilotSessions.organizationId, resolvedOrgId),
+								eq(copilotSessions.organizationId, organizationId),
 								or(
 									ilike(copilotSessions.summary, pattern),
 									ilike(copilotSessions.activeView, pattern),
 									sql`${copilotSessions.id}::text ILIKE ${pattern}`,
 									exists(
-										tx
+										spTx
 											.select({ id: copilotMessages.id })
 											.from(copilotMessages)
 											.where(
@@ -246,25 +242,15 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 												),
 											),
 									),
-									exists(
-										tx
-											.select({ id: patients.id })
-											.from(patients)
-											.where(
-												and(
-													eq(patients.id, copilotSessions.patientId),
-													eq(patients.organizationId, resolvedOrgId),
-													ilike(patients.fullName, pattern),
-												),
-											),
-									),
 								),
 							];
 							if (query.patientId) {
 								conditions.push(eq(copilotSessions.patientId, query.patientId));
 							}
-
-							return tx
+							if (principal.userId) {
+								conditions.push(eq(copilotSessions.userId, principal.userId));
+							}
+							return spTx
 								.select()
 								.from(copilotSessions)
 								.where(and(...conditions))
@@ -272,65 +258,67 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 								.limit(query.limit)
 								.offset(query.offset);
 						});
-						sessions = rows.map((row) => ({
-							id: row.id,
-							organizationId: row.organizationId,
-							userId: row.userId ?? null,
-							patientId: row.patientId ?? null,
-							activeView: row.activeView ?? null,
-							summary: row.summary ?? null,
-							createdAt: row.createdAt,
-							updatedAt: row.updatedAt,
+						sessions = rows.map((r) => ({
+							id: r.id,
+							organizationId: r.organizationId,
+							userId: r.userId,
+							patientId: r.patientId,
+							activeView: r.activeView,
+							summary: r.summary,
+							createdAt: r.createdAt,
+							updatedAt: r.updatedAt,
 						}));
 					} else {
-						sessions = await listSessionsFromDb(resolvedOrgId, {
-							patientId: query.patientId,
-							limit: query.limit,
-							offset: query.offset,
-						});
+						sessions = await withSavepoint(tx, async () =>
+							listSessionsFromDb(organizationId, {
+								userId: principal.userId ?? undefined,
+								patientId: query.patientId,
+								limit: query.limit,
+								offset: query.offset,
+							}),
+						);
 					}
 
-					// Seamless fallback integration if memory holds pending sessions
-					if (sessions.length === 0) {
-						const memSessions = getMemorySessions(resolvedOrgId, query);
-						if (memSessions.length > 0) {
-							sessions = memSessions;
+					const memSessions = getMemorySessions(organizationId, query);
+					if (memSessions.length > 0) {
+						const dbIds = new Set(sessions.map((s) => s.id));
+						for (const ms of memSessions) {
+							if (!dbIds.has(ms.id)) {
+								sessions.push(ms);
+							}
 						}
+						sessions.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 					}
 
-					return reply.code(200).send({
+					return {
 						sessions,
 						data: sessions,
 						total: sessions.length,
-						limit: query.limit,
-						offset: query.offset,
-					});
+					};
 				} catch (err: unknown) {
 					request.log.warn(
-						{ err, organizationId: resolvedOrgId },
+						{ err, organizationId },
 						"[agentSessionRoutes] DB listSessionsFromDb failed, falling back to memory store",
 					);
-					const memSessions = getMemorySessions(resolvedOrgId, query);
-					return reply.code(200).send({
+					const memSessions = getMemorySessions(organizationId, query);
+					return {
 						sessions: memSessions,
 						data: memSessions,
 						total: memSessions.length,
-						limit: query.limit,
-						offset: query.offset,
 						fallback: true,
-					});
+					};
 				}
-			}
-		);
+			},
+		});
 
 		// ─── POST sessions ─────────────────────────────────────────────────────────
-		server.post(
-			prefix,
-			{ config: { tenantTxSelfManaged: true } },
-			async (request: FastifyRequest, reply: FastifyReply) => {
-				const resolvedOrgId = await requireResolvedOrganizationId(request, reply, "create agent session");
-				if (!resolvedOrgId) return;
-
+		defineTenantMutation(server, {
+			method: "POST",
+			path: prefix,
+			permission: "agent.write",
+			authOptions: { allowClinicTokenWithoutStaff: true },
+			idempotency: "optional_header",
+			execute: async ({ tx, principal, organizationId, request, reply }) => {
 				const parseResult = createSessionBodySchema.safeParse(request.body ?? {});
 				if (!parseResult.success) {
 					return reply.code(400).send({
@@ -341,31 +329,32 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 				}
 
 				const body = parseResult.data;
-				const identity = getRequestIdentity(request);
 				const sessionId = ensureValidUuid(body.id);
 				const summary = body.summary || body.title || "Новый клинический диалог";
 
 				try {
-					const session = await createSessionInDb({
-						id: sessionId,
-						organizationId: resolvedOrgId,
-						userId: identity.userId ?? null,
-						patientId: body.patientId ?? null,
-						activeView: body.activeView ?? "Одонтограмма",
-						summary,
-					});
+					const session = await withSavepoint(tx, async () =>
+						createSessionInDb({
+							id: sessionId,
+							organizationId,
+							userId: principal.userId ?? null,
+							patientId: body.patientId ?? null,
+							activeView: body.activeView ?? "Одонтограмма",
+							summary,
+						}),
+					);
 
 					return reply.code(201).send({ ok: true, data: session, ...session });
 				} catch (err: unknown) {
 					request.log.error(
-						{ err, organizationId: resolvedOrgId, sessionId },
+						{ err, organizationId, sessionId },
 						"[agentSessionRoutes] DB createSessionInDb failed, persisting to memory store fallback",
 					);
 					const now = new Date();
 					const memSession: MemorySession = {
 						id: sessionId,
-						organizationId: resolvedOrgId,
-						userId: identity.userId ?? null,
+						organizationId,
+						userId: principal.userId ?? null,
 						patientId: body.patientId ?? null,
 						activeView: body.activeView ?? "Одонтограмма",
 						summary,
@@ -376,51 +365,52 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 
 					return reply.code(201).send({ ok: true, data: memSession, ...memSession });
 				}
-			}
-		);
+			},
+		});
 
 		// ─── GET session by id ─────────────────────────────────────────────────────
-		server.get(
-			`${prefix}/:id`,
-			{ config: { tenantTxSelfManaged: true } },
-			async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-				const resolvedOrgId = await requireResolvedOrganizationId(request, reply, "get agent session");
-				if (!resolvedOrgId) return;
-
-				const { id } = request.params;
+		defineTenantQuery(server, {
+			method: "GET",
+			path: `${prefix}/:id`,
+			permission: "agent.read",
+			authOptions: { allowClinicTokenWithoutStaff: true },
+			handler: async ({ tx, organizationId, request, reply }) => {
+				const { id } = request.params as { id: string };
 				if (!UUID_REGEX.test(id)) {
 					return reply.code(400).send({ error: "InvalidUUID", message: "ID сессии должен быть UUID" });
 				}
 
 				try {
-					const session = await getSessionFromDb(id, resolvedOrgId);
+					const session = await withSavepoint(tx, async () =>
+						getSessionFromDb(id, organizationId),
+					);
 					if (session) {
-						return reply.code(200).send({ data: session, ...session });
+						return { data: session, ...session };
 					}
 				} catch (err: unknown) {
 					request.log.warn(
-						{ err, organizationId: resolvedOrgId, id },
+						{ err, organizationId, id },
 						"[agentSessionRoutes] DB getSessionFromDb failed, checking memory fallback",
 					);
 				}
 
 				const memSession = fallbackSessions.get(id);
-				if (memSession && memSession.organizationId === resolvedOrgId) {
-					return reply.code(200).send({ data: memSession, ...memSession });
+				if (memSession && memSession.organizationId === organizationId) {
+					return { data: memSession, ...memSession };
 				}
 				return reply.code(404).send({ error: "NotFound", message: "Сессия диалога не найдена" });
-			}
-		);
+			},
+		});
 
 		// ─── PATCH session by id ───────────────────────────────────────────────────
-		server.patch(
-			`${prefix}/:id`,
-			{ config: { tenantTxSelfManaged: true } },
-			async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-				const resolvedOrgId = await requireResolvedOrganizationId(request, reply, "update agent session");
-				if (!resolvedOrgId) return;
-
-				const { id } = request.params;
+		defineTenantMutation(server, {
+			method: "PATCH",
+			path: `${prefix}/:id`,
+			permission: "agent.write",
+			authOptions: { allowClinicTokenWithoutStaff: true },
+			idempotency: "optional_header",
+			execute: async ({ tx, organizationId, request, reply }) => {
+				const { id } = request.params as { id: string };
 				if (!UUID_REGEX.test(id)) {
 					return reply.code(400).send({ error: "InvalidUUID", message: "ID сессии должен быть UUID" });
 				}
@@ -437,75 +427,77 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 				const body = parseResult.data;
 
 				try {
-					const updated = await updateSessionInDb(id, resolvedOrgId, body);
+					const updated = await withSavepoint(tx, async () =>
+						updateSessionInDb(id, organizationId, body),
+					);
 					if (updated) {
-						return reply.code(200).send({ data: updated, ...updated });
+						return { data: updated, ...updated };
 					}
 				} catch (err: unknown) {
 					request.log.warn(
-						{ err, organizationId: resolvedOrgId, id },
+						{ err, organizationId, id },
 						"[agentSessionRoutes] DB updateSessionInDb failed, checking memory fallback",
 					);
 				}
 
 				const memSession = fallbackSessions.get(id);
-				if (memSession && memSession.organizationId === resolvedOrgId) {
+				if (memSession && memSession.organizationId === organizationId) {
 					if (body.activeView !== undefined) memSession.activeView = body.activeView;
 					if (body.summary !== undefined) memSession.summary = body.summary;
 					if (body.patientId !== undefined) memSession.patientId = body.patientId;
 					memSession.updatedAt = new Date();
-					fallbackSessions.delete(id);
 					fallbackSessions.set(id, memSession);
-					return reply.code(200).send({ data: memSession, ...memSession });
+					return { data: memSession, ...memSession };
 				}
 
 				return reply.code(404).send({ error: "NotFound", message: "Сессия диалога не найдена" });
-			}
-		);
+			},
+		});
 
 		// ─── DELETE session by id ──────────────────────────────────────────────────
-		server.delete(
-			`${prefix}/:id`,
-			{ config: { tenantTxSelfManaged: true } },
-			async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-				const resolvedOrgId = await requireResolvedOrganizationId(request, reply, "delete agent session");
-				if (!resolvedOrgId) return;
-
-				const { id } = request.params;
+		defineTenantMutation(server, {
+			method: "DELETE",
+			path: `${prefix}/:id`,
+			permission: "agent.write",
+			authOptions: { allowClinicTokenWithoutStaff: true },
+			idempotency: "optional_header",
+			execute: async ({ tx, organizationId, request, reply }) => {
+				const { id } = request.params as { id: string };
 				if (!UUID_REGEX.test(id)) {
 					return reply.code(400).send({ error: "InvalidUUID", message: "ID сессии должен быть UUID" });
 				}
 
 				let dbDeleted = false;
 				try {
-					dbDeleted = await deleteSessionFromDb(id, resolvedOrgId);
+					dbDeleted = await withSavepoint(tx, async () =>
+						deleteSessionFromDb(id, organizationId),
+					);
 				} catch (err: unknown) {
 					request.log.warn(
-						{ err, organizationId: resolvedOrgId, id },
+						{ err, organizationId, id },
 						"[agentSessionRoutes] DB deleteSessionFromDb failed, checking memory fallback",
 					);
 				}
 
 				const memSession = fallbackSessions.get(id);
-				const memExisted = Boolean(memSession && memSession.organizationId === resolvedOrgId);
+				const memExisted = Boolean(memSession && memSession.organizationId === organizationId);
 				if (memExisted) {
 					fallbackSessions.delete(id);
 					fallbackMessages.delete(id);
 				}
 
-				return reply.code(200).send({ ok: true, deleted: dbDeleted || memExisted, success: dbDeleted || memExisted, id });
-			}
-		);
+				return { ok: true, deleted: dbDeleted || memExisted, success: dbDeleted || memExisted, id };
+			},
+		});
 
 		// ─── GET session messages ──────────────────────────────────────────────────
-		server.get(
-			`${prefix}/:id/messages`,
-			{ config: { tenantTxSelfManaged: true } },
-			async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-				const resolvedOrgId = await requireResolvedOrganizationId(request, reply, "get session messages");
-				if (!resolvedOrgId) return;
-
-				const { id } = request.params;
+		defineTenantQuery(server, {
+			method: "GET",
+			path: `${prefix}/:id/messages`,
+			permission: "agent.read",
+			authOptions: { allowClinicTokenWithoutStaff: true },
+			handler: async ({ tx, organizationId, request, reply }) => {
+				const { id } = request.params as { id: string };
 				if (!UUID_REGEX.test(id)) {
 					return reply.code(400).send({ error: "InvalidUUID", message: "ID сессии должен быть UUID" });
 				}
@@ -521,56 +513,58 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 				const query = parseResult.data;
 
 				const memSession = fallbackSessions.get(id);
-				if (memSession && memSession.organizationId !== resolvedOrgId) {
+				if (memSession && memSession.organizationId !== organizationId) {
 					return reply.code(404).send({ error: "NotFound", message: "Сессия диалога не найдена" });
 				}
 
 				try {
-					let messages: (CopilotMessageRecord | MemoryMessage)[] = await getMessagesFromDb(id, resolvedOrgId, query);
+					let messages: (CopilotMessageRecord | MemoryMessage)[] = await withSavepoint(tx, async () =>
+						getMessagesFromDb(id, organizationId, query),
+					);
 					if (
 						messages.length === 0 &&
 						memSession &&
-						memSession.organizationId === resolvedOrgId &&
+						memSession.organizationId === organizationId &&
 						fallbackMessages.has(id)
 					) {
 						messages = (fallbackMessages.get(id) || []).slice(query.offset, query.offset + query.limit);
 					}
 
-					return reply.code(200).send({
+					return {
 						sessionId: id,
 						messages,
 						data: messages,
 						total: messages.length,
-					});
+					};
 				} catch (err: unknown) {
 					request.log.warn(
-						{ err, organizationId: resolvedOrgId, id },
+						{ err, organizationId, id },
 						"[agentSessionRoutes] DB getMessagesFromDb failed, falling back to memory store",
 					);
 					const memMsgs =
-						memSession && memSession.organizationId === resolvedOrgId
+						memSession && memSession.organizationId === organizationId
 							? (fallbackMessages.get(id) || []).slice(query.offset, query.offset + query.limit)
 							: [];
-					return reply.code(200).send({
+					return {
 						sessionId: id,
 						messages: memMsgs,
 						data: memMsgs,
 						total: memMsgs.length,
 						fallback: true,
-					});
+					};
 				}
-			}
-		);
+			},
+		});
 
 		// ─── POST append message to session ────────────────────────────────────────
-		server.post(
-			`${prefix}/:id/messages`,
-			{ config: { tenantTxSelfManaged: true } },
-			async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-				const resolvedOrgId = await requireResolvedOrganizationId(request, reply, "add session message");
-				if (!resolvedOrgId) return;
-
-				const { id } = request.params;
+		defineTenantMutation(server, {
+			method: "POST",
+			path: `${prefix}/:id/messages`,
+			permission: "agent.write",
+			authOptions: { allowClinicTokenWithoutStaff: true },
+			idempotency: "optional_header",
+			execute: async ({ tx, principal, organizationId, request, reply }) => {
+				const { id } = request.params as { id: string };
 				if (!UUID_REGEX.test(id)) {
 					return reply.code(400).send({ error: "InvalidUUID", message: "ID сессии должен быть UUID" });
 				}
@@ -586,33 +580,34 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 
 				const body = parseResult.data;
 				const existingMemSession = fallbackSessions.get(id);
-				if (existingMemSession && existingMemSession.organizationId !== resolvedOrgId) {
+				if (existingMemSession && existingMemSession.organizationId !== organizationId) {
 					return reply.code(404).send({ error: "NotFound", message: "Сессия диалога не найдена" });
 				}
 
 				try {
-					const message = await addMessageToDb({
-						sessionId: id,
-						organizationId: resolvedOrgId,
-						role: body.role as CopilotRole,
-						content: body.content,
-						toolCalls: body.toolCalls,
-						autoCompact: body.autoCompact,
-					});
+					const message = await withSavepoint(tx, async () =>
+						addMessageToDb({
+							sessionId: id,
+							organizationId,
+							role: body.role as CopilotRole,
+							content: body.content,
+							toolCalls: body.toolCalls,
+							autoCompact: body.autoCompact,
+						}),
+					);
 
 					return reply.code(201).send({ ok: true, data: message, ...message });
 				} catch (err: unknown) {
 					request.log.error(
-						{ err, organizationId: resolvedOrgId, id },
+						{ err, organizationId, id },
 						"[agentSessionRoutes] DB addMessageToDb failed, appending to memory fallback",
 					);
 					const now = new Date();
 					if (!existingMemSession) {
-						const identity = getRequestIdentity(request);
 						saveFallbackSession({
 							id,
-							organizationId: resolvedOrgId,
-							userId: identity.userId ?? null,
+							organizationId,
+							userId: principal.userId ?? null,
 							patientId: null,
 							activeView: "Одонтограмма",
 							summary: body.content.slice(0, 120),
@@ -634,7 +629,7 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 
 					return reply.code(201).send({ ok: true, data: memMsg, ...memMsg });
 				}
-			}
-		);
+			},
+		});
 	}
 }

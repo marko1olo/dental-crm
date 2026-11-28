@@ -94,14 +94,21 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 		assert.equal(webRes.availableInWeb, false);
 		assert.match(webRes.error, /локальной станции врача/);
 
-		const nativeRes = (await executeDentalTool(
-			"open_patient_dropzone_folder",
-			{ patientId: "11111111-2222-3333-4444-555555555555" },
-			{ organizationId: testOrgId, runtimeMode: "desktop_native" },
-		)) as { success: boolean; dropzonePath: string };
+		const prevExe = process.env.IS_DESKTOP_EXE;
+		process.env.IS_DESKTOP_EXE = "true";
+		try {
+			const nativeRes = (await executeDentalTool(
+				"open_patient_dropzone_folder",
+				{ patientId: "11111111-2222-3333-4444-555555555555" },
+				{ organizationId: testOrgId, runtimeMode: "desktop_native" },
+			)) as { success: boolean; dropzonePath: string };
 
-		assert.equal(nativeRes.success, true);
-		assert.ok(nativeRes.dropzonePath.length > 0);
+			assert.equal(nativeRes.success, true);
+			assert.ok(nativeRes.dropzonePath.length > 0);
+		} finally {
+			if (prevExe !== undefined) process.env.IS_DESKTOP_EXE = prevExe;
+			else delete process.env.IS_DESKTOP_EXE;
+		}
 	});
 
 	it("3. calculate_anesthesia tool correctly calculates articaine dosage with cardiac risk limits", async () => {
@@ -340,20 +347,46 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 		assert.equal(json.count, 18);
 		assert.equal(json.runtimeMode, "web_browser");
 
-		// Authenticated request with x-agent-runtime: desktop_native
-		const nativeRes = await app.inject({
-			method: "GET",
-			url: "/api/agent/tools",
-			headers: {
-				[CLINIC_TOKEN_HEADER]: validClinicToken,
-				"x-agent-runtime": "desktop_native",
-			},
-		});
+		// Spoofed x-agent-runtime: desktop_native WITHOUT IS_DESKTOP_EXE/WORKSTATION_MODE must stay web_browser (P0-1)
+		const prevDesktopExe = process.env.IS_DESKTOP_EXE;
+		const prevWorkstation = process.env.WORKSTATION_MODE;
+		delete process.env.IS_DESKTOP_EXE;
+		delete process.env.WORKSTATION_MODE;
+		try {
+			const spoofRes = await app.inject({
+				method: "GET",
+				url: "/api/agent/tools",
+				headers: {
+					[CLINIC_TOKEN_HEADER]: validClinicToken,
+					"x-agent-runtime": "desktop_native",
+				},
+			});
+			assert.equal(spoofRes.statusCode, 200);
+			const spoofJson = spoofRes.json();
+			assert.equal(spoofJson.runtimeMode, "web_browser");
+			assert.equal(spoofJson.count, 18);
 
-		assert.equal(nativeRes.statusCode, 200);
-		const nativeJson = nativeRes.json();
-		assert.equal(nativeJson.count, 33);
-		assert.equal(nativeJson.runtimeMode, "desktop_native");
+			// Trusted workstation flag enables desktop_native on loopback IP
+			process.env.IS_DESKTOP_EXE = "true";
+			const nativeRes = await app.inject({
+				method: "GET",
+				url: "/api/agent/tools",
+				headers: {
+					[CLINIC_TOKEN_HEADER]: validClinicToken,
+					"x-agent-runtime": "desktop_native",
+				},
+			});
+
+			assert.equal(nativeRes.statusCode, 200);
+			const nativeJson = nativeRes.json();
+			assert.equal(nativeJson.count, 33);
+			assert.equal(nativeJson.runtimeMode, "desktop_native");
+		} finally {
+			if (prevDesktopExe !== undefined) process.env.IS_DESKTOP_EXE = prevDesktopExe;
+			else delete process.env.IS_DESKTOP_EXE;
+			if (prevWorkstation !== undefined) process.env.WORKSTATION_MODE = prevWorkstation;
+			else delete process.env.WORKSTATION_MODE;
+		}
 
 		await app.close();
 	});
@@ -564,5 +597,68 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 		assert.equal(ssrfRes.statusCode, 400, "byokProvider=custom & pinnedThreadIds pass Zod, SSRF URL fails with 400");
 
 		await app.close();
+	});
+
+	it("14. P0-1 & P0-3: blocks desktop_native tool execution via header/body spoof without IS_DESKTOP_EXE and accepts chairside payload", async () => {
+		const prevExe = process.env.IS_DESKTOP_EXE;
+		const prevWs = process.env.WORKSTATION_MODE;
+		delete process.env.IS_DESKTOP_EXE;
+		delete process.env.WORKSTATION_MODE;
+
+		const app = Fastify();
+		await app.register(registerAgentRoutes);
+		await app.ready();
+
+		try {
+			const spoofedDesktopAction = await app.inject({
+				method: "POST",
+				url: "/api/agent/action",
+				headers: {
+					[CLINIC_TOKEN_HEADER]: validClinicToken,
+					[STAFF_TOKEN_HEADER]: validStaffToken,
+					"x-agent-runtime": "desktop_native",
+					"Content-Type": "application/json",
+					"Idempotency-Key": randomUUID(),
+				},
+				payload: {
+					toolName: "capture_workstation_screen",
+					args: { roi: "full" },
+					runtimeMode: "desktop_native",
+					confirmed: true,
+				},
+			});
+			assert.equal(spoofedDesktopAction.statusCode, 403, "Spoofed desktop_native must return 403 without IS_DESKTOP_EXE");
+
+			const chairsideChatRes = await app.inject({
+				method: "POST",
+				url: "/api/agent/chat",
+				headers: {
+					[CLINIC_TOKEN_HEADER]: validClinicToken,
+					[STAFF_TOKEN_HEADER]: validStaffToken,
+					"Content-Type": "application/json",
+					"Idempotency-Key": randomUUID(),
+				},
+				payload: {
+					messages: [{ role: "user", content: "Составь краткий план по зубу 36" }],
+					patientId: "01945000-0000-7000-8000-000000000001",
+					activeTooth: 36,
+					allergies: ["Лидокаин"],
+					somaticHistory: "ИБС",
+					stream: false,
+					fallbackToDeterministicAgent: true,
+				},
+			});
+			assert.equal(chairsideChatRes.statusCode, 200, "Chairside JSON payload with activeTooth must pass .strict()");
+			const body = chairsideChatRes.json() as { text?: string; runtimeMode?: string };
+			assert.equal(typeof body.text, "string");
+			assert.ok((body.text?.length ?? 0) > 0);
+			assert.equal(body.runtimeMode, "web_browser");
+		} finally {
+			if (prevExe !== undefined) process.env.IS_DESKTOP_EXE = prevExe;
+			else delete process.env.IS_DESKTOP_EXE;
+			if (prevWs !== undefined) process.env.WORKSTATION_MODE = prevWs;
+			else delete process.env.WORKSTATION_MODE;
+			await app.close();
+		}
 	});
 });

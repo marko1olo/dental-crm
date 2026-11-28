@@ -32,7 +32,7 @@ export const AnamnesisVoiceInput: React.FC<AnamnesisVoiceInputProps> = ({
 	return (
 		<>
 			<div className="space-y-2.5">
-				<label className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-200 flex items-center gap-2 uppercase tracking-wider">
+				<label className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-200 flex items-center gap-2 tracking-wide">
 					<Stethoscope className="w-4 h-4 text-teal-500" />
 					<span>4. Основные жалобы пациента у кресла</span>
 				</label>
@@ -60,7 +60,7 @@ export const AnamnesisVoiceInput: React.FC<AnamnesisVoiceInputProps> = ({
 
 			<div className="space-y-2">
 				<div className="flex items-center justify-between">
-					<label htmlFor={customNotesId} className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
+					<label htmlFor={customNotesId} className="text-xs font-bold text-[var(--muted,#64748b)] tracking-wide">
 						Дополнительные примечания врача и постоянная терапия:
 					</label>
 					<div className="flex items-center">

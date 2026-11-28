@@ -4,10 +4,10 @@
  * T.A.R.S. Safety: Zero fallback to fake zero-UUID. Strictly 401 Unauthorized if unauthenticated.
  */
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { getRequestIdentity } from "../../security/identity.js";
+import { defineTenantMutation, defineTenantQuery } from "../../core/routeFactories.js";
+import { getDoctorPreferencesFromDb } from "../../db/doctorPreferencesQuery.js";
 import {
 	getDentalTools,
 	executeDentalTool,
@@ -34,36 +34,52 @@ const agentActionBodySchema = z
 		runtimeMode: z
 			.enum(["web_browser", "desktop_native", "chairside_tablet", "mobile_tablet"])
 			.optional(),
+		localDropzonePath: z.string().max(500).optional(),
 		patientId: z.string().uuid().nullish(),
 		visitId: z.string().uuid().nullish(),
 	})
 	.strict();
 
+function resolveActionErrorStatusCode(
+	errorCode: string | undefined,
+	errorMessage: string | undefined,
+): number {
+	if (errorCode === "DESKTOP_DENIED") return 403;
+	if (errorCode === "TOOL_NOT_FOUND") return 404;
+	if (errorMessage) {
+		if (
+			errorMessage.includes("Конфликт") ||
+			errorMessage.includes("уже подтверждено")
+		) {
+			return 409;
+		}
+		if (errorMessage.includes("не найден") || errorMessage.includes("истек срок")) {
+			return 404;
+		}
+	}
+	return 400;
+}
+
 export async function registerAgentToolsAndActionRoutes(
 	server: FastifyInstance,
 ): Promise<void> {
 	// ─── GET /api/agent/tools ──────────────────────────────────────────────────
-	server.get(
-		"/api/agent/tools",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"agent tools",
-			);
-			if (!resolvedOrgId) return;
-
+	defineTenantQuery(server, {
+		method: "GET",
+		path: "/api/agent/tools",
+		permission: "agent.read",
+		authOptions: { allowClinicTokenWithoutStaff: true },
+		handler: async ({ request }) => {
 			const runtimeMode = resolveRuntimeMode(request);
 			const tools = getDentalTools(runtimeMode);
 
-			return reply.code(200).send({
+			return {
 				tools,
 				count: tools.length,
 				runtimeMode,
-			});
+			};
 		},
-	);
+	});
 
 	// ─── ACTION CONFIRMATION & DIRECT EXECUTION (TWO-PHASE GUARD & HITL) ──────
 	const actionEndpoints = [
@@ -72,25 +88,23 @@ export async function registerAgentToolsAndActionRoutes(
 	];
 
 	for (const endpoint of actionEndpoints) {
-		server.post(
-			endpoint,
-			{ config: { tenantTxSelfManaged: true } },
-			async (request: FastifyRequest, reply: FastifyReply) => {
-				const resolvedOrgId = await requireResolvedOrganizationId(
-					request,
-					reply,
-					"copilot action confirmation",
-				);
-				if (!resolvedOrgId) return;
-
-				const identity = getRequestIdentity(request);
-				if (!identity.userId) {
+		defineTenantMutation(server, {
+			method: "POST",
+			path: endpoint,
+			permission: "agent.write",
+			authOptions: {
+				requireStaffToken: true,
+				allowClinicTokenWithoutStaff: false,
+			},
+			idempotency: "optional_header",
+			execute: async ({ tx, principal, organizationId, request, reply }) => {
+				const userId = principal.userId;
+				if (!userId) {
 					return reply.code(401).send({
-						error: "Unauthorized",
+						error: "StaffAuthRequired",
 						message: "Необходима авторизация врача для выполнения клинического действия",
 					});
 				}
-				const userId = identity.userId;
 
 				const parsedBody = agentActionBodySchema.safeParse(request.body ?? {});
 				if (!parsedBody.success) {
@@ -108,44 +122,76 @@ export async function registerAgentToolsAndActionRoutes(
 				const allowLocalExecution = runtimeMode === "desktop_native";
 				const callId = body.callId;
 
-				// 1. Two-phase HITL confirmation / rejection via copilotActionManager (takes precedence when callId is provided)
+				let effectiveLocalDropzonePath = body.localDropzonePath;
+				if (!effectiveLocalDropzonePath && allowLocalExecution) {
+					const prefRecord = await getDoctorPreferencesFromDb(
+						organizationId,
+						userId,
+						tx,
+					);
+					const prefs = (prefRecord?.preferences || {}) as Record<string, unknown>;
+					const copilotSettings =
+						prefs.copilotSettings && typeof prefs.copilotSettings === "object"
+							? (prefs.copilotSettings as Record<string, unknown>)
+							: undefined;
+					if (
+						typeof copilotSettings?.localDropzonePath === "string" &&
+						copilotSettings.localDropzonePath.trim().length > 0
+					) {
+						effectiveLocalDropzonePath = copilotSettings.localDropzonePath.trim();
+					}
+				}
+
+				// 1. Two-phase HITL confirmation / rejection via copilotActionManager
 				if (callId) {
 					const decision = body.decision ?? (body.confirmed !== false ? "confirm" : "reject");
 
 					if (decision === "confirm") {
 						const result = await defaultCopilotActionManager.confirmAction(
 							{
-								organizationId: resolvedOrgId,
-								clinicId: resolvedOrgId,
+								organizationId,
+								clinicId: organizationId,
 								userId,
 								sessionId,
 								mode: "autonomous",
+								db: tx,
 								metadata: {
 									runtimeMode,
 									patientId: body.patientId,
 									activeVisitId: body.visitId,
+									localDropzonePath: effectiveLocalDropzonePath,
 								},
 							},
 							callId,
 							body.modifiedArgs,
 						);
-						if (!result.ok && (result.error?.includes("Конфликт") || result.error?.includes("уже подтверждено"))) {
-							return reply.code(409).send({
+						if (!result.ok) {
+							const dataEnvelope =
+								result.data && typeof result.data === "object"
+									? (result.data as { code?: string })
+									: undefined;
+							const statusCode = resolveActionErrorStatusCode(
+								dataEnvelope?.code,
+								result.error,
+							);
+							return reply.code(statusCode).send({
 								ok: false,
-								error: result.error,
+								result: result.data,
+								data: result.data,
+								error: result.error ?? "Не удалось подтвердить действие",
 							});
 						}
-						return reply.code(result.ok ? 200 : 400).send({
-							ok: result.ok,
-							result: result.ok ? result.data : undefined,
-							error: result.error,
+						return reply.code(200).send({
+							ok: true,
+							result: result.data,
+							data: result.data,
 						});
 					}
 
 					const rejection = await defaultCopilotActionManager.rejectActionAsync(
 						callId,
 						body.reason ?? "Отклонено пользователем",
-						resolvedOrgId,
+						organizationId,
 					);
 					return reply.code(200).send({
 						ok: true,
@@ -156,7 +202,7 @@ export async function registerAgentToolsAndActionRoutes(
 
 				const directToolName = body.toolName || body.tool;
 
-				// 2. Direct tool execution via Canonical SSOT executeDentalTool (requires explicit confirmed=true for destructive tools)
+				// 2. Direct tool execution via Canonical SSOT executeDentalTool
 				if (directToolName) {
 					const canonicalTool = normalizeToolName(directToolName);
 					if (isDestructiveDentalTool(canonicalTool) && body.confirmed !== true) {
@@ -190,7 +236,7 @@ export async function registerAgentToolsAndActionRoutes(
 					}
 
 					const dentalContext: DentalToolContext = {
-						organizationId: resolvedOrgId,
+						organizationId,
 						userId,
 						doctorId: userId,
 						patientId: (typeof effectiveArgs.patientId === "string" ? effectiveArgs.patientId : undefined) || body.patientId || undefined,
@@ -201,6 +247,8 @@ export async function registerAgentToolsAndActionRoutes(
 								? effectiveArgs.tooth
 								: undefined,
 						runtimeMode,
+						localDropzonePath: effectiveLocalDropzonePath,
+						db: tx,
 						allowLocalExecution,
 					};
 
@@ -214,12 +262,7 @@ export async function registerAgentToolsAndActionRoutes(
 						const toolError = typeof toolResult?.error === "string" ? toolResult.error : undefined;
 
 						if (!isSuccess) {
-							const errorStatusCode =
-								toolCode === "DESKTOP_DENIED"
-									? 403
-									: toolCode === "TOOL_NOT_FOUND"
-										? 404
-										: 400;
+							const errorStatusCode = resolveActionErrorStatusCode(toolCode, toolError);
 							return reply.code(errorStatusCode).send({
 								ok: false,
 								result: rawToolResult,
@@ -249,6 +292,6 @@ export async function registerAgentToolsAndActionRoutes(
 					message: "Некорректный формат: укажите callId или toolName",
 				});
 			},
-		);
+		});
 	}
-};
+}

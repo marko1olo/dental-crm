@@ -12,14 +12,16 @@ import {
 } from "./securityConstants.js";
 
 export function checkIsLocalWorkstation(context: DentalToolContext): boolean {
-	if (context.runtimeMode !== "desktop_native" && !context.allowLocalExecution) {
+	const serverAllowsDesktop =
+		process.env.IS_DESKTOP_EXE === "true" ||
+		process.env.WORKSTATION_MODE === "true";
+	if (!serverAllowsDesktop) {
 		return false;
 	}
-	return (
-		process.platform === "win32" ||
-		process.env.WORKSTATION_MODE === "true" ||
-		context.allowLocalExecution === true
-	);
+	if (context.runtimeMode !== "desktop_native" || context.allowLocalExecution === false) {
+		return false;
+	}
+	return true;
 }
 
 export const DESKTOP_DENIED_RESPONSE = {
@@ -67,10 +69,18 @@ export function isCommandSafe(cmd: string): boolean {
 export function getTenantDropzonePath(
 	organizationId: string,
 	patientId?: string,
+	customBaseDropzone?: string,
 ): string {
-	const baseDropzone =
+	let baseDropzone =
 		process.env.DENTAL_DROPZONE_PATH ||
 		path.join(process.env.SYSTEMDRIVE || "C:", "DentalClinic", "XRayDropzone");
+
+	if (typeof customBaseDropzone === "string" && customBaseDropzone.trim().length > 0) {
+		const normalizedCustom = path.resolve(customBaseDropzone.trim());
+		if (isPathSafe(normalizedCustom)) {
+			baseDropzone = normalizedCustom;
+		}
+	}
 
 	const orgSafe = organizationId.replace(/[^a-zA-Z0-9_-]/g, "_");
 	if (!patientId) {

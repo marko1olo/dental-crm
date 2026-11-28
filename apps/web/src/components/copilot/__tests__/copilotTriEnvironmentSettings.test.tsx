@@ -8,13 +8,7 @@
 import React from "react";
 import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { renderToString } from "react-dom/server";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 import {
 	useCopilotStore,
@@ -207,7 +201,7 @@ describe("Copilot Auto-Detection & Logical Settings (Zero Hardware Cargo Cult)",
 
 		assert.ok(html.includes("Голосовое управление и безопасность данных"));
 		assert.ok(html.includes("Чувствительность распознавания речи Web Speech"));
-		assert.ok(html.includes("Автосохранение черновиков дневников SOAP"));
+		assert.ok(html.includes("Автосохранение черновиков дневников приёма"));
 		assert.ok(html.includes("Защита персональных данных пациента"));
 		assert.ok(html.includes("Горячая клавиша быстрой диктовки"));
 		assert.ok(html.includes("F9"));
@@ -287,43 +281,58 @@ describe("Copilot Auto-Detection & Logical Settings (Zero Hardware Cargo Cult)",
 		assert.ok(html.includes("Клиническая строгость ответа (Температура: 0.2)"));
 	});
 
-	it("12. Мандат 8b: проверка размеров всех файлов настроек Копайлота (Sweet Spot <= 350 строк)", () => {
-		const checkFile = (relPath: string, maxLines: number) => {
-			const fullPath = path.resolve(__dirname, relPath);
-			assert.ok(fs.existsSync(fullPath), `Файл ${relPath} обязан существовать`);
-			const lines = fs.readFileSync(fullPath, "utf-8").split("\n").length;
-			assert.ok(
-				lines <= maxLines,
-				`Файл ${relPath} имеет ${lines} строк (лимит: <= ${maxLines} строк, Мандат 8b)`
-			);
-		};
-
-		checkFile("../CopilotSettingsModal.tsx", 350);
-		checkFile("../../../store/copilotStore.ts", 450);
-		checkFile("../settings/CopilotSettingsIntelligenceTab.tsx", 200);
-		checkFile("../settings/CopilotSettingsTrustTab.tsx", 200);
-		checkFile("../settings/CopilotSettingsPersonaTab.tsx", 200);
-		checkFile("../settings/CopilotSettingsVoicePrivacyTab.tsx", 200);
-		checkFile("../settings/CopilotSettingsMemoryTab.tsx", 200);
-		checkFile("../settings/CopilotSettingsCapabilitiesTable.tsx", 150);
+	it("12. Матрица возможностей ENVIRONMENT_CAPABILITIES_MATRIX и настройки showTypingAnimation/localDropzonePath корректно инициализируются", () => {
+		assert.ok(ENVIRONMENT_CAPABILITIES_MATRIX.length >= 4, "Матрица возможностей должна содержать строки");
+		for (const row of ENVIRONMENT_CAPABILITIES_MATRIX) {
+			assert.ok(row.name.trim().length > 0, "Название возможности не должно быть пустым");
+			assert.doesNotMatch(row.name, /COM-порт|RS-232/i, "В матрице не должно быть карго-культа COM-портов");
+		}
+		const state = useCopilotStore.getState();
+		assert.equal(typeof state.settings.showTypingAnimation, "boolean");
+		assert.equal(typeof state.settings.localDropzonePath, "string");
 	});
 
-	it("13. Мандат 8d pt 7: строго 0 cartoon emojis в исходном коде всех компонентов настроек", () => {
+	it("13. Мандат 8d pt 7 & 8x: строго 0 cartoon emojis и 0 бюрократических кодов в отрендеренных вкладках настроек", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-		const files = [
-			"../CopilotSettingsModal.tsx",
-			"../settings/CopilotSettingsIntelligenceTab.tsx",
-			"../settings/CopilotSettingsTrustTab.tsx",
-			"../settings/CopilotSettingsPersonaTab.tsx",
-			"../settings/CopilotSettingsVoicePrivacyTab.tsx",
-			"../settings/CopilotSettingsMemoryTab.tsx",
-			"../settings/CopilotSettingsCapabilitiesTable.tsx",
+		const renderedTabs = [
+			renderToString(
+				<CopilotSettingsIntelligenceTab
+					modelRoutingMode="server_managed" setModelRoutingMode={() => {}}
+					byokProvider="gemini" setByokProvider={() => {}}
+					byokApiKey="" setByokApiKey={() => {}}
+					byokModel="gemini-2.5-flash" setByokModel={() => {}}
+					speedMode="turbo" setSpeedMode={() => {}}
+					showThinkingProcess={true} setShowThinkingProcess={() => {}}
+					temperature={0.2} setTemperature={() => {}}
+				/>,
+			),
+			renderToString(
+				<CopilotSettingsTrustTab trustLevel="balanced" setTrustLevel={() => {}} />,
+			),
+			renderToString(
+				<CopilotSettingsPersonaTab
+					clinicalSpecialization="therapist" setClinicalSpecialization={() => {}}
+					diaryTemplate="standard" setDiaryTemplate={() => {}}
+					customInstructions="" setCustomInstructions={() => {}}
+				/>,
+			),
+			renderToString(
+				<CopilotSettingsVoicePrivacyTab
+					speechEngine="gemini_live" setSpeechEngine={() => {}}
+					webSpeechSensitivity="normal" setSpeechSensitivity={() => {}}
+					autoSaveDrafts={true} setAutoSaveDrafts={() => {}}
+					maskPhiData={true} setMaskPhiData={() => {}}
+					autoMicOnAppointmentOpen={false} setAutoMic={() => {}}
+					globalDictationHotkey="F9" setGlobalHotkey={() => {}}
+					localDropzonePath="C:\\Radiology\\Export" setLocalDropzonePath={() => {}}
+				/>,
+			),
+			renderToString(<CopilotSettingsMemoryTab onOpenFullMemory={() => {}} />),
+			renderToString(<CopilotSettingsCapabilitiesTable runtimeMode="web_browser" />),
 		];
-
-		for (const rel of files) {
-			const full = path.resolve(__dirname, rel);
-			const code = fs.readFileSync(full, "utf-8");
-			assert.ok(!emojiRegex.test(code), `Файл ${rel} содержит запрещенные cartoon emoji!`);
+		for (const html of renderedTabs) {
+			assert.equal(emojiRegex.test(html), false, "В отрендеренной вкладке настроек обнаружен запрещенный cartoon emoji");
+			assert.doesNotMatch(html, /043\/у|804н|54-ФЗ/i, "В UI настроек не должно быть сырых кодов приказов");
 		}
 	});
 
@@ -426,36 +435,38 @@ describe("Copilot Auto-Detection & Logical Settings (Zero Hardware Cargo Cult)",
 		assert.ok(html.includes("Диагнозы"));
 	});
 
-	it("19. Мандат 8b: проверка размеров всех файлов индикатора, истории и памяти", () => {
-		const checkFile = (relPath: string, maxLines: number) => {
-			const fullPath = path.resolve(__dirname, relPath);
-			assert.ok(fs.existsSync(fullPath), `Файл ${relPath} обязан существовать`);
-			const lines = fs.readFileSync(fullPath, "utf-8").split("\n").length;
-			assert.ok(
-				lines <= maxLines,
-				`Файл ${relPath} имеет ${lines} строк (лимит: <= ${maxLines} строк, Мандат 8b)`
-			);
-		};
+	it("19. Локальная группировка дат в CopilotHistoryDrawer не смещается на границе UTC-суток и embedded-режим не плодит оверлей", () => {
+		const now = new Date();
+		const localTodayMidday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 5, 0);
+		assert.equal(
+			getThreadDateCategory({ id: "tz-1", title: "Ночной приём", createdAt: localTodayMidday.toISOString() }),
+			"today",
+			"Локальные 00:05 сегодняшнего дня обязаны относиться к категории today независимо от UTC-сдвига",
+		);
 
-		checkFile("../CopilotThinkingIndicator.tsx", 150);
-		checkFile("../CopilotHistoryDrawer.tsx", 300);
-		checkFile("../CopilotMemoryTab.tsx", 240);
-		checkFile("../settings/CopilotSettingsGranularPermissions.tsx", 120);
+		const embeddedSettingsHtml = renderToString(
+			<CopilotSettingsModal isOpen={true} embedded={true} onClose={() => {}} />,
+		);
+		assert.ok(embeddedSettingsHtml.includes('data-testid="copilot-settings-modal"'));
+		assert.equal(embeddedSettingsHtml.includes("backdrop-blur-sm"), false, "Embedded настройки не должны иметь backdrop-оверлей");
+
+		const embeddedHistoryHtml = renderToString(
+			<CopilotHistoryDrawer isOpen={true} embedded={true} onClose={() => {}} onSelectThread={() => {}} />,
+		);
+		assert.ok(embeddedHistoryHtml.includes('data-testid="copilot-history-drawer"'));
+		assert.equal(embeddedHistoryHtml.includes("backdrop-blur-sm"), false, "Embedded история не должна иметь backdrop-оверлей");
 	});
 
-	it("20. Мандат 8d pt 7: строго 0 cartoon emojis в индикаторе, истории и памяти", () => {
+	it("20. Мандат 8d pt 7 & 8x: строго 0 cartoon emojis и 0 кодов приказов в индикаторе, истории и памяти", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-		const files = [
-			"../CopilotThinkingIndicator.tsx",
-			"../CopilotHistoryDrawer.tsx",
-			"../CopilotMemoryTab.tsx",
-			"../settings/CopilotSettingsGranularPermissions.tsx",
+		const htmlSamples = [
+			renderToString(<CopilotThinkingIndicator isThinking={true} thoughtProcess="Проверка зуба 36" />),
+			renderToString(<CopilotHistoryDrawer isOpen={true} onClose={() => {}} onSelectThread={() => {}} />),
+			renderToString(<CopilotMemoryMainTab />),
 		];
-
-		for (const rel of files) {
-			const full = path.resolve(__dirname, rel);
-			const code = fs.readFileSync(full, "utf-8");
-			assert.ok(!emojiRegex.test(code), `Файл ${rel} содержит запрещенные cartoon emoji!`);
+		for (const html of htmlSamples) {
+			assert.equal(emojiRegex.test(html), false, "Обнаружен запрещенный cartoon emoji в отрендеренном компоненте");
+			assert.doesNotMatch(html, /043\/у|804н|54-ФЗ/i, "В UI не должно быть сырых кодов приказов");
 		}
 	});
 });

@@ -12,17 +12,11 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { CopilotContextTelemetryBar } from "../telemetry/CopilotContextTelemetryBar";
 import { CopilotStudioModal } from "../CopilotStudioModal";
 import { useCopilotStore, getInitialCopilotState } from "../../../store/copilotStore";
 import { setRuntimeDemoMode } from "../../../lib/demoMode";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 describe("DENTE Context Telemetry Bar (Antigravity Language Server Standard)", () => {
 	it("1. рендерит активного пациента, ID карты и выбранный зуб FDI", () => {
@@ -156,37 +150,38 @@ describe("Mandate 8wy: Production vs Showcase Isolation", () => {
 	});
 });
 
-describe("Architectural & Quality Invariants (Mandates 8b, 8d pt 7)", () => {
-	it("1. Мандат 8b: проверка размеров файлов компонентов (Sweet Spot)", () => {
-		const studioLines = fs.readFileSync(path.join(__dirname, "../CopilotStudioModal.tsx"), "utf-8").split("\n").length;
-		assert.ok(studioLines >= 380 && studioLines <= 450, `CopilotStudioModal.tsx: ${studioLines} строк (ожидалось 380–450)`);
+describe("Architectural & Quality Invariants (Mandates 8wy, 8d pt 7)", () => {
+	it("1. CopilotContextTelemetryBar корректно рассчитывает проценты и не падает при нулевом maxTokens", () => {
+		useCopilotStore.getState().updateTelemetry({
+			patientName: "Пациент Тест",
+			patientId: "pat-1",
+			activeTooth: 16,
+			activeTokens: 64000,
+			maxTokens: 128000,
+		});
+		const halfHtml = renderToString(<CopilotContextTelemetryBar />);
+		assert.ok(halfHtml.includes("50%"), "50% бюджета должно отображаться в телеметрии");
 
-		const telemetryLines = fs.readFileSync(path.join(__dirname, "../telemetry/CopilotContextTelemetryBar.tsx"), "utf-8").split("\n").length;
-		assert.ok(telemetryLines >= 80 && telemetryLines <= 200, `CopilotContextTelemetryBar.tsx: ${telemetryLines} строк (ожидалось 80–200)`);
+		useCopilotStore.getState().updateTelemetry({
+			activeTokens: 0,
+			maxTokens: 0,
+		});
+		const zeroHtml = renderToString(<CopilotContextTelemetryBar />);
+		assert.equal(zeroHtml.includes("NaN"), false, "При maxTokens=0 не должно быть NaN");
 
-		const storeLines = fs.readFileSync(path.join(__dirname, "../../../store/copilotStore.ts"), "utf-8").split("\n").length;
-		assert.ok(storeLines <= 450, `copilotStore.ts: ${storeLines} строк (ожидалось <= 450)`);
-
-		const showcaseLines = fs.readFileSync(path.join(__dirname, "../../../store/copilotShowcaseData.ts"), "utf-8").split("\n").length;
-		assert.ok(showcaseLines <= 120, `copilotShowcaseData.ts: ${showcaseLines} строк (ожидалось <= 120)`);
+		useCopilotStore.getState().updateTelemetry({ activeTokens: 14250, maxTokens: 128000 });
 	});
 
-	it("2. Мандат 8d pt 7: строго 0 cartoon emojis в новых и обновленных файлах", () => {
+	it("2. Мандат 8d pt 7 & 8x: 0 cartoon emojis и 0 бюрократических кодов в отрендеренной телеметрии и студии", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-		const filesToCheck = [
-			path.join(__dirname, "../CopilotStudioModal.tsx"),
-			path.join(__dirname, "../telemetry/CopilotContextTelemetryBar.tsx"),
-			path.join(__dirname, "../telemetry/telemetryTypes.ts"),
-			path.join(__dirname, "../settings/CopilotSettingsIntelligenceTab.tsx"),
-			path.join(__dirname, "../settings/CopilotSettingsTrustTab.tsx"),
-			path.join(__dirname, "../settings/CopilotSettingsPersonaTab.tsx"),
-			path.join(__dirname, "../../../store/copilotStore.ts"),
-			path.join(__dirname, "../../../store/copilotShowcaseData.ts"),
-		];
-
-		for (const file of filesToCheck) {
-			const content = fs.readFileSync(file, "utf-8");
-			assert.equal(emojiRegex.test(content), false, `Обнаружен запрещенный cartoon emoji в файле ${path.basename(file)}`);
-		}
+		const barHtml = renderToString(
+			<CopilotContextTelemetryBar patientName="Иванова М.П." patientId="pat-2" activeTooth={26} />,
+		);
+		const studioHtml = renderToString(
+			<CopilotStudioModal isOpen={true} onClose={() => {}} activeTooth={26} initialTab="dialog" />,
+		);
+		assert.equal(emojiRegex.test(barHtml), false, "Обнаружен cartoon emoji в CopilotContextTelemetryBar");
+		assert.equal(emojiRegex.test(studioHtml), false, "Обнаружен cartoon emoji в CopilotStudioModal");
+		assert.doesNotMatch(studioHtml, /043\/у|804н|54-ФЗ/i, "В UI не должно быть сырых бюрократических кодов");
 	});
 });

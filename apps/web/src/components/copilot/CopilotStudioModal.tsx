@@ -316,7 +316,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         sessionId: sseState.resolvedServerSessionId || undefined, activeTooth: ctxSnapshot.activeTooth,
         runtimeMode: apiRuntimeMode, trustLevel: settings.trustLevel, maskPhiData: settings.maskPhiData ?? true,
         temperature: settings.temperature ?? 0.2, contextLimitTokens: settings.contextLimitTokens,
-        showTypingAnimation: settings.showTypingAnimation, granularPermissions: settings.granularPermissions,
+        showTypingAnimation: settings.showTypingAnimation, localDropzonePath: settings.localDropzonePath, granularPermissions: settings.granularPermissions,
         customInstructions: mergedInstructions || undefined, memoryFacts: memoryFacts.map((m) => m.fact),
         doctorSpecialization: settings.clinicalSpecialization, speedMode,
         patientAllergies: ctxSnapshot.allergies, somaticHistory: ctxSnapshot.somaticHistory,
@@ -414,8 +414,9 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         aria-label="Кабинет клинического копайлота" data-testid="copilot-workspace-panel"
       >
         <CopilotStudioHeaderAndTabs
-          ctxSnapshot={ctxSnapshot} activeTab={activeTab} setActiveTab={setActiveTab}
-          onOpenHistory={() => setHistoryOpen(true)} onOpenSettings={() => setSettingsOpen(true)}
+          ctxSnapshot={ctxSnapshot} activeTab={activeTab} setActiveTab={(tab) => { setSettingsOpen(false); setHistoryOpen(false); setActiveTab(tab); }}
+          onOpenHistory={() => { setSettingsOpen(false); setHistoryOpen(!isHistoryOpen); }}
+          onOpenSettings={() => { setHistoryOpen(false); setSettingsOpen(!isSettingsOpen); }}
           onCollapseToHud={() => { useCopilotStore.getState().collapseToHud(); handleClose(); }}
           onClose={handleClose}
         />
@@ -423,7 +424,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
           activeTab={activeTab} setActiveTab={setActiveTab} ctxSnapshot={ctxSnapshot}
           runtimeMode={runtimeMode} speedMode={speedMode} showThinkingProcess={showThinkingProcess}
           thoughtProcess={thoughtProcess} currentThought={currentThought} activeToolName={activeToolName}
-          messages={messages} setMessages={setMessages} isStreaming={isStreaming} isThinking={isThinking}
+          messages={messages} setMessages={setMessages} isStreaming={isStreaming} showTypingAnimation={settings.showTypingAnimation} isThinking={isThinking}
           activeDiff={activeDiff} setActiveDiff={setActiveDiff} applyActiveDiff={applyActiveDiff}
           rejectActiveDiff={rejectActiveDiff} toolExecutionLogs={toolExecutionLogs}
           appliedActionIds={appliedActionIds} actionError={actionError} setActionError={setActionError}

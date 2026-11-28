@@ -99,7 +99,9 @@ describe("Chairside Copilot Agent Execution and Canonical State Mapping", () => 
       assert.ok(capturedBody, "Request body must be captured");
       assert.strictEqual(capturedBody["patientId"], "pat-real-123");
       assert.strictEqual(capturedBody["allergies"], undefined, "Fake penicillin allergy must NOT be present!");
-      assert.strictEqual(capturedBody["toothNumber"], 16);
+      assert.strictEqual(capturedBody["activeTooth"], 16);
+      assert.strictEqual("toothNumber" in capturedBody, false, "Deprecated toothNumber must not be sent");
+      assert.strictEqual("context" in capturedBody, false, "Deprecated context must not be sent");
 
       // Assertions on parsed response
       assert.strictEqual(res.verdict, "Рекомендовано лечение кариеса зуба 16");

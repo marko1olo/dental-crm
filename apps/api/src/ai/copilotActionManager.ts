@@ -8,6 +8,7 @@ import { and, eq } from "drizzle-orm";
 import { executeDentalTool, type DentalToolContext } from "./dentalTools.js";
 import { withTenantCtx, type TenantDb } from "../db/rls.js";
 import { copilotPendingActions } from "../db/schema/copilot.js";
+import { BoundedStringSet, BoundedTtlMap } from "../lib/boundedTtlMap.js";
 import { aiLogger } from "./aiLogger.js";
 
 export interface PendingAction {
@@ -63,9 +64,15 @@ export const COPILOT_ACTION_TTL_MS = 15 * 60 * 1000; // 15 minutes
  * Backed by in-memory L1 cache + persistent PostgreSQL storage with tenant isolation.
  */
 export class CopilotActionManager {
-	private readonly pendingActions = new Map<string, PendingAction>();
-	private readonly pendingPersistPromises = new Map<string, Promise<void>>();
-	private readonly inFlightConfirmations = new Set<string>();
+	private readonly pendingActions = new BoundedTtlMap<string, PendingAction>({
+		maxEntries: 500,
+		ttlMs: COPILOT_ACTION_TTL_MS,
+	});
+	private readonly pendingPersistPromises = new BoundedTtlMap<string, Promise<void>>({
+		maxEntries: 500,
+		ttlMs: 60_000,
+	});
+	private readonly inFlightConfirmations = new BoundedStringSet(500, 60_000);
 
 	public registerPending(
 		sessionId: string,
@@ -308,9 +315,13 @@ export class CopilotActionManager {
 				mode: "autonomous",
 			};
 
+			const serverAllowsDesktop =
+				process.env.IS_DESKTOP_EXE === "true" ||
+				process.env.WORKSTATION_MODE === "true";
 			const resolvedRuntimeMode =
-				(ctx.metadata?.runtimeMode as "web_browser" | "desktop_native") ||
-				"web_browser";
+				serverAllowsDesktop && ctx.metadata?.runtimeMode === "desktop_native"
+					? "desktop_native"
+					: "web_browser";
 
 			// 1. Canonical Dental Tools SSOT execution (Mandates 8e, 8s, 8wy)
 			const dentalContext: DentalToolContext = {
@@ -332,6 +343,10 @@ export class CopilotActionManager {
 							? effectiveArgs.tooth
 							: undefined,
 				runtimeMode: resolvedRuntimeMode,
+				localDropzonePath:
+					typeof ctx.metadata?.localDropzonePath === "string"
+						? ctx.metadata.localDropzonePath
+						: undefined,
 				db: (ctx.db as TenantDb | undefined) ?? undefined,
 				allowLocalExecution: resolvedRuntimeMode === "desktop_native",
 			};
@@ -491,6 +506,8 @@ export class CopilotActionManager {
 
 	public clear(): void {
 		this.pendingActions.clear();
+		this.pendingPersistPromises.clear();
+		this.inFlightConfirmations.clear();
 	}
 }
 

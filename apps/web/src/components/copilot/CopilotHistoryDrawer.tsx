@@ -15,8 +15,28 @@ import { showToast } from "../GlobalToast";
 
 export interface CopilotHistoryDrawerProps {
 	isOpen: boolean;
+	embedded?: boolean | undefined;
 	onClose: () => void;
 	onSelectThread: (threadId: string) => void;
+}
+
+function formatLocalYmd(date: Date): string {
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
+}
+
+function resolveThreadLocalYmd(rawDate: string): string | null {
+	const trimmed = rawDate.trim();
+	if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+		return trimmed;
+	}
+	const parsed = new Date(trimmed);
+	if (!Number.isNaN(parsed.getTime())) {
+		return formatLocalYmd(parsed);
+	}
+	return null;
 }
 
 export function getThreadDateCategory(thread: {
@@ -28,18 +48,18 @@ export function getThreadDateCategory(thread: {
 }): "pinned" | "today" | "yesterday" | "earlier" {
 	if (thread.pinned) return "pinned";
 	const now = new Date();
-	const todayStr = now.toISOString().slice(0, 10);
-	const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-	const yesterdayStr = yesterday.toISOString().slice(0, 10);
+	const todayStr = formatLocalYmd(now);
+	const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+	const yesterdayStr = formatLocalYmd(yesterday);
 
 	if (thread.createdAt) {
-		const threadDateStr = thread.createdAt.slice(0, 10);
+		const threadDateStr = resolveThreadLocalYmd(thread.createdAt);
 		if (threadDateStr === todayStr) return "today";
 		if (threadDateStr === yesterdayStr) return "yesterday";
 		return "earlier";
 	}
 	if (thread.updatedAt) {
-		const threadDateStr = thread.updatedAt.slice(0, 10);
+		const threadDateStr = resolveThreadLocalYmd(thread.updatedAt);
 		if (threadDateStr === todayStr) return "today";
 		if (threadDateStr === yesterdayStr) return "yesterday";
 		if (/^\d{1,2}:\d{2}/.test(thread.updatedAt)) return "today";
@@ -48,7 +68,7 @@ export function getThreadDateCategory(thread: {
 	return "earlier";
 }
 
-export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: CopilotHistoryDrawerProps) {
+export function CopilotHistoryDrawer({ isOpen, embedded = false, onClose, onSelectThread }: CopilotHistoryDrawerProps) {
 	const threads = useCopilotStore((s) => s.threads);
 	const threadMessages = useCopilotStore((s) => s.threadMessages);
 	const activeThreadId = useCopilotStore((s) => s.activeThreadId);
@@ -159,120 +179,137 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 		);
 	};
 
+	const panelBody = (
+		<div
+			className={
+				embedded
+					? "flex-1 min-h-0 w-full flex flex-col bg-[var(--paper)] text-[var(--ink)] overflow-hidden"
+					: [
+							"relative z-10 w-full max-w-md max-h-[88vh] flex flex-col bg-[var(--paper)] text-[var(--ink)]",
+							"rounded-2xl max-md:rounded-b-none max-md:rounded-t-[24px] border border-[var(--line)] shadow-2xl overflow-hidden",
+						].join(" ")
+			}
+			data-testid={embedded ? "copilot-history-drawer" : undefined}
+		>
+			{!embedded && (
+				<div className="md:hidden flex justify-center pt-2.5 pb-1 shrink-0">
+					<div className="w-9 h-1.5 touch-none rounded-full bg-[var(--line)]" />
+				</div>
+			)}
+			<header className="px-5 py-3.5 border-b border-[var(--line)] flex items-center justify-between gap-3 shrink-0">
+				<div className="flex items-center gap-2 min-w-0">
+					<MessageSquare size={16} className="text-[var(--primary)]" />
+					<h3 className="text-sm font-bold text-[var(--ink)] m-0">История диалогов</h3>
+					<span className="text-[11px] text-[var(--muted)]">({threads.length})</span>
+				</div>
+				<div className="flex items-center gap-1.5">
+					<button
+						type="button" onClick={handleCreateNew}
+						className={[
+							"primary-button text-xs sm:text-sm font-medium h-11 sm:h-9 px-3 rounded-xl sm:rounded-lg",
+							"bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-xs flex items-center gap-1.5 cursor-pointer",
+						].join(" ")}
+					>
+						<Plus size={14} /><span>Новый диалог</span>
+					</button>
+					<button
+						type="button" onClick={onClose}
+						className={[
+							"icon-button min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px]",
+							"w-11 h-11 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl sm:rounded-lg",
+							"border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer",
+						].join(" ")}
+						aria-label={embedded ? "Вернуться к диалогу" : "Закрыть"}
+					>
+						<X size={16} />
+					</button>
+				</div>
+			</header>
+
+			<div className="px-5 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
+				<div className="relative">
+					<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
+					<input
+						type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по диалогам, сообщениям и пациентам..."
+						style={{ paddingLeft: "38px" }}
+						className="w-full h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] pl-10 pr-3 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm sm:text-xs text-[var(--ink)]"
+					/>
+				</div>
+			</div>
+
+			<div className="flex-1 overflow-y-auto p-5 space-y-3.5 text-xs">
+				{pinnedThreads.length > 0 && (
+					<div className="space-y-1.5">
+						<div className="text-[10px] font-semibold text-[var(--primary)] flex items-center gap-1"><Pin size={10} /><span>Закрепленные</span></div>
+						{pinnedThreads.map(renderThreadCard)}
+					</div>
+				)}
+				{todayThreads.length > 0 && (
+					<div className="space-y-1.5">
+						<div className="text-[10px] font-semibold text-[var(--muted)] flex items-center gap-1 pt-1"><Calendar size={10} /><span>Сегодня</span></div>
+						{todayThreads.map(renderThreadCard)}
+					</div>
+				)}
+				{yesterdayThreads.length > 0 && (
+					<div className="space-y-1.5">
+						<div className="text-[10px] font-semibold text-[var(--muted)] flex items-center gap-1 pt-1"><Calendar size={10} /><span>Вчера</span></div>
+						{yesterdayThreads.map(renderThreadCard)}
+					</div>
+				)}
+				{earlierThreads.length > 0 && (
+					<div className="space-y-1.5">
+						<div className="text-[10px] font-semibold text-[var(--muted)] flex items-center gap-1 pt-1"><Calendar size={10} /><span>Ранее</span></div>
+						{earlierThreads.map(renderThreadCard)}
+					</div>
+				)}
+				{filteredThreads.length === 0 && (
+					<div className="p-8 text-center text-[var(--muted)] border border-dashed border-[var(--line)] rounded-xl">
+						<p className="m-0">Диалогов не найдено</p>
+					</div>
+				)}
+			</div>
+
+			<footer className="px-5 py-2.5 max-md:pb-[calc(10px+env(safe-area-inset-bottom,0px))] border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between text-xs shrink-0">
+				{isConfirmingClear ? (
+					<div className="flex items-center justify-between w-full gap-2">
+						<span className="text-[var(--danger)] font-semibold text-xs">Очистить все диалоги?</span>
+						<div className="flex items-center gap-1.5">
+							<button
+								type="button" onClick={() => setIsConfirmingClear(false)}
+								className="h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-medium cursor-pointer"
+							>
+								Отмена
+							</button>
+							<button
+								type="button"
+								onClick={() => { clearThreads(); setIsConfirmingClear(false); showToast("Вся история диалогов очищена", "info"); }}
+								className="h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-3 rounded-lg bg-[var(--danger)] text-white font-medium text-xs cursor-pointer"
+							>
+								Да, очистить
+							</button>
+						</div>
+					</div>
+				) : (
+					<button
+						type="button" onClick={() => setIsConfirmingClear(true)}
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 text-xs font-medium text-[var(--muted)] hover:text-[var(--danger)] cursor-pointer bg-transparent border-0 inline-flex items-center"
+					>
+						Очистить историю
+					</button>
+				)}
+				<span className="text-xs text-[var(--muted)] whitespace-nowrap">Сессий: {threads.length}</span>
+			</footer>
+		</div>
+	);
+
+	if (embedded) {
+		return panelBody;
+	}
+
 	return (
 		<div className="fixed inset-0 z-[100] flex items-center justify-center p-3 max-md:p-0 max-md:items-end" data-testid="copilot-history-drawer">
 			<div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-			<div
-				className={[
-					"relative z-10 w-full max-w-md max-h-[88vh] flex flex-col bg-[var(--paper)] text-[var(--ink)]",
-					"rounded-2xl max-md:rounded-b-none max-md:rounded-t-[24px] border border-[var(--line)] shadow-2xl overflow-hidden",
-				].join(" ")}
-			>
-				<div className="md:hidden flex justify-center pt-2.5 pb-1 shrink-0"><div className="w-9 h-1.5 touch-none rounded-full bg-[var(--line)]" /></div>
-				<header className="px-5 py-3.5 border-b border-[var(--line)] flex items-center justify-between gap-3 shrink-0">
-					<div className="flex items-center gap-2 min-w-0">
-						<MessageSquare size={16} className="text-[var(--primary)]" />
-						<h3 className="text-sm font-bold text-[var(--ink)] m-0">История диалогов</h3>
-						<span className="text-[11px] text-[var(--muted)]">({threads.length})</span>
-					</div>
-					<div className="flex items-center gap-1.5">
-						<button
-							type="button" onClick={handleCreateNew}
-							className={[
-								"primary-button text-xs sm:text-sm font-medium h-11 sm:h-9 px-3 rounded-xl sm:rounded-lg",
-								"bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-xs flex items-center gap-1.5 cursor-pointer",
-							].join(" ")}
-						>
-							<Plus size={14} /><span>Новый диалог</span>
-						</button>
-						<button
-							type="button" onClick={onClose}
-							className={[
-								"icon-button min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px]",
-								"w-11 h-11 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl sm:rounded-lg",
-								"border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer",
-							].join(" ")}
-							aria-label="Закрыть"
-						>
-							<X size={16} />
-						</button>
-					</div>
-				</header>
-
-				<div className="px-5 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
-					<div className="relative">
-						<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
-						<input
-							type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по диалогам, сообщениям и пациентам..."
-							style={{ paddingLeft: "38px" }}
-							className="w-full h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] pl-10 pr-3 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm sm:text-xs text-[var(--ink)]"
-						/>
-					</div>
-				</div>
-
-				<div className="flex-1 overflow-y-auto p-5 space-y-3.5 text-xs">
-					{pinnedThreads.length > 0 && (
-						<div className="space-y-1.5">
-							<div className="text-[10px] font-semibold text-[var(--primary)] flex items-center gap-1"><Pin size={10} /><span>Закрепленные</span></div>
-							{pinnedThreads.map(renderThreadCard)}
-						</div>
-					)}
-					{todayThreads.length > 0 && (
-						<div className="space-y-1.5">
-							<div className="text-[10px] font-semibold text-[var(--muted)] flex items-center gap-1 pt-1"><Calendar size={10} /><span>Сегодня</span></div>
-							{todayThreads.map(renderThreadCard)}
-						</div>
-					)}
-					{yesterdayThreads.length > 0 && (
-						<div className="space-y-1.5">
-							<div className="text-[10px] font-semibold text-[var(--muted)] flex items-center gap-1 pt-1"><Calendar size={10} /><span>Вчера</span></div>
-							{yesterdayThreads.map(renderThreadCard)}
-						</div>
-					)}
-					{earlierThreads.length > 0 && (
-						<div className="space-y-1.5">
-							<div className="text-[10px] font-semibold text-[var(--muted)] flex items-center gap-1 pt-1"><Calendar size={10} /><span>Ранее</span></div>
-							{earlierThreads.map(renderThreadCard)}
-						</div>
-					)}
-					{filteredThreads.length === 0 && (
-						<div className="p-8 text-center text-[var(--muted)] border border-dashed border-[var(--line)] rounded-xl">
-							<p className="m-0">Диалогов не найдено</p>
-						</div>
-					)}
-				</div>
-
-				<footer className="px-5 py-2.5 max-md:pb-[calc(10px+env(safe-area-inset-bottom,0px))] border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between text-xs shrink-0">
-					{isConfirmingClear ? (
-						<div className="flex items-center justify-between w-full gap-2">
-							<span className="text-[var(--danger)] font-semibold text-xs">Очистить все диалоги?</span>
-							<div className="flex items-center gap-1.5">
-								<button
-									type="button" onClick={() => setIsConfirmingClear(false)}
-									className="h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-medium cursor-pointer"
-								>
-									Отмена
-								</button>
-								<button
-									type="button"
-									onClick={() => { clearThreads(); setIsConfirmingClear(false); showToast("Вся история диалогов очищена", "info"); }}
-									className="h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-3 rounded-lg bg-[var(--danger)] text-white font-medium text-xs cursor-pointer"
-								>
-									Да, очистить
-								</button>
-							</div>
-						</div>
-					) : (
-						<button
-							type="button" onClick={() => setIsConfirmingClear(true)}
-							className="min-h-[44px] sm:min-h-[32px] px-2.5 text-xs font-medium text-[var(--muted)] hover:text-[var(--danger)] cursor-pointer bg-transparent border-0 inline-flex items-center"
-						>
-							Очистить историю
-						</button>
-					)}
-					<span className="text-xs text-[var(--muted)] whitespace-nowrap">Сессий: {threads.length}</span>
-				</footer>
-			</div>
+			{panelBody}
 		</div>
 	);
 }

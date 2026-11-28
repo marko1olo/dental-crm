@@ -8,14 +8,23 @@ import React from "react";
 import type { GranularAgentPermissions } from "../../../store/copilotStore";
 
 export interface CopilotSettingsGranularPermissionsProps {
-	granularPermissions: GranularAgentPermissions;
+	granularPermissions?: GranularAgentPermissions | undefined;
 	setGranularPermissions: (perms: GranularAgentPermissions) => void;
 }
+
+const DEFAULT_GRANULAR_PERMISSIONS: GranularAgentPermissions = {
+	autoApproveFileReads: true,
+	autoApproveFileWrites: false,
+	autoApproveClinicalMutations: true,
+	autoApproveFinancialDrafts: true,
+	autoApproveExternalSoftware: false,
+};
 
 export function CopilotSettingsGranularPermissions({
 	granularPermissions,
 	setGranularPermissions,
 }: CopilotSettingsGranularPermissionsProps) {
+	const perms = granularPermissions ?? DEFAULT_GRANULAR_PERMISSIONS;
 	return (
 		<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2">
 			<div className="font-bold text-[var(--ink)] flex items-center justify-between">
@@ -29,8 +38,8 @@ export function CopilotSettingsGranularPermissions({
 				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] text-[var(--ink)]">
 					<input
 						type="checkbox"
-						checked={granularPermissions.autoApproveFileReads}
-						onChange={(e) => setGranularPermissions({ ...granularPermissions, autoApproveFileReads: e.target.checked })}
+						checked={perms.autoApproveFileReads}
+						onChange={(e) => setGranularPermissions({ ...perms, autoApproveFileReads: e.target.checked })}
 						className="rounded text-[var(--teal,#0d9488)]"
 					/>
 					<span>Чтение снимков и файлов на ПК</span>
@@ -38,8 +47,8 @@ export function CopilotSettingsGranularPermissions({
 				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] text-[var(--ink)]">
 					<input
 						type="checkbox"
-						checked={granularPermissions.autoApproveClinicalMutations}
-						onChange={(e) => setGranularPermissions({ ...granularPermissions, autoApproveClinicalMutations: e.target.checked })}
+						checked={perms.autoApproveClinicalMutations}
+						onChange={(e) => setGranularPermissions({ ...perms, autoApproveClinicalMutations: e.target.checked })}
 						className="rounded text-[var(--teal,#0d9488)]"
 					/>
 					<span>Разметка формулы и дневника ЭМК</span>
@@ -47,8 +56,8 @@ export function CopilotSettingsGranularPermissions({
 				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] text-[var(--ink)]">
 					<input
 						type="checkbox"
-						checked={granularPermissions.autoApproveFinancialDrafts}
-						onChange={(e) => setGranularPermissions({ ...granularPermissions, autoApproveFinancialDrafts: e.target.checked })}
+						checked={perms.autoApproveFinancialDrafts}
+						onChange={(e) => setGranularPermissions({ ...perms, autoApproveFinancialDrafts: e.target.checked })}
 						className="rounded text-[var(--teal,#0d9488)]"
 					/>
 					<span>Формирование черновиков сметы</span>
@@ -56,8 +65,8 @@ export function CopilotSettingsGranularPermissions({
 				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] text-[var(--ink)]">
 					<input
 						type="checkbox"
-						checked={granularPermissions.autoApproveFileWrites}
-						onChange={(e) => setGranularPermissions({ ...granularPermissions, autoApproveFileWrites: e.target.checked })}
+						checked={perms.autoApproveFileWrites}
+						onChange={(e) => setGranularPermissions({ ...perms, autoApproveFileWrites: e.target.checked })}
 						className="rounded text-[var(--teal,#0d9488)]"
 					/>
 					<span>Запись и экспорт файлов на диск</span>
@@ -65,8 +74,8 @@ export function CopilotSettingsGranularPermissions({
 				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] text-[var(--ink)] sm:col-span-2">
 					<input
 						type="checkbox"
-						checked={granularPermissions.autoApproveExternalSoftware}
-						onChange={(e) => setGranularPermissions({ ...granularPermissions, autoApproveExternalSoftware: e.target.checked })}
+						checked={perms.autoApproveExternalSoftware}
+						onChange={(e) => setGranularPermissions({ ...perms, autoApproveExternalSoftware: e.target.checked })}
 						className="rounded text-[var(--teal,#0d9488)]"
 					/>
 					<span>Запуск внешнего стоматологического ПО (Romexis, Ez3D Plus)</span>

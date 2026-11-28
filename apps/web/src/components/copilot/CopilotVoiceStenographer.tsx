@@ -9,6 +9,9 @@ import { Mic, MicOff, Check, RotateCcw, X, Search, MessageSquare, Stethoscope } 
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { CanvasWaveform } from "../audio/CanvasWaveform";
 import { extractClinicalTerms, type ParsedClinicalSpeech } from "../../services/voice/clinicalTermsExtractor";
+import { loadStoredTeethData, saveStoredTeethData } from "../odontogram/odontogramStorage";
+import type { ToothData } from "../odontogram/ToothChart";
+import { useCopilotStore } from "../../store/copilotStore";
 import "./CopilotVoiceStenographer.css";
 
 export interface ParsedClinicalCommand {
@@ -19,9 +22,18 @@ export interface ParsedClinicalCommand {
   text: string;
 }
 
+const SOAP_SECTION_LABELS_RU: Record<NonNullable<ParsedClinicalCommand["soapSection"]>, string> = {
+  complaint: "Жалобы",
+  anamnesis: "Анамнез",
+  objectiveStatus: "Объективный статус",
+  treatmentPlan: "План и проведённое лечение",
+  recommendations: "Рекомендации",
+};
+
 export interface CopilotVoiceStenographerProps {
   isOpen?: boolean | undefined;
   embedded?: boolean | undefined;
+  patientId?: string | undefined;
   activeTooth?: number | null | undefined;
   patientName?: string | undefined;
   initialTranscript?: string | undefined;
@@ -34,6 +46,7 @@ export interface CopilotVoiceStenographerProps {
 export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> = ({
   isOpen = true,
   embedded = false,
+  patientId,
   activeTooth = null,
   patientName = "Пациент",
   initialTranscript = "",
@@ -120,10 +133,24 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
     const lastToothCommand = [...parsedCommands].reverse().find((c) => c.toothNumber && c.toothState);
     if (lastToothCommand && lastToothCommand.toothNumber && lastToothCommand.toothState) {
       if (onApplyTooth) onApplyTooth(lastToothCommand.toothNumber, lastToothCommand.toothState);
+      if (patientId) {
+        const currentTeeth = loadStoredTeethData(patientId) || [];
+        const updatedTeeth = [...currentTeeth];
+        const idx = updatedTeeth.findIndex((t) => t.toothNumber === lastToothCommand.toothNumber);
+        const nowIso = new Date().toISOString();
+        const toothState = lastToothCommand.toothState as ToothData["state"];
+        if (idx >= 0 && updatedTeeth[idx]) {
+          updatedTeeth[idx] = { ...updatedTeeth[idx], toothNumber: lastToothCommand.toothNumber, state: toothState, updatedAt: nowIso };
+        } else {
+          updatedTeeth.push({ toothNumber: lastToothCommand.toothNumber, state: toothState, updatedAt: nowIso });
+        }
+        saveStoredTeethData(patientId, updatedTeeth, true);
+      }
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("dente-odontogram-update", {
             detail: {
+              patientId: patientId || undefined,
               toothNumber: lastToothCommand.toothNumber,
               status: lastToothCommand.toothState,
               toothState: lastToothCommand.toothState,
@@ -143,6 +170,16 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
     if (Object.keys(soapPatch).length === 0) {
       soapPatch.objectiveStatus = effectiveText;
     }
+
+    useCopilotStore.getState().savePendingDictationDraft({
+      patientId: patientId || undefined,
+      ...(lastToothCommand?.toothNumber && lastToothCommand.toothState
+        ? {
+            toothUpdates: [{ toothNumber: lastToothCommand.toothNumber, status: lastToothCommand.toothState }],
+          }
+        : {}),
+      soapPatch,
+    });
 
     if (onApplySoap) onApplySoap(soapPatch);
     if (typeof window !== "undefined") {
@@ -170,8 +207,7 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
     const text = (isEditingManually ? manualDraft : (fullText || manualDraft)).trim();
     if (!text || typeof window === "undefined") return;
     window.dispatchEvent(new CustomEvent("dente:fill-copilot-input", { detail: { prompt: text } }));
-    window.dispatchEvent(new CustomEvent("dente:open-copilot"));
-    window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
+    window.dispatchEvent(new CustomEvent("dente:open-copilot", { detail: { prompt: text } }));
   };
 
   const displayDraft = isEditingManually ? manualDraft : (fullText || manualDraft);
@@ -330,7 +366,7 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
                 )}
                 {cmd.soapSection && (
                   <span className="copilot-entity-pill copilot-entity-pill--soap">
-                    Раздел: {cmd.soapSection}
+                    {`Раздел: ${SOAP_SECTION_LABELS_RU[cmd.soapSection] ?? cmd.soapSection}`}
                   </span>
                 )}
               </React.Fragment>

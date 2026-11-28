@@ -114,7 +114,7 @@ export function VoiceDictationOverlay({
 			style={{
 				position: "fixed",
 				inset: 0,
-				zIndex: 100000,
+				zIndex: 50,
 				background: "rgba(0, 0, 0, 0.45)",
 				backdropFilter: "blur(4px)",
 				WebkitBackdropFilter: "blur(4px)",

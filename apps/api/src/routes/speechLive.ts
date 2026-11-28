@@ -30,9 +30,9 @@ import {
 	getDentalSpeechBiasingTerms,
 } from "../speech/dentalPrompt.js";
 import { getProviderKeyPoolSummary } from "../speech/keyPool.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { getRequestIdentity, resolveIdentityFromTokens } from "../security/identity.js";
-import { requireClinicalReadContext, requireResolvedOrganizationId } from "../accessGuard.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
 import { z } from "zod";
 
@@ -137,22 +137,17 @@ export async function registerSpeechLiveRoutes(
 	}
 
 	// Status & Diagnostic endpoint
-	app.get(
-		"/api/v1/speech/live/status",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const context = await requireClinicalReadContext(
-				request,
-				reply,
-				"speech live status",
-			);
-			if (!context) return;
-
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/v1/speech/live/status",
+		permission: { anyOf: ["clinical.read", "agent.read", "schedule.read"] },
+		authOptions: { allowClinicTokenWithoutStaff: true },
+		handler: async () => {
 			const proxyStatus = getNetworkShieldStatus();
 			const keyPool = getProviderKeyPoolSummary("google_speech");
 			const activeTerms = getDentalSpeechBiasingTerms("universal");
 
-			return reply.status(200).send({
+			return {
 				ok: true,
 				provider: "gemini_transcribe_live",
 				endpoint:
@@ -178,17 +173,28 @@ export async function registerSpeechLiveRoutes(
 				dentalVocabularyTermsCount: Array.from(
 					new Set([...MANDATORY_DENTAL_BIDI_TERMS, ...activeTerms]),
 				).length,
-			});
+			};
 		},
-	);
+	});
 
-	const issueWsTicketHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-		const organizationId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"speech live ws ticket",
-		);
-		if (!organizationId) return;
+	const issueWsTicket = async ({
+		organizationId,
+		principal,
+		request,
+		reply,
+	}: {
+		organizationId: string | null;
+		principal: { userId: string | null; role: string } | null;
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
+		if (!organizationId) {
+			return reply.status(401).send({
+				ok: false,
+				error: "Unauthorized",
+				message: "Требуется авторизация клиники",
+			});
+		}
 
 		const parsedBody = speechLiveTicketBodySchema.safeParse(request.body ?? {});
 		if (!parsedBody.success) {
@@ -211,28 +217,35 @@ export async function registerSpeechLiveRoutes(
 			});
 		}
 
-		const identity = getRequestIdentity(request);
 		const ticket = signToken(
 			{
 				purpose: "speech_live_ws",
 				organizationId,
-				userId: identity.userId ?? null,
-				role: identity.role ?? "staff",
+				userId: principal?.userId ?? null,
+				role: principal?.role ?? "staff",
 			},
 			secret,
 			WS_TICKET_TTL_SECONDS,
 		);
 
-		return reply.status(200).send({
+		return {
 			ok: true,
 			ticket,
 			expiresInSeconds: WS_TICKET_TTL_SECONDS,
 			organizationId,
-		});
+		};
 	};
 
-	app.post("/api/v1/speech/live/ticket", { config: { tenantTxSelfManaged: true } }, issueWsTicketHandler);
-	app.post("/api/speech/live/ticket", { config: { tenantTxSelfManaged: true } }, issueWsTicketHandler);
+	for (const ticketPath of ["/api/v1/speech/live/ticket", "/api/speech/live/ticket"]) {
+		defineStreamRoute(app, {
+			method: "POST",
+			path: ticketPath,
+			permission: { anyOf: ["clinical.read", "agent.read", "schedule.read"] },
+			authOptions: { allowClinicTokenWithoutStaff: true },
+			handler: async ({ organizationId, principal, request, reply }) =>
+				issueWsTicket({ organizationId, principal, request, reply }),
+		});
+	}
 
 	// WebSocket Live Transcription Handler
 	const liveWsHandler = (clientSocket: WebSocket, request: FastifyRequest) => {

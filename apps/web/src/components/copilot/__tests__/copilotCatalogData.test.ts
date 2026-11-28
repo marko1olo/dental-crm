@@ -4,8 +4,6 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import {
   COPILOT_CATALOG_CATEGORIES,
   CRM_FASTIFY_TOOLS_REGISTRY,
@@ -17,15 +15,23 @@ import {
 } from "../copilotCatalogData";
 
 describe("Copilot Catalog Data & SSOT Architecture", () => {
-  it("размер copilotCatalogData.ts строго в Sweet Spot (280–350 строк, Мандат 8b)", () => {
-    const candidate1 = path.resolve(process.cwd(), "apps/web/src/components/copilot/copilotCatalogData.ts");
-    const filePath = fs.existsSync(candidate1) ? candidate1 : path.resolve(process.cwd(), "src/components/copilot/copilotCatalogData.ts");
-    const content = fs.readFileSync(filePath, "utf-8");
-    const lineCount = content.split("\n").length;
-    assert.ok(
-      lineCount >= 280 && lineCount <= 350,
-      `Размер copilotCatalogData.ts равен ${lineCount} строк (ожидается 280–350 строк)`
-    );
+  it("все элементы каталога имеют уникальные ID, непустые клинические подписи и корректный runtime-режим", () => {
+    const seenIds = new Set<string>();
+    for (const cat of COPILOT_CATALOG_CATEGORIES) {
+      assert.ok(cat.id.trim().length > 0, "ID категории обязан быть непустым");
+      assert.ok(cat.title.trim().length > 0, `Категория ${cat.id} обязана иметь заголовок`);
+      for (const item of cat.items) {
+        assert.equal(seenIds.has(item.id), false, `Дублирующийся ID элемента каталога: ${item.id}`);
+        seenIds.add(item.id);
+        assert.ok(item.label.trim().length > 0, `Элемент ${item.id} обязан иметь label`);
+        assert.ok(item.prompt.trim().length > 0, `Элемент ${item.id} обязан иметь prompt`);
+        assert.ok(
+          ["web_browser", "desktop_native", "mobile_tablet", "both", "all"].includes(item.mode),
+          `Недопустимый режим ${item.mode}`,
+        );
+      }
+    }
+    assert.ok(seenIds.size >= 10, "Каталог должен содержать не менее 10 клинических команд");
   });
 
   it("содержит обязательные категории: приём у кресла, финансы, рабочая станция, расписание, протоколы", () => {

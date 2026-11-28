@@ -8,7 +8,10 @@ import {
 } from "../../../lib/denteRequestHeaders";
 import { denteQueryClient } from "../../../lib/queryClient";
 import { useVisitStore } from "../../../store/visitStore";
+import { useAppStore } from "../../../store/appStore";
 import { useCopilotStore } from "../../../store/copilotStore";
+import { toCleanToothNumber, toCleanUuid } from "../client/copilotStreamClient";
+import { getCurrentCopilotUiContext } from "../contextSync/contextStoreReader";
 import type {
 	ConfirmUiMessage,
 	CopilotNudge,
@@ -191,7 +194,13 @@ export function useCopilotActions({
 			const sessId = isValidUuid ? conversationId : generateUuidV7();
 			if (!isValidUuid) setConversationId(sessId);
 
-			const settings = useCopilotStore.getState().settings;
+			const copilotState = useCopilotStore.getState();
+			const settings = copilotState.settings;
+			const uiContext = getCurrentCopilotUiContext();
+			const appState = useAppStore.getState();
+			const resolvedPatientId = toCleanUuid(uiContext.patientId ?? appState.activePatientId);
+			const resolvedVisitId = toCleanUuid(appState.dashboard?.activeVisit?.id);
+			const resolvedTooth = toCleanToothNumber(uiContext.activeTooth ?? appState.activeTooth);
 			const currentTrust = settings.trustLevel;
 			const normalizedTrust: "confirm_all" | "balanced" | "autonomous" =
 				currentTrust === "confirm_all"
@@ -205,11 +214,42 @@ export function useCopilotActions({
 				sessionId: sessId,
 				message: text,
 				messages: [{ role: "user", content: text }],
+				...(resolvedPatientId ? { patientId: resolvedPatientId } : {}),
+				...(resolvedVisitId ? { activeVisitId: resolvedVisitId } : {}),
+				...(resolvedTooth !== undefined ? { activeTooth: resolvedTooth } : {}),
+				...(uiContext.allergies && uiContext.allergies.length > 0
+					? { patientAllergies: [...uiContext.allergies] }
+					: {}),
+				...(settings.customDoctorInstructions
+					? { customInstructions: settings.customDoctorInstructions }
+					: {}),
+				...(copilotState.memoryFacts.length > 0
+					? { memoryFacts: copilotState.memoryFacts.map((m) => m.fact) }
+					: {}),
+				...(settings.clinicalSpecialization
+					? { doctorSpecialization: settings.clinicalSpecialization }
+					: {}),
+				...(settings.granularPermissions
+					? { granularPermissions: settings.granularPermissions }
+					: {}),
+				...(settings.temperature !== undefined
+					? { temperature: settings.temperature }
+					: {}),
+				...(settings.contextLimitTokens !== undefined
+					? { contextLimitTokens: settings.contextLimitTokens }
+					: {}),
+				...(settings.showTypingAnimation !== undefined
+					? { showTypingAnimation: settings.showTypingAnimation }
+					: {}),
+				...(settings.localDropzonePath
+					? { localDropzonePath: settings.localDropzonePath }
+					: {}),
 				stream: true,
 				modelRoutingMode: settings.modelRoutingMode,
 				byokProvider: settings.byokProvider,
 				byokApiKey: settings.byokApiKey,
 				byokModel: settings.byokModel,
+				...(settings.byokBaseUrl ? { byokBaseUrl: settings.byokBaseUrl } : {}),
 				speedMode: settings.speedMode,
 				trustLevel: normalizedTrust,
 				runtimeMode: settings.runtimeMode,

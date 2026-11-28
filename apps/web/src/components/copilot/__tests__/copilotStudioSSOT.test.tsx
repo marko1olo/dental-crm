@@ -272,7 +272,7 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
         onEvent: () => {},
       });
       assert.equal(result.ok, true);
-      assert.equal(calledUrl, "/api/agent/chat");
+      assert.ok(calledUrl.endsWith("/api/agent/chat") && calledUrl.startsWith("http"));
       assert.equal(calledMethod, "POST");
       assert.ok(idempotencyKey);
     } finally {

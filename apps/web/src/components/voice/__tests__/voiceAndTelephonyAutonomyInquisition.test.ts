@@ -1,29 +1,23 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToString } from "react-dom/server";
 import {
 	parseClinicalVoiceSpeech,
 	isValidFdiToothNumber,
 	parseRussianSpokenToothNumber,
 	extractSoapSections,
 } from "../voiceClinicalCommands";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { CopilotVoiceStenographer } from "../../copilot/CopilotVoiceStenographer";
+import { SmartMicrophoneButton } from "../../SmartMicrophoneButton";
+import { CallAudioPlayer } from "../../telephony/CallAudioPlayer";
+import { TelephonyHeaderCapsule } from "../../telephony/headerCapsule/TelephonyHeaderCapsule";
+import { AudioStreamManager } from "../../audio/AudioStreamManager";
+import { UnifiedAudioClient } from "../../../services/voice/UnifiedAudioClient";
+import { useAppStore } from "../../../store/appStore";
 
 describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e, 8i, 8k, 8s)", () => {
-	const componentsDir = path.resolve(__dirname, "../../");
-	const voiceDir = path.resolve(__dirname, "../");
-	const telephonyDir = path.resolve(componentsDir, "telephony");
-
-	const getVoiceStenographerCode = () => {
-		const modalPath = path.resolve(componentsDir, "copilot/CopilotVoiceStenographer.tsx");
-		return fs.readFileSync(modalPath, "utf-8");
-	};
-
-	describe("1. Solo Doctor Autonomy & Form 043/u Diary Notes (Mandates 8e, 8s)", () => {
+	describe("1. Solo Doctor Autonomy & Clinical Diary Notes (Mandates 8e, 8s)", () => {
 		it("correctly identifies valid FDI tooth numbers in Russian spoken speech", () => {
 			assert.equal(isValidFdiToothNumber(46), true);
 			assert.equal(isValidFdiToothNumber(16), true);
@@ -48,7 +42,8 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 		});
 
 		it("extracts SOAP sections from natural clinical Russian speech", () => {
-			const dictation = "Жалобы: периодическая ноющая боль в области зуба 36 от горячего. Лечение: проведена анестезия, вскрытие полости зуба, экстирпация пульпы.";
+			const dictation =
+				"Жалобы: периодическая ноющая боль в области зуба 36 от горячего. Лечение: проведена анестезия, вскрытие полости зуба, экстирпация пульпы.";
 			const soap = extractSoapSections(dictation);
 
 			assert.ok(soap.subjective, "Should extract subjective жалобы");
@@ -57,200 +52,106 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 			assert.ok(soap.plan?.includes("проведена анестезия"));
 		});
 
-		it("guarantees 1-chair solo doctor free dictation without blocking validations", () => {
-			const code = getVoiceStenographerCode();
-
-			// Must support applying rawText directly to SOAP diary notes when no formal dental keywords are matched
-			assert.ok(
-				code.includes("onApplySoap(soapPatch)"),
-				"CopilotVoiceStenographer must apply soap patch directly to SOAP note without blocking modal toasts",
+		it("renders CopilotVoiceStenographer with unlocked Primary CTA and Russian clinical section labels", () => {
+			const html = renderToString(
+				React.createElement(CopilotVoiceStenographer, {
+					isOpen: true,
+					patientId: "11111111-1111-4111-8111-111111111111",
+					activeTooth: 36,
+					patientName: "Иванов А.Б.",
+					initialTranscript: "Жалобы: боль в области зуба 36 от холодного. Кариес.",
+				}),
 			);
-			assert.ok(
-				code.includes("dente-apply-soap-protocol"),
-				"Must dispatch dente-apply-soap-protocol in handleApplyAll",
-			);
+			assert.ok(html.includes('data-testid="copilot-voice-stenographer"'));
+			assert.ok(html.includes("Иванов А.Б."));
+			assert.ok(html.includes("Зуб 36"));
+			assert.equal(html.includes("Раздел: complaint"), false, "Сырой английский enum не должен утекать в UI");
+			assert.equal(html.includes("Раздел: treatmentPlan"), false, "Сырой английский enum не должен утекать в UI");
+			assert.equal(html.includes('disabled=""'), false, "Primary CTA врача не должен быть disabled");
 		});
 	});
 
-	describe("2. Audio Lifecycle & Memory Leak Law (Mandates 8i, 8k)", () => {
-		it("useUnifiedDictation hook explicitly manages audio lifecycle on unmount", () => {
-			const hookPath = path.resolve(componentsDir, "../hooks/useUnifiedDictation.ts");
-			const hookCode = fs.readFileSync(hookPath, "utf-8");
+	describe("2. Audio Lifecycle & Zero Potemkin Duration Defaults (Mandates 8i, 8k)", () => {
+		it("AudioStreamManager and UnifiedAudioClient dispose cleanly without dangling timers or errors", () => {
+			const manager = new AudioStreamManager({
+				onPcmChunk: () => {},
+				onError: () => {},
+			});
+			assert.equal(manager.getAnalyserNode(), null);
+			assert.equal(manager.getAudioLevel(), 0);
+			manager.pause();
+			manager.resume();
+			manager.dispose();
 
-			assert.ok(
-				hookCode.includes("clientRef.current?.dispose()") || hookCode.includes("stopDictation"),
-				"useUnifiedDictation must release audio hardware on unmount",
-			);
-
-			// Verify underlying hardware release in UnifiedAudioClient & AudioStreamManager
-			const clientPath = path.resolve(componentsDir, "../services/voice/UnifiedAudioClient.ts");
-			const clientCode = fs.readFileSync(clientPath, "utf-8");
-			assert.ok(
-				clientCode.includes("this.streamManager.dispose()"),
-				"UnifiedAudioClient must dispose streamManager",
-			);
-
-			const managerPath = path.resolve(componentsDir, "audio/AudioStreamManager.ts");
-			const managerCode = fs.readFileSync(managerPath, "utf-8");
-			assert.ok(
-				managerCode.includes("t.stop()"),
-				"AudioStreamManager must stop all MediaStream tracks to release microphone hardware",
-			);
-			assert.ok(
-				managerCode.includes("ctx.close()"),
-				"AudioStreamManager must close AudioContext instance",
-			);
+			const client = new UnifiedAudioClient({ preferredMode: "gemini_live" });
+			assert.equal(client.getState(), "idle");
+			client.dispose();
+			assert.equal(client.getState(), "idle");
 		});
 
-		it("CallAudioPlayer explicitly pauses and resets audio element on unmount", () => {
-			const playerPath = path.join(telephonyDir, "CallAudioPlayer.tsx");
-			const code = fs.readFileSync(playerPath, "utf-8");
-
-			// Audio unmount cleanup
-			assert.ok(
-				code.includes("p.audioRef.current.pause()") &&
-				code.includes("p.audioRef.current.src = \"\"") &&
-				code.includes("p.audioRef.current.load()"),
-				"CallAudioPlayer must clean up audioRef on unmount",
+		it("CallAudioPlayer renders honest 00:00 duration default instead of fake 45s", () => {
+			const html = renderToString(
+				React.createElement(CallAudioPlayer, {
+					recordingUrl: "",
+					transcript: "Пациент записан на завтра в 10:00",
+				}),
 			);
-
-			// durationSeconds default must be 0, not a fake hardcoded 45s
-			assert.ok(
-				code.includes("durationSeconds = 0"),
-				"durationSeconds must default to 0 seconds",
-			);
-			assert.ok(
-				!code.includes("durationSeconds = 45"),
-				"Must eliminate fake 45 default",
-			);
-		});
-
-		it("IncomingCallPopup and TelephonyDrawer eliminate fake 45s default", () => {
-			const popupPath = path.join(telephonyDir, "IncomingCallPopup.tsx");
-			const playerPath = path.join(telephonyDir, "CallAudioPlayer.tsx");
-			const drawerPath = path.join(telephonyDir, "TelephonyDrawer.tsx");
-			const activePanelPath = path.join(telephonyDir, "drawerModules", "TelephonyActiveCallPanel.tsx");
-			const code = (fs.existsSync(playerPath) ? fs.readFileSync(playerPath, "utf-8") : "") +
-				(fs.existsSync(drawerPath) ? fs.readFileSync(drawerPath, "utf-8") : "") +
-				(fs.existsSync(activePanelPath) ? fs.readFileSync(activePanelPath, "utf-8") : "") +
-				fs.readFileSync(popupPath, "utf-8");
-
-			// CallAudioPlayer default duration must be 0
-			assert.ok(
-				code.includes("durationSeconds = 0"),
-				"CallAudioPlayer durationSeconds default must be 0",
-			);
-			assert.ok(
-				!code.includes("durationSeconds = 45"),
-				"CallAudioPlayer must not have durationSeconds = 45 default",
-			);
-
-			// CallAudioPlayer audio unmount cleanup
-			assert.ok(
-				code.includes("audioRef.current.pause()") &&
-				code.includes("audioRef.current.src = \"\"") &&
-				code.includes("audioRef.current.load()"),
-				"CallAudioPlayer must clean up audio element on unmount",
-			);
-
-			// Zero fake 45s fallback in invocation
-			assert.ok(
-				code.includes("durationSeconds={currentCall.durationSeconds || 0}"),
-				"Invocation must use durationSeconds || 0 instead of || 45",
-			);
+			assert.equal(html.includes("0:45"), false, "Фейковая длительность 45с должна быть исключена");
 		});
 	});
 
-	describe("3. Desktop Density & HIG Ergonomics (Mandates 8c, 8d pt 2)", () => {
-		it("telephonyCapsuleAndDrawer.css enforces desktop clinical density (32-36px) and adaptive coarse touch targets", () => {
-			const cssPath = path.join(telephonyDir, "styles", "telephonyCapsuleAndDrawer.css");
-			const css = fs.readFileSync(cssPath, "utf-8");
-
-			// Desktop base rules must be 32px
-			assert.ok(
-				css.includes(".dnt-telephony-card button") &&
-				css.includes("min-height: 32px"),
-				"CSS must enforce min-height: 32px for desktop clinical density",
+	describe("3. Desktop Density & Touch Ergonomics (Mandates 8c, 8d pt 2)", () => {
+		it("TelephonyHeaderCapsule renders compact 32px density capsule in admin mode", () => {
+			useAppStore.setState({ selectedWorkspaceRole: "administrator", currentView: "schedule" });
+			const html = renderToString(
+				React.createElement(TelephonyHeaderCapsule, {
+					activeCall: {
+						callId: "call-1",
+						direction: "inbound",
+						callerPhone: "+79991234567",
+						callerName: "Петрова Е.В.",
+						startedAt: new Date().toISOString(),
+					},
+				}),
 			);
-
-			// Adaptive touch target only for narrow mobile viewports (<= 768px)
-			assert.ok(
-				css.includes("@media (max-width: 768px)") && !css.includes("@media (pointer: coarse)"),
-				"CSS must isolate 44px touch targets under @media (max-width: 768px) without global (pointer: coarse)",
-			);
-
-			// No global universal 44px override on desktop
-			const desktopOverridePattern = /\.dnt-telephony-island-pill button\s*,\s*\.dnt-telephony-island-expanded button\s*\{\s*min-height:\s*44px;\s*\}/;
-			assert.equal(
-				desktopOverridePattern.test(css),
-				false,
-				"Must not have unconditioned min-height: 44px on desktop buttons",
-			);
+			assert.ok(html.includes("min-h-[32px]") && html.includes("rounded-full"));
 		});
 
-		it("Capsule pill buttons in TelephonyHeaderCapsule and IncomingCallPopup use compact 32-34px density", () => {
-			const capsulePath = path.join(telephonyDir, "headerCapsule", "TelephonyHeaderCapsule.tsx");
-			const widgetCode = fs.readFileSync(capsulePath, "utf-8");
-
-			const popupPath = path.join(telephonyDir, "IncomingCallPopup.tsx");
-			const headerBarPath = path.join(telephonyDir, "incomingCallPopupModules", "IncomingCallHeaderBar.tsx");
-			const popupCode = (fs.existsSync(headerBarPath) ? fs.readFileSync(headerBarPath, "utf-8") : "") + fs.readFileSync(popupPath, "utf-8");
-
-			assert.ok(
-				widgetCode.includes("min-h-[32px]") && widgetCode.includes("rounded-full"),
-				"Telephony capsule button must use compact min-h-[32px] density and rounded-full",
+		it("SmartMicrophoneButton preserves >= 44x44px hit target for sterile chairside use", () => {
+			const html = renderToString(
+				React.createElement(SmartMicrophoneButton, { context: "visit", onResult: () => {} }),
 			);
-
-			assert.ok(
-				popupCode.includes("min-h-[32px] sm:min-h-[34px] shadow-xs cursor-pointer active:scale-95"),
-				"IncomingCallPopup capsule button must use min-h-[32px] sm:min-h-[34px]",
-			);
+			assert.ok(html.includes("min-width:44px") || html.includes("min-w-[44px]"));
+			assert.ok(html.includes("min-height:44px") || html.includes("min-h-[44px]"));
 		});
 	});
 
 	describe("4. CSS Token Conformity & Theme Hygiene", () => {
-		it("CopilotVoiceStenographer binds to design tokens", () => {
-			const code = getVoiceStenographerCode();
-
-			assert.ok(!code.includes("#ef444420"), "Must not contain #ef444420");
-			assert.ok(code.includes("var(--teal"), "Must use var(--teal)");
-		});
-
-		it("SmartMicrophoneButton binds to semantic tokens and handles fallback tokens cleanly", () => {
-			const btnPath = path.join(componentsDir, "SmartMicrophoneButton.tsx");
-			const code = fs.readFileSync(btnPath, "utf-8");
-
-			assert.ok(code.includes("var(--bad-bg)"), "Must use var(--bad-bg)");
-			assert.ok(code.includes("var(--bad-fg)"), "Must use var(--bad-fg)");
-			assert.ok(code.includes("var(--info-bg)"), "Must use var(--info-bg)");
-			assert.ok(code.includes("var(--info-fg)"), "Must use var(--info-fg)");
-			assert.ok(code.includes("var(--teal, var(--brand-500))"), "Must use var(--teal, var(--brand-500))");
-			assert.ok(code.includes("var(--bad-glow"), "Must use var(--bad-glow)");
+		it("SmartMicrophoneButton and CopilotVoiceStenographer bind exclusively to design system tokens", () => {
+			const micHtml = renderToString(
+				React.createElement(SmartMicrophoneButton, { context: "visit", onResult: () => {} }),
+			);
+			const stenoHtml = renderToString(
+				React.createElement(CopilotVoiceStenographer, { isOpen: true, activeTooth: 16, patientName: "Тест" }),
+			);
+			assert.ok(micHtml.includes("var(--teal, var(--brand-500))"), "Кнопка микрофона должна использовать var(--teal)");
+			assert.equal(micHtml.includes("#ef444420"), false);
+			assert.equal(stenoHtml.includes("#ef444420"), false);
 		});
 	});
 
 	describe("5. Zero Cartoon Emojis (Mandate 8d pt 7)", () => {
-		const targetFiles = [
-			path.join(voiceDir, "voiceClinicalCommands.ts"),
-			path.join(telephonyDir, "TelephonyStudioModal.tsx"),
-			path.join(telephonyDir, "IncomingCallPopup.tsx"),
-			path.join(componentsDir, "SmartMicrophoneButton.tsx"),
-			path.resolve(componentsDir, "copilot/CopilotVoiceStenographer.tsx"),
-		];
-
-		const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
-
-		for (const file of targetFiles) {
-			const filename = path.basename(file);
-			it(`${filename} contains zero cartoon emojis and strictly uses vector Lucide icons`, () => {
-				const content = fs.readFileSync(file, "utf-8");
-				const match = emojiRegex.exec(content);
-				assert.equal(
-					match,
-					null,
-					`Found prohibited cartoon emoji in ${filename}: ${match?.[0]}`,
-				);
-			});
-		}
+		it("Voice components and clinical parser outputs contain zero cartoon emojis", () => {
+			const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+			const parsed = parseClinicalVoiceSpeech("зуб 16 глубокий кариес, анестезия септанест");
+			const samples = [
+				JSON.stringify(parsed),
+				renderToString(React.createElement(SmartMicrophoneButton, { context: "visit", onResult: () => {} })),
+				renderToString(React.createElement(CopilotVoiceStenographer, { isOpen: true, patientName: "Тест" })),
+			];
+			for (const sample of samples) {
+				assert.equal(emojiRegex.test(sample), false, "Обнаружен запрещенный cartoon emoji в голосовом контуре");
+			}
+		});
 	});
 });

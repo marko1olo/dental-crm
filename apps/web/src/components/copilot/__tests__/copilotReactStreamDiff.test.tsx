@@ -7,9 +7,6 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { CopilotThinkingIndicator } from "../CopilotThinkingIndicator";
 import { CopilotThinkingMessage } from "../message/CopilotThinkingMessage";
 import { CopilotToolMessage } from "../message/CopilotToolMessage";
@@ -17,9 +14,6 @@ import { ActionConfirmDiffBox } from "../actionConfirm/ActionConfirmDiffBox";
 import { CopilotStudioModal } from "../CopilotStudioModal";
 import { setRuntimeDemoMode } from "../../../lib/demoMode";
 import type { ToolUiMessage, ThinkingUiMessage } from "../copilotTypes";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const cleanHtml = (raw: string): string =>
   raw.replace(/<!--.*?-->/g, "").replace(/\u00A0/g, " ");
@@ -156,19 +150,37 @@ describe("Copilot ReAct Stream, Extended Thinking (CoT) & Two-Phase Diff Suite",
     setRuntimeDemoMode(null);
   });
 
-  it("8. Мандат 8d pt 7: строго 0 cartoon emojis во всех компонентах ReAct Stream & Diff", () => {
-    const targetFiles = [
-      "../CopilotThinkingIndicator.tsx",
-      "../message/CopilotThinkingMessage.tsx",
-      "../message/CopilotToolMessage.tsx",
-      "../actionConfirm/ActionConfirmDiffBox.tsx",
-      "../CopilotStudioModal.tsx",
-    ];
+  it("8. Мандат 8d pt 7 & 8x: 0 cartoon emojis и 0 бюрократических кодов в отрендеренных ReAct/Diff компонентах", () => {
     const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-    for (const rel of targetFiles) {
-      const full = path.join(__dirname, rel);
-      const content = fs.readFileSync(full, "utf-8");
-      assert.equal(emojiRegex.test(content), false, `Обнаружен запрещенный emoji в файле ${rel}`);
+    const htmlSamples = [
+      renderToString(
+        <CopilotThinkingIndicator
+          isThinking={true}
+          activeTooth={36}
+          thoughtProcess="Анализ зуба 36: кариес дентина K02.1"
+          speedMode="turbo"
+          showThinkingProcess={true}
+        />,
+      ),
+      renderToString(
+        <CopilotThinkingMessage message={{ kind: "thinking", text: "Расчет дозировки", durationMs: 1200 }} />,
+      ),
+      renderToString(
+        <CopilotToolMessage
+          message={{ kind: "tool", callId: "c1", name: "updateToothStatusTool", status: "done", args: { tooth: 36 } }}
+        />,
+      ),
+      renderToString(
+        <ActionConfirmDiffBox
+          clinicalDiff={{ target: "Зуб 36", from: "Интактный", to: "Пломба", badge: "Одонтограмма" }}
+        />,
+      ),
+      renderToString(<CopilotStudioModal isOpen={true} onClose={() => {}} activeTooth={36} initialTab="dialog" />),
+    ];
+    for (const rawHtml of htmlSamples) {
+      const html = cleanHtml(rawHtml);
+      assert.equal(emojiRegex.test(html), false, "Обнаружен запрещенный emoji в отрендеренном компоненте");
+      assert.doesNotMatch(html, /043\/у|804н|54-ФЗ/i, "В UI не должно быть сырых бюрократических кодов");
     }
   });
 });

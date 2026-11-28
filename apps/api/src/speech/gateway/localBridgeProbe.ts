@@ -2,6 +2,7 @@ import type {
 	SpeechGatewayProvider,
 	SpeechProviderKind,
 } from "@dental/shared";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { numberFromEnv, providerKeyCount } from "../keyPool.js";
 import {
 	type LocalSpeechBridgeProbeState,
@@ -218,10 +219,13 @@ export function localSpeechProbeTtlMs(): number {
 	);
 }
 
-export const localSpeechBridgeProbeByProvider = new Map<
+export const localSpeechBridgeProbeByProvider = new BoundedTtlMap<
 	SpeechGatewayProvider,
 	LocalSpeechBridgeProbeState
->();
+>({
+	maxEntries: 32,
+	ttlMs: 10 * 60 * 1000,
+});
 
 export function defaultLocalSpeechBridgeProbeState(): LocalSpeechBridgeProbeState {
 	return {

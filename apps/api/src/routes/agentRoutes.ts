@@ -6,7 +6,6 @@
 import type { FastifyPluginAsync } from "fastify";
 import {
 	registerAgentChatRoutes,
-	handleAgentChat,
 	formatSseMessage,
 	resolveRuntimeMode,
 	normalizeIncomingBody,
@@ -18,7 +17,6 @@ import { registerAgentProactiveAndNudgeRoutes } from "./agent/agentProactiveAndN
 import { registerAgentSessionRoutes } from "./agentSessionRoutes.js";
 
 export {
-	handleAgentChat,
 	formatSseMessage,
 	resolveRuntimeMode,
 	normalizeIncomingBody,

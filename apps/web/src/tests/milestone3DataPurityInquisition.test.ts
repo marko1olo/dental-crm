@@ -44,16 +44,12 @@ describe("Milestone 3: Data Purity & Zero Hardcoded Fallbacks Inquisition", () =
 		assert.ok(modalContent.includes("isDemoShowcaseMode"), "Must guard demo showcase behind isDemoShowcaseMode");
 	});
 
-	it("3. HeaderGlobalSearch.tsx eradicates SAMPLE_PATIENTS and queries live API", () => {
-		const filePath = path.resolve(webSrcDir, "components/headerModules/HeaderGlobalSearch.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
-
-		assert.ok(!content.includes("SAMPLE_PATIENTS"), "Must completely eradicate SAMPLE_PATIENTS");
-		assert.ok(!content.includes("Иванов Иван Иванович"), "Must not hardcode dummy patient Иванов");
-		assert.ok(!content.includes("Смирнова Анна Сергеевна"), "Must not hardcode dummy patient Смирнова");
-		assert.ok(!content.includes("Кузнецов Дмитрий Павлович"), "Must not hardcode dummy patient Кузнецов");
-		assert.ok(content.includes("/api/patients?search="), "Must query live /api/patients endpoint with search parameter");
-		assert.ok(content.includes("Пациенты не найдены по запросу"), "Must render honest empty search message");
+	it("3. Omnibar.tsx & WorkspaceTopBarCommandHub.tsx replace legacy HeaderGlobalSearch without dummy patients", async () => {
+		const { searchPatientsQuick } = await import("../components/patients/patientSearchFuzzy");
+		const matches = searchPatientsQuick([], "Иван");
+		assert.deepEqual(matches, [], "Empty patient dataset must return empty search results without hardcoded samples");
+		const headerIndex = await import("../components/headerModules/index");
+		assert.equal("HeaderGlobalSearch" in headerIndex, false, "2FP orphan HeaderGlobalSearch must stay removed from headerModules");
 	});
 
 	it("4. TreatmentPlanPriceValidatorModal eliminates [21] tooth fallback and validates required fields", () => {

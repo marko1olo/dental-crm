@@ -33,13 +33,14 @@ import { MODERN_BYOK_MODELS } from "./settings/CopilotSettingsModelRouting";
 
 export interface CopilotSettingsModalProps {
 	isOpen: boolean;
+	embedded?: boolean | undefined;
 	onClose: () => void;
 	onOpenMemoryTab?: () => void;
 }
 
 export type SettingsTab = "intelligence" | "trust" | "persona" | "voice_privacy" | "memory" | "matrix";
 
-export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: CopilotSettingsModalProps) {
+export function CopilotSettingsModal({ isOpen, embedded = false, onClose, onOpenMemoryTab }: CopilotSettingsModalProps) {
 	const settings = useCopilotStore((s) => s.settings);
 	const memoryCount = useCopilotStore((s) => s.memoryFacts.length);
 	const updateSettings = useCopilotStore((s) => s.updateSettings);
@@ -158,22 +159,26 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 		onClose();
 	};
 
-	return (
-		<div className="fixed inset-0 z-[100] flex items-center justify-center p-3 max-md:p-0 max-md:items-end">
-			<div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-			<div
-				className={[
-					"relative z-10 w-full max-w-4xl max-h-[92vh] flex flex-col bg-[var(--paper)] text-[var(--ink)]",
-					"rounded-2xl max-md:rounded-b-none max-md:rounded-t-[24px] border border-[var(--line)] shadow-2xl overflow-hidden",
-				].join(" ")}
-				data-testid="copilot-settings-modal"
-			>
-				{/* Apple HIG тактильный Drag Handle на мобильных экранах */}
+	const modalPanel = (
+		<div
+			className={
+				embedded
+					? "flex-1 min-h-0 w-full flex flex-col bg-[var(--paper)] text-[var(--ink)] overflow-hidden"
+					: [
+							"relative z-10 w-full max-w-4xl max-h-[92vh] flex flex-col bg-[var(--paper)] text-[var(--ink)]",
+							"rounded-2xl max-md:rounded-b-none max-md:rounded-t-[24px] border border-[var(--line)] shadow-2xl overflow-hidden",
+						].join(" ")
+			}
+			data-testid="copilot-settings-modal"
+		>
+			{/* Apple HIG тактильный Drag Handle на мобильных экранах */}
+			{!embedded && (
 				<div className="md:hidden flex justify-center pt-2.5 pb-1 shrink-0">
 					<div className="w-9 h-1.5 touch-none rounded-full bg-[var(--line)]" />
 				</div>
+			)}
 
-				{/* Шапка */}
+			{/* Шапка */}
 				<header className="px-5 py-3 border-b border-[var(--line)] flex items-center justify-between gap-3 shrink-0">
 					<div className="flex items-center gap-2.5 min-w-0">
 						<div className="w-8 h-8 rounded-lg bg-[var(--teal)]/12 border border-[var(--teal)]/30 flex items-center justify-center text-[var(--teal)] shrink-0">
@@ -218,7 +223,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 				</div>
 
 				{/* Логические навигационные вкладки настроек */}
-				<div className="flex border-b border-[var(--line)] px-3 sm:px-5 gap-2 sm:gap-3 text-xs font-semibold shrink-0 overflow-x-auto no-scrollbar snap-x bg-[var(--paper)]">
+				<div className="flex sm:flex-wrap border-b border-[var(--line)] px-3 sm:px-5 gap-2 sm:gap-x-4 sm:gap-y-0.5 text-xs font-semibold shrink-0 overflow-x-auto sm:overflow-x-visible no-scrollbar snap-x bg-[var(--paper)]">
 					{[
 						{ id: "intelligence" as const, label: "Интеллект и модель", icon: <Brain size={14} className="shrink-0" /> },
 						{ id: "trust" as const, label: "Уровень доверия", icon: <ShieldCheck size={14} className="shrink-0" /> },
@@ -317,7 +322,17 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 						Сохранить настройки
 					</button>
 				</footer>
-			</div>
+		</div>
+	);
+
+	if (embedded) {
+		return modalPanel;
+	}
+
+	return (
+		<div className="fixed inset-0 z-[100] flex items-center justify-center p-3 max-md:p-0 max-md:items-end">
+			<div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+			{modalPanel}
 		</div>
 	);
 }

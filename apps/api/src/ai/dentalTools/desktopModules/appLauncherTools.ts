@@ -60,7 +60,11 @@ export async function handleLaunchWorkstationApp(
 
 	let patientFolder = args.targetPatientFolder;
 	if (!patientFolder && args.patientId) {
-		patientFolder = getTenantDropzonePath(context.organizationId, args.patientId);
+		patientFolder = getTenantDropzonePath(
+			context.organizationId,
+			args.patientId,
+			context.localDropzonePath,
+		);
 	}
 
 	if (args.appType === "explorer_custom") {

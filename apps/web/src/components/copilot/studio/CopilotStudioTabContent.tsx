@@ -40,6 +40,7 @@ export interface CopilotStudioTabContentProps {
   messages: CopilotChatMessage[];
   setMessages: React.Dispatch<React.SetStateAction<CopilotChatMessage[]>>;
   isStreaming: boolean;
+  showTypingAnimation?: boolean | undefined;
   isThinking?: boolean | undefined;
   activeDiff: ActiveDiff | null;
   setActiveDiff: (diff: ActiveDiff | null) => void;
@@ -75,7 +76,7 @@ export interface CopilotStudioTabContentProps {
 export const CopilotStudioTabContent: React.FC<CopilotStudioTabContentProps> = ({
   activeTab, setActiveTab, ctxSnapshot, runtimeMode, speedMode, showThinkingProcess,
   thoughtProcess, currentThought, activeToolName, messages, setMessages, isStreaming,
-  isThinking, activeDiff, setActiveDiff, applyActiveDiff, rejectActiveDiff,
+  showTypingAnimation, isThinking, activeDiff, setActiveDiff, applyActiveDiff, rejectActiveDiff,
   toolExecutionLogs, appliedActionIds, actionError, setActionError, onApplyAction,
   onSendMessage, executeApiTool, messagesEndRef, isListening, audioLevel, audioMode,
   speechHealth, streamManager, inputText, onInputChange, onToggleListening,
@@ -83,98 +84,107 @@ export const CopilotStudioTabContent: React.FC<CopilotStudioTabContentProps> = (
   threads, threadMessages, selectThread, hydrateSession,
 }) => (
   <>
-    {activeTab === "dialog" && (
-      <div className="flex-1 flex flex-col min-h-0">
-        <CopilotMessageFeed
-          messages={messages}
-          activeTooth={ctxSnapshot.activeTooth}
-          patientId={ctxSnapshot.patientId}
-          activeDiff={activeDiff}
-          applyActiveDiff={applyActiveDiff}
-          rejectActiveDiff={rejectActiveDiff}
-          appliedActionIds={appliedActionIds}
-          actionError={actionError}
-          onApplyAction={onApplyAction}
-          onRejectMessageAction={(msgId) => {
-            setActionError(null);
-            setMessages((prev) =>
-              prev.map((msg) => (msg.id === msgId ? { ...msg, actionProposal: undefined } : msg)),
-            );
-          }}
-          onSendMessage={(prompt) => onSendMessage(prompt)}
-          isStreaming={isStreaming}
-          isThinking={isThinking}
-          speedMode={speedMode}
-          showThinkingProcess={showThinkingProcess}
-          thoughtProcess={thoughtProcess}
-          currentThought={currentThought}
-          activeToolName={activeToolName}
-          messagesEndRef={messagesEndRef}
-        />
-        <CopilotVoiceDock
-          messages={messages}
-          isStreaming={isStreaming}
-          isListening={isListening}
-          audioLevel={audioLevel}
-          audioMode={audioMode}
-          speechHealth={speechHealth}
-          streamManager={streamManager}
-          inputText={inputText}
-          onInputChange={onInputChange}
-          onToggleListening={onToggleListening}
-          onStopListening={onStopListening}
-          onSendMessage={onSendMessage}
-        />
-      </div>
-    )}
-    {activeTab === "actions" && (
-      <CopilotStudioActionsTab
-        activeTooth={ctxSnapshot.activeTooth}
-        patientId={ctxSnapshot.patientId}
-        runtimeMode={runtimeMode}
-        toolExecutionLogs={toolExecutionLogs}
-        activeDiff={activeDiff}
-        setActiveDiff={setActiveDiff}
-        applyActiveDiff={applyActiveDiff}
-        rejectActiveDiff={rejectActiveDiff}
-        executeApiTool={executeApiTool}
+    {isSettingsOpen ? (
+      <CopilotSettingsModal
+        key="studio-settings-embedded"
+        isOpen={true}
+        embedded={true}
+        onClose={() => setSettingsOpen(false)}
+        onOpenMemoryTab={() => {
+          setSettingsOpen(false);
+          setActiveTab("memory");
+        }}
       />
-    )}
-    {activeTab === "memory" && <CopilotMemoryTab />}
-    <CopilotSettingsModal
-      key={isSettingsOpen ? "settings-open" : "settings-closed"}
-      isOpen={isSettingsOpen}
-      onClose={() => setSettingsOpen(false)}
-      onOpenMemoryTab={() => {
-        setSettingsOpen(false);
-        setActiveTab("memory");
-      }}
-    />
-    <CopilotHistoryDrawer
-      isOpen={isHistoryOpen}
-      onClose={() => setHistoryOpen(false)}
-      onSelectThread={(tId) => {
-        selectThread(tId);
-        setMessages([]);
-        const saved = threadMessages[tId];
-        if (saved && saved.length > 0) {
-          setMessages(parseChatMsgs(saved));
-        } else {
-          const found = threads.find((t) => t.id === tId);
-          if (found?.previewText) {
-            setMessages([{
-              id: `thread-init-${Date.now()}`,
-              role: "assistant",
-              text: found.previewText,
-              timestamp: found.updatedAt,
-              citation: "Клинический протокол СтАР",
-            }]);
+    ) : isHistoryOpen ? (
+      <CopilotHistoryDrawer
+        isOpen={true}
+        embedded={true}
+        onClose={() => setHistoryOpen(false)}
+        onSelectThread={(tId) => {
+          selectThread(tId);
+          setMessages([]);
+          const saved = threadMessages[tId];
+          if (saved && saved.length > 0) {
+            setMessages(parseChatMsgs(saved));
+          } else {
+            const found = threads.find((t) => t.id === tId);
+            if (found?.previewText) {
+              setMessages([{
+                id: `thread-init-${Date.now()}`,
+                role: "assistant",
+                text: found.previewText,
+                timestamp: found.updatedAt,
+                citation: "Клинический протокол СтАР",
+              }]);
+            }
+            void hydrateSession(tId);
           }
-          void hydrateSession(tId);
-        }
-        setHistoryOpen(false);
-        setActiveTab("dialog");
-      }}
-    />
+          setHistoryOpen(false);
+          setActiveTab("dialog");
+        }}
+      />
+    ) : (
+      <>
+        {activeTab === "dialog" && (
+          <div className="flex-1 flex flex-col min-h-0">
+            <CopilotMessageFeed
+              messages={messages}
+              activeTooth={ctxSnapshot.activeTooth}
+              patientId={ctxSnapshot.patientId}
+              activeDiff={activeDiff}
+              applyActiveDiff={applyActiveDiff}
+              rejectActiveDiff={rejectActiveDiff}
+              appliedActionIds={appliedActionIds}
+              actionError={actionError}
+              onApplyAction={onApplyAction}
+              onRejectMessageAction={(msgId) => {
+                setActionError(null);
+                setMessages((prev) =>
+                  prev.map((msg) => (msg.id === msgId ? { ...msg, actionProposal: undefined } : msg)),
+                );
+              }}
+              onSendMessage={(prompt) => onSendMessage(prompt)}
+              isStreaming={isStreaming}
+              showTypingAnimation={showTypingAnimation}
+              isThinking={isThinking}
+              speedMode={speedMode}
+              showThinkingProcess={showThinkingProcess}
+              thoughtProcess={thoughtProcess}
+              currentThought={currentThought}
+              activeToolName={activeToolName}
+              messagesEndRef={messagesEndRef}
+            />
+            <CopilotVoiceDock
+              messages={messages}
+              isStreaming={isStreaming}
+              isListening={isListening}
+              audioLevel={audioLevel}
+              audioMode={audioMode}
+              speechHealth={speechHealth}
+              streamManager={streamManager}
+              inputText={inputText}
+              onInputChange={onInputChange}
+              onToggleListening={onToggleListening}
+              onStopListening={onStopListening}
+              onSendMessage={onSendMessage}
+            />
+          </div>
+        )}
+        {activeTab === "actions" && (
+          <CopilotStudioActionsTab
+            activeTooth={ctxSnapshot.activeTooth}
+            patientId={ctxSnapshot.patientId}
+            runtimeMode={runtimeMode}
+            toolExecutionLogs={toolExecutionLogs}
+            activeDiff={activeDiff}
+            setActiveDiff={setActiveDiff}
+            applyActiveDiff={applyActiveDiff}
+            rejectActiveDiff={rejectActiveDiff}
+            executeApiTool={executeApiTool}
+          />
+        )}
+        {activeTab === "memory" && <CopilotMemoryTab />}
+      </>
+    )}
   </>
 );

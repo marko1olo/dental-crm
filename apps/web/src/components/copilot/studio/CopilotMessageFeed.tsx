@@ -26,6 +26,7 @@ export interface CopilotMessageFeedProps {
   onRejectMessageAction: (messageId: string) => void;
   onSendMessage: (prompt: string) => void;
   isStreaming: boolean;
+  showTypingAnimation?: boolean | undefined;
   isThinking?: boolean | undefined;
   speedMode: AiSpeedMode;
   showThinkingProcess: boolean;
@@ -48,6 +49,7 @@ export const CopilotMessageFeed: React.FC<CopilotMessageFeedProps> = ({
   onRejectMessageAction,
   onSendMessage,
   isStreaming,
+  showTypingAnimation = true,
   isThinking,
   speedMode,
   showThinkingProcess,
@@ -97,7 +99,7 @@ export const CopilotMessageFeed: React.FC<CopilotMessageFeedProps> = ({
             )}
             <p className="whitespace-pre-wrap m-0">
               {m.text || (isStreaming ? "Формирование ответа..." : "")}
-              {isStreaming && m.id === lastMsgId && m.role === "assistant" && (
+              {isStreaming && showTypingAnimation !== false && m.id === lastMsgId && m.role === "assistant" && (
                 <span className="copilot-typing-cursor inline-block w-1.5 h-3 bg-[var(--primary)] animate-pulse ml-1 align-middle" />
               )}
             </p>

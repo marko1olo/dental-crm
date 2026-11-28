@@ -39,7 +39,11 @@ interface StudyFileInfo {
 
 export async function handleListPatientStudyDirectory(args: ListPatientStudyDirectoryInput, context: DentalToolContext) {
 	if (!checkIsLocalWorkstation(context)) return DESKTOP_DENIED_RESPONSE;
-	const base = getTenantDropzonePath(context.organizationId, args.patientId);
+	const base = getTenantDropzonePath(
+		context.organizationId,
+		args.patientId,
+		context.localDropzonePath,
+	);
 	const targetFolder = args.customSubfolder ? path.join(base, args.customSubfolder) : base;
 
 	if (!fs.existsSync(targetFolder)) {

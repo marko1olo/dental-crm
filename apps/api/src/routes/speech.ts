@@ -14,14 +14,11 @@ import {
 	speechTranscriptPolishResponseSchema,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
-import {
-	requireClinicalMutationContext,
-	requireClinicalReadContext,
-} from "../accessGuard.js";
-import { db } from "../db/client.js";
-import { withTenantCtx } from "../db/rls.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
+import type { TenantDb } from "../db/client.js";
+import { withTenantCtx, withTenantReadCtx } from "../db/rls.js";
 import { patients, visits } from "../db/schema.js";
 import {
 	buildSpeechRecordingStrategy,
@@ -138,7 +135,11 @@ function sendSpeechChunkRejection(
  */
 async function validateSpeechClinicalScope(
 	input: SpeechScopeInput,
-	options: { organizationId: string | null; requirePatientOrVisit?: boolean },
+	options: {
+		organizationId: string | null;
+		requirePatientOrVisit?: boolean;
+		runReadTx?: <T>(fn: (tx: TenantDb) => Promise<T>) => Promise<T>;
+	},
 ): Promise<SpeechScopeValidation> {
 	const requestedPatientId = normalizeScopeId(input.patientId);
 	const requestedVisitId = normalizeScopeId(input.visitId);
@@ -165,7 +166,12 @@ async function validateSpeechClinicalScope(
 		);
 	}
 
-	const { patient, visit } = await withTenantCtx(callerOrganizationId, async (tx) => {
+	const executeRead =
+		options.runReadTx ??
+		(<T>(fn: (tx: TenantDb) => Promise<T>) =>
+			withTenantReadCtx(callerOrganizationId, fn));
+
+	const { patient, visit } = await executeRead(async (tx) => {
 		let foundPatient: typeof patients.$inferSelect | null = null;
 		if (requestedPatientId) {
 			const patientScope = and(
@@ -220,60 +226,27 @@ async function validateSpeechClinicalScope(
 	};
 }
 
-async function handleSpeechStatus(
-	request: FastifyRequest,
-	reply: FastifyReply,
-) {
-	if (
-		!(await requireClinicalReadContext(request, reply, "speech gateway status"))
-	)
-		return;
+async function handleSpeechStatus() {
 	return speechGatewayStatusSchema.parse(getSpeechGatewayStatus());
 }
 
-async function handleSpeechGatewayHealth(
-	request: FastifyRequest,
-	reply: FastifyReply,
-) {
-	if (
-		!(await requireClinicalReadContext(request, reply, "speech gateway health"))
-	)
-		return;
+async function handleSpeechGatewayHealth() {
 	return speechGatewayHealthReportSchema.parse(getSpeechGatewayHealthReport());
 }
 
-async function handleSpeechProvidersRuntime(
-	request: FastifyRequest,
-	reply: FastifyReply,
-) {
-	if (
-		!(await requireClinicalReadContext(
-			request,
-			reply,
-			"speech provider runtime",
-		))
-	)
-		return;
+async function handleSpeechProvidersRuntime() {
 	return getSpeechProviderRuntimeStatuses().map((provider) =>
 		speechProviderRuntimeStatusSchema.parse(provider),
 	);
 }
 
 async function handleSpeechRecordingStrategy(
-	request: FastifyRequest,
+	body: unknown,
 	reply: FastifyReply,
 ) {
-	if (
-		!(await requireClinicalReadContext(
-			request,
-			reply,
-			"speech recording strategy",
-		))
-	)
-		return;
 	const input = parseSpeechPayload(
 		speechRecordingStrategyRequestSchema,
-		request.body,
+		body,
 		"SpeechStrategyValidationError",
 		speechStrategyValidationMessage,
 		reply,
@@ -314,28 +287,31 @@ const speechAssembleQuerySchema = z
 	.strict();
 
 async function handleSpeechChunks(
-	request: FastifyRequest,
+	organizationId: string,
+	runReadTx: <T>(fn: (tx: TenantDb) => Promise<T>) => Promise<T>,
+	rawQuery: unknown,
 	reply: FastifyReply,
 ) {
-	const context = await requireClinicalReadContext(
-		request,
-		reply,
-		"speech chunks",
-	);
-	if (!context) return;
-	const query = speechChunksQuerySchema.parse(request.query ?? {});
+	const parsedQuery = speechChunksQuerySchema.safeParse(rawQuery ?? {});
+	if (!parsedQuery.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры запроса фрагментов диктовки.",
+		});
+	}
+	const query = parsedQuery.data;
 	const recordingId = query.recordingId?.trim();
 	if (!recordingId) return [];
 
 	const scopeValidation = await validateSpeechClinicalScope(
 		{ patientId: query.patientId, visitId: query.visitId },
-		{ organizationId: context.organizationId, requirePatientOrVisit: true },
+		{ organizationId, requirePatientOrVisit: true, runReadTx },
 	);
 	if (!scopeValidation.ok)
 		return sendSpeechScopeValidationError(reply, scopeValidation);
 
 	const scope: Parameters<typeof listSpeechTranscriptionChunks>[1] = {
-		organizationId: context.organizationId,
+		organizationId,
 	};
 	if (scopeValidation.visitId) scope.visitId = scopeValidation.visitId;
 	if (scopeValidation.patientId) scope.patientId = scopeValidation.patientId;
@@ -345,19 +321,22 @@ async function handleSpeechChunks(
 }
 
 async function handleSpeechRecordingsRecovery(
-	request: FastifyRequest,
+	organizationId: string,
+	runReadTx: <T>(fn: (tx: TenantDb) => Promise<T>) => Promise<T>,
+	rawQuery: unknown,
 	reply: FastifyReply,
 ) {
-	const context = await requireClinicalReadContext(
-		request,
-		reply,
-		"speech recording recovery",
-	);
-	if (!context) return;
-	const query = speechRecoveryQuerySchema.parse(request.query ?? {});
+	const parsedQuery = speechRecoveryQuerySchema.safeParse(rawQuery ?? {});
+	if (!parsedQuery.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры запроса восстановления записей.",
+		});
+	}
+	const query = parsedQuery.data;
 	const scopeValidation = await validateSpeechClinicalScope(
 		{ patientId: query.patientId, visitId: query.visitId },
-		{ organizationId: context.organizationId, requirePatientOrVisit: true },
+		{ organizationId, requirePatientOrVisit: true, runReadTx },
 	);
 	if (!scopeValidation.ok)
 		return sendSpeechScopeValidationError(reply, scopeValidation);
@@ -368,7 +347,7 @@ async function handleSpeechRecordingsRecovery(
 		visitId?: string | null;
 		patientId?: string | null;
 		limit?: number | null;
-	} = { organizationId: context.organizationId };
+	} = { organizationId };
 	if (scopeValidation.visitId) filters.visitId = scopeValidation.visitId;
 	if (scopeValidation.patientId) filters.patientId = scopeValidation.patientId;
 	if (parsedLimit !== undefined && !Number.isNaN(parsedLimit)) filters.limit = parsedLimit;
@@ -378,26 +357,31 @@ async function handleSpeechRecordingsRecovery(
 }
 
 async function handleSpeechRecordingAssemble(
-	request: FastifyRequest,
+	organizationId: string,
+	runReadTx: <T>(fn: (tx: TenantDb) => Promise<T>) => Promise<T>,
+	rawParams: unknown,
+	rawQuery: unknown,
 	reply: FastifyReply,
 ) {
-	const context = await requireClinicalReadContext(
-		request,
-		reply,
-		"speech recording assemble",
-	);
-	if (!context) return;
-	const params = speechAssembleParamsSchema.parse(request.params ?? {});
-	const query = speechAssembleQuerySchema.parse(request.query ?? {});
+	const parsedParams = speechAssembleParamsSchema.safeParse(rawParams ?? {});
+	const parsedQuery = speechAssembleQuerySchema.safeParse(rawQuery ?? {});
+	if (!parsedParams.success || !parsedQuery.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры сборки записи диктовки.",
+		});
+	}
+	const params = parsedParams.data;
+	const query = parsedQuery.data;
 	const scopeValidation = await validateSpeechClinicalScope(
 		{ patientId: query.patientId, visitId: query.visitId },
-		{ organizationId: context.organizationId, requirePatientOrVisit: true },
+		{ organizationId, requirePatientOrVisit: true, runReadTx },
 	);
 	if (!scopeValidation.ok)
 		return sendSpeechScopeValidationError(reply, scopeValidation);
 
 	const scope: Parameters<typeof assembleSpeechRecording>[1] = {
-		organizationId: context.organizationId,
+		organizationId,
 	};
 	if (scopeValidation.visitId) scope.visitId = scopeValidation.visitId;
 	if (scopeValidation.patientId) scope.patientId = scopeValidation.patientId;
@@ -406,37 +390,23 @@ async function handleSpeechRecordingAssemble(
 	);
 }
 
-/**
- * Единственный эндпоинт диктовки, который ПИШЕТ в клиническую запись пациента.
- *
- * Здесь стоит requireClinicalMutationContext, а не requireClinicalMutationAccess:
- * второй возвращает только «пройден ли гейт» и в этой среде пропускает запрос вообще
- * без учетных данных (accessGuard.ts:31-33 — при незаданном DENTE_CLINICAL_ADMIN_SECRET
- * и DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS=1 он возвращает true), и он никогда не
- * сообщает, ОТ КАКОЙ клиники пришел запрос. Контекстная версия дополнительно требует
- * организацию из подписанного токена (401, если токена нет) и отдает ее обработчику,
- * так что фрагмент диктовки уже нельзя записать в карту чужой клиники.
- */
 async function handleSpeechTranscribeChunk(
-	request: FastifyRequest,
+	organizationId: string,
+	runReadTx: <T>(fn: (tx: TenantDb) => Promise<T>) => Promise<T>,
+	body: unknown,
 	reply: FastifyReply,
 ) {
-	const context = await requireClinicalMutationContext(
-		request,
-		reply,
-		"speech chunk transcribe",
-	);
-	if (!context) return;
 	const input = parseSpeechPayload(
 		speechChunkUploadSchema,
-		request.body,
+		body,
 		"SpeechChunkValidationError",
 		speechChunkValidationMessage,
 		reply,
 	);
 	if (!input) return;
 	const scopeValidation = await validateSpeechClinicalScope(input, {
-		organizationId: context.organizationId,
+		organizationId,
+		runReadTx,
 	});
 	if (!scopeValidation.ok)
 		return sendSpeechScopeValidationError(reply, scopeValidation);
@@ -473,20 +443,10 @@ async function handleSpeechTranscribeChunk(
 }
 
 async function handleSpeechPolishTranscript(
-	request: FastifyRequest,
+	body: unknown,
 	reply: FastifyReply,
 ) {
-	if (
-		!(await requireClinicalMutationContext(
-			request,
-			reply,
-			"speech transcript polish",
-		))
-	)
-		return;
-	const parsedInput = speechTranscriptPolishRequestSchema.safeParse(
-		request.body,
-	);
+	const parsedInput = speechTranscriptPolishRequestSchema.safeParse(body);
 	if (!parsedInput.success) {
 		return reply.code(400).send({
 			error: "ValidationError",
@@ -500,24 +460,115 @@ async function handleSpeechPolishTranscript(
 	);
 }
 
-export async function registerSpeechRoutes(app: FastifyInstance) {
-	const selfManagedRouteConfig = { config: { tenantTxSelfManaged: true } } as const;
+const SPEECH_READ_PERMISSION = {
+	anyOf: ["clinical.read", "agent.read", "schedule.read"],
+} as const;
+const SPEECH_WRITE_PERMISSION = {
+	anyOf: ["clinical.write", "clinical.read", "agent.write", "schedule.write"],
+} as const;
+const SPEECH_AUTH_OPTIONS = { allowClinicTokenWithoutStaff: true } as const;
 
-	app.get("/api/speech/status", selfManagedRouteConfig, handleSpeechStatus);
-	app.get("/api/speech/gateway-health", selfManagedRouteConfig, handleSpeechGatewayHealth);
-	app.get("/api/speech/providers/runtime", selfManagedRouteConfig, handleSpeechProvidersRuntime);
-	app.post("/api/speech/recording-strategy", selfManagedRouteConfig, handleSpeechRecordingStrategy);
-	app.get("/api/speech/chunks", selfManagedRouteConfig, handleSpeechChunks);
-	app.get("/api/speech/recordings/recovery", selfManagedRouteConfig, handleSpeechRecordingsRecovery);
-	app.get(
-		"/api/speech/recordings/:recordingId/assemble",
-		selfManagedRouteConfig,
-		handleSpeechRecordingAssemble,
-	);
-	app.post(
-		"/api/speech/transcribe-chunk",
-		{ bodyLimit: speechJsonBodyLimitBytes(), config: { tenantTxSelfManaged: true } },
-		handleSpeechTranscribeChunk,
-	);
-	app.post("/api/speech/polish-transcript", selfManagedRouteConfig, handleSpeechPolishTranscript);
+export async function registerSpeechRoutes(app: FastifyInstance) {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/speech/status",
+		permission: SPEECH_READ_PERMISSION,
+		authOptions: SPEECH_AUTH_OPTIONS,
+		handler: async () => handleSpeechStatus(),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/speech/gateway-health",
+		permission: SPEECH_READ_PERMISSION,
+		authOptions: SPEECH_AUTH_OPTIONS,
+		handler: async () => handleSpeechGatewayHealth(),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/speech/providers/runtime",
+		permission: SPEECH_READ_PERMISSION,
+		authOptions: SPEECH_AUTH_OPTIONS,
+		handler: async () => handleSpeechProvidersRuntime(),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/speech/recording-strategy",
+		permission: SPEECH_READ_PERMISSION,
+		authOptions: SPEECH_AUTH_OPTIONS,
+		handler: async ({ request, reply }) =>
+			handleSpeechRecordingStrategy(request.body, reply),
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/speech/chunks",
+		permission: SPEECH_READ_PERMISSION,
+		authOptions: SPEECH_AUTH_OPTIONS,
+		handler: async ({ organizationId, runReadTx, request, reply }) => {
+			if (!organizationId) {
+				return reply.code(401).send({ error: "Unauthorized" });
+			}
+			return handleSpeechChunks(organizationId, runReadTx, request.query, reply);
+		},
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/speech/recordings/recovery",
+		permission: SPEECH_READ_PERMISSION,
+		authOptions: SPEECH_AUTH_OPTIONS,
+		handler: async ({ organizationId, runReadTx, request, reply }) => {
+			if (!organizationId) {
+				return reply.code(401).send({ error: "Unauthorized" });
+			}
+			return handleSpeechRecordingsRecovery(
+				organizationId,
+				runReadTx,
+				request.query,
+				reply,
+			);
+		},
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/speech/recordings/:recordingId/assemble",
+		permission: SPEECH_READ_PERMISSION,
+		authOptions: SPEECH_AUTH_OPTIONS,
+		handler: async ({ organizationId, runReadTx, request, reply }) => {
+			if (!organizationId) {
+				return reply.code(401).send({ error: "Unauthorized" });
+			}
+			return handleSpeechRecordingAssemble(
+				organizationId,
+				runReadTx,
+				request.params,
+				request.query,
+				reply,
+			);
+		},
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/speech/transcribe-chunk",
+		bodyLimit: speechJsonBodyLimitBytes(),
+		permission: SPEECH_WRITE_PERMISSION,
+		authOptions: SPEECH_AUTH_OPTIONS,
+		handler: async ({ organizationId, runReadTx, request, reply }) => {
+			if (!organizationId) {
+				return reply.code(401).send({ error: "Unauthorized" });
+			}
+			return handleSpeechTranscribeChunk(
+				organizationId,
+				runReadTx,
+				request.body,
+				reply,
+			);
+		},
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/speech/polish-transcript",
+		permission: SPEECH_WRITE_PERMISSION,
+		authOptions: SPEECH_AUTH_OPTIONS,
+		handler: async ({ request, reply }) =>
+			handleSpeechPolishTranscript(request.body, reply),
+	});
 }

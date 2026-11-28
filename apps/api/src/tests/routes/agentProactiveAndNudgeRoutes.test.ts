@@ -1,10 +1,23 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
+import { eq } from "drizzle-orm";
 import Fastify, { type FastifyInstance } from "fastify";
 import { registerAgentProactiveAndNudgeRoutes } from "../../routes/agent/agentProactiveAndNudgeRoutes.js";
+import {
+	communicationOutbox,
+	copilotHitlCards,
+	organizations,
+} from "../../db/schema.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import {
+	fixtureUuid,
+	isDatabaseUnavailable,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
 
 describe("agentProactiveAndNudgeRoutes RLS, Zod .strict() & Error Handling", () => {
 	let app: FastifyInstance;
@@ -126,5 +139,104 @@ describe("agentProactiveAndNudgeRoutes RLS, Zod .strict() & Error Handling", () 
 			payload: { approvalId: "99999999-9999-4999-8999-999999999999" },
 		});
 		assert.equal(rejectMissingRes.statusCode, 404);
+	});
+
+	it("4. P1-1: approve with sendNow=true persists approved HITL card and enqueues into communication_outbox in PG18", async (t) => {
+		const fixtureOrgId = fixtureUuid("agentProactiveAndNudge", 1);
+		const approvalId = randomUUID();
+		const secret = authTokenSecret();
+		const fixtureClinicToken = signToken(
+			{ organizationId: fixtureOrgId, role: "clinic" },
+			secret,
+			3600,
+		);
+		const fixtureStaffToken = signToken(
+			{ organizationId: fixtureOrgId, userId, role: "doctor", clinicalRole: "doctor" },
+			secret,
+			3600,
+		);
+
+		try {
+			await purgeFixtureOrganizations([fixtureOrgId]);
+			await withFixtureTenant(fixtureOrgId, async (tx) => {
+				await tx
+					.insert(organizations)
+					.values({ id: fixtureOrgId, name: "Клиника Proactive HITL Test" });
+				await tx.insert(copilotHitlCards).values({
+					id: approvalId,
+					organizationId: fixtureOrgId,
+					patientId: "non-uuid-phone-only",
+					patientName: "Тест Пациент",
+					phone: "+79991234567",
+					intent: "appointment_confirm",
+					urgency: "NORMAL",
+					incomingSnippet: "Подскажите, во сколько завтра приём?",
+					draftReply: "Добрый день! Ждём вас завтра в 10:00.",
+					channel: "whatsapp",
+					status: "pending",
+				});
+			});
+		} catch (error) {
+			if (isDatabaseUnavailable(error)) {
+				t.skip("PostgreSQL unavailable for P1-1 proactive sendNow integration test");
+				return;
+			}
+			throw error;
+		}
+
+		try {
+			const approveRes = await app.inject({
+				method: "POST",
+				url: "/api/agent/proactive/approve",
+				headers: {
+					[CLINIC_TOKEN_HEADER]: fixtureClinicToken,
+					[STAFF_TOKEN_HEADER]: fixtureStaffToken,
+					"Idempotency-Key": randomUUID(),
+				},
+				payload: {
+					approvalId,
+					sendNow: true,
+					modifiedReply: "Добрый день! Ваш визит подтверждён на завтра в 10:30.",
+				},
+			});
+
+			assert.equal(approveRes.statusCode, 200);
+			const body = approveRes.json() as {
+				ok?: boolean;
+				approved?: boolean;
+				queuedForDelivery?: boolean;
+				deliveryStatus?: string;
+				outboxId?: string;
+			};
+			assert.equal(body.ok, true);
+			assert.equal(body.approved, true);
+			assert.equal(body.queuedForDelivery, true);
+			assert.equal(body.deliveryStatus, "queued");
+			assert.ok(body.outboxId, "outboxId must be returned");
+			const outboxId = body.outboxId;
+			if (!outboxId) throw new Error("outboxId must be returned");
+
+			await withFixtureTenant(fixtureOrgId, async (tx) => {
+				const [outboxRow] = await tx
+					.select()
+					.from(communicationOutbox)
+					.where(eq(communicationOutbox.id, outboxId));
+				assert.ok(outboxRow, "communication_outbox row must exist in PG18");
+				assert.equal(outboxRow.status, "queued");
+				assert.equal(outboxRow.recipientAddress, "+79991234567");
+				assert.equal(
+					outboxRow.body,
+					"Добрый день! Ваш визит подтверждён на завтра в 10:30.",
+				);
+
+				const [cardRow] = await tx
+					.select()
+					.from(copilotHitlCards)
+					.where(eq(copilotHitlCards.id, approvalId));
+				assert.equal(cardRow?.status, "approved");
+			});
+		} finally {
+			await purgeFixtureOrganizations([fixtureOrgId]);
+		}
 	});
 });

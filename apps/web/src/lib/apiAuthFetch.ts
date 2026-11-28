@@ -214,7 +214,7 @@ function requestUrlOf(input: RequestInfo | URL): string {
 	return input.url;
 }
 
-function resolveConfiguredLanBaseOrigin(): string | null {
+export function resolveConfiguredLanBaseOrigin(): string | null {
 	const activeBase = safeLocalStorageGetItem(STORAGE_KEY_ACTIVE_BASE_URL)?.trim();
 	if (activeBase && activeBase !== "/api" && /^https?:\/\//i.test(activeBase)) {
 		return activeBase.replace(/\/api\/?$/, "");

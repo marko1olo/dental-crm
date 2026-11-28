@@ -5,7 +5,7 @@
  */
 
 import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
-import { withTenantCtx } from "../../db/rls.js";
+import { type TenantDb, withTenantCtx } from "../../db/rls.js";
 import { copilotMessages, copilotSessions } from "../../db/schema/copilot.js";
 import {
 	compactMessageHistory,
@@ -80,7 +80,7 @@ export async function addMessageToDb(
 				.where(eq(copilotMessages.sessionId, sessionId));
 			const messageCount = Number(countRes?.total ?? 0);
 			if (messageCount > DEFAULT_COMPACTION_THRESHOLD) {
-				await compactSessionInDb(sessionId, orgId);
+				await compactSessionInDb(sessionId, orgId, undefined, tx);
 			}
 		}
 
@@ -194,6 +194,7 @@ export async function compactSessionInDb(
 	sessionId: string,
 	organizationId: string,
 	options?: CompactorOptions,
+	existingTx?: TenantDb,
 ): Promise<{
 	compacted: boolean;
 	summary: string | null;
@@ -209,7 +210,7 @@ export async function compactSessionInDb(
 		};
 	}
 
-	return await withTenantCtx(organizationId, async (tx) => {
+	const runCompaction = async (tx: TenantDb) => {
 		const [sessionRow] = await tx
 			.select()
 			.from(copilotSessions)
@@ -273,7 +274,12 @@ export async function compactSessionInDb(
 			totalMessages: compactionResult.totalMessagesCount,
 			retainedCount: compactionResult.retainedMessages.length,
 		};
-	});
+	};
+
+	if (existingTx) {
+		return await runCompaction(existingTx);
+	}
+	return await withTenantCtx(organizationId, runCompaction);
 }
 
 /**

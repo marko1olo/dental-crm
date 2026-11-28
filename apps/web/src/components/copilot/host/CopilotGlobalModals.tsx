@@ -64,6 +64,7 @@ export const CopilotGlobalModals: React.FC<CopilotGlobalModalsProps> = ({
         <CopilotVoiceStenographer
           isOpen={isVoiceModalOpen}
           onClose={closeVoiceModal}
+          patientId={patientId}
           activeTooth={activeTooth}
           patientName={patientName}
         />
